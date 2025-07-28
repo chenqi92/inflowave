@@ -14,8 +14,8 @@ permissions:
   actions: read
 
 jobs:
+  # 准备发布说明 (仅在标签推送或手动触发时运行)
   prepare-release-notes:
-    # 仅在标签推送或手动触发时运行
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     outputs:
@@ -30,14 +30,17 @@ jobs:
 
       - name: Generate release notes
         id: generate
-        shell: bash
         run: |
+          # 使用外部脚本生成开发版本的release notes
           RELEASE_BODY=$(node scripts/generate-release-notes.cjs --dev)
+          
+          # 输出到GitHub Actions
           {
             echo 'release_body<<EOF'
             echo "$RELEASE_BODY"
             echo 'EOF'
-          } >> "$GITHUB_OUTPUT"
+          } >> $GITHUB_OUTPUT
+        shell: bash
 
   build:
     if: github.event_name != 'pull_request'
@@ -47,28 +50,28 @@ jobs:
       matrix:
         include:
           # Windows
-          - platform: windows-latest
-            target: x86_64-pc-windows-msvc
-            args: --target x86_64-pc-windows-msvc
-          - platform: windows-latest
-            target: i686-pc-windows-msvc
-            args: --target i686-pc-windows-msvc
+          - platform: 'windows-latest'
+            target: 'x86_64-pc-windows-msvc'
+            args: '--target x86_64-pc-windows-msvc'
+          - platform: 'windows-latest'
+            target: 'i686-pc-windows-msvc'
+            args: '--target i686-pc-windows-msvc'
 
           # macOS
-          - platform: macos-latest
-            target: x86_64-apple-darwin
-            args: --target x86_64-apple-darwin
-          - platform: macos-latest
-            target: aarch64-apple-darwin
-            args: --target aarch64-apple-darwin
+          - platform: 'macos-latest'
+            target: 'x86_64-apple-darwin'
+            args: '--target x86_64-apple-darwin'
+          - platform: 'macos-latest'
+            target: 'aarch64-apple-darwin'
+            args: '--target aarch64-apple-darwin'
 
           # Linux
-          - platform: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
-            args: --target x86_64-unknown-linux-gnu
-          - platform: ubuntu-22.04
-            target: aarch64-unknown-linux-gnu
-            args: --target aarch64-unknown-linux-gnu
+          - platform: 'ubuntu-22.04'
+            target: 'x86_64-unknown-linux-gnu'
+            args: '--target x86_64-unknown-linux-gnu'
+          - platform: 'ubuntu-22.04'
+            target: 'aarch64-unknown-linux-gnu'
+            args: '--target aarch64-unknown-linux-gnu'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -77,234 +80,238 @@ jobs:
 
       - name: Install dependencies (ubuntu only)
         if: matrix.platform == 'ubuntu-22.04'
-        shell: bash
         run: |
-          set -euxo pipefail
+          # 刷新包缓存
           sudo apt-get clean
           sudo rm -rf /var/lib/apt/lists/*
           sudo apt-get update
-
-          # Tauri v2 官方依赖为基
-          sudo apt-get install -y --no-install-recommends \
-            libwebkit2gtk-4.1-dev \
-            libgtk-3-dev \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            build-essential \
-            curl wget file \
-            pkg-config \
-            libssl-dev \
-            libxdo-dev \
-            patchelf
-
-          # 显式安装（可选）
-          sudo apt-get install -y --no-install-recommends libglib2.0-dev || true
-
-          # 运行时常见库（便于链接期/工具检查；.deb 仍以 tauri 配置为准）
-          sudo apt-get install -y --no-install-recommends \
-            libglib2.0-0 libglib2.0-bin libgirepository1.0-dev \
-            libgdk-pixbuf2.0-dev libpango1.0-dev libatk1.0-dev \
-            libxdo3 || true
-
+          
+          # 安装基础编译依赖
+          sudo apt-get install -y build-essential curl wget gnupg software-properties-common file
+          
+          # 安装 glib-sys 和 GTK 相关依赖
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev \
+            pkg-config libglib2.0-dev libgdk-pixbuf2.0-dev libpango1.0-dev libatk1.0-dev \
+            libxdo-dev libxdo3 libssl-dev \
+            libglib2.0-0 libglib2.0-bin gobject-introspection libgirepository1.0-dev \
+            libffi-dev patchelf
+          
+          # 验证 glib pkg-config 文件
           echo "🔍 检查 glib pkg-config 文件..."
-          find /usr -name "glib-2.0.pc" 2>/dev/null | head -5 || true
-          if pkg-config --exists glib-2.0; then
-            echo "✅ glib-2.0 pkg-config 可用"
-            pkg-config --modversion glib-2.0 || true
-          else
-            echo "⚠️ glib-2.0 pkg-config 不可用"
-          fi
-
-          # ARM64 交叉编译
+          find /usr -name "glib-2.0.pc" 2>/dev/null | head -5
+          pkg-config --exists glib-2.0 && echo "✅ glib-2.0 pkg-config 可用" || echo "❌ glib-2.0 pkg-config 不可用"
+          
+          # 设置和验证 pkg-config 路径
+          echo "📋 设置 pkg-config 环境变量..."
+          export PKG_CONFIG_PATH="/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig:$PKG_CONFIG_PATH"
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $GITHUB_ENV
+          
+          echo "📋 当前 PKG_CONFIG_PATH: $PKG_CONFIG_PATH"
+          echo "📋 pkg-config 库列表:"
+          pkg-config --list-all | grep glib || echo "❌ 未找到 glib 相关库"
+          
+          # 尝试手动检查 glib 版本
+          pkg-config --modversion glib-2.0 || echo "❌ 无法获取 glib-2.0 版本"
+          
+          # ARM64 交叉编译设置
           if [[ "${{ matrix.target }}" == "aarch64-unknown-linux-gnu" ]]; then
             echo "🔧 设置 ARM64 交叉编译环境..."
+          
+            # 添加 ARM64 架构
             sudo dpkg --add-architecture arm64
-
-            sudo tee /etc/apt/sources.list >/dev/null <<'EOF'
-  deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse
-  deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse
-  deb [arch=amd64] http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse
-  
-  deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse
-  deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse
-  deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse
-  EOF
-  
-  sudo apt-get update || true
-  sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-  
-  # ARM64 dev 库尽量装；失败不终止，交由目标系统满足运行时
-  sudo apt-get install -y --no-install-recommends \
-  libwebkit2gtk-4.1-dev:arm64 \
-  libgtk-3-dev:arm64 \
-  libglib2.0-dev:arm64 \
-  libgdk-pixbuf2.0-dev:arm64 \
-  libpango1.0-dev:arm64 \
-  libatk1.0-dev:arm64 \
-  libssl-dev:arm64 \
-  libayatana-appindicator3-dev:arm64 \
-  librsvg2-dev:arm64 || echo "⚠️ 部分 ARM64 dev 包安装失败，继续构建"
-  fi
-
-- name: Rust setup
-  uses: dtolnay/rust-toolchain@stable
-  with:
-    targets: ${{ matrix.target }}
-
-- name: Install additional Rust targets
-  shell: bash
-  run: rustup target add ${{ matrix.target }}
-
-- name: Rust cache
-  uses: swatinem/rust-cache@v2
-  with:
-    workspaces: ./src-tauri -> target
-
-- name: Setup Node.js
-  uses: actions/setup-node@v4
-  with:
-    node-version: 'lts/*'
-    cache: npm
-
-- name: Install frontend dependencies
-  run: npm ci
-
-- name: Download fonts for offline use
-  shell: bash
-  run: |
-    echo "📦 下载字体文件用于离线使用..."
-    node scripts/download-fonts-ci.cjs
-    echo "✅ 字体下载完成"
-
-- name: Get package version
-  id: package-version
-  shell: bash
-  run: |
-    echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-
-- name: Build the app
-  uses: tauri-apps/tauri-action@v0
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    ENABLE_EMBEDDED_SERVER: false
-    DISABLE_CONSOLE_LOGS: true
-    LANG: zh_CN.UTF-8
-    LC_ALL: zh_CN.UTF-8
-
-    PKG_CONFIG_ALLOW_CROSS: 1
-    PKG_CONFIG_ALLOW_SYSTEM_CFLAGS: 1
-    PKG_CONFIG_PATH: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' || '/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' }}
-    PKG_CONFIG_LIBDIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig' || '' }}
-    PKG_CONFIG_SYSROOT_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/' || '' }}
-
-    # 与 tauri 配置的 minimumSystemVersion 对齐
-    MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform == 'macos-latest' && '10.15' || '' }}
-
-    # ARM64 工具链
-    CC_aarch64_unknown_linux_gnu: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
-    CXX_aarch64_unknown_linux_gnu: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-g++' || '' }}
-    AR_aarch64_unknown_linux_gnu: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-ar' || '' }}
-    CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
-
-    # OpenSSL（如使用）
-    OPENSSL_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
-    OPENSSL_LIB_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
-    OPENSSL_INCLUDE_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/include' || '' }}
-
-    GLIB_SYS_USE_PKG_CONFIG: 1
-    GOBJECT_SYS_USE_PKG_CONFIG: 1
-    GIO_SYS_USE_PKG_CONFIG: 1
-
-    APPIMAGE_EXTRACT_AND_RUN: 1
-  with:
-    tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.package-version.outputs.version) }}
-    releaseName: InfloWave ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.package-version.outputs.version) }}
-    releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
-    releaseDraft: true
-    prerelease: false
-    args: ${{ matrix.args }}
-
-build-dev:
-  name: Build Development Version
-  runs-on: ubuntu-22.04
-  if: github.event_name == 'pull_request'
-  steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-
-    - name: Install dependencies
-      shell: bash
-      run: |
-        set -euxo pipefail
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends \
-          libwebkit2gtk-4.1-dev \
-          libgtk-3-dev \
-          libayatana-appindicator3-dev \
-          librsvg2-dev \
-          build-essential \
-          curl wget file \
-          pkg-config \
-          libssl-dev \
-          libxdo-dev \
-          patchelf
-
-    - name: Rust setup
-      uses: dtolnay/rust-toolchain@stable
-
-    - name: Rust cache
-      uses: swatinem/rust-cache@v2
-      with:
-        workspaces: ./src-tauri -> target
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 'lts/*'
-        cache: npm
-
-    - name: Install frontend dependencies
-      run: npm ci
-
-    - name: Download fonts for offline use (dev)
-      shell: bash
-      run: |
-        echo "📦 下载字体文件用于离线使用 (开发构建)..."
-        node scripts/download-fonts-ci.cjs
-        echo "✅ 字体下载完成"
-
-    - name: Run type check
-      run: npm run type-check
-      continue-on-error: true
-
-    - name: Test port conflict resolution
-      shell: bash
-      run: |
-        echo "Testing port conflict handling..."
-        node -e "
-          const net = require('net');
-          const server = net.createServer();
-          server.listen(1422, () => {
-            console.log('✅ Occupied port 1422 for testing');
-            const { spawn } = require('child_process');
-            const child = spawn('node', ['scripts/start-with-port-check.cjs'], {
-              stdio: 'pipe',
-              timeout: 10000
-            });
-            let output = '';
-            child.stdout.on('data', (d) => { output += d.toString(); console.log(d.toString().trim()); });
-            setTimeout(() => {
-              child.kill('SIGTERM'); server.close();
-              if (output.includes('被占用') && output.includes('找到可用端口')) {
-                console.log('✅ Port conflict resolution test passed'); process.exit(0);
-              } else {
-                console.log('❌ Port conflict resolution test failed'); process.exit(1);
+          
+            # 备份原始 sources.list
+            sudo cp /etc/apt/sources.list /etc/apt/sources.list.backup
+          
+            # 配置多架构源
+            {
+              echo "# AMD64 (默认架构)"
+              echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy main restricted universe multiverse"
+              echo "deb [arch=amd64] http://archive.ubuntu.com/ubuntu jammy-updates main restricted universe multiverse"
+              echo "deb [arch=amd64] http://security.ubuntu.com/ubuntu jammy-security main restricted universe multiverse"
+              echo ""
+              echo "# ARM64 架构"
+              echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy main restricted universe multiverse"
+              echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-updates main restricted universe multiverse"
+              echo "deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports jammy-security main restricted universe multiverse"
+            } | sudo tee /etc/apt/sources.list
+          
+            # 更新包列表
+            sudo apt-get update || true
+          
+            # 安装交叉编译工具链
+            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+          
+            # 尝试安装 ARM64 开发库（允许失败）
+            sudo apt-get install -y \
+              libwebkit2gtk-4.1-dev:arm64 \
+              libgtk-3-dev:arm64 \
+              libglib2.0-dev:arm64 \
+              libgdk-pixbuf2.0-dev:arm64 \
+              libpango1.0-dev:arm64 \
+              libatk1.0-dev:arm64 \
+              libssl-dev:arm64 \
+              libayatana-appindicator3-dev:arm64 \
+              librsvg2-dev:arm64 || {
+                echo "⚠️ 部分 ARM64 库安装失败，将使用系统库进行交叉编译"
               }
-            }, 8000);
-          });
-        "
+          fi
+        shell: bash
 
-    - name: Build test
-      env:
-        ENABLE_EMBEDDED_SERVER: false
-      run: npm run tauri:build:production
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install additional Rust targets
+        run: |
+          # Target already specified in rust-toolchain step, but ensure it's installed
+          rustup target add ${{ matrix.target }}
+        shell: bash
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Sync node version and setup cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Download fonts for offline use
+        run: |
+          echo "📦 下载字体文件用于离线使用..."
+          node scripts/download-fonts-ci.cjs
+          echo "✅ 字体下载完成"
+
+      - name: Get package version
+        id: package-version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        shell: bash
+
+      - name: Build the app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: false
+          DISABLE_CONSOLE_LOGS: true
+          # 设置语言环境
+          LANG: ${{ matrix.platform == 'windows-latest' && 'zh_CN.UTF-8' || 'zh_CN.UTF-8' }}
+          LC_ALL: ${{ matrix.platform == 'windows-latest' && 'zh_CN.UTF-8' || 'zh_CN.UTF-8' }}
+          # 跨编译环境变量
+          PKG_CONFIG_ALLOW_CROSS: 1
+          PKG_CONFIG_ALLOW_SYSTEM_CFLAGS: 1
+          PKG_CONFIG_PATH: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig:/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' || '/usr/lib/pkgconfig:/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig' }}
+          PKG_CONFIG_LIBDIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu/pkgconfig' || '' }}
+          PKG_CONFIG_SYSROOT_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/' || '' }}
+          # 修复 macOS universal build 问题
+          MACOSX_DEPLOYMENT_TARGET: ${{ matrix.platform == 'macos-latest' && '10.15' || '' }}
+          # ARM64 交叉编译环境变量
+          CC_aarch64_unknown_linux_gnu: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
+          CXX_aarch64_unknown_linux_gnu: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-g++' || '' }}
+          AR_aarch64_unknown_linux_gnu: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-ar' || '' }}
+          CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && 'aarch64-linux-gnu-gcc' || '' }}
+          # OpenSSL 交叉编译配置
+          OPENSSL_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
+          OPENSSL_LIB_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/lib/aarch64-linux-gnu' || '' }}
+          OPENSSL_INCLUDE_DIR: ${{ matrix.target == 'aarch64-unknown-linux-gnu' && '/usr/include' || '' }}
+          # glib-sys 特定环境变量
+          GLIB_SYS_USE_PKG_CONFIG: 1
+          GOBJECT_SYS_USE_PKG_CONFIG: 1
+          GIO_SYS_USE_PKG_CONFIG: 1
+          # AppImage 优化配置
+          APPIMAGE_EXTRACT_AND_RUN: 1
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.package-version.outputs.version) }}
+          releaseName: InfloWave ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}', steps.package-version.outputs.version) }}
+          releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  build-dev:
+    name: Build Development Version
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev file patchelf
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Download fonts for offline use (dev)
+        run: |
+          echo "📦 下载字体文件用于离线使用 (开发构建)..."
+          node scripts/download-fonts-ci.cjs
+          echo "✅ 字体下载完成"
+
+      - name: Run type check
+        run: npm run type-check
+        continue-on-error: true
+
+      - name: Test port conflict resolution
+        run: |
+          echo "Testing port conflict handling..."
+          node -e "
+            const net = require('net');
+            const server = net.createServer();
+            server.listen(1422, () => {
+              console.log('✅ Occupied port 1422 for testing');
+              const { spawn } = require('child_process');
+              const child = spawn('node', ['scripts/start-with-port-check.cjs'], {
+                stdio: 'pipe',
+                timeout: 10000
+              });
+          
+              let output = '';
+              child.stdout.on('data', (data) => {
+                output += data.toString();
+                console.log(data.toString().trim());
+              });
+          
+              setTimeout(() => {
+                child.kill('SIGTERM');
+                server.close();
+          
+                if (output.includes('被占用') && output.includes('找到可用端口')) {
+                  console.log('✅ Port conflict resolution test passed');
+                  process.exit(0);
+                } else {
+                  console.log('❌ Port conflict resolution test failed');
+                  process.exit(1);
+                }
+              }, 8000);
+            });
+          "
+        shell: bash
+
+      - name: Build test
+        run: npm run tauri:build:production
+        env:
+          ENABLE_EMBEDDED_SERVER: false
