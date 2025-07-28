@@ -3,7 +3,9 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { ChevronRight, ChevronDown, Loader2, RefreshCw, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui';
-import { TreeNode, TreeNodeType, TreeNodeIcons, TreeNodeStyles, TreeNodeDescriptions, isSystemNode, TreeNodeUtils } from '@/types/tree';
+import { TreeNode, TreeNodeType, TreeNodeStyles, TreeNodeDescriptions, isSystemNode, TreeNodeUtils } from '@/types/tree';
+import { DatabaseIcon } from '@/components/common/DatabaseIcon';
+import { useConnection } from '@/hooks/useConnection';
 
 interface DatabaseTreeProps {
   connectionId: string;
@@ -24,6 +26,14 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [showSystemNodes, setShowSystemNodes] = useState(false);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
+
+  // 获取连接信息
+  const { connections } = useConnection();
+  const connection = connections.find(conn => conn.id === connectionId);
+
+  // 获取数据库类型和版本
+  const dbType = connection?.dbType || 'influxdb';
+  const dbVersion = connection?.version || '1.x';
 
   // 加载树节点
   const loadTreeNodes = useCallback(async (forceRefresh = false) => {
@@ -156,7 +166,6 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
     const isExpanded = expandedNodes.has(node.id);
     const isSelected = selectedNodeId === node.id;
     const hasChildren = node.children.length > 0 || node.isExpandable;
-    const icon = TreeNodeIcons[node.nodeType] || '📄';
     const styleClass = TreeNodeStyles[node.nodeType] || '';
 
     const nodeDescription = TreeNodeDescriptions[node.nodeType] || '数据节点';
@@ -198,7 +207,16 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                 </div>
 
                 {/* 节点图标 */}
-                <span className="mr-2 text-sm">{icon}</span>
+                <div className="mr-2">
+                  <DatabaseIcon
+                    nodeType={node.nodeType}
+                    size={16}
+                    className="inline-block"
+                    dbType={dbType}
+                    dbVersion={dbVersion}
+                    isConnected={true}
+                  />
+                </div>
 
                 {/* 节点名称 */}
                 <span className={`text-sm truncate ${styleClass}`}>

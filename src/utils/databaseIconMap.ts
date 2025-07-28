@@ -367,13 +367,13 @@ export const getCurrentTheme = (): 'light' | 'dark' => {
  */
 export const getThemeAwareIcon = (nodeType: TreeNodeType, isConnected?: boolean): string => {
   const theme = getCurrentTheme();
-  let iconKey = nodeType;
-  
+  let iconKey: keyof typeof DatabaseIconMap = nodeType;
+
   // 特殊处理连接状态
   if (nodeType === 'connection') {
     iconKey = isConnected ? 'connection-active' : 'connection-inactive';
   }
-  
+
   const iconConfig = DatabaseIconMap[iconKey];
   if (iconConfig) {
     return iconConfig[theme];

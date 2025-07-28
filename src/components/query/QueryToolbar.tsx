@@ -66,12 +66,15 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
   const getConnectionDisplayInfo = (conn: any) => {
     const status = conn.id ? connectionStatuses[conn.id] : null;
     const version = conn.version || 'Unknown';
-    const statusIcon = status?.status === 'connected' ? '🟢' : '🔴';
-    
+    const statusIcon = status?.status === 'connected' ? '●' : '○';
+    const statusColor = status?.status === 'connected' ? 'text-green-500' : 'text-red-500';
+
     return {
-      label: `${statusIcon} ${conn.name} (${version})`,
+      label: `${conn.name} (${version})`,
       value: conn.id,
       version: conn.version,
+      statusIcon,
+      statusColor,
     };
   };
 
@@ -121,7 +124,10 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
             const displayInfo = getConnectionDisplayInfo(conn);
             return (
               <SelectItem key={conn.id} value={conn.id!}>
-                {displayInfo.label}
+                <div className="flex items-center gap-2">
+                  <span className={displayInfo.statusColor}>{displayInfo.statusIcon}</span>
+                  <span>{displayInfo.label}</span>
+                </div>
               </SelectItem>
             );
           })}

@@ -41,6 +41,7 @@ import {
 import { showMessage } from '@/utils/message';
 import { VersionDetectionDialog } from './VersionDetectionDialog';
 import { getDatabaseIcon, renderDatabaseOption } from '@/utils/databaseIcons';
+import { getDatabaseBrandIcon } from '@/utils/databaseIconMap';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -87,6 +88,66 @@ interface FormData {
   proxyPassword: string;
   proxyType: 'http' | 'https' | 'socks5';
 }
+
+// 渲染数据库类型选项（使用品牌图标）
+const renderDatabaseTypeOption = (dbType: string) => {
+  const dbTypeMap: Record<string, string> = {
+    'influxdb': 'InfluxDB',
+    'iotdb': 'IoTDB'
+  };
+
+  return (
+    <div className='flex items-center gap-2'>
+      <img
+        src={getDatabaseBrandIcon(dbTypeMap[dbType] || 'Generic')}
+        alt={`${dbType} icon`}
+        className="w-4 h-4"
+      />
+      <span>
+        {dbType === 'influxdb' ? 'InfluxDB' : 'Apache IoTDB'}
+      </span>
+    </div>
+  );
+};
+
+// 渲染版本选项（使用对应的版本图标）
+const renderVersionOption = (version: string, dbType: string) => {
+  const getVersionIcon = (version: string, dbType: string) => {
+    if (dbType === 'influxdb') {
+      switch (version) {
+        case '1.x':
+          return getDatabaseBrandIcon('InfluxDB');
+        case '2.x':
+          return getDatabaseBrandIcon('InfluxDB2');
+        case '3.x':
+          return getDatabaseBrandIcon('InfluxDB3');
+        default:
+          return getDatabaseBrandIcon('InfluxDB');
+      }
+    }
+    return getDatabaseBrandIcon('IoTDB');
+  };
+
+  return (
+    <div className='flex items-center gap-2'>
+      <img
+        src={getVersionIcon(version, dbType)}
+        alt={`${version} icon`}
+        className="w-4 h-4"
+      />
+      <div className='flex flex-col'>
+        <span className='font-medium'>
+          {dbType === 'influxdb' ? `InfluxDB ${version}` : 'Apache IoTDB'}
+        </span>
+        <span className='text-xs text-muted-foreground'>
+          {version === '1.x' && 'InfluxQL 查询语言'}
+          {version === '2.x' && 'Flux 查询语言，API Token 认证'}
+          {version === '3.x' && 'SQL + Flux，简化架构，可选组织'}
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   visible,
@@ -796,24 +857,15 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             >
               <SelectTrigger className='h-9'>
                 <SelectValue placeholder='选择数据库类型'>
-                  {formData.dbType && (
-                    <div className='flex items-center gap-2'>
-                      {getDatabaseIcon(formData.dbType)}
-                      <span>
-                        {formData.dbType === 'influxdb'
-                          ? 'InfluxDB'
-                          : 'Apache IoTDB'}
-                      </span>
-                    </div>
-                  )}
+                  {formData.dbType && renderDatabaseTypeOption(formData.dbType)}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='influxdb'>
-                  {renderDatabaseOption('influxdb')}
+                  {renderDatabaseTypeOption('influxdb')}
                 </SelectItem>
                 <SelectItem value='iotdb'>
-                  {renderDatabaseOption('iotdb')}
+                  {renderDatabaseTypeOption('iotdb')}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -844,61 +896,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               >
                 <SelectTrigger className='h-9'>
                   <SelectValue placeholder='选择版本'>
-                    {formData.version && (
-                      <div className='flex items-center gap-2'>
-                        <span className='text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded'>
-                          {formData.version}
-                        </span>
-                        <span>
-                          {formData.version === '1.x' &&
-                            'InfluxDB 1.x (InfluxQL)'}
-                          {formData.version === '2.x' && 'InfluxDB 2.x (Flux)'}
-                          {formData.version === '3.x' &&
-                            'InfluxDB 3.x (SQL + Flux)'}
-                        </span>
-                      </div>
-                    )}
+                    {formData.version && renderVersionOption(formData.version, formData.dbType)}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='1.x'>
-                    <div className='flex items-center gap-2'>
-                      <span className='text-xs bg-green-100 text-green-800 px-2 py-1 rounded font-medium'>
-                        1.x
-                      </span>
-                      <div className='flex flex-col'>
-                        <span className='font-medium'>InfluxDB 1.x</span>
-                        <span className='text-xs text-muted-foreground'>
-                          InfluxQL 查询语言
-                        </span>
-                      </div>
-                    </div>
+                    {renderVersionOption('1.x', 'influxdb')}
                   </SelectItem>
                   <SelectItem value='2.x'>
-                    <div className='flex items-center gap-2'>
-                      <span className='text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-medium'>
-                        2.x
-                      </span>
-                      <div className='flex flex-col'>
-                        <span className='font-medium'>InfluxDB 2.x</span>
-                        <span className='text-xs text-muted-foreground'>
-                          Flux 查询语言，API Token 认证
-                        </span>
-                      </div>
-                    </div>
+                    {renderVersionOption('2.x', 'influxdb')}
                   </SelectItem>
                   <SelectItem value='3.x'>
-                    <div className='flex items-center gap-2'>
-                      <span className='text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-medium'>
-                        3.x
-                      </span>
-                      <div className='flex flex-col'>
-                        <span className='font-medium'>InfluxDB 3.x</span>
-                        <span className='text-xs text-muted-foreground'>
-                          SQL + Flux，简化架构，可选组织
-                        </span>
-                      </div>
-                    </div>
+                    {renderVersionOption('3.x', 'influxdb')}
                   </SelectItem>
                 </SelectContent>
               </Select>

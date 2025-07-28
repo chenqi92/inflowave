@@ -29,6 +29,7 @@ import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import { dialog } from '@/utils/dialog';
 import ContextMenu from '@/components/common/ContextMenu';
+import { getDatabaseBrandIcon } from '@/utils/databaseIconMap';
 import './ConnectionManager.css';
 
 interface ConnectionManagerProps {
@@ -480,20 +481,44 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         const displayVersion = detectedVersion || configVersion;
         const isDetected = !!detectedVersion;
 
+        // 获取品牌图标
+        const getBrandIcon = () => {
+          if (record.dbType === 'influxdb') {
+            switch (displayVersion) {
+              case '1.x':
+                return getDatabaseBrandIcon('InfluxDB');
+              case '2.x':
+                return getDatabaseBrandIcon('InfluxDB2');
+              case '3.x':
+                return getDatabaseBrandIcon('InfluxDB3');
+              default:
+                return getDatabaseBrandIcon('InfluxDB');
+            }
+          }
+          return getDatabaseBrandIcon('IoTDB');
+        };
+
         return (
           <Tooltip>
             <TooltipTrigger asChild>
-              <div className='relative inline-flex items-baseline'>
-                <span className='font-medium text-foreground'>{dbName}</span>
-                {displayVersion && (
-                  <sup className={`ml-1 text-xs px-1.5 py-0.5 rounded-md font-medium ${
-                    isDetected
-                      ? 'text-green-700 bg-green-100 border border-green-200'
-                      : 'text-blue-700 bg-blue-100 border border-blue-200'
-                  }`}>
-                    {displayVersion}
-                  </sup>
-                )}
+              <div className='relative inline-flex items-center gap-2'>
+                <img
+                  src={getBrandIcon()}
+                  alt={`${dbName} icon`}
+                  className="w-4 h-4"
+                />
+                <div className='inline-flex items-baseline'>
+                  <span className='font-medium text-foreground'>{dbName}</span>
+                  {displayVersion && (
+                    <sup className={`ml-1 text-xs px-1.5 py-0.5 rounded-md font-medium ${
+                      isDetected
+                        ? 'text-green-700 bg-green-100 border border-green-200'
+                        : 'text-blue-700 bg-blue-100 border border-blue-200'
+                    }`}>
+                      {displayVersion}
+                    </sup>
+                  )}
+                </div>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" align="start">
