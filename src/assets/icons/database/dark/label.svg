@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M2 8L8 2H14V8L8 14L2 8Z" fill="none" stroke="#D1D5DB" stroke-width="1"/>
+    <circle cx="11" cy="5" r="1" fill="#D1D5DB"/>
+    <text x="8" y="10" text-anchor="middle" font-family="Arial" font-size="4" fill="#D1D5DB">TAG</text>
+</svg>

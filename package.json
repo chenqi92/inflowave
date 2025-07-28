@@ -73,7 +73,11 @@
     "release:notes": "node scripts/generate-release-notes.cjs",
     "release:notes:dev": "node scripts/generate-release-notes.cjs --dev",
     "release:notes:save": "node scripts/generate-release-notes.cjs --output=release-notes-output.md",
-    "release:notes:dev:save": "node scripts/generate-release-notes.cjs --dev --output=release-notes-dev.md"
+    "release:notes:dev:save": "node scripts/generate-release-notes.cjs --dev --output=release-notes-dev.md",
+    "icons:generate": "node scripts/generate-placeholder-icons.cjs",
+    "icons:missing": "node scripts/generate-missing-icons.cjs", 
+    "icons:preview": "node scripts/generate-icon-preview.cjs",
+    "icons:all": "npm run icons:generate && npm run icons:missing && npm run icons:preview"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

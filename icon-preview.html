@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InfloWave 数据库图标预览</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8fafc;
+      padding: 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .header h1 { color: #1f2937; margin-bottom: 10px; }
+    .header p { color: #6b7280; }
+    .section {
+      margin-bottom: 40px;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .section h2 {
+      color: #374151;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    .icon-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 15px;
+    }
+    .icon-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      transition: all 0.2s;
+      background: #fafafa;
+    }
+    .icon-item:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      transform: translateY(-2px);
+    }
+    .icon-display {
+      width: 32px;
+      height: 32px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .icon-display img {
+      width: 24px;
+      height: 24px;
+    }
+    .icon-name {
+      font-size: 11px;
+      color: #4b5563;
+      text-align: center;
+      word-break: break-all;
+      line-height: 1.3;
+    }
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    }
+    .theme-toggle:hover {
+      background: #2563eb;
+    }
+    .dark-theme {
+      background: #111827;
+      color: #f9fafb;
+    }
+    .dark-theme .section,
+    .dark-theme .header {
+      background: #1f2937;
+      color: #f9fafb;
+    }
+    .dark-theme .icon-item {
+      background: #374151;
+      border-color: #4b5563;
+    }
+    .dark-theme .icon-item:hover {
+      border-color: #60a5fa;
+      box-shadow: 0 4px 12px rgba(96, 165, 250, 0.15);
+    }
+    .dark-theme .section h2 {
+      color: #f3f4f6;
+      border-bottom-color: #4b5563;
+    }
+    .stats {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin: 20px 0;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 24px;
+      font-weight: bold;
+      color: #3b82f6;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-top: 4px;
+    }
+    .comparison {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .comparison-item {
+      padding: 15px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    .comparison-item h4 {
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    .comparison .light-theme { background: #f8fafc; }
+    .comparison .dark-theme-demo { background: #1f2937; color: #f9fafb; border-color: #4b5563; }
+  </style>
+</head>
+<body>
+  <button class="theme-toggle" onclick="toggleTheme()">🌙 切换主题</button>
+  
+  <div class="container">
+    <div class="header">
+      <h1>🎨 InfloWave 数据库图标预览</h1>
+      <p>共 129 个 SVG 图标占位符</p>
+      
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-number">62</div>
+          <div class="stat-label">亮色主题</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number">62</div>
+          <div class="stat-label">暗色主题</div>
+        </div>
+        <div class="stat">
+          <div class="stat-number">5</div>
+          <div class="stat-label">品牌图标</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🏢 数据库品牌图标</h2>
+      <div class="icon-grid">
+        
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/brands/database-generic.svg" alt="database-generic">
+              </div>
+              <div class="icon-name">database-generic</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/brands/influxdb-1x.svg" alt="influxdb-1x">
+              </div>
+              <div class="icon-name">influxdb-1x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/brands/influxdb-2x.svg" alt="influxdb-2x">
+              </div>
+              <div class="icon-name">influxdb-2x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/brands/influxdb-3x.svg" alt="influxdb-3x">
+              </div>
+              <div class="icon-name">influxdb-3x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/brands/iotdb.svg" alt="iotdb">
+              </div>
+              <div class="icon-name">iotdb</div>
+            </div>
+          
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🔌 连接状态图标对比</h2>
+      <div class="comparison">
+        <div class="comparison-item light-theme">
+          <h4>亮色主题</h4>
+          <div class="icon-grid">
+            
+              <div class="icon-item">
+                <div class="icon-display">
+                  <img src="src/assets/icons/database/light/connection-active.svg" alt="connection-active">
+                </div>
+                <div class="icon-name">connection-active</div>
+              </div>
+            
+              <div class="icon-item">
+                <div class="icon-display">
+                  <img src="src/assets/icons/database/light/connection-inactive.svg" alt="connection-inactive">
+                </div>
+                <div class="icon-name">connection-inactive</div>
+              </div>
+            
+              <div class="icon-item">
+                <div class="icon-display">
+                  <img src="src/assets/icons/database/light/connection-error.svg" alt="connection-error">
+                </div>
+                <div class="icon-name">connection-error</div>
+              </div>
+            
+              <div class="icon-item">
+                <div class="icon-display">
+                  <img src="src/assets/icons/database/light/connection-loading.svg" alt="connection-loading">
+                </div>
+                <div class="icon-name">connection-loading</div>
+              </div>
+            
+          </div>
+        </div>
+        <div class="comparison-item dark-theme-demo">
+          <h4>暗色主题</h4>
+          <div class="icon-grid">
+            
+              <div class="icon-item">
+                <div class="icon-display">
+                  <img src="src/assets/icons/database/dark/connection-active.svg" alt="connection-active">
+                </div>
+                <div class="icon-name">connection-active</div>
+              </div>
+            
+              <div class="icon-item">
+                <div class="icon-display">
+                  <img src="src/assets/icons/database/dark/connection-inactive.svg" alt="connection-inactive">
+                </div>
+                <div class="icon-name">connection-inactive</div>
+              </div>
+            
+              <div class="icon-item">
+                <div class="icon-display">
+                  <img src="src/assets/icons/database/dark/connection-error.svg" alt="connection-error">
+                </div>
+                <div class="icon-name">connection-error</div>
+              </div>
+            
+              <div class="icon-item">
+                <div class="icon-display">
+                  <img src="src/assets/icons/database/dark/connection-loading.svg" alt="connection-loading">
+                </div>
+                <div class="icon-name">connection-loading</div>
+              </div>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="light-icons">
+      <h2>☀️ 亮色主题图标 (62 个)</h2>
+      <div class="icon-grid">
+        
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/aligned-timeseries.svg" alt="aligned-timeseries">
+              </div>
+              <div class="icon-name">aligned-timeseries</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/attribute-group.svg" alt="attribute-group">
+              </div>
+              <div class="icon-name">attribute-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/authorization.svg" alt="authorization">
+              </div>
+              <div class="icon-name">authorization</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/bucket.svg" alt="bucket">
+              </div>
+              <div class="icon-name">bucket</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/cell.svg" alt="cell">
+              </div>
+              <div class="icon-name">cell</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/check.svg" alt="check">
+              </div>
+              <div class="icon-name">check</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/cluster-info.svg" alt="cluster-info">
+              </div>
+              <div class="icon-name">cluster-info</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/column.svg" alt="column">
+              </div>
+              <div class="icon-name">column</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/compression.svg" alt="compression">
+              </div>
+              <div class="icon-name">compression</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/connection-active.svg" alt="connection-active">
+              </div>
+              <div class="icon-name">connection-active</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/connection-error.svg" alt="connection-error">
+              </div>
+              <div class="icon-name">connection-error</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/connection-inactive.svg" alt="connection-inactive">
+              </div>
+              <div class="icon-name">connection-inactive</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/connection-loading.svg" alt="connection-loading">
+              </div>
+              <div class="icon-name">connection-loading</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/continuous-query.svg" alt="continuous-query">
+              </div>
+              <div class="icon-name">continuous-query</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/dashboard.svg" alt="dashboard">
+              </div>
+              <div class="icon-name">dashboard</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/data-type.svg" alt="data-type">
+              </div>
+              <div class="icon-name">data-type</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/database-system.svg" alt="database-system">
+              </div>
+              <div class="icon-name">database-system</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/database.svg" alt="database">
+              </div>
+              <div class="icon-name">database</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/database3x.svg" alt="database3x">
+              </div>
+              <div class="icon-name">database3x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/default.svg" alt="default">
+              </div>
+              <div class="icon-name">default</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/device.svg" alt="device">
+              </div>
+              <div class="icon-name">device</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/encoding.svg" alt="encoding">
+              </div>
+              <div class="icon-name">encoding</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/field-group.svg" alt="field-group">
+              </div>
+              <div class="icon-name">field-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/field.svg" alt="field">
+              </div>
+              <div class="icon-name">field</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/function.svg" alt="function">
+              </div>
+              <div class="icon-name">function</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/function3x.svg" alt="function3x">
+              </div>
+              <div class="icon-name">function3x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/index.svg" alt="index">
+              </div>
+              <div class="icon-name">index</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/label.svg" alt="label">
+              </div>
+              <div class="icon-name">label</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/materialized-view.svg" alt="materialized-view">
+              </div>
+              <div class="icon-name">materialized-view</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/measurement.svg" alt="measurement">
+              </div>
+              <div class="icon-name">measurement</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/namespace.svg" alt="namespace">
+              </div>
+              <div class="icon-name">namespace</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/notification-endpoint.svg" alt="notification-endpoint">
+              </div>
+              <div class="icon-name">notification-endpoint</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/notification-rule.svg" alt="notification-rule">
+              </div>
+              <div class="icon-name">notification-rule</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/organization.svg" alt="organization">
+              </div>
+              <div class="icon-name">organization</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/partition.svg" alt="partition">
+              </div>
+              <div class="icon-name">partition</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/privilege.svg" alt="privilege">
+              </div>
+              <div class="icon-name">privilege</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/procedure.svg" alt="procedure">
+              </div>
+              <div class="icon-name">procedure</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/retention-policy.svg" alt="retention-policy">
+              </div>
+              <div class="icon-name">retention-policy</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/schema-template.svg" alt="schema-template">
+              </div>
+              <div class="icon-name">schema-template</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/schema.svg" alt="schema">
+              </div>
+              <div class="icon-name">schema</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/scraper.svg" alt="scraper">
+              </div>
+              <div class="icon-name">scraper</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/series.svg" alt="series">
+              </div>
+              <div class="icon-name">series</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/shard-group.svg" alt="shard-group">
+              </div>
+              <div class="icon-name">shard-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/shard.svg" alt="shard">
+              </div>
+              <div class="icon-name">shard</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/storage-engine-info.svg" alt="storage-engine-info">
+              </div>
+              <div class="icon-name">storage-engine-info</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/storage-group.svg" alt="storage-group">
+              </div>
+              <div class="icon-name">storage-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/system-bucket.svg" alt="system-bucket">
+              </div>
+              <div class="icon-name">system-bucket</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/system-info.svg" alt="system-info">
+              </div>
+              <div class="icon-name">system-info</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/table.svg" alt="table">
+              </div>
+              <div class="icon-name">table</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/tag-group.svg" alt="tag-group">
+              </div>
+              <div class="icon-name">tag-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/tag.svg" alt="tag">
+              </div>
+              <div class="icon-name">tag</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/task.svg" alt="task">
+              </div>
+              <div class="icon-name">task</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/telegraf.svg" alt="telegraf">
+              </div>
+              <div class="icon-name">telegraf</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/template.svg" alt="template">
+              </div>
+              <div class="icon-name">template</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/timeseries.svg" alt="timeseries">
+              </div>
+              <div class="icon-name">timeseries</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/trigger.svg" alt="trigger">
+              </div>
+              <div class="icon-name">trigger</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/trigger3x.svg" alt="trigger3x">
+              </div>
+              <div class="icon-name">trigger3x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/user1x.svg" alt="user1x">
+              </div>
+              <div class="icon-name">user1x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/user2x.svg" alt="user2x">
+              </div>
+              <div class="icon-name">user2x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/variable.svg" alt="variable">
+              </div>
+              <div class="icon-name">variable</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/version-info.svg" alt="version-info">
+              </div>
+              <div class="icon-name">version-info</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/light/view.svg" alt="view">
+              </div>
+              <div class="icon-name">view</div>
+            </div>
+          
+      </div>
+    </div>
+
+    <div class="section" id="dark-icons" style="display: none;">
+      <h2>🌙 暗色主题图标 (62 个)</h2>
+      <div class="icon-grid">
+        
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/aligned-timeseries.svg" alt="aligned-timeseries">
+              </div>
+              <div class="icon-name">aligned-timeseries</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/attribute-group.svg" alt="attribute-group">
+              </div>
+              <div class="icon-name">attribute-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/authorization.svg" alt="authorization">
+              </div>
+              <div class="icon-name">authorization</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/bucket.svg" alt="bucket">
+              </div>
+              <div class="icon-name">bucket</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/cell.svg" alt="cell">
+              </div>
+              <div class="icon-name">cell</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/check.svg" alt="check">
+              </div>
+              <div class="icon-name">check</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/cluster-info.svg" alt="cluster-info">
+              </div>
+              <div class="icon-name">cluster-info</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/column.svg" alt="column">
+              </div>
+              <div class="icon-name">column</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/compression.svg" alt="compression">
+              </div>
+              <div class="icon-name">compression</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/connection-active.svg" alt="connection-active">
+              </div>
+              <div class="icon-name">connection-active</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/connection-error.svg" alt="connection-error">
+              </div>
+              <div class="icon-name">connection-error</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/connection-inactive.svg" alt="connection-inactive">
+              </div>
+              <div class="icon-name">connection-inactive</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/connection-loading.svg" alt="connection-loading">
+              </div>
+              <div class="icon-name">connection-loading</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/continuous-query.svg" alt="continuous-query">
+              </div>
+              <div class="icon-name">continuous-query</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/dashboard.svg" alt="dashboard">
+              </div>
+              <div class="icon-name">dashboard</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/data-type.svg" alt="data-type">
+              </div>
+              <div class="icon-name">data-type</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/database-system.svg" alt="database-system">
+              </div>
+              <div class="icon-name">database-system</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/database.svg" alt="database">
+              </div>
+              <div class="icon-name">database</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/database3x.svg" alt="database3x">
+              </div>
+              <div class="icon-name">database3x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/default.svg" alt="default">
+              </div>
+              <div class="icon-name">default</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/device.svg" alt="device">
+              </div>
+              <div class="icon-name">device</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/encoding.svg" alt="encoding">
+              </div>
+              <div class="icon-name">encoding</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/field-group.svg" alt="field-group">
+              </div>
+              <div class="icon-name">field-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/field.svg" alt="field">
+              </div>
+              <div class="icon-name">field</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/function.svg" alt="function">
+              </div>
+              <div class="icon-name">function</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/function3x.svg" alt="function3x">
+              </div>
+              <div class="icon-name">function3x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/index.svg" alt="index">
+              </div>
+              <div class="icon-name">index</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/label.svg" alt="label">
+              </div>
+              <div class="icon-name">label</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/materialized-view.svg" alt="materialized-view">
+              </div>
+              <div class="icon-name">materialized-view</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/measurement.svg" alt="measurement">
+              </div>
+              <div class="icon-name">measurement</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/namespace.svg" alt="namespace">
+              </div>
+              <div class="icon-name">namespace</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/notification-endpoint.svg" alt="notification-endpoint">
+              </div>
+              <div class="icon-name">notification-endpoint</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/notification-rule.svg" alt="notification-rule">
+              </div>
+              <div class="icon-name">notification-rule</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/organization.svg" alt="organization">
+              </div>
+              <div class="icon-name">organization</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/partition.svg" alt="partition">
+              </div>
+              <div class="icon-name">partition</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/privilege.svg" alt="privilege">
+              </div>
+              <div class="icon-name">privilege</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/procedure.svg" alt="procedure">
+              </div>
+              <div class="icon-name">procedure</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/retention-policy.svg" alt="retention-policy">
+              </div>
+              <div class="icon-name">retention-policy</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/schema-template.svg" alt="schema-template">
+              </div>
+              <div class="icon-name">schema-template</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/schema.svg" alt="schema">
+              </div>
+              <div class="icon-name">schema</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/scraper.svg" alt="scraper">
+              </div>
+              <div class="icon-name">scraper</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/series.svg" alt="series">
+              </div>
+              <div class="icon-name">series</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/shard-group.svg" alt="shard-group">
+              </div>
+              <div class="icon-name">shard-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/shard.svg" alt="shard">
+              </div>
+              <div class="icon-name">shard</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/storage-engine-info.svg" alt="storage-engine-info">
+              </div>
+              <div class="icon-name">storage-engine-info</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/storage-group.svg" alt="storage-group">
+              </div>
+              <div class="icon-name">storage-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/system-bucket.svg" alt="system-bucket">
+              </div>
+              <div class="icon-name">system-bucket</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/system-info.svg" alt="system-info">
+              </div>
+              <div class="icon-name">system-info</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/table.svg" alt="table">
+              </div>
+              <div class="icon-name">table</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/tag-group.svg" alt="tag-group">
+              </div>
+              <div class="icon-name">tag-group</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/tag.svg" alt="tag">
+              </div>
+              <div class="icon-name">tag</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/task.svg" alt="task">
+              </div>
+              <div class="icon-name">task</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/telegraf.svg" alt="telegraf">
+              </div>
+              <div class="icon-name">telegraf</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/template.svg" alt="template">
+              </div>
+              <div class="icon-name">template</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/timeseries.svg" alt="timeseries">
+              </div>
+              <div class="icon-name">timeseries</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/trigger.svg" alt="trigger">
+              </div>
+              <div class="icon-name">trigger</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/trigger3x.svg" alt="trigger3x">
+              </div>
+              <div class="icon-name">trigger3x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/user1x.svg" alt="user1x">
+              </div>
+              <div class="icon-name">user1x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/user2x.svg" alt="user2x">
+              </div>
+              <div class="icon-name">user2x</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/variable.svg" alt="variable">
+              </div>
+              <div class="icon-name">variable</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/version-info.svg" alt="version-info">
+              </div>
+              <div class="icon-name">version-info</div>
+            </div>
+          
+            <div class="icon-item">
+              <div class="icon-display">
+                <img src="src/assets/icons/database/dark/view.svg" alt="view">
+              </div>
+              <div class="icon-name">view</div>
+            </div>
+          
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isDark = false;
+    
+    function toggleTheme() {
+      isDark = !isDark;
+      const body = document.body;
+      const button = document.querySelector('.theme-toggle');
+      const lightSection = document.getElementById('light-icons');
+      const darkSection = document.getElementById('dark-icons');
+      
+      if (isDark) {
+        body.classList.add('dark-theme');
+        button.textContent = '☀️ 切换主题';
+        lightSection.style.display = 'none';
+        darkSection.style.display = 'block';
+      } else {
+        body.classList.remove('dark-theme');
+        button.textContent = '🌙 切换主题';
+        lightSection.style.display = 'block';
+        darkSection.style.display = 'none';
+      }
+    }
+    
+    // 图标点击复制功能
+    document.addEventListener('click', (e) => {
+      const iconItem = e.target.closest('.icon-item');
+      if (iconItem) {
+        const iconName = iconItem.querySelector('.icon-name').textContent;
+        navigator.clipboard.writeText(iconName).then(() => {
+          const originalBg = iconItem.style.backgroundColor;
+          iconItem.style.backgroundColor = '#10b981';
+          iconItem.style.color = 'white';
+          setTimeout(() => {
+            iconItem.style.backgroundColor = originalBg;
+            iconItem.style.color = '';
+          }, 500);
+        });
+      }
+    });
+  </script>
+</body>
+</html>

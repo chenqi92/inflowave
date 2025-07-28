@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="16" height="16" rx="2" fill="transparent"/>
+  <rect x="2" y="2" width="12" height="12" rx="2" fill="#374151"/>
+    <text x="8" y="11" text-anchor="middle" font-family="Arial" font-size="5" fill="white">IoT</text>
+</svg>

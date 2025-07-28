@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="4" width="12" height="8" fill="none" stroke="#374151" stroke-width="1"/>
+    <path d="M4 6L6 8L4 10M12 6L10 8L12 10" stroke="#374151" stroke-width="1"/>
+    <text x="8" y="9" text-anchor="middle" font-family="Arial" font-size="3" fill="#374151">ENC</text>
+</svg>
