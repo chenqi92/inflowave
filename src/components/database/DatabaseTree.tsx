@@ -214,7 +214,7 @@ export const DatabaseTree: React.FC<DatabaseTreeProps> = ({
                   <DatabaseIcon
                     nodeType={node.nodeType}
                     size={16}
-                    className="inline-block"
+                    className="flex-shrink-0"
                     dbType={dbType}
                     dbVersion={dbVersion}
                     isConnected={true}
