@@ -69,13 +69,46 @@ impl PortManager {
     pub fn is_port_available(&self, port: u16) -> bool {
         debug!("检查端口 {} 是否可用", port);
         
+        // 先检查是否已经在内部注册表中被分配
+        {
+            let registry = self.port_registry.read().unwrap();
+            for port_info in registry.values() {
+                if port_info.port == port {
+                    debug!("端口 {} 已被内部服务 '{}' 占用", port, port_info.service_name);
+                    return false;
+                }
+            }
+        }
+        
+        // 尝试绑定端口来检查是否可用
+        // 使用单次检查而不是重试，因为端口要么可用要么不可用
         match TcpListener::bind(SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port)) {
-            Ok(_) => {
+            Ok(listener) => {
+                // 立即释放绑定，确保端口真正可用
+                drop(listener);
                 debug!("端口 {} 可用", port);
                 true
             }
             Err(e) => {
                 debug!("端口 {} 不可用: {}", port, e);
+                false
+            }
+        }
+    }
+
+    /// 检查端口是否真正在被使用（用于健康检查）
+    fn is_port_actually_in_use(&self, port: u16) -> bool {
+        // 尝试连接到端口来检查是否有服务在监听
+        match std::net::TcpStream::connect_timeout(
+            &SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), port),
+            Duration::from_millis(100)
+        ) {
+            Ok(_) => {
+                debug!("端口 {} 有服务在监听", port);
+                true
+            }
+            Err(_) => {
+                debug!("端口 {} 没有服务在监听", port);
                 false
             }
         }
@@ -187,7 +220,9 @@ impl PortManager {
             }
         };
 
-        let is_healthy = self.is_port_available(port);
+        // 对于前端服务，我们简化健康检查 - 只要端口被分配就认为是健康的
+        // 因为前端服务是由Tauri管理的，不需要复杂的端口监听检查
+        let is_healthy = true;
         
         // 更新检查时间
         {

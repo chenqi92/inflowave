@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, Badge, Switch, Label } from '@/components/ui';
 import {
@@ -108,10 +108,55 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
   const [loading, setLoading] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(30);
+  const [containerWidth, setContainerWidth] = useState(0);
+  
+  // Refs
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Store hooks
   const { connections } = useConnectionStore();
   const { openedDatabases } = useOpenedDatabasesStore();
+  
+  // 监听容器宽度变化
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.offsetWidth);
+      }
+    };
+    
+    updateWidth();
+    
+    const resizeObserver = new ResizeObserver(updateWidth);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+    
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+  
+  // 响应式布局计算
+  const layout = useMemo(() => {
+    // 定义不同宽度断点
+    const breakpoints = {
+      xs: 200,   // 极小屏：只显示核心指标
+      sm: 300,   // 小屏：显示基本统计
+      md: 400,   // 中屏：显示图表
+      lg: 500,   // 大屏：显示完整内容
+    };
+    
+    return {
+      showHeader: containerWidth >= breakpoints.xs,
+      showStats: containerWidth >= breakpoints.sm,
+      showCharts: containerWidth >= breakpoints.md,
+      showDetailed: containerWidth >= breakpoints.lg,
+      isNarrow: containerWidth < breakpoints.sm,
+      isVeryNarrow: containerWidth < breakpoints.xs,
+      gridCols: containerWidth >= breakpoints.md ? 2 : 1,
+    };
+  }, [containerWidth]);
 
   // 获取性能数据
   const fetchPerformanceData = useCallback(async () => {
@@ -220,11 +265,12 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
     ].filter(item => item.value > 0);
   }, [metricsData]);
 
-  // 响应式宽度计算
-  const getResponsiveWidth = () => {
-    if (isCollapsed) return 'w-16 min-w-16 max-w-16';
-    return 'w-80 min-w-80 max-w-96';
-  };
+  // 自动折叠逻辑：当宽度过小时自动折叠
+  useEffect(() => {
+    if (containerWidth > 0 && containerWidth < 200 && !isCollapsed) {
+      setIsCollapsed(true);
+    }
+  }, [containerWidth, isCollapsed]);
 
   // 渲染折叠状态的简化视图
   const renderCollapsedView = () => (
@@ -274,121 +320,157 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
 
   if (isCollapsed) {
     return (
-      <div className={`${getResponsiveWidth()} h-full border-r border-border bg-background ${className}`}>
+      <div ref={containerRef} className={`w-full h-full border-r border-border bg-background ${className}`}>
         {renderCollapsedView()}
       </div>
     );
   }
 
   return (
-    <div className={`${getResponsiveWidth()} h-full border-r border-border bg-background ${className}`}>
+    <div ref={containerRef} className={`w-full h-full border-r border-border bg-background ${className}`}>
       <div className="h-full flex flex-col">
         {/* 头部控制栏 */}
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold">性能监控</h2>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsCollapsed(true)}
-                className="p-2"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
+        {layout.showHeader && (
+          <div className={`${layout.isNarrow ? 'p-2' : 'p-4'} border-b border-border`}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                {!layout.isNarrow && (
+                  <h2 className="text-lg font-semibold">性能监控</h2>
+                )}
+                {layout.isNarrow && (
+                  <h2 className="text-sm font-semibold">监控</h2>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsCollapsed(true)}
+                  className="p-1"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </Button>
+              </div>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={fetchPerformanceData}
+                  disabled={loading}
+                  className="p-1"
+                >
+                  <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={fetchPerformanceData}
-                disabled={loading}
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-            </div>
-          </div>
 
-          {/* 自动刷新控制 */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Switch
-                id="auto-refresh"
-                checked={autoRefresh}
-                onCheckedChange={setAutoRefresh}
-              />
-              <Label htmlFor="auto-refresh" className="text-sm">
-                自动刷新
-              </Label>
-            </div>
-            <Badge variant="outline">
-              {overallStats.activeConnections}/{overallStats.totalConnections} 活跃
-            </Badge>
+            {/* 自动刷新控制 - 只在非窄屏显示 */}
+            {!layout.isNarrow && (
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="auto-refresh"
+                    checked={autoRefresh}
+                    onCheckedChange={setAutoRefresh}
+                  />
+                  <Label htmlFor="auto-refresh" className="text-sm">
+                    自动刷新
+                  </Label>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {overallStats.activeConnections}/{overallStats.totalConnections} 活跃
+                </Badge>
+              </div>
+            )}
+            
+            {/* 窄屏时的简化状态显示 */}
+            {layout.isNarrow && (
+              <div className="flex items-center justify-center">
+                <Badge variant="outline" className="text-xs">
+                  {overallStats.activeConnections}/{overallStats.totalConnections}
+                </Badge>
+              </div>
+            )}
           </div>
-        </div>
+        )}
 
         {/* 主要内容区域 */}
         <div className="flex-1 overflow-y-auto">
           {metricsData.length === 0 ? (
-            <div className="p-6 text-center">
-              <Database className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-              <h3 className="text-lg font-medium mb-2">暂无数据源</h3>
-              <p className="text-sm text-muted-foreground">
-                请在左侧数据源树中打开数据库以查看性能监控
-              </p>
+            <div className={`${layout.isNarrow ? 'p-3' : 'p-6'} text-center`}>
+              <Database className={`${layout.isNarrow ? 'w-8 h-8' : 'w-12 h-12'} mx-auto mb-4 text-muted-foreground/50`} />
+              {!layout.isNarrow && (
+                <>
+                  <h3 className="text-lg font-medium mb-2">暂无数据源</h3>
+                  <p className="text-sm text-muted-foreground">
+                    请在左侧数据源树中打开数据库以查看性能监控
+                  </p>
+                </>
+              )}
+              {layout.isNarrow && (
+                <p className="text-xs text-muted-foreground">暂无数据</p>
+              )}
             </div>
           ) : (
-            <div className="p-4 space-y-6">
-              {/* 总体统计卡片 */}
-              <div className="grid grid-cols-2 gap-3">
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <Database className="w-5 h-5 text-primary" />
+            <div className={`${layout.isNarrow ? 'p-2' : 'p-4'} space-y-${layout.isNarrow ? '3' : '6'}`}>
+              {/* 总体统计卡片 - 只在显示统计时显示 */}
+              {layout.showStats && (
+                <div className={`grid grid-cols-${layout.gridCols} gap-${layout.isNarrow ? '2' : '3'}`}>
+                  <Card>
+                    <CardContent className={`${layout.isNarrow ? 'p-3' : 'p-4'}`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`${layout.isNarrow ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-primary/10 flex items-center justify-center`}>
+                          <Database className={`${layout.isNarrow ? 'w-4 h-4' : 'w-5 h-5'} text-primary`} />
+                        </div>
+                        <div>
+                          <div className={`${layout.isNarrow ? 'text-lg' : 'text-2xl'} font-bold`}>
+                            {layout.isNarrow ? overallStats.totalQueries > 999 ? '999+' : overallStats.totalQueries : overallStats.totalQueries}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {layout.isNarrow ? '查询' : '今日查询'}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold">{overallStats.totalQueries}</div>
-                        <div className="text-xs text-muted-foreground">今日查询</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
-                        <Timer className="w-5 h-5 text-success" />
+                  <Card>
+                    <CardContent className={`${layout.isNarrow ? 'p-3' : 'p-4'}`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`${layout.isNarrow ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-success/10 flex items-center justify-center`}>
+                          <Timer className={`${layout.isNarrow ? 'w-4 h-4' : 'w-5 h-5'} text-success`} />
+                        </div>
+                        <div>
+                          <div className={`${layout.isNarrow ? 'text-lg' : 'text-2xl'} font-bold`}>
+                            {overallStats.avgLatency.toFixed(0)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {layout.isNarrow ? 'ms' : '平均延迟(ms)'}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-2xl font-bold">{overallStats.avgLatency.toFixed(0)}</div>
-                        <div className="text-xs text-muted-foreground">平均延迟(ms)</div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
 
-              {/* 健康状态分布 */}
-              {healthDistribution.length > 0 && (
+              {/* 健康状态分布 - 只在显示图表时显示 */}
+              {layout.showCharts && healthDistribution.length > 0 && (
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <Gauge className="w-4 h-4" />
-                      健康状态分布
+                      {layout.isNarrow ? '状态' : '健康状态分布'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-32">
+                    <div className={layout.isNarrow ? 'h-20' : 'h-32'}>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
                             data={healthDistribution}
                             cx="50%"
                             cy="50%"
-                            innerRadius={20}
-                            outerRadius={50}
+                            innerRadius={layout.isNarrow ? 10 : 20}
+                            outerRadius={layout.isNarrow ? 30 : 50}
                             dataKey="value"
                           >
                             {healthDistribution.map((entry, index) => (
@@ -399,25 +481,27 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                         </PieChart>
                       </ResponsiveContainer>
                     </div>
-                    <div className="flex justify-center gap-4 mt-2">
-                      {healthDistribution.map((item, index) => (
-                        <div key={index} className="flex items-center gap-1">
-                          <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-xs">{item.name}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {!layout.isNarrow && (
+                      <div className="flex justify-center gap-4 mt-2">
+                        {healthDistribution.map((item, index) => (
+                          <div key={index} className="flex items-center gap-1">
+                            <div
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: item.color }}
+                            />
+                            <span className="text-xs">{item.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
 
-              {/* 性能趋势图表 */}
-              {historyData.length > 0 && (
+              {/* 性能趋势图表 - 只在显示详细内容时显示 */}
+              {layout.showDetailed && historyData.length > 0 && (
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="pb-2">
                     <CardTitle className="text-sm flex items-center gap-2">
                       <TrendingUp className="w-4 h-4" />
                       24小时性能趋势
@@ -467,13 +551,13 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
 
               {/* 数据源列表 */}
               <Card>
-                <CardHeader className="pb-3">
+                <CardHeader className="pb-2">
                   <CardTitle className="text-sm flex items-center gap-2">
                     <Database className="w-4 h-4" />
-                    数据源列表
+                    {layout.isNarrow ? '数据源' : '数据源列表'}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className={`space-y-${layout.isNarrow ? '2' : '3'}`}>
                   {metricsData.map(metrics => {
                     const datasourceKey = `${metrics.connectionId}/${metrics.databaseName}`;
                     const isSelected = selectedDataSource === datasourceKey;
@@ -481,7 +565,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                     return (
                       <div
                         key={datasourceKey}
-                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                        className={`${layout.isNarrow ? 'p-2' : 'p-3'} border rounded-lg cursor-pointer transition-all ${
                           isSelected
                             ? 'border-primary bg-primary/5 shadow-sm'
                             : 'hover:bg-muted/50 hover:border-muted-foreground/20'
@@ -494,10 +578,17 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                               metrics.isConnected ? 'bg-success' : 'bg-muted-foreground'
                             }`} />
                             <div>
-                              <div className="font-medium text-sm">{metrics.connectionName}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {metrics.databaseName} • {metrics.dbType}
+                              <div className={`font-medium ${layout.isNarrow ? 'text-xs' : 'text-sm'}`}>
+                                {layout.isNarrow 
+                                  ? metrics.connectionName.length > 10 ? `${metrics.connectionName.substring(0, 10)  }...` : metrics.connectionName
+                                  : metrics.connectionName
+                                }
                               </div>
+                              {!layout.isNarrow && (
+                                <div className="text-xs text-muted-foreground">
+                                  {metrics.databaseName} • {metrics.dbType}
+                                </div>
+                              )}
                             </div>
                           </div>
                           <Badge
@@ -510,18 +601,16 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                             }
                             className="text-xs"
                           >
-                            {metrics.healthScore === 'good'
-                              ? '健康'
-                              : metrics.healthScore === 'warning'
-                                ? '警告'
-                                : '严重'}
+                            {layout.isNarrow 
+                              ? (metrics.healthScore === 'good' ? '✓' : metrics.healthScore === 'warning' ? '!' : '✗')
+                              : (metrics.healthScore === 'good' ? '健康' : metrics.healthScore === 'warning' ? '警告' : '严重')
+                            }
                           </Badge>
                         </div>
 
-                        {/* 关键指标 */}
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-muted-foreground" />
+                        {/* 关键指标 - 窄屏时简化显示 */}
+                        {layout.isNarrow && (
+                          <div className="flex items-center justify-between text-xs">
                             <span className={
                               metrics.connectionLatency > 500 ? 'text-danger' : 'text-success'
                             }>
@@ -529,23 +618,40 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                                 ? `${metrics.connectionLatency.toFixed(0)}ms`
                                 : 'N/A'}
                             </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <BarChart3 className="w-3 h-3 text-muted-foreground" />
                             <span>{metrics.totalQueriesToday}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <HardDrive className="w-3 h-3 text-muted-foreground" />
-                            <span>{(metrics.databaseSize / 1024 / 1024).toFixed(1)}MB</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Database className="w-3 h-3 text-muted-foreground" />
-                            <span>{metrics.tableCount} 表</span>
-                          </div>
-                        </div>
+                        )}
 
-                        {/* 展开的详细信息 */}
-                        {isSelected && (
+                        {/* 完整指标 - 非窄屏显示 */}
+                        {!layout.isNarrow && (
+                          <div className="grid grid-cols-2 gap-2 text-xs">
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-muted-foreground" />
+                              <span className={
+                                metrics.connectionLatency > 500 ? 'text-danger' : 'text-success'
+                              }>
+                                {metrics.connectionLatency >= 0
+                                  ? `${metrics.connectionLatency.toFixed(0)}ms`
+                                  : 'N/A'}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <BarChart3 className="w-3 h-3 text-muted-foreground" />
+                              <span>{metrics.totalQueriesToday}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <HardDrive className="w-3 h-3 text-muted-foreground" />
+                              <span>{(metrics.databaseSize / 1024 / 1024).toFixed(1)}MB</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Database className="w-3 h-3 text-muted-foreground" />
+                              <span>{metrics.tableCount} 表</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* 展开的详细信息 - 只在非窄屏且显示详细内容时显示 */}
+                        {isSelected && layout.showDetailed && !layout.isNarrow && (
                           <div className="mt-3 pt-3 border-t border-border space-y-2">
                             <div className="text-xs">
                               <div className="font-medium mb-1">性能指标</div>

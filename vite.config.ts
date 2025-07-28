@@ -133,4 +133,7 @@ export default defineConfig({
         'process.env.TAURI_DEBUG': JSON.stringify(process.env.TAURI_DEBUG || 'false'),
         'process.env.DISABLE_CONSOLE_LOGS': JSON.stringify(process.env.DISABLE_CONSOLE_LOGS || 'false'),
     },
+
+    // Monaco Editor 配置
+    assetsInclude: ['**/*.woff', '**/*.woff2', '**/*.ttf'],
 } as any); // 使用类型断言来支持Vitest配置

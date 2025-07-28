@@ -527,48 +527,58 @@ fn setup_crash_handler(_app_handle: tauri::AppHandle) {
 async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use services::port_manager::get_port_manager;
     
-    info!("检查启动时端口冲突...");
+    info!("检查启动时端口状态...");
     
     let manager = get_port_manager();
     let manager = manager.read().unwrap();
     
-    // 检查默认端口 1422 是否可用
-    if manager.is_port_available(1422) {
-        // 为前端服务分配默认端口
-        match manager.allocate_port("frontend") {
-            Ok(port) => {
-                info!("前端服务使用默认端口: {}", port);
-            }
-            Err(e) => {
-                warn!("无法分配默认端口，尝试查找其他可用端口: {}", e);
-                // 分配其他可用端口
-                match manager.find_available_port() {
-                    Ok(port) => {
-                        warn!("端口冲突已解决，前端将使用端口: {} 而不是默认的 1422", port);
-                    }
-                    Err(e) => {
-                        error!("无法找到可用端口: {}", e);
-                        return Err(format!("端口分配失败: {}", e).into());
-                    }
-                }
-            }
+    // 在开发模式下，Vite 开发服务器已经由 Tauri 的 BeforeDevCommand 启动
+    // 我们只需要检查并记录端口状态，不需要尝试分配端口
+    #[cfg(debug_assertions)]
+    {
+        let preferred_port = 1422;
+        let is_preferred_available = manager.is_port_available(preferred_port);
+        
+        if is_preferred_available {
+            info!("开发模式：默认端口 {} 当前可用", preferred_port);
+        } else {
+            info!("开发模式：默认端口 {} 被前端开发服务器占用（这是正常的）", preferred_port);
         }
-    } else {
-        warn!("默认端口 1422 被占用，正在查找可用端口...");
-        // 查找并分配可用端口
+        
+        // 在开发模式下，不需要通过端口管理器分配端口
+        info!("开发模式：跳过端口分配，前端服务器由 Tauri 开发工作流程管理");
+    }
+    
+    // 在生产模式下，才需要端口管理
+    #[cfg(not(debug_assertions))]
+    {
+        let preferred_port = 1422;
+        let is_preferred_available = manager.is_port_available(preferred_port);
+        
+        if is_preferred_available {
+            info!("生产模式：默认端口 {} 可用", preferred_port);
+        } else {
+            warn!("生产模式：默认端口 {} 被占用，需要查找替代端口", preferred_port);
+        }
+        
+        // 分配端口给前端服务
         match manager.allocate_port("frontend") {
             Ok(port) => {
-                warn!("端口冲突已解决，前端将使用端口: {} 而不是默认的 1422", port);
+                if port == preferred_port {
+                    info!("前端服务成功使用默认端口: {}", port);
+                } else {
+                    warn!("端口冲突已解决，前端将使用端口: {} 而不是默认的 {}", port, preferred_port);
+                }
             }
             Err(e) => {
                 error!("无法为前端服务分配端口: {}", e);
                 return Err(format!("端口分配失败: {}", e).into());
             }
         }
+        
+        // 启动健康检查
+        manager.start_health_check_loop("frontend".to_string());
     }
-    
-    // 启动健康检查
-    manager.start_health_check_loop("frontend".to_string());
     
     Ok(())
 }

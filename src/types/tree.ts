@@ -5,6 +5,8 @@
 export type TreeNodeType =
   // 通用节点类型
   | 'connection'
+  | 'connection-active'
+  | 'connection-inactive'
 
   // InfluxDB 1.x 节点类型
   | 'database'           // 数据库
@@ -101,6 +103,8 @@ export type DatabaseType = 'InfluxDB' | 'IoTDB' | 'InfluxDB2';
  */
 export const TreeNodeDescriptions: Record<TreeNodeType, string> = {
   connection: '数据库连接',
+  'connection-active': '数据库连接已建立',
+  'connection-inactive': '数据库连接未建立',
   // InfluxDB 1.x 描述
   database: 'InfluxDB 1.x 数据库，支持时间序列数据存储',
   system_database: '系统数据库，包含内部监控和元数据',
@@ -168,6 +172,8 @@ export const TreeNodeDescriptions: Record<TreeNodeType, string> = {
  */
 export const TreeNodeStyles: Record<TreeNodeType, string> = {
   connection: 'text-blue-600 font-semibold',
+  'connection-active': 'text-green-600 font-semibold',
+  'connection-inactive': 'text-gray-600 font-semibold',
   // InfluxDB 1.x 样式
   database: 'text-green-600',
   system_database: 'text-orange-600 italic',
