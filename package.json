@@ -1,6 +1,6 @@
 {
   "name": "inflowave",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "description": "A modern time-series database management tool built with Tauri + React + TypeScript",
   "type": "module",
   "scripts": {
@@ -75,7 +75,7 @@
     "release:notes:save": "node scripts/generate-release-notes.cjs --output=release-notes-output.md",
     "release:notes:dev:save": "node scripts/generate-release-notes.cjs --dev --output=release-notes-dev.md",
     "icons:generate": "node scripts/generate-placeholder-icons.cjs",
-    "icons:missing": "node scripts/generate-missing-icons.cjs", 
+    "icons:missing": "node scripts/generate-missing-icons.cjs",
     "icons:preview": "node scripts/generate-icon-preview.cjs",
     "icons:all": "npm run icons:generate && npm run icons:missing && npm run icons:preview"
   },

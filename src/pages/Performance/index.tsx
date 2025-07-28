@@ -1,10 +1,10 @@
 import React from 'react';
-import { VerticalPerformanceMonitor } from '@/components/performance/VerticalPerformanceMonitor';
+import { PerformanceDashboard } from '@/components/performance/PerformanceDashboard';
 
 const Performance: React.FC = () => {
   return (
     <div className="h-full">
-      <VerticalPerformanceMonitor />
+      <PerformanceDashboard />
     </div>
   );
 };

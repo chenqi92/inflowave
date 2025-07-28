@@ -8,10 +8,12 @@ import NotificationPanel from '@/components/notifications/NotificationPanel';
 // 懒加载面板适配的功能组件
 // 直接导入页面组件并创建面板适配版本
 const VisualizationPage = React.lazy(() => import('@/pages/Visualization'));
-const PerformancePage = React.lazy(() => import('@/pages/Performance'));
 const QueryHistoryPage = React.lazy(() => import('@/pages/QueryHistory'));
 const Extensions = React.lazy(() => import('@/pages/Extensions'));
 const DevTools = React.lazy(() => import('@/pages/DevTools'));
+
+// 直接导入性能监控组件
+import { ModernPerformanceMonitor } from '@/components/performance/ModernPerformanceMonitor';
 
 // 面板适配组件
 const PanelVisualizationPage: React.FC = () => (
@@ -22,7 +24,7 @@ const PanelVisualizationPage: React.FC = () => (
 
 const PanelPerformancePage: React.FC = () => (
   <div className="h-full">
-    <PerformancePage />
+    <ModernPerformanceMonitor />
   </div>
 );
 
