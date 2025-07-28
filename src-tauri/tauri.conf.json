@@ -80,8 +80,7 @@
         "language": [
           "zh-CN"
         ],
-        "template": "./wix/main.wxs",
-        "license": "./wix/license.rtf"
+        "template": "./wix/main.wxs"
       },
       "nsis": {
         "languages": [
