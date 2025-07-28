@@ -82,7 +82,7 @@
           "zh-CN": {
             "localePath": "./wix/zh-CN.wxl"
           },
-          "en-US": null
+          "en-US": {}
         }
       },
       "nsis": {

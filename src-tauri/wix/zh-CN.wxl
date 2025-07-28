@@ -1,40 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<WixLocalization Culture="zh-cn" Language="2052" xmlns="http://schemas.microsoft.com/wix/2006/localization">
-  
-  <!-- 安装程序界面文本 -->
+<WixLocalization
+  Culture="zh-CN"
+  Codepage="65001"
+  Language="2052"
+  xmlns="http://schemas.microsoft.com/wix/2006/localization">
+
+  <!-- 建议补充，帮助 WiX/TAURI 正确识别 -->
+  <String Id="TauriLanguage">2052</String>
+  <String Id="TauriCodepage">65001</String>
+
+  <!-- Tauri 明确要求存在的 4 个字符串 -->
+  <String Id="LaunchApp">启动 InfloWave</String>
+  <String Id="DowngradeErrorMessage">已安装更高版本的 InfloWave。</String>
+  <String Id="PathEnvVarFeature">将 InfloWave 可执行文件目录添加到系统 PATH 环境变量。</String>
+  <String Id="InstallAppFeature">安装 InfloWave。</String>
+
+  <!-- 以下为你原有的字符串，保留即可 -->
   <String Id="WelcomeDlgTitle">欢迎使用 InfloWave 安装向导</String>
   <String Id="WelcomeDlgDescription">安装向导将在您的计算机上安装 InfloWave 时序数据库管理工具。</String>
-  
-  <!-- 许可协议页面 -->
+
   <String Id="LicenseAgreementDlgTitle">许可协议</String>
   <String Id="LicenseAgreementDlgDescription">请阅读以下许可协议。如果您接受协议条款，请选择"我接受许可协议中的条款"。</String>
   <String Id="LicenseAcceptedCheckBox">我接受许可协议中的条款(&amp;A)</String>
-  
-  <!-- 安装类型页面 -->
+
   <String Id="InstallDirDlgTitle">选择安装文件夹</String>
   <String Id="InstallDirDlgDescription">安装向导将 InfloWave 安装到以下文件夹中。</String>
   <String Id="InstallDirDlgBannerBitmap">WixUI_InstallDir</String>
-  
-  <!-- 功能选择页面 -->
+
   <String Id="CustomizeDlgTitle">自定义安装</String>
   <String Id="CustomizeDlgDescription">选择您想要安装的功能。</String>
-  
-  <!-- 安装确认页面 -->
+
   <String Id="VerifyReadyDlgTitle">准备安装</String>
   <String Id="VerifyReadyDlgDescription">安装向导已准备好开始安装。</String>
   <String Id="VerifyReadyDlgInstallTitle">点击"安装"开始安装。</String>
-  
-  <!-- 安装进度页面 -->
+
   <String Id="ProgressDlgTitle">正在安装 InfloWave</String>
   <String Id="ProgressDlgTitleInstalling">正在安装 InfloWave</String>
   <String Id="ProgressDlgTextInstalling">正在安装功能:</String>
-  
-  <!-- 完成页面 -->
+
   <String Id="ExitDlgTitle">完成 InfloWave 安装向导</String>
   <String Id="ExitDlgDescription">安装向导已成功在您的计算机上安装了 InfloWave。点击"完成"退出向导。</String>
   <String Id="LaunchCheckBox">启动 InfloWave(&amp;L)</String>
-  
-  <!-- 按钮文本 -->
+
   <String Id="WixUIBack">&lt; 上一步(&amp;B)</String>
   <String Id="WixUINext">下一步(&amp;N) &gt;</String>
   <String Id="WixUICancel">取消</String>
@@ -43,19 +50,16 @@
   <String Id="WixUIChange">更改(&amp;C)</String>
   <String Id="WixUIRemove">删除(&amp;R)</String>
   <String Id="WixUIRepair">修复(&amp;R)</String>
-  
-  <!-- 功能描述 -->
+
   <String Id="MainApplicationFeatureTitle">主程序</String>
   <String Id="MainApplicationFeatureDescription">InfloWave 主程序文件，包含所有核心功能</String>
   <String Id="DesktopShortcutFeatureTitle">桌面快捷方式</String>
   <String Id="DesktopShortcutFeatureDescription">在桌面创建 InfloWave 快捷方式</String>
-  
-  <!-- 错误消息 -->
+
   <String Id="OutOfDiskSpace">磁盘空间不足，无法安装此功能。</String>
   <String Id="OutOfNoRbDiskSpace">磁盘空间不足，无法安装此功能。</String>
   <String Id="PolicyOrResourceConflict">系统策略禁止此安装。请联系系统管理员。</String>
-  
-  <!-- 应用程序描述 -->
+
   <String Id="ApplicationDescription">InfloWave 是一个现代化的时序数据库管理工具，支持：
 • InfluxDB 1.x/2.x/3.x 版本
 • IoTDB 时序数据库
@@ -69,11 +73,9 @@
 • 数据导入导出
 • 性能监控分析</String>
 
-  <!-- 系统要求 -->
   <String Id="SystemRequirements">系统要求：
 • Windows 10 或更高版本
 • 至少 2GB 内存
 • 至少 50MB 可用磁盘空间
 • 支持 WebView2 的系统环境</String>
-
 </WixLocalization>
