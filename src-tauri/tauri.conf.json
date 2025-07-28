@@ -81,15 +81,15 @@
         "language": {
           "zh-CN": {
             "localePath": "./wix/zh-CN.wxl"
-          },
-          "en-US": {}
+          }
         }
       },
       "nsis": {
         "languages": [
           "English",
           "SimpChinese"
-        ]
+        ],
+        "displayLanguageSelector": true
       }
     },
     "macOS": {
