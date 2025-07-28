@@ -152,6 +152,7 @@ jobs:
               libpango1.0-dev:arm64 \
               libatk1.0-dev:arm64 \
               libssl-dev:arm64 \
+              libxdo-dev:arm64 \
               libayatana-appindicator3-dev:arm64 \
               librsvg2-dev:arm64 || {
                 echo "⚠️ 部分 ARM64 库安装失败，将使用系统库进行交叉编译"
