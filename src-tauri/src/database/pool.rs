@@ -1,4 +1,4 @@
-use crate::database::InfluxClient;
+use crate::database::client::InfluxClient;
 use crate::models::ConnectionConfig;
 use anyhow::{Context, Result};
 use std::sync::Arc;

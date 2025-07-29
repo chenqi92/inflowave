@@ -51,6 +51,14 @@ tokio-tungstenite = { version = "0.20", optional = true }
 # 新增依赖
 regex = "1.10"
 hex = "0.4"
+urlencoding = "2.1"
+
+# InfluxDB 3.x FlightSQL 支持
+arrow-flight = { version = "53.0", features = ["flight-sql-experimental"], optional = true }
+arrow = { version = "53.0", optional = true }
+arrow-schema = { version = "53.0", optional = true }
+tonic = { version = "0.12", optional = true }
+prost = { version = "0.13", optional = true }
 
 # Linux平台特定依赖 - 启用原生菜单支持
 [target.'cfg(target_os = "linux")'.dependencies]
@@ -74,8 +82,13 @@ iotdb-v2 = []
 iotdb-rest = []
 iotdb-websocket = ["tokio-tungstenite"]
 
-# 默认启用 v1, v2 和 REST 支持
-default = ["iotdb-v1", "iotdb-v2", "iotdb-rest"]
+# InfluxDB 版本兼容性特性
+influxdb-v1 = []
+influxdb-v2 = []
+influxdb-v3 = ["arrow-flight", "arrow", "arrow-schema", "tonic", "prost"]
+
+# 默认启用 InfluxDB v2 和 IoTDB v1, v2, REST 支持 (v3 暂时禁用)
+default = ["influxdb-v2", "iotdb-v1", "iotdb-v2", "iotdb-rest"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-shell = "2.0"

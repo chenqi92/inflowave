@@ -1,5 +1,6 @@
-use crate::models::{ConnectionConfig, QueryResult, RetentionPolicy, DatabaseType};
+use crate::models::{ConnectionConfig, QueryResult, RetentionPolicy, DatabaseType, TagInfo, FieldInfo, FieldType, TableSchema};
 use crate::database::iotdb_multi_client::IoTDBMultiClient;
+use crate::database::influxdb_client::InfluxDBClient;
 use anyhow::Result;
 use influxdb::Client;
 use std::time::Instant;
@@ -13,6 +14,7 @@ use reqwest;
 pub enum DatabaseClient {
     InfluxDB1x(InfluxClient),
     InfluxDB2x(InfluxDB2Client),
+    InfluxDBUnified(InfluxDBClient), // 新的统一客户端
     IoTDB(Arc<Mutex<IoTDBMultiClient>>),
 }
 
@@ -22,6 +24,7 @@ impl DatabaseClient {
         match self {
             DatabaseClient::InfluxDB1x(client) => client.test_connection().await,
             DatabaseClient::InfluxDB2x(client) => client.test_connection().await,
+            DatabaseClient::InfluxDBUnified(client) => client.test_connection().await,
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.test_connection().await
@@ -36,6 +39,9 @@ impl DatabaseClient {
             DatabaseClient::InfluxDB2x(client) => {
                 // InfluxDB 2.x/3.x 使用 Flux 查询，不需要 database 参数
                 client.execute_query(query).await
+            },
+            DatabaseClient::InfluxDBUnified(client) => {
+                client.execute_query_with_database(query, database).await
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
@@ -72,6 +78,9 @@ impl DatabaseClient {
                     }
                 }
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                client.list_databases().await
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_databases().await
@@ -87,6 +96,9 @@ impl DatabaseClient {
                 // InfluxDB 2.x/3.x: database 参数是组织名，返回存储桶列表
                 client.get_buckets_for_org(database).await
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                client.list_measurements(database).await
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_devices(database).await
@@ -101,6 +113,11 @@ impl DatabaseClient {
             DatabaseClient::InfluxDB2x(client) => {
                 // InfluxDB 2.x/3.x: 通过 Flux 查询获取字段信息
                 client.get_field_keys_flux(database, table).await
+            },
+            DatabaseClient::InfluxDBUnified(client) => {
+                // 使用统一客户端获取字段信息
+                let schema = client.get_driver().describe_measurement(database, table).await?;
+                Ok(schema.fields.into_iter().map(|f| f.name).collect())
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
@@ -135,6 +152,21 @@ impl DatabaseClient {
                     "organization": client.config.v2_config.as_ref().map(|c| &c.organization)
                 }))
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                let capability = client.capabilities();
+                Ok(serde_json::json!({
+                    "type": "influxdb_unified",
+                    "version": capability.version,
+                    "major": capability.major,
+                    "host": client.get_config().host,
+                    "port": client.get_config().port,
+                    "ssl": client.get_config().ssl,
+                    "supports_flux": capability.supports_flux,
+                    "supports_sql": capability.supports_sql,
+                    "supports_influxql": capability.supports_influxql,
+                    "has_flightsql": capability.has_flightsql
+                }))
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 let server_info = client.get_server_info().await?;
@@ -166,6 +198,10 @@ impl DatabaseClient {
                 debug!("关闭 InfluxDB 2.x/3.x 连接");
                 Ok(())
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                debug!("关闭统一 InfluxDB 连接");
+                client.close().await
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.disconnect().await
@@ -178,6 +214,7 @@ impl DatabaseClient {
         match self {
             DatabaseClient::InfluxDB1x(_) => DatabaseType::InfluxDB,
             DatabaseClient::InfluxDB2x(_) => DatabaseType::InfluxDB,
+            DatabaseClient::InfluxDBUnified(_) => DatabaseType::InfluxDB,
             DatabaseClient::IoTDB(_) => DatabaseType::IoTDB,
         }
     }
@@ -187,6 +224,7 @@ impl DatabaseClient {
         match self {
             DatabaseClient::InfluxDB1x(client) => client.get_config().clone(),
             DatabaseClient::InfluxDB2x(client) => client.config.clone(),
+            DatabaseClient::InfluxDBUnified(client) => client.get_config().clone(),
             DatabaseClient::IoTDB(client) => {
                 let client = client.lock().await;
                 client.get_config().clone()
@@ -201,6 +239,9 @@ impl DatabaseClient {
             DatabaseClient::InfluxDB2x(_client) => {
                 // InfluxDB 2.x/3.x 不支持直接创建数据库，需要创建存储桶
                 Err(anyhow::anyhow!("InfluxDB 2.x/3.x 不支持创建数据库，请使用存储桶管理"))
+            },
+            DatabaseClient::InfluxDBUnified(client) => {
+                client.create_database(database_name).await
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
@@ -219,6 +260,9 @@ impl DatabaseClient {
                 // InfluxDB 2.x/3.x 不支持直接删除数据库，需要删除存储桶
                 Err(anyhow::anyhow!("InfluxDB 2.x/3.x 不支持删除数据库，请使用存储桶管理"))
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                client.drop_database(database_name).await
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 let sql = format!("DELETE STORAGE GROUP root.{}", database_name);
@@ -236,6 +280,17 @@ impl DatabaseClient {
                 // InfluxDB 2.x/3.x 不使用保留策略概念，返回空列表
                 Ok(vec![])
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                // 统一客户端获取保留策略
+                let policies = client.get_driver().list_retention_policies(database).await?;
+                Ok(policies.into_iter().map(|p| RetentionPolicy {
+                    name: p.name,
+                    duration: p.duration,
+                    shard_group_duration: p.shard_group_duration,
+                    replica_n: p.replica_n,
+                    default: p.default,
+                }).collect())
+            },
             DatabaseClient::IoTDB(_) => {
                 // IoTDB 不支持保留策略概念，返回空列表
                 Ok(vec![])
@@ -251,6 +306,9 @@ impl DatabaseClient {
                 // InfluxDB 2.x/3.x: 通过 Flux 查询获取测量值
                 client.get_measurements_flux(database).await
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                client.list_measurements(database).await
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_devices(database).await
@@ -265,6 +323,10 @@ impl DatabaseClient {
             DatabaseClient::InfluxDB2x(client) => {
                 // InfluxDB 2.x/3.x: 通过 Flux 查询获取字段信息
                 client.get_field_keys_flux(database, measurement).await
+            },
+            DatabaseClient::InfluxDBUnified(client) => {
+                let schema = client.get_driver().describe_measurement(database, measurement).await?;
+                Ok(schema.fields.into_iter().map(|f| f.name).collect())
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
@@ -290,6 +352,27 @@ impl DatabaseClient {
                     fields: vec![],
                 })
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                let schema = client.get_driver().describe_measurement(database, measurement).await?;
+                Ok(TableSchema {
+                    tags: schema.tags.into_iter().map(|t| TagInfo {
+                        name: t.name,
+                        values: t.values,
+                        cardinality: 0, // 暂时设为0，后续可以实现真实的基数统计
+                    }).collect(),
+                    fields: schema.fields.into_iter().map(|f| FieldInfo {
+                        name: f.name,
+                        field_type: match f.field_type.as_str() {
+                            "float" => FieldType::Float,
+                            "integer" => FieldType::Integer,
+                            "string" => FieldType::String,
+                            "boolean" => FieldType::Boolean,
+                            _ => FieldType::String, // 默认为字符串类型
+                        },
+                        last_value: None, // 暂时设为None，后续可以实现最后值查询
+                    }).collect(),
+                })
+            },
             DatabaseClient::IoTDB(_client) => {
                 // IoTDB 多协议客户端暂不支持表结构查询，返回空结构
                 Ok(TableSchema {
@@ -312,6 +395,9 @@ impl DatabaseClient {
                 // 暂时不支持，后续可以实现完整的写入功能
                 Err(anyhow::anyhow!("InfluxDB 2.x/3.x 行协议写入暂未实现"))
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                client.write_line_protocol(database, line_protocol).await
+            },
             DatabaseClient::IoTDB(_client) => {
                 // IoTDB 多协议客户端暂不支持行协议写入
                 Err(anyhow::anyhow!("IoTDB 多协议客户端暂不支持行协议写入"))
@@ -329,6 +415,9 @@ impl DatabaseClient {
             DatabaseClient::InfluxDB2x(client) => {
                 // InfluxDB 2.x/3.x 版本检测逻辑
                 client.detect_version().await
+            },
+            DatabaseClient::InfluxDBUnified(client) => {
+                Ok(client.capabilities().version.clone())
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
@@ -348,6 +437,10 @@ impl DatabaseClient {
                 // InfluxDB 2.x/3.x 树节点生成逻辑
                 client.get_tree_nodes().await
             },
+            DatabaseClient::InfluxDBUnified(_client) => {
+                // 统一客户端暂时返回空节点，后续可以实现完整的树节点生成
+                Ok(vec![])
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 client.get_tree_nodes().await
@@ -366,6 +459,10 @@ impl DatabaseClient {
                 // InfluxDB 2.x/3.x 子节点获取逻辑
                 client.get_tree_children(parent_node_id, node_type).await
             },
+            DatabaseClient::InfluxDBUnified(client) => {
+                // 统一 InfluxDB 客户端子节点获取逻辑
+                client.get_tree_children(parent_node_id, node_type).await
+            },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
                 // IoTDB 子节点获取逻辑
@@ -376,6 +473,10 @@ impl DatabaseClient {
 }
 
 /// InfluxDB 2.x/3.x 客户端封装
+///
+/// ⚠️ 遗留代码：建议使用新的统一 InfluxDBClient 替代
+/// 新的统一客户端位于 `crate::database::influxdb_client::InfluxDBClient`
+/// 支持自动版本探测、统一的驱动架构和更好的错误处理
 #[derive(Debug)]
 pub struct InfluxDB2Client {
     client: influxdb2::Client,
@@ -1585,6 +1686,10 @@ impl InfluxDB2Client {
 }
 
 /// InfluxDB 1.x 客户端封装
+///
+/// ⚠️ 遗留代码：建议使用新的统一 InfluxDBClient 替代
+/// 新的统一客户端位于 `crate::database::influxdb_client::InfluxDBClient`
+/// 支持自动版本探测和统一的驱动架构
 #[derive(Debug, Clone)]
 pub struct InfluxClient {
     client: Client,
@@ -2180,13 +2285,33 @@ impl InfluxClient {
 
         // 解析字段和标签
         let fields = self.parse_field_keys_result(field_result)?;
-        let tags = self.parse_tag_keys_result(tag_result)?;
+        let tag_names = self.parse_tag_keys_result(tag_result)?;
 
-        Ok(TableSchema { tags, fields })
+        // 转换为 TagInfo 结构
+        let tags = tag_names.into_iter().map(|name| TagInfo {
+            name,
+            values: vec![], // 暂时为空，后续可以实现标签值查询
+            cardinality: 0, // 暂时为0，后续可以实现基数统计
+        }).collect();
+
+        // 转换为 FieldInfo 结构
+        let field_infos = fields.into_iter().map(|f| FieldInfo {
+            name: f.name,
+            field_type: match f.field_type.as_str() {
+                "float" => FieldType::Float,
+                "integer" => FieldType::Integer,
+                "string" => FieldType::String,
+                "boolean" => FieldType::Boolean,
+                _ => FieldType::String,
+            },
+            last_value: None,
+        }).collect();
+
+        Ok(TableSchema { tags, fields: field_infos })
     }
 
     /// 解析字段键结果
-    fn parse_field_keys_result(&self, result: String) -> Result<Vec<FieldSchema>> {
+    fn parse_field_keys_result(&self, result: String) -> Result<Vec<crate::database::influxdb::FieldSchema>> {
         debug!("解析字段键结果: {}", result);
         
         match serde_json::from_str::<serde_json::Value>(&result) {
@@ -2205,9 +2330,9 @@ impl InfluxClient {
                                             if arr.len() >= 2 {
                                                 if let (Some(field_name), Some(field_type)) = 
                                                     (arr[0].as_str(), arr[1].as_str()) {
-                                                    fields.push(FieldSchema {
+                                                    fields.push(crate::database::influxdb::FieldSchema {
                                                         name: field_name.to_string(),
-                                                        r#type: field_type.to_string(),
+                                                        field_type: crate::database::influxdb::FieldType::from_str(&field_type),
                                                     });
                                                 }
                                             }
@@ -2850,7 +2975,26 @@ impl InfluxClient {
 pub struct DatabaseClientFactory;
 
 impl DatabaseClientFactory {
-    /// 创建数据库客户端
+    /// 创建数据库客户端（新的统一方法）
+    pub async fn create_unified_client(config: ConnectionConfig) -> Result<DatabaseClient> {
+        match config.db_type {
+            DatabaseType::InfluxDB => {
+                info!("创建统一 InfluxDB 客户端: {}:{}", config.host, config.port);
+                let client = InfluxDBClient::new(config).await?;
+                Ok(DatabaseClient::InfluxDBUnified(client))
+            },
+            DatabaseType::IoTDB => {
+                let client = IoTDBMultiClient::new(config);
+                Ok(DatabaseClient::IoTDB(Arc::new(Mutex::new(client))))
+            },
+            _ => Err(anyhow::anyhow!("不支持的数据库类型: {:?}", config.db_type)),
+        }
+    }
+
+    /// 创建数据库客户端（兼容旧版本）
+    ///
+    /// ⚠️ 遗留方法：建议使用 `create_unified_client` 替代
+    /// 新的统一方法支持自动版本探测和更好的错误处理
     pub fn create_client(config: ConnectionConfig) -> Result<DatabaseClient> {
         match config.db_type {
             DatabaseType::InfluxDB => {
@@ -2901,17 +3045,4 @@ impl DatabaseClientFactory {
     }
 }
 
-/// 表结构信息
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct TableSchema {
-    pub tags: Vec<String>,
-    pub fields: Vec<FieldSchema>,
-}
 
-/// 字段结构信息
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct FieldSchema {
-    pub name: String,
-    #[serde(rename = "type")]
-    pub r#type: String,
-}

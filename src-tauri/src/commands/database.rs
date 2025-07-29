@@ -1,6 +1,6 @@
 ﻿use crate::models::{RetentionPolicy, RetentionPolicyConfig, QueryResult, DatabaseInfo, DatabaseStats};
 use crate::services::{ConnectionService, database_service::DatabaseService};
-use crate::database::client::TableSchema;
+use crate::models::TableSchema;
 use crate::commands::settings::SettingsStorage;
 use tauri::State;
 use log::{debug, error, info};

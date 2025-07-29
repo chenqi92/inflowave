@@ -81,6 +81,13 @@ pub struct TagInfo {
     pub cardinality: u64,
 }
 
+/// 表结构信息
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TableSchema {
+    pub tags: Vec<TagInfo>,
+    pub fields: Vec<FieldInfo>,
+}
+
 /// 数据库统计信息
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DatabaseStats {

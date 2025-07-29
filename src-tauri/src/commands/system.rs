@@ -72,7 +72,7 @@ fn get_network_stats() -> NetworkStats {
 /// 获取序列数量
 #[allow(dead_code)]
 async fn get_series_count(
-    client: &crate::database::InfluxClient,
+    client: &crate::database::client::InfluxClient,
     database: &str,
 ) -> Result<u64, Error> {
     let query = format!("SHOW SERIES ON \"{}\"", database);

@@ -29,9 +29,18 @@ impl ConnectionManager {
 
         debug!("添加连接: {} ({:?} {}:{})", config.name, db_type, config.host, config.port);
 
-        // 使用工厂创建客户端
-        let client = DatabaseClientFactory::create_client(config.clone())
-            .context("创建数据库客户端失败")?;
+        // 优先使用新的统一客户端，如果失败则回退到旧版本
+        let client = match DatabaseClientFactory::create_unified_client(config.clone()).await {
+            Ok(client) => {
+                info!("使用统一客户端创建连接: {}", config.name);
+                client
+            },
+            Err(e) => {
+                warn!("统一客户端创建失败，回退到旧版本: {}", e);
+                DatabaseClientFactory::create_client(config.clone())
+                    .context("创建数据库客户端失败")?
+            }
+        };
 
         // 存储连接
         {
