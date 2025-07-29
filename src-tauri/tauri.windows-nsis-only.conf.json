@@ -40,7 +40,7 @@
       "timestampUrl": "",
       "wix": {
         "language": ["en-US", "zh-CN"],
-        "template": "main.wxs"
+        "template": "wix/main.wxs"
       }
     }
   },

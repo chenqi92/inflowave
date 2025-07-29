@@ -44,7 +44,6 @@
   "bundle": {
     "active": true,
     "targets": [
-      "wix",
       "msi",
       "deb",
       "rpm",
@@ -78,7 +77,7 @@
       "timestampUrl": "",
       "wix": {
         "language": ["en-US", "zh-CN"],
-        "template": "main.wxs"
+        "template": "wix/main.wxs"
       }
     },
     "macOS": {
