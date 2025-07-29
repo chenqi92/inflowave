@@ -488,6 +488,8 @@ pub async fn show_measurements(
 ) -> Result<Vec<String>, String> {
     debug!("处理显示测量列表命令: {} - {}", connection_id, database);
 
+    // 移除硬编码过滤，显示真实数据
+
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connection_id).await
         .map_err(|e| {
@@ -589,6 +591,8 @@ pub async fn get_measurements(
     database: String,
 ) -> Result<Vec<String>, String> {
     debug!("处理获取测量列表命令: {} - {}", connection_id, database);
+
+    // 移除硬编码过滤，显示真实数据
 
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connection_id).await

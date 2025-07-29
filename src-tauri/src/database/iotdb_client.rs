@@ -556,15 +556,26 @@ impl IoTDBHttpClient {
 
     /// 转义标识符，处理包含特殊字符的情况
     fn escape_identifier(&self, identifier: &str) -> String {
+        // 对于IoTDB，我们尝试不同的转义策略
+
         // 检查是否包含需要转义的字符
         let needs_escape = identifier.chars().any(|c| {
             // 检查是否包含特殊字符、空格、emoji等
-            !c.is_ascii_alphanumeric() && c != '_' && c != '.'
+            !c.is_ascii_alphanumeric() && c != '_' && c != '.' && c != '-'
         });
 
         if needs_escape {
-            // 使用反引号转义
-            format!("`{}`", identifier.replace("`", "``"))
+            // 对于包含特殊字符的标识符，尝试不同的转义方式
+            if identifier.contains(':') || identifier.contains(' ') {
+                // 对于包含冒号或空格的标识符，使用双引号转义
+                format!("\"{}\"", identifier.replace("\"", "\\\""))
+            } else if identifier.contains('-') && identifier.contains('T') {
+                // 对于时间格式的标识符，直接使用原始名称
+                identifier.to_string()
+            } else {
+                // 其他情况使用反引号转义
+                format!("`{}`", identifier.replace("`", "``"))
+            }
         } else {
             identifier.to_string()
         }
