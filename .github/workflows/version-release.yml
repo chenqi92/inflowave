@@ -309,7 +309,7 @@ jobs:
           prerelease: false
           args: --target ${{ matrix.rust_target }} ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '--config src-tauri/tauri.arm64.conf.json' || '' }}
 
-      - name: Build Windows NSIS Fallback
+      - name: Build Windows WIX Fallback
         if: matrix.platform == 'windows-latest' && steps.standard_build.outcome == 'failure'
         uses: tauri-apps/tauri-action@v0
         env:

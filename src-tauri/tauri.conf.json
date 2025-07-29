@@ -44,7 +44,7 @@
   "bundle": {
     "active": true,
     "targets": [
-      "nsis",
+      "wix",
       "msi",
       "deb",
       "rpm",
@@ -77,17 +77,8 @@
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
       "wix": {
-        "language": [
-          "zh-CN"
-        ],
-        "template": "./wix/main.wxs"
-      },
-      "nsis": {
-        "languages": [
-          "English",
-          "SimpChinese"
-        ],
-        "displayLanguageSelector": true
+        "language": ["en-US", "zh-CN"],
+        "template": "main.wxs"
       }
     },
     "macOS": {

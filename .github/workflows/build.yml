@@ -52,10 +52,10 @@ jobs:
           # Windows
           - platform: 'windows-latest'
             target: 'x86_64-pc-windows-msvc'
-            args: '--target x86_64-pc-windows-msvc'
+            args: '--target x86_64-pc-windows-msvc --config src-tauri/tauri.windows-nsis-only.conf.json'
           - platform: 'windows-latest'
             target: 'i686-pc-windows-msvc'
-            args: '--target i686-pc-windows-msvc'
+            args: '--target i686-pc-windows-msvc --config src-tauri/tauri.windows-nsis-only.conf.json'
 
           # macOS
           - platform: 'macos-latest'
