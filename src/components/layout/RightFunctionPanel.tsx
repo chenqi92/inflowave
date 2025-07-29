@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, Spin } from '@/components/ui';
+import { Spin } from '@/components/ui';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import type { FunctionType } from './RightFunctionBar';

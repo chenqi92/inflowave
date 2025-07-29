@@ -23,7 +23,6 @@ import {
 import {
   History,
   Book,
-  Search,
   RefreshCw,
   Play,
   Copy,

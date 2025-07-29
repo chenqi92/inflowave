@@ -4,7 +4,7 @@
  * 支持不同数据库类型的数据可视化
  */
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -52,7 +52,6 @@ import {
   PieChart as PieChartIcon,
   Zap as ScatterIcon,
   Activity,
-  Settings,
   Download,
   RefreshCw,
   Database,
@@ -61,9 +60,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
-import { safeTauriInvoke } from '@/utils/tauri';
-import { showMessage } from '@/utils/message';
-import type { DatabaseType, QueryResult } from '@/types';
+import type { QueryResult } from '@/types';
 
 // 图表类型配置
 const CHART_TYPES = {

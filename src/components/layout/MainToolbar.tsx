@@ -4,14 +4,12 @@ import {
 } from '@/components/ui';
 import {
   Database,
-  History,
   Settings,
 } from 'lucide-react';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
-import { showMessage } from '@/utils/message';
 import SettingsModal from '@/components/common/SettingsModal';
-import TimeRangeSelector, {
+import {
   TimeRange,
 } from '@/components/common/TimeRangeSelector';
 

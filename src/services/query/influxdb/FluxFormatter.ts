@@ -48,7 +48,7 @@ export class FluxFormatter extends QueryFormatter {
     let inPipeline = false;
 
     for (let i = 0; i < lines.length; i++) {
-      let line = lines[i].trim();
+      const line = lines[i].trim();
       
       if (!line || this.isCommentLine(line)) {
         formatted.push(line);
@@ -89,7 +89,7 @@ export class FluxFormatter extends QueryFormatter {
             // 管道后的部分
             if (part) {
               indentLevel = 1;
-              formatted.push(this.getIndent(indentLevel) + '|> ' + this.formatFunction(part));
+              formatted.push(`${this.getIndent(indentLevel)  }|> ${  this.formatFunction(part)}`);
             } else if (j === parts.length - 1) {
               // 行末的管道操作符
               formatted[formatted.length - 1] += ' |>';
@@ -100,7 +100,7 @@ export class FluxFormatter extends QueryFormatter {
         // 非管道行
         if (inPipeline) {
           // 继续管道
-          formatted.push(this.getIndent(indentLevel) + '|> ' + this.formatFunction(line));
+          formatted.push(`${this.getIndent(indentLevel)  }|> ${  this.formatFunction(line)}`);
         } else {
           // 独立语句
           formatted.push(this.formatFunction(line));
@@ -164,10 +164,10 @@ export class FluxFormatter extends QueryFormatter {
     
     // 多行格式化
     const indentedParams = paramList.map(param => 
-      '\n' + this.getIndent(2) + param.trim()
+      `\n${  this.getIndent(2)  }${param.trim()}`
     );
     
-    return indentedParams.join(',') + '\n' + this.getIndent(1);
+    return `${indentedParams.join(',')  }\n${  this.getIndent(1)}`;
   }
 
   /**

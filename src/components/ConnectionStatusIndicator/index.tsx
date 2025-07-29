@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tag, Text, Badge, TooltipWrapper as Tooltip } from '@/components/ui';
+import { Text, Badge, TooltipWrapper as Tooltip } from '@/components/ui';
 import { Wifi, Unlink, Loader2, Clock, AlertCircle } from 'lucide-react';
 import type { ConnectionStatus } from '@/types';
 

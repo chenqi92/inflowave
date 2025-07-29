@@ -26,10 +26,8 @@ import { showMessage } from '@/utils/message';
 import {
   Save,
   RefreshCw,
-  Trash2,
   Settings,
   Database,
-  Bug,
   Bell,
   FileDown,
   FileUp,

@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
-  CardHeader,
   Button,
-  Input,
   SearchInput,
   ScrollArea,
   Tabs,
@@ -13,10 +11,7 @@ import {
   TabsTrigger,
   Badge,
   Switch,
-  Tooltip,
-  TooltipContent,
   TooltipProvider,
-  TooltipTrigger,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -27,7 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Textarea,
   Select,
   SelectContent,
   SelectItem,
@@ -44,16 +38,11 @@ import {
   MoreVertical,
   Settings,
   Play,
-  Pause,
   Trash2,
-  Download,
-  Upload,
   TestTube,
   CheckCircle,
   XCircle,
   AlertCircle,
-  Search,
-  Filter,
   ExternalLink,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -235,7 +224,7 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))  } ${  sizes[i]}`;
   };
 
   // 获取状态图标

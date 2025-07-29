@@ -13,15 +13,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Info,
   Database,
-  Calendar,
   Loader2,
   RefreshCw,
   Copy,
-  FileText,
   Clock,
   BarChart3,
   HardDrive,
-  Activity,
   TrendingUp
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';

@@ -17,7 +17,6 @@ import {
   CardTitle,
   ScrollArea,
   Badge,
-  Separator,
   Tooltip,
   TooltipContent,
   TooltipTrigger,

@@ -24,15 +24,11 @@ import {
     Hash,
     Tags,
     Clock,
-    Link,
     GitBranch,
     Star,
     StarOff,
-    Building,
     Plus,
     Trash2,
-    Calendar,
-    MousePointer,
     X,
     Info,
     Search,
@@ -1300,7 +1296,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     }, [getConnection, connectToDatabase, closeAllDatabasesForConnection, clearDatabasesCache,
         loadDatabases, isFavorite, isDatabaseOpened, getDatabaseNodeType, expandedKeys,
-        updateConnectionNodeDisplay]);
+        ]);
 
     // 处理已连接的连接节点展开
     const handleExpandConnection = useCallback(async (connectionId: string) => {
@@ -1342,7 +1338,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         setExpandedKeys(prev => [...prev, connectionKey]);
         showMessage.info(`已展开连接 "${connection.name}"`);
 
-    }, [getConnection, treeData, addDatabaseNodesToConnection, updateConnectionNodeDisplay]);
+    }, [getConnection, treeData]);
 
     // 处理连接操作
     const handleConnectionToggle = async (connection_id: string) => {

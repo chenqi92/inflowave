@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { safeTauriListen, safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
-import { getFileOperationError, handleUserCancellation, formatErrorMessage } from '@/utils/userFriendlyErrors';
+import { getFileOperationError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 import { useConnectionStore } from '@/store/connection';
 import { useSettingsStore } from '@/store/settings';
 import { useTheme } from '@/components/providers/ThemeProvider';

@@ -13,7 +13,7 @@ const FontPreview: React.FC<FontPreviewProps> = ({ fontFamily, name, className }
   
   // 强制应用字体样式的内联样式对象 - 直接使用传入的字体
   const forcedFontStyle = {
-    fontFamily: fontFamily,
+    fontFamily,
     fontWeight: 400,
     fontSize: '14px',
     lineHeight: '1.2',
@@ -21,7 +21,7 @@ const FontPreview: React.FC<FontPreviewProps> = ({ fontFamily, name, className }
 
   // 为所有子元素创建完全相同的样式对象
   const childFontStyle = {
-    fontFamily: fontFamily,
+    fontFamily,
     fontWeight: 400,
     fontSize: '14px',
     lineHeight: '1.2',

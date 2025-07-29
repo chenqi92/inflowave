@@ -7,7 +7,7 @@ import React from 'react';
 import {toast} from 'sonner';
 import type {ExternalToast} from 'sonner';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { getDatabaseConnectionError, formatErrorMessage } from '@/utils/userFriendlyErrors';
+import { getDatabaseConnectionError } from '@/utils/userFriendlyErrors';
 import { addNotification } from '@/store/notifications';
 
 // 消息类型定义

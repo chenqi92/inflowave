@@ -40,7 +40,6 @@ import {
 } from '@/services/databaseVersionDetection';
 import { showMessage } from '@/utils/message';
 import { VersionDetectionDialog } from './VersionDetectionDialog';
-import { getDatabaseIcon, renderDatabaseOption } from '@/utils/databaseIcons';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 
 interface SimpleConnectionDialogProps {

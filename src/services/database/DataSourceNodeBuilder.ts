@@ -367,7 +367,7 @@ export class DataSourceNodeBuilder {
     name: string,
     parentPath: string[] = []
   ): string {
-    const pathStr = parentPath.length > 0 ? parentPath.join(':') + ':' : '';
+    const pathStr = parentPath.length > 0 ? `${parentPath.join(':')  }:` : '';
     return `${level}:${connectionId}:${pathStr}${name}`;
   }
 

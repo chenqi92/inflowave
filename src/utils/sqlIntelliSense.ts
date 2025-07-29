@@ -4,7 +4,7 @@
  */
 
 import * as monaco from 'monaco-editor';
-import type { InfluxDBVersion, DatabaseVersion } from '@/types/database';
+import type { InfluxDBVersion } from '@/types/database';
 import type { DatabaseType as SQLFormatterDatabaseType } from './sqlFormatter';
 
 /**

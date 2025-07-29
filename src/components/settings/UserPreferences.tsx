@@ -16,8 +16,6 @@ import {
   Switch,
   Badge,
 } from '@/components/ui';
-import FontPreview from './FontPreview';
-import FontCategoryLabel from './FontCategoryLabel';
 import CustomFontSelector from './CustomFontSelector';
 import { showMessage } from '@/utils/message';
 import {

@@ -3,7 +3,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { ChevronRight, ChevronDown, Database, Loader2, RefreshCw } from 'lucide-react';
 import { Button,Badge } from '@/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getNodeIcon, getNodeStyle, getNodeDescription } from '@/types/tree';
+import { getNodeIcon, getNodeStyle } from '@/types/tree';
 
 interface TreeNode {
   id: string;

@@ -15,7 +15,6 @@ import {Button, Badge, Progress} from '@/components/ui';
 import {
     Download,
     ExternalLink,
-    X,
     Calendar,
     Tag,
     AlertCircle,

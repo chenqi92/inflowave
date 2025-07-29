@@ -32,7 +32,6 @@ import {
 
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { dataExplorerRefresh } from '@/utils/refreshEvents';
 import type { DataPoint, BatchWriteRequest, WriteResult } from '@/types';
 
 interface DataGeneratorProps {
@@ -852,7 +851,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               request: {
                 connectionId: activeConnectionId,
                 database: selectedDatabase,
-                query: query,
+                query,
               },
             });
             console.log('\ud83d\udce6 字段查询响应:', { 
@@ -954,7 +953,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               request: {
                 connectionId: activeConnectionId,
                 database: selectedDatabase,
-                query: query,
+                query,
               },
             });
             console.log('\ud83d\udce6 标签查询响应:', { 
@@ -1136,7 +1135,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 request: {
                   connectionId: activeConnectionId,
                   database: selectedDatabase,
-                  query: query,
+                  query,
                 },
               });
 
@@ -1620,7 +1619,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                   request: {
                     connectionId: activeConnectionId,
                     database: selectedDatabase,
-                    query: query,
+                    query,
                   },
                 });
 

@@ -9,7 +9,6 @@ import {
   DatabaseType,
   DatabaseDriver,
   DatabaseConnectionConfig,
-  DatabaseConnection,
   Query,
   QueryResult,
   ValidationResult,

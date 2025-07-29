@@ -8,7 +8,6 @@ import type {
   DatabaseType, 
   DatabaseFeatures, 
   DatabaseRegistryEntry,
-  VersionSpecificFeatures,
   DatabaseLevel,
   NodeTypeConfig
 } from '@/types/database/features';

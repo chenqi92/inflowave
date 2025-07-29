@@ -2,7 +2,6 @@ import React, {useState, useCallback, startTransition} from 'react';
 import { UnifiedDataTable, type ColumnConfig, type DataRow } from '@/components/ui/UnifiedDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import {
-    DataTable,
     Tabs,
     TabsContent,
     TabsList,

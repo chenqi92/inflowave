@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { EditorTab } from '@/components/editor/TabManager';
-import { safeTauriInvoke } from '@/utils/tauri';
 
 interface TabState {
   tabs: EditorTab[];

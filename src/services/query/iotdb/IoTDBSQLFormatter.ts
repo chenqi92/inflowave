@@ -85,13 +85,13 @@ export class IoTDBSQLFormatter extends QueryFormatter {
         
         // 处理复合关键字
         if (this.isCompoundKeyword(upperToken, nextToken?.toUpperCase())) {
-          formatted.push(' ' + this.applyKeywordCase(nextToken));
+          formatted.push(` ${  this.applyKeywordCase(nextToken)}`);
           i++; // 跳过下一个标记
           
           // 处理三元复合关键字
           const thirdToken = tokens[i + 1];
           if (this.isTripleCompoundKeyword(upperToken, nextToken?.toUpperCase(), thirdToken?.toUpperCase())) {
-            formatted.push(' ' + this.applyKeywordCase(thirdToken));
+            formatted.push(` ${  this.applyKeywordCase(thirdToken)}`);
             i++; // 跳过第三个标记
           }
         }
@@ -100,20 +100,20 @@ export class IoTDBSQLFormatter extends QueryFormatter {
       }
       // 处理子句关键字
       else if (this.isClauseKeyword(upperToken)) {
-        formatted.push('\n' + this.getIndent(indentLevel) + this.applyKeywordCase(token) + ' ');
+        formatted.push(`\n${  this.getIndent(indentLevel)  }${this.applyKeywordCase(token)  } `);
       }
       // 处理对齐关键字
       else if (this.isAlignKeyword(upperToken, nextToken?.toUpperCase())) {
-        formatted.push('\n' + this.getIndent(indentLevel) + this.applyKeywordCase(token) + ' ' + this.applyKeywordCase(nextToken) + ' ');
+        formatted.push(`\n${  this.getIndent(indentLevel)  }${this.applyKeywordCase(token)  } ${  this.applyKeywordCase(nextToken)  } `);
         i++; // 跳过下一个标记
       }
       // 处理操作符
       else if (this.isOperator(token)) {
-        formatted.push(' ' + token + ' ');
+        formatted.push(` ${  token  } `);
       }
       // 处理逗号
       else if (token === ',') {
-        formatted.push(token + ' ');
+        formatted.push(`${token  } `);
       }
       // 处理括号
       else if (token === '(') {
@@ -230,12 +230,12 @@ export class IoTDBSQLFormatter extends QueryFormatter {
       
       // 处理三元复合关键字
       if (this.isTripleCompoundKeyword(token.toUpperCase(), nextToken?.toUpperCase(), thirdToken?.toUpperCase())) {
-        processedTokens.push(token + ' ' + nextToken + ' ' + thirdToken);
+        processedTokens.push(`${token  } ${  nextToken  } ${  thirdToken}`);
         i += 2; // 跳过接下来的两个标记
       }
       // 处理二元复合关键字
       else if (this.isCompoundKeyword(token.toUpperCase(), nextToken?.toUpperCase())) {
-        processedTokens.push(token + ' ' + nextToken);
+        processedTokens.push(`${token  } ${  nextToken}`);
         i++; // 跳过下一个标记
       } else {
         processedTokens.push(token);

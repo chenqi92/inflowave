@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import FontPreview from './FontPreview';
-import FontCategoryLabel from './FontCategoryLabel';
 import { useFontLoader } from '@/hooks/useFontLoader';
 
 interface FontOption {

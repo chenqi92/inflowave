@@ -90,7 +90,7 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
           trigger: 'item',
           formatter: '{a} <br/>{b}: {c} ({d}%)',
           backgroundColor: isDark ? '#1f2937' : '#ffffff',
-          borderColor: borderColor,
+          borderColor,
           textStyle: {
             color: textColor,
           },
@@ -165,7 +165,7 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
             },
           },
           backgroundColor: isDark ? '#1f2937' : '#ffffff',
-          borderColor: borderColor,
+          borderColor,
           textStyle: {
             color: textColor,
           },
@@ -199,7 +199,7 @@ const SimpleChart: React.FC<SimpleChartProps> = ({
           right: '4%',
           bottom: '3%',
           containLabel: true,
-          borderColor: borderColor,
+          borderColor,
         },
         xAxis: [
           {

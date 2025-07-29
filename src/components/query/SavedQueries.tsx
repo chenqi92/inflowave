@@ -44,7 +44,6 @@ import {
   PlayCircle,
   Tag,
   Book,
-  Search,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { SavedQuery } from '@/types';

@@ -43,7 +43,7 @@ export const saveTextFile = async (
     // 写入文件
     await safeTauriInvoke('write_file', {
       path: dialogResult.path,
-      content: content
+      content
     });
 
     return true;
@@ -176,7 +176,7 @@ export const quickSave = async (
     if (typeof content === 'string') {
       await safeTauriInvoke('write_file', {
         path: fullPath,
-        content: content
+        content
       });
     } else {
       const uint8Array = content instanceof ArrayBuffer ? new Uint8Array(content) : content;

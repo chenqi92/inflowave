@@ -146,7 +146,7 @@ export class InfluxQLValidator extends QueryValidator {
     // 检查 GROUP BY 和聚合函数的配合
     if (upperQuery.includes('GROUP BY')) {
       const hasAggregateFunction = this.getSupportedFunctions().some(func => 
-        upperQuery.includes(func + '(')
+        upperQuery.includes(`${func  }(`)
       );
       
       if (!hasAggregateFunction) {

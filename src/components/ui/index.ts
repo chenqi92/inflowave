@@ -44,8 +44,7 @@ export {
   TableFooter,
 } from './Table';
 
-export { DataTable } from './DataTable';
-export type { DataTableProps, Column } from './DataTable';
+// DataTable已移除，统一使用UnifiedDataTable
 
 export { Skeleton } from './Skeleton';
 

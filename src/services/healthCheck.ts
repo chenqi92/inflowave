@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { portDiscoveryService } from './portDiscovery';
-import { getSystemResourceError, formatErrorMessage } from '@/utils/userFriendlyErrors';
+import { getSystemResourceError } from '@/utils/userFriendlyErrors';
 
 export interface HealthCheckResult {
   component: string;

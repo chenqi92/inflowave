@@ -17,7 +17,6 @@ import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
 import { useUserPreferences } from './hooks/useUserPreferences';
 import { useAppNotifications } from './hooks/useAppNotifications';
-import { consoleLogger } from './utils/consoleLogger';
 import { initializeHealthCheck } from './utils/healthCheck';
 import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
 import { initializeInputClipboardHandler } from './utils/inputClipboardHandler';
@@ -30,7 +29,6 @@ import { UpdateNotification } from '@components/updater';
 import { useUpdater } from './hooks/useUpdater';
 
 // 页面组件
-import UserGuideTest from './components/test/UserGuideTest';
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 import NativeMenuHandler from './components/layout/NativeMenuHandler';
 
@@ -161,7 +159,6 @@ const MainLayout: React.FC = () => {
     '/debug',
     '/typography-test',
     '/ui-test',
-    '/user-guide-test',
   ].includes(location.pathname);
 
   if (isSpecialPage) {
@@ -176,7 +173,7 @@ const MainLayout: React.FC = () => {
           {/* 主内容区 */}
           <Content className='flex-1 p-4'>
             <Routes>
-              <Route path='/user-guide-test' element={<UserGuideTest />} />
+              {/* 特殊页面路由将在这里添加 */}
             </Routes>
           </Content>
 
@@ -203,26 +200,8 @@ const MainLayout: React.FC = () => {
       <NativeMenuHandler onGlobalSearch={() => setGlobalSearchVisible(true)} />
 
       <Routes>
-        <Route path='/' element={<DataGripStyleLayout />} />
-        <Route path='/dashboard' element={<DataGripStyleLayout />} />
-        <Route path='/query' element={<DataGripStyleLayout />} />
-        <Route path='/datagrip' element={<DataGripStyleLayout />} />
-        <Route path='/visualization' element={<DataGripStyleLayout />} />
-        <Route path='/data-write' element={<DataGripStyleLayout />} />
-        <Route path='/write' element={<DataGripStyleLayout />} />
-        <Route path='/performance' element={<DataGripStyleLayout />} />
-        <Route path='/extensions' element={<DataGripStyleLayout />} />
-        <Route path='/dev-tools' element={<DataGripStyleLayout />} />
-        <Route path='/query-history' element={<DataGripStyleLayout />} />
-
-        {/* 连接管理页面 */}
-        <Route path='/connections' element={<DataGripStyleLayout />} />
-
-
-
-        {/* IoTDB 测试页面 */}
-        <Route path='/iotdb-test' element={<DataGripStyleLayout />} />
-
+        {/* 所有主要功能页面都使用DataGrip风格布局，内部根据路径动态切换视图 */}
+        <Route path='/*' element={<DataGripStyleLayout />} />
       </Routes>
 
       {/* 用户指引弹框 */}

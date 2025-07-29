@@ -2,7 +2,7 @@
 import { persist } from 'zustand/middleware';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { createDefaultConnectionConfig, getFilledConnectionConfig } from '@/config/defaults';
+import { createDefaultConnectionConfig } from '@/config/defaults';
 import { generateUniqueId } from '@/utils/idGenerator';
 
 interface ConnectionState {

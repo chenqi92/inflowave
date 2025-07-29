@@ -57,7 +57,7 @@ export function useSmartSuggestion(options: UseSmartSuggestionOptions): UseSmart
 
     // 获取光标前的单词
     const wordInfo = model.getWordUntilPosition(position);
-    let wordBeforeCursor = wordInfo.word;
+    const wordBeforeCursor = wordInfo.word;
     let wordStartColumn = wordInfo.startColumn;
     let wordEndColumn = wordInfo.endColumn;
 
@@ -74,8 +74,8 @@ export function useSmartSuggestion(options: UseSmartSuggestionOptions): UseSmart
       wordBeforeCursor,
       lineNumber: position.lineNumber,
       column: position.column,
-      wordStartColumn: wordStartColumn,
-      wordEndColumn: wordEndColumn,
+      wordStartColumn,
+      wordEndColumn,
     };
   }, []);
 

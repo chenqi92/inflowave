@@ -4,7 +4,6 @@ import * as monaco from 'monaco-editor';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useConnectionStore } from '@/store/connection';
 import {
-  setEditorLanguageByDatabaseVersion,
   createDatabaseSpecificCompletions
 } from '@/utils/sqlIntelliSense';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -131,7 +130,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
           const currentTheme = unifiedSyntaxManager.getThemeName(languageType, resolvedTheme === 'dark');
 
           console.log('🔧 连接状态变化后重新应用简化语言和主题:', {
-            languageType: languageType,
+            languageType,
             language: currentLanguage,
             theme: currentTheme,
             connectionId: activeConnectionId
@@ -157,7 +156,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
               if (model) {
                 console.log('📋 编辑器信息:', {
                   language: model.getLanguageId(),
-                  content: model.getValue().substring(0, 50) + '...'
+                  content: `${model.getValue().substring(0, 50)  }...`
                 });
               }
             }, 500);
@@ -671,7 +670,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
                 if (selection) {
                   editor.executeEdits('paste', [{
                     range: selection,
-                    text: text,
+                    text,
                     forceMoveMarkers: true
                   }]);
                 }

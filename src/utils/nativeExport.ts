@@ -6,7 +6,7 @@
 import { safeTauriInvoke, safeTauriInvokeOptional } from '@/utils/tauri';
 import { convertToCSV, convertToJSON, convertToExcel, convertToTSV, convertToMarkdown, convertToSQL, getFileExtension, getMimeType } from './export';
 import { getFileOperationError, formatErrorMessage } from '@/utils/userFriendlyErrors';
-import type { QueryResult, ExportOptions } from '@/types';
+import type { QueryResult } from '@/types';
 
 export interface NativeExportOptions {
   format: 'csv' | 'json' | 'excel' | 'xlsx' | 'tsv' | 'markdown' | 'sql';
@@ -91,9 +91,9 @@ export const exportWithNativeDialog = async (
     console.log('导出参数调试:', {
       originalDefaultFilename: options.defaultFilename,
       generatedDefaultFilename: defaultFilename,
-      defaultPath: defaultPath,
+      defaultPath,
       format: options.format,
-      filters: filters
+      filters
     });
 
     // 准备Tauri调用参数 - 包装在params字段中，符合后端SaveFileDialogParams结构体要求

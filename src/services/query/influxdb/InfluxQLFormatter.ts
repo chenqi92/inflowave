@@ -67,12 +67,12 @@ export class InfluxQLFormatter extends QueryFormatter {
         
         // 处理复合关键字
         if (this.isCompoundKeyword(upperToken, nextToken)) {
-          formatted.push(' ' + this.applyKeywordCase(nextToken));
+          formatted.push(` ${  this.applyKeywordCase(nextToken)}`);
           i++; // 跳过下一个标记
         }
         
         if (this.options.lineBreakAfterKeywords) {
-          formatted.push('\n' + this.getIndent(indentLevel + 1));
+          formatted.push(`\n${  this.getIndent(indentLevel + 1)}`);
         } else {
           formatted.push(' ');
         }
@@ -80,20 +80,20 @@ export class InfluxQLFormatter extends QueryFormatter {
       // 处理子句关键字
       else if (this.isClauseKeyword(upperToken)) {
         if (this.options.lineBreakAfterKeywords) {
-          formatted.push('\n' + this.getIndent(indentLevel) + this.applyKeywordCase(token) + '\n' + this.getIndent(indentLevel + 1));
+          formatted.push(`\n${  this.getIndent(indentLevel)  }${this.applyKeywordCase(token)  }\n${  this.getIndent(indentLevel + 1)}`);
         } else {
-          formatted.push(' ' + this.applyKeywordCase(token) + ' ');
+          formatted.push(` ${  this.applyKeywordCase(token)  } `);
         }
       }
       // 处理操作符
       else if (this.isOperator(token)) {
-        formatted.push(' ' + token + ' ');
+        formatted.push(` ${  token  } `);
       }
       // 处理逗号
       else if (token === ',') {
         formatted.push(token);
         if (this.options.lineBreakAfterKeywords) {
-          formatted.push('\n' + this.getIndent(indentLevel + 1));
+          formatted.push(`\n${  this.getIndent(indentLevel + 1)}`);
         } else {
           formatted.push(' ');
         }
@@ -168,7 +168,7 @@ export class InfluxQLFormatter extends QueryFormatter {
         
         // 处理复合关键字
         if (this.isCompoundKeyword(upperToken, nextToken?.toUpperCase())) {
-          formatted.push(' ' + this.applyKeywordCase(nextToken));
+          formatted.push(` ${  this.applyKeywordCase(nextToken)}`);
           i++; // 跳过下一个标记
         }
         
@@ -176,15 +176,15 @@ export class InfluxQLFormatter extends QueryFormatter {
       }
       // 处理子句关键字
       else if (this.isClauseKeyword(upperToken)) {
-        formatted.push('\n' + this.getIndent(indentLevel) + this.applyKeywordCase(token) + ' ');
+        formatted.push(`\n${  this.getIndent(indentLevel)  }${this.applyKeywordCase(token)  } `);
       }
       // 处理操作符
       else if (this.isOperator(token)) {
-        formatted.push(' ' + token + ' ');
+        formatted.push(` ${  token  } `);
       }
       // 处理逗号
       else if (token === ',') {
-        formatted.push(token + ' ');
+        formatted.push(`${token  } `);
       }
       // 处理括号
       else if (token === '(') {
@@ -267,7 +267,7 @@ export class InfluxQLFormatter extends QueryFormatter {
       const nextToken = tokens[i + 1];
       
       if (this.isCompoundKeyword(token.toUpperCase(), nextToken?.toUpperCase())) {
-        processedTokens.push(token + ' ' + nextToken);
+        processedTokens.push(`${token  } ${  nextToken}`);
         i++; // 跳过下一个标记
       } else {
         processedTokens.push(token);

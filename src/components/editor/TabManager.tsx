@@ -6,7 +6,6 @@ import { generateUniqueId } from '@/utils/idGenerator';
 import { showMessage } from '@/utils/message';
 import TabContextMenu from './TabContextMenu';
 import SaveConfirmDialog from '../common/SaveConfirmDialog';
-import { useTabOperations } from '@/stores/tabStore';
 
 export interface EditorTab {
   id: string;

@@ -70,7 +70,7 @@ export class IoTDBQueryEngine extends QueryEngineBase {
       // 处理 IoTDB 设备路径，提取设备名称
       const devices = result.map((device: string) => {
         // 如果设备路径包含存储组前缀，则移除它
-        if (device.startsWith(database + '.')) {
+        if (device.startsWith(`${database  }.`)) {
           return device.substring(database.length + 1);
         }
         return device;
@@ -109,7 +109,7 @@ export class IoTDBQueryEngine extends QueryEngineBase {
             nullable: true,
             metadata: {
               fullPath: field,
-              devicePath: devicePath
+              devicePath
             }
           };
         } else {
@@ -120,7 +120,7 @@ export class IoTDBQueryEngine extends QueryEngineBase {
             description: field.description,
             metadata: {
               fullPath: field.timeseries || field.name,
-              devicePath: devicePath,
+              devicePath,
               encoding: field.encoding,
               compression: field.compression,
               tags: field.tags,
@@ -291,7 +291,7 @@ export class IoTDBQueryEngine extends QueryEngineBase {
 
   private buildDevicePath(storageGroup: string, device: string): string {
     // 确保设备路径格式正确
-    if (device.startsWith(storageGroup + '.')) {
+    if (device.startsWith(`${storageGroup  }.`)) {
       return device;
     } else {
       return `${storageGroup}.${device}`;
@@ -300,7 +300,7 @@ export class IoTDBQueryEngine extends QueryEngineBase {
 
   private extractTimeseriesName(fullPath: string, devicePath: string): string {
     // 从完整路径中提取时间序列名称
-    if (fullPath.startsWith(devicePath + '.')) {
+    if (fullPath.startsWith(`${devicePath  }.`)) {
       return fullPath.substring(devicePath.length + 1);
     }
     
@@ -403,7 +403,7 @@ export class IoTDBQueryEngine extends QueryEngineBase {
       } catch (error) {
         results.push({ 
           error: error instanceof Error ? error.message : String(error),
-          query: query
+          query
         });
       }
     }

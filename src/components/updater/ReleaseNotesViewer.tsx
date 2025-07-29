@@ -3,7 +3,7 @@
  */
 
 import React, {useState, useEffect} from 'react';
-import {ScrollArea, Badge, Separator, Button} from '@/components/ui';
+import { Badge, Button} from '@/components/ui';
 import {
     Sparkles,
     Wrench,
@@ -227,7 +227,7 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
             <div 
                 style={{
                     height: maxHeight,
-                    maxHeight: maxHeight,
+                    maxHeight,
                     scrollbarWidth: 'none', // Firefox
                     msOverflowStyle: 'none', // IE and Edge
                 }} 

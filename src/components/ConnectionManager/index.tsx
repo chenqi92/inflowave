@@ -7,10 +7,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from '@/components/ui';
 import { useGlobalDialog } from '@/components/providers/DialogProvider';
 import type { Column } from '@/components/ui/DataTable';
@@ -27,7 +23,6 @@ import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
-import { dialog } from '@/utils/dialog';
 import ContextMenu from '@/components/common/ContextMenu';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 import './ConnectionManager.css';
