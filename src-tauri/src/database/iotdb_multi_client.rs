@@ -18,6 +18,12 @@ use super::protocol::{
     ConnectionStatus, ServerInfo
 };
 
+// 导入新的 IoTDB 全版本兼容模块
+use super::iotdb::{
+    IoTDBManager, DriverConfig, QueryRequest as IoTDBQueryRequest,
+    QueryResponse as IoTDBQueryResponse
+};
+
 /// IoTDB多协议客户端
 #[derive(Debug)]
 pub struct IoTDBMultiClient {
@@ -25,6 +31,10 @@ pub struct IoTDBMultiClient {
     protocol_client: Option<Box<dyn ProtocolClient>>,
     preferred_protocol: Option<ProtocolType>,
     fallback_protocols: Vec<ProtocolType>,
+
+    // 新的全版本兼容管理器
+    iotdb_manager: Option<IoTDBManager>,
+    use_new_driver: bool,
 }
 
 impl IoTDBMultiClient {
@@ -40,12 +50,51 @@ impl IoTDBMultiClient {
                 ProtocolType::Http,           // REST API 备用协议
                 // 注意：桌面程序不需要 WebSocket 协议
             ],
+            iotdb_manager: None,
+            use_new_driver: true, // 默认使用新驱动
         }
     }
     
     /// 设置首选协议
     pub fn set_preferred_protocol(&mut self, protocol: ProtocolType) {
         self.preferred_protocol = Some(protocol);
+    }
+
+    /// 启用新的全版本兼容驱动
+    pub fn enable_new_driver(&mut self, enable: bool) {
+        self.use_new_driver = enable;
+    }
+
+    /// 初始化新的 IoTDB 驱动系统
+    async fn init_new_driver(&mut self) -> Result<()> {
+        if !self.use_new_driver {
+            return Ok(());
+        }
+
+        info!("初始化 IoTDB 全版本兼容驱动系统");
+
+        // 创建驱动配置
+        let driver_config = DriverConfig {
+            host: self.config.host.clone(),
+            port: self.config.port,
+            username: self.config.username.clone(),
+            password: self.config.password.clone(),
+            ssl: self.config.ssl,
+            timeout: Duration::from_secs(self.config.connection_timeout),
+            extra_params: HashMap::new(),
+        };
+
+        // 创建管理器并添加连接
+        let mut manager = IoTDBManager::new();
+        let connection_id = format!("{}:{}", self.config.host, self.config.port);
+
+        manager.add_connection(connection_id, driver_config).await
+            .context("初始化新驱动失败")?;
+
+        self.iotdb_manager = Some(manager);
+        info!("IoTDB 全版本兼容驱动系统初始化成功");
+
+        Ok(())
     }
     
     /// 设置备选协议列表
@@ -186,27 +235,62 @@ impl IoTDBMultiClient {
     /// 测试连接
     pub async fn test_connection(&mut self) -> Result<u64> {
         debug!("测试IoTDB多协议连接: {}", self.config.host);
-        
-        // 如果还没有连接，先自动连接
+
+        // 优先尝试新驱动系统
+        if self.use_new_driver {
+            if let Err(e) = self.init_new_driver().await {
+                warn!("新驱动初始化失败，回退到旧协议: {}", e);
+                self.use_new_driver = false;
+            } else if let Some(manager) = &mut self.iotdb_manager {
+                let connection_id = format!("{}:{}", self.config.host, self.config.port);
+                if let Some(driver) = manager.get_driver(&connection_id) {
+                    let latency = driver.test_connection().await?;
+                    return Ok(latency.as_millis() as u64);
+                }
+            }
+        }
+
+        // 回退到旧协议系统
         if self.protocol_client.is_none() {
             self.auto_connect().await?;
         }
-        
+
         let client = self.protocol_client.as_mut()
             .ok_or_else(|| anyhow::anyhow!("没有可用的协议客户端"))?;
-        
+
         let latency = client.test_connection().await?;
-        
+
         Ok(latency.as_millis() as u64)
     }
     
     /// 执行查询
     pub async fn execute_query(&mut self, sql: &str) -> Result<QueryResult> {
         debug!("执行多协议查询: {}", sql);
-        
+
+        // 优先使用新驱动系统
+        if self.use_new_driver {
+            if let Some(manager) = &mut self.iotdb_manager {
+                let connection_id = format!("{}:{}", self.config.host, self.config.port);
+                if let Some(driver) = manager.get_driver(&connection_id) {
+                    let request = IoTDBQueryRequest {
+                        sql: sql.to_string(),
+                        database: None,
+                        session_id: None,
+                        fetch_size: Some(1000),
+                        timeout: Some(Duration::from_secs(30)),
+                        parameters: None,
+                    };
+
+                    let response = driver.query(request).await?;
+                    return Ok(self.convert_iotdb_response(response));
+                }
+            }
+        }
+
+        // 回退到旧协议系统
         let client = self.protocol_client.as_mut()
             .ok_or_else(|| anyhow::anyhow!("未连接到IoTDB服务器"))?;
-        
+
         let request = ProtocolQueryRequest {
             sql: sql.to_string(),
             database: None,
@@ -215,13 +299,47 @@ impl IoTDBMultiClient {
             timeout: Some(Duration::from_secs(30)),
             parameters: None,
         };
-        
+
         let response = client.execute_query(request).await?;
-        
+
         // 转换为应用程序的QueryResult格式
         Ok(self.convert_protocol_response(response))
     }
-    
+
+    /// 转换新 IoTDB 驱动响应为应用程序格式
+    fn convert_iotdb_response(&self, response: IoTDBQueryResponse) -> QueryResult {
+        use super::iotdb::types::DataValue;
+
+        let columns: Vec<String> = response.columns.into_iter().map(|col| col.name).collect();
+        let rows: Vec<Vec<serde_json::Value>> = response.rows.into_iter()
+            .map(|row| {
+                row.into_iter().map(|cell| {
+                    match cell {
+                        DataValue::Boolean(b) => serde_json::Value::Bool(b),
+                        DataValue::Int32(i) => serde_json::Value::Number(serde_json::Number::from(i)),
+                        DataValue::Int64(i) => serde_json::Value::Number(serde_json::Number::from(i)),
+                        DataValue::Float(f) => serde_json::Value::Number(
+                            serde_json::Number::from_f64(f as f64).unwrap_or(serde_json::Number::from(0))
+                        ),
+                        DataValue::Double(d) => serde_json::Value::Number(
+                            serde_json::Number::from_f64(d).unwrap_or(serde_json::Number::from(0))
+                        ),
+                        DataValue::Text(s) => serde_json::Value::String(s),
+                        DataValue::Blob(b) => serde_json::Value::String(hex::encode(b)),
+                        DataValue::Timestamp(t) => serde_json::Value::Number(serde_json::Number::from(t)),
+                        DataValue::Null => serde_json::Value::Null,
+                    }
+                }).collect()
+            })
+            .collect();
+
+        QueryResult::new(
+            columns,
+            rows,
+            response.execution_time.as_millis() as u64,
+        )
+    }
+
     /// 转换协议响应为应用程序格式
     fn convert_protocol_response(&self, response: ProtocolQueryResponse) -> QueryResult {
         let columns: Vec<String> = response.columns.into_iter().map(|col| col.name).collect();

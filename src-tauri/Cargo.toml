@@ -36,13 +36,21 @@ sysinfo = "0.29"
 lazy_static = "1.4"
 rust_xlsxwriter = "0.64"
 async-trait = "0.1"
-# IoTDB 相关依赖
+# IoTDB 原生协议依赖
 url = "2.4"
 bytes = "1.5"
-iotdb = "0.0.7"
+# 移除封装客户端，使用原生协议实现
+# iotdb = "0.0.7"  # 已移除，改用原生协议
 
-# 多协议支持依赖
-tokio-tungstenite = "0.20"
+# Thrift 协议支持
+thrift = "0.17"
+# REST API 支持已通过 reqwest 提供
+# WebSocket 支持（可选）
+tokio-tungstenite = { version = "0.20", optional = true }
+
+# 新增依赖
+regex = "1.10"
+hex = "0.4"
 
 # Linux平台特定依赖 - 启用原生菜单支持
 [target.'cfg(target_os = "linux")'.dependencies]
@@ -58,6 +66,16 @@ custom-protocol = ["tauri/custom-protocol"]
 # TLS 后端选择
 default-tls = ["reqwest/native-tls"]
 rustls-tls = ["reqwest/rustls-tls"]
+
+# IoTDB 版本兼容性特性
+iotdb-v0_13 = []
+iotdb-v1 = []
+iotdb-v2 = []
+iotdb-rest = []
+iotdb-websocket = ["tokio-tungstenite"]
+
+# 默认启用 v1, v2 和 REST 支持
+default = ["iotdb-v1", "iotdb-v2", "iotdb-rest"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-shell = "2.0"
