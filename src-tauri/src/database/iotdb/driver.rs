@@ -62,6 +62,7 @@ pub struct Tablet {
     pub data_types: Vec<IoTDBDataType>,
     pub timestamps: Vec<i64>,
     pub values: Vec<Vec<Option<DataValue>>>,
+    pub is_aligned: bool,
 }
 
 /// IoTDB 驱动接口

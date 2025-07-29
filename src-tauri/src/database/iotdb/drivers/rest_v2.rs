@@ -361,17 +361,20 @@ impl IoTDBDriver for RestV2Driver {
             "dataTypes": tablet.data_types.iter().map(|dt| format!("{:?}", dt)).collect::<Vec<_>>(),
             "timestamps": tablet.timestamps,
             "values": tablet.values,
-            "isAligned": false // Tablet 结构体没有 is_aligned 字段，使用默认值
+            "isAligned": tablet.is_aligned
         });
 
-        let url = format!("{}/rest/v2/insertTablet", self.base_url);
-        let client = reqwest::Client::new();
+        let url = format!("{}/insertTablet", self.base_url);
 
-        match client
-            .post(&url)
-            .json(&tablet_data)
-            .send()
-            .await
+        // 添加认证信息
+        let mut request = self.client.post(&url)
+            .json(&tablet_data);
+
+        if let (Some(username), Some(password)) = (&self.config.username, &self.config.password) {
+            request = request.basic_auth(username, Some(password));
+        }
+
+        match request.send().await
         {
             Ok(response) => {
                 if response.status().is_success() {

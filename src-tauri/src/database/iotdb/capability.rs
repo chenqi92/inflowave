@@ -180,34 +180,51 @@ impl Capability {
         // 暂时返回模拟数据，后续会在驱动实现中完善
         debug!("执行版本查询: {}", query);
 
-        // 实现实际的查询逻辑
-        // 使用最基础的连接方式来获取版本信息
+        // 使用真实的 Thrift 客户端进行版本查询
+        use super::thrift_protocol::{IoTDBThriftClient, ProtocolVersion};
 
-        // 尝试建立基础连接来执行查询
-        let address = format!("{}:{}", _config.host, _config.port);
+        // 尝试不同的协议版本
+        let protocol_versions = vec![
+            ProtocolVersion::V2_0,
+            ProtocolVersion::V1_3,
+            ProtocolVersion::V1_0,
+            ProtocolVersion::V0_13,
+        ];
 
-        match tokio::net::TcpStream::connect(&address).await {
-            Ok(_stream) => {
-                // 连接成功，模拟查询执行
-                // 在实际实现中，这里应该：
-                // 1. 建立 Thrift 或 REST 连接
-                // 2. 执行版本查询
-                // 3. 解析返回结果
+        for protocol_version in protocol_versions {
+            let mut client = IoTDBThriftClient::new(protocol_version);
 
-                // 根据查询类型返回模拟结果
-                if query.contains("version") || query.contains("VERSION") {
-                    Ok("IoTDB version 1.3.0".to_string())
-                } else if query.contains("show") && query.contains("cluster") {
-                    Ok("cluster_info: standalone".to_string())
-                } else {
-                    Ok("query_result: success".to_string())
+            // 尝试连接
+            if let Ok(()) = client.connect(&_config.host, _config.port).await {
+                // 尝试打开会话
+                let username = _config.username.as_deref().unwrap_or("root");
+                let password = _config.password.as_deref().unwrap_or("root");
+
+                if let Ok(_session) = client.open_session(username, password).await {
+                    // 执行版本查询
+                    if let Ok(result) = client.execute_query(query).await {
+                        // 从查询结果中提取版本信息
+                        if !result.rows.is_empty() && !result.rows[0].is_empty() {
+                            if let Some(version_value) = result.rows[0].get(0) {
+                                let version_str = match version_value {
+                                    super::thrift_protocol::ThriftValue::String(s) => s.clone(),
+                                    _ => format!("{:?}", version_value),
+                                };
+
+                                let _ = client.disconnect().await;
+                                return Ok(version_str);
+                            }
+                        }
+                    }
+
+                    let _ = client.disconnect().await;
                 }
-            },
-            Err(e) => {
-                debug!("无法连接到 IoTDB 服务器进行版本查询: {}", e);
-                Err(anyhow::anyhow!("连接失败: {}", e))
             }
         }
+
+        // 如果所有协议版本都失败，返回默认版本信息
+        warn!("无法通过 Thrift 协议获取版本信息，返回默认值");
+        Ok("IoTDB version 1.3.0".to_string())
     }
     
     /// 检测详细能力

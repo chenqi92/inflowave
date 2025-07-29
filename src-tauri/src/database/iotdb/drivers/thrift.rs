@@ -14,6 +14,7 @@ use crate::database::iotdb::{
     driver::{DriverConfig, IoTDBDriver, QueryRequest, QueryResponse, Tablet, ColumnInfo},
     types::{DataValue, IoTDBDataType, TypeMapper},
     dialect::{QueryBuilder, SqlDialect},
+    thrift_protocol::{IoTDBThriftClient, ProtocolVersion, TabletData, ThriftValue},
 };
 
 /// Thrift 驱动实现
@@ -22,7 +23,7 @@ pub struct ThriftDriver {
     config: DriverConfig,
     capability: Capability,
     connected: bool,
-    session_id: Option<String>,
+    thrift_client: IoTDBThriftClient,
     type_mapper: TypeMapper,
     query_builder: QueryBuilder,
 }
@@ -37,12 +38,19 @@ impl ThriftDriver {
             SqlDialect::Tree
         };
         let query_builder = QueryBuilder::new(dialect);
-        
+
+        // 根据版本创建协议客户端
+        let protocol_version = ProtocolVersion::from_version(
+            capability.server.version.major,
+            capability.server.version.minor,
+        );
+        let thrift_client = IoTDBThriftClient::new(protocol_version);
+
         Ok(Self {
             config,
             capability,
             connected: false,
-            session_id: None,
+            thrift_client,
             type_mapper,
             query_builder,
         })
@@ -51,161 +59,59 @@ impl ThriftDriver {
     /// 建立 Thrift 连接
     async fn establish_connection(&mut self) -> Result<()> {
         info!("建立 Thrift 连接到 {}:{}", self.config.host, self.config.port);
-        
-        // TODO: 实现实际的 Thrift 连接逻辑
-        // 这里需要根据不同版本使用不同的 Thrift 接口
-        
-        #[cfg(feature = "iotdb-v2")]
-        if self.capability.server.version.major >= 2 {
-            return self.connect_v2().await;
-        }
-        
-        #[cfg(feature = "iotdb-v1")]
-        if self.capability.server.version.major >= 1 {
-            return self.connect_v1().await;
-        }
-        
-        #[cfg(feature = "iotdb-v0_13")]
-        if self.capability.server.version.major == 0 {
-            return self.connect_v0_13().await;
-        }
-        
-        Err(anyhow::anyhow!("不支持的 IoTDB 版本: {}", self.capability.server.version.raw))
+
+        // 连接到服务器
+        self.thrift_client.connect(&self.config.host, self.config.port).await?;
+
+        // 打开会话
+        let username = self.config.username.as_deref().unwrap_or("root");
+        let password = self.config.password.as_deref().unwrap_or("root");
+
+        let session_info = self.thrift_client.open_session(username, password).await?;
+
+        self.connected = true;
+        info!("Thrift 连接建立成功，会话ID: {}", session_info.session_id);
+
+        Ok(())
     }
-    
-    #[cfg(feature = "iotdb-v2")]
-    async fn connect_v2(&mut self) -> Result<()> {
-        debug!("使用 IoTDB 2.x Thrift 协议连接");
 
-        // 实现 IoTDB 2.x 的连接逻辑
-        // 创建 Thrift 传输层
-        let address = format!("{}:{}", self.config.host, self.config.port);
 
-        // 尝试建立 TCP 连接以验证服务器可达性
-        match tokio::net::TcpStream::connect(&address).await {
-            Ok(_stream) => {
-                // 连接成功，创建会话
-                self.connected = true;
-                self.session_id = Some(format!("iotdb2_session_{}", uuid::Uuid::new_v4()));
-
-                // 在实际实现中，这里应该：
-                // 1. 创建 Thrift 客户端
-                // 2. 调用 openSession API
-                // 3. 处理认证
-                // 4. 设置表模型/树模型
-
-                info!("IoTDB 2.x Thrift 连接建立成功，会话ID: {:?}", self.session_id);
-                Ok(())
-            },
-            Err(e) => {
-                error!("无法连接到 IoTDB 2.x 服务器 {}: {}", address, e);
-                Err(anyhow::anyhow!("连接失败: {}", e))
-            }
-        }
-    }
-    
-    #[cfg(feature = "iotdb-v1")]
-    async fn connect_v1(&mut self) -> Result<()> {
-        debug!("使用 IoTDB 1.x Thrift 协议连接");
-
-        // 实现 IoTDB 1.x 的连接逻辑
-        let address = format!("{}:{}", self.config.host, self.config.port);
-
-        match tokio::net::TcpStream::connect(&address).await {
-            Ok(_stream) => {
-                self.connected = true;
-                self.session_id = Some(format!("iotdb1_session_{}", uuid::Uuid::new_v4()));
-
-                // 在实际实现中，这里应该：
-                // 1. 使用 IoTDB 1.x 的 Thrift 接口
-                // 2. 调用相应的连接 API
-                // 3. 处理用户认证
-
-                info!("IoTDB 1.x Thrift 连接建立成功，会话ID: {:?}", self.session_id);
-                Ok(())
-            },
-            Err(e) => {
-                error!("无法连接到 IoTDB 1.x 服务器 {}: {}", address, e);
-                Err(anyhow::anyhow!("连接失败: {}", e))
-            }
-        }
-    }
-    
-    #[cfg(feature = "iotdb-v0_13")]
-    async fn connect_v0_13(&mut self) -> Result<()> {
-        debug!("使用 IoTDB 0.13 Thrift 协议连接");
-
-        // 实现 IoTDB 0.13 的连接逻辑
-        let address = format!("{}:{}", self.config.host, self.config.port);
-
-        match tokio::net::TcpStream::connect(&address).await {
-            Ok(_stream) => {
-                self.connected = true;
-                self.session_id = Some(format!("iotdb013_session_{}", uuid::Uuid::new_v4()));
-
-                // 在实际实现中，这里应该：
-                // 1. 使用 IoTDB 0.13 的 Thrift 接口
-                // 2. 处理较旧的 API 版本
-                // 3. 兼容性处理
-
-                info!("IoTDB 0.13 Thrift 连接建立成功，会话ID: {:?}", self.session_id);
-                Ok(())
-            },
-            Err(e) => {
-                error!("无法连接到 IoTDB 0.13 服务器 {}: {}", address, e);
-                Err(anyhow::anyhow!("连接失败: {}", e))
-            }
-        }
-    }
     
     /// 执行原始查询
     async fn execute_raw_query(&mut self, sql: &str) -> Result<QueryResponse> {
         if !self.connected {
             return Err(anyhow::anyhow!("未连接到 IoTDB 服务器"));
         }
-        
+
         let start_time = Instant::now();
         debug!("执行 Thrift 查询: {}", sql);
-        
-        // 实现实际的查询执行逻辑
-        // 根据不同版本使用不同的 Thrift 接口
 
-        // 在实际实现中，这里应该：
-        // 1. 使用会话ID执行查询
-        // 2. 处理不同版本的 Thrift API
-        // 3. 解析返回的数据集
-        // 4. 转换为统一的 QueryResponse 格式
+        // 使用真实的 Thrift 客户端执行查询
+        let thrift_result = self.thrift_client.execute_query(sql).await?;
 
-        // 模拟查询执行过程
-        tokio::time::sleep(tokio::time::Duration::from_millis(10)).await;
+        // 转换 Thrift 结果为标准格式
+        let columns = thrift_result.columns.into_iter()
+            .zip(thrift_result.column_types.iter())
+            .map(|(name, type_str)| {
+                let data_type = self.parse_column_type(type_str);
+                ColumnInfo {
+                    name,
+                    data_type,
+                    nullable: true,
+                }
+            })
+            .collect();
 
-        // 根据查询类型生成相应的模拟结果
-        let columns = vec![
-            ColumnInfo {
-                name: "Time".to_string(),
-                data_type: IoTDBDataType::Timestamp,
-                nullable: false,
-            },
-            ColumnInfo {
-                name: "root.sg1.d1.s1".to_string(),
-                data_type: IoTDBDataType::Double,
-                nullable: true,
-            },
-        ];
-        
-        let rows = vec![
-            vec![
-                DataValue::Timestamp(1640995200000),
-                DataValue::Double(23.5),
-            ],
-            vec![
-                DataValue::Timestamp(1640995260000),
-                DataValue::Double(24.1),
-            ],
-        ];
-        
+        let rows = thrift_result.rows.into_iter()
+            .map(|thrift_row| {
+                thrift_row.into_iter()
+                    .map(|thrift_value| self.convert_thrift_value(thrift_value))
+                    .collect()
+            })
+            .collect();
+
         let execution_time = start_time.elapsed();
-        
+
         Ok(QueryResponse {
             columns,
             rows,
@@ -213,6 +119,36 @@ impl ThriftDriver {
             affected_rows: None,
             warnings: vec![],
         })
+    }
+
+    /// 解析列类型
+    fn parse_column_type(&self, type_str: &str) -> IoTDBDataType {
+        match type_str.to_uppercase().as_str() {
+            "INT32" => IoTDBDataType::Int32,
+            "INT64" => IoTDBDataType::Int64,
+            "FLOAT" => IoTDBDataType::Float,
+            "DOUBLE" => IoTDBDataType::Double,
+            "BOOLEAN" => IoTDBDataType::Boolean,
+            "TEXT" => IoTDBDataType::Text,
+            "STRING" => IoTDBDataType::String,
+            "BLOB" => IoTDBDataType::Blob,
+            "DATE" => IoTDBDataType::Date,
+            "TIMESTAMP" => IoTDBDataType::Timestamp,
+            _ => IoTDBDataType::Text, // 默认类型
+        }
+    }
+
+    /// 转换 Thrift 值为标准数据值
+    fn convert_thrift_value(&self, thrift_value: ThriftValue) -> DataValue {
+        match thrift_value {
+            ThriftValue::Bool(b) => DataValue::Boolean(b),
+            ThriftValue::I32(i) => DataValue::Int32(i),
+            ThriftValue::I64(i) => DataValue::Int64(i),
+            ThriftValue::Double(d) => DataValue::Double(d),
+            ThriftValue::String(s) => DataValue::Text(s),
+            ThriftValue::Binary(b) => DataValue::Blob(b),
+            ThriftValue::Null => DataValue::Null,
+        }
     }
     
     /// 处理类型兼容性
@@ -243,21 +179,10 @@ impl IoTDBDriver for ThriftDriver {
         if self.connected {
             debug!("断开 Thrift 连接");
 
-            // 实现实际的断开连接逻辑
-            if let Some(session_id) = &self.session_id {
-                debug!("关闭会话: {}", session_id);
-
-                // 在实际实现中，这里应该：
-                // 1. 调用 closeSession API
-                // 2. 清理资源
-                // 3. 关闭 Thrift 传输层
-
-                // 模拟会话关闭过程
-                tokio::time::sleep(tokio::time::Duration::from_millis(5)).await;
-            }
+            // 使用真实的 Thrift 客户端断开连接
+            self.thrift_client.disconnect().await?;
 
             self.connected = false;
-            self.session_id = None;
             info!("Thrift 连接已断开");
         }
         Ok(())
@@ -285,28 +210,65 @@ impl IoTDBDriver for ThriftDriver {
         if !self.connected {
             return Err(anyhow::anyhow!("未连接到 IoTDB 服务器"));
         }
-        
+
         debug!("写入 Tablet 数据: {}", tablet.device_id);
-        
-        // 实现实际的 Tablet 写入逻辑
-        // 根据版本使用不同的写入接口
 
-        // 在实际实现中，这里应该：
-        // 1. 将 Tablet 数据转换为 Thrift 格式
-        // 2. 调用相应版本的 insertTablet API
-        // 3. 处理批量写入优化
-        // 4. 错误处理和重试机制
+        // 转换为 Thrift Tablet 格式
+        let thrift_tablet = self.convert_to_thrift_tablet(tablet)?;
 
-        // 模拟写入过程
-        let row_count = tablet.timestamps.len();
-        debug!("准备写入 {} 行数据到设备 {}", row_count, tablet.device_id);
+        // 使用真实的 Thrift 客户端写入数据
+        self.thrift_client.insert_tablet(&thrift_tablet).await?;
 
-        // 模拟网络传输时间
-        let write_delay = std::cmp::min(row_count * 2, 100); // 最多100ms
-        tokio::time::sleep(tokio::time::Duration::from_millis(write_delay as u64)).await;
-
-        info!("Tablet 数据写入成功: {} 行数据", row_count);
+        info!("Tablet 数据写入成功: {} 行数据", tablet.timestamps.len());
         Ok(())
+    }
+
+    /// 转换为 Thrift Tablet 格式
+    fn convert_to_thrift_tablet(&self, tablet: &Tablet) -> Result<TabletData> {
+        // 转换数据类型
+        let data_types: Vec<i32> = tablet.data_types.iter()
+            .map(|dt| match dt {
+                IoTDBDataType::Boolean => 0,
+                IoTDBDataType::Int32 => 1,
+                IoTDBDataType::Int64 => 2,
+                IoTDBDataType::Float => 3,
+                IoTDBDataType::Double => 4,
+                IoTDBDataType::Text => 5,
+                IoTDBDataType::String => 6,
+                IoTDBDataType::Blob => 7,
+                IoTDBDataType::Date => 8,
+                IoTDBDataType::Timestamp => 9,
+                IoTDBDataType::Null => 10,
+            })
+            .collect();
+
+        // 转换数据值
+        let values: Vec<Vec<Option<ThriftValue>>> = tablet.values.iter()
+            .map(|row| {
+                row.iter().map(|cell| {
+                    cell.as_ref().map(|value| match value {
+                        DataValue::Boolean(b) => ThriftValue::Bool(*b),
+                        DataValue::Int32(i) => ThriftValue::I32(*i),
+                        DataValue::Int64(i) => ThriftValue::I64(*i),
+                        DataValue::Float(f) => ThriftValue::Double(*f as f64),
+                        DataValue::Double(d) => ThriftValue::Double(*d),
+                        DataValue::Text(s) => ThriftValue::String(s.clone()),
+                        DataValue::Blob(b) => ThriftValue::Binary(b.clone()),
+                        DataValue::Timestamp(t) => ThriftValue::I64(*t),
+                        DataValue::Null => ThriftValue::Null,
+                    })
+                }).collect()
+            })
+            .collect();
+
+        Ok(TabletData {
+            device_id: tablet.device_id.clone(),
+            measurements: tablet.measurements.clone(),
+            data_types,
+            timestamps: tablet.timestamps.clone(),
+            values,
+            is_aligned: true, // 默认对齐
+        })
     }
     
     async fn test_connection(&mut self) -> Result<Duration> {

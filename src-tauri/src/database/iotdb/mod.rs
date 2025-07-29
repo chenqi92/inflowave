@@ -10,6 +10,7 @@ pub mod driver;
 pub mod drivers;
 pub mod dialect;
 pub mod types;
+pub mod thrift_protocol;
 
 // 重新导出核心类型
 pub use capability::Capability;
