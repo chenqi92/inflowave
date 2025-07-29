@@ -42,9 +42,16 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
     setError(null);
 
     try {
-      // 暂时跳过版本检测，直接设置默认版本
-      // TODO: 实现版本检测 API 调用
-      setDatabaseVersion('Database-1.x');
+      // 检测数据库版本
+      try {
+        const versionInfo = await safeTauriInvoke<{version: string, type: string}>('detect_database_version', {
+          connectionId,
+        });
+        setDatabaseVersion(`${versionInfo.type}-${versionInfo.version}`);
+      } catch (versionError) {
+        console.warn('版本检测失败，使用默认版本:', versionError);
+        setDatabaseVersion('Database-1.x');
+      }
 
       // 获取树节点
       const nodes = await safeTauriInvoke<TreeNode[]>('get_tree_nodes', {

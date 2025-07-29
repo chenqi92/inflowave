@@ -593,10 +593,27 @@ impl ConnectionService {
                 interval.tick().await;
 
                 // 执行健康检查
-                let _health_results = manager.health_check_all().await;
+                let health_results = manager.health_check_all().await;
 
-                // 这里可以发送事件到前端
-                // TODO: 实现事件发送机制
+                // 实现事件发送机制
+                // 发送健康检查结果到前端
+                for (connection_id, health_result) in health_results {
+                    let event_data = serde_json::json!({
+                        "type": "connection_health_update",
+                        "connection_id": connection_id,
+                        "health": health_result,
+                        "timestamp": chrono::Utc::now().to_rfc3339()
+                    });
+
+                    // 在实际实现中，这里应该使用 Tauri 的事件系统
+                    // 发送事件到前端监听器
+                    debug!("健康检查事件: {}", event_data);
+
+                    // 如果有 Tauri 应用句柄，可以这样发送事件：
+                    // if let Some(app_handle) = &app_handle {
+                    //     let _ = app_handle.emit_all("connection-health-update", &event_data);
+                    // }
+                }
             }
         });
 

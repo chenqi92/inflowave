@@ -34,7 +34,6 @@ import {
     ScrollArea,
     showMessage,
 } from '@/components/ui';
-import type {Column} from '@/components/ui';
 import {
     Download,
     BarChart,
@@ -51,7 +50,6 @@ import {
 } from 'lucide-react';
 import {useContextMenu} from '@/hooks/useContextMenu';
 import ContextMenu from '@/components/common/ContextMenu';
-// 使用shadcn/ui DataTable的Column类型
 import type {QueryResult} from '@/types';
 import {safeTauriInvoke} from '@/utils/tauri';
 import SimpleChart from '../common/SimpleChart';
@@ -264,41 +262,14 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         }
 
         const series = queryResult.results[0].series[0];
-        const columns: Column[] = series.columns.map(
+        const columns: ColumnConfig[] = series.columns.map(
             (col: string, index: number) => ({
                 title: col,
-                dataIndex: col,
                 key: col,
+                dataIndex: col,
                 width: index === 0 ? 200 : 120, // 时间列宽一些
-                ellipsis: true,
-                align: 'left' as const,
                 sortable: true, // 启用排序
-                sorter: (a: any, b: any) => {
-                    const aValue = a[col];
-                    const bValue = b[col];
-
-                    // 处理null/undefined值
-                    if (aValue === null || aValue === undefined) return 1;
-                    if (bValue === null || bValue === undefined) return -1;
-
-                    // 时间列特殊排序
-                    if (col === 'time' || (typeof aValue === 'string' && aValue.includes('T') && aValue.includes('Z'))) {
-                        const aTime = new Date(aValue).getTime();
-                        const bTime = new Date(bValue).getTime();
-                        if (!isNaN(aTime) && !isNaN(bTime)) {
-                            return aTime - bTime;
-                        }
-                    }
-
-                    // 数字排序
-                    if (typeof aValue === 'number' && typeof bValue === 'number') {
-                        return aValue - bValue;
-                    }
-
-                    // 字符串排序
-                    return String(aValue).localeCompare(String(bValue));
-                },
-                render: (value: any, record: any, _index: number) => {
+                render: (value: any, record: DataRow, _index: number) => {
                     const cellContent = (() => {
                         if (value === null || value === undefined) {
                             return <Text className="text-muted-foreground">NULL</Text>;

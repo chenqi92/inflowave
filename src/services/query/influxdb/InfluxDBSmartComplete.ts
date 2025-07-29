@@ -5,6 +5,7 @@
  */
 
 import { SmartComplete, CompletionContext } from '../base/SmartComplete';
+import { safeTauriInvoke } from '../../../utils/tauri';
 import {
   QueryLanguage,
   DatabaseConnection,
@@ -275,22 +276,59 @@ export class InfluxDBSmartComplete extends SmartComplete {
 
   // 模拟数据获取方法（实际实现中应该调用后端）
   private async getMeasurements(connection: DatabaseConnection, database?: string): Promise<string[]> {
-    // TODO: 实现实际的测量获取逻辑
-    return ['cpu', 'memory', 'disk', 'network'];
+    // 实现实际的测量获取逻辑
+    try {
+      const measurements = await safeTauriInvoke<string[]>('get_measurements', {
+        connectionId: connection.id,
+        database: database || (connection.config as any).database
+      });
+      return measurements;
+    } catch (error) {
+      console.warn('获取测量失败，使用默认值:', error);
+      return ['cpu', 'memory', 'disk', 'network'];
+    }
   }
 
   private async getDatabases(connection: DatabaseConnection): Promise<string[]> {
-    // TODO: 实现实际的数据库获取逻辑
-    return ['mydb', 'telegraf', '_internal'];
+    // 实现实际的数据库获取逻辑
+    try {
+      const databases = await safeTauriInvoke<{name: string}[]>('get_databases', {
+        connectionId: connection.id
+      });
+      return databases.map(db => db.name);
+    } catch (error) {
+      console.warn('获取数据库失败，使用默认值:', error);
+      return ['mydb', 'telegraf', '_internal'];
+    }
   }
 
   private async getFields(connection: DatabaseConnection, context: CompletionContext): Promise<string[]> {
-    // TODO: 实现实际的字段获取逻辑
-    return ['time', 'value', 'usage_idle', 'usage_system', 'usage_user'];
+    // 实现实际的字段获取逻辑
+    try {
+      const fields = await safeTauriInvoke<{name: string}[]>('get_field_keys', {
+        connectionId: connection.id,
+        database: context.database || (connection.config as any).database,
+        measurement: (context as any).measurement
+      });
+      return fields.map(field => field.name);
+    } catch (error) {
+      console.warn('获取字段失败，使用默认值:', error);
+      return ['time', 'value', 'usage_idle', 'usage_system', 'usage_user'];
+    }
   }
 
   private async getTags(connection: DatabaseConnection, context: CompletionContext): Promise<string[]> {
-    // TODO: 实现实际的标签获取逻辑
-    return ['host', 'cpu', 'region', 'datacenter'];
+    // 实现实际的标签获取逻辑
+    try {
+      const tags = await safeTauriInvoke<{name: string}[]>('get_tag_keys', {
+        connectionId: connection.id,
+        database: context.database || (connection.config as any).database,
+        measurement: (context as any).measurement
+      });
+      return tags.map(tag => tag.name);
+    } catch (error) {
+      console.warn('获取标签失败，使用默认值:', error);
+      return ['host', 'cpu', 'region', 'datacenter'];
+    }
   }
 }

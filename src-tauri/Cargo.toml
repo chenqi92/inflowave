@@ -51,6 +51,12 @@ tokio-tungstenite = { version = "0.20", optional = true }
 # 新增依赖
 regex = "1.10"
 hex = "0.4"
+# 用于二进制数据处理
+byteorder = "1.5"
+# 用于网络连接
+tokio-util = { version = "0.7", features = ["codec"] }
+# 用于数据压缩（IoTDB 支持 SNAPPY 压缩）
+snap = "1.1"
 urlencoding = "2.1"
 
 # InfluxDB 3.x FlightSQL 支持

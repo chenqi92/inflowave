@@ -20,9 +20,10 @@ import {
     ArrowUp,
     ArrowDown,
     FileDown,
+    Download,
+    SortAsc,
+    SortDesc,
 } from 'lucide-react';
-// TODO: Replace these icons: ExportOutlined, FilterOutlined, SortAscendingOutlined, SortDescendingOutlined, FileTextOutlined
-// You may need to find alternatives or create custom icons
 
 interface QueryResultContextMenuProps {
     children: React.ReactNode;

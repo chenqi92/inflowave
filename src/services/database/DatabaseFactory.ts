@@ -22,6 +22,7 @@ import {
 } from '../../types/database/base';
 
 import { databaseFactory as typeFactory } from '../../types/database/factory';
+import { safeTauriInvoke } from '@utils/tauri.ts';
 
 /**
  * 数据库服务接口
@@ -74,13 +75,8 @@ export class BaseDatabaseService implements DatabaseService {
 
     // 调用 Tauri 后端创建连接
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // const connectionId = await invoke('create_connection', { config });
-      // return connectionId as string;
-
-      // 临时实现：返回模拟的连接ID
-      return `conn_${Date.now()}`;
+      const connectionId = await safeTauriInvoke<string>('create_connection', { config });
+      return connectionId;
     } catch (error) {
       throw new Error(`Failed to create connection: ${error}`);
     }
@@ -88,17 +84,8 @@ export class BaseDatabaseService implements DatabaseService {
 
   async testConnection(config: DatabaseConnectionConfig): Promise<ConnectionTestResult> {
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // const result = await invoke('test_connection', { config });
-      // return result as ConnectionTestResult;
-
-      // 临时实现：返回模拟的测试结果
-      return {
-        success: true,
-        latency: 50,
-        serverVersion: '1.0.0'
-      };
+      const result = await safeTauriInvoke<ConnectionTestResult>('test_connection', { config });
+      return result;
     } catch (error) {
       return {
         success: false,
@@ -109,10 +96,7 @@ export class BaseDatabaseService implements DatabaseService {
 
   async closeConnection(connectionId: string): Promise<void> {
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // await invoke('close_connection', { connectionId });
-      console.log(`Closing connection: ${connectionId}`);
+      await safeTauriInvoke('delete_connection', { connectionId });
     } catch (error) {
       throw new Error(`Failed to close connection: ${error}`);
     }
@@ -123,15 +107,11 @@ export class BaseDatabaseService implements DatabaseService {
     error?: string;
   }> {
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // const status = await invoke('get_connection_status', { connectionId });
-      // return status as any;
-
-      // 临时实现：返回模拟状态
-      return {
-        status: 'connected'
-      };
+      const status = await safeTauriInvoke<{
+        status: 'connected' | 'disconnected' | 'connecting' | 'error';
+        error?: string;
+      }>('get_connection_status', { connectionId });
+      return status;
     } catch (error) {
       return {
         status: 'error',
@@ -142,27 +122,16 @@ export class BaseDatabaseService implements DatabaseService {
 
   async executeQuery(connectionId: string, query: Query): Promise<QueryResult> {
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // const result = await invoke('execute_query', {
-      //   connectionId,
-      //   query: query.sql,
-      //   language: query.language,
-      //   database: query.database,
-      //   parameters: query.parameters,
-      //   timeout: query.timeout,
-      //   maxRows: query.maxRows
-      // });
-      // return result as QueryResult;
-
-      // 临时实现：返回模拟结果
-      return {
-        success: true,
-        data: [['time', 'value'], ['2023-01-01T00:00:00Z', 100]],
-        columns: ['time', 'value'],
-        rowCount: 1,
-        executionTime: 25
-      };
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
+        connectionId,
+        query: query.sql,
+        language: query.language,
+        database: query.database,
+        parameters: query.parameters,
+        timeout: query.timeout,
+        maxRows: query.maxRows
+      });
+      return result;
     } catch (error) {
       return {
         success: false,
@@ -179,17 +148,12 @@ export class BaseDatabaseService implements DatabaseService {
       // 如果有连接ID，可以调用后端进行更深入的验证
       if (connectionId) {
         try {
-          // TODO: 实现 Tauri 后端调用
-          // const { invoke } = await import('@tauri-apps/api/tauri');
-          // const backendResult = await invoke('validate_query', {
-          //   connectionId,
-          //   query,
-          //   language
-          // });
-          // return backendResult as ValidationResult;
-
-          // 临时实现：返回前端验证结果
-          return driverResult;
+          const backendResult = await safeTauriInvoke<ValidationResult>('validate_query', {
+            connectionId,
+            query,
+            language
+          });
+          return backendResult;
         } catch {
           // 如果后端验证失败，返回前端验证结果
           return driverResult;
@@ -220,13 +184,8 @@ export class BaseDatabaseService implements DatabaseService {
     } catch (error) {
       // 如果前端格式化失败，尝试调用后端
       try {
-        // TODO: 实现 Tauri 后端调用
-        // const { invoke } = await import('@tauri-apps/api/tauri');
-        // const result = await invoke('format_query', { query, language });
-        // return result as string;
-
-        // 临时实现：返回原查询
-        return query;
+        const result = await safeTauriInvoke<string>('format_query', { query, language });
+        return result;
       } catch {
         // 如果都失败了，返回原查询
         return query;
@@ -236,13 +195,8 @@ export class BaseDatabaseService implements DatabaseService {
 
   async getDatabases(connectionId: string): Promise<DatabaseInfo[]> {
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // const databases = await invoke('get_databases', { connectionId });
-      // return databases as DatabaseInfo[];
-
-      // 临时实现：返回空数组
-      return [];
+      const databases = await safeTauriInvoke<DatabaseInfo[]>('get_databases', { connectionId });
+      return databases;
     } catch (error) {
       throw new Error(`Failed to get databases: ${error}`);
     }
@@ -250,13 +204,8 @@ export class BaseDatabaseService implements DatabaseService {
 
   async getMeasurements(connectionId: string, database: string): Promise<MeasurementInfo[]> {
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // const measurements = await invoke('get_measurements', { connectionId, database });
-      // return measurements as MeasurementInfo[];
-
-      // 临时实现：返回空数组
-      return [];
+      const measurements = await safeTauriInvoke<MeasurementInfo[]>('get_measurements', { connectionId, database });
+      return measurements;
     } catch (error) {
       throw new Error(`Failed to get measurements: ${error}`);
     }
@@ -264,13 +213,8 @@ export class BaseDatabaseService implements DatabaseService {
 
   async getFields(connectionId: string, database: string, measurement: string): Promise<FieldInfo[]> {
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // const fields = await invoke('get_fields', { connectionId, database, measurement });
-      // return fields as FieldInfo[];
-
-      // 临时实现：返回空数组
-      return [];
+      const fields = await safeTauriInvoke<FieldInfo[]>('get_field_keys', { connectionId, database, measurement });
+      return fields;
     } catch (error) {
       throw new Error(`Failed to get fields: ${error}`);
     }
@@ -278,13 +222,8 @@ export class BaseDatabaseService implements DatabaseService {
 
   async getTags(connectionId: string, database: string, measurement: string): Promise<TagInfo[]> {
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // const tags = await invoke('get_tags', { connectionId, database, measurement });
-      // return tags as TagInfo[];
-
-      // 临时实现：返回空数组
-      return [];
+      const tags = await safeTauriInvoke<TagInfo[]>('get_tag_keys', { connectionId, database, measurement });
+      return tags;
     } catch (error) {
       throw new Error(`Failed to get tags: ${error}`);
     }
@@ -292,13 +231,8 @@ export class BaseDatabaseService implements DatabaseService {
 
   async getSmartSuggestions(connectionId: string, context: QueryContext): Promise<SmartSuggestion[]> {
     try {
-      // TODO: 实现 Tauri 后端调用
-      // const { invoke } = await import('@tauri-apps/api/tauri');
-      // const suggestions = await invoke('get_smart_suggestions', { connectionId, context });
-      // return suggestions as SmartSuggestion[];
-
-      // 临时实现：返回空数组
-      return [];
+      const suggestions = await safeTauriInvoke<SmartSuggestion[]>('get_query_suggestions', { connectionId, context });
+      return suggestions;
     } catch (error) {
       // 如果后端获取建议失败，返回空数组
       return [];

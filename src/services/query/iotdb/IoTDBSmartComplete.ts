@@ -5,6 +5,7 @@
  */
 
 import { SmartComplete, CompletionContext } from '../base/SmartComplete';
+import { safeTauriInvoke } from '../../../utils/tauri';
 import {
   QueryLanguage,
   DatabaseConnection,
@@ -257,22 +258,49 @@ export class IoTDBSmartComplete extends SmartComplete {
 
   // 模拟数据获取方法（实际实现中应该调用后端）
   private async getStorageGroups(connection: DatabaseConnection): Promise<string[]> {
-    // TODO: 实现实际的存储组获取逻辑
-    return ['root.sg1', 'root.sg2', 'root.vehicle', 'root.factory'];
+    // 实现实际的存储组获取逻辑
+    try {
+      const storageGroups = await safeTauriInvoke<string[]>('get_iotdb_storage_groups', {
+        connectionId: connection.id
+      });
+      return storageGroups;
+    } catch (error) {
+      console.warn('获取存储组失败，使用默认值:', error);
+      return ['root.sg1', 'root.sg2', 'root.vehicle', 'root.factory'];
+    }
   }
 
   private async getDevices(connection: DatabaseConnection, context: CompletionContext): Promise<string[]> {
-    // TODO: 实现实际的设备获取逻辑
-    return ['root.sg1.d1', 'root.sg1.d2', 'root.sg2.d1', 'root.vehicle.d1'];
+    // 实现实际的设备获取逻辑
+    try {
+      const devices = await safeTauriInvoke<string[]>('get_iotdb_devices', {
+        connectionId: connection.id,
+        storageGroup: (context as any).storageGroup
+      });
+      return devices;
+    } catch (error) {
+      console.warn('获取设备失败，使用默认值:', error);
+      return ['root.sg1.d1', 'root.sg1.d2', 'root.sg2.d1', 'root.vehicle.d1'];
+    }
   }
 
   private async getTimeseries(connection: DatabaseConnection, context: CompletionContext): Promise<string[]> {
-    // TODO: 实现实际的时间序列获取逻辑
-    return [
-      'root.sg1.d1.s1', 'root.sg1.d1.s2', 'root.sg1.d2.s1',
-      'root.sg2.d1.temperature', 'root.sg2.d1.humidity',
-      'root.vehicle.d1.speed', 'root.vehicle.d1.fuel'
-    ];
+    // 实现实际的时间序列获取逻辑
+    try {
+      const timeseries = await safeTauriInvoke<string[]>('get_iotdb_timeseries', {
+        connectionId: connection.id,
+        devicePath: (context as any).device,
+        storageGroup: (context as any).storageGroup
+      });
+      return timeseries;
+    } catch (error) {
+      console.warn('获取时间序列失败，使用默认值:', error);
+      return [
+        'root.sg1.d1.s1', 'root.sg1.d1.s2', 'root.sg1.d2.s1',
+        'root.sg2.d1.temperature', 'root.sg2.d1.humidity',
+        'root.vehicle.d1.speed', 'root.vehicle.d1.fuel'
+      ];
+    }
   }
 
   /**

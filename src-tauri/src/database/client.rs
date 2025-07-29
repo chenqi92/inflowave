@@ -2784,8 +2784,39 @@ impl InfluxClient {
                         }
                     }
 
-                    // 暂时跳过标签获取，因为方法不存在
+                    // 获取标签键 (暂时跳过，因为 get_tag_keys 方法不存在)
                     // TODO: 实现 get_tag_keys 方法
+                    /*
+                    match self.get_tag_keys(database, measurement).await {
+                        Ok(tag_keys) => {
+                            for tag_key in tag_keys {
+                                children.push(TreeNode {
+                                    id: format!("{}:{}:{}:{}", database, measurement, "tag", tag_key.name),
+                                    name: format!("🏷️ {}", tag_key.name),
+                                    node_type: TreeNodeType::Tag,
+                                    parent_id: Some(parent_node_id.to_string()),
+                                    children: Vec::new(),
+                                    is_leaf: true,
+                                    is_system: false,
+                                    is_expandable: false,
+                                    is_expanded: false,
+                                    is_loading: false,
+                                    metadata: {
+                                        let mut map = std::collections::HashMap::new();
+                                        map.insert("database".to_string(), serde_json::Value::String(database.to_string()));
+                                        map.insert("measurement".to_string(), serde_json::Value::String(measurement.to_string()));
+                                        map.insert("tag_key".to_string(), serde_json::Value::String(tag_key.name.clone()));
+                                        map.insert("data_type".to_string(), serde_json::Value::String("tag".to_string()));
+                                        map
+                                    },
+                                });
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取标签键失败: {}", e);
+                        }
+                    }
+                    */
                 }
             }
             _ => {

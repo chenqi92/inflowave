@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { generateUniqueId } from '@/utils/idGenerator';
 import {
-  DataTable,
   Button,
   Badge,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui';
+import { UnifiedDataTable } from '@/components/ui/UnifiedDataTable';
+import type { ColumnConfig, DataRow } from '@/components/ui/UnifiedDataTable';
 import { useGlobalDialog } from '@/components/providers/DialogProvider';
-import type { Column } from '@/components/ui/DataTable';
 import {
   Trash2,
   Edit,
@@ -386,15 +386,13 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   };
 
   // 表格列定义
-  const columns: Column[] = [
+  const columns: ColumnConfig[] = [
     {
       title: '连接名称',
       dataIndex: 'name',
       key: 'name',
-      width: '25%',
-      minWidth: 180,
-      fixed: 'left',
-      render: (name: string, record) => {
+      width: 200,
+      render: (name: string, record: DataRow) => {
         const isLoading = connectionLoadingStates.get(record.id!);
         const status = tableConnectionStatuses[record.id!];
 
@@ -464,9 +462,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '数据库类型',
       dataIndex: 'dbType',
       key: 'dbType',
-      width: '15%',
-      minWidth: 120,
-      render: (_, record) => {
+      width: 150,
+      render: (_: any, record: DataRow) => {
         const dbName = record.dbType === 'influxdb' ? 'InfluxDB' : record.dbType || 'InfluxDB';
         const configVersion = record.version || '1.x';
         const status = tableConnectionStatuses[record.id!];
@@ -547,8 +544,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '数据库信息',
       dataIndex: 'databaseInfo',
       key: 'databaseInfo',
-      width: '20%',
-      minWidth: 160,
+      width: 200,
       render: (_, record) => {
         const status = tableConnectionStatuses[record.id!];
         const isConnected = status?.status === 'connected';
@@ -629,9 +625,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '认证信息',
       dataIndex: 'authInfo',
       key: 'authInfo',
-      width: '18%',
-      minWidth: 140,
-      render: (_, record) => {
+      width: 180,
+      render: (_: any, record: DataRow) => {
         const authInfo = record.version === '1.x'
           ? (record.username || '无认证')
           : '令牌认证';
@@ -688,9 +683,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: '10%',
-      minWidth: 90,
-      render: (_, record) => {
+      width: 120,
+      render: (_: any, record: DataRow) => {
         const status = tableConnectionStatuses[record.id!];
         const isActive = activeConnectionId === record.id;
 
@@ -719,10 +713,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       title: '操作',
       dataIndex: 'actions',
       key: 'actions',
-      width: '12%',
-      minWidth: 120,
-      fixed: 'right',
-      render: (_, record) => {
+      width: 150,
+      render: (_: any, record: DataRow) => {
         const status = tableConnectionStatuses[record.id!];
         const isLoading = connectionLoadingStates.get(record.id!);
         const isTestSuccessful = status?.status === 'connected' && status?.error === undefined;
@@ -760,7 +752,9 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                   disabled={isLoading}
                   onClick={() => {
                     console.log('编辑连接:', record);
-                    onEditConnection?.(record);
+                    // 将 DataRow 转换为 ConnectionConfig
+                    const connection = record as any as ConnectionConfig;
+                    onEditConnection?.(connection);
                   }}
                   className='px-2'
                 >
@@ -865,26 +859,18 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       {/* 连接表格 */}
       <div className='flex-1 overflow-hidden px-6 py-6'>
         <div className='h-full rounded-lg border overflow-hidden bg-background'>
-          <DataTable
+          <UnifiedDataTable
             columns={columns}
-            dataSource={dataSource}
-            rowKey='id'
+            data={dataSource}
             loading={false}
-            scroll={{
-              x: 'max-content', // 自适应内容宽度
-              y: 'calc(100vh - 200px)', // 调整高度以适应新的头部布局
-            }}
-            size='middle'
             className='w-full h-full connection-table'
-            tableLayout='fixed'
-            rowClassName={(record: ConnectionWithStatus) =>
-              activeConnectionId === record.id
-                ? 'bg-accent/50'
-                : ''
-            }
-            onRow={(record: ConnectionWithStatus) => ({
-              onContextMenu: (event: React.MouseEvent) => handleRowContextMenu(event, record),
-            })}
+            showRowNumbers={false}
+            showToolbar={false}
+            searchable={false}
+            filterable={false}
+            sortable={false}
+            exportable={false}
+            columnManagement={false}
           />
         </div>
       </div>

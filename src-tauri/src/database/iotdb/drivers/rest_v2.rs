@@ -6,7 +6,7 @@
 
 use anyhow::{Context, Result};
 use async_trait::async_trait;
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::time::{Duration, Instant};
@@ -344,11 +344,49 @@ impl IoTDBDriver for RestV2Driver {
         Ok(response.affected_rows.unwrap_or(0))
     }
     
-    async fn write_tablet(&mut self, _tablet: &Tablet) -> Result<()> {
-        // TODO: 实现 REST API 的 Tablet 写入
+    async fn write_tablet(&mut self, tablet: &Tablet) -> Result<()> {
+        // 实现 REST API 的 Tablet 写入
         // REST V2 API 支持 insertTablet 接口
-        warn!("REST V2 驱动的 Tablet 写入功能暂未实现");
-        Ok(())
+
+        if !self.connected {
+            return Err(anyhow::anyhow!("未连接到 IoTDB 服务器"));
+        }
+
+        debug!("通过 REST V2 API 写入 Tablet 数据: {}", tablet.device_id);
+
+        // 构建 insertTablet 请求
+        let tablet_data = serde_json::json!({
+            "deviceId": tablet.device_id,
+            "measurements": tablet.measurements,
+            "dataTypes": tablet.data_types.iter().map(|dt| format!("{:?}", dt)).collect::<Vec<_>>(),
+            "timestamps": tablet.timestamps,
+            "values": tablet.values,
+            "isAligned": false // Tablet 结构体没有 is_aligned 字段，使用默认值
+        });
+
+        let url = format!("{}/rest/v2/insertTablet", self.base_url);
+        let client = reqwest::Client::new();
+
+        match client
+            .post(&url)
+            .json(&tablet_data)
+            .send()
+            .await
+        {
+            Ok(response) => {
+                if response.status().is_success() {
+                    info!("REST V2 Tablet 数据写入成功: {} 行数据", tablet.timestamps.len());
+                    Ok(())
+                } else {
+                    let error_text = response.text().await.unwrap_or_default();
+                    Err(anyhow::anyhow!("Tablet 写入失败: {}", error_text))
+                }
+            },
+            Err(e) => {
+                error!("REST V2 Tablet 写入请求失败: {}", e);
+                Err(anyhow::anyhow!("网络请求失败: {}", e))
+            }
+        }
     }
     
     async fn test_connection(&mut self) -> Result<Duration> {
