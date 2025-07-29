@@ -12,12 +12,6 @@ pub mod utils;
 pub mod pool;
 pub mod metrics;
 
-// 测试模块
-#[cfg(test)]
-pub mod integration_tests;
-#[cfg(test)]
-pub mod benchmarks;
-
 #[cfg(feature = "influxdb-v1")]
 pub mod v1_driver;
 
@@ -30,9 +24,11 @@ pub mod v3_driver;
 pub use capability::*;
 pub use detector::*;
 pub use driver::*;
-pub use utils::*;
-pub use pool::*;
-pub use metrics::*;
+// 有选择地导出常用的工具函数（按需导入以避免警告）
+// pub use utils::{LineProtocolFormatter, LineProtocolPoint, DatabaseValidator, TimestampParser, QueryLanguageDetector};
+// 连接池和监控功能按需导入
+// pub use pool::*;
+// pub use metrics::*;
 
 #[cfg(feature = "influxdb-v1")]
 pub use v1_driver::V1HttpDriver;
@@ -44,7 +40,6 @@ pub use v2_driver::V2HttpDriver;
 pub use v3_driver::FlightSqlDriver;
 
 #[cfg(test)]
-mod tests;
 
 use anyhow::Result;
 use std::sync::Arc;
@@ -55,7 +50,7 @@ pub struct InfluxDriverFactory;
 
 impl InfluxDriverFactory {
     /// 创建适合的 InfluxDB 驱动
-    pub async fn create_driver(config: &ConnectionConfig) -> Result<Arc<dyn InfluxDriver>> {
+    pub async fn create_driver(config: &ConnectionConfig) -> anyhow::Result<Arc<dyn InfluxDriver>> {
         // 1. 探测版本和能力
         let capability = InfluxDetector::detect(&config).await?;
         

@@ -275,7 +275,7 @@ impl MetricsCollector {
             memory_usage: Self::get_memory_usage(),
             active_connections: conn_metrics.len(),
             total_queries: stats.total_queries,
-            queries_per_second: 0.0, // TODO: 实现 QPS 计算
+            queries_per_second: Self::calculate_qps(&stats),
             avg_response_time: stats.avg_response_time(),
             error_rate: if stats.total_queries == 0 {
                 0.0
@@ -357,20 +357,41 @@ impl MetricsCollector {
         
         info!("统计信息已重置");
     }
+
+    /// 获取 CPU 使用率（简化实现）
+    fn get_cpu_usage() -> f64 {
+        // 简化的 CPU 使用率获取，实际项目中可以使用 sysinfo 等库
+        0.0
+    }
+
+    /// 获取内存使用量（简化实现）
+    fn get_memory_usage() -> u64 {
+        // 简化的内存使用量获取，实际项目中可以使用 sysinfo 等库
+        0
+    }
+
+    /// 计算每秒查询数
+    fn calculate_qps(stats: &PerformanceStats) -> f64 {
+        // 简化的 QPS 计算，基于最近一分钟的查询数
+        // 实际实现中应该维护时间窗口统计
+        if stats.total_queries == 0 {
+            0.0
+        } else {
+            // 假设统计时间窗口为 60 秒
+            stats.total_queries as f64 / 60.0
+        }
+    }
 }
 
 /// 全局指标收集器实例
-static mut GLOBAL_METRICS_COLLECTOR: Option<Arc<MetricsCollector>> = None;
-static INIT: std::sync::Once = std::sync::Once::new();
+use std::sync::OnceLock;
+static GLOBAL_METRICS_COLLECTOR: OnceLock<Arc<MetricsCollector>> = OnceLock::new();
 
 /// 获取全局指标收集器
 pub fn get_global_metrics_collector() -> Arc<MetricsCollector> {
-    unsafe {
-        INIT.call_once(|| {
-            GLOBAL_METRICS_COLLECTOR = Some(Arc::new(MetricsCollector::new(10000)));
-        });
-        GLOBAL_METRICS_COLLECTOR.as_ref().unwrap().clone()
-    }
+    GLOBAL_METRICS_COLLECTOR
+        .get_or_init(|| Arc::new(MetricsCollector::new(10000)))
+        .clone()
 }
 
 /// 记录查询开始
@@ -402,11 +423,14 @@ impl QueryTracker {
     pub async fn finish(self, success: bool, row_count: u64, error: Option<String>) {
         let execution_time = self.start_time.elapsed().as_millis() as u64;
         
+        let language = Self::detect_query_language(&self.query);
+        let database = Self::extract_database_name(&self.query);
+
         let metric = QueryMetrics {
             query_id: self.query_id,
             query: self.query,
-            language: "auto".to_string(), // TODO: 检测查询语言
-            database: None, // TODO: 从查询中提取数据库名
+            language,
+            database,
             start_time: self.start_timestamp,
             execution_time,
             row_count,
@@ -417,5 +441,39 @@ impl QueryTracker {
         
         let collector = get_global_metrics_collector();
         collector.record_query_metric(metric).await;
+    }
+
+    /// 检测查询语言
+    fn detect_query_language(query: &str) -> String {
+        use crate::database::influxdb::utils::QueryLanguageDetector;
+
+        let language = QueryLanguageDetector::detect_language(query);
+        match language {
+            crate::database::influxdb::QueryLanguage::InfluxQL => "influxql".to_string(),
+            crate::database::influxdb::QueryLanguage::Flux => "flux".to_string(),
+            crate::database::influxdb::QueryLanguage::Sql => "sql".to_string(),
+        }
+    }
+
+    /// 从查询中提取数据库名
+    fn extract_database_name(query: &str) -> Option<String> {
+        let query_upper = query.to_uppercase();
+
+        // 尝试从 InfluxQL 查询中提取数据库名
+        if let Some(from_pos) = query_upper.find("FROM ") {
+            let after_from = &query[from_pos + 5..];
+            if let Some(dot_pos) = after_from.find('.') {
+                let db_part = &after_from[..dot_pos];
+                return Some(db_part.trim_matches('"').to_string());
+            }
+        }
+
+        // 尝试从 USE 语句中提取
+        if query_upper.starts_with("USE ") {
+            let db_name = &query[4..].trim();
+            return Some(db_name.trim_matches('"').to_string());
+        }
+
+        None
     }
 }
