@@ -67,7 +67,7 @@ export const TEST_DATABASES: DatabaseConfig[] = [
     host: TEST_HOST,
     port: 6667,
     username: 'root',
-    password: 'abc9877',
+    password: 'root',
   },
 ];
 
