@@ -171,6 +171,23 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const [treeNodeCache, setTreeNodeCache] = useState<Record<string, any[]>>({});
     const [loading, setLoading] = useState(false);
     const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
+    // 数据库列表缓存，避免重复查询
+    const [databasesCache, setDatabasesCache] = useState<Map<string, string[]>>(new Map());
+
+    // 清除指定连接的缓存
+    const clearDatabasesCache = useCallback((connectionId?: string) => {
+        if (connectionId) {
+            setDatabasesCache(prev => {
+                const newCache = new Map(prev);
+                newCache.delete(connectionId);
+                return newCache;
+            });
+            console.log(`🗑️ 已清除连接 ${connectionId} 的数据库缓存`);
+        } else {
+            setDatabasesCache(new Map());
+            console.log(`🗑️ 已清除所有数据库缓存`);
+        }
+    }, []);
     const [_connectionLoadingStates, setConnectionLoadingStates] = useState<
         Map<string, boolean>
     >(new Map());
@@ -490,7 +507,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
     // 加载指定连接的数据库列表
     const loadDatabases = useCallback(
-        async (connection_id: string): Promise<string[]> => {
+        async (connection_id: string, forceRefresh: boolean = false): Promise<string[]> => {
+            // 优先使用缓存，除非强制刷新
+            if (!forceRefresh && databasesCache.has(connection_id)) {
+                const cachedDatabases = databasesCache.get(connection_id)!;
+                console.log(`✅ 使用缓存的数据库列表，连接: ${connection_id}，数据库数量: ${cachedDatabases.length}`);
+                return cachedDatabases;
+            }
+
             console.log(`🔍 开始加载连接 ${connection_id} 的数据库列表...`);
             try {
                 // 首先验证连接是否在后端存在
@@ -557,6 +581,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 // 提取数据库名称用于兼容现有逻辑
                 const dbList = treeNodes.map(node => node.name || node.id);
                 console.log(`✅ 提取的数据库列表:`, dbList);
+
+                // 更新缓存
+                setDatabasesCache(prev => new Map(prev).set(connection_id, dbList || []));
+
                 return dbList || [];
             } catch (error) {
                 console.error(`❌ 加载连接 ${connection_id} 的数据库失败:`, error);
@@ -571,7 +599,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 return [];
             }
         },
-        [getConnection, addConnection]
+        [getConnection, addConnection, databasesCache]
     );
 
     // 加载指定数据库的表列表
@@ -767,7 +795,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         getConnectionStatus,
         loadDatabases,
         isFavorite,
-        expandedKeys, // 添加expandedKeys依赖，确保展开状态变化时重新构建树形数据
+        // 移除expandedKeys依赖，避免每次展开/收起都重建整个树
         isDatabaseOpened, // 添加数据库打开状态依赖
     ]);
 
@@ -1184,6 +1212,138 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         // buildTreeData会通过expandedKeys依赖项自动重新执行，无需手动调用
     };
 
+    // 统一处理连接建立和数据库加载
+    const handleConnectionAndLoadDatabases = useCallback(async (connectionId: string) => {
+        const connection = getConnection(connectionId);
+        if (!connection) return;
+
+        console.log(`🚀 开始连接并加载数据库: ${connection.name}`);
+
+        // 设置加载状态
+        setConnectionLoadingStates(prev => new Map(prev).set(connectionId, true));
+        updateConnectionNodeDisplay(connectionId, true);
+
+        try {
+            // 1. 建立连接
+            console.log(`🔗 建立连接: ${connection.name}`);
+            await connectToDatabase(connectionId);
+
+            // 2. 清理之前的数据库状态
+            closeAllDatabasesForConnection(connectionId);
+            clearDatabasesCache(connectionId);
+
+            // 3. 加载数据库列表
+            console.log(`📂 加载数据库列表: ${connection.name}`);
+            const databases = await loadDatabases(connectionId, true); // 强制刷新
+
+            // 4. 更新树形数据，一次性显示完整结果
+            setTreeData(prevData => {
+                return prevData.map(node => {
+                    if (node.key === `connection-${connectionId}`) {
+                        const databaseChildren: DataNode[] = databases.map(databaseName => {
+                            const dbPath = `${connectionId}/${databaseName}`;
+                            const isFav = isFavorite(dbPath);
+                            const databaseKey = `database|${connectionId}|${databaseName}`;
+                            const isOpened = isDatabaseOpened(connectionId, databaseName);
+
+                            return {
+                                title: (
+                                    <span className='flex items-center gap-1'>
+                                        {databaseName}
+                                        {isFav && <Star className='w-3 h-3 text-warning fill-current'/>}
+                                    </span>
+                                ),
+                                key: databaseKey,
+                                icon: (
+                                    <DatabaseIcon
+                                        nodeType={getDatabaseNodeType(connectionId, databaseName) as any}
+                                        size={16}
+                                        isOpen={isOpened}
+                                        className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
+                                    />
+                                ),
+                                isLeaf: !isOpened,
+                                children: isOpened ? [] : undefined,
+                            };
+                        });
+
+                        return {
+                            ...node,
+                            children: databaseChildren,
+                            isLeaf: databaseChildren.length === 0,
+                        };
+                    }
+                    return node;
+                });
+            });
+
+            // 5. 自动展开连接节点
+            const connectionKey = `connection-${connectionId}`;
+            if (!expandedKeys.includes(connectionKey)) {
+                setExpandedKeys(prev => [...prev, connectionKey]);
+            }
+
+            showMessage.success(`已连接并加载 ${databases.length} 个数据库: ${connection.name}`);
+            console.log(`✅ 连接并加载数据库完成: ${connection.name}`);
+
+        } catch (error) {
+            console.error(`❌ 连接并加载数据库失败:`, error);
+            showMessage.error(`连接失败: ${error}`);
+        } finally {
+            // 清除加载状态
+            setConnectionLoadingStates(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(connectionId);
+                return newMap;
+            });
+            updateConnectionNodeDisplay(connectionId, false);
+        }
+    }, [getConnection, connectToDatabase, closeAllDatabasesForConnection, clearDatabasesCache,
+        loadDatabases, isFavorite, isDatabaseOpened, getDatabaseNodeType, expandedKeys,
+        updateConnectionNodeDisplay]);
+
+    // 处理已连接的连接节点展开
+    const handleExpandConnection = useCallback(async (connectionId: string) => {
+        const connection = getConnection(connectionId);
+        if (!connection) return;
+
+        console.log(`📂 展开已连接的连接: ${connection.name}`);
+
+        const connectionKey = `connection-${connectionId}`;
+
+        // 检查是否已有数据库子节点
+        const currentNode = treeData.find(node => node.key === connectionKey);
+        const hasChildren = currentNode?.children && currentNode.children.length > 0;
+
+        if (!hasChildren) {
+            // 如果没有子节点，需要加载数据库列表
+            setConnectionLoadingStates(prev => new Map(prev).set(connectionId, true));
+            updateConnectionNodeDisplay(connectionId, true);
+
+            try {
+                console.log(`📊 加载数据库列表: ${connection.name}`);
+                await addDatabaseNodesToConnection(connectionId);
+                showMessage.success(`已加载数据库列表: ${connection.name}`);
+            } catch (error) {
+                console.error(`❌ 加载数据库列表失败:`, error);
+                showMessage.error(`加载数据库列表失败: ${error}`);
+                return; // 加载失败时不展开
+            } finally {
+                setConnectionLoadingStates(prev => {
+                    const newMap = new Map(prev);
+                    newMap.delete(connectionId);
+                    return newMap;
+                });
+                updateConnectionNodeDisplay(connectionId, false);
+            }
+        }
+
+        // 展开连接节点
+        setExpandedKeys(prev => [...prev, connectionKey]);
+        showMessage.info(`已展开连接 "${connection.name}"`);
+
+    }, [getConnection, treeData, addDatabaseNodesToConnection, updateConnectionNodeDisplay]);
+
     // 处理连接操作
     const handleConnectionToggle = async (connection_id: string) => {
         const isCurrentlyConnected = isConnectionConnected(connection_id);
@@ -1270,23 +1430,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     clearTimeout(existingTimeout);
                 }
 
-                // 设置新的定时器 - 只更新显示状态，不重新加载数据
+                // 设置新的定时器 - 只更新显示状态，不自动加载数据
                 const newTimeout = setTimeout(async () => {
                     // 连接操作完成后，loading状态应该为false
                     updateConnectionNodeDisplay(connection_id, false);
 
-                    // 根据连接状态处理数据库节点
+                    // 根据连接状态处理节点显示
                     if (isConnectionConnected(connection_id)) {
-                        // 如果连接成功，先清理之前可能残留的数据库打开状态，然后加载数据库节点
+                        // 如果连接成功，只清理数据库打开状态，不自动加载数据库节点
+                        // 数据库节点的加载由双击处理函数统一管理
                         closeAllDatabasesForConnection(connection_id);
-                        await addDatabaseNodesToConnection(connection_id);
-
-                        // 自动展开连接节点，显示数据库列表
-                        const connectionKey = `connection-${connection_id}`;
-                        if (!expandedKeys.includes(connectionKey)) {
-                            setExpandedKeys(prev => [...prev, connectionKey]);
-                            console.log(`🔄 自动展开连接节点: ${connection.name}`);
-                        }
+                        console.log(`✅ 连接建立完成: ${connection.name}`);
                     } else {
                         // 如果连接断开，清理该连接的数据库子节点和打开状态
                         clearDatabaseNodesForConnection(connection_id);
@@ -1327,7 +1481,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
 
         if (String(key).startsWith('connection-')) {
-            // 连接节点被双击，根据连接状态决定行为
+            // 连接节点被双击，统一处理连接和数据加载
             const connectionId = String(key).replace('connection-', '');
             const connection = getConnection(connectionId);
 
@@ -1347,11 +1501,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             });
 
             if (!isConnected) {
-                // 如果连接未建立，则建立连接
-                console.log(`🔗 建立连接: ${connection.name}`);
-                await handleConnectionToggle(connectionId);
+                // 如果连接未建立，建立连接并加载数据库列表
+                await handleConnectionAndLoadDatabases(connectionId);
             } else {
-                // 如果连接已建立，则切换展开/收起状态
+                // 如果连接已建立，切换展开/收起状态
                 if (isExpanded) {
                     // 当前已展开，收起连接节点
                     const newExpandedKeys = expandedKeys.filter(k => !String(k).startsWith(connectionKey));
@@ -1359,11 +1512,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     console.log(`📁 收起连接节点: ${connection.name}`);
                     showMessage.info(`已收起连接 "${connection.name}"`);
                 } else {
-                    // 当前已收起，展开连接节点
-                    const newExpandedKeys = [...expandedKeys, connectionKey];
-                    setExpandedKeys(newExpandedKeys);
-                    console.log(`📂 展开连接节点: ${connection.name}`);
-                    showMessage.info(`已展开连接 "${connection.name}"`);
+                    // 当前已收起，展开连接节点并确保数据已加载
+                    await handleExpandConnection(connectionId);
                 }
             }
         } else if (String(key).startsWith('database|')) {
@@ -1719,8 +1869,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         // 刷新连接状态
                         const connectionId = contextMenuTarget.connectionId;
                         try {
-                            // 重新加载数据库列表
-                            await loadDatabases(connectionId);
+                            // 清除该连接的缓存，强制重新加载
+                            clearDatabasesCache(connectionId);
+                            // 重新加载数据库列表（强制刷新）
+                            await loadDatabases(connectionId, true);
                             // 刷新树形数据
                             buildCompleteTreeData(true);
                             showMessage.success(`连接 ${contextMenuTarget.title} 已刷新`);
@@ -2489,6 +2641,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 Array.from(changedConnections)
             );
             changedConnections.forEach(connectionId => {
+                // 清除该连接的数据库缓存，确保下次获取最新数据
+                clearDatabasesCache(connectionId);
                 updateConnectionNodeDisplay(connectionId, false);
             });
         }
@@ -2496,7 +2650,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         // 更新引用值
         prevConnectedIdsRef.current = [...connectedConnectionIds];
         prevActiveIdRef.current = activeConnectionId;
-    }, [connectedConnectionIds, activeConnectionId, updateConnectionNodeDisplay]);
+    }, [connectedConnectionIds, activeConnectionId, updateConnectionNodeDisplay, clearDatabasesCache]);
 
     // 为单个连接添加数据库子节点（局部更新）
     const addDatabaseNodesToConnection = useCallback(
@@ -2622,9 +2776,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     useEffect(() => {
         if (refreshTrigger) {
             console.log(`🔄 收到刷新触发器，重新加载数据...`);
+            // 清除所有缓存，确保获取最新数据
+            clearDatabasesCache();
             buildCompleteTreeData(true); // 外部触发器刷新时显示全局 loading
         }
-    }, [refreshTrigger, buildCompleteTreeData]);
+    }, [refreshTrigger, buildCompleteTreeData, clearDatabasesCache]);
 
     // 监听已打开数据库变化，通知父组件
     useEffect(() => {
