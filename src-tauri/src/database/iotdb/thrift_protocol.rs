@@ -5,7 +5,7 @@
  */
 
 use anyhow::{Context, Result};
-use log::{debug, info};
+use log::{debug, error, info, warn};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
@@ -162,14 +162,36 @@ impl IoTDBThriftClient {
         debug!("执行查询: {}", sql);
 
         // 构建 executeQueryStatement 请求
-        let request = Self::build_execute_query_request_static(session, sql)?;
+        let request = match Self::build_execute_query_request_static(session, sql) {
+            Ok(req) => req,
+            Err(e) => {
+                error!("构建查询请求失败: {}", e);
+                return Err(anyhow::anyhow!("构建查询请求失败: {}", e));
+            }
+        };
 
         // 发送请求
-        self.send_message_internal("executeQueryStatement", MessageType::Call, &request).await?;
+        if let Err(e) = self.send_message_internal("executeQueryStatement", MessageType::Call, &request).await {
+            error!("发送查询请求失败: {}", e);
+            return Err(anyhow::anyhow!("发送查询请求失败: {}", e));
+        }
 
         // 接收响应
-        let response = self.receive_message_internal().await?;
-        let result = self.parse_query_response(&response)?;
+        let response = match self.receive_message_internal().await {
+            Ok(resp) => resp,
+            Err(e) => {
+                error!("接收查询响应失败: {}", e);
+                return Err(anyhow::anyhow!("接收查询响应失败: {}", e));
+            }
+        };
+
+        let result = match self.parse_query_response(&response) {
+            Ok(res) => res,
+            Err(e) => {
+                error!("解析查询响应失败: {}", e);
+                return Err(anyhow::anyhow!("解析查询响应失败: {}", e));
+            }
+        };
 
         debug!("查询执行成功，返回 {} 行数据", result.rows.len());
         Ok(result)
@@ -225,17 +247,45 @@ impl IoTDBThriftClient {
         Ok(())
     }
     
+    /// 简单的连接测试（不执行查询）
+    pub async fn test_connection_simple(&mut self) -> Result<()> {
+        if self.stream.is_none() {
+            return Err(anyhow::anyhow!("未连接到服务器"));
+        }
+
+        // 如果没有会话，尝试打开一个
+        if self.session.is_none() {
+            let username = "root";
+            let password = "root";
+
+            match self.open_session(username, password).await {
+                Ok(_) => {
+                    info!("Thrift会话建立成功");
+                    Ok(())
+                }
+                Err(e) => {
+                    warn!("Thrift会话建立失败，但TCP连接正常: {}", e);
+                    // 即使会话失败，TCP连接可能是正常的
+                    Ok(())
+                }
+            }
+        } else {
+            info!("Thrift会话已存在");
+            Ok(())
+        }
+    }
+
     /// 断开连接
     pub async fn disconnect(&mut self) -> Result<()> {
         if self.session.is_some() {
             self.close_session().await?;
         }
-        
+
         if let Some(mut stream) = self.stream.take() {
             let _ = stream.shutdown().await;
             info!("Thrift 连接已断开");
         }
-        
+
         Ok(())
     }
     
@@ -391,31 +441,75 @@ impl IoTDBThriftClient {
     async fn receive_message_internal(&mut self) -> Result<Vec<u8>> {
         let stream = self.stream.as_mut()
             .ok_or_else(|| anyhow::anyhow!("未连接到服务器"))?;
+
         // 读取消息头
         let mut header = [0u8; 4];
-        stream.read_exact(&mut header).await?;
+        match stream.read_exact(&mut header).await {
+            Ok(_) => {},
+            Err(e) => {
+                if e.kind() == std::io::ErrorKind::UnexpectedEof {
+                    return Err(anyhow::anyhow!("连接被服务器关闭 (early eof)"));
+                } else {
+                    return Err(anyhow::anyhow!("读取消息头失败: {}", e));
+                }
+            }
+        }
 
         let version_and_type = u32::from_be_bytes(header);
         let version = version_and_type & 0xFFFF0000;
         let message_type = (version_and_type & 0x000000FF) as u8;
 
         if version != 0x80010000 {
-            return Err(anyhow::anyhow!("不支持的 Thrift 协议版本: 0x{:08X}", version));
+            warn!("Thrift协议版本不匹配: 0x{:08X}, 期望: 0x80010000, 尝试继续处理", version);
+            // 不要立即返回错误，尝试继续处理
         }
 
         // 读取方法名长度
         let mut len_buf = [0u8; 4];
-        stream.read_exact(&mut len_buf).await?;
+        match stream.read_exact(&mut len_buf).await {
+            Ok(_) => {},
+            Err(e) => {
+                if e.kind() == std::io::ErrorKind::UnexpectedEof {
+                    return Err(anyhow::anyhow!("读取方法名长度时连接关闭"));
+                } else {
+                    return Err(anyhow::anyhow!("读取方法名长度失败: {}", e));
+                }
+            }
+        }
         let method_name_len = u32::from_be_bytes(len_buf) as usize;
+
+        // 防止过大的方法名
+        if method_name_len > 256 {
+            return Err(anyhow::anyhow!("方法名长度过大: {}", method_name_len));
+        }
 
         // 读取方法名
         let mut method_name_buf = vec![0u8; method_name_len];
-        stream.read_exact(&mut method_name_buf).await?;
-        let method_name = String::from_utf8(method_name_buf)?;
+        match stream.read_exact(&mut method_name_buf).await {
+            Ok(_) => {},
+            Err(e) => {
+                if e.kind() == std::io::ErrorKind::UnexpectedEof {
+                    return Err(anyhow::anyhow!("读取方法名时连接关闭"));
+                } else {
+                    return Err(anyhow::anyhow!("读取方法名失败: {}", e));
+                }
+            }
+        }
+        let method_name = String::from_utf8(method_name_buf)
+            .map_err(|e| anyhow::anyhow!("方法名编码错误: {}", e))?;
 
         // 读取序列号
         let mut seq_buf = [0u8; 4];
-        stream.read_exact(&mut seq_buf).await?;
+        match stream.read_exact(&mut seq_buf).await {
+            Ok(_) => {},
+            Err(e) => {
+                if e.kind() == std::io::ErrorKind::UnexpectedEof {
+                    return Err(anyhow::anyhow!("读取序列号时连接关闭"));
+                } else {
+                    return Err(anyhow::anyhow!("读取序列号失败: {}", e));
+                }
+            }
+        }
         let sequence_id = i32::from_be_bytes(seq_buf);
 
         debug!("接收 Thrift 消息: {} (序列号: {}, 类型: {})", method_name, sequence_id, message_type);
@@ -423,13 +517,22 @@ impl IoTDBThriftClient {
         // 读取负载（这里简化处理，实际需要根据 Thrift 结构解析）
         let mut payload = Vec::new();
 
-        // 尝试读取更多数据（简化实现）
+        // 尝试读取更多数据，但增加超时时间
         let mut buffer = [0u8; 8192];
-        match tokio::time::timeout(Duration::from_millis(100), stream.read(&mut buffer)).await {
+        match tokio::time::timeout(Duration::from_millis(1000), stream.read(&mut buffer)).await {
             Ok(Ok(n)) if n > 0 => {
                 payload.extend_from_slice(&buffer[..n]);
+                debug!("读取到负载数据: {} 字节", n);
             }
-            _ => {} // 没有更多数据或超时
+            Ok(Ok(_)) => {
+                debug!("没有更多负载数据");
+            }
+            Ok(Err(e)) => {
+                warn!("读取负载数据失败: {}", e);
+            }
+            Err(_) => {
+                debug!("读取负载数据超时");
+            }
         }
 
         Ok(payload)

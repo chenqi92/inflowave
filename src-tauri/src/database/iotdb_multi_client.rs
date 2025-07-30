@@ -7,7 +7,7 @@
 
 use crate::models::{ConnectionConfig, QueryResult, TreeNode};
 use anyhow::{Context, Result};
-use log::{debug, info, warn};
+use log::{debug, error, info, warn};
 use std::time::{Duration, Instant};
 use std::collections::HashMap;
 
@@ -238,29 +238,65 @@ impl IoTDBMultiClient {
 
         // 优先尝试新驱动系统
         if self.use_new_driver {
-            if let Err(e) = self.init_new_driver().await {
-                warn!("新驱动初始化失败，回退到旧协议: {}", e);
-                self.use_new_driver = false;
-            } else if let Some(manager) = &mut self.iotdb_manager {
-                let connection_id = format!("{}:{}", self.config.host, self.config.port);
-                if let Some(driver) = manager.get_driver(&connection_id) {
-                    let latency = driver.test_connection().await?;
-                    return Ok(latency.as_millis() as u64);
+            match self.init_new_driver().await {
+                Ok(()) => {
+                    if let Some(manager) = &mut self.iotdb_manager {
+                        let connection_id = format!("{}:{}", self.config.host, self.config.port);
+                        if let Some(driver) = manager.get_driver(&connection_id) {
+                            match driver.test_connection().await {
+                                Ok(latency) => {
+                                    info!("新驱动系统连接测试成功，延迟: {}ms", latency.as_millis());
+                                    return Ok(latency.as_millis() as u64);
+                                }
+                                Err(e) => {
+                                    warn!("新驱动系统连接测试失败，回退到旧协议: {}", e);
+                                    self.use_new_driver = false;
+                                }
+                            }
+                        } else {
+                            warn!("新驱动系统初始化成功但无法获取驱动实例，回退到旧协议");
+                            self.use_new_driver = false;
+                        }
+                    } else {
+                        warn!("新驱动系统初始化成功但管理器为空，回退到旧协议");
+                        self.use_new_driver = false;
+                    }
+                }
+                Err(e) => {
+                    warn!("新驱动初始化失败，回退到旧协议: {}", e);
+                    self.use_new_driver = false;
                 }
             }
         }
 
         // 回退到旧协议系统
+        info!("使用旧协议系统进行连接测试");
+
         if self.protocol_client.is_none() {
-            self.auto_connect().await?;
+            match self.auto_connect().await {
+                Ok(protocol) => {
+                    info!("旧协议系统自动连接成功，使用协议: {:?}", protocol);
+                }
+                Err(e) => {
+                    error!("旧协议系统自动连接失败: {}", e);
+                    return Err(anyhow::anyhow!("所有连接方式都失败: {}", e));
+                }
+            }
         }
 
         let client = self.protocol_client.as_mut()
             .ok_or_else(|| anyhow::anyhow!("没有可用的协议客户端"))?;
 
-        let latency = client.test_connection().await?;
-
-        Ok(latency.as_millis() as u64)
+        match client.test_connection().await {
+            Ok(latency) => {
+                info!("旧协议系统连接测试成功，延迟: {}ms", latency.as_millis());
+                Ok(latency.as_millis() as u64)
+            }
+            Err(e) => {
+                error!("旧协议系统连接测试失败: {}", e);
+                Err(anyhow::anyhow!("连接测试失败: {}", e))
+            }
+        }
     }
     
     /// 执行查询

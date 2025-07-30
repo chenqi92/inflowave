@@ -53,7 +53,8 @@ impl Dialect for TreeDialect {
     }
 
     fn build_test_query(&self) -> String {
-        "SHOW VERSION".to_string()
+        // 使用更简单的查询，避免版本兼容性问题
+        "SHOW STORAGE GROUP".to_string()
     }
 
     fn build_show_databases_query(&self) -> String {
@@ -113,7 +114,8 @@ impl Dialect for TableDialect {
     }
 
     fn build_test_query(&self) -> String {
-        "SHOW VERSION".to_string()
+        // 使用更简单的查询，避免版本兼容性问题
+        "SHOW DATABASES".to_string()
     }
 
     fn build_show_databases_query(&self) -> String {

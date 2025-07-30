@@ -156,21 +156,28 @@ impl Capability {
         ];
         
         for query in version_queries {
-            if let Ok(version_str) = Self::execute_version_query(config, query).await {
-                if let Ok(version) = VersionInfo::parse(&version_str) {
-                    return Ok(version);
+            match Self::execute_version_query(config, query).await {
+                Ok(version_str) => {
+                    if let Ok(version) = VersionInfo::parse(&version_str) {
+                        info!("成功获取IoTDB版本信息: {}", version.raw);
+                        return Ok(version);
+                    }
+                }
+                Err(e) => {
+                    debug!("版本查询失败 '{}': {}", query, e);
+                    continue;
                 }
             }
         }
-        
+
         // 如果无法获取版本信息，尝试通过端口推断
         warn!("无法获取版本信息，尝试通过默认配置推断");
         Ok(VersionInfo {
             major: 1,
-            minor: 0,
+            minor: 3,  // 使用更常见的1.3版本
             patch: 0,
             build: None,
-            raw: "unknown".to_string(),
+            raw: "IoTDB version 1.3.0 (inferred)".to_string(),
         })
     }
     
