@@ -353,6 +353,11 @@ export const useConnectionStore = create<ConnectionState>()(
             console.warn(`⚠️ 连接配置同步检查失败，继续尝试连接: ${syncError}`);
           }
 
+          // 首先建立连接（如果尚未建立）
+          await safeTauriInvoke('establish_connection', { connectionId: id });
+          console.log(`🔗 后端连接建立成功: ${id}`);
+
+          // 然后连接到数据库
           await safeTauriInvoke('connect_to_database', { connectionId: id });
           console.log(`✅ 后端连接成功: ${id}`);
 

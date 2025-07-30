@@ -335,16 +335,30 @@ impl ConnectionService {
         Ok(())
     }
 
-    /// 加载单个连接配置
+    /// 加载单个连接配置（仅存储配置，不建立连接）
     pub async fn load_single_connection(&self, config: ConnectionConfig) -> Result<()> {
         let connection_id = config.id.clone();
-        
-        // 存储配置
+
+        // 仅存储配置，不建立连接
         {
             let mut configs = self.configs.write().await;
             configs.insert(connection_id.clone(), config.clone());
         }
-        
+
+        debug!("连接配置加载成功（未建立连接）: {}", connection_id);
+        Ok(())
+    }
+
+    /// 建立单个连接（从已加载的配置中）
+    pub async fn establish_single_connection(&self, connection_id: &str) -> Result<()> {
+        // 获取配置
+        let config = {
+            let configs = self.configs.read().await;
+            configs.get(connection_id)
+                .ok_or_else(|| anyhow::anyhow!("连接配置不存在: {}", connection_id))?
+                .clone()
+        };
+
         // 解密密码用于连接
         let mut runtime_config = config.clone();
         if let Some(encrypted_password) = &config.password {
@@ -358,12 +372,12 @@ impl ConnectionService {
                 }
             }
         }
-        
-        // 添加到连接管理器
+
+        // 添加到连接管理器（建立连接）
         self.manager.add_connection(runtime_config).await
             .context("添加连接到管理器失败")?;
-        
-        debug!("连接配置加载成功: {}", connection_id);
+
+        debug!("连接建立成功: {}", connection_id);
         Ok(())
     }
 
@@ -442,23 +456,23 @@ impl ConnectionService {
     pub async fn connect_to_database(&self, connection_id: &str) -> Result<()> {
         debug!("连接到数据库: {}", connection_id);
 
-        // 检查连接是否存在，如果不存在尝试从配置重新加载
+        // 检查连接是否存在，如果不存在尝试从配置建立连接
         if !self.manager.connection_exists(connection_id).await {
-            debug!("连接在管理器中不存在，检查配置: {}", connection_id);
+            debug!("连接在管理器中不存在，尝试建立连接: {}", connection_id);
 
-            // 尝试从配置中找到连接并重新加载
-            let config = {
+            // 检查配置是否存在
+            let config_exists = {
                 let configs = self.configs.read().await;
-                configs.get(connection_id).cloned()
+                configs.contains_key(connection_id)
             };
 
-            if let Some(config) = config {
-                info!("找到连接配置，尝试重新加载到管理器: {}", connection_id);
-                if let Err(e) = self.load_single_connection(config).await {
-                    error!("重新加载连接失败: {} - {}", connection_id, e);
-                    return Err(anyhow::anyhow!("连接 '{}' 不存在且重新加载失败: {}", connection_id, e));
+            if config_exists {
+                info!("找到连接配置，尝试建立连接: {}", connection_id);
+                if let Err(e) = self.establish_single_connection(connection_id).await {
+                    error!("建立连接失败: {} - {}", connection_id, e);
+                    return Err(anyhow::anyhow!("连接 '{}' 建立失败: {}", connection_id, e));
                 }
-                info!("连接重新加载成功: {}", connection_id);
+                info!("连接建立成功: {}", connection_id);
             } else {
                 error!("连接配置不存在: {}", connection_id);
                 return Err(anyhow::anyhow!("连接 '{}' 不存在，请检查连接配置是否正确保存", connection_id));

@@ -601,6 +601,7 @@ async fn main() {
         .invoke_handler(tauri::generate_handler![
             // Connection management
             initialize_connections,
+            establish_connection,
             create_connection,
             test_connection,
             get_connections,

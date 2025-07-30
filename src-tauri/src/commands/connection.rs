@@ -38,12 +38,12 @@ pub async fn test_connection(
         })
 }
 
-/// 初始化连接服务（加载保存的连接）
+/// 初始化连接服务（仅加载保存的连接配置，不建立连接）
 #[tauri::command]
 pub async fn initialize_connections(
     connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
-    debug!("初始化连接服务，加载保存的连接");
+    debug!("初始化连接服务，加载保存的连接配置（不建立连接）");
 
     connection_service
         .load_from_storage()
@@ -51,6 +51,23 @@ pub async fn initialize_connections(
         .map_err(|e| {
             error!("加载连接配置失败: {}", e);
             format!("加载连接配置失败: {}", e)
+        })
+}
+
+/// 建立数据库连接
+#[tauri::command(rename_all = "camelCase")]
+pub async fn establish_connection(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+) -> Result<(), String> {
+    debug!("建立数据库连接: {}", connection_id);
+
+    connection_service
+        .establish_single_connection(&connection_id)
+        .await
+        .map_err(|e| {
+            error!("建立连接失败: {}", e);
+            format!("建立连接失败: {}", e)
         })
 }
 
