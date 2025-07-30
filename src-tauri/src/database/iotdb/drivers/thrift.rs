@@ -238,8 +238,8 @@ impl IoTDBDriver for ThriftDriver {
                 return Ok(start_time.elapsed());
             }
             Err(e) => {
-                warn!("IoTDB Thrift TCP连接测试失败: {}", e);
-                return Err(e);
+                warn!("IoTDB Thrift TCP连接测试失败，尝试查询测试: {}", e);
+                // 继续尝试查询测试，不直接返回错误
             }
         }
 

@@ -336,10 +336,30 @@ impl IoTDBMultiClient {
             parameters: None,
         };
 
-        let response = client.execute_query(request).await?;
-
-        // 转换为应用程序的QueryResult格式
-        Ok(self.convert_protocol_response(response))
+        match client.execute_query(request.clone()).await {
+            Ok(response) => {
+                debug!("查询执行成功");
+                return Ok(self.convert_protocol_response(response));
+            }
+            Err(e) => {
+                error!("旧协议系统查询失败: {}", e);
+                // 如果是连接相关的错误，尝试重新连接
+                if e.to_string().contains("early eof") || e.to_string().contains("连接") {
+                    warn!("检测到连接问题，尝试重新连接");
+                    if let Err(reconnect_err) = self.auto_connect().await {
+                        error!("重新连接失败: {}", reconnect_err);
+                        return Err(e);
+                    } else {
+                        info!("重新连接成功，重试查询");
+                        let client = self.protocol_client.as_mut()
+                            .ok_or_else(|| anyhow::anyhow!("重连后客户端不可用"))?;
+                        let response = client.execute_query(request).await?;
+                        return Ok(self.convert_protocol_response(response));
+                    }
+                }
+                return Err(e);
+            }
+        }
     }
 
     /// 转换新 IoTDB 驱动响应为应用程序格式
