@@ -351,6 +351,12 @@ impl ConnectionService {
 
     /// 建立单个连接（从已加载的配置中）
     pub async fn establish_single_connection(&self, connection_id: &str) -> Result<()> {
+        // 检查连接是否已经存在于管理器中
+        if self.manager.connection_exists(connection_id).await {
+            debug!("连接已存在于管理器中: {}", connection_id);
+            return Ok(());
+        }
+
         // 获取配置
         let config = {
             let configs = self.configs.read().await;
@@ -377,7 +383,7 @@ impl ConnectionService {
         self.manager.add_connection(runtime_config).await
             .context("添加连接到管理器失败")?;
 
-        debug!("连接建立成功: {}", connection_id);
+        info!("连接建立成功: {}", connection_id);
         Ok(())
     }
 
