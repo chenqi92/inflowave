@@ -412,12 +412,26 @@ impl IoTDBMultiClient {
     
     /// 获取数据库列表
     pub async fn get_databases(&mut self) -> Result<Vec<String>> {
-        // 尝试不同版本的IoTDB命令
+        // 尝试不同版本的IoTDB命令，按优先级排序
         let queries = vec![
-            "SHOW STORAGE GROUP",  // IoTDB 0.x
-            "SHOW DATABASES",      // IoTDB 1.x+
-            "SHOW DATABASE",       // 备选
+            "SHOW DATABASES",                                    // IoTDB 1.x+ (表模型)
+            "SHOW STORAGE GROUP",                               // IoTDB 0.x (树模型)
+            "SHOW DATABASE",                                    // 备选
+            "SELECT * FROM INFORMATION_SCHEMA.DATABASES",       // 信息模式查询
+            "SHOW SCHEMAS",                                     // 另一种可能的语法
         ];
+
+        // 首先尝试一个简单的测试查询来验证连接状态
+        debug!("验证连接状态...");
+        match self.execute_query("SELECT 1").await {
+            Ok(_) => {
+                debug!("连接状态验证成功");
+            }
+            Err(e) => {
+                warn!("连接状态验证失败: {}", e);
+                // 继续尝试，可能是查询语法问题
+            }
+        }
 
         for query in queries {
             debug!("尝试查询存储组: {}", query);
