@@ -59,16 +59,22 @@ pub async fn initialize_connections(
 pub async fn establish_connection(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
-) -> Result<(), String> {
+) -> Result<bool, String> {
     debug!("建立数据库连接: {}", connection_id);
 
-    connection_service
+    match connection_service
         .establish_single_connection(&connection_id)
         .await
-        .map_err(|e| {
+    {
+        Ok(_) => {
+            debug!("连接建立成功: {}", connection_id);
+            Ok(true)
+        }
+        Err(e) => {
             error!("建立连接失败: {}", e);
-            format!("建立连接失败: {}", e)
-        })
+            Err(format!("建立连接失败: {}", e))
+        }
+    }
 }
 
 /// 获取所有连接
