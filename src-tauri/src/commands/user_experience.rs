@@ -121,6 +121,12 @@ pub async fn update_user_preferences(
         debug!("当前偏好设置: layout={}, panel_sizes={:?}",
                preferences.workspace.layout,
                preferences.workspace.panel_sizes);
+
+        // 如果调用过于频繁，直接返回成功但不实际保存
+        if time_diff < 1 {
+            debug!("跳过过于频繁的偏好更新");
+            return Ok(());
+        }
     }
 
     // 每100次调用输出一次统计

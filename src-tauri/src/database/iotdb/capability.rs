@@ -147,31 +147,9 @@ impl Capability {
     }
     
     /// 探测版本信息
-    async fn detect_version(config: &DriverConfig) -> Result<VersionInfo> {
-        // 尝试多种方式获取版本信息
-        let version_queries = vec![
-            "SHOW VERSION",
-            "SELECT version()",
-            "SHOW CLUSTER",
-        ];
-        
-        for query in version_queries {
-            match Self::execute_version_query(config, query).await {
-                Ok(version_str) => {
-                    if let Ok(version) = VersionInfo::parse(&version_str) {
-                        info!("成功获取IoTDB版本信息: {}", version.raw);
-                        return Ok(version);
-                    }
-                }
-                Err(e) => {
-                    debug!("版本查询失败 '{}': {}", query, e);
-                    continue;
-                }
-            }
-        }
-
-        // 如果无法获取版本信息，尝试通过端口推断
-        warn!("无法获取版本信息，尝试通过默认配置推断");
+    async fn detect_version(_config: &DriverConfig) -> Result<VersionInfo> {
+        // 直接返回推断的版本信息，避免重复连接导致的循环问题
+        warn!("跳过版本检测以避免重复连接，使用推断版本");
         Ok(VersionInfo {
             major: 1,
             minor: 3,  // 使用更常见的1.3版本
@@ -236,32 +214,29 @@ impl Capability {
     
     /// 检测详细能力
     async fn detect_detailed_capabilities(
-        config: &DriverConfig, 
+        _config: &DriverConfig,
         version: &VersionInfo
     ) -> Result<HashMap<String, String>> {
         let mut properties = HashMap::new();
-        
-        // 检测 SQL 方言支持
+
+        // 基于版本推断能力，避免额外的连接
         if version.major >= 2 {
-            // 尝试检测表模型是否启用
-            if let Ok(_) = Self::execute_version_query(
-                config, 
-                "SELECT get_system_property('sql_dialect')"
-            ).await {
-                properties.insert("sql_dialect".to_string(), "table".to_string());
-            }
+            properties.insert("sql_dialect".to_string(), "table".to_string());
+        } else {
+            properties.insert("sql_dialect".to_string(), "tree".to_string());
         }
-        
-        // 检测 REST 服务状态
-        if version.supports_feature("rest_v2") {
-            if let Ok(_) = Self::execute_version_query(
-                config,
-                "show variables like 'enable_rest_service'"
-            ).await {
-                properties.insert("rest_service".to_string(), "enabled".to_string());
-            }
+
+        // 检测时间序列类型支持
+        if version.major >= 1 && version.minor >= 3 {
+            properties.insert("supports_new_types".to_string(), "true".to_string());
+        } else {
+            properties.insert("supports_new_types".to_string(), "false".to_string());
         }
-        
+
+        // 默认假设不支持REST服务，避免额外连接
+        properties.insert("rest_service".to_string(), "disabled".to_string());
+
+        debug!("推断的IoTDB能力: {:?}", properties);
         Ok(properties)
     }
     
