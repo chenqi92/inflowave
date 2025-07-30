@@ -247,8 +247,19 @@ impl IoTDBThriftClient {
         Ok(())
     }
     
-    /// 简单的连接测试（不执行查询）
+    /// 简单的连接测试（仅检查TCP连接）
     pub async fn test_connection_simple(&mut self) -> Result<()> {
+        if self.stream.is_none() {
+            return Err(anyhow::anyhow!("未连接到服务器"));
+        }
+
+        // 只检查TCP连接是否存在，不尝试打开会话
+        info!("Thrift TCP连接检查通过");
+        Ok(())
+    }
+
+    /// 尝试建立会话的连接测试
+    pub async fn test_connection_with_session(&mut self) -> Result<()> {
         if self.stream.is_none() {
             return Err(anyhow::anyhow!("未连接到服务器"));
         }
@@ -266,7 +277,7 @@ impl IoTDBThriftClient {
                 Err(e) => {
                     warn!("Thrift会话建立失败，但TCP连接正常: {}", e);
                     // 即使会话失败，TCP连接可能是正常的
-                    Ok(())
+                    Err(e)
                 }
             }
         } else {

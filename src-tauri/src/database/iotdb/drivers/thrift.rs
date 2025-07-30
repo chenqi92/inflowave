@@ -231,14 +231,15 @@ impl IoTDBDriver for ThriftDriver {
             self.connect().await?;
         }
 
-        // 首先尝试简单的连接测试（不执行查询）
+        // 首先尝试最简单的TCP连接测试
         match self.thrift_client.test_connection_simple().await {
             Ok(()) => {
-                info!("IoTDB Thrift 简单连接测试成功");
+                info!("IoTDB Thrift TCP连接测试成功");
                 return Ok(start_time.elapsed());
             }
             Err(e) => {
-                warn!("IoTDB Thrift 简单连接测试失败: {}", e);
+                warn!("IoTDB Thrift TCP连接测试失败: {}", e);
+                return Err(e);
             }
         }
 

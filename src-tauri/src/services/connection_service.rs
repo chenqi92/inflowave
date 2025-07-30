@@ -496,9 +496,13 @@ impl ConnectionService {
             pools.insert(connection_id.to_string(), pool);
         }
 
-        // 连接成功后，尝试检查并连接到 _internal 数据库以获取监控数据
-        if let Err(e) = self.check_and_connect_internal_database(connection_id).await {
-            warn!("连接到 _internal 数据库失败: {}", e);
+        // 连接成功后，对于InfluxDB连接，尝试检查并连接到 _internal 数据库以获取监控数据
+        if matches!(config.db_type, crate::models::DatabaseType::InfluxDB) {
+            if let Err(e) = self.check_and_connect_internal_database(connection_id).await {
+                warn!("连接到 _internal 数据库失败: {}", e);
+            }
+        } else {
+            debug!("跳过 _internal 数据库检查，数据库类型: {:?}", config.db_type);
         }
 
         info!("成功连接到数据库: {}", connection_id);
