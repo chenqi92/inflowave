@@ -39,9 +39,7 @@ pub use v2_driver::V2HttpDriver;
 #[cfg(feature = "influxdb-v3")]
 pub use v3_driver::FlightSqlDriver;
 
-#[cfg(test)]
-
-use anyhow::Result;
+// use anyhow::Result; // 暂时未使用
 use std::sync::Arc;
 use crate::models::ConnectionConfig;
 

@@ -511,68 +511,141 @@ impl IoTDBThriftClient {
         let mut request = Vec::new();
 
         // 字段1: sessionId (i64)
-        request.write_u8(ThriftType::I64 as u8)?;
-        request.write_i16::<BigEndian>(1)?;
-        request.write_i64::<BigEndian>(session.session_id)?;
+        request.push(ThriftType::I64 as u8);
+        request.extend_from_slice(&1i16.to_be_bytes());
+        request.extend_from_slice(&session.session_id.to_be_bytes());
 
         // 字段2: statement (string)
-        request.write_u8(ThriftType::String as u8)?;
-        request.write_i16::<BigEndian>(2)?;
-        request.write_i32::<BigEndian>(sql.len() as i32)?;
-        request.write_all(sql.as_bytes())?;
+        request.push(ThriftType::String as u8);
+        request.extend_from_slice(&2i16.to_be_bytes());
+        request.extend_from_slice(&(sql.len() as i32).to_be_bytes());
+        request.extend_from_slice(sql.as_bytes());
 
         // 字段3: statementId (i64)
-        request.write_u8(ThriftType::I64 as u8)?;
-        request.write_i16::<BigEndian>(3)?;
-        request.write_i64::<BigEndian>(session.statement_id)?;
+        request.push(ThriftType::I64 as u8);
+        request.extend_from_slice(&3i16.to_be_bytes());
+        request.extend_from_slice(&session.statement_id.to_be_bytes());
 
         // 字段4: fetchSize (i32, 可选)
-        request.write_u8(ThriftType::I32 as u8)?;
-        request.write_i16::<BigEndian>(4)?;
-        request.write_i32::<BigEndian>(1000)?; // 默认获取1000行
+        request.push(ThriftType::I32 as u8);
+        request.extend_from_slice(&4i16.to_be_bytes());
+        request.extend_from_slice(&1000i32.to_be_bytes()); // 默认获取1000行
 
         // 字段5: timeout (i64, 可选)
-        request.write_u8(ThriftType::I64 as u8)?;
-        request.write_i16::<BigEndian>(5)?;
-        request.write_i64::<BigEndian>(30000)?; // 30秒超时
+        request.push(ThriftType::I64 as u8);
+        request.extend_from_slice(&5i16.to_be_bytes());
+        request.extend_from_slice(&30000i64.to_be_bytes()); // 30秒超时
 
         // 结束标记
-        request.write_u8(ThriftType::Stop as u8)?;
+        request.push(ThriftType::Stop as u8);
 
         Ok(request)
     }
 
     /// 解析查询响应
     fn parse_query_response(&self, response: &[u8]) -> Result<QueryResult> {
-        // 简化的响应解析
-        // 实际应该使用 Thrift 编译器生成的代码
-
         if response.is_empty() {
             return Ok(QueryResult {
-                columns: vec!["Time".to_string(), "Value".to_string()],
-                column_types: vec!["TIMESTAMP".to_string(), "DOUBLE".to_string()],
-                rows: vec![
-                    vec![
-                        ThriftValue::I64(1640995200000),
-                        ThriftValue::Double(23.5),
-                    ],
-                    vec![
-                        ThriftValue::I64(1640995260000),
-                        ThriftValue::Double(24.1),
-                    ],
-                ],
-                query_id: Some(uuid::Uuid::new_v4().to_string()),
+                columns: vec![],
+                column_types: vec![],
+                rows: vec![],
+                query_id: None,
                 has_more: false,
             });
         }
 
-        // TODO: 实现真实的 Thrift 响应解析
+        // 实现真实的 Thrift 响应解析
+        let mut cursor = 0;
+        let mut columns = Vec::new();
+        let mut column_types = Vec::new();
+        let mut rows = Vec::new();
+        let mut query_id = None;
+        let mut has_more = false;
+
+        // 解析 Thrift 结构体响应
+        while cursor < response.len() {
+            // 读取字段类型
+            if cursor >= response.len() {
+                break;
+            }
+            let field_type = response[cursor];
+            cursor += 1;
+
+            // 如果是结束标记，退出
+            if field_type == ThriftType::Stop as u8 {
+                break;
+            }
+
+            // 读取字段ID（2字节）
+            if cursor + 1 >= response.len() {
+                break;
+            }
+            let field_id = u16::from_be_bytes([response[cursor], response[cursor + 1]]);
+            cursor += 2;
+
+            match field_id {
+                1 => {
+                    // 字段1: status (i32)
+                    if cursor + 3 < response.len() {
+                        let _status = i32::from_be_bytes([
+                            response[cursor], response[cursor + 1],
+                            response[cursor + 2], response[cursor + 3]
+                        ]);
+                        cursor += 4;
+                    }
+                }
+                2 => {
+                    // 字段2: queryId (string)
+                    if let Ok((query_id_str, new_cursor)) = self.parse_thrift_string(response, cursor) {
+                        query_id = Some(query_id_str);
+                        cursor = new_cursor;
+                    }
+                }
+                3 => {
+                    // 字段3: columns (list of strings)
+                    if let Ok((cols, new_cursor)) = self.parse_thrift_string_list(response, cursor) {
+                        columns = cols;
+                        cursor = new_cursor;
+                    }
+                }
+                4 => {
+                    // 字段4: dataTypeList (list of strings)
+                    if let Ok((types, new_cursor)) = self.parse_thrift_string_list(response, cursor) {
+                        column_types = types;
+                        cursor = new_cursor;
+                    }
+                }
+                5 => {
+                    // 字段5: queryDataSet (结构体)
+                    if let Ok((data_rows, new_cursor)) = self.parse_query_dataset(response, cursor, &column_types) {
+                        rows = data_rows;
+                        cursor = new_cursor;
+                    }
+                }
+                6 => {
+                    // 字段6: hasMoreData (bool)
+                    if cursor < response.len() {
+                        has_more = response[cursor] != 0;
+                        cursor += 1;
+                    }
+                }
+                _ => {
+                    // 跳过未知字段
+                    if let Ok(new_cursor) = self.skip_thrift_field(response, cursor, field_type) {
+                        cursor = new_cursor;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
         Ok(QueryResult {
-            columns: vec!["Time".to_string()],
-            column_types: vec!["TIMESTAMP".to_string()],
-            rows: vec![],
-            query_id: None,
-            has_more: false,
+            columns,
+            column_types,
+            rows,
+            query_id,
+            has_more,
         })
     }
 
@@ -581,18 +654,18 @@ impl IoTDBThriftClient {
         let mut request = Vec::new();
 
         // 字段1: sessionId (i64)
-        request.write_u8(ThriftType::I64 as u8)?;
-        request.write_i16::<BigEndian>(1)?;
-        request.write_i64::<BigEndian>(session.session_id)?;
+        request.push(ThriftType::I64 as u8);
+        request.extend_from_slice(&1i16.to_be_bytes());
+        request.extend_from_slice(&session.session_id.to_be_bytes());
 
         // 字段2: statement (string)
-        request.write_u8(ThriftType::String as u8)?;
-        request.write_i16::<BigEndian>(2)?;
-        request.write_i32::<BigEndian>(sql.len() as i32)?;
-        request.write_all(sql.as_bytes())?;
+        request.push(ThriftType::String as u8);
+        request.extend_from_slice(&2i16.to_be_bytes());
+        request.extend_from_slice(&(sql.len() as i32).to_be_bytes());
+        request.extend_from_slice(sql.as_bytes());
 
         // 结束标记
-        request.write_u8(ThriftType::Stop as u8)?;
+        request.push(ThriftType::Stop as u8);
 
         Ok(request)
     }
@@ -608,45 +681,45 @@ impl IoTDBThriftClient {
         let mut request = Vec::new();
 
         // 字段1: sessionId (i64)
-        request.write_u8(ThriftType::I64 as u8)?;
-        request.write_i16::<BigEndian>(1)?;
-        request.write_i64::<BigEndian>(session.session_id)?;
+        request.push(ThriftType::I64 as u8);
+        request.extend_from_slice(&1i16.to_be_bytes());
+        request.extend_from_slice(&session.session_id.to_be_bytes());
 
         // 字段2: tablet 结构
-        request.write_u8(ThriftType::Struct as u8)?;
-        request.write_i16::<BigEndian>(2)?;
+        request.push(ThriftType::Struct as u8);
+        request.extend_from_slice(&2i16.to_be_bytes());
 
         // Tablet 结构内容
         // deviceId
-        request.write_u8(ThriftType::String as u8)?;
-        request.write_i16::<BigEndian>(1)?;
-        request.write_i32::<BigEndian>(tablet.device_id.len() as i32)?;
-        request.write_all(tablet.device_id.as_bytes())?;
+        request.push(ThriftType::String as u8);
+        request.extend_from_slice(&1i16.to_be_bytes());
+        request.extend_from_slice(&(tablet.device_id.len() as i32).to_be_bytes());
+        request.extend_from_slice(tablet.device_id.as_bytes());
 
         // measurements
-        request.write_u8(ThriftType::List as u8)?;
-        request.write_i16::<BigEndian>(2)?;
-        request.write_u8(ThriftType::String as u8)?; // 列表元素类型
-        request.write_i32::<BigEndian>(tablet.measurements.len() as i32)?;
+        request.push(ThriftType::List as u8);
+        request.extend_from_slice(&2i16.to_be_bytes());
+        request.push(ThriftType::String as u8); // 列表元素类型
+        request.extend_from_slice(&(tablet.measurements.len() as i32).to_be_bytes());
         for measurement in &tablet.measurements {
-            request.write_i32::<BigEndian>(measurement.len() as i32)?;
-            request.write_all(measurement.as_bytes())?;
+            request.extend_from_slice(&(measurement.len() as i32).to_be_bytes());
+            request.extend_from_slice(measurement.as_bytes());
         }
 
         // timestamps
-        request.write_u8(ThriftType::List as u8)?;
-        request.write_i16::<BigEndian>(3)?;
-        request.write_u8(ThriftType::I64 as u8)?; // 列表元素类型
-        request.write_i32::<BigEndian>(tablet.timestamps.len() as i32)?;
+        request.push(ThriftType::List as u8);
+        request.extend_from_slice(&3i16.to_be_bytes());
+        request.push(ThriftType::I64 as u8); // 列表元素类型
+        request.extend_from_slice(&(tablet.timestamps.len() as i32).to_be_bytes());
         for timestamp in &tablet.timestamps {
-            request.write_i64::<BigEndian>(*timestamp)?;
+            request.extend_from_slice(&timestamp.to_be_bytes());
         }
 
         // 结束 Tablet 结构
-        request.write_u8(ThriftType::Stop as u8)?;
+        request.push(ThriftType::Stop as u8);
 
         // 结束主结构
-        request.write_u8(ThriftType::Stop as u8)?;
+        request.push(ThriftType::Stop as u8);
 
         Ok(request)
     }
@@ -655,5 +728,257 @@ impl IoTDBThriftClient {
     fn parse_insert_response(&self, _response: &[u8]) -> Result<()> {
         // 简化实现
         Ok(())
+    }
+
+    /// 解析 Thrift 字符串
+    fn parse_thrift_string(&self, data: &[u8], cursor: usize) -> Result<(String, usize)> {
+        if cursor + 4 > data.len() {
+            return Err(anyhow::anyhow!("数据不足以读取字符串长度"));
+        }
+
+        let length = i32::from_be_bytes([
+            data[cursor], data[cursor + 1], data[cursor + 2], data[cursor + 3]
+        ]) as usize;
+
+        let new_cursor = cursor + 4;
+        if new_cursor + length > data.len() {
+            return Err(anyhow::anyhow!("数据不足以读取字符串内容"));
+        }
+
+        let string_bytes = &data[new_cursor..new_cursor + length];
+        let string_value = String::from_utf8_lossy(string_bytes).to_string();
+
+        Ok((string_value, new_cursor + length))
+    }
+
+    /// 解析 Thrift 字符串列表
+    fn parse_thrift_string_list(&self, data: &[u8], cursor: usize) -> Result<(Vec<String>, usize)> {
+        if cursor + 5 > data.len() {
+            return Err(anyhow::anyhow!("数据不足以读取列表头"));
+        }
+
+        let _element_type = data[cursor]; // 列表元素类型
+        let list_size = i32::from_be_bytes([
+            data[cursor + 1], data[cursor + 2], data[cursor + 3], data[cursor + 4]
+        ]) as usize;
+
+        let mut strings = Vec::new();
+        let mut current_cursor = cursor + 5;
+
+        for _ in 0..list_size {
+            if let Ok((string_value, new_cursor)) = self.parse_thrift_string(data, current_cursor) {
+                strings.push(string_value);
+                current_cursor = new_cursor;
+            } else {
+                break;
+            }
+        }
+
+        Ok((strings, current_cursor))
+    }
+
+    /// 解析查询数据集
+    fn parse_query_dataset(&self, data: &[u8], cursor: usize, column_types: &[String]) -> Result<(Vec<Vec<ThriftValue>>, usize)> {
+        let mut rows = Vec::new();
+        let mut current_cursor = cursor;
+
+        // 解析数据集结构体
+        while current_cursor < data.len() {
+            let field_type = data[current_cursor];
+            current_cursor += 1;
+
+            if field_type == ThriftType::Stop as u8 {
+                break;
+            }
+
+            // 读取字段ID
+            if current_cursor + 1 >= data.len() {
+                break;
+            }
+            let field_id = u16::from_be_bytes([data[current_cursor], data[current_cursor + 1]]);
+            current_cursor += 2;
+
+            match field_id {
+                1 => {
+                    // 时间戳列表
+                    if let Ok((timestamps, new_cursor)) = self.parse_timestamp_list(data, current_cursor) {
+                        // 为每个时间戳创建一行，第一列是时间戳
+                        for timestamp in timestamps {
+                            let mut row = vec![ThriftValue::I64(timestamp)];
+                            // 为其他列添加占位符
+                            for _ in 1..column_types.len() {
+                                row.push(ThriftValue::Null);
+                            }
+                            rows.push(row);
+                        }
+                        current_cursor = new_cursor;
+                    }
+                }
+                2 => {
+                    // 值列表（按列存储）
+                    if let Ok((values, new_cursor)) = self.parse_value_lists(data, current_cursor, column_types) {
+                        // 将按列存储的数据转换为按行存储
+                        for (col_index, column_values) in values.iter().enumerate() {
+                            for (row_index, value) in column_values.iter().enumerate() {
+                                if row_index < rows.len() && col_index + 1 < rows[row_index].len() {
+                                    rows[row_index][col_index + 1] = value.clone();
+                                }
+                            }
+                        }
+                        current_cursor = new_cursor;
+                    }
+                }
+                _ => {
+                    // 跳过未知字段
+                    if let Ok(new_cursor) = self.skip_thrift_field(data, current_cursor, field_type) {
+                        current_cursor = new_cursor;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+
+        Ok((rows, current_cursor))
+    }
+
+    /// 解析时间戳列表
+    fn parse_timestamp_list(&self, data: &[u8], cursor: usize) -> Result<(Vec<i64>, usize)> {
+        if cursor + 5 > data.len() {
+            return Err(anyhow::anyhow!("数据不足以读取时间戳列表"));
+        }
+
+        let _element_type = data[cursor]; // 应该是 I64
+        let list_size = i32::from_be_bytes([
+            data[cursor + 1], data[cursor + 2], data[cursor + 3], data[cursor + 4]
+        ]) as usize;
+
+        let mut timestamps = Vec::new();
+        let mut current_cursor = cursor + 5;
+
+        for _ in 0..list_size {
+            if current_cursor + 8 <= data.len() {
+                let timestamp = i64::from_be_bytes([
+                    data[current_cursor], data[current_cursor + 1], data[current_cursor + 2], data[current_cursor + 3],
+                    data[current_cursor + 4], data[current_cursor + 5], data[current_cursor + 6], data[current_cursor + 7]
+                ]);
+                timestamps.push(timestamp);
+                current_cursor += 8;
+            } else {
+                break;
+            }
+        }
+
+        Ok((timestamps, current_cursor))
+    }
+
+    /// 解析值列表（按列存储）
+    fn parse_value_lists(&self, data: &[u8], cursor: usize, column_types: &[String]) -> Result<(Vec<Vec<ThriftValue>>, usize)> {
+        let mut columns = Vec::new();
+        let mut current_cursor = cursor;
+
+        // 为每个列类型解析对应的值列表
+        for column_type in column_types.iter().skip(1) { // 跳过时间戳列
+            if let Ok((column_values, new_cursor)) = self.parse_typed_value_list(data, current_cursor, column_type) {
+                columns.push(column_values);
+                current_cursor = new_cursor;
+            } else {
+                break;
+            }
+        }
+
+        Ok((columns, current_cursor))
+    }
+
+    /// 解析特定类型的值列表
+    fn parse_typed_value_list(&self, data: &[u8], cursor: usize, column_type: &str) -> Result<(Vec<ThriftValue>, usize)> {
+        if cursor + 5 > data.len() {
+            return Err(anyhow::anyhow!("数据不足以读取值列表"));
+        }
+
+        let _element_type = data[cursor];
+        let list_size = i32::from_be_bytes([
+            data[cursor + 1], data[cursor + 2], data[cursor + 3], data[cursor + 4]
+        ]) as usize;
+
+        let mut values = Vec::new();
+        let mut current_cursor = cursor + 5;
+
+        for _ in 0..list_size {
+            match column_type.to_uppercase().as_str() {
+                "INT32" => {
+                    if current_cursor + 4 <= data.len() {
+                        let value = i32::from_be_bytes([
+                            data[current_cursor], data[current_cursor + 1],
+                            data[current_cursor + 2], data[current_cursor + 3]
+                        ]);
+                        values.push(ThriftValue::I32(value));
+                        current_cursor += 4;
+                    }
+                }
+                "INT64" => {
+                    if current_cursor + 8 <= data.len() {
+                        let value = i64::from_be_bytes([
+                            data[current_cursor], data[current_cursor + 1], data[current_cursor + 2], data[current_cursor + 3],
+                            data[current_cursor + 4], data[current_cursor + 5], data[current_cursor + 6], data[current_cursor + 7]
+                        ]);
+                        values.push(ThriftValue::I64(value));
+                        current_cursor += 8;
+                    }
+                }
+                "DOUBLE" => {
+                    if current_cursor + 8 <= data.len() {
+                        let value = f64::from_be_bytes([
+                            data[current_cursor], data[current_cursor + 1], data[current_cursor + 2], data[current_cursor + 3],
+                            data[current_cursor + 4], data[current_cursor + 5], data[current_cursor + 6], data[current_cursor + 7]
+                        ]);
+                        values.push(ThriftValue::Double(value));
+                        current_cursor += 8;
+                    }
+                }
+                "BOOLEAN" => {
+                    if current_cursor < data.len() {
+                        let value = data[current_cursor] != 0;
+                        values.push(ThriftValue::Bool(value));
+                        current_cursor += 1;
+                    }
+                }
+                "TEXT" | "STRING" => {
+                    if let Ok((string_value, new_cursor)) = self.parse_thrift_string(data, current_cursor) {
+                        values.push(ThriftValue::String(string_value));
+                        current_cursor = new_cursor;
+                    }
+                }
+                _ => {
+                    // 未知类型，添加空值
+                    values.push(ThriftValue::Null);
+                }
+            }
+        }
+
+        Ok((values, current_cursor))
+    }
+
+    /// 跳过 Thrift 字段
+    fn skip_thrift_field(&self, data: &[u8], cursor: usize, field_type: u8) -> Result<usize> {
+        match field_type {
+            t if t == ThriftType::Bool as u8 => Ok(cursor + 1),
+            t if t == ThriftType::Byte as u8 => Ok(cursor + 1),
+            t if t == ThriftType::I16 as u8 => Ok(cursor + 2),
+            t if t == ThriftType::I32 as u8 => Ok(cursor + 4),
+            t if t == ThriftType::I64 as u8 => Ok(cursor + 8),
+            t if t == ThriftType::Double as u8 => Ok(cursor + 8),
+            t if t == ThriftType::String as u8 => {
+                if cursor + 4 <= data.len() {
+                    let length = i32::from_be_bytes([
+                        data[cursor], data[cursor + 1], data[cursor + 2], data[cursor + 3]
+                    ]) as usize;
+                    Ok(cursor + 4 + length)
+                } else {
+                    Err(anyhow::anyhow!("无法跳过字符串字段"))
+                }
+            }
+            _ => Err(anyhow::anyhow!("不支持的字段类型: {}", field_type))
+        }
     }
 }

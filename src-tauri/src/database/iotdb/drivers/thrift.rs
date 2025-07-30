@@ -6,7 +6,7 @@
 
 use anyhow::Result;
 use async_trait::async_trait;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use std::time::{Duration, Instant};
 
 use crate::database::iotdb::{
@@ -214,7 +214,7 @@ impl IoTDBDriver for ThriftDriver {
         debug!("写入 Tablet 数据: {}", tablet.device_id);
 
         // 转换为 Thrift Tablet 格式
-        let thrift_tablet = self.convert_to_thrift_tablet(tablet)?;
+        let thrift_tablet = Self::convert_to_thrift_tablet(tablet)?;
 
         // 使用真实的 Thrift 客户端写入数据
         self.thrift_client.insert_tablet(&thrift_tablet).await?;
@@ -223,8 +223,37 @@ impl IoTDBDriver for ThriftDriver {
         Ok(())
     }
 
-    /// 转换为 Thrift Tablet 格式
-    fn convert_to_thrift_tablet(&self, tablet: &Tablet) -> Result<TabletData> {
+
+    async fn test_connection(&mut self) -> Result<Duration> {
+        let start_time = Instant::now();
+        
+        if !self.connected {
+            self.connect().await?;
+        }
+        
+        // 执行简单的测试查询
+        let test_sql = self.query_builder.build_test_query();
+        let _response = self.execute_raw_query(&test_sql).await?;
+        
+        Ok(start_time.elapsed())
+    }
+    
+    fn capabilities(&self) -> &Capability {
+        &self.capability
+    }
+    
+    fn is_connected(&self) -> bool {
+        self.connected
+    }
+    
+    fn driver_type(&self) -> &str {
+        "thrift"
+    }
+}
+
+impl ThriftDriver {
+    /// 转换为 Thrift Tablet 格式（静态方法）
+    fn convert_to_thrift_tablet(tablet: &Tablet) -> Result<TabletData> {
         // 转换数据类型
         let data_types: Vec<i32> = tablet.data_types.iter()
             .map(|dt| match dt {
@@ -267,34 +296,8 @@ impl IoTDBDriver for ThriftDriver {
             data_types,
             timestamps: tablet.timestamps.clone(),
             values,
-            is_aligned: true, // 默认对齐
+            is_aligned: tablet.is_aligned,
         })
-    }
-    
-    async fn test_connection(&mut self) -> Result<Duration> {
-        let start_time = Instant::now();
-        
-        if !self.connected {
-            self.connect().await?;
-        }
-        
-        // 执行简单的测试查询
-        let test_sql = self.query_builder.build_test_query();
-        let _response = self.execute_raw_query(&test_sql).await?;
-        
-        Ok(start_time.elapsed())
-    }
-    
-    fn capabilities(&self) -> &Capability {
-        &self.capability
-    }
-    
-    fn is_connected(&self) -> bool {
-        self.connected
-    }
-    
-    fn driver_type(&self) -> &str {
-        "thrift"
     }
 }
 
