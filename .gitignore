@@ -120,3 +120,6 @@ logs/
 *.db
 pnpm-lock.yaml
 /test/connecting.yml
+
+# Database testing tools (not for version control)
+/database-tools/
