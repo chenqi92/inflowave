@@ -82,6 +82,21 @@
             Schedule='afterInstallInitialize'
             DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'/>
 
+        <!-- 检测已安装的版本和路径 -->
+        <Property Id="PREVIOUSVERSIONSINSTALLED" Secure="yes" />
+        <Upgrade Id='12345678-1234-1234-1234-123456789012'>
+            <UpgradeVersion Minimum='0.0.0' Maximum='$(var.Version)'
+                           Property='PREVIOUSVERSIONSINSTALLED'
+                           IncludeMinimum='yes' IncludeMaximum='no' />
+        </Upgrade>
+
+        <!-- 注册表搜索已安装路径 -->
+        <Property Id="INSTALLFOLDER">
+            <RegistrySearch Id="InstallFolderRegistry" Root="HKLM"
+                           Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\{$(var.ProductCode)}"
+                           Name="InstallLocation" Type="raw" />
+        </Property>
+
         <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
         <Property Id='DiskPrompt' Value='InfloWave Installation'/>
 

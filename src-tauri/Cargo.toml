@@ -1,6 +1,6 @@
 [package]
 name = "InfloWave"
-version = "0.5.3"
+version = "0.5.4"
 description = "A modern time-series database management tool"
 authors = ["Kkape Team"]
 license = "MIT"
@@ -16,6 +16,13 @@ license = "wix/license.rtf"
 # banner = "wix/banner.bmp"
 # dialog = "wix/dialog.bmp"
 eula = false
+# 包含所有必要的文件和依赖
+include = [
+    "target/release/InfloWave.exe",
+    "icons/*"
+]
+# 启用中文本地化
+locale = "wix/WixUI_zh-cn.wxl"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
