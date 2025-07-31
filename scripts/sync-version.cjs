@@ -28,6 +28,7 @@ const tauriLinuxConfigPath = path.join(rootDir, 'src-tauri', 'tauri.linux.conf.j
 const tauriMacosConfigPath = path.join(rootDir, 'src-tauri', 'tauri.macos.conf.json');
 const tauriWindowsConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows.conf.json');
 const tauriWindowsCargoWixConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-cargo-wix.conf.json');
+const tauriWindowsNsisConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-nsis.conf.json');
 const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
 const readmeCnPath = path.join(rootDir, 'README.md');
 const readmeEnPath = path.join(rootDir, 'README-en.md');
@@ -175,7 +176,8 @@ function getTauriConfigFiles() {
         { path: tauriLinuxConfigPath, name: 'tauri.linux.conf.json', required: false },
         { path: tauriMacosConfigPath, name: 'tauri.macos.conf.json', required: false },
         { path: tauriWindowsConfigPath, name: 'tauri.windows.conf.json', required: false },
-        { path: tauriWindowsCargoWixConfigPath, name: 'tauri.windows-cargo-wix.conf.json', required: false }
+        { path: tauriWindowsCargoWixConfigPath, name: 'tauri.windows-cargo-wix.conf.json', required: false },
+        { path: tauriWindowsNsisConfigPath, name: 'tauri.windows-nsis.conf.json', required: false }
     ];
 }
 
@@ -467,6 +469,7 @@ function getAllVersions() {
         tauriMacosConfig: getSingleTauriVersion(tauriMacosConfigPath),
         tauriWindowsConfig: getSingleTauriVersion(tauriWindowsConfigPath),
         tauriWindowsCargoWixConfig: getSingleTauriVersion(tauriWindowsCargoWixConfigPath),
+        tauriWindowsNsisConfig: getSingleTauriVersion(tauriWindowsNsisConfigPath),
         cargoToml: cargoVersion
     };
 }
@@ -485,7 +488,8 @@ function checkVersionConsistency() {
         versions.tauriLinuxConfig,
         versions.tauriMacosConfig,
         versions.tauriWindowsConfig,
-        versions.tauriWindowsCargoWixConfig
+        versions.tauriWindowsCargoWixConfig,
+        versions.tauriWindowsNsisConfig
     ];
 
     const validTauriVersions = tauriVersions.filter(v => v !== 'not found' && v !== 'invalid');
@@ -529,6 +533,7 @@ function syncVersions(targetVersion = null, options = {}) {
     log.info(`  tauri.macos.conf.json:            ${versions.tauriMacosConfig}`);
     log.info(`  tauri.windows.conf.json:          ${versions.tauriWindowsConfig}`);
     log.info(`  tauri.windows-cargo-wix.conf.json:${versions.tauriWindowsCargoWixConfig}`);
+    log.info(`  tauri.windows-nsis.conf.json:     ${versions.tauriWindowsNsisConfig}`);
     log.info(`  Cargo.toml:                       ${versions.cargoToml}`);
 
     const finalVersion = targetVersion || packageVersion;
@@ -835,6 +840,7 @@ function main() {
             log.info(`  tauri.macos.conf.json:            ${versions.tauriMacosConfig}`);
             log.info(`  tauri.windows.conf.json:          ${versions.tauriWindowsConfig}`);
             log.info(`  tauri.windows-cargo-wix.conf.json:${versions.tauriWindowsCargoWixConfig}`);
+            log.info(`  tauri.windows-nsis.conf.json:     ${versions.tauriWindowsNsisConfig}`);
             log.info(`  Cargo.toml:                       ${versions.cargoToml}`);
 
             log.divider();
@@ -907,6 +913,7 @@ ${colors.bright}🎯 功能:${colors.reset}
   • tauri.macos.conf.json
   • tauri.windows.conf.json
   • tauri.windows-cargo-wix.conf.json
+  • tauri.windows-nsis.conf.json
   • Cargo.toml
   • README.md (中文)
   • README-en.md (英文)

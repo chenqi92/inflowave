@@ -259,21 +259,16 @@ jobs:
           node-version: 'lts/*'
           cache: 'npm'
 
-      - name: Setup Windows Build Tools (cargo-wix)
+      - name: Setup Windows Build Environment
         if: matrix.platform == 'windows-latest'
         shell: pwsh
         run: |
-          Write-Output "🔧 设置 Windows 构建工具 (cargo-wix)..."
+          Write-Output "Setting up Windows build environment..."
 
-          # 安装 cargo-wix
-          Write-Output "📦 安装 cargo-wix..."
-          cargo install cargo-wix --force
+          # Run our setup script
+          powershell -ExecutionPolicy Bypass -File scripts/setup-windows-build.ps1 -Force
 
-          # 验证安装
-          Write-Output "✅ 验证 cargo-wix 安装..."
-          cargo wix --version
-
-          Write-Output "✅ Windows 构建工具设置完成"
+          Write-Output "Windows build environment setup completed"
 
       - name: Install frontend dependencies
         run: npm ci
@@ -284,20 +279,24 @@ jobs:
           node scripts/download-fonts-ci.cjs
           echo "✅ 字体下载完成"
 
-      - name: Verify cargo-wix Installation (Windows)
+      - name: Verify Windows Build Environment
         if: matrix.platform == 'windows-latest'
         run: |
-          Write-Output "🔍 验证 cargo-wix 安装..."
+          Write-Output "Verifying Windows build environment..."
+
+          # Verify cargo-wix
           cargo wix --version
 
-          Write-Output "📁 检查 WiX 模板文件..."
-          $wixDir = "src-tauri/wix"
-          if (Test-Path $wixDir) {
-            Write-Output "WiX 模板文件:"
-            Get-ChildItem $wixDir | ForEach-Object { Write-Output "  $($_.Name)" }
+          # Verify WiX Toolset
+          candle.exe -? | Out-Null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Output "WiX Toolset is working"
           } else {
-            Write-Output "❌ WiX 目录不存在!"
+            Write-Output "WiX Toolset verification failed"
+            exit 1
           }
+
+          Write-Output "Windows build environment verified"
         shell: pwsh
 
       # Windows 使用 cargo-wix 构建
@@ -306,30 +305,27 @@ jobs:
         id: windows_build
         shell: pwsh
         run: |
-          Write-Output "🔨 使用 cargo-wix 构建 Windows MSI..."
+          Write-Output "Building Windows MSI using cargo-wix..."
 
-          cd src-tauri
+          # Use our build script
+          powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Target ${{ matrix.rust_target }} -Verbose
 
-          # 构建 Rust 应用程序
-          Write-Output "📦 构建 Rust 应用程序..."
-          cargo build --release --target ${{ matrix.rust_target }}
-
-          # 构建 MSI 安装包
-          Write-Output "🏗️ 构建 MSI 安装包..."
-          cargo wix --target ${{ matrix.rust_target }} --profile release --verbose
-
-          # 检查构建结果
-          $msiFiles = Get-ChildItem "target\wix\*.msi" -ErrorAction SilentlyContinue
-          if ($msiFiles) {
-            Write-Output "✅ MSI 构建成功!"
-            foreach ($file in $msiFiles) {
-              $size = [math]::Round($file.Length / 1MB, 2)
-              Write-Output "  📁 $($file.Name) ($size MB)"
-            }
-          } else {
-            Write-Output "❌ MSI 构建失败 - 未找到 MSI 文件"
-            exit 1
-          }
+      # Windows cargo-wix 失败时的 NSIS fallback
+      - name: Build Windows NSIS Fallback
+        if: matrix.platform == 'windows-latest' && steps.windows_build.outcome == 'failure'
+        id: windows_nsis_fallback
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: false
+          DISABLE_CONSOLE_LOGS: true
+        with:
+          tagName: v${{ needs.detect-version.outputs.version }}
+          releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
+          releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
+          releaseDraft: false
+          prerelease: false
+          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.windows-nsis.conf.json
 
       # 非 Windows 平台使用 Tauri 构建
       - name: Build Non-Windows Platforms
