@@ -1,6 +1,6 @@
 [package]
 name = "InfloWave"
-version = "0.5.2"
+version = "0.5.3"
 description = "A modern time-series database management tool"
 authors = ["Kkape Team"]
 license = "MIT"
@@ -24,11 +24,7 @@ tauri-build = { version = "2.0", features = ["codegen"] }
 
 [dependencies]
 tauri = { version = "2.0", features = [
-    "protocol-asset",
-    "icon-ico",
-    "icon-png",
-    "windows7-compat",
-    "system-tray",
+    "tray-icon",
     "devtools"
 ] }
 serde = { version = "1.0", features = ["derive"] }

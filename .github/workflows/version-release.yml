@@ -378,16 +378,34 @@ jobs:
 
           # 查找生成的包文件
           if [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
-            find src-tauri/target/${{ matrix.rust_target }}/release/bundle -name "*.dmg" -o -name "*.app" | while read file; do
-              echo "Uploading: $file"
-              gh release upload "v${{ needs.detect-version.outputs.version }}" "$file" --clobber || echo "Upload failed for $file"
+            # macOS 包通常在这些位置
+            for bundle_dir in "src-tauri/target/${{ matrix.rust_target }}/release/bundle" "src-tauri/target/release/bundle"; do
+              if [[ -d "$bundle_dir" ]]; then
+                find "$bundle_dir" -name "*.dmg" -o -name "*.app" | while read file; do
+                  if [[ -f "$file" ]]; then
+                    echo "Uploading: $file"
+                    gh release upload "v${{ needs.detect-version.outputs.version }}" "$file" --clobber || echo "Upload failed for $file"
+                  fi
+                done
+              fi
             done
           elif [[ "${{ matrix.platform }}" == "ubuntu-latest" ]]; then
-            find src-tauri/target/${{ matrix.rust_target }}/release/bundle -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" | while read file; do
-              echo "Uploading: $file"
-              gh release upload "v${{ needs.detect-version.outputs.version }}" "$file" --clobber || echo "Upload failed for $file"
+            # Linux 包通常在这些位置
+            for bundle_dir in "src-tauri/target/${{ matrix.rust_target }}/release/bundle" "src-tauri/target/release/bundle"; do
+              if [[ -d "$bundle_dir" ]]; then
+                find "$bundle_dir" -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" | while read file; do
+                  if [[ -f "$file" ]]; then
+                    echo "Uploading: $file"
+                    gh release upload "v${{ needs.detect-version.outputs.version }}" "$file" --clobber || echo "Upload failed for $file"
+                  fi
+                done
+              fi
             done
           fi
+
+          # 如果没有找到任何文件，列出目录结构进行调试
+          echo "Debug: Listing target directory structure..."
+          find src-tauri/target -type f -name "*.dmg" -o -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" -o -name "*.app" 2>/dev/null || echo "No bundle files found"
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
