@@ -12,7 +12,7 @@
   "bundle": {
     "active": true,
     "targets": [
-      "msi"
+      "nsis"
     ],
     "icon": [
       "icons/icon.png",
@@ -38,9 +38,11 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
-      "wix": {
-        "language": "zh-CN",
-        "template": "wix/main.wxs"
+      "nsis": {
+        "languages": [
+          "SimpChinese"
+        ],
+        "displayLanguageSelector": false
       }
     }
   },

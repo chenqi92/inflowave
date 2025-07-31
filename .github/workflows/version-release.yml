@@ -346,6 +346,44 @@ jobs:
           node scripts/download-fonts-ci.cjs
           echo "✅ 字体下载完成"
 
+      - name: Verify WiX Installation (Windows)
+        if: matrix.platform == 'windows-latest'
+        run: |
+          $tauriToolsPath = "$env:USERPROFILE\.tauri"
+          $wixPath = Join-Path $tauriToolsPath "WixTools314"
+          $candlePath = Join-Path $wixPath "candle.exe"
+
+          Write-Output "Checking WiX installation..."
+          Write-Output "Tauri tools path: $tauriToolsPath"
+          Write-Output "WiX path: $wixPath"
+          Write-Output "Candle path: $candlePath"
+
+          if (Test-Path $candlePath) {
+            Write-Output "✅ candle.exe found at: $candlePath"
+            try {
+              & $candlePath -? 2>&1 | Write-Output
+            } catch {
+              Write-Output "⚠️ candle.exe exists but failed to run: $($_.Exception.Message)"
+            }
+          } else {
+            Write-Output "❌ candle.exe not found!"
+            if (Test-Path $tauriToolsPath) {
+              Write-Output "Contents of Tauri tools directory:"
+              Get-ChildItem $tauriToolsPath -Recurse -Name "*.exe" | Write-Output
+            }
+          }
+
+          # Check WiX template files
+          Write-Output "Checking WiX template files..."
+          $wixDir = "src-tauri/wix"
+          if (Test-Path $wixDir) {
+            Write-Output "WiX template files:"
+            Get-ChildItem $wixDir | ForEach-Object { Write-Output "  $($_.Name)" }
+          } else {
+            Write-Output "❌ WiX directory not found!"
+          }
+        shell: pwsh
+
       - name: Build Standard Mode
         id: standard_build
         continue-on-error: ${{ matrix.platform == 'windows-latest' }}
@@ -382,6 +420,10 @@ jobs:
           # Windows 构建工具下载配置
           TAURI_BUNDLER_TOOLS_DOWNLOAD_TIMEOUT: 600
           TAURI_BUNDLER_TOOLS_DOWNLOAD_RETRIES: 3
+          # WiX 调试配置
+          TAURI_BUNDLER_WIX_VERBOSE: true
+          # 强制使用UTF-8编码
+          PYTHONIOENCODING: utf-8
         with:
           tagName: v${{ needs.detect-version.outputs.version }}
           releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
@@ -407,6 +449,25 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.windows-full.conf.json
+
+      - name: Build Windows NSIS-Only Fallback
+        if: matrix.platform == 'windows-latest' && steps.standard_build.outcome == 'failure'
+        continue-on-error: true
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: false
+          DISABLE_CONSOLE_LOGS: true
+          # 设置重试和超时
+          TAURI_BUNDLER_TOOLS_DOWNLOAD_TIMEOUT: 600
+          TAURI_BUNDLER_TOOLS_DOWNLOAD_RETRIES: 3
+        with:
+          tagName: v${{ needs.detect-version.outputs.version }}
+          releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
+          releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
+          releaseDraft: false
+          prerelease: false
+          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.windows-nsis-only.conf.json
 
       - name: Build Windows MSI-Only Final Fallback
         if: matrix.platform == 'windows-latest' && steps.standard_build.outcome == 'failure'
