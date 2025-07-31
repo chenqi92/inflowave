@@ -299,10 +299,11 @@ jobs:
           Write-Output "Windows build environment verified"
         shell: pwsh
 
-      # Windows 使用 cargo-wix 构建
+      # Windows 构建 - 同时生成 MSI 和 EXE
       - name: Build Windows MSI (cargo-wix)
         if: matrix.platform == 'windows-latest'
-        id: windows_build
+        id: windows_msi_build
+        continue-on-error: true
         shell: pwsh
         run: |
           Write-Output "Building Windows MSI using cargo-wix..."
@@ -310,10 +311,9 @@ jobs:
           # Use our build script
           powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Target ${{ matrix.rust_target }} -Verbose
 
-      # Windows cargo-wix 失败时的 NSIS fallback
-      - name: Build Windows NSIS Fallback
-        if: matrix.platform == 'windows-latest' && steps.windows_build.outcome == 'failure'
-        id: windows_nsis_fallback
+      - name: Build Windows EXE (Tauri NSIS)
+        if: matrix.platform == 'windows-latest'
+        id: windows_exe_build
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
@@ -327,10 +327,13 @@ jobs:
           prerelease: false
           args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.windows-nsis.conf.json
 
+
+
       # 非 Windows 平台使用 Tauri 构建
       - name: Build Non-Windows Platforms
         if: matrix.platform != 'windows-latest'
         id: standard_build
+        continue-on-error: true
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
@@ -366,12 +369,34 @@ jobs:
           prerelease: false
           args: --target ${{ matrix.rust_target }} ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '--config src-tauri/tauri.arm64.conf.json' || '' }}
 
+      # 备用上传方案 - 如果tauri-action上传失败
+      - name: Upload Non-Windows Packages (Fallback)
+        if: matrix.platform != 'windows-latest' && steps.standard_build.outcome == 'failure'
+        shell: bash
+        run: |
+          echo "Tauri action failed, attempting manual upload..."
+
+          # 查找生成的包文件
+          if [[ "${{ matrix.platform }}" == "macos-latest" ]]; then
+            find src-tauri/target/${{ matrix.rust_target }}/release/bundle -name "*.dmg" -o -name "*.app" | while read file; do
+              echo "Uploading: $file"
+              gh release upload "v${{ needs.detect-version.outputs.version }}" "$file" --clobber || echo "Upload failed for $file"
+            done
+          elif [[ "${{ matrix.platform }}" == "ubuntu-latest" ]]; then
+            find src-tauri/target/${{ matrix.rust_target }}/release/bundle -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" | while read file; do
+              echo "Uploading: $file"
+              gh release upload "v${{ needs.detect-version.outputs.version }}" "$file" --clobber || echo "Upload failed for $file"
+            done
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
       # Windows MSI 文件上传到 Release
       - name: Upload Windows MSI to Release
-        if: matrix.platform == 'windows-latest' && steps.windows_build.outcome == 'success'
+        if: matrix.platform == 'windows-latest' && steps.windows_msi_build.outcome == 'success'
         shell: pwsh
         run: |
-          Write-Output "📤 上传 Windows MSI 文件到 Release..."
+          Write-Output "Uploading Windows MSI files to Release..."
 
           # 查找 MSI 文件
           $msiFiles = Get-ChildItem "src-tauri\target\wix\*.msi"
@@ -380,13 +405,13 @@ jobs:
             $fileName = $msiFile.Name
             $filePath = $msiFile.FullName
 
-            Write-Output "上传文件: $fileName"
+            Write-Output "Uploading file: $fileName"
 
             # 使用 GitHub CLI 上传文件到 Release
             gh release upload "v${{ needs.detect-version.outputs.version }}" "$filePath" --clobber
           }
 
-          Write-Output "✅ Windows MSI 文件上传完成"
+          Write-Output "Windows MSI files uploaded successfully"
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 

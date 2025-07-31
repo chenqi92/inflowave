@@ -512,14 +512,48 @@ fn setup_responsive_window_size(window: &tauri::WebviewWindow) -> Result<(), Box
 }
 
 
-/// 简单的崩溃日志记录
+/// 增强的崩溃日志记录和诊断
 fn setup_crash_handler(_app_handle: tauri::AppHandle) {
     std::panic::set_hook(Box::new(|panic_info| {
         let panic_message = panic_info.to_string();
-        error!("Application panic: {}", panic_message);
-        
-        // 简单记录到stderr，避免复杂的文件操作
-        eprintln!("InfloWave crashed: {}", panic_message);
+        let location = panic_info.location()
+            .map(|l| format!("{}:{}:{}", l.file(), l.line(), l.column()))
+            .unwrap_or_else(|| "unknown location".to_string());
+
+        let full_message = format!(
+            "InfloWave Application Crash Report\n\
+            Version: {}\n\
+            Platform: {}\n\
+            Architecture: {}\n\
+            Location: {}\n\
+            Error: {}\n\
+            \n\
+            Please report this issue at: https://github.com/chenqi92/inflowave/issues",
+            env!("CARGO_PKG_VERSION"),
+            std::env::consts::OS,
+            std::env::consts::ARCH,
+            location,
+            panic_message
+        );
+
+        error!("Application panic: {}", full_message);
+        eprintln!("{}", full_message);
+
+        // 尝试写入崩溃日志文件
+        if let Ok(mut home_dir) = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")) {
+            home_dir.push_str("/.inflowave_crash.log");
+            if let Ok(mut file) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&home_dir) {
+                use std::io::Write;
+                let _ = writeln!(file, "{}\n{}\n{}",
+                    chrono::Utc::now().format("%Y-%m-%d %H:%M:%S UTC"),
+                    full_message,
+                    "=" .repeat(80)
+                );
+            }
+        }
     }));
 }
 
@@ -530,7 +564,13 @@ async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Er
     info!("检查启动时端口状态...");
     
     let manager = get_port_manager();
-    let manager = manager.read().unwrap();
+    let manager = match manager.read() {
+        Ok(m) => m,
+        Err(e) => {
+            warn!("Failed to acquire port manager lock: {}", e);
+            return Ok(());
+        }
+    };
     
     // 在开发模式下，Vite 开发服务器已经由 Tauri 的 BeforeDevCommand 启动
     // 我们只需要检查并记录端口状态，不需要尝试分配端口
@@ -1020,5 +1060,10 @@ async fn main() {
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error while running Inflowave application");
+        .map_err(|e| {
+            error!("Failed to run InfloWave application: {}", e);
+            eprintln!("InfloWave startup failed: {}", e);
+            std::process::exit(1);
+        })
+        .unwrap();
 }

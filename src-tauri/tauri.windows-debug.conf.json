@@ -10,8 +10,10 @@
     "frontendDist": "../dist"
   },
   "bundle": {
-    "active": false,
-    "targets": [],
+    "active": true,
+    "targets": [
+      "nsis"
+    ],
     "icon": [
       "icons/icon.png",
       "icons/32x32.png",
@@ -31,7 +33,30 @@
     "category": "DeveloperTool",
     "shortDescription": "Modern time-series database management tool",
     "longDescription": "A modern, secure, and user-friendly GUI tool for managing time-series databases. Features include connection management, database operations, query execution, data visualization, and more.",
-    "externalBin": []
+    "externalBin": [],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper",
+        "silent": false
+      },
+      "allowDowngrades": true,
+      "nsis": {
+        "languages": [
+          "English",
+          "SimpChinese"
+        ],
+        "displayLanguageSelector": true,
+        "installerIcon": "icons/icon.ico",
+        "installMode": "perMachine",
+        "allowDowngrades": true,
+        "createDesktopShortcut": true,
+        "createStartMenuShortcut": true,
+        "template": null
+      }
+    }
   },
   "app": {
     "windows": [

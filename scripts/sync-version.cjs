@@ -29,6 +29,7 @@ const tauriMacosConfigPath = path.join(rootDir, 'src-tauri', 'tauri.macos.conf.j
 const tauriWindowsConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows.conf.json');
 const tauriWindowsCargoWixConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-cargo-wix.conf.json');
 const tauriWindowsNsisConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-nsis.conf.json');
+const tauriWindowsDebugConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-debug.conf.json');
 const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
 const readmeCnPath = path.join(rootDir, 'README.md');
 const readmeEnPath = path.join(rootDir, 'README-en.md');
@@ -177,7 +178,8 @@ function getTauriConfigFiles() {
         { path: tauriMacosConfigPath, name: 'tauri.macos.conf.json', required: false },
         { path: tauriWindowsConfigPath, name: 'tauri.windows.conf.json', required: false },
         { path: tauriWindowsCargoWixConfigPath, name: 'tauri.windows-cargo-wix.conf.json', required: false },
-        { path: tauriWindowsNsisConfigPath, name: 'tauri.windows-nsis.conf.json', required: false }
+        { path: tauriWindowsNsisConfigPath, name: 'tauri.windows-nsis.conf.json', required: false },
+        { path: tauriWindowsDebugConfigPath, name: 'tauri.windows-debug.conf.json', required: false }
     ];
 }
 
