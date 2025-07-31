@@ -1,6 +1,6 @@
 {
   "name": "inflowave",
-  "version": "0.4.6",
+  "version": "0.5.0",
   "description": "A modern time-series database management tool built with Tauri + React + TypeScript",
   "type": "module",
   "scripts": {
@@ -23,6 +23,9 @@
     "tauri:build:production": "cross-env DISABLE_CONSOLE_LOGS=true npm run copy-docs && tauri build",
     "tauri:build:production:release": "cross-env DISABLE_CONSOLE_LOGS=true tauri build --release",
     "build:windows-x64": "tauri build --target x86_64-pc-windows-msvc",
+    "build:windows:cargo-wix": "powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1",
+    "build:windows:cargo-wix:chinese": "powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Chinese",
+    "build:windows:cargo-wix:clean": "powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Clean",
     "build:windows-x86": "tauri build --target i686-pc-windows-msvc",
     "build:windows-arm64": "echo 'Windows ARM64 暂时禁用，等待 ring 库支持改善'",
     "build:windows": "npm run build:windows-x64 && npm run build:windows-x86",

@@ -1,12 +1,21 @@
 [package]
 name = "InfloWave"
-version = "0.4.6"
+version = "0.5.0"
 description = "A modern time-series database management tool"
 authors = ["Kkape Team"]
 license = "MIT"
-repository = "https://github.com/kkape/inflowave"
+repository = "https://github.com/chenqi92/inflowave"
 edition = "2021"
 default-run = "InfloWave"
+
+# WiX 配置
+[package.metadata.wix]
+upgrade-guid = "12345678-1234-1234-1234-123456789012"
+path-guid = "87654321-4321-4321-4321-210987654321"
+license = "wix/license.rtf"
+# banner = "wix/banner.bmp"
+# dialog = "wix/dialog.bmp"
+eula = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

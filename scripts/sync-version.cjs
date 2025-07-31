@@ -24,12 +24,10 @@ const rootDir = path.join(__dirname, '..');
 const packageJsonPath = path.join(rootDir, 'package.json');
 const tauriConfigPath = path.join(rootDir, 'src-tauri', 'tauri.conf.json');
 const tauriArm64ConfigPath = path.join(rootDir, 'src-tauri', 'tauri.arm64.conf.json');
-const tauriWindowsFullConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-full.conf.json');
-const tauriWindowsMsiConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-msi-only.conf.json');
-const tauriWindowsNsisConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-nsis-only.conf.json');
 const tauriLinuxConfigPath = path.join(rootDir, 'src-tauri', 'tauri.linux.conf.json');
 const tauriMacosConfigPath = path.join(rootDir, 'src-tauri', 'tauri.macos.conf.json');
 const tauriWindowsConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows.conf.json');
+const tauriWindowsCargoWixConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-cargo-wix.conf.json');
 const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
 const readmeCnPath = path.join(rootDir, 'README.md');
 const readmeEnPath = path.join(rootDir, 'README-en.md');
@@ -174,12 +172,10 @@ function getTauriConfigFiles() {
     return [
         { path: tauriConfigPath, name: 'tauri.conf.json', required: true },
         { path: tauriArm64ConfigPath, name: 'tauri.arm64.conf.json', required: false },
-        { path: tauriWindowsFullConfigPath, name: 'tauri.windows-full.conf.json', required: false },
-        { path: tauriWindowsMsiConfigPath, name: 'tauri.windows-msi-only.conf.json', required: false },
-        { path: tauriWindowsNsisConfigPath, name: 'tauri.windows-nsis-only.conf.json', required: false },
         { path: tauriLinuxConfigPath, name: 'tauri.linux.conf.json', required: false },
         { path: tauriMacosConfigPath, name: 'tauri.macos.conf.json', required: false },
-        { path: tauriWindowsConfigPath, name: 'tauri.windows.conf.json', required: false }
+        { path: tauriWindowsConfigPath, name: 'tauri.windows.conf.json', required: false },
+        { path: tauriWindowsCargoWixConfigPath, name: 'tauri.windows-cargo-wix.conf.json', required: false }
     ];
 }
 
@@ -467,12 +463,10 @@ function getAllVersions() {
         packageJson: packageJson.version,
         tauriConfig: getSingleTauriVersion(tauriConfigPath),
         tauriArm64Config: getSingleTauriVersion(tauriArm64ConfigPath),
-        tauriWindowsFullConfig: getSingleTauriVersion(tauriWindowsFullConfigPath),
-        tauriWindowsMsiConfig: getSingleTauriVersion(tauriWindowsMsiConfigPath),
-        tauriWindowsNsisConfig: getSingleTauriVersion(tauriWindowsNsisConfigPath),
         tauriLinuxConfig: getSingleTauriVersion(tauriLinuxConfigPath),
         tauriMacosConfig: getSingleTauriVersion(tauriMacosConfigPath),
         tauriWindowsConfig: getSingleTauriVersion(tauriWindowsConfigPath),
+        tauriWindowsCargoWixConfig: getSingleTauriVersion(tauriWindowsCargoWixConfigPath),
         cargoToml: cargoVersion
     };
 }
@@ -488,12 +482,10 @@ function checkVersionConsistency() {
     const tauriVersions = [
         versions.tauriConfig,
         versions.tauriArm64Config,
-        versions.tauriWindowsFullConfig,
-        versions.tauriWindowsMsiConfig,
-        versions.tauriWindowsNsisConfig,
         versions.tauriLinuxConfig,
         versions.tauriMacosConfig,
-        versions.tauriWindowsConfig
+        versions.tauriWindowsConfig,
+        versions.tauriWindowsCargoWixConfig
     ];
 
     const validTauriVersions = tauriVersions.filter(v => v !== 'not found' && v !== 'invalid');
@@ -509,7 +501,7 @@ function checkVersionConsistency() {
  */
 function syncVersions(targetVersion = null, options = {}) {
     const {
-        createBackup = true,
+        createBackup = false,  // 默认不创建备份
         skipReadme = false,
         dryRun = false,
         cleanBackups = false
@@ -533,12 +525,10 @@ function syncVersions(targetVersion = null, options = {}) {
     log.info(`  package.json:                     ${versions.packageJson}`);
     log.info(`  tauri.conf.json:                  ${versions.tauriConfig}`);
     log.info(`  tauri.arm64.conf.json:            ${versions.tauriArm64Config}`);
-    log.info(`  tauri.windows-full.conf.json:     ${versions.tauriWindowsFullConfig}`);
-    log.info(`  tauri.windows-msi-only.conf.json: ${versions.tauriWindowsMsiConfig}`);
-    log.info(`  tauri.windows-nsis-only.conf.json:${versions.tauriWindowsNsisConfig}`);
     log.info(`  tauri.linux.conf.json:            ${versions.tauriLinuxConfig}`);
     log.info(`  tauri.macos.conf.json:            ${versions.tauriMacosConfig}`);
     log.info(`  tauri.windows.conf.json:          ${versions.tauriWindowsConfig}`);
+    log.info(`  tauri.windows-cargo-wix.conf.json:${versions.tauriWindowsCargoWixConfig}`);
     log.info(`  Cargo.toml:                       ${versions.cargoToml}`);
 
     const finalVersion = targetVersion || packageVersion;
@@ -764,7 +754,7 @@ function createVersionTag(version, options = {}) {
  */
 function parseArgs(args) {
     const options = {
-        createBackup: true,
+        createBackup: false,
         skipReadme: false,
         dryRun: false,
         cleanBackups: false,
@@ -841,12 +831,10 @@ function main() {
             log.info(`  package.json:                     ${versions.packageJson}`);
             log.info(`  tauri.conf.json:                  ${versions.tauriConfig}`);
             log.info(`  tauri.arm64.conf.json:            ${versions.tauriArm64Config}`);
-            log.info(`  tauri.windows-full.conf.json:     ${versions.tauriWindowsFullConfig}`);
-            log.info(`  tauri.windows-msi-only.conf.json: ${versions.tauriWindowsMsiConfig}`);
-            log.info(`  tauri.windows-nsis-only.conf.json:${versions.tauriWindowsNsisConfig}`);
             log.info(`  tauri.linux.conf.json:            ${versions.tauriLinuxConfig}`);
             log.info(`  tauri.macos.conf.json:            ${versions.tauriMacosConfig}`);
             log.info(`  tauri.windows.conf.json:          ${versions.tauriWindowsConfig}`);
+            log.info(`  tauri.windows-cargo-wix.conf.json:${versions.tauriWindowsCargoWixConfig}`);
             log.info(`  Cargo.toml:                       ${versions.cargoToml}`);
 
             log.divider();
@@ -915,12 +903,10 @@ ${colors.bright}🎯 功能:${colors.reset}
   • package.json
   • tauri.conf.json
   • tauri.arm64.conf.json
-  • tauri.windows-full.conf.json
-  • tauri.windows-msi-only.conf.json
-  • tauri.windows-nsis-only.conf.json
   • tauri.linux.conf.json
   • tauri.macos.conf.json
   • tauri.windows.conf.json
+  • tauri.windows-cargo-wix.conf.json
   • Cargo.toml
   • README.md (中文)
   • README-en.md (英文)
