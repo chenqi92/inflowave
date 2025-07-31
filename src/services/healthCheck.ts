@@ -212,7 +212,7 @@ export class HealthCheckService {
       
       if (healthStatus) {
         return {
-          component: 'Tauri App',
+          component: 'Inflowave',
           status: 'healthy',
           message: 'Tauri 应用运行正常',
           timestamp: Date.now(),
@@ -220,7 +220,7 @@ export class HealthCheckService {
         };
       } else {
         return {
-          component: 'Tauri App',
+          component: 'Inflowave',
           status: 'unhealthy',
           message: 'Tauri 应用健康检查失败',
           timestamp: Date.now(),
@@ -229,7 +229,7 @@ export class HealthCheckService {
       }
     } catch (error) {
       return {
-        component: 'Tauri App',
+        component: 'Inflowave',
         status: 'unhealthy',
         message: `Tauri 应用检查失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: Date.now(),

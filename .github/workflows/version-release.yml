@@ -259,6 +259,77 @@ jobs:
           node-version: 'lts/*'
           cache: 'npm'
 
+      - name: Pre-install Windows build tools
+        if: matrix.platform == 'windows-latest'
+        shell: powershell
+        run: |
+          echo "🔧 预安装 Windows 构建工具..."
+
+          # 创建 tauri 工具目录
+          $tauriToolsPath = "$env:LOCALAPPDATA\tauri"
+          New-Item -ItemType Directory -Force -Path $tauriToolsPath
+
+          # 下载并安装 WiX Tools (用于 MSI)
+          echo "📦 下载 WiX Tools..."
+          $wixUrl = "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip"
+          $wixZip = "$tauriToolsPath\wix311-binaries.zip"
+          $wixPath = "$tauriToolsPath\WixTools314"
+
+          if (-not (Test-Path $wixPath)) {
+            try {
+              Invoke-WebRequest -Uri $wixUrl -OutFile $wixZip -TimeoutSec 300
+              Expand-Archive -Path $wixZip -DestinationPath $tauriToolsPath -Force
+              Remove-Item $wixZip -Force
+              echo "✅ WiX Tools 安装完成"
+            } catch {
+              echo "⚠️ WiX Tools 下载失败，将在构建时重试: $_"
+            }
+          } else {
+            echo "✅ WiX Tools 已存在"
+          }
+
+          # 下载并安装 NSIS Tools (用于 EXE)
+          echo "📦 下载 NSIS Tools..."
+          $nsisUrl = "https://github.com/tauri-apps/binary-releases/releases/download/nsis-3/nsis-3.zip"
+          $nsisZip = "$tauriToolsPath\nsis-3.zip"
+          $nsisPath = "$tauriToolsPath\NSIS"
+
+          if (-not (Test-Path $nsisPath)) {
+            try {
+              Invoke-WebRequest -Uri $nsisUrl -OutFile $nsisZip -TimeoutSec 300
+              Expand-Archive -Path $nsisZip -DestinationPath $tauriToolsPath -Force
+              Rename-Item "$tauriToolsPath\nsis-3.08" $nsisPath -Force
+              Remove-Item $nsisZip -Force
+
+              # 下载 NSIS 插件
+              echo "📦 下载 NSIS 插件..."
+              $pluginUrl = "https://github.com/tauri-apps/binary-releases/releases/download/nsis-plugins-v0/NSIS-ApplicationID.zip"
+              $pluginZip = "$tauriToolsPath\NSIS-ApplicationID.zip"
+              $pluginPath = "$nsisPath\Plugins"
+
+              Invoke-WebRequest -Uri $pluginUrl -OutFile $pluginZip -TimeoutSec 300
+              Expand-Archive -Path $pluginZip -DestinationPath $pluginPath -Force
+
+              # 创建插件目录并复制文件
+              New-Item -ItemType Directory -Force -Path "$pluginPath\x86-unicode"
+              Copy-Item "$pluginPath\ReleaseUnicode\ApplicationID.dll" "$pluginPath\x86-unicode\ApplicationID.dll" -Force
+              Remove-Item $pluginZip -Force
+
+              # 下载 tauri utils 插件
+              $utilsUrl = "https://github.com/tauri-apps/nsis-tauri-utils/releases/download/nsis_tauri_utils-v0.1.1/nsis_tauri_utils.dll"
+              $utilsPath = "$pluginPath\x86-unicode\nsis_tauri_utils.dll"
+              Invoke-WebRequest -Uri $utilsUrl -OutFile $utilsPath -TimeoutSec 300
+
+              echo "✅ NSIS Tools 安装完成"
+            } catch {
+              echo "⚠️ NSIS Tools 下载失败，将在构建时重试: $_"
+            }
+          } else {
+            echo "✅ NSIS Tools 已存在"
+          }
+
+          echo "🎯 Windows 构建工具预安装完成"
+
       - name: Install frontend dependencies
         run: npm ci
 
@@ -301,6 +372,9 @@ jobs:
           GIO_SYS_USE_PKG_CONFIG: 1
           # AppImage 优化配置
           APPIMAGE_EXTRACT_AND_RUN: 1
+          # Windows 构建工具下载配置
+          TAURI_BUNDLER_TOOLS_DOWNLOAD_TIMEOUT: 600
+          TAURI_BUNDLER_TOOLS_DOWNLOAD_RETRIES: 3
         with:
           tagName: v${{ needs.detect-version.outputs.version }}
           releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
@@ -309,18 +383,40 @@ jobs:
           prerelease: false
           args: --target ${{ matrix.rust_target }} ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '--config src-tauri/tauri.arm64.conf.json' || '' }}
 
-      - name: Build Windows WIX Fallback
+      - name: Build Windows Full Fallback
         if: matrix.platform == 'windows-latest' && steps.standard_build.outcome == 'failure'
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           ENABLE_EMBEDDED_SERVER: false
           DISABLE_CONSOLE_LOGS: true
+          # 设置重试和超时
+          TAURI_BUNDLER_TOOLS_DOWNLOAD_TIMEOUT: 600
+          TAURI_BUNDLER_TOOLS_DOWNLOAD_RETRIES: 3
         with:
           tagName: v${{ needs.detect-version.outputs.version }}
           releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
           releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
           releaseDraft: false
           prerelease: false
-          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.windows-nsis-only.conf.json
+          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.windows-full.conf.json
+
+      - name: Build Windows MSI-Only Final Fallback
+        if: matrix.platform == 'windows-latest' && steps.standard_build.outcome == 'failure'
+        continue-on-error: true
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          ENABLE_EMBEDDED_SERVER: false
+          DISABLE_CONSOLE_LOGS: true
+          # 设置重试和超时
+          TAURI_BUNDLER_TOOLS_DOWNLOAD_TIMEOUT: 600
+          TAURI_BUNDLER_TOOLS_DOWNLOAD_RETRIES: 3
+        with:
+          tagName: v${{ needs.detect-version.outputs.version }}
+          releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
+          releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
+          releaseDraft: false
+          prerelease: false
+          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.windows-msi-only.conf.json
 
