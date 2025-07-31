@@ -261,74 +261,81 @@ jobs:
 
       - name: Pre-install Windows build tools
         if: matrix.platform == 'windows-latest'
-        shell: powershell
+        shell: pwsh
         run: |
-          echo "🔧 预安装 Windows 构建工具..."
+          Write-Output "Pre-installing Windows build tools..."
 
-          # 创建 tauri 工具目录
-          $tauriToolsPath = "$env:LOCALAPPDATA\tauri"
-          New-Item -ItemType Directory -Force -Path $tauriToolsPath
+          $tauriToolsPath = Join-Path $env:LOCALAPPDATA "tauri"
+          New-Item -ItemType Directory -Force -Path $tauriToolsPath | Out-Null
 
-          # 下载并安装 WiX Tools (用于 MSI)
-          echo "📦 下载 WiX Tools..."
+          # Download WiX Tools for MSI
+          Write-Output "Downloading WiX Tools..."
           $wixUrl = "https://github.com/wixtoolset/wix3/releases/download/wix3112rtm/wix311-binaries.zip"
-          $wixZip = "$tauriToolsPath\wix311-binaries.zip"
-          $wixPath = "$tauriToolsPath\WixTools314"
+          $wixZip = Join-Path $tauriToolsPath "wix311-binaries.zip"
+          $wixPath = Join-Path $tauriToolsPath "WixTools314"
 
           if (-not (Test-Path $wixPath)) {
             try {
               Invoke-WebRequest -Uri $wixUrl -OutFile $wixZip -TimeoutSec 300
               Expand-Archive -Path $wixZip -DestinationPath $tauriToolsPath -Force
               Remove-Item $wixZip -Force
-              echo "✅ WiX Tools 安装完成"
+              Write-Output "WiX Tools installed successfully"
             } catch {
-              echo "⚠️ WiX Tools 下载失败，将在构建时重试: $_"
+              Write-Output "WiX Tools download failed: $($_.Exception.Message)"
             }
           } else {
-            echo "✅ WiX Tools 已存在"
+            Write-Output "WiX Tools already exists"
           }
 
-          # 下载并安装 NSIS Tools (用于 EXE)
-          echo "📦 下载 NSIS Tools..."
+          # Download NSIS Tools for EXE
+          Write-Output "Downloading NSIS Tools..."
           $nsisUrl = "https://github.com/tauri-apps/binary-releases/releases/download/nsis-3/nsis-3.zip"
-          $nsisZip = "$tauriToolsPath\nsis-3.zip"
-          $nsisPath = "$tauriToolsPath\NSIS"
+          $nsisZip = Join-Path $tauriToolsPath "nsis-3.zip"
+          $nsisPath = Join-Path $tauriToolsPath "NSIS"
 
           if (-not (Test-Path $nsisPath)) {
             try {
               Invoke-WebRequest -Uri $nsisUrl -OutFile $nsisZip -TimeoutSec 300
               Expand-Archive -Path $nsisZip -DestinationPath $tauriToolsPath -Force
-              Rename-Item "$tauriToolsPath\nsis-3.08" $nsisPath -Force
+              $nsisExtracted = Join-Path $tauriToolsPath "nsis-3.08"
+              if (Test-Path $nsisExtracted) {
+                Rename-Item $nsisExtracted $nsisPath -Force
+              }
               Remove-Item $nsisZip -Force
 
-              # 下载 NSIS 插件
-              echo "📦 下载 NSIS 插件..."
+              # Download NSIS plugins
+              Write-Output "Downloading NSIS plugins..."
               $pluginUrl = "https://github.com/tauri-apps/binary-releases/releases/download/nsis-plugins-v0/NSIS-ApplicationID.zip"
-              $pluginZip = "$tauriToolsPath\NSIS-ApplicationID.zip"
-              $pluginPath = "$nsisPath\Plugins"
+              $pluginZip = Join-Path $tauriToolsPath "NSIS-ApplicationID.zip"
+              $pluginPath = Join-Path $nsisPath "Plugins"
 
               Invoke-WebRequest -Uri $pluginUrl -OutFile $pluginZip -TimeoutSec 300
               Expand-Archive -Path $pluginZip -DestinationPath $pluginPath -Force
 
-              # 创建插件目录并复制文件
-              New-Item -ItemType Directory -Force -Path "$pluginPath\x86-unicode"
-              Copy-Item "$pluginPath\ReleaseUnicode\ApplicationID.dll" "$pluginPath\x86-unicode\ApplicationID.dll" -Force
+              $unicodePath = Join-Path $pluginPath "x86-unicode"
+              New-Item -ItemType Directory -Force -Path $unicodePath | Out-Null
+
+              $sourceDll = Join-Path $pluginPath "ReleaseUnicode\ApplicationID.dll"
+              $targetDll = Join-Path $unicodePath "ApplicationID.dll"
+              if (Test-Path $sourceDll) {
+                Copy-Item $sourceDll $targetDll -Force
+              }
               Remove-Item $pluginZip -Force
 
-              # 下载 tauri utils 插件
+              # Download tauri utils plugin
               $utilsUrl = "https://github.com/tauri-apps/nsis-tauri-utils/releases/download/nsis_tauri_utils-v0.1.1/nsis_tauri_utils.dll"
-              $utilsPath = "$pluginPath\x86-unicode\nsis_tauri_utils.dll"
+              $utilsPath = Join-Path $unicodePath "nsis_tauri_utils.dll"
               Invoke-WebRequest -Uri $utilsUrl -OutFile $utilsPath -TimeoutSec 300
 
-              echo "✅ NSIS Tools 安装完成"
+              Write-Output "NSIS Tools installed successfully"
             } catch {
-              echo "⚠️ NSIS Tools 下载失败，将在构建时重试: $_"
+              Write-Output "NSIS Tools download failed: $($_.Exception.Message)"
             }
           } else {
-            echo "✅ NSIS Tools 已存在"
+            Write-Output "NSIS Tools already exists"
           }
 
-          echo "🎯 Windows 构建工具预安装完成"
+          Write-Output "Windows build tools pre-installation completed"
 
       - name: Install frontend dependencies
         run: npm ci
