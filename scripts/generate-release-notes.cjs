@@ -103,7 +103,7 @@ function generateDownloadSection(version, type = 'release') {
 - 32位版本: InfloWave-${version}-i686.msi (32位系统)
 
 #### 🍎 macOS 用户
-- Apple Silicon (M1/M2/M3): InfloWave_${version}_aarch64-apple-darwin.dmg
+- Apple Silicon (M1/M2/M3): InfloWave_${version}_aarch64.dmg
 - Intel 处理器: InfloWave_${version}_x64.dmg
 
 #### 🐧 Linux 用户
@@ -160,7 +160,7 @@ function generateDownloadSection(version, type = 'release') {
 - 💻 查看「处理器」或「芯片」信息
 
 **Apple Silicon Mac (M1/M2/M3/M4 芯片)**
-- 📥 **[InfloWave_${version}_aarch64-apple-darwin.dmg](https://github.com/${repository}/releases/download/v${version}/InfloWave_${version}_aarch64-apple-darwin.dmg)**
+- 📥 **[InfloWave_${version}_aarch64.dmg](https://github.com/${repository}/releases/download/v${version}/InfloWave_${version}_aarch64.dmg)**
   - ✅ 2020年11月后发布的 Mac
   - ✅ 性能最优，原生支持
   - ✅ 更低的电量消耗

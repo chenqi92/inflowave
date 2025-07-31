@@ -66,7 +66,7 @@
 - 💻 查看「处理器」或「芯片」信息
 
 **Apple Silicon Mac (M1/M2/M3/M4 芯片)**
-- 📥 **[InfloWave_0.5.4_aarch64-apple-darwin.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.5.4/InfloWave_0.5.4_aarch64-apple-darwin.dmg)**
+- 📥 **[InfloWave_0.5.4_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.5.4/InfloWave_0.5.4_aarch64.dmg)**
   - ✅ 2020年11月后发布的 Mac
   - ✅ 性能最优，原生支持
   - ✅ 更低的电量消耗
