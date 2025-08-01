@@ -3,6 +3,9 @@
 
 #![allow(unused_imports)]
 #![allow(unused_extern_crates)]
+#![allow(deprecated)]
+#![allow(unreachable_patterns)]
+#![allow(unused_variables)]
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 #![cfg_attr(rustfmt, rustfmt_skip)]
 
