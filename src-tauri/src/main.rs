@@ -48,9 +48,6 @@ fn check_system_compatibility() -> Result<(), Box<dyn std::error::Error>> {
     // 检查操作系统版本
     #[cfg(target_os = "windows")]
     {
-        use std::ffi::OsString;
-        use std::os::windows::ffi::OsStringExt;
-
         // 检查 Windows 版本（需要 Windows 10 或更高版本）
         let version = std::env::var("OS").unwrap_or_else(|_| "Unknown".to_string());
         info!("Operating System: {}", version);

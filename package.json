@@ -1,6 +1,6 @@
 {
   "name": "inflowave",
-  "version": "0.5.6",
+  "version": "0.5.7",
   "description": "A modern time-series database management tool built with Tauri + React + TypeScript",
   "type": "module",
   "scripts": {
@@ -63,7 +63,6 @@
     "format:all": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md,html}\" --ignore-path .gitignore",
     "type-check": "tsc --noEmit",
     "code-quality": "npm run type-check && npm run lint:fix-all && npm run format:all",
-    "fix-all": "node scripts/fix-code-quality.js",
     "clean-imports": "eslint . --ext ts,tsx --fix",
     "check-unused": "eslint . --ext ts,tsx",
     "prepare": "node scripts/prepare.js",

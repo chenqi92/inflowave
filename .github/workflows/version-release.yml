@@ -325,7 +325,7 @@ jobs:
           releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
           releaseDraft: false
           prerelease: false
-          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.windows-stable.conf.json
+          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.conf.json
 
 
 
