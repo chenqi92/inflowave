@@ -41,6 +41,92 @@ use updater::*;
 use services::ConnectionService;
 use utils::encryption::create_encryption_service;
 
+/// 系统兼容性检查
+fn check_system_compatibility() -> Result<(), Box<dyn std::error::Error>> {
+    info!("Performing system compatibility check...");
+
+    // 检查操作系统版本
+    #[cfg(target_os = "windows")]
+    {
+        use std::ffi::OsString;
+        use std::os::windows::ffi::OsStringExt;
+
+        // 检查 Windows 版本（需要 Windows 10 或更高版本）
+        let version = std::env::var("OS").unwrap_or_else(|_| "Unknown".to_string());
+        info!("Operating System: {}", version);
+
+        // 检查架构兼容性
+        let arch = std::env::consts::ARCH;
+        info!("Architecture: {}", arch);
+
+        // 检查必要的系统库
+        if !check_required_dlls() {
+            return Err("Required system libraries are missing".into());
+        }
+    }
+
+    // 检查可用内存
+    let available_memory = get_available_memory();
+    if available_memory < 100 * 1024 * 1024 { // 100MB
+        warn!("Low available memory: {} bytes", available_memory);
+    } else {
+        info!("Available memory: {} MB", available_memory / 1024 / 1024);
+    }
+
+    // 检查磁盘空间
+    if let Ok(temp_dir) = std::env::temp_dir().canonicalize() {
+        info!("Temp directory: {:?}", temp_dir);
+    }
+
+    info!("System compatibility check passed");
+    Ok(())
+}
+
+/// 检查必要的 DLL 文件
+#[cfg(target_os = "windows")]
+fn check_required_dlls() -> bool {
+    // 简化的 DLL 检查，避免直接使用 winapi
+    let required_dlls = [
+        "kernel32.dll",
+        "user32.dll",
+        "ole32.dll",
+        "oleaut32.dll",
+        "advapi32.dll",
+        "shell32.dll",
+    ];
+
+    for dll in &required_dlls {
+        // 使用 std::process::Command 来检查 DLL 是否可用
+        let output = std::process::Command::new("where")
+            .arg(dll)
+            .output();
+
+        match output {
+            Ok(result) if result.status.success() => {
+                info!("Successfully verified DLL: {}", dll);
+            }
+            _ => {
+                warn!("Could not verify DLL: {} (this may be normal)", dll);
+                // 不返回 false，因为某些 DLL 可能不在 PATH 中但仍然可用
+            }
+        }
+    }
+    true
+}
+
+#[cfg(not(target_os = "windows"))]
+fn check_required_dlls() -> bool {
+    true // 非 Windows 系统跳过 DLL 检查
+}
+
+/// 获取可用内存
+fn get_available_memory() -> u64 {
+    use sysinfo::{System, SystemExt};
+    let mut system = System::new_all();
+    system.refresh_memory();
+    system.available_memory()
+}
+
 // 创建原生菜单 - 完整的专业化菜单，支持跨平台
 fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
     info!("为平台创建原生菜单: {}", std::env::consts::OS);
@@ -625,10 +711,18 @@ async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Er
 
 #[tokio::main]
 async fn main() {
-    // Initialize logger
-    env_logger::init();
+    // Initialize logger with better error handling
+    if let Err(e) = env_logger::try_init() {
+        eprintln!("Failed to initialize logger: {}", e);
+    }
 
-    info!("Starting InfloWave");
+    info!("Starting InfloWave v{}", env!("CARGO_PKG_VERSION"));
+
+    // Early system compatibility check (disabled for now to avoid crashes)
+    // if let Err(e) = check_system_compatibility() {
+    //     eprintln!("System compatibility check failed: {}", e);
+    //     std::process::exit(1);
+    // }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())

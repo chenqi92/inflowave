@@ -29,8 +29,7 @@ const tauriMacosConfigPath = path.join(rootDir, 'src-tauri', 'tauri.macos.conf.j
 const tauriWindowsConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows.conf.json');
 const tauriWindowsCargoWixConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-cargo-wix.conf.json');
 const tauriWindowsNsisConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-nsis.conf.json');
-const tauriWindowsDebugConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-debug.conf.json');
-const tauriWindowsStableConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-stable.conf.json');
+
 const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
 const readmeCnPath = path.join(rootDir, 'README.md');
 const readmeEnPath = path.join(rootDir, 'README-en.md');
@@ -179,9 +178,7 @@ function getTauriConfigFiles() {
         { path: tauriMacosConfigPath, name: 'tauri.macos.conf.json', required: false },
         { path: tauriWindowsConfigPath, name: 'tauri.windows.conf.json', required: false },
         { path: tauriWindowsCargoWixConfigPath, name: 'tauri.windows-cargo-wix.conf.json', required: false },
-        { path: tauriWindowsNsisConfigPath, name: 'tauri.windows-nsis.conf.json', required: false },
-        { path: tauriWindowsDebugConfigPath, name: 'tauri.windows-debug.conf.json', required: false },
-        { path: tauriWindowsStableConfigPath, name: 'tauri.windows-stable.conf.json', required: false }
+        { path: tauriWindowsNsisConfigPath, name: 'tauri.windows-nsis.conf.json', required: false }
     ];
 }
 
@@ -278,11 +275,17 @@ function updateReadmeVersion(filePath, version, createBackup = true) {
                 replacement: (match, oldVersion) => match.replace(`v${oldVersion}`, `v${version}`),
                 description: 'GitHub下载链接'
             },
-            // 文件名中的版本号 (InfloWave_1.2.3 或 InfloWave-1.2.3)
+            // Windows文件名中的版本号 (InfloWave_1.2.3 或 InfloWave-1.2.3)
             {
                 regex: /InfloWave[_-](\d+\.\d+\.\d+)/g,
                 replacement: (match, oldVersion) => match.replace(oldVersion, version),
-                description: '文件名版本号'
+                description: 'Windows文件名版本号'
+            },
+            // Linux文件名中的版本号 (inflowave_1.2.3 或 inflowave-1.2.3)
+            {
+                regex: /inflowave[_-](\d+\.\d+\.\d+)/g,
+                replacement: (match, oldVersion) => match.replace(oldVersion, version),
+                description: 'Linux文件名版本号'
             },
             // 版本徽章
             {
@@ -290,11 +293,17 @@ function updateReadmeVersion(filePath, version, createBackup = true) {
                 replacement: (match, oldVersion) => match.replace(oldVersion, version),
                 description: '版本徽章'
             },
-            // 文档中的版本引用
+            // 安装命令中的文件名版本号
             {
-                regex: /v(\d+\.\d+\.\d+)/g,
-                replacement: (match, oldVersion) => match.replace(oldVersion, version),
-                description: '版本引用'
+                regex: /(sudo\s+(?:dpkg\s+-i|rpm\s+-i|dnf\s+install)\s+[^\s]+[_-])(\d+\.\d+\.\d+)/g,
+                replacement: (match, prefix, oldVersion) => match.replace(oldVersion, version),
+                description: '安装命令中的版本号'
+            },
+            // AppImage和其他可执行文件的版本号
+            {
+                regex: /(chmod\s+\+x\s+[^\s]+[_-])(\d+\.\d+\.\d+)/g,
+                replacement: (match, prefix, oldVersion) => match.replace(oldVersion, version),
+                description: '可执行文件版本号'
             }
         ];
 
