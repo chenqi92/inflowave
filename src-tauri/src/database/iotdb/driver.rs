@@ -118,14 +118,7 @@ impl DriverFactory {
             }
         }
         
-        if protocols.contains(&"rest".to_string()) && capability.server.rest_v2 {
-            #[cfg(feature = "iotdb-rest")]
-            {
-                use super::drivers::rest_v2::RestV2Driver;
-                let driver = RestV2Driver::new(config, capability.clone()).await?;
-                return Ok(Box::new(driver));
-            }
-        }
+        // REST V2 驱动已移除，现在只使用官方Thrift客户端
         
         Err(anyhow::anyhow!("没有找到合适的驱动实现"))
     }
@@ -148,14 +141,7 @@ impl DriverFactory {
                 Err(anyhow::anyhow!("Thrift 驱动未启用，请启用 iotdb-v1 或 iotdb-v2 特性"))
             }
             "rest" | "rest_v2" => {
-                #[cfg(feature = "iotdb-rest")]
-                {
-                    use super::drivers::rest_v2::RestV2Driver;
-                    let driver = RestV2Driver::new(config, capability.clone()).await?;
-                    Ok(Box::new(driver))
-                }
-                #[cfg(not(feature = "iotdb-rest"))]
-                Err(anyhow::anyhow!("REST 驱动未启用，请启用 iotdb-rest 特性"))
+                Err(anyhow::anyhow!("REST 驱动已移除，现在只使用官方Thrift客户端"))
             }
             _ => Err(anyhow::anyhow!("不支持的驱动类型: {}", driver_type)),
         }
@@ -164,13 +150,12 @@ impl DriverFactory {
     /// 列出可用的驱动类型
     pub fn available_drivers() -> Vec<&'static str> {
         let mut drivers = Vec::new();
-        
+
         #[cfg(any(feature = "iotdb-v1", feature = "iotdb-v2"))]
         drivers.push("thrift");
-        
-        #[cfg(feature = "iotdb-rest")]
-        drivers.push("rest_v2");
-        
+
+        // REST驱动已移除，现在只使用官方Thrift客户端
+
         drivers
     }
 }

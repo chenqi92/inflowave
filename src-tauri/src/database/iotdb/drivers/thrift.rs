@@ -14,8 +14,11 @@ use crate::database::iotdb::{
     driver::{DriverConfig, IoTDBDriver, QueryRequest, QueryResponse, Tablet, ColumnInfo},
     types::{DataValue, IoTDBDataType, TypeMapper},
     dialect::{QueryBuilder, SqlDialect},
-    thrift_protocol::{IoTDBThriftClient, ProtocolVersion, TabletData, ThriftValue},
 };
+
+// 使用新的官方Thrift客户端
+use super::official_thrift::OfficialThriftClient;
+use super::client::TSQueryDataSet;
 
 /// Thrift 驱动实现
 #[derive(Debug)]
@@ -23,7 +26,7 @@ pub struct ThriftDriver {
     config: DriverConfig,
     capability: Capability,
     connected: bool,
-    thrift_client: IoTDBThriftClient,
+    thrift_client: OfficialThriftClient,
     type_mapper: TypeMapper,
     query_builder: QueryBuilder,
 }
@@ -39,12 +42,13 @@ impl ThriftDriver {
         };
         let query_builder = QueryBuilder::new(dialect);
 
-        // 根据版本创建协议客户端
-        let protocol_version = ProtocolVersion::from_version(
-            capability.server.version.major,
-            capability.server.version.minor,
+        // 创建官方Thrift客户端
+        let thrift_client = OfficialThriftClient::new(
+            config.host.clone(),
+            config.port,
+            config.username.clone().unwrap_or_else(|| "root".to_string()),
+            config.password.clone().unwrap_or_else(|| "root".to_string()),
         );
-        let thrift_client = IoTDBThriftClient::new(protocol_version);
 
         Ok(Self {
             config,
@@ -61,16 +65,13 @@ impl ThriftDriver {
         info!("建立 Thrift 连接到 {}:{}", self.config.host, self.config.port);
 
         // 连接到服务器
-        self.thrift_client.connect(&self.config.host, self.config.port).await?;
+        self.thrift_client.connect().await?;
 
         // 打开会话
-        let username = self.config.username.as_deref().unwrap_or("root");
-        let password = self.config.password.as_deref().unwrap_or("root");
-
-        let session_info = self.thrift_client.open_session(username, password).await?;
+        let session_id = self.thrift_client.open_session().await?;
 
         self.connected = true;
-        info!("Thrift 连接建立成功，会话ID: {}", session_info.session_id);
+        info!("Thrift 连接建立成功，会话ID: {}", session_id);
 
         Ok(())
     }
@@ -86,29 +87,37 @@ impl ThriftDriver {
         let start_time = Instant::now();
         debug!("执行 Thrift 查询: {}", sql);
 
-        // 使用真实的 Thrift 客户端执行查询
-        let thrift_result = self.thrift_client.execute_query(sql).await?;
+        // 使用官方 Thrift 客户端执行查询
+        let thrift_result = self.thrift_client.execute_statement(sql).await?;
 
         // 转换 Thrift 结果为标准格式
-        let columns = thrift_result.columns.into_iter()
-            .zip(thrift_result.column_types.iter())
-            .map(|(name, type_str)| {
-                let data_type = self.parse_column_type(type_str);
-                ColumnInfo {
-                    name,
-                    data_type,
-                    nullable: true,
-                }
-            })
-            .collect();
+        let columns = if let Some(column_names) = thrift_result.columns {
+            let data_types = thrift_result.data_type_list.unwrap_or_default();
+            column_names.into_iter()
+                .zip(data_types.iter())
+                .map(|(name, type_str)| {
+                    let data_type = self.parse_column_type(type_str);
+                    ColumnInfo {
+                        name,
+                        data_type,
+                        nullable: true,
+                    }
+                })
+                .collect()
+        } else {
+            vec![]
+        };
 
-        let rows = thrift_result.rows.into_iter()
-            .map(|thrift_row| {
-                thrift_row.into_iter()
-                    .map(|thrift_value| self.convert_thrift_value(thrift_value))
-                    .collect()
-            })
-            .collect();
+        // 处理查询结果数据
+        let rows = if let Some(query_data_set) = thrift_result.query_data_set {
+            // 解析查询数据集
+            self.parse_query_data_set(query_data_set)?
+        } else if let Some(query_result) = thrift_result.query_result {
+            // 解析查询结果
+            self.parse_query_result(query_result)?
+        } else {
+            vec![]
+        };
 
         let execution_time = start_time.elapsed();
 
@@ -138,17 +147,22 @@ impl ThriftDriver {
         }
     }
 
-    /// 转换 Thrift 值为标准数据值
-    fn convert_thrift_value(&self, thrift_value: ThriftValue) -> DataValue {
-        match thrift_value {
-            ThriftValue::Bool(b) => DataValue::Boolean(b),
-            ThriftValue::I32(i) => DataValue::Int32(i),
-            ThriftValue::I64(i) => DataValue::Int64(i),
-            ThriftValue::Double(d) => DataValue::Double(d),
-            ThriftValue::String(s) => DataValue::Text(s),
-            ThriftValue::Binary(b) => DataValue::Blob(b),
-            ThriftValue::Null => DataValue::Null,
-        }
+    /// 解析查询数据集
+    fn parse_query_data_set(&self, _data_set: TSQueryDataSet) -> Result<Vec<Vec<DataValue>>> {
+        // TODO: 实现TSQueryDataSet的解析
+        // 这需要根据IoTDB的二进制数据格式进行解析
+        // 暂时返回空结果
+        warn!("TSQueryDataSet解析尚未实现");
+        Ok(vec![])
+    }
+
+    /// 解析查询结果
+    fn parse_query_result(&self, _query_result: Vec<Vec<u8>>) -> Result<Vec<Vec<DataValue>>> {
+        // TODO: 实现查询结果的解析
+        // 这需要根据IoTDB的二进制数据格式进行解析
+        // 暂时返回空结果
+        warn!("查询结果解析尚未实现");
+        Ok(vec![])
     }
     
     /// 处理类型兼容性
@@ -213,14 +227,11 @@ impl IoTDBDriver for ThriftDriver {
 
         debug!("写入 Tablet 数据: {}", tablet.device_id);
 
-        // 转换为 Thrift Tablet 格式
-        let thrift_tablet = Self::convert_to_thrift_tablet(tablet)?;
+        // TODO: 实现使用官方Thrift客户端的Tablet写入
+        // 这需要使用官方生成的Thrift接口中的insertTablet方法
+        warn!("Tablet写入功能尚未实现，需要使用官方Thrift客户端接口");
 
-        // 使用真实的 Thrift 客户端写入数据
-        self.thrift_client.insert_tablet(&thrift_tablet).await?;
-
-        info!("Tablet 数据写入成功: {} 行数据", tablet.timestamps.len());
-        Ok(())
+        Err(anyhow::anyhow!("Tablet写入功能尚未实现"))
     }
 
 
@@ -233,12 +244,16 @@ impl IoTDBDriver for ThriftDriver {
 
         // 首先尝试最简单的TCP连接测试
         match self.thrift_client.test_connection_simple().await {
-            Ok(()) => {
+            Ok(true) => {
                 info!("IoTDB Thrift TCP连接测试成功");
                 return Ok(start_time.elapsed());
             }
+            Ok(false) => {
+                warn!("IoTDB Thrift TCP连接测试失败，尝试查询测试");
+                // 继续尝试查询测试，不直接返回错误
+            }
             Err(e) => {
-                warn!("IoTDB Thrift TCP连接测试失败，尝试查询测试: {}", e);
+                warn!("IoTDB Thrift TCP连接测试出错，尝试查询测试: {}", e);
                 // 继续尝试查询测试，不直接返回错误
             }
         }
@@ -291,53 +306,7 @@ impl IoTDBDriver for ThriftDriver {
 }
 
 impl ThriftDriver {
-    /// 转换为 Thrift Tablet 格式（静态方法）
-    fn convert_to_thrift_tablet(tablet: &Tablet) -> Result<TabletData> {
-        // 转换数据类型
-        let data_types: Vec<i32> = tablet.data_types.iter()
-            .map(|dt| match dt {
-                IoTDBDataType::Boolean => 0,
-                IoTDBDataType::Int32 => 1,
-                IoTDBDataType::Int64 => 2,
-                IoTDBDataType::Float => 3,
-                IoTDBDataType::Double => 4,
-                IoTDBDataType::Text => 5,
-                IoTDBDataType::String => 6,
-                IoTDBDataType::Blob => 7,
-                IoTDBDataType::Date => 8,
-                IoTDBDataType::Timestamp => 9,
-                IoTDBDataType::Null => 10,
-            })
-            .collect();
-
-        // 转换数据值
-        let values: Vec<Vec<Option<ThriftValue>>> = tablet.values.iter()
-            .map(|row| {
-                row.iter().map(|cell| {
-                    cell.as_ref().map(|value| match value {
-                        DataValue::Boolean(b) => ThriftValue::Bool(*b),
-                        DataValue::Int32(i) => ThriftValue::I32(*i),
-                        DataValue::Int64(i) => ThriftValue::I64(*i),
-                        DataValue::Float(f) => ThriftValue::Double(*f as f64),
-                        DataValue::Double(d) => ThriftValue::Double(*d),
-                        DataValue::Text(s) => ThriftValue::String(s.clone()),
-                        DataValue::Blob(b) => ThriftValue::Binary(b.clone()),
-                        DataValue::Timestamp(t) => ThriftValue::I64(*t),
-                        DataValue::Null => ThriftValue::Null,
-                    })
-                }).collect()
-            })
-            .collect();
-
-        Ok(TabletData {
-            device_id: tablet.device_id.clone(),
-            measurements: tablet.measurements.clone(),
-            data_types,
-            timestamps: tablet.timestamps.clone(),
-            values,
-            is_aligned: tablet.is_aligned,
-        })
-    }
+    // 其他辅助方法可以在这里添加
 }
 
 impl Drop for ThriftDriver {

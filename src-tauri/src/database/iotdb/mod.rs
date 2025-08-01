@@ -8,7 +8,6 @@ pub mod capability;
 pub mod dialect;
 pub mod driver;
 pub mod drivers;
-pub mod thrift_protocol;
 pub mod types;
 
 // 重新导出核心类型
