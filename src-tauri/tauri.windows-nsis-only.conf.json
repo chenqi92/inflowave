@@ -9,6 +9,38 @@
     "devUrl": "http://127.0.0.1:1422",
     "frontendDist": "../dist"
   },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "InfloWave",
+        "width": 1400,
+        "height": 900,
+        "minWidth": 1000,
+        "minHeight": 700,
+        "center": true,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "theme": "Light",
+        "titleBarStyle": "Visible",
+        "maximized": false,
+        "visible": true,
+        "shadow": true,
+        "backgroundColor": "#ffffff",
+        "url": "index.html",
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": null,
+      "capabilities": [
+        "default"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
     "targets": [
@@ -51,38 +83,6 @@
         "displayLanguageSelector": true,
         "installerIcon": "icons/icon.ico"
       }
-    }
-  },
-  "app": {
-    "windows": [
-      {
-        "label": "main",
-        "title": "InfloWave",
-        "width": 1400,
-        "height": 900,
-        "minWidth": 1000,
-        "minHeight": 700,
-        "center": true,
-        "resizable": true,
-        "fullscreen": false,
-        "decorations": true,
-        "alwaysOnTop": false,
-        "skipTaskbar": false,
-        "theme": "Light",
-        "titleBarStyle": "Visible",
-        "maximized": false,
-        "visible": true,
-        "shadow": true,
-        "backgroundColor": "#ffffff",
-        "url": "index.html",
-        "transparent": false
-      }
-    ],
-    "security": {
-      "csp": null,
-      "capabilities": [
-        "default"
-      ]
     }
   }
 }

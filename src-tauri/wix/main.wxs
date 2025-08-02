@@ -93,7 +93,7 @@
         <!-- 注册表搜索已安装路径 -->
         <Property Id="INSTALLFOLDER">
             <RegistrySearch Id="InstallFolderRegistry" Root="HKLM"
-                           Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\{$(var.ProductCode)}"
+                           Key="Software\Microsoft\Windows\CurrentVersion\Uninstall\{12345678-1234-1234-1234-123456789012}"
                            Name="InstallLocation" Type="raw" />
         </Property>
 
@@ -177,8 +177,8 @@
           The product icon is the graphic that appears in the Add/Remove
           Programs control panel for the application.
         -->
-        <!--<Icon Id='ProductICO' SourceFile='wix\Product.ico'/>-->
-        <!--<Property Id='ARPPRODUCTICON' Value='ProductICO' />-->
+        <Icon Id='ProductICO' SourceFile='icons\icon.ico'/>
+        <Property Id='ARPPRODUCTICON' Value='ProductICO' />
 
         <Property Id='ARPHELPLINK' Value='https://github.com/chenqi92/inflowave'/>
         

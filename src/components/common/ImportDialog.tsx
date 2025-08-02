@@ -315,9 +315,11 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
             <TableCell>
               <Select
                 value={mapping.fieldType}
-                onValueChange={val => updateFieldMapping(index, 'fieldType', val)}
+                onValueChange={(val: string) =>
+                  updateFieldMapping(index, 'fieldType', val)
+                }
               >
-                <SelectTrigger className="w-[100px]">
+                <SelectTrigger className='w-[100px]'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -330,10 +332,12 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
             <TableCell>
               <Select
                 value={mapping.dataType}
-                onValueChange={val => updateFieldMapping(index, 'dataType', val)}
+                onValueChange={(val: string) =>
+                  updateFieldMapping(index, 'dataType', val)
+                }
                 disabled={mapping.fieldType === 'time'}
               >
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className='w-[120px]'>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -381,7 +385,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={open => !open && onClose()}>
+    <Dialog open={open} onOpenChange={(open: any) => !open && onClose()}>
       <DialogContent className='max-w-5xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>数据导入</DialogTitle>
@@ -429,15 +433,21 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                       </Text>
                     </div>
                     <Input
-                      type="file"
-                      accept=".csv,.json,.txt"
+                      type='file'
+                      accept='.csv,.json,.txt'
                       onChange={handleFileSelect}
-                      className="max-w-xs"
+                      className='max-w-xs'
                     />
                     {selectedFile && (
-                      <div className="flex items-center gap-2 mt-4">
-                        <Text className="text-sm">已选择: {selectedFile.name}</Text>
-                        <Button variant="outline" size="sm" onClick={handleRemoveFile}>
+                      <div className='flex items-center gap-2 mt-4'>
+                        <Text className='text-sm'>
+                          已选择: {selectedFile.name}
+                        </Text>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          onClick={handleRemoveFile}
+                        >
                           移除
                         </Button>
                       </div>
@@ -445,16 +455,17 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                   </div>
                 </div>
 
-                <Alert className="border-blue-200 bg-blue-50">
+                <Alert className='border-blue-200 bg-blue-50'>
                   <Info className='w-4 h-4 text-blue-600' />
-                  <AlertDescription className="text-blue-800">
-                    <div className="space-y-2">
-                      <div className="font-medium">文件格式要求</div>
+                  <AlertDescription className='text-blue-800'>
+                    <div className='space-y-2'>
+                      <div className='font-medium'>文件格式要求</div>
                       <div>
                         <strong>CSV 格式:</strong> 第一行为表头，数据用逗号分隔
                       </div>
                       <div>
-                        <strong>JSON 格式:</strong> 对象数组，每个对象代表一行数据
+                        <strong>JSON 格式:</strong>{' '}
+                        对象数组，每个对象代表一行数据
                       </div>
                     </div>
                   </AlertDescription>
@@ -473,23 +484,29 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                 </CardHeader>
                 <CardContent>
                   <Form {...form}>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
                       <FormField
                         control={form.control}
-                        name="measurement"
+                        name='measurement'
                         rules={{ required: '请输入测量名称' }}
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>目标测量</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                            >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="选择或输入测量名称" />
+                                  <SelectValue placeholder='选择或输入测量名称' />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
                                 {measurements.map(measurement => (
-                                  <SelectItem key={measurement} value={measurement}>
+                                  <SelectItem
+                                    key={measurement}
+                                    value={measurement}
+                                  >
                                     {measurement}
                                   </SelectItem>
                                 ))}
@@ -502,16 +519,16 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
                       <FormField
                         control={form.control}
-                        name="batchSize"
+                        name='batchSize'
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>批次大小</FormLabel>
                             <FormControl>
                               <Input
-                                type="number"
+                                type='number'
                                 min={1}
                                 max={10000}
-                                placeholder="1000"
+                                placeholder='1000'
                                 {...field}
                               />
                             </FormControl>
@@ -522,11 +539,13 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
                       <FormField
                         control={form.control}
-                        name="skipErrors"
+                        name='skipErrors'
                         render={({ field }) => (
-                          <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                            <div className="space-y-0.5">
-                              <FormLabel className="text-base">跳过错误</FormLabel>
+                          <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                            <div className='space-y-0.5'>
+                              <FormLabel className='text-base'>
+                                跳过错误
+                              </FormLabel>
                             </div>
                             <FormControl>
                               <Switch
@@ -548,9 +567,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                   <CardTitle>字段映射配置</CardTitle>
                 </CardHeader>
                 <CardContent className='space-y-4'>
-                  <Alert className="border-blue-200 bg-blue-50">
+                  <Alert className='border-blue-200 bg-blue-50'>
                     <Info className='w-4 h-4 text-blue-600' />
-                    <AlertDescription className="text-blue-800">
+                    <AlertDescription className='text-blue-800'>
                       请为每个源字段配置对应的目标字段名称和类型。至少需要一个时间字段。
                     </AlertDescription>
                   </Alert>
@@ -565,19 +584,24 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                   <CardTitle>数据预览 (前10行)</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="overflow-x-auto">
-                    {renderPreviewTable()}
-                  </div>
+                  <div className='overflow-x-auto'>{renderPreviewTable()}</div>
                 </CardContent>
               </Card>
 
               {/* 操作按钮 */}
               <div className='flex justify-between'>
-                <Button variant="outline" onClick={() => setCurrentStep(0)}>上一步</Button>
+                <Button variant='outline' onClick={() => setCurrentStep(0)}>
+                  上一步
+                </Button>
                 <div className='flex gap-2'>
-                  <Button variant="outline" onClick={onClose}>取消</Button>
+                  <Button variant='outline' onClick={onClose}>
+                    取消
+                  </Button>
                   <Button
-                    disabled={loading || !fieldMappings.some(m => m.fieldType === 'time')}
+                    disabled={
+                      loading ||
+                      !fieldMappings.some(m => m.fieldType === 'time')
+                    }
                     onClick={handleImport}
                   >
                     开始导入
@@ -590,7 +614,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
           {/* 步骤 3: 导入完成 */}
           {currentStep === 2 && (
             <Card>
-              <CardContent className="pt-6">
+              <CardContent className='pt-6'>
                 <div className='text-center space-y-4'>
                   <CheckCircle className='w-16 h-16 mx-auto text-green-600' />
                   <h3 className='text-lg font-semibold'>导入完成</h3>
@@ -598,7 +622,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
                     数据已成功导入到数据库 <strong>{database}</strong> 中。
                   </Text>
                   <div className='flex gap-2 justify-center'>
-                    <Button variant="outline" onClick={onClose}>关闭</Button>
+                    <Button variant='outline' onClick={onClose}>
+                      关闭
+                    </Button>
                     <Button
                       onClick={() => {
                         resetState();
