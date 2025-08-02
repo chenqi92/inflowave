@@ -1,6 +1,6 @@
 {
   "name": "inflowave",
-  "version": "0.5.9",
+  "version": "0.6.0",
   "description": "A modern time-series database management tool built with Tauri + React + TypeScript",
   "type": "module",
   "scripts": {
@@ -27,6 +27,7 @@
     "build:windows:cargo-wix:chinese": "powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Chinese",
     "build:windows:cargo-wix:clean": "powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Clean",
     "test:cargo-wix": "powershell -ExecutionPolicy Bypass -File scripts/test-cargo-wix.ps1",
+    "validate:configs": "node scripts/validate-configs.cjs",
     "setup:windows": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows-build.ps1",
     "build:windows:stable": "tauri build --target x86_64-pc-windows-msvc --config src-tauri/tauri.windows-stable.conf.json",
     "build:windows:safe": "powershell -ExecutionPolicy Bypass -File scripts/build-windows-safe.ps1",
