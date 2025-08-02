@@ -25,7 +25,10 @@
         "alwaysOnTop": false,
         "skipTaskbar": false,
         "theme": "Light",
-        "titleBarStyle": "Visible",
+        "titleBarStyle": "Transparent",
+        "hiddenTitle": false,
+        "acceptFirstMouse": true,
+        "tabbingIdentifier": "main",
         "maximized": false,
         "visible": true,
         "shadow": true,
@@ -44,8 +47,8 @@
   "bundle": {
     "active": true,
     "targets": [
-      "deb",
-      "rpm"
+      "dmg",
+      "app"
     ],
     "icon": [
       "icons/icon.png",
@@ -54,7 +57,8 @@
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/256x256.png",
-      "icons/512x512.png"
+      "icons/512x512.png",
+      "icons/icon.icns"
     ],
     "publisher": "Kkape Team",
     "copyright": "Copyright © 2024 InfloWave",
@@ -62,18 +66,13 @@
     "shortDescription": "Modern time-series database management tool",
     "longDescription": "A modern, secure, and user-friendly GUI tool for managing time-series databases. Features include connection management, database operations, query execution, data visualization, and more.",
     "externalBin": [],
-    "linux": {
-      "deb": {
-        "depends": [
-          "libwebkit2gtk-4.1-0",
-          "libgtk-3-0",
-          "libayatana-appindicator3-1"
-        ]
-      },
-      "appimage": {
-        "bundleMediaFramework": false,
-        "files": {}
-      }
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.15",
+      "exceptionDomain": "",
+      "signingIdentity": null,
+      "providerShortName": null,
+      "entitlements": null
     }
   }
 }

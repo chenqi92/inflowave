@@ -37,7 +37,8 @@
     "security": {
       "csp": null,
       "capabilities": [
-        "default"
+        "default",
+        "linux"
       ]
     }
   },
@@ -45,7 +46,8 @@
     "active": true,
     "targets": [
       "deb",
-      "rpm"
+      "rpm",
+      "appimage"
     ],
     "icon": [
       "icons/icon.png",
