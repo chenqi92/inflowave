@@ -861,6 +861,10 @@ impl IoTDBMultiClient {
             "StorageEngineInfo" => TreeNodeType::StorageEngineInfo,
             "ClusterInfo" => TreeNodeType::ClusterInfo,
             "SchemaTemplate" => TreeNodeType::SchemaTemplate,
+            "UserGroup" => TreeNodeType::UserGroup,
+            "PrivilegeGroup" => TreeNodeType::PrivilegeGroup,
+            "FunctionGroup" => TreeNodeType::FunctionGroup,
+            "TriggerGroup" => TreeNodeType::TriggerGroup,
             _ => return Ok(children),
         };
 
@@ -885,6 +889,62 @@ impl IoTDBMultiClient {
                     }
                 } else {
                     log::debug!("跳过非存储组节点的设备查询: {}", parent_node_id);
+                }
+            }
+            TreeNodeType::UserGroup => {
+                // 用户管理节点 - 获取用户列表
+                match self.get_users_for_tree().await {
+                    Ok(users) => {
+                        for user in users {
+                            let user_node = TreeNodeFactory::create_user(user, parent_node_id.to_string());
+                            children.push(user_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取用户列表失败: {}", e);
+                    }
+                }
+            }
+            TreeNodeType::PrivilegeGroup => {
+                // 权限管理节点 - 获取权限信息
+                match self.get_privileges_for_tree().await {
+                    Ok(privileges) => {
+                        for privilege in privileges {
+                            let privilege_node = TreeNodeFactory::create_privilege(privilege, parent_node_id.to_string());
+                            children.push(privilege_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取权限列表失败: {}", e);
+                    }
+                }
+            }
+            TreeNodeType::FunctionGroup => {
+                // 函数管理节点 - 获取函数列表
+                match self.get_functions_for_tree().await {
+                    Ok(functions) => {
+                        for function in functions {
+                            let function_node = TreeNodeFactory::create_function(function, parent_node_id.to_string());
+                            children.push(function_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取函数列表失败: {}", e);
+                    }
+                }
+            }
+            TreeNodeType::TriggerGroup => {
+                // 触发器管理节点 - 获取触发器列表
+                match self.get_triggers_for_tree().await {
+                    Ok(triggers) => {
+                        for trigger in triggers {
+                            let trigger_node = TreeNodeFactory::create_trigger(trigger, parent_node_id.to_string());
+                            children.push(trigger_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取触发器列表失败: {}", e);
+                    }
                 }
             }
             TreeNodeType::SystemInfo | TreeNodeType::SchemaTemplate => {
@@ -1498,6 +1558,98 @@ impl IoTDBMultiClient {
         }
 
         Ok(vec![])
+    }
+
+    /// 获取用户列表用于树显示
+    async fn get_users_for_tree(&mut self) -> Result<Vec<String>> {
+        let sql = "LIST USER";
+        match self.execute_query(sql).await {
+            Ok(response) => {
+                let mut users = Vec::new();
+                for row in response.rows() {
+                    if !row.is_empty() {
+                        if let Some(user_value) = row.get(0) {
+                            if let Some(user_str) = user_value.as_str() {
+                                users.push(user_str.to_string());
+                            }
+                        }
+                    }
+                }
+                Ok(users)
+            }
+            Err(_) => {
+                // 如果查询失败，返回默认用户
+                Ok(vec!["root".to_string()])
+            }
+        }
+    }
+
+    /// 获取权限列表用于树显示
+    async fn get_privileges_for_tree(&mut self) -> Result<Vec<String>> {
+        // IoTDB的权限类型
+        Ok(vec![
+            "READ_DATA".to_string(),
+            "WRITE_DATA".to_string(),
+            "READ_SCHEMA".to_string(),
+            "WRITE_SCHEMA".to_string(),
+            "MANAGE_DATABASE".to_string(),
+            "MANAGE_USER".to_string(),
+            "MANAGE_ROLE".to_string(),
+        ])
+    }
+
+    /// 获取函数列表用于树显示
+    async fn get_functions_for_tree(&mut self) -> Result<Vec<String>> {
+        let sql = "SHOW FUNCTIONS";
+        match self.execute_query(sql).await {
+            Ok(response) => {
+                let mut functions = Vec::new();
+                for row in response.rows() {
+                    if !row.is_empty() {
+                        if let Some(func_value) = row.get(0) {
+                            if let Some(func_str) = func_value.as_str() {
+                                functions.push(func_str.to_string());
+                            }
+                        }
+                    }
+                }
+                Ok(functions)
+            }
+            Err(_) => {
+                // 如果查询失败，返回内置函数
+                Ok(vec![
+                    "AVG".to_string(),
+                    "COUNT".to_string(),
+                    "MAX".to_string(),
+                    "MIN".to_string(),
+                    "SUM".to_string(),
+                ])
+            }
+        }
+    }
+
+    /// 获取触发器列表用于树显示
+    async fn get_triggers_for_tree(&mut self) -> Result<Vec<String>> {
+        let sql = "SHOW TRIGGERS";
+        match self.execute_query(sql).await {
+            Ok(response) => {
+                let mut triggers = Vec::new();
+                for row in response.rows() {
+                    if !row.is_empty() {
+                        if let Some(trigger_value) = row.get(0) {
+                            if let Some(trigger_str) = trigger_value.as_str() {
+                                triggers.push(trigger_str.to_string());
+                            }
+                        }
+                    }
+                }
+                Ok(triggers)
+            }
+            Err(_) => {
+                // 如果查询失败，返回空列表
+                Ok(vec![])
+            }
+        }
     }
 }
 

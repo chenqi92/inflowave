@@ -6,6 +6,14 @@ use tauri::State;
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 
+/// 检查是否是管理节点
+fn is_management_node(node_name: &str) -> bool {
+    matches!(node_name,
+        "用户管理" | "权限管理" | "函数管理" | "触发器管理" |
+        "user_management" | "privilege_management" | "function_management" | "trigger_management"
+    )
+}
+
 /// 获取数据库列表
 #[tauri::command(rename_all = "camelCase")]
 pub async fn get_databases(
@@ -286,13 +294,27 @@ pub async fn get_table_structure(
             format!("获取连接失败: {}", e)
         })?;
 
-    // 获取字段信息，包含数据库上下文
-    let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, table);
-    let field_result = client.execute_query(&field_query, Some(&database)).await
-        .map_err(|e| {
-            error!("获取字段信息失败: {}", e);
-            format!("获取字段信息失败: {}", e)
-        })?;
+    // 根据连接类型获取字段信息
+    let field_result = {
+        let db_type = client.get_database_type();
+        if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+            // IoTDB使用SHOW TIMESERIES语法
+            let field_query = format!("SHOW TIMESERIES {}.{}.*", database, table);
+            client.execute_query(&field_query, Some(&database)).await
+                .map_err(|e| {
+                    error!("获取字段信息失败: {}", e);
+                    format!("获取字段信息失败: {}", e)
+                })?
+        } else {
+            // InfluxDB使用SHOW FIELD KEYS语法
+            let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, table);
+            client.execute_query(&field_query, Some(&database)).await
+                .map_err(|e| {
+                    error!("获取字段信息失败: {}", e);
+                    format!("获取字段信息失败: {}", e)
+                })?
+        }
+    };
 
     // 根据连接类型获取标签信息
     let tag_result = {
@@ -504,7 +526,11 @@ pub async fn show_measurements(
 ) -> Result<Vec<String>, String> {
     debug!("处理显示测量列表命令: {} - {}", connection_id, database);
 
-    // 移除硬编码过滤，显示真实数据
+    // 检查是否是管理节点，如果是则返回空列表
+    if is_management_node(&database) {
+        debug!("跳过管理节点的测量查询: {}", database);
+        return Ok(vec![]);
+    }
 
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connection_id).await
@@ -608,7 +634,11 @@ pub async fn get_measurements(
 ) -> Result<Vec<String>, String> {
     debug!("处理获取测量列表命令: {} - {}", connection_id, database);
 
-    // 移除硬编码过滤，显示真实数据
+    // 检查是否是管理节点，如果是则返回空列表
+    if is_management_node(&database) {
+        debug!("跳过管理节点的测量查询: {}", database);
+        return Ok(vec![]);
+    }
 
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connection_id).await
@@ -646,11 +676,11 @@ pub async fn get_field_keys(
         // 检查连接类型，如果是IoTDB则使用SHOW TIMESERIES语法
         let db_type = client.get_database_type();
         if matches!(db_type, crate::models::DatabaseType::IoTDB) {
-            // IoTDB使用SHOW TIMESERIES语法，路径需要正确格式
+            // IoTDB使用SHOW TIMESERIES语法，不使用引号
             if let Some(measurement) = measurement {
-                format!("SHOW TIMESERIES `{}`.`{}`.*", database, measurement)
+                format!("SHOW TIMESERIES {}.{}.*", database, measurement)
             } else {
-                format!("SHOW TIMESERIES `{}`.**", database)
+                format!("SHOW TIMESERIES {}.**", database)
             }
         } else {
             // InfluxDB使用SHOW FIELD KEYS语法

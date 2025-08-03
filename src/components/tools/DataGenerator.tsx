@@ -831,18 +831,20 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
       const tags: FieldInfo[] = [];
 
       try {
-        // 获取字段信息 - 尝试多种查询格式
+        // 获取字段信息 - 使用后端API而不是直接SQL查询
         let fieldResult;
-        const fieldQueries = [
-          `SHOW FIELD KEYS ON "${selectedDatabase}" FROM "${tableName}"`,
-          `SHOW FIELD KEYS FROM "${tableName}"`,
-          `SHOW FIELD KEYS FROM ${tableName}`,
-          `SHOW FIELD KEYS ON "${selectedDatabase}"`,
-          // 注意：避免使用可能导致retention policy错误的查询格式
-          // `SHOW FIELD KEYS FROM "${selectedDatabase}"."${tableName}"`,
-          // `SHOW FIELD KEYS FROM "${selectedDatabase}".."${tableName}"`,
-          // `SHOW FIELD KEYS FROM "${selectedDatabase}"."autogen"."${tableName}"`
-        ];
+        try {
+          console.log('🔍 尝试获取字段信息:', { selectedDatabase, tableName });
+          fieldResult = await safeTauriInvoke<any>('get_field_keys', {
+            connection_id: activeConnectionId,
+            database: selectedDatabase,
+            measurement: tableName,
+          });
+          console.log('📦 字段信息响应:', fieldResult);
+        } catch (error) {
+          console.log('❌ 获取字段信息失败:', error);
+          fieldResult = [];
+        }
         
         for (const query of fieldQueries) {
           try {

@@ -515,6 +515,46 @@ impl TreeNodeFactory {
         )
     }
 
+    /// 创建用户节点
+    pub fn create_user(name: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("user_{}", name),
+            name,
+            TreeNodeType::User,
+        )
+        .with_parent(parent_id)
+    }
+
+    /// 创建权限节点
+    pub fn create_privilege(name: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("privilege_{}", name),
+            name,
+            TreeNodeType::Privilege,
+        )
+        .with_parent(parent_id)
+    }
+
+    /// 创建函数节点
+    pub fn create_function(name: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("function_{}", name),
+            name,
+            TreeNodeType::Function,
+        )
+        .with_parent(parent_id)
+    }
+
+    /// 创建触发器节点
+    pub fn create_trigger(name: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("trigger_{}", name),
+            name,
+            TreeNodeType::Trigger,
+        )
+        .with_parent(parent_id)
+    }
+
     /// 创建 IoTDB 版本信息节点
     pub fn create_version_info(version: String) -> TreeNode {
         TreeNode::new(

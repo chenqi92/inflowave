@@ -141,15 +141,14 @@ impl OfficialThriftClient {
 
         debug!("执行SQL语句: {}", sql);
 
-        // 对于查询语句，IoTDB可能不需要预先创建的StatementId
-        // 尝试使用一个特殊的值表示直接执行查询
-        let statement_id = -1; // 使用-1表示直接执行，不需要预先创建Statement
+        // 使用会话ID作为StatementId，这样可以确保在会话中是有效的
+        let statement_id = session_id;
 
         // 构建执行语句请求
         let request = TSExecuteStatementReq::new(
             session_id,
             sql.to_string(),
-            statement_id, // 使用0作为默认statement_id
+            statement_id, // 使用生成的statement_id
             Some(1000), // fetch_size
             Some(60000), // timeout (60秒)
             Some(false), // enable_redirect_query

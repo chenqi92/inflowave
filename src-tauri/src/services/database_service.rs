@@ -237,11 +237,24 @@ impl DatabaseService {
         let client = manager.get_connection(connection_id).await
             .context("获取连接失败")?;
         
-        // 构建查询语句，包含数据库上下文
-        let query = if let Some(measurement) = measurement {
-            format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
-        } else {
-            format!("SHOW FIELD KEYS ON \"{}\"", database)
+        // 根据连接类型构建查询语句
+        let query = {
+            let db_type = client.get_database_type();
+            if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+                // IoTDB使用SHOW TIMESERIES语法
+                if let Some(measurement) = measurement {
+                    format!("SHOW TIMESERIES {}.{}.*", database, measurement)
+                } else {
+                    format!("SHOW TIMESERIES {}.**", database)
+                }
+            } else {
+                // InfluxDB使用SHOW FIELD KEYS语法
+                if let Some(measurement) = measurement {
+                    format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+                } else {
+                    format!("SHOW FIELD KEYS ON \"{}\"", database)
+                }
+            }
         };
         
         let result = client.execute_query(&query, Some(database)).await
@@ -273,11 +286,24 @@ impl DatabaseService {
         let client = manager.get_connection(connection_id).await
             .context("获取连接失败")?;
         
-        // 构建查询语句，包含数据库上下文
-        let query = if let Some(measurement) = measurement {
-            format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
-        } else {
-            format!("SHOW TAG KEYS ON \"{}\"", database)
+        // 根据连接类型构建查询语句
+        let query = {
+            let db_type = client.get_database_type();
+            if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+                // IoTDB不支持TAG概念，使用SHOW DEVICES
+                if let Some(measurement) = measurement {
+                    format!("SHOW DEVICES {}.{}", database, measurement)
+                } else {
+                    format!("SHOW DEVICES {}.**", database)
+                }
+            } else {
+                // InfluxDB使用SHOW TAG KEYS语法
+                if let Some(measurement) = measurement {
+                    format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+                } else {
+                    format!("SHOW TAG KEYS ON \"{}\"", database)
+                }
+            }
         };
         
         let result = client.execute_query(&query, Some(database)).await
