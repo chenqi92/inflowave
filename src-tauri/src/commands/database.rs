@@ -259,15 +259,47 @@ pub async fn execute_table_query(
         })?;
 
     // 根据查询类型构建查询语句
-    let query = match query_type.as_str() {
-        "SELECT" => {
-            let limit_clause = limit.map(|l| format!(" LIMIT {}", l)).unwrap_or_default();
-            format!("SELECT * FROM \"{}\" ORDER BY time DESC{}", table, limit_clause)
+    let query = {
+        // 检查连接类型，如果是IoTDB则使用不带引号的路径格式
+        let db_type = client.get_database_type();
+        let table_path = if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+            // IoTDB使用不带引号的路径格式
+            if table.starts_with(&database) {
+                table.to_string()
+            } else {
+                format!("{}.{}", database, table)
+            }
+        } else {
+            // InfluxDB使用带引号的格式
+            format!("\"{}\"", table)
+        };
+
+        match query_type.as_str() {
+            "SELECT" => {
+                let limit_clause = limit.map(|l| format!(" LIMIT {}", l)).unwrap_or_default();
+                if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+                    format!("SELECT * FROM {}{}", table_path, limit_clause)
+                } else {
+                    format!("SELECT * FROM {} ORDER BY time DESC{}", table_path, limit_clause)
+                }
+            }
+            "COUNT" => format!("SELECT COUNT(*) FROM {}", table_path),
+            "FIRST" => {
+                if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+                    format!("SELECT * FROM {} LIMIT 1", table_path)
+                } else {
+                    format!("SELECT FIRST(*) FROM {}", table_path)
+                }
+            }
+            "LAST" => {
+                if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+                    format!("SELECT * FROM {} ORDER BY time DESC LIMIT 1", table_path)
+                } else {
+                    format!("SELECT LAST(*) FROM {}", table_path)
+                }
+            }
+            _ => return Err(format!("不支持的查询类型: {}", query_type)),
         }
-        "COUNT" => format!("SELECT COUNT(*) FROM \"{}\"", table),
-        "FIRST" => format!("SELECT FIRST(*) FROM \"{}\"", table),
-        "LAST" => format!("SELECT LAST(*) FROM \"{}\"", table),
-        _ => return Err(format!("不支持的查询类型: {}", query_type)),
     };
 
     client.execute_query(&query, Some(&database)).await

@@ -264,10 +264,11 @@ pub async fn get_query_suggestions(
     
     let mut suggestions = Vec::new();
     
-    // 基本的 InfluxQL 关键字建议
+    // 基本的SQL关键字建议（兼容InfluxDB和IoTDB）
     let keywords = [
         "SELECT", "FROM", "WHERE", "GROUP BY", "ORDER BY", "LIMIT",
-        "SHOW DATABASES", "SHOW MEASUREMENTS", "SHOW FIELD KEYS", "SHOW TAG KEYS",
+        "SHOW DATABASES", "SHOW MEASUREMENTS", "SHOW TIMESERIES", "SHOW DEVICES",
+        "SHOW FIELD KEYS", "SHOW TAG KEYS", "SHOW STORAGE GROUP",
         "CREATE DATABASE", "DROP DATABASE", "CREATE RETENTION POLICY",
         "SHOW RETENTION POLICIES", "SHOW SERIES", "SHOW STATS",
     ];

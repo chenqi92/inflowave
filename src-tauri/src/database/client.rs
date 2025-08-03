@@ -330,7 +330,13 @@ impl DatabaseClient {
             },
             DatabaseClient::IoTDB(client) => {
                 let mut client = client.lock().await;
-                client.get_timeseries(measurement).await
+                // 对于IoTDB，需要传递完整的路径：database.measurement
+                let device_path = if measurement.is_empty() {
+                    database.to_string()
+                } else {
+                    format!("{}.{}", database, measurement)
+                };
+                client.get_timeseries(&device_path).await
             },
         }
     }

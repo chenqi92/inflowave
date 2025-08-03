@@ -402,27 +402,138 @@ pub async fn get_field_context_menu(
 
 // SQL 生成辅助函数
 fn generate_select_all_sql(request: &SqlGenerationRequest) -> String {
-    let _database = request.database.as_ref().unwrap_or(&String::new());
+    let default_database = String::new();
+    let database = request.database.as_ref().unwrap_or(&default_database);
     let default_measurement = String::new();
     let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     let limit = request.limit.unwrap_or(100);
 
-    format!("SELECT * FROM \"{}\" LIMIT {}", measurement, limit)
+    // 根据数据库类型生成不同的SQL
+    if let Some(db_type) = &request.database_type {
+        match db_type.as_str() {
+            "iotdb" => {
+                // IoTDB使用不带引号的路径格式
+                let device_path = if database.is_empty() {
+                    measurement.to_string()
+                } else if measurement.starts_with(database) {
+                    measurement.to_string()
+                } else {
+                    format!("{}.{}", database, measurement)
+                };
+                format!("SELECT * FROM {} LIMIT {}", device_path, limit)
+            }
+            _ => {
+                // InfluxDB使用带引号的格式
+                format!("SELECT * FROM \"{}\" LIMIT {}", measurement, limit)
+            }
+        }
+    } else {
+        // 检查是否是IoTDB路径格式
+        if database.starts_with("root.") || measurement.starts_with("root.") {
+            // IoTDB使用不带引号的路径格式
+            let device_path = if database.is_empty() {
+                measurement.to_string()
+            } else if measurement.starts_with(database) {
+                measurement.to_string()
+            } else {
+                format!("{}.{}", database, measurement)
+            };
+            format!("SELECT * FROM {} LIMIT {}", device_path, limit)
+        } else {
+            // InfluxDB使用带引号的格式
+            format!("SELECT * FROM \"{}\" LIMIT {}", measurement, limit)
+        }
+    }
 }
 
 fn generate_select_fields_sql(request: &SqlGenerationRequest) -> String {
+    let default_database = String::new();
+    let database = request.database.as_ref().unwrap_or(&default_database);
     let default_measurement = String::new();
     let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
     let fields = request.fields.as_ref().map(|f| f.join(", ")).unwrap_or("*".to_string());
     let limit = request.limit.unwrap_or(100);
 
-    format!("SELECT {} FROM \"{}\" LIMIT {}", fields, measurement, limit)
+    // 根据数据库类型生成不同的SQL
+    if let Some(db_type) = &request.database_type {
+        match db_type.as_str() {
+            "iotdb" => {
+                // IoTDB使用不带引号的路径格式
+                let device_path = if database.is_empty() {
+                    measurement.to_string()
+                } else if measurement.starts_with(database) {
+                    measurement.to_string()
+                } else {
+                    format!("{}.{}", database, measurement)
+                };
+                format!("SELECT {} FROM {} LIMIT {}", fields, device_path, limit)
+            }
+            _ => {
+                // InfluxDB使用带引号的格式
+                format!("SELECT {} FROM \"{}\" LIMIT {}", fields, measurement, limit)
+            }
+        }
+    } else {
+        // 检查是否是IoTDB路径格式
+        if database.starts_with("root.") || measurement.starts_with("root.") {
+            // IoTDB使用不带引号的路径格式
+            let device_path = if database.is_empty() {
+                measurement.to_string()
+            } else if measurement.starts_with(database) {
+                measurement.to_string()
+            } else {
+                format!("{}.{}", database, measurement)
+            };
+            format!("SELECT {} FROM {} LIMIT {}", fields, device_path, limit)
+        } else {
+            // InfluxDB使用带引号的格式
+            format!("SELECT {} FROM \"{}\" LIMIT {}", fields, measurement, limit)
+        }
+    }
 }
 
 fn generate_count_sql(request: &SqlGenerationRequest) -> String {
+    let default_database = String::new();
+    let database = request.database.as_ref().unwrap_or(&default_database);
     let default_measurement = String::new();
     let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
-    format!("SELECT COUNT(*) FROM \"{}\"", measurement)
+
+    // 根据数据库类型生成不同的SQL
+    if let Some(db_type) = &request.database_type {
+        match db_type.as_str() {
+            "iotdb" => {
+                // IoTDB使用不带引号的路径格式
+                let device_path = if database.is_empty() {
+                    measurement.to_string()
+                } else if measurement.starts_with(database) {
+                    measurement.to_string()
+                } else {
+                    format!("{}.{}", database, measurement)
+                };
+                format!("SELECT COUNT(*) FROM {}", device_path)
+            }
+            _ => {
+                // InfluxDB使用带引号的格式
+                format!("SELECT COUNT(*) FROM \"{}\"", measurement)
+            }
+        }
+    } else {
+        // 检查是否是IoTDB路径格式
+        if database.starts_with("root.") || measurement.starts_with("root.") {
+            // IoTDB使用不带引号的路径格式
+            let device_path = if database.is_empty() {
+                measurement.to_string()
+            } else if measurement.starts_with(database) {
+                measurement.to_string()
+            } else {
+                format!("{}.{}", database, measurement)
+            };
+            format!("SELECT COUNT(*) FROM {}", device_path)
+        } else {
+            // InfluxDB使用带引号的格式
+            format!("SELECT COUNT(*) FROM \"{}\"", measurement)
+        }
+    }
 }
 
 fn generate_show_measurements_sql(request: &SqlGenerationRequest) -> String {
@@ -442,10 +553,43 @@ fn generate_show_tag_keys_sql(request: &SqlGenerationRequest) -> String {
     let default_measurement = String::new();
     let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
 
-    if measurement.is_empty() {
-        format!("SHOW TAG KEYS ON \"{}\"", database)
+    // 根据数据库类型生成不同的SQL
+    if let Some(db_type) = &request.database_type {
+        match db_type.as_str() {
+            "iotdb" => {
+                // IoTDB不支持TAG概念，使用SHOW DEVICES
+                if measurement.is_empty() {
+                    format!("SHOW DEVICES {}.**", database)
+                } else {
+                    format!("SHOW DEVICES {}.{}", database, measurement)
+                }
+            }
+            _ => {
+                // InfluxDB使用SHOW TAG KEYS语法
+                if measurement.is_empty() {
+                    format!("SHOW TAG KEYS ON \"{}\"", database)
+                } else {
+                    format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+                }
+            }
+        }
     } else {
-        format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+        // 检查是否是IoTDB路径格式
+        if database.starts_with("root.") {
+            // IoTDB不支持TAG概念，使用SHOW DEVICES
+            if measurement.is_empty() {
+                format!("SHOW DEVICES {}.**", database)
+            } else {
+                format!("SHOW DEVICES {}.{}", database, measurement)
+            }
+        } else {
+            // InfluxDB使用SHOW TAG KEYS语法
+            if measurement.is_empty() {
+                format!("SHOW TAG KEYS ON \"{}\"", database)
+            } else {
+                format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+            }
+        }
     }
 }
 
@@ -499,11 +643,21 @@ fn generate_show_field_keys_sql(request: &SqlGenerationRequest) -> String {
             }
         }
     } else {
-        // 默认使用InfluxDB语法
-        if measurement.is_empty() {
-            format!("SHOW FIELD KEYS ON \"{}\"", database)
+        // 检查是否是IoTDB路径格式
+        if database.starts_with("root.") {
+            // IoTDB使用SHOW TIMESERIES语法
+            if measurement.is_empty() {
+                format!("SHOW TIMESERIES {}.**", database)
+            } else {
+                format!("SHOW TIMESERIES {}.{}.*", database, measurement)
+            }
         } else {
-            format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+            // 默认使用InfluxDB语法
+            if measurement.is_empty() {
+                format!("SHOW FIELD KEYS ON \"{}\"", database)
+            } else {
+                format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+            }
         }
     }
 }
