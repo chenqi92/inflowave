@@ -134,16 +134,12 @@ const getFunctionalIconPath = (nodeType: TreeNodeType, theme: 'light' | 'dark', 
     'continuous_query': 'continuous-query.svg',
     'series': 'series.svg',
 
-    // IoTDB 管理节点 (使用现有类型替换)
-    'UserGroup': 'user1x.svg',
-    'PrivilegeGroup': 'privilege.svg',
+    // IoTDB 新管理节点
+    'StorageGroupManagement': 'storage-group.svg',
+    'TimeseriesManagement': 'timeseries.svg',
     'FunctionGroup': 'function.svg',
-    'TriggerGroup': 'trigger.svg',
-    // 映射后的类型
-    'user': 'user1x.svg',
-    'privilege': 'privilege.svg',
-    'function': 'function.svg',
-    'trigger': 'trigger.svg',
+    'ConfigManagement': 'config.svg',
+    'VersionManagement': 'version.svg',
   };
 
   const iconFile = iconMap[nodeType] || 'default.svg';

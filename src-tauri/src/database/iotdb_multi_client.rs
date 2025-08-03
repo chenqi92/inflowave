@@ -51,7 +51,7 @@ impl IoTDBMultiClient {
                 // 注意：桌面程序不需要 WebSocket 协议
             ],
             iotdb_manager: None,
-            use_new_driver: false, // 临时禁用新驱动，避免会话冲突
+            use_new_driver: true, // 启用新驱动，使用官方IoTDB源码实现
         }
     }
     
@@ -94,8 +94,15 @@ impl IoTDBMultiClient {
         let mut manager = IoTDBManager::new();
         let connection_id = format!("{}:{}", self.config.host, self.config.port);
 
-        manager.add_connection(connection_id, driver_config).await
-            .context("初始化新驱动失败")?;
+        match manager.add_connection(connection_id.clone(), driver_config).await {
+            Ok(()) => {
+                info!("成功添加连接到新驱动管理器: {}", connection_id);
+            }
+            Err(e) => {
+                error!("添加连接到新驱动管理器失败: {}", e);
+                return Err(e).context("初始化新驱动失败");
+            }
+        }
 
         self.iotdb_manager = Some(manager);
         info!("IoTDB 全版本兼容驱动系统初始化成功");
@@ -827,21 +834,25 @@ impl IoTDBMultiClient {
             }
         }
 
-        // 2. 添加用户管理节点
-        let users_node = TreeNodeFactory::create_user_management("用户管理".to_string());
-        nodes.push(users_node);
+        // 2. 添加存储组管理节点
+        let storage_groups_node = TreeNodeFactory::create_storage_group_management("存储组管理".to_string());
+        nodes.push(storage_groups_node);
 
-        // 3. 添加权限管理节点
-        let privileges_node = TreeNodeFactory::create_privilege_management("权限管理".to_string());
-        nodes.push(privileges_node);
+        // 3. 添加时间序列管理节点
+        let timeseries_node = TreeNodeFactory::create_timeseries_management("时间序列管理".to_string());
+        nodes.push(timeseries_node);
 
         // 4. 添加函数管理节点
         let functions_node = TreeNodeFactory::create_function_management("函数管理".to_string());
         nodes.push(functions_node);
 
-        // 5. 添加触发器管理节点
-        let triggers_node = TreeNodeFactory::create_trigger_management("触发器管理".to_string());
-        nodes.push(triggers_node);
+        // 5. 添加配置管理节点
+        let config_node = TreeNodeFactory::create_config_management("配置管理".to_string());
+        nodes.push(config_node);
+
+        // 6. 添加版本信息节点
+        let version_node = TreeNodeFactory::create_version_info("版本信息".to_string());
+        nodes.push(version_node);
 
         log::info!("🎉 成功生成 {} 个树节点: {:?}",
             nodes.len(),
@@ -867,10 +878,11 @@ impl IoTDBMultiClient {
             "StorageEngineInfo" => TreeNodeType::StorageEngineInfo,
             "ClusterInfo" => TreeNodeType::ClusterInfo,
             "SchemaTemplate" => TreeNodeType::SchemaTemplate,
-            "UserGroup" => TreeNodeType::UserGroup,
-            "PrivilegeGroup" => TreeNodeType::PrivilegeGroup,
+            "StorageGroupManagement" => TreeNodeType::StorageGroupManagement,
+            "TimeseriesManagement" => TreeNodeType::TimeseriesManagement,
             "FunctionGroup" => TreeNodeType::FunctionGroup,
-            "TriggerGroup" => TreeNodeType::TriggerGroup,
+            "ConfigManagement" => TreeNodeType::ConfigManagement,
+            "VersionManagement" => TreeNodeType::VersionManagement,
             _ => return Ok(children),
         };
 
@@ -897,31 +909,33 @@ impl IoTDBMultiClient {
                     log::debug!("跳过非存储组节点的设备查询: {}", parent_node_id);
                 }
             }
-            TreeNodeType::UserGroup => {
-                // 用户管理节点 - 获取用户列表
-                match self.get_users_for_tree().await {
-                    Ok(users) => {
-                        for user in users {
-                            let user_node = TreeNodeFactory::create_user(user, parent_node_id.to_string());
-                            children.push(user_node);
+            TreeNodeType::StorageGroupManagement => {
+                // 存储组管理节点 - 获取存储组列表
+                match self.get_databases().await {
+                    Ok(storage_groups) => {
+                        for sg in storage_groups {
+                            let sg_node = TreeNodeFactory::create_storage_group(sg);
+                            children.push(sg_node);
                         }
                     }
                     Err(e) => {
-                        log::warn!("获取用户列表失败: {}", e);
+                        log::warn!("获取存储组列表失败: {}", e);
                     }
                 }
             }
-            TreeNodeType::PrivilegeGroup => {
-                // 权限管理节点 - 获取权限信息
-                match self.get_privileges_for_tree().await {
-                    Ok(privileges) => {
-                        for privilege in privileges {
-                            let privilege_node = TreeNodeFactory::create_privilege(privilege, parent_node_id.to_string());
-                            children.push(privilege_node);
+            TreeNodeType::TimeseriesManagement => {
+                // 时间序列管理节点 - 获取所有时间序列
+                match self.execute_query("SHOW TIMESERIES").await {
+                    Ok(result) => {
+                        for row in result.rows() {
+                            if let Some(timeseries_name) = row.get(0).and_then(|v| v.as_str()) {
+                                let ts_node = TreeNodeFactory::create_timeseries(timeseries_name.to_string(), parent_node_id.to_string());
+                                children.push(ts_node);
+                            }
                         }
                     }
                     Err(e) => {
-                        log::warn!("获取权限列表失败: {}", e);
+                        log::warn!("获取时间序列列表失败: {}", e);
                     }
                 }
             }
@@ -939,17 +953,35 @@ impl IoTDBMultiClient {
                     }
                 }
             }
-            TreeNodeType::TriggerGroup => {
-                // 触发器管理节点 - 获取触发器列表
-                match self.get_triggers_for_tree().await {
-                    Ok(triggers) => {
-                        for trigger in triggers {
-                            let trigger_node = TreeNodeFactory::create_trigger(trigger, parent_node_id.to_string());
-                            children.push(trigger_node);
+            TreeNodeType::ConfigManagement => {
+                // 配置管理节点 - 获取配置信息
+                match self.execute_query("SHOW VARIABLES").await {
+                    Ok(result) => {
+                        for row in result.rows() {
+                            if let Some(config_name) = row.get(0).and_then(|v| v.as_str()) {
+                                let config_node = TreeNodeFactory::create_config(config_name.to_string(), parent_node_id.to_string());
+                                children.push(config_node);
+                            }
                         }
                     }
                     Err(e) => {
-                        log::warn!("获取触发器列表失败: {}", e);
+                        log::warn!("获取配置列表失败: {}", e);
+                    }
+                }
+            }
+            TreeNodeType::VersionManagement => {
+                // 版本信息节点 - 获取版本信息
+                match self.execute_query("SHOW VERSION").await {
+                    Ok(result) => {
+                        for row in result.rows() {
+                            if let Some(version_info) = row.get(0).and_then(|v| v.as_str()) {
+                                let version_node = TreeNodeFactory::create_version(version_info.to_string(), parent_node_id.to_string());
+                                children.push(version_node);
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取版本信息失败: {}", e);
                     }
                 }
             }

@@ -105,11 +105,25 @@ impl Capability {
     /// 探测服务器能力
     pub async fn detect(config: &DriverConfig) -> Result<Self> {
         info!("开始探测 IoTDB 服务器能力: {}:{}", config.host, config.port);
-        
+
         // 首先尝试获取版本信息
-        let version = Self::detect_version(config).await?;
-        info!("检测到 IoTDB 版本: {}", version.raw);
-        
+        let version = match Self::detect_version(config).await {
+            Ok(version) => {
+                info!("检测到 IoTDB 版本: {}", version.raw);
+                version
+            }
+            Err(e) => {
+                warn!("版本检测失败，使用默认版本: {}", e);
+                VersionInfo {
+                    major: 1,
+                    minor: 3,
+                    patch: 0,
+                    build: None,
+                    raw: "IoTDB version 1.3.0".to_string(),
+                }
+            }
+        };
+
         // 基于版本信息推断基本能力
         let mut server_capability = ServerCapability {
             version: version.clone(),
@@ -121,25 +135,27 @@ impl Capability {
             supported_protocols: vec!["thrift".to_string()],
             extra_properties: HashMap::new(),
         };
-        
+
         // 检测具体功能支持
         if let Ok(props) = Self::detect_detailed_capabilities(config, &version).await {
             server_capability.extra_properties = props;
         }
-        
+
         // 检测可用协议和端口
         let available_ports = Self::detect_available_ports(config).await;
         if available_ports.contains_key("rest") {
             server_capability.supported_protocols.push("rest".to_string());
         }
-        
+
         let connection_info = ConnectionInfo {
             host: config.host.clone(),
             port: config.port,
             ssl: config.ssl,
             available_ports,
         };
-        
+
+        info!("IoTDB 服务器能力探测完成: 版本={}, 协议={:?}", version.raw, server_capability.supported_protocols);
+
         Ok(Capability {
             server: server_capability,
             connection_info,

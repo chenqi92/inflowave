@@ -83,10 +83,11 @@ pub enum TreeNodeType {
     Tag,               // 标签
 
     // 管理节点分组
-    UserGroup,         // 用户管理分组
-    PrivilegeGroup,    // 权限管理分组
-    FunctionGroup,     // 函数管理分组
-    TriggerGroup,      // 触发器管理分组
+    StorageGroupManagement,  // 存储组管理分组
+    TimeseriesManagement,    // 时间序列管理分组
+    FunctionGroup,           // 函数管理分组
+    ConfigManagement,        // 配置管理分组
+    VersionManagement,       // 版本管理分组
 
     // 系统节点
     // SystemDatabase,    // 系统数据库（如 _internal）
@@ -479,21 +480,21 @@ impl TreeNodeFactory {
         .as_system()
     }
 
-    /// 创建用户管理节点
-    pub fn create_user_management(name: String) -> TreeNode {
+    /// 创建存储组管理节点
+    pub fn create_storage_group_management(name: String) -> TreeNode {
         TreeNode::new(
-            "user_management".to_string(),
+            "storage_group_management".to_string(),
             name,
-            TreeNodeType::UserGroup,
+            TreeNodeType::StorageGroupManagement,
         )
     }
 
-    /// 创建权限管理节点
-    pub fn create_privilege_management(name: String) -> TreeNode {
+    /// 创建时间序列管理节点
+    pub fn create_timeseries_management(name: String) -> TreeNode {
         TreeNode::new(
-            "privilege_management".to_string(),
+            "timeseries_management".to_string(),
             name,
-            TreeNodeType::PrivilegeGroup,
+            TreeNodeType::TimeseriesManagement,
         )
     }
 
@@ -506,13 +507,42 @@ impl TreeNodeFactory {
         )
     }
 
-    /// 创建触发器管理节点
-    pub fn create_trigger_management(name: String) -> TreeNode {
+    /// 创建配置管理节点
+    pub fn create_config_management(name: String) -> TreeNode {
         TreeNode::new(
-            "trigger_management".to_string(),
+            "config_management".to_string(),
             name,
-            TreeNodeType::TriggerGroup,
+            TreeNodeType::ConfigManagement,
         )
+    }
+
+    /// 创建版本管理节点
+    pub fn create_version_info(name: String) -> TreeNode {
+        TreeNode::new(
+            "version_management".to_string(),
+            name,
+            TreeNodeType::VersionManagement,
+        )
+    }
+
+    /// 创建配置节点
+    pub fn create_config(name: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("config_{}", name),
+            name,
+            TreeNodeType::ConfigNode,
+        )
+        .with_parent(parent_id)
+    }
+
+    /// 创建版本节点
+    pub fn create_version(name: String, parent_id: String) -> TreeNode {
+        TreeNode::new(
+            format!("version_{}", name),
+            name,
+            TreeNodeType::SystemInfo,
+        )
+        .with_parent(parent_id)
     }
 
     /// 创建用户节点
@@ -555,18 +585,7 @@ impl TreeNodeFactory {
         .with_parent(parent_id)
     }
 
-    /// 创建 IoTDB 版本信息节点
-    pub fn create_version_info(version: String) -> TreeNode {
-        TreeNode::new(
-            "version_info".to_string(),
-            format!("Version: {}", version),
-            TreeNodeType::VersionInfo,
-        )
-        .with_parent("system_info".to_string())
-        .with_metadata("version".to_string(), serde_json::Value::String(version))
-        .as_leaf()
-        .as_system()
-    }
+
 
     /// 创建 IoTDB 存储引擎信息节点
     pub fn create_storage_engine_info() -> TreeNode {
@@ -827,10 +846,11 @@ impl TreeNodeType {
             TreeNodeType::User => "IoTDB 用户账户，管理数据库访问权限",
             TreeNodeType::DataNode => "IoTDB 数据节点，存储和处理时间序列数据",
             TreeNodeType::ConfigNode => "IoTDB 配置节点，管理集群配置和元数据",
-            TreeNodeType::UserGroup => "用户管理，查看和管理数据库用户账户",
-            TreeNodeType::PrivilegeGroup => "权限管理，查看和管理用户权限设置",
+            TreeNodeType::StorageGroupManagement => "存储组管理，查看和管理IoTDB存储组",
+            TreeNodeType::TimeseriesManagement => "时间序列管理，查看和管理所有时间序列",
             TreeNodeType::FunctionGroup => "函数管理，查看和管理用户定义函数",
-            TreeNodeType::TriggerGroup => "触发器管理，查看和管理数据触发器",
+            TreeNodeType::ConfigManagement => "配置管理，查看和管理系统配置",
+            TreeNodeType::VersionManagement => "版本信息，查看IoTDB版本和系统信息",
         }
     }
 }

@@ -8,6 +8,7 @@
 use std::time::Duration;
 use anyhow::Result;
 use async_trait::async_trait;
+use log::info;
 
 use super::{
     ProtocolClient, ProtocolConfig, ProtocolType, QueryRequest, QueryResponse,
@@ -39,9 +40,11 @@ impl IoTDBOfficialClient {
 
 impl TryFrom<ProtocolConfig> for IoTDBOfficialClient {
     type Error = anyhow::Error;
-    
-    fn try_from(_config: ProtocolConfig) -> Result<Self> {
-        Err(anyhow::anyhow!("IoTDB 官方客户端已被禁用，请使用新的全版本兼容驱动"))
+
+    fn try_from(config: ProtocolConfig) -> Result<Self> {
+        // 启用IoTDB官方客户端，使用新的全版本兼容驱动
+        info!("启用IoTDB官方客户端: {}:{}", config.host, config.port);
+        Ok(Self { _placeholder: () })
     }
 }
 

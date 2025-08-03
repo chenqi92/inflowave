@@ -466,47 +466,72 @@ async fn execute_insert_statement(
 ) -> Result<QueryResult, String> {
     debug!("处理INSERT语句: {}", request.query);
 
-    // 解析INSERT语句为Line Protocol格式
-    let line_protocol = ValidationUtils::parse_insert_to_line_protocol(&request.query)
-        .map_err(|e| {
-            error!("INSERT语句解析失败: {}", e);
-            format!("INSERT语句解析失败: {}", e)
-        })?;
-
-    // 确保有数据库名称
-    let database = request.database.as_ref()
-        .ok_or_else(|| {
-            error!("INSERT操作需要指定数据库");
-            "INSERT操作需要指定数据库".to_string()
-        })?;
-
+    // 检查数据库类型
+    let db_type = client.get_database_type();
     let start_time = std::time::Instant::now();
 
-    // 使用写入API执行INSERT
-    match client.write_line_protocol(database, &line_protocol).await {
-        Ok(_) => {
-            let execution_time = start_time.elapsed().as_millis() as u64;
+    match db_type {
+        crate::models::DatabaseType::IoTDB => {
+            // IoTDB 直接执行 SQL INSERT 语句
+            debug!("IoTDB INSERT语句，直接执行SQL: {}", request.query);
 
-            // 估算写入的数据点数量（从行协议解析）
-            let points_written = line_protocol.lines().count();
-            info!("INSERT执行成功，写入 {} 个数据点，耗时: {}ms", points_written, execution_time);
-
-            // 构造写入操作的查询结果
-            let mut result = QueryResult::empty();
-            result.execution_time = Some(execution_time);
-            result.row_count = Some(points_written);
-
-            // 添加成功信息到结果中
-            result.results = vec![QueryResultItem {
-                series: None,
-                error: None,
-            }];
-
-            Ok(result)
+            match client.execute_query(&request.query, request.database.as_deref()).await {
+                Ok(mut result) => {
+                    let execution_time = start_time.elapsed().as_millis() as u64;
+                    result.execution_time = Some(execution_time);
+                    info!("IoTDB INSERT语句执行成功，耗时: {}ms", execution_time);
+                    Ok(result)
+                }
+                Err(e) => {
+                    error!("IoTDB INSERT语句执行失败: {}", e);
+                    Err(format!("IoTDB INSERT语句执行失败: {}", e))
+                }
+            }
         }
-        Err(e) => {
-            error!("INSERT执行失败: {}", e);
-            Err(format!("INSERT执行失败: {}", e))
+        _ => {
+            // InfluxDB 需要转换为 Line Protocol 格式
+            debug!("InfluxDB INSERT语句，转换为Line Protocol格式");
+
+            let line_protocol = ValidationUtils::parse_insert_to_line_protocol(&request.query)
+                .map_err(|e| {
+                    error!("INSERT语句解析失败: {}", e);
+                    format!("INSERT语句解析失败: {}", e)
+                })?;
+
+            // 确保有数据库名称
+            let database = request.database.as_ref()
+                .ok_or_else(|| {
+                    error!("INSERT操作需要指定数据库");
+                    "INSERT操作需要指定数据库".to_string()
+                })?;
+
+            // 使用写入API执行INSERT
+            match client.write_line_protocol(database, &line_protocol).await {
+                Ok(_) => {
+                    let execution_time = start_time.elapsed().as_millis() as u64;
+
+                    // 估算写入的数据点数量（从行协议解析）
+                    let points_written = line_protocol.lines().count();
+                    info!("InfluxDB INSERT执行成功，写入 {} 个数据点，耗时: {}ms", points_written, execution_time);
+
+                    // 构造写入操作的查询结果
+                    let mut result = QueryResult::empty();
+                    result.execution_time = Some(execution_time);
+                    result.row_count = Some(points_written);
+
+                    // 添加成功信息到结果中
+                    result.results = vec![QueryResultItem {
+                        series: None,
+                        error: None,
+                    }];
+
+                    Ok(result)
+                }
+                Err(e) => {
+                    error!("InfluxDB INSERT执行失败: {}", e);
+                    Err(format!("InfluxDB INSERT执行失败: {}", e))
+                }
+            }
         }
     }
 }

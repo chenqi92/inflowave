@@ -9,9 +9,58 @@ use serde::{Deserialize, Serialize};
 /// 检查是否是管理节点
 fn is_management_node(node_name: &str) -> bool {
     matches!(node_name,
-        "用户管理" | "权限管理" | "函数管理" | "触发器管理" |
-        "user_management" | "privilege_management" | "function_management" | "trigger_management"
+        "存储组管理" | "时间序列管理" | "函数管理" | "配置管理" | "版本信息" |
+        "storage_group_management" | "timeseries_management" | "function_management" | "config_management" | "version_info"
     )
+}
+
+/// 处理管理节点查询
+async fn handle_management_query(
+    connection_id: &str,
+    node_name: &str,
+    connection_service: State<'_, crate::services::ConnectionService>,
+) -> Result<Vec<String>, String> {
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 根据管理节点类型执行相应的 IoTDB 查询
+    let query = match node_name {
+        "存储组管理" | "storage_group_management" => "SHOW STORAGE GROUP",
+        "时间序列管理" | "timeseries_management" => "SHOW TIMESERIES",
+        "函数管理" | "function_management" => "SHOW FUNCTIONS",
+        "配置管理" | "config_management" => "SHOW VARIABLES",
+        "版本信息" | "version_info" => "SHOW VERSION",
+        _ => {
+            debug!("未知的管理节点类型: {}", node_name);
+            return Ok(vec![]);
+        }
+    };
+
+    debug!("执行管理查询: {}", query);
+
+    // 执行查询
+    let result = client.execute_query(query, None).await
+        .map_err(|e| {
+            error!("管理查询失败: {}", e);
+            format!("管理查询失败: {}", e)
+        })?;
+
+    // 解析结果
+    let mut items = Vec::new();
+    for row in result.rows() {
+        if let Some(item) = row.get(0) {
+            if let Some(item_str) = item.as_str() {
+                items.push(item_str.to_string());
+            }
+        }
+    }
+
+    debug!("管理查询 '{}' 返回 {} 个项目", query, items.len());
+    Ok(items)
 }
 
 /// 获取数据库列表
@@ -558,10 +607,10 @@ pub async fn show_measurements(
 ) -> Result<Vec<String>, String> {
     debug!("处理显示测量列表命令: {} - {}", connection_id, database);
 
-    // 检查是否是管理节点，如果是则返回空列表
+    // 检查是否是管理节点，如果是则执行相应的管理查询
     if is_management_node(&database) {
-        debug!("跳过管理节点的测量查询: {}", database);
-        return Ok(vec![]);
+        debug!("处理管理节点查询: {}", database);
+        return handle_management_query(&connection_id, &database, connection_service).await;
     }
 
     let manager = connection_service.get_manager();
@@ -666,10 +715,10 @@ pub async fn get_measurements(
 ) -> Result<Vec<String>, String> {
     debug!("处理获取测量列表命令: {} - {}", connection_id, database);
 
-    // 检查是否是管理节点，如果是则返回空列表
+    // 检查是否是管理节点，如果是则执行相应的管理查询
     if is_management_node(&database) {
-        debug!("跳过管理节点的测量查询: {}", database);
-        return Ok(vec![]);
+        debug!("处理管理节点查询: {}", database);
+        return handle_management_query(&connection_id, &database, connection_service).await;
     }
 
     let manager = connection_service.get_manager();
@@ -696,6 +745,12 @@ pub async fn get_field_keys(
 ) -> Result<Vec<String>, String> {
     debug!("处理获取字段键命令: {} - {} - {:?}", connection_id, database, measurement);
 
+    // 检查是否是管理节点，如果是则返回空结果（管理节点不应该有字段查询）
+    if is_management_node(&database) {
+        debug!("管理节点不支持字段查询: {}", database);
+        return Ok(vec![]);
+    }
+
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connection_id).await
         .map_err(|e| {
@@ -707,7 +762,7 @@ pub async fn get_field_keys(
     let query = {
         // 检查连接类型，如果是IoTDB则使用SHOW TIMESERIES语法
         let db_type = client.get_database_type();
-        error!("🔍 commands/database.rs字段查询 - 数据库类型: {:?}, database: {}, measurement: {:?}", db_type, database, measurement);
+        debug!("🔍 commands/database.rs字段查询 - 数据库类型: {:?}, database: {}, measurement: {:?}", db_type, database, measurement);
         if matches!(db_type, crate::models::DatabaseType::IoTDB) {
             // IoTDB使用SHOW TIMESERIES语法，不使用引号
             if let Some(measurement) = measurement {
@@ -720,22 +775,22 @@ pub async fn get_field_keys(
                     format!("{}.{}", database, measurement)
                 };
                 let query = format!("SHOW TIMESERIES {}.*", full_path);
-                error!("🔍 commands/database.rs生成IoTDB字段查询: {}", query);
+                debug!("🔍 commands/database.rs生成IoTDB字段查询: {}", query);
                 query
             } else {
                 let query = format!("SHOW TIMESERIES {}.**", database);
-                error!("🔍 commands/database.rs生成IoTDB字段查询: {}", query);
+                debug!("🔍 commands/database.rs生成IoTDB字段查询: {}", query);
                 query
             }
         } else {
             // InfluxDB使用SHOW FIELD KEYS语法
             if let Some(measurement) = measurement {
                 let query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement);
-                error!("🔍 commands/database.rs生成InfluxDB字段查询: {}", query);
+                debug!("🔍 commands/database.rs生成InfluxDB字段查询: {}", query);
                 query
             } else {
                 let query = format!("SHOW FIELD KEYS ON \"{}\"", database);
-                error!("🔍 commands/database.rs生成InfluxDB字段查询: {}", query);
+                debug!("🔍 commands/database.rs生成InfluxDB字段查询: {}", query);
                 query
             }
         }
@@ -777,42 +832,24 @@ pub async fn get_tag_keys(
             format!("获取连接失败: {}", e)
         })?;
 
-    // 根据连接类型构建不同的查询语句
-    let query = {
-        let db_type = client.get_database_type();
-        error!("🔍 commands/database.rs标签查询 - 数据库类型: {:?}, database: {}, measurement: {:?}", db_type, database, measurement);
-        if matches!(db_type, crate::models::DatabaseType::IoTDB) {
-            // IoTDB不支持TAG概念，返回空查询或使用SHOW DEVICES
-            if let Some(measurement) = measurement {
-                // 智能处理路径重复问题
-                let full_path = if measurement.starts_with(&database) {
-                    // measurement已经包含database前缀，直接使用
-                    measurement.clone()
-                } else {
-                    // measurement不包含database前缀，需要拼接
-                    format!("{}.{}", database, measurement)
-                };
-                let query = format!("SHOW DEVICES {}", full_path);
-                error!("🔍 commands/database.rs生成IoTDB标签查询: {}", query);
-                query
-            } else {
-                let query = format!("SHOW DEVICES {}.**", database);
-                error!("🔍 commands/database.rs生成IoTDB标签查询: {}", query);
-                query
-            }
-        } else {
-            // InfluxDB使用SHOW TAG KEYS语法
-            if let Some(measurement) = measurement {
-                let query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement);
-                error!("🔍 commands/database.rs生成InfluxDB标签查询: {}", query);
-                query
-            } else {
-                let query = format!("SHOW TAG KEYS ON \"{}\"", database);
-                error!("🔍 commands/database.rs生成InfluxDB标签查询: {}", query);
-                query
-            }
-        }
+    // 根据连接类型处理标签查询
+    let db_type = client.get_database_type();
+    debug!("🔍 commands/database.rs标签查询 - 数据库类型: {:?}, database: {}, measurement: {:?}", db_type, database, measurement);
+
+    if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+        // IoTDB不支持TAG概念，直接返回空结果
+        debug!("🔍 commands/database.rs IoTDB不支持标签，返回空结果");
+        return Ok(vec![]);
+    }
+
+    // InfluxDB使用SHOW TAG KEYS语法
+    let query = if let Some(measurement) = measurement {
+        format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+    } else {
+        format!("SHOW TAG KEYS ON \"{}\"", database)
     };
+
+    debug!("🔍 commands/database.rs生成InfluxDB标签查询: {}", query);
 
     let result = client.execute_query(&query, Some(&database)).await
         .map_err(|e| {

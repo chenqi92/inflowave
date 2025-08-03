@@ -798,14 +798,27 @@ impl ThriftClient {
             // IoTDB的数据格式：每个value_list[i]包含一列的所有数据
             // 我们需要转置数据结构：从列优先转换为行优先
             if !value_list.is_empty() {
-                // 解析第一列来确定行数和数据
-                let first_column = &value_list[0];
-                let parsed_values = self.parse_iotdb_column_data(first_column);
+                // 解析所有列的数据
+                let mut all_column_data: Vec<Vec<String>> = Vec::new();
+                let mut max_rows = 0;
 
-                // 为每个解析出的值创建一行
-                for value in parsed_values {
+                // 解析每一列
+                for column_data in &value_list {
+                    let parsed_values = self.parse_iotdb_column_data(column_data);
+                    max_rows = max_rows.max(parsed_values.len());
+                    all_column_data.push(parsed_values);
+                }
+
+                // 转置数据：从列优先转换为行优先
+                for row_idx in 0..max_rows {
                     let mut row = Vec::new();
-                    row.push(value);
+                    for col_data in &all_column_data {
+                        if row_idx < col_data.len() {
+                            row.push(col_data[row_idx].clone());
+                        } else {
+                            row.push(String::new()); // 填充空值
+                        }
+                    }
                     rows.push(row);
                 }
             }

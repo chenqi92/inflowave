@@ -28,6 +28,7 @@ import {
     Star,
     StarOff,
     Plus,
+    TrendingUp,
     Trash2,
     X,
     Info,
@@ -419,6 +420,33 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     };
 
+    // IoTDB 路径显示名称优化函数
+    const getIoTDBDisplayName = (fullPath: string, isField: boolean = false): string => {
+        if (!fullPath) return fullPath;
+
+        // 对于字段/时间序列，显示最后两个部分（设备.传感器）
+        if (isField) {
+            const parts = fullPath.split('.');
+            if (parts.length >= 2) {
+                return parts.slice(-2).join('.');
+            }
+        } else {
+            // 对于设备/表，显示最后一个部分
+            const parts = fullPath.split('.');
+            if (parts.length > 1) {
+                return parts[parts.length - 1];
+            }
+        }
+
+        return fullPath;
+    };
+
+    // 检查是否为 IoTDB 连接的辅助函数
+    const isIoTDBConnection = (connectionId: string): boolean => {
+        const connection = connections.find(c => c.id === connectionId);
+        return connection?.dbType?.toLowerCase() === 'iotdb';
+    };
+
     const getNodeIcon = (nodeType: string, isOpened: boolean = false) => {
         // 节点类型映射 - 将后端返回的类型映射到我们的图标类型
         const typeMapping: Record<string, string> = {
@@ -642,24 +670,32 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             fields: Array<{ name: string; type: string }>;
         }> => {
             try {
-                // 尝试分别获取字段和标签信息
-                const [tags, fields] = await Promise.all([
-                    safeTauriInvoke<string[]>('get_tag_keys', {
+                // 获取连接信息以确定数据库类型
+                const connection = connections.find(c => c.id === connection_id);
+                const isIoTDB = connection?.dbType?.toLowerCase() === 'iotdb';
+
+                // 根据数据库类型决定是否获取标签信息
+                const tagsPromise = isIoTDB
+                    ? Promise.resolve([]) // IoTDB 不支持标签概念，直接返回空数组
+                    : safeTauriInvoke<string[]>('get_tag_keys', {
                         connectionId: connection_id,
                         database,
                         measurement: table,
-                    }).catch(() => []),
-                    safeTauriInvoke<string[]>('get_field_keys', {
-                        connectionId: connection_id,
-                        database,
-                        measurement: table,
-                    }).catch(() => []),
-                ]);
+                    }).catch(() => []);
+
+                // 获取字段信息（所有数据库类型都支持）
+                const fieldsPromise = safeTauriInvoke<string[]>('get_field_keys', {
+                    connectionId: connection_id,
+                    database,
+                    measurement: table,
+                }).catch(() => []);
+
+                const [tags, fields] = await Promise.all([tagsPromise, fieldsPromise]);
 
                 // 将字段转换为带类型的格式
                 const fieldsWithType = fields.map(fieldName => ({
                     name: fieldName,
-                    type: 'float', // 默认类型，因为 InfluxDB 字段类型需要额外查询
+                    type: isIoTDB ? 'timeseries' : 'float', // IoTDB 使用 timeseries 类型，InfluxDB 默认 float
                 }));
 
                 return {tags: tags || [], fields: fieldsWithType};
@@ -883,33 +919,38 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                     const children: DataNode[] = [];
 
-                    // 直接添加标签列
-                    tags.forEach(tag => {
-                        const tagPath = `${connectionId}/${database}/${table}/tags/${tag}`;
-                        const isFav = isFavorite(tagPath);
-                        children.push({
-                            title: (
-                                <div className='flex items-center gap-2'>
-                                    <span className='flex-1'>{tag}</span>
-                                    {isFav && (
-                                        <Star className='w-3 h-3 text-warning fill-current'/>
-                                    )}
-                                    <Badge variant='secondary'
-                                           className='bg-orange-100 text-orange-600 text-xs px-1.5 py-0.5 h-auto'>
-                                        Tag
-                                    </Badge>
-                                    <span className='text-xs text-muted-foreground flex-shrink-0'>
-                    string
-                  </span>
-                                </div>
-                            ),
-                            key: `tag|${connectionId}|${database}|${table}|${tag}`,
-                            icon: <Tags className='w-4 h-4 text-orange-500'/>,
-                            isLeaf: true,
-                        });
-                    });
+                    // 获取连接信息以确定数据库类型
+                    const isIoTDB = isIoTDBConnection(connectionId);
 
-                    // 直接添加字段列
+                    // 只为非 IoTDB 连接添加标签列（IoTDB 不支持标签概念）
+                    if (!isIoTDB) {
+                        tags.forEach(tag => {
+                            const tagPath = `${connectionId}/${database}/${table}/tags/${tag}`;
+                            const isFav = isFavorite(tagPath);
+                            children.push({
+                                title: (
+                                    <div className='flex items-center gap-2'>
+                                        <span className='flex-1'>{tag}</span>
+                                        {isFav && (
+                                            <Star className='w-3 h-3 text-warning fill-current'/>
+                                        )}
+                                        <Badge variant='secondary'
+                                               className='bg-orange-100 text-orange-600 text-xs px-1.5 py-0.5 h-auto'>
+                                            Tag
+                                        </Badge>
+                                        <span className='text-xs text-muted-foreground flex-shrink-0'>
+                        string
+                      </span>
+                                    </div>
+                                ),
+                                key: `tag|${connectionId}|${database}|${table}|${tag}`,
+                                icon: <Tags className='w-4 h-4 text-orange-500'/>,
+                                isLeaf: true,
+                            });
+                        });
+                    }
+
+                    // 添加字段列（根据数据库类型显示不同的标签）
                     fields.forEach(field => {
                         const fieldPath = `${connectionId}/${database}/${table}/${field.name}`;
                         const isFav = isFavorite(fieldPath);
@@ -929,21 +970,31 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                 case 'boolean':
                                 case 'bool':
                                     return <GitBranch className='w-4 h-4 text-success'/>;
+                                case 'timeseries':
+                                    return <TrendingUp className='w-4 h-4 text-indigo-500'/>;
                                 default:
                                     return <File className='w-4 h-4 text-muted-foreground'/>;
                             }
                         };
 
+                        // 根据数据库类型显示不同的标签文本
+                        const fieldLabel = isIoTDB ? 'Timeseries' : 'Field';
+                        const fieldBadgeClass = isIoTDB
+                            ? 'bg-indigo-100 text-indigo-600 text-xs px-1.5 py-0.5 h-auto'
+                            : 'bg-primary/10 text-primary text-xs px-1.5 py-0.5 h-auto';
+
+                        // 对于 IoTDB，优化字段显示名称
+                        const fieldDisplayName = isIoTDB ? getIoTDBDisplayName(field.name, true) : field.name;
+
                         children.push({
                             title: (
                                 <div className='flex items-center gap-2'>
-                                    <span className='flex-1'>{field.name}</span>
+                                    <span className='flex-1' title={field.name}>{fieldDisplayName}</span>
                                     {isFav && (
                                         <Star className='w-3 h-3 text-warning fill-current'/>
                                     )}
-                                    <Badge variant='secondary'
-                                           className='bg-primary/10 text-primary text-xs px-1.5 py-0.5 h-auto'>
-                                        Field
+                                    <Badge variant='secondary' className={fieldBadgeClass}>
+                                        {fieldLabel}
                                     </Badge>
                                     <span className='text-xs text-muted-foreground flex-shrink-0'>
                     {field.type}
@@ -1574,10 +1625,15 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                 const tableNodes = tables.map(table => {
                                                     const tablePath = `${connectionId}/${database}/${table}`;
                                                     const isFav = isFavorite(tablePath);
+
+                                                    // 对于 IoTDB，优化显示名称
+                                                    const isIoTDB = isIoTDBConnection(connectionId);
+                                                    const displayName = isIoTDB ? getIoTDBDisplayName(table, false) : table;
+
                                                     return {
                                                         title: (
                                                             <div className='flex items-center gap-2'>
-                                                                <span className='flex-1'>{table}</span>
+                                                                <span className='flex-1' title={table}>{displayName}</span>
                                                                 {isFav && (
                                                                     <Star
                                                                         className='w-3 h-3 text-warning fill-current'/>
