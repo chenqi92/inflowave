@@ -7,6 +7,7 @@
 
 use anyhow::{Context, Result};
 use log::{debug, info, warn};
+use std::sync::atomic::AtomicI64;
 // TcpStream 导入已移除，使用 std::net::TcpStream 直接引用
 use thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};
 use thrift::transport::{TFramedReadTransport, TFramedWriteTransport, TIoChannel, TTcpChannel, ReadHalf, WriteHalf};
@@ -29,6 +30,8 @@ pub struct OfficialThriftClient {
     password: String,
     /// 连接状态
     connected: bool,
+    /// Statement ID 计数器
+    statement_id_counter: AtomicI64,
 }
 
 impl OfficialThriftClient {
@@ -42,6 +45,7 @@ impl OfficialThriftClient {
             username,
             password,
             connected: false,
+            statement_id_counter: AtomicI64::new(1), // 从1开始，避免使用0
         }
     }
 
@@ -137,11 +141,15 @@ impl OfficialThriftClient {
 
         debug!("执行SQL语句: {}", sql);
 
+        // 对于查询语句，IoTDB可能不需要预先创建的StatementId
+        // 尝试使用一个特殊的值表示直接执行查询
+        let statement_id = -1; // 使用-1表示直接执行，不需要预先创建Statement
+
         // 构建执行语句请求
         let request = TSExecuteStatementReq::new(
             session_id,
             sql.to_string(),
-            0, // statement_id，暂时使用0
+            statement_id, // 使用0作为默认statement_id
             Some(1000), // fetch_size
             Some(60000), // timeout (60秒)
             Some(false), // enable_redirect_query
@@ -229,7 +237,8 @@ impl OfficialThriftClient {
         let client = self.client.as_mut()
             .ok_or_else(|| anyhow::anyhow!("Thrift客户端未初始化"))?;
 
-        let response = client.execute_statement(request)
+        // 尝试使用V2版本的查询方法
+        let response = client.execute_query_statement_v2(request)
             .map_err(|e| anyhow::anyhow!("Thrift RPC调用失败: {}", e))?;
 
         Ok(response)

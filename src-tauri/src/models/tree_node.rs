@@ -58,6 +58,9 @@ pub enum TreeNodeType {
     Template,          // 设备模板
     Function,          // 用户定义函数
     Trigger,           // 触发器
+    User,              // 用户
+    DataNode,          // 数据节点
+    ConfigNode,        // 配置节点
 
     // IoTDB 系统节点
     SystemInfo,        // 系统信息
@@ -514,6 +517,69 @@ impl TreeNodeFactory {
         )
     }
 
+    /// 创建 IoTDB 用户节点
+    pub fn create_iotdb_user(name: String, is_admin: bool) -> TreeNode {
+        let display_name = if is_admin {
+            format!("{} (Admin)", name)
+        } else {
+            name.clone()
+        };
+
+        TreeNode::new(
+            format!("user_{}", name),
+            display_name,
+            TreeNodeType::User,
+        )
+        .with_metadata("is_admin".to_string(), serde_json::Value::Bool(is_admin))
+        .as_leaf()
+    }
+
+    /// 创建 IoTDB 函数节点
+    pub fn create_iotdb_function(name: String, function_type: String) -> TreeNode {
+        TreeNode::new(
+            format!("function_{}", name),
+            format!("{} ({})", name, function_type),
+            TreeNodeType::Function,
+        )
+        .with_metadata("function_type".to_string(), serde_json::Value::String(function_type))
+        .as_leaf()
+    }
+
+    /// 创建 IoTDB 触发器节点
+    pub fn create_iotdb_trigger(name: String, status: String) -> TreeNode {
+        TreeNode::new(
+            format!("trigger_{}", name),
+            format!("{} ({})", name, status),
+            TreeNodeType::Trigger,
+        )
+        .with_metadata("status".to_string(), serde_json::Value::String(status))
+        .as_leaf()
+    }
+
+    /// 创建 IoTDB 数据节点信息
+    pub fn create_data_node(node_id: String, host: String, status: String) -> TreeNode {
+        TreeNode::new(
+            format!("datanode_{}", node_id),
+            format!("DataNode {} ({}:{})", node_id, host, status),
+            TreeNodeType::DataNode,
+        )
+        .with_metadata("host".to_string(), serde_json::Value::String(host))
+        .with_metadata("status".to_string(), serde_json::Value::String(status))
+        .as_leaf()
+    }
+
+    /// 创建 IoTDB 配置节点信息
+    pub fn create_config_node(node_id: String, host: String, status: String) -> TreeNode {
+        TreeNode::new(
+            format!("confignode_{}", node_id),
+            format!("ConfigNode {} ({}:{})", node_id, host, status),
+            TreeNodeType::ConfigNode,
+        )
+        .with_metadata("host".to_string(), serde_json::Value::String(host))
+        .with_metadata("status".to_string(), serde_json::Value::String(status))
+        .as_leaf()
+    }
+
     /// 创建 IoTDB 数据类型信息节点
     pub fn create_data_type_info(data_type: String, parent_id: String) -> TreeNode {
         TreeNode::new(
@@ -676,6 +742,9 @@ impl TreeNodeType {
             TreeNodeType::FieldGroup => "字段分组，包含数值类型的数据",
             TreeNodeType::Field => "字段，存储数值数据",
             TreeNodeType::Tag => "标签，用于索引和过滤",
+            TreeNodeType::User => "IoTDB 用户账户，管理数据库访问权限",
+            TreeNodeType::DataNode => "IoTDB 数据节点，存储和处理时间序列数据",
+            TreeNodeType::ConfigNode => "IoTDB 配置节点，管理集群配置和元数据",
         }
     }
 }

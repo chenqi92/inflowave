@@ -42,6 +42,43 @@ pub struct TimeseriesInfo {
     pub attributes: Option<serde_json::Value>,
 }
 
+// IoTDB 集群节点信息
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ClusterNodeInfo {
+    pub node_id: String,
+    pub node_type: String,
+    pub host: String,
+    pub port: i32,
+    pub status: String,
+}
+
+// IoTDB 用户信息
+#[derive(Debug, Serialize, Deserialize)]
+pub struct UserInfo {
+    pub username: String,
+    pub is_admin: bool,
+    pub privileges: Vec<String>,
+}
+
+// IoTDB 函数信息
+#[derive(Debug, Serialize, Deserialize)]
+pub struct FunctionInfo {
+    pub name: String,
+    pub function_type: String,
+    pub class_name: String,
+    pub description: Option<String>,
+}
+
+// IoTDB 触发器信息
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TriggerInfo {
+    pub name: String,
+    pub status: String,
+    pub event: String,
+    pub path: String,
+    pub class_name: String,
+}
+
 /// 获取 IoTDB 存储组列表
 #[tauri::command]
 pub async fn get_iotdb_storage_groups(
@@ -319,4 +356,152 @@ pub async fn get_iotdb_server_info(
     });
 
     Ok(server_info)
+}
+
+/// 获取 IoTDB 集群信息
+#[tauri::command]
+pub async fn get_iotdb_cluster_info(
+    connection_id: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<Vec<ClusterNodeInfo>, String> {
+    debug!("获取 IoTDB 集群信息: {}", connection_id);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let result = client
+        .execute_query("SHOW CLUSTER", None)
+        .await
+        .map_err(|e| format!("获取集群信息失败: {}", e))?;
+
+    let mut cluster_nodes = Vec::new();
+    if let Some(data) = result.data {
+        for row in data {
+            if row.len() >= 4 {
+                let node_info = ClusterNodeInfo {
+                    node_id: row[0].as_str().unwrap_or("").to_string(),
+                    node_type: row[1].as_str().unwrap_or("").to_string(),
+                    host: row[2].as_str().unwrap_or("").to_string(),
+                    port: row[3].as_i64().unwrap_or(0) as i32,
+                    status: row.get(4).and_then(|v| v.as_str()).unwrap_or("UNKNOWN").to_string(),
+                };
+                cluster_nodes.push(node_info);
+            }
+        }
+    }
+
+    Ok(cluster_nodes)
+}
+
+/// 获取 IoTDB 用户列表
+#[tauri::command]
+pub async fn get_iotdb_users(
+    connection_id: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<Vec<UserInfo>, String> {
+    debug!("获取 IoTDB 用户列表: {}", connection_id);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let result = client
+        .execute_query("LIST USER", None)
+        .await
+        .map_err(|e| format!("获取用户列表失败: {}", e))?;
+
+    let mut users = Vec::new();
+    if let Some(data) = result.data {
+        for row in data {
+            if !row.is_empty() {
+                let username = row[0].as_str().unwrap_or("").to_string();
+                let is_admin = username == "root" || username.contains("admin");
+
+                let user_info = UserInfo {
+                    username,
+                    is_admin,
+                    privileges: vec![], // 可以后续通过 LIST PRIVILEGES 获取
+                };
+                users.push(user_info);
+            }
+        }
+    }
+
+    Ok(users)
+}
+
+/// 获取 IoTDB 函数列表
+#[tauri::command]
+pub async fn get_iotdb_functions(
+    connection_id: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<Vec<FunctionInfo>, String> {
+    debug!("获取 IoTDB 函数列表: {}", connection_id);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let result = client
+        .execute_query("SHOW FUNCTIONS", None)
+        .await
+        .map_err(|e| format!("获取函数列表失败: {}", e))?;
+
+    let mut functions = Vec::new();
+    if let Some(data) = result.data {
+        for row in data {
+            if row.len() >= 3 {
+                let function_info = FunctionInfo {
+                    name: row[0].as_str().unwrap_or("").to_string(),
+                    function_type: row[1].as_str().unwrap_or("UDF").to_string(),
+                    class_name: row[2].as_str().unwrap_or("").to_string(),
+                    description: row.get(3).and_then(|v| v.as_str()).map(|s| s.to_string()),
+                };
+                functions.push(function_info);
+            }
+        }
+    }
+
+    Ok(functions)
+}
+
+/// 获取 IoTDB 触发器列表
+#[tauri::command]
+pub async fn get_iotdb_triggers(
+    connection_id: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<Vec<TriggerInfo>, String> {
+    debug!("获取 IoTDB 触发器列表: {}", connection_id);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let result = client
+        .execute_query("SHOW TRIGGERS", None)
+        .await
+        .map_err(|e| format!("获取触发器列表失败: {}", e))?;
+
+    let mut triggers = Vec::new();
+    if let Some(data) = result.data {
+        for row in data {
+            if row.len() >= 5 {
+                let trigger_info = TriggerInfo {
+                    name: row[0].as_str().unwrap_or("").to_string(),
+                    status: row[1].as_str().unwrap_or("UNKNOWN").to_string(),
+                    event: row[2].as_str().unwrap_or("").to_string(),
+                    path: row[3].as_str().unwrap_or("").to_string(),
+                    class_name: row[4].as_str().unwrap_or("").to_string(),
+                };
+                triggers.push(trigger_info);
+            }
+        }
+    }
+
+    Ok(triggers)
 }

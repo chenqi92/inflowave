@@ -14,6 +14,7 @@ pub struct SqlGenerationRequest {
     pub limit: Option<u32>,
     pub group_by: Option<Vec<String>>,
     pub order_by: Option<OrderBy>,
+    pub database_type: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -477,10 +478,33 @@ fn generate_show_field_keys_sql(request: &SqlGenerationRequest) -> String {
     let default_measurement = String::new();
     let measurement = request.measurement.as_ref().unwrap_or(&default_measurement);
 
-    if measurement.is_empty() {
-        format!("SHOW FIELD KEYS ON \"{}\"", database)
+    // 根据数据库类型生成不同的SQL
+    if let Some(db_type) = &request.database_type {
+        match db_type.as_str() {
+            "iotdb" => {
+                // IoTDB使用SHOW TIMESERIES语法
+                if measurement.is_empty() {
+                    format!("SHOW TIMESERIES {}.**", database)
+                } else {
+                    format!("SHOW TIMESERIES {}.{}.*", database, measurement)
+                }
+            }
+            _ => {
+                // InfluxDB使用SHOW FIELD KEYS语法
+                if measurement.is_empty() {
+                    format!("SHOW FIELD KEYS ON \"{}\"", database)
+                } else {
+                    format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+                }
+            }
+        }
     } else {
-        format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+        // 默认使用InfluxDB语法
+        if measurement.is_empty() {
+            format!("SHOW FIELD KEYS ON \"{}\"", database)
+        } else {
+            format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+        }
     }
 }
 

@@ -232,6 +232,63 @@ impl IoTDBMultiClient {
         })
     }
     
+    /// 确保连接状态正常
+    async fn ensure_connection(&mut self) -> Result<()> {
+        // 优先使用新驱动系统检查连接状态
+        if self.use_new_driver {
+            if let Some(manager) = &mut self.iotdb_manager {
+                let connection_id = format!("{}:{}", self.config.host, self.config.port);
+                if let Some(driver) = manager.get_driver(&connection_id) {
+                    if !driver.is_connected() {
+                        warn!("新驱动连接已断开，尝试重新连接");
+                        match driver.connect().await {
+                            Ok(_) => {
+                                info!("新驱动重连成功");
+                                return Ok(());
+                            }
+                            Err(e) => {
+                                warn!("新驱动重连失败: {}", e);
+                                return Err(anyhow::anyhow!("新驱动重连失败: {}", e));
+                            }
+                        }
+                    }
+                    return Ok(());
+                } else {
+                    warn!("新驱动管理器中未找到连接，尝试重新初始化");
+                    if let Err(e) = self.init_new_driver().await {
+                        warn!("重新初始化新驱动失败: {}", e);
+                        return Err(anyhow::anyhow!("重新初始化新驱动失败: {}", e));
+                    }
+                    return Ok(());
+                }
+            } else {
+                warn!("新驱动管理器未初始化，尝试初始化");
+                if let Err(e) = self.init_new_driver().await {
+                    warn!("初始化新驱动失败: {}", e);
+                    return Err(anyhow::anyhow!("初始化新驱动失败: {}", e));
+                }
+                return Ok(());
+            }
+        }
+
+        // 检查旧协议系统连接状态
+        if let Some(client) = &mut self.protocol_client {
+            match client.test_connection().await {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    warn!("协议客户端连接测试失败: {}", e);
+                    Err(e)
+                }
+            }
+        } else {
+            debug!("旧协议系统未连接，尝试自动连接");
+            match self.auto_connect().await {
+                Ok(_) => Ok(()),
+                Err(e) => Err(anyhow::anyhow!("自动连接失败: {}", e))
+            }
+        }
+    }
+
     /// 测试连接
     pub async fn test_connection(&mut self) -> Result<u64> {
         debug!("测试IoTDB多协议连接: {}", self.config.host);
@@ -308,22 +365,52 @@ impl IoTDBMultiClient {
             if let Some(manager) = &mut self.iotdb_manager {
                 let connection_id = format!("{}:{}", self.config.host, self.config.port);
                 if let Some(driver) = manager.get_driver(&connection_id) {
-                    let request = IoTDBQueryRequest {
-                        sql: sql.to_string(),
-                        database: None,
-                        session_id: None,
-                        fetch_size: Some(1000),
-                        timeout: Some(Duration::from_secs(30)),
-                        parameters: None,
-                    };
+                    // 检查驱动连接状态
+                    if !driver.is_connected() {
+                        warn!("新驱动未连接，尝试重新连接");
+                        if let Err(e) = driver.connect().await {
+                            warn!("新驱动重连失败: {}, 回退到旧协议系统", e);
+                        } else {
+                            info!("新驱动重连成功");
+                        }
+                    }
 
-                    let response = driver.query(request).await?;
-                    return Ok(self.convert_iotdb_response(response));
+                    // 如果驱动已连接，尝试执行查询
+                    if driver.is_connected() {
+                        let request = IoTDBQueryRequest {
+                            sql: sql.to_string(),
+                            database: None,
+                            session_id: None,
+                            fetch_size: Some(1000),
+                            timeout: Some(Duration::from_secs(30)),
+                            parameters: None,
+                        };
+
+                        match driver.query(request).await {
+                            Ok(response) => {
+                                debug!("新驱动查询成功");
+                                return Ok(self.convert_iotdb_response(response));
+                            }
+                            Err(e) => {
+                                warn!("新驱动查询失败: {}, 回退到旧协议系统", e);
+                            }
+                        }
+                    }
                 }
             }
         }
 
         // 回退到旧协议系统
+        debug!("使用旧协议系统执行查询");
+
+        // 确保旧协议系统已连接
+        if self.protocol_client.is_none() {
+            debug!("旧协议系统未连接，尝试自动连接");
+            if let Err(e) = self.auto_connect().await {
+                return Err(anyhow::anyhow!("自动连接失败: {}", e));
+            }
+        }
+
         let client = self.protocol_client.as_mut()
             .ok_or_else(|| anyhow::anyhow!("未连接到IoTDB服务器"))?;
 
@@ -412,55 +499,58 @@ impl IoTDBMultiClient {
     
     /// 获取数据库列表
     pub async fn get_databases(&mut self) -> Result<Vec<String>> {
-        // 尝试不同版本的IoTDB命令，按优先级排序
-        let queries = vec![
-            "SHOW DATABASES",                                    // IoTDB 1.x+ (表模型)
-            "SHOW STORAGE GROUP",                               // IoTDB 0.x (树模型)
-            "SHOW DATABASE",                                    // 备选
-            "SELECT * FROM INFORMATION_SCHEMA.DATABASES",       // 信息模式查询
-            "SHOW SCHEMAS",                                     // 另一种可能的语法
-        ];
+        debug!("开始获取IoTDB数据库列表");
 
-        // 首先尝试一个简单的测试查询来验证连接状态
-        debug!("验证连接状态...");
-        match self.execute_query("SELECT 1").await {
-            Ok(_) => {
-                debug!("连接状态验证成功");
-            }
-            Err(e) => {
-                warn!("连接状态验证失败: {}", e);
-                // 继续尝试，可能是查询语法问题
+        // 首先确保连接状态正常
+        if let Err(e) = self.ensure_connection().await {
+            warn!("连接状态检查失败: {}", e);
+            // 尝试重新连接
+            if let Err(reconnect_err) = self.reconnect().await {
+                warn!("重连失败: {}", reconnect_err);
+                // 如果重连也失败，尝试使用旧协议系统
+                debug!("尝试使用旧协议系统");
+                if self.protocol_client.is_none() {
+                    if let Err(auto_connect_err) = self.auto_connect().await {
+                        return Err(anyhow::anyhow!("所有连接方式都失败: 新驱动重连失败({}), 旧协议自动连接失败({})", reconnect_err, auto_connect_err));
+                    }
+                }
             }
         }
+
+        // 使用IoTDB 1.3.0正确的查询语法
+        let queries = vec![
+            "SHOW STORAGE GROUP",                               // IoTDB 1.3.0标准语法
+            "SHOW DATABASES",                                   // 备选语法
+        ];
 
         for query in queries {
             debug!("尝试查询存储组: {}", query);
             match self.execute_query(query).await {
                 Ok(result) => {
-                    info!("查询 '{}' 成功，结果: {:?}", query, result);
+                    info!("查询 '{}' 成功", query);
 
                     // 从查询结果中提取数据库名称
                     let mut databases = Vec::new();
                     if let Some(data) = &result.data {
-                        info!("查询返回 {} 行数据", data.len());
-                        for (i, row) in data.iter().enumerate() {
-                            info!("第 {} 行数据: {:?}", i + 1, row);
+                        debug!("查询返回 {} 行数据", data.len());
+                        for row in data.iter() {
                             if !row.is_empty() {
                                 if let Some(name) = row[0].as_str() {
-                                    info!("解析到存储组名称: '{}'", name);
-                                    databases.push(name.to_string());
-                                    info!("添加存储组: '{}'", name);
+                                    let name = name.trim();
+                                    if !name.is_empty() {
+                                        debug!("解析到存储组名称: '{}'", name);
+                                        databases.push(name.to_string());
+                                    }
                                 } else if let Some(value) = row.get(0) {
                                     // 尝试转换其他类型为字符串
-                                    let name_str = value.to_string();
-                                    info!("转换后的存储组名称: '{}'", name_str);
-                                    databases.push(name_str.clone());
-                                    info!("添加转换后的存储组: '{}'", name_str);
+                                    let name_str = value.to_string().trim().to_string();
+                                    if !name_str.is_empty() && name_str != "null" {
+                                        debug!("转换后的存储组名称: '{}'", name_str);
+                                        databases.push(name_str);
+                                    }
                                 }
                             }
                         }
-                    } else {
-                        info!("查询 '{}' 返回空数据", query);
                     }
 
                     if !databases.is_empty() {
@@ -471,14 +561,69 @@ impl IoTDBMultiClient {
                     }
                 }
                 Err(e) => {
-                    debug!("查询 '{}' 失败: {}", query, e);
+                    let error_msg = e.to_string();
+                    debug!("查询 '{}' 失败: {}", query, error_msg);
+
+                    // 如果是会话问题，尝试重新连接
+                    if error_msg.contains("未打开会话") || error_msg.contains("session") {
+                        warn!("检测到会话问题，尝试重新建立连接");
+                        if let Err(reconnect_err) = self.ensure_connection().await {
+                            warn!("重新建立连接失败: {}", reconnect_err);
+                        } else {
+                            // 重连成功，重试当前查询
+                            debug!("重连成功，重试查询: {}", query);
+                            if let Ok(retry_result) = self.execute_query(query).await {
+                                info!("重试查询 '{}' 成功", query);
+                                // 处理重试结果（复制上面的逻辑）
+                                let mut databases = Vec::new();
+                                if let Some(data) = &retry_result.data {
+                                    for row in data.iter() {
+                                        if !row.is_empty() {
+                                            if let Some(name) = row[0].as_str() {
+                                                let name = name.trim();
+                                                if !name.is_empty() {
+                                                    databases.push(name.to_string());
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                if !databases.is_empty() {
+                                    info!("重试后成功获取到 {} 个存储组: {:?}", databases.len(), databases);
+                                    return Ok(databases);
+                                }
+                            }
+                        }
+                    }
                     continue;
                 }
             }
         }
 
-        // 如果所有查询都失败或返回空结果，返回错误
-        Err(anyhow::anyhow!("无法获取 IoTDB 存储组列表：所有查询方法都失败或返回空结果"))
+        // 如果所有查询都失败，尝试一些简单的查询来验证连接
+        warn!("无法获取存储组列表，尝试简单查询验证连接");
+
+        // 尝试一些IoTDB 1.3.0支持的简单查询
+        let test_queries = vec![
+            "SHOW STORAGE GROUP",                               // 最基本的查询
+            "SHOW TIMESERIES LIMIT 1",                         // 简单的时间序列查询
+        ];
+
+        for test_query in test_queries {
+            match self.execute_query(test_query).await {
+                Ok(_) => {
+                    info!("连接验证成功（使用查询: {}），但可能没有存储组或权限不足", test_query);
+                    return Ok(vec![]); // 返回空列表表示连接正常但没有数据或权限不足
+                }
+                Err(e) => {
+                    debug!("验证查询 '{}' 失败: {}", test_query, e);
+                    continue;
+                }
+            }
+        }
+
+        error!("所有验证查询都失败，连接可能存在问题");
+        Err(anyhow::anyhow!("无法获取 IoTDB 存储组列表：所有查询方法都失败，连接可能存在问题"))
     }
     
     /// 获取设备列表
@@ -676,42 +821,10 @@ impl IoTDBMultiClient {
             }
         }
 
-        // 2. 添加系统信息节点
-        let mut system_info = TreeNodeFactory::create_system_info();
+        // 2. 只有在能够获取到真实数据时才添加系统信息节点
+        // 不添加硬编码的系统信息节点
 
-        // 添加版本信息子节点
-        let version_info = TreeNodeFactory::create_version_info(version.clone());
-        system_info.add_child(version_info);
-
-        // 添加存储引擎信息子节点
-        let storage_engine_info = TreeNodeFactory::create_storage_engine_info();
-        system_info.add_child(storage_engine_info);
-
-        // 如果是集群版本，添加集群信息
-        if self.is_cluster_version().await.unwrap_or(false) {
-            let cluster_info = TreeNodeFactory::create_cluster_info();
-            system_info.add_child(cluster_info);
-        }
-
-        nodes.push(system_info);
-
-        // 3. 获取模式模板
-        match self.get_schema_templates().await {
-            Ok(templates) => {
-                if !templates.is_empty() {
-                    log::info!("发现 {} 个模式模板", templates.len());
-                    for template in templates {
-                        let template_node = TreeNodeFactory::create_schema_template(template);
-                        nodes.push(template_node);
-                    }
-                } else {
-                    log::debug!("未发现模式模板");
-                }
-            }
-            Err(e) => {
-                log::warn!("获取模式模板失败: {}", e);
-            }
-        }
+        // 3. 不添加其他硬编码节点，只显示真实的存储组数据
 
         log::info!("🎉 成功生成 {} 个树节点: {:?}",
             nodes.len(),
@@ -884,16 +997,23 @@ impl IoTDBMultiClient {
             TreeNodeType::StorageEngineInfo => {
                 // 获取存储引擎详细信息
                 if let Ok(engine_info) = self.get_storage_engine_info().await {
-                    for (key, value) in engine_info {
-                        let info_node = TreeNode::new(
-                            format!("{}/engine_{}", parent_node_id, key),
-                            format!("{}: {}", key, value),
-                            TreeNodeType::Field, // 复用字段类型
-                        )
-                        .with_parent(parent_node_id.to_string())
-                        .as_leaf()
-                        .as_system();
-                        children.push(info_node);
+                    if let serde_json::Value::Object(map) = engine_info {
+                        for (key, value) in map {
+                            let value_str = match value {
+                                serde_json::Value::String(s) => s,
+                                serde_json::Value::Array(arr) => format!("{} items", arr.len()),
+                                _ => value.to_string(),
+                            };
+                            let info_node = TreeNode::new(
+                                format!("{}/engine_{}", parent_node_id, key),
+                                format!("{}: {}", key, value_str),
+                                TreeNodeType::Field, // 复用字段类型
+                            )
+                            .with_parent(parent_node_id.to_string())
+                            .as_leaf()
+                            .as_system();
+                            children.push(info_node);
+                        }
                     }
                 }
             }
@@ -928,58 +1048,99 @@ impl IoTDBMultiClient {
             return Ok(vec![]);
         }
 
-        // 移除硬编码过滤，尝试查询所有存储组的设备
+        // 尝试多种查询方式获取设备
+        let queries = vec![
+            format!("SHOW DEVICES {}", storage_group),
+            format!("SHOW DEVICES {}.**", storage_group),
+            format!("SHOW DEVICES root.{}", storage_group),
+            format!("SHOW DEVICES root.{}.**", storage_group),
+        ];
 
-        // 对存储组名称进行转义，处理包含特殊字符（包括emoji）的情况
-        let escaped_sg = self.escape_identifier(storage_group);
-        let query = format!("SHOW DEVICES {}.**", escaped_sg);
+        for query in queries {
+            debug!("IoTDB 设备查询: {}", query);
+            match self.execute_query(&query).await {
+                Ok(result) => {
+                    let mut devices = Vec::new();
+                    let rows = result.rows();
 
-        debug!("IoTDB 设备查询: {}", query);
-        let result = self.execute_query(&query).await?;
-        let mut devices = Vec::new();
-
-        let rows = result.rows();
-        if !rows.is_empty() {
-            for row in rows {
-                if let Some(device_path) = row.first() {
-                    if let Some(device_str) = device_path.as_str() {
-                        devices.push(device_str.to_string());
+                    if !rows.is_empty() {
+                        for row in rows {
+                            if let Some(device_path) = row.first() {
+                                if let Some(device_str) = device_path.as_str() {
+                                    let device_str = device_str.trim();
+                                    if !device_str.is_empty() {
+                                        devices.push(device_str.to_string());
+                                    }
+                                }
+                            }
+                        }
                     }
+
+                    if !devices.is_empty() {
+                        debug!("IoTDB 获取到 {} 个设备", devices.len());
+                        return Ok(devices);
+                    }
+                }
+                Err(e) => {
+                    debug!("设备查询失败: {} - {}", query, e);
+                    continue;
                 }
             }
         }
 
-        debug!("IoTDB 获取到 {} 个设备", devices.len());
-        Ok(devices)
+        debug!("未找到任何设备，存储组: {}", storage_group);
+        Ok(vec![])
     }
 
     /// 获取时间序列列表（用于树节点）
     async fn get_timeseries_for_tree(&mut self, device_path: &str) -> Result<Vec<String>> {
-        // 对设备路径进行转义，处理包含特殊字符（包括emoji）的情况
-        let escaped_path = self.escape_identifier(device_path);
-        let query = format!("SHOW TIMESERIES {}.**", escaped_path);
+        // 尝试多种查询方式获取时间序列
+        let queries = vec![
+            format!("SHOW TIMESERIES {}", device_path),
+            format!("SHOW TIMESERIES {}.*", device_path),
+            format!("SHOW TIMESERIES {}.**", device_path),
+        ];
 
-        debug!("IoTDB 时间序列查询: {}", query);
-        let result = self.execute_query(&query).await?;
-        let mut timeseries = Vec::new();
+        for query in queries {
+            debug!("IoTDB 时间序列查询: {}", query);
+            match self.execute_query(&query).await {
+                Ok(result) => {
+                    let mut timeseries = Vec::new();
+                    let rows = result.rows();
 
-        let rows = result.rows();
-        if !rows.is_empty() {
-            for row in rows {
-                if let Some(ts_path) = row.first() {
-                    if let Some(ts_str) = ts_path.as_str() {
-                        // 提取时间序列名称（去掉设备路径前缀）
-                        if let Some(ts_name) = ts_str.strip_prefix(&format!("{}.", device_path)) {
-                            timeseries.push(ts_name.to_string());
-                        } else {
-                            timeseries.push(ts_str.to_string());
+                    if !rows.is_empty() {
+                        for row in rows {
+                            if let Some(ts_path) = row.first() {
+                                if let Some(ts_str) = ts_path.as_str() {
+                                    let ts_str = ts_str.trim();
+                                    if !ts_str.is_empty() {
+                                        // 提取时间序列名称（去掉设备路径前缀）
+                                        if let Some(ts_name) = ts_str.strip_prefix(&format!("{}.", device_path)) {
+                                            timeseries.push(ts_name.to_string());
+                                        } else {
+                                            // 如果无法去掉前缀，使用完整路径
+                                            timeseries.push(ts_str.to_string());
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
+
+                    if !timeseries.is_empty() {
+                        debug!("IoTDB 获取到 {} 个时间序列", timeseries.len());
+                        return Ok(timeseries);
+                    }
+                }
+                Err(e) => {
+                    debug!("时间序列查询失败: {} - {}", query, e);
+                    continue;
                 }
             }
         }
 
-        Ok(timeseries)
+        debug!("未找到任何时间序列，设备: {}", device_path);
+        Ok(vec![])
     }
 
     /// 检查是否为集群版本
@@ -1167,23 +1328,7 @@ impl IoTDBMultiClient {
         Err(anyhow::anyhow!("无法获取时间序列详细信息"))
     }
 
-    /// 获取存储引擎信息
-    async fn get_storage_engine_info(&mut self) -> Result<Vec<(String, String)>> {
-        let result = self.execute_query("SHOW VARIABLES").await?;
-        let mut engine_info = Vec::new();
 
-        if let Some(data) = result.data {
-            for row in data {
-                if row.len() >= 2 {
-                    let key = row[0].as_str().unwrap_or("").to_string();
-                    let value = row[1].as_str().unwrap_or("").to_string();
-                    engine_info.push((key, value));
-                }
-            }
-        }
-
-        Ok(engine_info)
-    }
 
     /// 获取集群节点信息
     async fn get_cluster_nodes(&mut self) -> Result<Vec<ClusterNodeInfo>> {
@@ -1203,6 +1348,145 @@ impl IoTDBMultiClient {
         }
 
         Ok(nodes)
+    }
+
+
+
+    /// 获取版本信息
+    async fn get_version_info(&mut self) -> Result<serde_json::Value> {
+        let queries = vec![
+            "SHOW VERSION",
+            "SELECT version()",
+            "SHOW CLUSTER",
+        ];
+
+        for query in queries {
+            if let Ok(result) = self.execute_query(query).await {
+                if let Some(data) = result.data {
+                    if !data.is_empty() && !data[0].is_empty() {
+                        return Ok(serde_json::json!({
+                            "query": query,
+                            "result": data
+                        }));
+                    }
+                }
+            }
+        }
+
+        Ok(serde_json::json!({
+            "error": "无法获取版本信息"
+        }))
+    }
+
+    /// 获取存储引擎信息
+    async fn get_storage_engine_info(&mut self) -> Result<serde_json::Value> {
+        let queries = vec![
+            "SHOW STORAGE GROUP",
+            "SHOW DATABASES",
+            "SHOW FUNCTIONS",
+            "SHOW TRIGGERS",
+        ];
+
+        let mut info = serde_json::Map::new();
+
+        for query in queries {
+            if let Ok(result) = self.execute_query(query).await {
+                let key = query.to_lowercase().replace(" ", "_");
+                info.insert(key, serde_json::json!(result.data.unwrap_or_default()));
+            }
+        }
+
+        Ok(serde_json::Value::Object(info))
+    }
+
+    /// 获取集群信息
+    async fn get_cluster_info(&mut self) -> Result<serde_json::Value> {
+        let queries = vec![
+            "SHOW CLUSTER",
+            "SHOW DATANODES",
+            "SHOW CONFIGNODES",
+            "SHOW REGIONS",
+        ];
+
+        let mut cluster_info = serde_json::Map::new();
+
+        for query in queries {
+            if let Ok(result) = self.execute_query(query).await {
+                let key = query.to_lowercase().replace(" ", "_");
+                cluster_info.insert(key, serde_json::json!(result.data.unwrap_or_default()));
+            }
+        }
+
+        Ok(serde_json::Value::Object(cluster_info))
+    }
+
+    /// 获取用户和权限信息
+    async fn get_users_and_privileges(&mut self) -> Result<Vec<String>> {
+        let queries = vec![
+            "LIST USER",
+            "SHOW USERS",
+        ];
+
+        for query in queries {
+            if let Ok(result) = self.execute_query(query).await {
+                if let Some(data) = result.data {
+                    let users: Vec<String> = data.iter()
+                        .filter_map(|row| row.first()?.as_str().map(|s| s.to_string()))
+                        .collect();
+                    if !users.is_empty() {
+                        return Ok(users);
+                    }
+                }
+            }
+        }
+
+        Ok(vec![])
+    }
+
+    /// 获取函数列表
+    async fn get_functions(&mut self) -> Result<Vec<String>> {
+        let queries = vec![
+            "SHOW FUNCTIONS",
+            "LIST FUNCTIONS",
+        ];
+
+        for query in queries {
+            if let Ok(result) = self.execute_query(query).await {
+                if let Some(data) = result.data {
+                    let functions: Vec<String> = data.iter()
+                        .filter_map(|row| row.first()?.as_str().map(|s| s.to_string()))
+                        .collect();
+                    if !functions.is_empty() {
+                        return Ok(functions);
+                    }
+                }
+            }
+        }
+
+        Ok(vec![])
+    }
+
+    /// 获取触发器列表
+    async fn get_triggers(&mut self) -> Result<Vec<String>> {
+        let queries = vec![
+            "SHOW TRIGGERS",
+            "LIST TRIGGERS",
+        ];
+
+        for query in queries {
+            if let Ok(result) = self.execute_query(query).await {
+                if let Some(data) = result.data {
+                    let triggers: Vec<String> = data.iter()
+                        .filter_map(|row| row.first()?.as_str().map(|s| s.to_string()))
+                        .collect();
+                    if !triggers.is_empty() {
+                        return Ok(triggers);
+                    }
+                }
+            }
+        }
+
+        Ok(vec![])
     }
 }
 

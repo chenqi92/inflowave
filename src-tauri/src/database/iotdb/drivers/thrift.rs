@@ -87,8 +87,21 @@ impl ThriftDriver {
         let start_time = Instant::now();
         debug!("执行 Thrift 查询: {}", sql);
 
-        // 使用官方 Thrift 客户端执行查询
-        let thrift_result = self.thrift_client.execute_statement(sql).await?;
+        // 使用官方 Thrift 客户端执行查询，如果会话已关闭则重新打开
+        let thrift_result = match self.thrift_client.execute_statement(sql).await {
+            Ok(result) => result,
+            Err(e) => {
+                if e.to_string().contains("未打开会话") {
+                    warn!("会话已关闭，尝试重新打开会话");
+                    // 重新打开会话
+                    self.thrift_client.open_session().await?;
+                    // 重试查询
+                    self.thrift_client.execute_statement(sql).await?
+                } else {
+                    return Err(e);
+                }
+            }
+        };
 
         // 转换 Thrift 结果为标准格式
         let columns = if let Some(column_names) = thrift_result.columns {
@@ -242,18 +255,23 @@ impl IoTDBDriver for ThriftDriver {
             self.connect().await?;
         }
 
-        // 首先尝试最简单的TCP连接测试
-        match self.thrift_client.test_connection_simple().await {
-            Ok(true) => {
-                info!("IoTDB Thrift TCP连接测试成功");
-                return Ok(start_time.elapsed());
-            }
-            Ok(false) => {
-                warn!("IoTDB Thrift TCP连接测试失败，尝试查询测试");
-                // 继续尝试查询测试，不直接返回错误
+        // 首先尝试最简单的TCP连接测试，但不断开连接
+        match self.thrift_client.connect().await {
+            Ok(()) => {
+                match self.thrift_client.open_session().await {
+                    Ok(_) => {
+                        info!("IoTDB Thrift TCP连接测试成功");
+                        // 不断开连接，保持会话用于后续查询
+                        return Ok(start_time.elapsed());
+                    }
+                    Err(e) => {
+                        warn!("IoTDB Thrift 会话打开失败，尝试查询测试: {}", e);
+                        // 继续尝试查询测试，不直接返回错误
+                    }
+                }
             }
             Err(e) => {
-                warn!("IoTDB Thrift TCP连接测试出错，尝试查询测试: {}", e);
+                warn!("IoTDB Thrift 连接失败，尝试查询测试: {}", e);
                 // 继续尝试查询测试，不直接返回错误
             }
         }
@@ -297,7 +315,8 @@ impl IoTDBDriver for ThriftDriver {
     }
     
     fn is_connected(&self) -> bool {
-        self.connected
+        // 检查连接状态和会话状态
+        self.connected && self.thrift_client.get_session_id().is_some()
     }
     
     fn driver_type(&self) -> &str {

@@ -791,6 +791,10 @@ async fn main() {
             delete_iotdb_timeseries,
             insert_iotdb_data,
             get_iotdb_server_info,
+            get_iotdb_cluster_info,
+            get_iotdb_users,
+            get_iotdb_functions,
+            get_iotdb_triggers,
 
             // Database version detection
             commands::database_detection::detect_database_version,
