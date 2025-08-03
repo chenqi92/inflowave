@@ -51,7 +51,7 @@ impl IoTDBMultiClient {
                 // 注意：桌面程序不需要 WebSocket 协议
             ],
             iotdb_manager: None,
-            use_new_driver: true, // 默认使用新驱动
+            use_new_driver: false, // 临时禁用新驱动，避免会话冲突
         }
     }
     

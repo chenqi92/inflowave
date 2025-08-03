@@ -787,8 +787,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 获取表结构信息
   const fetchTableSchema = useCallback(async () => {
     try {
+      // 智能检测数据库类型并生成正确的查询
+      const isIoTDB = tableName.startsWith('root.') || database.startsWith('root.');
+
       // 获取字段键
-      const fieldKeysQuery = `SHOW FIELD KEYS FROM "${tableName}"`;
+      const fieldKeysQuery = isIoTDB
+        ? `SHOW TIMESERIES ${tableName}.*`
+        : `SHOW FIELD KEYS FROM "${tableName}"`;
       const fieldResult = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connection_id: connectionId,
@@ -798,7 +803,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       });
 
       // 获取标签键
-      const tagKeysQuery = `SHOW TAG KEYS FROM "${tableName}"`;
+      const tagKeysQuery = isIoTDB
+        ? `SHOW DEVICES ${tableName}`
+        : `SHOW TAG KEYS FROM "${tableName}"`;
       const tagResult = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connection_id: connectionId,
@@ -848,8 +855,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 获取总数
   const fetchTotalCount = useCallback(async () => {
     try {
+      // 智能检测数据库类型并生成正确的查询
+      const isIoTDB = tableName.startsWith('root.') || database.startsWith('root.');
+      const tableRef = isIoTDB ? tableName : `"${tableName}"`;
+
       const countQuery = `SELECT COUNT(*)
-                          FROM "${tableName}"`;
+                          FROM ${tableRef}`;
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connection_id: connectionId,

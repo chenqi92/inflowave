@@ -141,8 +141,8 @@ impl OfficialThriftClient {
 
         debug!("执行SQL语句: {}", sql);
 
-        // 使用会话ID作为StatementId，这样可以确保在会话中是有效的
-        let statement_id = session_id;
+        // 生成唯一的StatementId，每次查询都使用不同的ID
+        let statement_id = self.statement_id_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
 
         // 构建执行语句请求
         let request = TSExecuteStatementReq::new(

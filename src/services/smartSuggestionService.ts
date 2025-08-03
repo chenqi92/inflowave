@@ -515,13 +515,18 @@ export class SmartSuggestionService {
     try {
       console.log('使用备用方法获取字段和标签');
 
-      // 尝试执行SHOW FIELD KEYS查询
+      // 尝试执行字段查询 - 智能检测数据库类型
       try {
+        const isIoTDB = database.startsWith('root.') || tableName.startsWith('root.');
+        const fieldQuery = isIoTDB
+          ? `SHOW TIMESERIES ${tableName}.*`
+          : `SHOW FIELD KEYS FROM "${tableName}"`;
+
         const fieldResult = await safeTauriInvoke<any>('execute_query', {
           request: {
             connectionId,
             database,
-            query: `SHOW FIELD KEYS FROM "${tableName}"`,
+            query: fieldQuery,
           }
         });
 

@@ -341,15 +341,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         const timeCondition = generateTimeCondition();
         const limit = 'LIMIT 500'; // 默认分页500条
 
+        // 智能检测数据库类型并生成正确的查询
+        const isIoTDB = table.startsWith('root.') || (activeDatabase && activeDatabase.startsWith('root.'));
+        const tableRef = isIoTDB ? table : `"${table}"`;
+        const orderBy = isIoTDB ? '' : 'ORDER BY time DESC '; // IoTDB不需要ORDER BY
+
         if (timeCondition) {
             return `SELECT *
-                    FROM "${table}"
+                    FROM ${tableRef}
                     WHERE ${timeCondition}
-                    ORDER BY time DESC ${limit}`;
+                    ${orderBy}${limit}`;
         } else {
             return `SELECT *
-                    FROM "${table}"
-                    ORDER BY time DESC ${limit}`;
+                    FROM ${tableRef}
+                    ${orderBy}${limit}`;
         }
     };
 

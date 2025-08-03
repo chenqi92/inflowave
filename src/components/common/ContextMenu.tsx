@@ -222,7 +222,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 ];
 
             case 'connection_row':
-                const isConnected = target.status?.status === 'connected';
+                { const isConnected = target.status?.status === 'connected';
                 return [
                     {
                         id: isConnected ? 'disconnect' : 'connect',
@@ -291,7 +291,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                         action: {type: 'delete_connection'},
                         danger: true
                     }
-                ];
+                ]; }
 
             case 'database':
                 return [
@@ -607,12 +607,12 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                             {
                                 id: 'template_show_fields',
                                 label: '显示字段',
-                                action: {type: 'insertTemplate', template: 'SHOW FIELD KEYS FROM measurement_name'}
+                                action: {type: 'insertTemplate', template: 'SHOW TIMESERIES device_path.*'}
                             },
                             {
                                 id: 'template_show_tags',
                                 label: '显示标签',
-                                action: {type: 'insertTemplate', template: 'SHOW TAG KEYS FROM measurement_name'}
+                                action: {type: 'insertTemplate', template: 'SHOW DEVICES device_path'}
                             }
                         ]
                     },
