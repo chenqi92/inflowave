@@ -625,11 +625,25 @@ pub async fn get_field_keys(
             format!("获取连接失败: {}", e)
         })?;
 
-    // 构建查询语句，包含数据库上下文
-    let query = if let Some(measurement) = measurement {
-        format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
-    } else {
-        format!("SHOW FIELD KEYS ON \"{}\"", database)
+    // 根据连接类型构建不同的查询语句
+    let query = {
+        // 检查连接类型，如果是IoTDB则使用SHOW TIMESERIES语法
+        let db_type = client.get_database_type();
+        if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+            // IoTDB使用SHOW TIMESERIES语法
+            if let Some(measurement) = measurement {
+                format!("SHOW TIMESERIES {}.{}.*", database, measurement)
+            } else {
+                format!("SHOW TIMESERIES {}.**", database)
+            }
+        } else {
+            // InfluxDB使用SHOW FIELD KEYS语法
+            if let Some(measurement) = measurement {
+                format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+            } else {
+                format!("SHOW FIELD KEYS ON \"{}\"", database)
+            }
+        }
     };
 
     let result = client.execute_query(&query, Some(&database)).await
