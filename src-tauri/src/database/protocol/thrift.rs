@@ -16,7 +16,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use log::{debug, info, warn};
 use crate::database::iotdb::drivers::client::{
     IClientRPCServiceSyncClient, TIClientRPCServiceSyncClient, TSExecuteStatementReq, TSExecuteStatementResp,
-    TSOpenSessionReq, TSOpenSessionResp, TSProtocolVersion
+    TSOpenSessionResp
 };
 use thrift::transport::{TFramedReadTransport, TFramedWriteTransport, TTcpChannel, ReadHalf, WriteHalf, TIoChannel};
 use thrift::protocol::{TBinaryInputProtocol, TBinaryOutputProtocol};

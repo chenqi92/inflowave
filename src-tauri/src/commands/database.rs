@@ -294,13 +294,29 @@ pub async fn get_table_structure(
             format!("获取字段信息失败: {}", e)
         })?;
 
-    // 获取标签信息，包含数据库上下文
-    let tag_query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, table);
-    let tag_result = client.execute_query(&tag_query, Some(&database)).await
-        .map_err(|e| {
-            error!("获取标签信息失败: {}", e);
-            format!("获取标签信息失败: {}", e)
-        })?;
+    // 根据连接类型获取标签信息
+    let tag_result = {
+        let db_type = client.get_database_type();
+        if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+            // IoTDB不支持TAG概念，返回空结果
+            crate::models::QueryResult {
+                results: vec![],
+                execution_time: Some(1),
+                row_count: Some(0),
+                data: None,
+                columns: Some(vec![]),
+                error: None,
+            }
+        } else {
+            // InfluxDB获取标签信息
+            let tag_query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, table);
+            client.execute_query(&tag_query, Some(&database)).await
+                .map_err(|e| {
+                    error!("获取标签信息失败: {}", e);
+                    format!("获取标签信息失败: {}", e)
+                })?
+        }
+    };
 
     // 构建结构信息
     let structure = serde_json::json!({
@@ -630,11 +646,11 @@ pub async fn get_field_keys(
         // 检查连接类型，如果是IoTDB则使用SHOW TIMESERIES语法
         let db_type = client.get_database_type();
         if matches!(db_type, crate::models::DatabaseType::IoTDB) {
-            // IoTDB使用SHOW TIMESERIES语法
+            // IoTDB使用SHOW TIMESERIES语法，路径需要正确格式
             if let Some(measurement) = measurement {
-                format!("SHOW TIMESERIES {}.{}.*", database, measurement)
+                format!("SHOW TIMESERIES `{}`.`{}`.*", database, measurement)
             } else {
-                format!("SHOW TIMESERIES {}.**", database)
+                format!("SHOW TIMESERIES `{}`.**", database)
             }
         } else {
             // InfluxDB使用SHOW FIELD KEYS语法
@@ -682,11 +698,24 @@ pub async fn get_tag_keys(
             format!("获取连接失败: {}", e)
         })?;
 
-    // 构建查询语句，包含数据库上下文
-    let query = if let Some(measurement) = measurement {
-        format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
-    } else {
-        format!("SHOW TAG KEYS ON \"{}\"", database)
+    // 根据连接类型构建不同的查询语句
+    let query = {
+        let db_type = client.get_database_type();
+        if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+            // IoTDB不支持TAG概念，返回空查询或使用SHOW DEVICES
+            if let Some(measurement) = measurement {
+                format!("SHOW DEVICES {}.{}", database, measurement)
+            } else {
+                format!("SHOW DEVICES {}.**", database)
+            }
+        } else {
+            // InfluxDB使用SHOW TAG KEYS语法
+            if let Some(measurement) = measurement {
+                format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+            } else {
+                format!("SHOW TAG KEYS ON \"{}\"", database)
+            }
+        }
     };
 
     let result = client.execute_query(&query, Some(&database)).await
@@ -726,11 +755,24 @@ pub async fn get_tag_values(
             format!("获取连接失败: {}", e)
         })?;
     
-    // 构建查询语句，包含数据库上下文
-    let query = if let Some(measurement) = measurement {
-        format!("SHOW TAG VALUES ON \"{}\" FROM \"{}\" WITH KEY = \"{}\"", database, measurement, tag_key)
-    } else {
-        format!("SHOW TAG VALUES ON \"{}\" WITH KEY = \"{}\"", database, tag_key)
+    // 根据连接类型构建不同的查询语句
+    let query = {
+        let db_type = client.get_database_type();
+        if matches!(db_type, crate::models::DatabaseType::IoTDB) {
+            // IoTDB不支持TAG VALUES概念，返回设备信息
+            if let Some(measurement) = measurement {
+                format!("SHOW DEVICES {}.{}", database, measurement)
+            } else {
+                format!("SHOW DEVICES {}.**", database)
+            }
+        } else {
+            // InfluxDB使用SHOW TAG VALUES语法
+            if let Some(measurement) = measurement {
+                format!("SHOW TAG VALUES ON \"{}\" FROM \"{}\" WITH KEY = \"{}\"", database, measurement, tag_key)
+            } else {
+                format!("SHOW TAG VALUES ON \"{}\" WITH KEY = \"{}\"", database, tag_key)
+            }
+        }
     };
     
     let result = client.execute_query(&query, Some(&database)).await

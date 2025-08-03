@@ -821,10 +821,21 @@ impl IoTDBMultiClient {
             }
         }
 
-        // 2. 只有在能够获取到真实数据时才添加系统信息节点
-        // 不添加硬编码的系统信息节点
+        // 2. 添加用户管理节点
+        let users_node = TreeNodeFactory::create_user_management("用户管理".to_string());
+        nodes.push(users_node);
 
-        // 3. 不添加其他硬编码节点，只显示真实的存储组数据
+        // 3. 添加权限管理节点
+        let privileges_node = TreeNodeFactory::create_privilege_management("权限管理".to_string());
+        nodes.push(privileges_node);
+
+        // 4. 添加函数管理节点
+        let functions_node = TreeNodeFactory::create_function_management("函数管理".to_string());
+        nodes.push(functions_node);
+
+        // 5. 添加触发器管理节点
+        let triggers_node = TreeNodeFactory::create_trigger_management("触发器管理".to_string());
+        nodes.push(triggers_node);
 
         log::info!("🎉 成功生成 {} 个树节点: {:?}",
             nodes.len(),

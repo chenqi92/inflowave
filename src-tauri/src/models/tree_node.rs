@@ -81,7 +81,13 @@ pub enum TreeNodeType {
     TagGroup,          // 标签分组
     Field,             // 字段
     Tag,               // 标签
-    
+
+    // 管理节点分组
+    UserGroup,         // 用户管理分组
+    PrivilegeGroup,    // 权限管理分组
+    FunctionGroup,     // 函数管理分组
+    TriggerGroup,      // 触发器管理分组
+
     // 系统节点
     // SystemDatabase,    // 系统数据库（如 _internal）
     // SystemBucket,      // 系统存储桶（如 _monitoring）
@@ -464,13 +470,49 @@ impl TreeNodeFactory {
     }
 
     /// 创建 IoTDB 系统信息节点
-    pub fn create_system_info() -> TreeNode {
+    pub fn create_system_info(name: String) -> TreeNode {
         TreeNode::new(
-            "system_info".to_string(),
-            "System Information".to_string(),
+            format!("system_info_{}", name.replace(" ", "_")),
+            name,
             TreeNodeType::SystemInfo,
         )
         .as_system()
+    }
+
+    /// 创建用户管理节点
+    pub fn create_user_management(name: String) -> TreeNode {
+        TreeNode::new(
+            "user_management".to_string(),
+            name,
+            TreeNodeType::UserGroup,
+        )
+    }
+
+    /// 创建权限管理节点
+    pub fn create_privilege_management(name: String) -> TreeNode {
+        TreeNode::new(
+            "privilege_management".to_string(),
+            name,
+            TreeNodeType::PrivilegeGroup,
+        )
+    }
+
+    /// 创建函数管理节点
+    pub fn create_function_management(name: String) -> TreeNode {
+        TreeNode::new(
+            "function_management".to_string(),
+            name,
+            TreeNodeType::FunctionGroup,
+        )
+    }
+
+    /// 创建触发器管理节点
+    pub fn create_trigger_management(name: String) -> TreeNode {
+        TreeNode::new(
+            "trigger_management".to_string(),
+            name,
+            TreeNodeType::TriggerGroup,
+        )
     }
 
     /// 创建 IoTDB 版本信息节点
@@ -745,6 +787,10 @@ impl TreeNodeType {
             TreeNodeType::User => "IoTDB 用户账户，管理数据库访问权限",
             TreeNodeType::DataNode => "IoTDB 数据节点，存储和处理时间序列数据",
             TreeNodeType::ConfigNode => "IoTDB 配置节点，管理集群配置和元数据",
+            TreeNodeType::UserGroup => "用户管理，查看和管理数据库用户账户",
+            TreeNodeType::PrivilegeGroup => "权限管理，查看和管理用户权限设置",
+            TreeNodeType::FunctionGroup => "函数管理，查看和管理用户定义函数",
+            TreeNodeType::TriggerGroup => "触发器管理，查看和管理数据触发器",
         }
     }
 }
