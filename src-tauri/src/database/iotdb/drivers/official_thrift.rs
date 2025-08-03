@@ -54,9 +54,14 @@ impl OfficialThriftClient {
         let address = format!("{}:{}", self.host, self.port);
         info!("连接到IoTDB服务器: {}", address);
 
-        // 创建TCP连接 (使用标准库的TcpStream)
-        let tcp_stream = std::net::TcpStream::connect(&address)
-            .context("无法连接到IoTDB服务器")?;
+        // 使用tokio的异步TCP连接，然后转换为同步流
+        let tcp_stream = tokio::task::spawn_blocking({
+            let address = address.clone();
+            move || {
+                std::net::TcpStream::connect(&address)
+                    .context("无法连接到IoTDB服务器")
+            }
+        }).await??;
 
         // 创建Thrift通道
         let channel = TTcpChannel::with_stream(tcp_stream);
@@ -236,8 +241,8 @@ impl OfficialThriftClient {
         let client = self.client.as_mut()
             .ok_or_else(|| anyhow::anyhow!("Thrift客户端未初始化"))?;
 
-        // 尝试使用V2版本的查询方法
-        let response = client.execute_query_statement_v2(request)
+        // 使用标准的execute_statement方法
+        let response = client.execute_statement(request)
             .map_err(|e| anyhow::anyhow!("Thrift RPC调用失败: {}", e))?;
 
         Ok(response)

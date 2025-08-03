@@ -1,5 +1,5 @@
 use crate::models::{ConnectionConfig, QueryResult, RetentionPolicy, DatabaseType, TagInfo, FieldInfo, FieldType, TableSchema};
-use crate::database::iotdb_multi_client::IoTDBMultiClient;
+use crate::database::iotdb_official_client::IoTDBOfficialClient;
 use crate::database::influxdb_client::InfluxDBClient;
 use anyhow::Result;
 use influxdb::Client;
@@ -15,7 +15,7 @@ pub enum DatabaseClient {
     InfluxDB1x(InfluxClient),
     InfluxDB2x(InfluxDB2Client),
     InfluxDBUnified(InfluxDBClient), // 新的统一客户端
-    IoTDB(Arc<Mutex<IoTDBMultiClient>>),
+    IoTDB(Arc<Mutex<IoTDBOfficialClient>>),
 }
 
 impl DatabaseClient {
@@ -26,7 +26,7 @@ impl DatabaseClient {
             DatabaseClient::InfluxDB2x(client) => client.test_connection().await,
             DatabaseClient::InfluxDBUnified(client) => client.test_connection().await,
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 client.test_connection().await
             },
         }
@@ -44,8 +44,8 @@ impl DatabaseClient {
                 client.execute_query_with_database(query, database).await
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
-                client.execute_query(query).await
+                let client = client.lock().await;
+                client.execute_query(query, None).await
             },
         }
     }
@@ -82,7 +82,7 @@ impl DatabaseClient {
                 client.list_databases().await
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 client.get_databases().await
             },
         }
@@ -100,7 +100,7 @@ impl DatabaseClient {
                 client.list_measurements(database).await
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 client.get_devices(database).await
             },
         }
@@ -120,7 +120,7 @@ impl DatabaseClient {
                 Ok(schema.fields.into_iter().map(|f| f.name).collect())
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 // 对于IoTDB，需要传递完整的路径：database.table
                 let device_path = if table.starts_with(database) {
                     table.to_string()
@@ -174,20 +174,20 @@ impl DatabaseClient {
                 }))
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 let server_info = client.get_server_info().await?;
-                let status = client.get_connection_status();
+                let status = client.get_connection_status().await;
                 let protocol = client.get_current_protocol();
 
                 Ok(serde_json::json!({
-                    "type": "iotdb_multi",
-                    "version": server_info.version,
-                    "build_info": server_info.build_info,
+                    "type": "iotdb_official",
+                    "version": "1.3.0",
+                    "build_info": server_info,
                     "status": status,
                     "protocol": protocol,
-                    "supported_protocols": server_info.supported_protocols,
-                    "capabilities": server_info.capabilities,
-                    "timezone": server_info.timezone
+                    "supported_protocols": ["IoTDB Official"],
+                    "capabilities": ["query", "insert", "management"],
+                    "timezone": "UTC"
                 }))
             },
         }
@@ -209,7 +209,7 @@ impl DatabaseClient {
                 client.close().await
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 client.disconnect().await
             },
         }
@@ -250,9 +250,9 @@ impl DatabaseClient {
                 client.create_database(database_name).await
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 let sql = format!("CREATE STORAGE GROUP root.{}", database_name);
-                client.execute_query(&sql).await?;
+                client.execute_query(&sql, None).await?;
                 Ok(())
             },
         }
@@ -270,9 +270,9 @@ impl DatabaseClient {
                 client.drop_database(database_name).await
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 let sql = format!("DELETE STORAGE GROUP root.{}", database_name);
-                client.execute_query(&sql).await?;
+                client.execute_query(&sql, None).await?;
                 Ok(())
             },
         }
@@ -316,7 +316,7 @@ impl DatabaseClient {
                 client.list_measurements(database).await
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 client.get_devices(database).await
             },
         }
@@ -335,7 +335,7 @@ impl DatabaseClient {
                 Ok(schema.fields.into_iter().map(|f| f.name).collect())
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 // 对于IoTDB，需要传递完整的路径：database.measurement
                 let device_path = if measurement.is_empty() {
                     database.to_string()
@@ -432,7 +432,7 @@ impl DatabaseClient {
                 Ok(client.capabilities().version.clone())
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 client.detect_version().await
             },
         }
@@ -454,7 +454,7 @@ impl DatabaseClient {
                 Ok(vec![])
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 client.get_tree_nodes().await
             },
         }
@@ -476,7 +476,7 @@ impl DatabaseClient {
                 client.get_tree_children(parent_node_id, node_type).await
             },
             DatabaseClient::IoTDB(client) => {
-                let mut client = client.lock().await;
+                let client = client.lock().await;
                 // IoTDB 子节点获取逻辑
                 client.get_tree_children(parent_node_id, node_type).await
             },
@@ -3027,7 +3027,8 @@ impl DatabaseClientFactory {
                 Ok(DatabaseClient::InfluxDBUnified(client))
             },
             DatabaseType::IoTDB => {
-                let client = IoTDBMultiClient::new(config);
+                info!("创建IoTDB官方客户端: {}:{}", config.host, config.port);
+                let client = IoTDBOfficialClient::new(config).await?;
                 Ok(DatabaseClient::IoTDB(Arc::new(Mutex::new(client))))
             },
             _ => Err(anyhow::anyhow!("不支持的数据库类型: {:?}", config.db_type)),
@@ -3078,8 +3079,9 @@ impl DatabaseClientFactory {
                 Ok(DatabaseClient::InfluxDB1x(client))
             },
             DatabaseType::IoTDB => {
-                let client = IoTDBMultiClient::new(config);
-                Ok(DatabaseClient::IoTDB(Arc::new(Mutex::new(client))))
+                // 注意：这是遗留的同步方法，无法使用async的IoTDBOfficialClient::new
+                // 建议使用 create_unified_client 方法
+                return Err(anyhow::anyhow!("IoTDB客户端创建需要使用异步方法 create_unified_client"));
             },
             _ => {
                 Err(anyhow::anyhow!("不支持的数据库类型: {:?}", config.db_type))

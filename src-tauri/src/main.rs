@@ -715,12 +715,7 @@ async fn main() {
 
     info!("Starting InfloWave v{}", env!("CARGO_PKG_VERSION"));
 
-    // 后台预加载IoTDB驱动系统
-    tokio::spawn(async {
-        if let Err(e) = database::iotdb_multi_client::IoTDBMultiClient::preload_driver_system().await {
-            warn!("IoTDB驱动系统预加载失败: {}", e);
-        }
-    });
+    // IoTDB官方客户端无需预加载
 
     // Early system compatibility check (disabled for now to avoid crashes)
     // if let Err(e) = check_system_compatibility() {

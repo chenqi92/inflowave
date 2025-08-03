@@ -10,7 +10,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
 
-pub mod thrift;
 pub mod http;
 pub mod iotdb_official;
 // 注意：桌面程序不需要 WebSocket 协议
@@ -21,8 +20,7 @@ pub mod iotdb_official;
 pub enum ProtocolType {
     /// HTTP REST API
     Http,
-    /// Thrift TCP协议（IoTDB 标准协议）
-    Thrift,
+
     /// IoTDB 官方客户端（推荐）
     IoTDBOfficial,
     /// gRPC协议（暂未实现）
@@ -139,9 +137,6 @@ impl ProtocolFactory {
             ProtocolType::Http => {
                 Ok(Box::new(http::HttpClient::new(config)?))
             }
-            ProtocolType::Thrift => {
-                Ok(Box::new(thrift::ThriftClient::new(config)?))
-            }
             ProtocolType::IoTDBOfficial => {
                 Ok(Box::new(iotdb_official::IoTDBOfficialClient::try_from(config)?))
             }
@@ -159,8 +154,7 @@ impl ProtocolFactory {
         password: Option<String>,
     ) -> Result<ProtocolType> {
         let protocols = vec![
-            ProtocolType::IoTDBOfficial,  // IoTDB 官方客户端，最优选择
-            ProtocolType::Thrift,         // IoTDB 标准协议，次选
+            ProtocolType::IoTDBOfficial,  // IoTDB 官方客户端，唯一选择
             ProtocolType::Http,           // REST API 备用协议
         ];
         
@@ -190,7 +184,7 @@ impl ProtocolFactory {
     pub fn get_default_port(protocol: &ProtocolType) -> u16 {
         match protocol {
             ProtocolType::Http => 18080,           // IoTDB REST API默认端口
-            ProtocolType::Thrift => 6667,          // IoTDB Thrift默认端口（标准协议）
+            // Thrift协议已移除
             ProtocolType::IoTDBOfficial => 6667,   // IoTDB 官方客户端使用 Thrift 端口
             ProtocolType::Grpc => 6668,            // gRPC默认端口
         }
@@ -201,10 +195,7 @@ impl ProtocolFactory {
         match (protocol, feature) {
             (ProtocolType::Http, "pagination") => true,
             (ProtocolType::Http, "async_query") => true,
-            (ProtocolType::Thrift, "session") => true,
-            (ProtocolType::Thrift, "prepared_statement") => true,
-            (ProtocolType::Thrift, "real_time") => true,  // Thrift 支持实时查询
-            (ProtocolType::Thrift, "streaming") => true,  // Thrift 支持流式查询
+
             (ProtocolType::IoTDBOfficial, "session") => true,
             (ProtocolType::IoTDBOfficial, "prepared_statement") => true,
             (ProtocolType::IoTDBOfficial, "real_time") => true,

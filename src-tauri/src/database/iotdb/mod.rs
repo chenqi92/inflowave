@@ -12,7 +12,7 @@ pub mod types;
 
 // 重新导出核心类型
 pub use capability::Capability;
-pub use driver::{DriverConfig, DriverFactory, IoTDBDriver, QueryRequest, QueryResponse};
+pub use driver::{DriverConfig, DriverFactory, IoTDBDriver};
 
 // 内部使用的类型，不对外导出以避免未使用警告
 // pub use dialect::{QueryBuilder, SqlDialect};

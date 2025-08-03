@@ -102,21 +102,14 @@ pub struct DriverFactory;
 impl DriverFactory {
     /// 创建最佳驱动
     pub async fn create_best_driver(
-        config: DriverConfig,
+        _config: DriverConfig,
         capability: &Capability,
     ) -> Result<Box<dyn IoTDBDriver>> {
         // 根据服务器能力选择最佳驱动
-        let protocols = &capability.server.supported_protocols;
+        let _protocols = &capability.server.supported_protocols;
         
-        // 优先级：IoTDB官方客户端 > Thrift > REST V2
-        if protocols.contains(&"thrift".to_string()) {
-            #[cfg(any(feature = "iotdb-v1", feature = "iotdb-v2"))]
-            {
-                use super::drivers::thrift::ThriftDriver;
-                let driver = ThriftDriver::new(config, capability.clone()).await?;
-                return Ok(Box::new(driver));
-            }
-        }
+        // 驱动工厂已简化，直接返回错误，使用简化的客户端架构
+        // 实际的IoTDB连接通过IoTDBOfficialClient处理
         
         // REST V2 驱动已移除，现在只使用官方Thrift客户端
         
@@ -126,19 +119,12 @@ impl DriverFactory {
     /// 创建指定类型的驱动
     pub async fn create_driver(
         driver_type: &str,
-        config: DriverConfig,
-        capability: &Capability,
+        _config: DriverConfig,
+        _capability: &Capability,
     ) -> Result<Box<dyn IoTDBDriver>> {
         match driver_type {
             "thrift" => {
-                #[cfg(any(feature = "iotdb-v1", feature = "iotdb-v2"))]
-                {
-                    use super::drivers::thrift::ThriftDriver;
-                    let driver = ThriftDriver::new(config, capability.clone()).await?;
-                    Ok(Box::new(driver))
-                }
-                #[cfg(not(any(feature = "iotdb-v1", feature = "iotdb-v2")))]
-                Err(anyhow::anyhow!("Thrift 驱动未启用，请启用 iotdb-v1 或 iotdb-v2 特性"))
+                Err(anyhow::anyhow!("Thrift 驱动已移除，请使用IoTDBOfficialClient"))
             }
             "rest" | "rest_v2" => {
                 Err(anyhow::anyhow!("REST 驱动已移除，现在只使用官方Thrift客户端"))

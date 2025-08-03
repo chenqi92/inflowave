@@ -11,8 +11,7 @@ pub mod client;
 // 官方Thrift客户端包装器
 pub mod official_thrift;
 
-#[cfg(any(feature = "iotdb-v1", feature = "iotdb-v2"))]
-pub mod thrift;
+// Thrift驱动已移除，只使用官方客户端
 
 // REST V2 驱动已移除，现在只使用官方Thrift客户端
 
