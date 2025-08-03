@@ -707,19 +707,36 @@ pub async fn get_field_keys(
     let query = {
         // 检查连接类型，如果是IoTDB则使用SHOW TIMESERIES语法
         let db_type = client.get_database_type();
+        error!("🔍 commands/database.rs字段查询 - 数据库类型: {:?}, database: {}, measurement: {:?}", db_type, database, measurement);
         if matches!(db_type, crate::models::DatabaseType::IoTDB) {
             // IoTDB使用SHOW TIMESERIES语法，不使用引号
             if let Some(measurement) = measurement {
-                format!("SHOW TIMESERIES {}.{}.*", database, measurement)
+                // 智能处理路径重复问题
+                let full_path = if measurement.starts_with(&database) {
+                    // measurement已经包含database前缀，直接使用
+                    measurement.clone()
+                } else {
+                    // measurement不包含database前缀，需要拼接
+                    format!("{}.{}", database, measurement)
+                };
+                let query = format!("SHOW TIMESERIES {}.*", full_path);
+                error!("🔍 commands/database.rs生成IoTDB字段查询: {}", query);
+                query
             } else {
-                format!("SHOW TIMESERIES {}.**", database)
+                let query = format!("SHOW TIMESERIES {}.**", database);
+                error!("🔍 commands/database.rs生成IoTDB字段查询: {}", query);
+                query
             }
         } else {
             // InfluxDB使用SHOW FIELD KEYS语法
             if let Some(measurement) = measurement {
-                format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+                let query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement);
+                error!("🔍 commands/database.rs生成InfluxDB字段查询: {}", query);
+                query
             } else {
-                format!("SHOW FIELD KEYS ON \"{}\"", database)
+                let query = format!("SHOW FIELD KEYS ON \"{}\"", database);
+                error!("🔍 commands/database.rs生成InfluxDB字段查询: {}", query);
+                query
             }
         }
     };
@@ -763,19 +780,36 @@ pub async fn get_tag_keys(
     // 根据连接类型构建不同的查询语句
     let query = {
         let db_type = client.get_database_type();
+        error!("🔍 commands/database.rs标签查询 - 数据库类型: {:?}, database: {}, measurement: {:?}", db_type, database, measurement);
         if matches!(db_type, crate::models::DatabaseType::IoTDB) {
             // IoTDB不支持TAG概念，返回空查询或使用SHOW DEVICES
             if let Some(measurement) = measurement {
-                format!("SHOW DEVICES {}.{}", database, measurement)
+                // 智能处理路径重复问题
+                let full_path = if measurement.starts_with(&database) {
+                    // measurement已经包含database前缀，直接使用
+                    measurement.clone()
+                } else {
+                    // measurement不包含database前缀，需要拼接
+                    format!("{}.{}", database, measurement)
+                };
+                let query = format!("SHOW DEVICES {}", full_path);
+                error!("🔍 commands/database.rs生成IoTDB标签查询: {}", query);
+                query
             } else {
-                format!("SHOW DEVICES {}.**", database)
+                let query = format!("SHOW DEVICES {}.**", database);
+                error!("🔍 commands/database.rs生成IoTDB标签查询: {}", query);
+                query
             }
         } else {
             // InfluxDB使用SHOW TAG KEYS语法
             if let Some(measurement) = measurement {
-                format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+                let query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement);
+                error!("🔍 commands/database.rs生成InfluxDB标签查询: {}", query);
+                query
             } else {
-                format!("SHOW TAG KEYS ON \"{}\"", database)
+                let query = format!("SHOW TAG KEYS ON \"{}\"", database);
+                error!("🔍 commands/database.rs生成InfluxDB标签查询: {}", query);
+                query
             }
         }
     };

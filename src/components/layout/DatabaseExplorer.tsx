@@ -463,12 +463,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             'Column': 'column',
 
             // 用户和权限
-            'user': 'user1x',
-            'User': 'user1x',
             'user1x': 'user1x',
             'user2x': 'user2x',
-            'privilege': 'privilege',
-            'Privilege': 'privilege',
             'authorization': 'authorization',
             'Authorization': 'authorization',
 
@@ -487,6 +483,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             'Procedure': 'procedure',
             'trigger': 'trigger',
             'Trigger': 'trigger',
+
+            // IoTDB 管理节点 (使用现有类型替换)
+            'UserGroup': 'user',
+            'PrivilegeGroup': 'privilege',
+            'FunctionGroup': 'function',
+            'TriggerGroup': 'trigger',
         };
 
         // 获取映射后的类型，如果没有映射则使用原类型的小写版本

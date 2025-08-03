@@ -3,7 +3,7 @@ use crate::services::ConnectionService;
 use crate::utils::validation::ValidationUtils;
 use anyhow::{Context, Result};
 use std::sync::Arc;
-use log::{debug, info};
+use log::{debug, info, error};
 
 /// 数据库服务
 pub struct DatabaseService {
@@ -240,19 +240,28 @@ impl DatabaseService {
         // 根据连接类型构建查询语句
         let query = {
             let db_type = client.get_database_type();
+            error!("🔍 database_service字段查询 - 数据库类型: {:?}, database: {}, measurement: {:?}", db_type, database, measurement);
             if matches!(db_type, crate::models::DatabaseType::IoTDB) {
                 // IoTDB使用SHOW TIMESERIES语法
                 if let Some(measurement) = measurement {
-                    format!("SHOW TIMESERIES {}.{}.*", database, measurement)
+                    let query = format!("SHOW TIMESERIES {}.{}.*", database, measurement);
+                    debug!("database_service生成IoTDB字段查询: {}", query);
+                    query
                 } else {
-                    format!("SHOW TIMESERIES {}.**", database)
+                    let query = format!("SHOW TIMESERIES {}.**", database);
+                    debug!("database_service生成IoTDB字段查询: {}", query);
+                    query
                 }
             } else {
                 // InfluxDB使用SHOW FIELD KEYS语法
                 if let Some(measurement) = measurement {
-                    format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+                    let query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement);
+                    debug!("database_service生成InfluxDB字段查询: {}", query);
+                    query
                 } else {
-                    format!("SHOW FIELD KEYS ON \"{}\"", database)
+                    let query = format!("SHOW FIELD KEYS ON \"{}\"", database);
+                    debug!("database_service生成InfluxDB字段查询: {}", query);
+                    query
                 }
             }
         };
@@ -289,19 +298,28 @@ impl DatabaseService {
         // 根据连接类型构建查询语句
         let query = {
             let db_type = client.get_database_type();
+            error!("🔍 database_service标签查询 - 数据库类型: {:?}, database: {}, measurement: {:?}", db_type, database, measurement);
             if matches!(db_type, crate::models::DatabaseType::IoTDB) {
                 // IoTDB不支持TAG概念，使用SHOW DEVICES
                 if let Some(measurement) = measurement {
-                    format!("SHOW DEVICES {}.{}", database, measurement)
+                    let query = format!("SHOW DEVICES {}.{}", database, measurement);
+                    debug!("database_service生成IoTDB标签查询: {}", query);
+                    query
                 } else {
-                    format!("SHOW DEVICES {}.**", database)
+                    let query = format!("SHOW DEVICES {}.**", database);
+                    debug!("database_service生成IoTDB标签查询: {}", query);
+                    query
                 }
             } else {
                 // InfluxDB使用SHOW TAG KEYS语法
                 if let Some(measurement) = measurement {
-                    format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement)
+                    let query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement);
+                    debug!("database_service生成InfluxDB标签查询: {}", query);
+                    query
                 } else {
-                    format!("SHOW TAG KEYS ON \"{}\"", database)
+                    let query = format!("SHOW TAG KEYS ON \"{}\"", database);
+                    debug!("database_service生成InfluxDB标签查询: {}", query);
+                    query
                 }
             }
         };
