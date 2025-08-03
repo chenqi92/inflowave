@@ -143,16 +143,14 @@ impl IoTDBOfficialClient {
                     debug!("解析 {} 行数据", values.len());
 
                     for (row_index, row_data) in values.iter().enumerate() {
-                        let mut row_values: Vec<serde_json::Value> = Vec::new();
-
                         // 解析每行的二进制数据
-                        if let Ok(parsed_row) = self.parse_row_data(row_data, &columns) {
-                            row_values = parsed_row;
+                        let row_values = if let Ok(parsed_row) = self.parse_row_data(row_data, &columns) {
+                            parsed_row
                         } else {
                             warn!("解析第 {} 行数据失败", row_index);
                             // 创建空值填充
-                            row_values = columns.iter().map(|_| serde_json::Value::Null).collect();
-                        }
+                            columns.iter().map(|_| serde_json::Value::Null).collect()
+                        };
 
                         rows.push(row_values);
                     }
