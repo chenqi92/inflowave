@@ -131,16 +131,38 @@ impl IoTDBOfficialClient {
 
             // 解析响应数据
             let columns: Vec<String> = response.columns.unwrap_or_default();
-            let rows: Vec<Vec<serde_json::Value>> = Vec::new();
+            let mut rows: Vec<Vec<serde_json::Value>> = Vec::new();
 
-            // 对于IoTDB，数据通常在query_data_set中以二进制格式存储
-            // 这里我们先使用简化的处理方式，返回列名但没有数据行
-            // TODO: 实现完整的二进制数据解析
+            // 解析IoTDB查询数据集
+            if let Some(query_data_set) = response.query_data_set {
+                debug!("开始解析IoTDB查询数据集");
 
-            if response.query_data_set.is_some() {
-                // 有查询数据集，但需要解析二进制格式
-                // 暂时返回空行，但保留列信息
-                debug!("查询返回了数据集，但二进制解析尚未实现");
+                // 解析二进制数据
+                let values = &query_data_set.value_list;
+                if !values.is_empty() {
+                    debug!("解析 {} 行数据", values.len());
+
+                    for (row_index, row_data) in values.iter().enumerate() {
+                        let mut row_values: Vec<serde_json::Value> = Vec::new();
+
+                        // 解析每行的二进制数据
+                        if let Ok(parsed_row) = self.parse_row_data(row_data, &columns) {
+                            row_values = parsed_row;
+                        } else {
+                            warn!("解析第 {} 行数据失败", row_index);
+                            // 创建空值填充
+                            row_values = columns.iter().map(|_| serde_json::Value::Null).collect();
+                        }
+
+                        rows.push(row_values);
+                    }
+
+                    debug!("成功解析 {} 行数据", rows.len());
+                } else {
+                    debug!("查询数据集中没有数据行");
+                }
+            } else {
+                debug!("响应中没有查询数据集");
             }
 
             result.row_count = Some(rows.len());
@@ -372,4 +394,49 @@ impl IoTDBOfficialClient {
     pub async fn get_timeseries(&self, _device_path: &str) -> Result<Vec<String>> {
         Ok(vec!["temperature".to_string(), "humidity".to_string()])
     }
+
+    /// 解析行数据
+    fn parse_row_data(&self, row_data: &[u8], columns: &[String]) -> Result<Vec<serde_json::Value>> {
+        debug!("解析行数据，长度: {} 字节，列数: {}", row_data.len(), columns.len());
+
+        let mut values = Vec::new();
+        let mut offset = 0;
+
+        // 简化的数据解析 - 假设每个值都是字符串格式
+        // 在实际的IoTDB实现中，需要根据数据类型进行不同的解析
+
+        for (_col_index, column_name) in columns.iter().enumerate() {
+            if offset >= row_data.len() {
+                debug!("数据不足，为列 {} 填充null", column_name);
+                values.push(serde_json::Value::Null);
+                continue;
+            }
+
+            // 尝试解析为字符串（简化实现）
+            // 实际实现需要根据IoTDB的数据类型规范进行解析
+            if let Ok(value_str) = std::str::from_utf8(&row_data[offset..]) {
+                if let Some(null_pos) = value_str.find('\0') {
+                    let actual_value = &value_str[..null_pos];
+                    values.push(serde_json::Value::String(actual_value.to_string()));
+                    offset += null_pos + 1;
+                } else {
+                    values.push(serde_json::Value::String(value_str.to_string()));
+                    break;
+                }
+            } else {
+                debug!("无法解析列 {} 的数据，使用null", column_name);
+                values.push(serde_json::Value::Null);
+                offset += 1; // 跳过一个字节
+            }
+        }
+
+        // 确保返回的值数量与列数匹配
+        while values.len() < columns.len() {
+            values.push(serde_json::Value::Null);
+        }
+
+        debug!("成功解析行数据: {} 个值", values.len());
+        Ok(values)
+    }
+
 }
