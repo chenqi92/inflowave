@@ -935,9 +935,16 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           });
         }
 
-        // 获取标签信息 - 尝试多种查询格式
+        // 获取标签信息 - 智能检测数据库类型并生成正确的查询
         let tagResult;
-        const tagQueries = [
+        const isIoTDB = selectedDatabase.startsWith('root.');
+        const tagQueries = isIoTDB ? [
+          // IoTDB使用SHOW DEVICES语法
+          `SHOW DEVICES ${selectedDatabase}.${tableName}`,
+          `SHOW DEVICES ${selectedDatabase}.**`,
+          `SHOW DEVICES ${tableName}`,
+        ] : [
+          // InfluxDB使用SHOW TAG KEYS语法
           `SHOW TAG KEYS ON "${selectedDatabase}" FROM "${tableName}"`,
           `SHOW TAG KEYS FROM "${tableName}"`,
           `SHOW TAG KEYS FROM ${tableName}`,
@@ -1039,11 +1046,17 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             // 尝试字段查询
             if (fields.length === 0) {
               try {
+                // 智能检测数据库类型并生成正确的查询
+                const isIoTDB = selectedDatabase.startsWith('root.');
+                const fieldQuery = isIoTDB
+                  ? `SHOW TIMESERIES ${selectedDatabase}.${tableName}.*`
+                  : `SHOW FIELD KEYS FROM "${selectedDatabase}"."${rp}"."${tableName}"`;
+
                 const rpFieldResult = await safeTauriInvoke<any>('execute_query', {
                   request: {
                     connectionId: activeConnectionId,
                     database: selectedDatabase,
-                    query: `SHOW FIELD KEYS FROM "${selectedDatabase}"."${rp}"."${tableName}"`,
+                    query: fieldQuery,
                   },
                 });
 
@@ -1085,11 +1098,17 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             // 尝试标签查询
             if (tags.length === 0) {
               try {
+                // 智能检测数据库类型并生成正确的查询
+                const isIoTDB = selectedDatabase.startsWith('root.');
+                const tagQuery = isIoTDB
+                  ? `SHOW DEVICES ${selectedDatabase}.${tableName}`
+                  : `SHOW TAG KEYS FROM "${selectedDatabase}"."${rp}"."${tableName}"`;
+
                 const rpTagResult = await safeTauriInvoke<any>('execute_query', {
                   request: {
                     connectionId: activeConnectionId,
                     database: selectedDatabase,
-                    query: `SHOW TAG KEYS FROM "${selectedDatabase}"."${rp}"."${tableName}"`,
+                    query: tagQuery,
                   },
                 });
 

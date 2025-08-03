@@ -611,8 +611,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 生成查询语句
   const generateQuery = useCallback(() => {
+    // 智能检测数据库类型并生成正确的SQL
+    const isIoTDB = tableName.startsWith('root.');
+    const tableRef = isIoTDB ? tableName : `"${tableName}"`;
+
     let query = `SELECT *
-                 FROM "${tableName}"`;
+                 FROM ${tableRef}`;
 
     // 添加 WHERE 条件
     const whereConditions: string[] = [];
@@ -731,8 +735,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 生成不包含过滤条件的基础查询（避免添加过滤器时自动重新加载）
   const generateBaseQuery = useCallback(() => {
+    // 智能检测数据库类型并生成正确的SQL
+    const isIoTDB = tableName.startsWith('root.');
+    const tableRef = isIoTDB ? tableName : `"${tableName}"`;
+
     let query = `SELECT *
-                 FROM "${tableName}"`;
+                 FROM ${tableRef}`;
 
     // 添加 WHERE 条件
     const whereConditions: string[] = [];
