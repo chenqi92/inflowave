@@ -141,35 +141,80 @@ impl OfficialThriftClient {
 
     /// 执行SQL语句
     pub async fn execute_statement(&mut self, sql: &str) -> Result<TSExecuteStatementResp> {
+        debug!("执行SQL语句: {}", sql);
+
+        // 对于查询语句，使用executeQueryStatement
+        if sql.trim().to_uppercase().starts_with("SELECT") ||
+           sql.trim().to_uppercase().starts_with("SHOW") {
+            return self.execute_query_statement(sql).await;
+        }
+
+        // 对于非查询语句，使用executeUpdateStatement
+        self.execute_update_statement(sql).await
+    }
+
+    /// 执行查询语句
+    async fn execute_query_statement(&mut self, sql: &str) -> Result<TSExecuteStatementResp> {
         let session_id = self.session_id
             .ok_or_else(|| anyhow::anyhow!("未打开会话"))?;
 
-        debug!("执行SQL语句: {}", sql);
+        debug!("执行查询语句: {}", sql);
 
-        // 生成唯一的StatementId，每次查询都使用不同的ID
-        let statement_id = self.statement_id_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-
-        // 构建执行语句请求
+        // 构建查询请求（不需要预先创建StatementId）
         let request = TSExecuteStatementReq::new(
             session_id,
             sql.to_string(),
-            statement_id, // 使用生成的statement_id
+            0, // 对于查询，使用0作为statement_id
             Some(1000), // fetch_size
             Some(60000), // timeout (60秒)
             Some(false), // enable_redirect_query
             Some(false), // jdbc_query
         );
 
-        // 发送请求并接收响应
-        let response = self.send_execute_statement_request(request).await?;
+        // 使用查询专用的方法
+        let response = self.send_query_statement_request(request).await?;
 
         // 检查响应状态
         if response.status.code != 200 {
             let error_msg = response.status.message.unwrap_or_else(|| "未知错误".to_string());
-            return Err(anyhow::anyhow!("执行SQL失败: {}", error_msg));
+            return Err(anyhow::anyhow!("执行查询失败: {}", error_msg));
         }
 
-        debug!("SQL执行成功");
+        debug!("查询执行成功");
+        Ok(response)
+    }
+
+    /// 执行更新语句
+    async fn execute_update_statement(&mut self, sql: &str) -> Result<TSExecuteStatementResp> {
+        let session_id = self.session_id
+            .ok_or_else(|| anyhow::anyhow!("未打开会话"))?;
+
+        debug!("执行更新语句: {}", sql);
+
+        // 生成唯一的StatementId
+        let statement_id = self.statement_id_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+
+        // 构建更新请求
+        let request = TSExecuteStatementReq::new(
+            session_id,
+            sql.to_string(),
+            statement_id,
+            Some(1000), // fetch_size
+            Some(60000), // timeout (60秒)
+            Some(false), // enable_redirect_query
+            Some(false), // jdbc_query
+        );
+
+        // 使用更新专用的方法
+        let response = self.send_update_statement_request(request).await?;
+
+        // 检查响应状态
+        if response.status.code != 200 {
+            let error_msg = response.status.message.unwrap_or_else(|| "未知错误".to_string());
+            return Err(anyhow::anyhow!("执行更新失败: {}", error_msg));
+        }
+
+        debug!("更新执行成功");
         Ok(response)
     }
 
@@ -236,14 +281,26 @@ impl OfficialThriftClient {
         Ok(response)
     }
 
-    // 私有方法：发送执行语句请求
-    async fn send_execute_statement_request(&mut self, request: TSExecuteStatementReq) -> Result<TSExecuteStatementResp> {
+    // 私有方法：发送查询语句请求
+    async fn send_query_statement_request(&mut self, request: TSExecuteStatementReq) -> Result<TSExecuteStatementResp> {
         let client = self.client.as_mut()
             .ok_or_else(|| anyhow::anyhow!("Thrift客户端未初始化"))?;
 
-        // 使用标准的execute_statement方法
-        let response = client.execute_statement(request)
-            .map_err(|e| anyhow::anyhow!("Thrift RPC调用失败: {}", e))?;
+        // 使用查询专用的方法
+        let response = client.execute_query_statement(request)
+            .map_err(|e| anyhow::anyhow!("Thrift查询RPC调用失败: {}", e))?;
+
+        Ok(response)
+    }
+
+    // 私有方法：发送更新语句请求
+    async fn send_update_statement_request(&mut self, request: TSExecuteStatementReq) -> Result<TSExecuteStatementResp> {
+        let client = self.client.as_mut()
+            .ok_or_else(|| anyhow::anyhow!("Thrift客户端未初始化"))?;
+
+        // 使用更新专用的方法
+        let response = client.execute_update_statement(request)
+            .map_err(|e| anyhow::anyhow!("Thrift更新RPC调用失败: {}", e))?;
 
         Ok(response)
     }
