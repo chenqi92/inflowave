@@ -160,11 +160,15 @@ impl OfficialThriftClient {
 
         debug!("执行查询语句: {}", sql);
 
-        // 构建查询请求（不需要预先创建StatementId）
+        // 先请求一个有效的StatementId
+        let statement_id = self.request_statement_id(session_id).await?;
+        debug!("获取到StatementId: {}", statement_id);
+
+        // 构建查询请求
         let request = TSExecuteStatementReq::new(
             session_id,
             sql.to_string(),
-            0, // 对于查询，使用0作为statement_id
+            statement_id, // 使用请求到的statement_id
             Some(1000), // fetch_size
             Some(60000), // timeout (60秒)
             Some(false), // enable_redirect_query
@@ -279,6 +283,18 @@ impl OfficialThriftClient {
             .map_err(|e| anyhow::anyhow!("Thrift RPC调用失败: {}", e))?;
 
         Ok(response)
+    }
+
+    // 私有方法：请求StatementId
+    async fn request_statement_id(&mut self, session_id: i64) -> Result<i64> {
+        let client = self.client.as_mut()
+            .ok_or_else(|| anyhow::anyhow!("Thrift客户端未初始化"))?;
+
+        // 请求一个新的StatementId
+        let statement_id = client.request_statement_id(session_id)
+            .map_err(|e| anyhow::anyhow!("请求StatementId失败: {}", e))?;
+
+        Ok(statement_id)
     }
 
     // 私有方法：发送查询语句请求
