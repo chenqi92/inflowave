@@ -117,7 +117,6 @@ const handleResetSettings = () => {
 
 ## 相关文件
 
-- `src/pages/Settings/index.tsx` - 主要修复文件
 - `src/store/app.ts` - 应用状态 store
 - `src/components/ui/Form.tsx` - 表单组件
 

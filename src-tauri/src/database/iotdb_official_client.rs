@@ -332,18 +332,42 @@ impl IoTDBOfficialClient {
 
         // 如果所有查询都失败，尝试查询一些常见的存储组
         debug!("所有存储组查询都失败，尝试探测常见存储组");
-        let common_storage_groups = vec!["root.test", "root.demo", "root.vehicle", "root.ln"];
+        let common_storage_groups = vec![];
         let mut found_groups = Vec::new();
 
         for sg in common_storage_groups {
-            match self.execute_query(&format!("SHOW DEVICES {}", sg), None).await {
-                Ok(_) => {
-                    debug!("探测到存储组: {}", sg);
-                    found_groups.push(sg.to_string());
+            // 尝试多种方式探测存储组
+            let detection_queries = vec![
+                format!("SHOW DEVICES {}", sg),
+                format!("SHOW TIMESERIES {}", sg),
+                format!("SHOW TIMESERIES {}.**", sg),
+                format!("SELECT * FROM {} LIMIT 1", sg),
+            ];
+
+            let mut sg_exists = false;
+            for query in detection_queries {
+                match self.execute_query(&query, None).await {
+                    Ok(result) => {
+                        // 检查是否有任何数据返回
+                        if let Some(results) = result.results.first() {
+                            if let Some(series_list) = &results.series {
+                                if !series_list.is_empty() {
+                                    debug!("通过查询 '{}' 探测到存储组: {}", query, sg);
+                                    found_groups.push(sg.to_string());
+                                    sg_exists = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        debug!("探测查询 '{}' 失败: {}", query, e);
+                    }
                 }
-                Err(_) => {
-                    debug!("存储组 {} 不存在", sg);
-                }
+            }
+
+            if !sg_exists {
+                debug!("存储组 {} 不存在或无法访问", sg);
             }
         }
 
@@ -359,6 +383,34 @@ impl IoTDBOfficialClient {
     /// 获取表列表（设备）
     pub async fn get_tables(&self, database: &str) -> Result<Vec<String>> {
         debug!("获取IoTDB设备列表: {}", database);
+
+        // 处理系统节点的特殊情况
+        match database {
+            "System Information" => {
+                debug!("处理系统信息节点");
+                return self.get_system_info_items().await;
+            }
+            "Version Information" => {
+                debug!("处理版本信息节点");
+                return self.get_version_info_items().await;
+            }
+            "Schema Templates" => {
+                debug!("处理模式模板节点");
+                return self.get_schema_templates().await;
+            }
+            "Functions" => {
+                debug!("处理函数节点");
+                return self.get_functions().await;
+            }
+            "Triggers" => {
+                debug!("处理触发器节点");
+                return self.get_triggers().await;
+            }
+            _ => {
+                // 处理存储组节点
+                debug!("处理存储组节点: {}", database);
+            }
+        }
 
         // 尝试不同的查询语句
         let queries = if database.is_empty() || database == "root" {
@@ -553,7 +605,7 @@ impl IoTDBOfficialClient {
         // 1. 添加系统信息节点
         let system_info_node = TreeNode::new(
             "system_info".to_string(),
-            "📊 System Information".to_string(),
+            "System Information".to_string(),
             TreeNodeType::SystemInfo,
         );
         nodes.push(system_info_node);
@@ -561,7 +613,7 @@ impl IoTDBOfficialClient {
         // 2. 添加版本信息节点
         let version_info_node = TreeNode::new(
             "version_info".to_string(),
-            "ℹ️ Version Information".to_string(),
+            "Version Information".to_string(),
             TreeNodeType::VersionInfo,
         );
         nodes.push(version_info_node);
@@ -569,7 +621,7 @@ impl IoTDBOfficialClient {
         // 3. 添加模式模板节点
         let schema_template_node = TreeNode::new(
             "schema_templates".to_string(),
-            "📋 Schema Templates".to_string(),
+            "Schema Templates".to_string(),
             TreeNodeType::SchemaTemplate,
         );
         nodes.push(schema_template_node);
@@ -581,7 +633,7 @@ impl IoTDBOfficialClient {
         for storage_group in storage_groups {
             let node = TreeNode::new(
                 format!("sg_{}", storage_group),
-                format!("📁 {}", storage_group),
+                storage_group.clone(),
                 TreeNodeType::StorageGroup,
             );
             nodes.push(node);
@@ -590,7 +642,7 @@ impl IoTDBOfficialClient {
         // 5. 添加函数节点
         let functions_node = TreeNode::new(
             "functions".to_string(),
-            "⚙️ Functions".to_string(),
+            "Functions".to_string(),
             TreeNodeType::Function,
         );
         nodes.push(functions_node);
@@ -598,7 +650,7 @@ impl IoTDBOfficialClient {
         // 6. 添加触发器节点
         let triggers_node = TreeNode::new(
             "triggers".to_string(),
-            "🔄 Triggers".to_string(),
+            "Triggers".to_string(),
             TreeNodeType::Trigger,
         );
         nodes.push(triggers_node);
@@ -608,7 +660,7 @@ impl IoTDBOfficialClient {
             debug!("没有找到存储组，添加默认root节点");
             let root_node = TreeNode::new(
                 "root".to_string(),
-                "📁 root".to_string(),
+                "root".to_string(),
                 TreeNodeType::StorageGroup,
             );
             nodes.push(root_node);
@@ -616,6 +668,156 @@ impl IoTDBOfficialClient {
 
         info!("生成了 {} 个树节点", nodes.len());
         Ok(nodes)
+    }
+
+    /// 获取系统信息项目
+    async fn get_system_info_items(&self) -> Result<Vec<String>> {
+        debug!("获取系统信息项目");
+        let items = vec![
+            "Cluster Status".to_string(),
+            "Node Information".to_string(),
+            "Storage Engine".to_string(),
+            "Memory Usage".to_string(),
+            "Performance Metrics".to_string(),
+        ];
+        Ok(items)
+    }
+
+    /// 获取版本信息项目
+    async fn get_version_info_items(&self) -> Result<Vec<String>> {
+        debug!("获取版本信息项目");
+
+        // 执行SHOW VERSION查询获取真实的版本信息
+        match self.execute_query("SHOW VERSION", None).await {
+            Ok(result) => {
+                let mut items = Vec::new();
+                if let Some(results) = result.results.first() {
+                    if let Some(series_list) = &results.series {
+                        for series in series_list {
+                            for row in &series.values {
+                                if row.len() >= 2 {
+                                    if let (Some(version), Some(build)) = (row[0].as_str(), row[1].as_str()) {
+                                        items.push(format!("Version: {}", version));
+                                        items.push(format!("Build: {}", build));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if items.is_empty() {
+                    items.push("Version Information".to_string());
+                }
+
+                Ok(items)
+            }
+            Err(_) => {
+                Ok(vec!["Version Information".to_string()])
+            }
+        }
+    }
+
+    /// 获取模式模板
+    async fn get_schema_templates(&self) -> Result<Vec<String>> {
+        debug!("获取模式模板");
+
+        // 尝试执行SHOW SCHEMA TEMPLATES查询
+        match self.execute_query("SHOW SCHEMA TEMPLATES", None).await {
+            Ok(result) => {
+                let mut templates = Vec::new();
+                if let Some(results) = result.results.first() {
+                    if let Some(series_list) = &results.series {
+                        for series in series_list {
+                            for row in &series.values {
+                                if let Some(template_name) = row.first() {
+                                    if let Some(name_str) = template_name.as_str() {
+                                        templates.push(name_str.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if templates.is_empty() {
+                    templates.push("No Templates Found".to_string());
+                }
+
+                Ok(templates)
+            }
+            Err(_) => {
+                Ok(vec!["Schema Templates".to_string()])
+            }
+        }
+    }
+
+    /// 获取函数列表
+    async fn get_functions(&self) -> Result<Vec<String>> {
+        debug!("获取函数列表");
+
+        // 尝试执行SHOW FUNCTIONS查询
+        match self.execute_query("SHOW FUNCTIONS", None).await {
+            Ok(result) => {
+                let mut functions = Vec::new();
+                if let Some(results) = result.results.first() {
+                    if let Some(series_list) = &results.series {
+                        for series in series_list {
+                            for row in &series.values {
+                                if let Some(function_name) = row.first() {
+                                    if let Some(name_str) = function_name.as_str() {
+                                        functions.push(name_str.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if functions.is_empty() {
+                    functions.push("No Functions Found".to_string());
+                }
+
+                Ok(functions)
+            }
+            Err(_) => {
+                Ok(vec!["Built-in Functions".to_string(), "User-defined Functions".to_string()])
+            }
+        }
+    }
+
+    /// 获取触发器列表
+    async fn get_triggers(&self) -> Result<Vec<String>> {
+        debug!("获取触发器列表");
+
+        // 尝试执行SHOW TRIGGERS查询
+        match self.execute_query("SHOW TRIGGERS", None).await {
+            Ok(result) => {
+                let mut triggers = Vec::new();
+                if let Some(results) = result.results.first() {
+                    if let Some(series_list) = &results.series {
+                        for series in series_list {
+                            for row in &series.values {
+                                if let Some(trigger_name) = row.first() {
+                                    if let Some(name_str) = trigger_name.as_str() {
+                                        triggers.push(name_str.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if triggers.is_empty() {
+                    triggers.push("No Triggers Found".to_string());
+                }
+
+                Ok(triggers)
+            }
+            Err(_) => {
+                Ok(vec!["No Triggers Found".to_string()])
+            }
+        }
     }
 
     /// 获取树子节点
