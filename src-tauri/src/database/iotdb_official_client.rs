@@ -546,32 +546,75 @@ impl IoTDBOfficialClient {
     pub async fn get_tree_nodes(&self) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::{TreeNode, TreeNodeType};
 
-        debug!("获取IoTDB存储组树节点");
-
-        // 获取存储组列表
-        let storage_groups = self.get_databases().await?;
+        debug!("获取IoTDB树节点");
 
         let mut nodes = Vec::new();
+
+        // 1. 添加系统信息节点
+        let system_info_node = TreeNode::new(
+            "system_info".to_string(),
+            "📊 System Information".to_string(),
+            TreeNodeType::SystemInfo,
+        );
+        nodes.push(system_info_node);
+
+        // 2. 添加版本信息节点
+        let version_info_node = TreeNode::new(
+            "version_info".to_string(),
+            "ℹ️ Version Information".to_string(),
+            TreeNodeType::VersionInfo,
+        );
+        nodes.push(version_info_node);
+
+        // 3. 添加模式模板节点
+        let schema_template_node = TreeNode::new(
+            "schema_templates".to_string(),
+            "📋 Schema Templates".to_string(),
+            TreeNodeType::SchemaTemplate,
+        );
+        nodes.push(schema_template_node);
+
+        // 4. 获取存储组列表
+        let storage_groups = self.get_databases().await?;
+        let storage_groups_empty = storage_groups.is_empty();
+
         for storage_group in storage_groups {
             let node = TreeNode::new(
                 format!("sg_{}", storage_group),
-                storage_group,
+                format!("📁 {}", storage_group),
                 TreeNodeType::StorageGroup,
             );
             nodes.push(node);
         }
 
+        // 5. 添加函数节点
+        let functions_node = TreeNode::new(
+            "functions".to_string(),
+            "⚙️ Functions".to_string(),
+            TreeNodeType::Function,
+        );
+        nodes.push(functions_node);
+
+        // 6. 添加触发器节点
+        let triggers_node = TreeNode::new(
+            "triggers".to_string(),
+            "🔄 Triggers".to_string(),
+            TreeNodeType::Trigger,
+        );
+        nodes.push(triggers_node);
+
         // 如果没有存储组，添加一个默认的root节点用于探索
-        if nodes.is_empty() {
+        if storage_groups_empty {
             debug!("没有找到存储组，添加默认root节点");
-            nodes.push(TreeNode::new(
+            let root_node = TreeNode::new(
                 "root".to_string(),
-                "root".to_string(),
+                "📁 root".to_string(),
                 TreeNodeType::StorageGroup,
-            ));
+            );
+            nodes.push(root_node);
         }
 
-        info!("生成了 {} 个存储组节点", nodes.len());
+        info!("生成了 {} 个树节点", nodes.len());
         Ok(nodes)
     }
 
