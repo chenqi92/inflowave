@@ -494,7 +494,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             'VersionInfo': 'version_info',
             'schema_template': 'schema_template',
             'SchemaTemplate': 'schema_template',
-            // IoTDB 管理节点类型映射
+            // IoTDB 管理节点类型映射 - 确保不同类型有不同图标
             'Function': 'function',
             'FunctionGroup': 'function',
             'Trigger': 'trigger',

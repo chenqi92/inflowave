@@ -622,7 +622,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const whereConditions: string[] = [];
 
     // 搜索条件
-    if (searchText.trim()) {
+    if (searchText.trim() && columns && columns.length > 0) {
       const searchConditions = columns
         .filter(col => col !== 'time' && col !== '#')
         .map(col => `"${col}" =~ /.*${searchText.trim()}.*/`);
@@ -746,7 +746,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const whereConditions: string[] = [];
 
     // 搜索条件
-    if (searchText.trim()) {
+    if (searchText.trim() && columns && columns.length > 0) {
       const searchConditions = columns
         .filter(col => col !== 'time' && col !== '#')
         .map(col => `"${col}" =~ /.*${searchText.trim()}.*/`);
