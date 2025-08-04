@@ -400,7 +400,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 return 'database3x';
 
             case 'iotdb':
-                // IoTDB 中数据库实际上是 storage group
+                // IoTDB 中需要从缓存的树节点信息中获取正确的节点类型
+                const cachedTreeNodes = treeNodeCache[connectionId] || [];
+                const cachedNode = cachedTreeNodes.find(node =>
+                    node.name === databaseName || node.id === databaseName
+                );
+                if (cachedNode?.nodeType) {
+                    console.log(`🏷️ 从缓存获取节点类型: ${databaseName} -> ${cachedNode.nodeType}`);
+                    return cachedNode.nodeType;
+                }
+                // 默认返回 storage_group
+                console.log(`⚠️ 未找到缓存节点类型，使用默认: ${databaseName} -> storage_group`);
                 return 'storage_group';
 
             default:
@@ -827,13 +837,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         const isExpanded = expandedKeys.includes(databaseKey);
                         const isOpened = connection.id ? isDatabaseOpened(connection.id, db) : false;
 
-                        // 从树节点信息中查找对应的节点类型
-                        const treeNode = treeNodes.find(node => {
+                        // 从缓存的树节点信息中查找对应的节点类型
+                        const cachedTreeNodes = treeNodeCache[connection.id] || [];
+                        const cachedNode = cachedTreeNodes.find(node => {
                             return node.name === db || node.id === db;
                         });
-                        const nodeType = treeNode?.nodeType || getDatabaseNodeType(connection.id, db);
+                        const nodeType = cachedNode?.nodeType || getDatabaseNodeType(connection.id, db);
 
-                        console.log(`🏷️ 数据库 "${db}" 的节点类型: ${nodeType} (来源: ${treeNode ? '树节点' : '推断'}, 树节点: ${treeNode?.name})`);
+                        console.log(`🏷️ 数据库 "${db}" 的节点类型: ${nodeType} (来源: ${cachedNode ? '缓存' : '推断'}, 缓存节点: ${cachedNode?.name})`);
 
                         const nodeData: any = {
                             title: (

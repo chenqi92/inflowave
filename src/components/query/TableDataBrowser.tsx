@@ -759,12 +759,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       query += ` WHERE ${whereConditions.join(' AND ')}`;
     }
 
-    // 添加排序 - InfluxDB只支持按时间排序
-    if (sortColumn === 'time') {
-      query += ` ORDER BY time ${sortDirection.toUpperCase()}`;
-    } else {
-      // 对于非时间列，使用默认时间排序，客户端排序将在数据加载后处理
-      query += ` ORDER BY time DESC`;
+    // 添加排序 - IoTDB不支持ORDER BY，InfluxDB支持按时间排序
+    if (!isIoTDB) {
+      if (sortColumn === 'time') {
+        query += ` ORDER BY time ${sortDirection.toUpperCase()}`;
+      } else {
+        // 对于非时间列，使用默认时间排序，客户端排序将在数据加载后处理
+        query += ` ORDER BY time DESC`;
+      }
     }
 
     // 添加分页（如果不是"全部"选项）

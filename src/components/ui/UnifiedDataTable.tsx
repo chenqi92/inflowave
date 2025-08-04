@@ -189,6 +189,12 @@ const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
         <DropdownMenu
             open={isOpen}
             onOpenChange={(open) => {
+                console.log('🔧 [ExcelStyleFilter] DropdownMenu状态变化:', { column, open, currentOpen: isOpen });
+                // 防止重复触发
+                if (open === isOpen) {
+                    console.log('🔧 [ExcelStyleFilter] 状态相同，跳过处理:', { column, open });
+                    return;
+                }
                 if (!open) {
                     // 点击外部关闭时清空搜索
                     onSearchChange('');
@@ -202,7 +208,10 @@ const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
                     size="sm"
                     className="h-5 w-5 p-0"
                     title="筛选"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        console.log('🔧 [ExcelStyleFilter] 筛选按钮点击:', { column, currentOpen: isOpen });
+                    }}
                 >
                     <Filter className="h-3 w-3" />
                 </Button>
@@ -211,6 +220,13 @@ const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
                 align="start"
                 className="w-96 p-0"
                 onCloseAutoFocus={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => {
+                    console.log('🔧 [ExcelStyleFilter] ESC键关闭:', { column });
+                    onSearchChange('');
+                }}
+                onPointerDownOutside={(e) => {
+                    console.log('🔧 [ExcelStyleFilter] 外部点击关闭:', { column });
+                }}
             >
                 <div className="p-3 border-b">
                     {/* 搜索框 */}
@@ -1259,16 +1275,31 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         return filtered;
     }, []);
 
-    // 筛选菜单状态处理
+    // 筛选菜单状态处理 - 确保同时只有一个菜单打开
     const handleFilterMenuOpenChange = useCallback((column: string | null) => {
-        setFilterMenuOpen(column);
-        console.log('🔧 [UnifiedDataTable] 筛选菜单状态变化:', { column });
-    }, []);
+        console.log('🔧 [UnifiedDataTable] 筛选菜单状态变化请求:', { from: filterMenuOpen, to: column });
+
+        // 如果要打开新菜单，先关闭当前菜单
+        if (column && filterMenuOpen && filterMenuOpen !== column) {
+            console.log('🔧 [UnifiedDataTable] 关闭当前菜单，打开新菜单:', { close: filterMenuOpen, open: column });
+            setFilterMenuOpen(null);
+            // 使用 setTimeout 确保状态更新完成后再打开新菜单
+            setTimeout(() => {
+                setFilterMenuOpen(column);
+            }, 10);
+        } else if (filterMenuOpen !== column) {
+            setFilterMenuOpen(column);
+            console.log('🔧 [UnifiedDataTable] 筛选菜单状态已更新:', { from: filterMenuOpen, to: column });
+        }
+    }, [filterMenuOpen]);
 
     const handleFilterSearchChange = useCallback((text: string) => {
-        setFilterSearchText(text);
-        console.log('🔧 [UnifiedDataTable] 筛选搜索文本变化:', { text });
-    }, []);
+        // 避免重复设置相同的搜索文本
+        if (filterSearchText !== text) {
+            setFilterSearchText(text);
+            console.log('🔧 [UnifiedDataTable] 筛选搜索文本变化:', { from: filterSearchText, to: text });
+        }
+    }, [filterSearchText]);
 
     // 全局鼠标事件监听 - 处理表格外的鼠标释放
     useEffect(() => {
