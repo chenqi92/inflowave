@@ -185,6 +185,39 @@ impl OfficialThriftClient {
         }
 
         debug!("查询执行成功");
+
+        // 添加详细的响应调试信息
+        debug!("响应状态: {:?}", response.status);
+        debug!("响应列数: {:?}", response.columns.as_ref().map(|c| c.len()));
+        debug!("响应数据类型: {:?}", response.data_type_list);
+        debug!("是否有查询数据集: {}", response.query_data_set.is_some());
+        debug!("是否有查询结果: {}", response.query_result.is_some());
+
+        if let Some(ref data_set) = response.query_data_set {
+            debug!("查询数据集详情:");
+            debug!("  - 时间数据长度: {} 字节", data_set.time.len());
+            debug!("  - 值列表数量: {}", data_set.value_list.len());
+            debug!("  - 位图列表数量: {}", data_set.bitmap_list.len());
+
+            for (i, value_data) in data_set.value_list.iter().enumerate() {
+                debug!("  - 列 {} 数据长度: {} 字节", i, value_data.len());
+                if value_data.len() > 0 && value_data.len() <= 100 {
+                    debug!("  - 列 {} 原始数据: {:?}", i, value_data);
+                }
+            }
+        }
+
+        if let Some(ref query_result) = response.query_result {
+            debug!("查询结果详情:");
+            debug!("  - 结果行数: {}", query_result.len());
+            for (i, row_data) in query_result.iter().enumerate().take(3) {
+                debug!("  - 行 {} 数据长度: {} 字节", i, row_data.len());
+                if row_data.len() > 0 && row_data.len() <= 100 {
+                    debug!("  - 行 {} 原始数据: {:?}", i, row_data);
+                }
+            }
+        }
+
         Ok(response)
     }
 

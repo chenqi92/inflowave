@@ -114,6 +114,12 @@ impl IoTDBOfficialClient {
     pub async fn execute_query(&self, sql: &str, database: Option<&str>) -> Result<QueryResult> {
         debug!("执行IoTDB查询: {} (数据库: {:?})", sql, database);
 
+        // 如果是SHOW VERSION查询，测试数据解析
+        if sql.to_uppercase().contains("SHOW VERSION") {
+            debug!("检测到SHOW VERSION查询，将测试数据解析功能");
+            self.test_parse_known_data();
+        }
+
         let start_time = std::time::Instant::now();
 
         // 确保连接可用
@@ -131,34 +137,116 @@ impl IoTDBOfficialClient {
 
             // 解析响应数据
             let columns: Vec<String> = response.columns.unwrap_or_default();
+            let data_types: Vec<String> = response.data_type_list.unwrap_or_default();
             let mut rows: Vec<Vec<serde_json::Value>> = Vec::new();
+
+            debug!("查询响应 - 列数: {}, 数据类型: {:?}", columns.len(), data_types);
 
             // 解析IoTDB查询数据集
             if let Some(query_data_set) = response.query_data_set {
                 debug!("开始解析IoTDB查询数据集");
+                debug!("时间数据长度: {} 字节", query_data_set.time.len());
+                debug!("值列表数量: {}", query_data_set.value_list.len());
+                debug!("位图列表数量: {}", query_data_set.bitmap_list.len());
 
-                // 解析二进制数据
-                let values = &query_data_set.value_list;
-                if !values.is_empty() {
-                    debug!("解析 {} 行数据", values.len());
+                // 检查是否有query_result字段（某些IoTDB版本可能使用这个字段）
+                if let Some(ref query_result) = response.query_result {
+                    debug!("发现query_result字段，包含 {} 行数据", query_result.len());
 
-                    for (row_index, row_data) in values.iter().enumerate() {
-                        // 解析每行的二进制数据
-                        let row_values = if let Ok(parsed_row) = self.parse_row_data(row_data, &columns) {
-                            parsed_row
-                        } else {
-                            warn!("解析第 {} 行数据失败", row_index);
-                            // 创建空值填充
-                            columns.iter().map(|_| serde_json::Value::Null).collect()
-                        };
+                    // 使用query_result解析数据
+                    for (row_index, row_data) in query_result.iter().enumerate() {
+                        debug!("解析第 {} 行，数据长度: {} 字节", row_index, row_data.len());
+                        if row_data.len() > 0 {
+                            debug!("第 {} 行数据前16字节: {:?}", row_index, &row_data[..std::cmp::min(16, row_data.len())]);
+                        }
 
+                        let row_values = self.parse_query_result_row(row_data, &columns, &data_types)?;
                         rows.push(row_values);
                     }
-
-                    debug!("成功解析 {} 行数据", rows.len());
                 } else {
-                    debug!("查询数据集中没有数据行");
+                    // 使用传统的query_data_set解析数据
+                    let time_data = &query_data_set.time;
+                    let value_list = &query_data_set.value_list;
+                    let bitmap_list = &query_data_set.bitmap_list;
+
+                    // 添加详细的数据调试信息
+                    for (i, column_data) in value_list.iter().enumerate() {
+                        debug!("列 {} 数据长度: {} 字节", i, column_data.len());
+                        if column_data.len() > 0 {
+                            debug!("列 {} 前16字节: {:?}", i, &column_data[..std::cmp::min(16, column_data.len())]);
+                        }
+                    }
+
+                    if !time_data.is_empty() || !value_list.is_empty() {
+                        // 尝试解析时间戳
+                        let timestamps = if !time_data.is_empty() {
+                            self.parse_time_data(time_data)?
+                        } else {
+                            Vec::new()
+                        };
+
+                        debug!("解析到 {} 个时间戳", timestamps.len());
+
+                        // 确定行数
+                        let row_count = if !timestamps.is_empty() {
+                            timestamps.len()
+                        } else if !value_list.is_empty() {
+                            // 尝试从第一列数据推断行数
+                            let estimated = self.estimate_row_count(&value_list[0], data_types.get(0).map(|s| s.as_str()).unwrap_or("TEXT"));
+                            debug!("从第一列估计行数: {}", estimated);
+
+                            // 如果估计行数为0，说明确实没有数据行
+                            if estimated == 0 {
+                                debug!("所有列数据长度为0，确认没有数据行");
+                                0
+                            } else {
+                                estimated
+                            }
+                        } else {
+                            0
+                        };
+
+                        debug!("最终确定行数: {}", row_count);
+
+                        for row_index in 0..row_count {
+                            let mut row_values = Vec::new();
+
+                            // 添加时间戳列（如果查询包含时间戳且有时间数据）
+                            if !timestamps.is_empty() && row_index < timestamps.len() {
+                                // 检查第一列是否是时间列
+                                if columns.first().map(|c| c.to_lowercase()).as_deref() == Some("time") {
+                                    row_values.push(serde_json::Value::Number(
+                                        serde_json::Number::from(timestamps[row_index])
+                                    ));
+                                }
+                            }
+
+                            // 解析每列的数据
+                            for (col_index, column_data) in value_list.iter().enumerate() {
+                                let data_type = data_types.get(col_index).map(|s| s.as_str()).unwrap_or("TEXT");
+                                let bitmap = bitmap_list.get(col_index);
+
+                                debug!("解析第 {} 行，第 {} 列，数据类型: {}, 数据长度: {} 字节",
+                                       row_index, col_index, data_type, column_data.len());
+
+                                let value = self.parse_column_value(
+                                    column_data,
+                                    row_index,
+                                    data_type,
+                                    bitmap
+                                )?;
+
+                                debug!("第 {} 行，第 {} 列解析结果: {:?}", row_index, col_index, value);
+                                row_values.push(value);
+                            }
+
+                            debug!("第 {} 行完整数据: {:?}", row_index, row_values);
+                            rows.push(row_values);
+                        }
+                    }
                 }
+
+                debug!("成功解析 {} 行数据", rows.len());
             } else {
                 debug!("响应中没有查询数据集");
             }
@@ -196,51 +284,137 @@ impl IoTDBOfficialClient {
     pub async fn get_databases(&self) -> Result<Vec<String>> {
         debug!("获取IoTDB存储组列表");
 
-        let result = self.execute_query("SHOW STORAGE GROUP", None).await?;
+        // 尝试不同的查询语句
+        let queries = vec![
+            "SHOW STORAGE GROUP",
+            "SHOW DATABASES",
+            "SHOW DATABASE",
+            "LIST DATABASE",
+        ];
 
-        let mut databases = Vec::new();
-        if let Some(results) = result.results.first() {
-            if let Some(series_list) = &results.series {
-                for series in series_list {
-                    for row in &series.values {
-                        if let Some(db_name) = row.first() {
-                            if let Some(name_str) = db_name.as_str() {
-                                databases.push(name_str.to_string());
+        for query in queries {
+            debug!("尝试查询存储组: {}", query);
+            match self.execute_query(query, None).await {
+                Ok(result) => {
+                    debug!("查询 '{}' 成功，解析结果", query);
+                    let mut databases = Vec::new();
+
+                    if let Some(results) = result.results.first() {
+                        if let Some(series_list) = &results.series {
+                            for series in series_list {
+                                debug!("处理series: {}, 行数: {}", series.name, series.values.len());
+                                for (row_index, row) in series.values.iter().enumerate() {
+                                    debug!("处理第 {} 行: {:?}", row_index, row);
+                                    if let Some(db_name) = row.first() {
+                                        if let Some(name_str) = db_name.as_str() {
+                                            debug!("找到存储组: {}", name_str);
+                                            databases.push(name_str.to_string());
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+
+                    if !databases.is_empty() {
+                        info!("使用查询 '{}' 获取到 {} 个存储组: {:?}", query, databases.len(), databases);
+                        return Ok(databases);
+                    } else {
+                        debug!("查询 '{}' 没有返回存储组数据", query);
+                    }
+                }
+                Err(e) => {
+                    debug!("查询 '{}' 失败: {}", query, e);
+                    continue;
                 }
             }
         }
 
-        info!("获取到 {} 个存储组", databases.len());
-        Ok(databases)
+        // 如果所有查询都失败，尝试查询一些常见的存储组
+        debug!("所有存储组查询都失败，尝试探测常见存储组");
+        let common_storage_groups = vec!["root.test", "root.demo", "root.vehicle", "root.ln"];
+        let mut found_groups = Vec::new();
+
+        for sg in common_storage_groups {
+            match self.execute_query(&format!("SHOW DEVICES {}", sg), None).await {
+                Ok(_) => {
+                    debug!("探测到存储组: {}", sg);
+                    found_groups.push(sg.to_string());
+                }
+                Err(_) => {
+                    debug!("存储组 {} 不存在", sg);
+                }
+            }
+        }
+
+        if !found_groups.is_empty() {
+            info!("通过探测找到 {} 个存储组: {:?}", found_groups.len(), found_groups);
+            return Ok(found_groups);
+        }
+
+        info!("没有找到任何存储组，返回空列表");
+        Ok(vec![])
     }
 
     /// 获取表列表（设备）
     pub async fn get_tables(&self, database: &str) -> Result<Vec<String>> {
         debug!("获取IoTDB设备列表: {}", database);
 
-        let sql = format!("SHOW DEVICES {}", database);
-        let result = self.execute_query(&sql, Some(database)).await?;
+        // 尝试不同的查询语句
+        let queries = if database.is_empty() || database == "root" {
+            vec![
+                "SHOW DEVICES".to_string(),
+                "SHOW DEVICES root".to_string(),
+                "SHOW DEVICES root.**".to_string(),
+            ]
+        } else {
+            vec![
+                format!("SHOW DEVICES {}", database),
+                format!("SHOW DEVICES {}.**", database),
+                format!("SHOW DEVICES {}.** ", database),
+            ]
+        };
 
-        let mut tables = Vec::new();
-        if let Some(results) = result.results.first() {
-            if let Some(series_list) = &results.series {
-                for series in series_list {
-                    for row in &series.values {
-                        if let Some(device_name) = row.first() {
-                            if let Some(name_str) = device_name.as_str() {
-                                tables.push(name_str.to_string());
+        for query in queries {
+            debug!("尝试查询设备: {}", query);
+            match self.execute_query(&query, Some(database)).await {
+                Ok(result) => {
+                    debug!("查询 '{}' 成功，解析结果", query);
+                    let mut tables = Vec::new();
+
+                    if let Some(results) = result.results.first() {
+                        if let Some(series_list) = &results.series {
+                            for series in series_list {
+                                debug!("处理设备series: {}, 行数: {}", series.name, series.values.len());
+                                for (row_index, row) in series.values.iter().enumerate() {
+                                    debug!("处理设备第 {} 行: {:?}", row_index, row);
+                                    if let Some(device_name) = row.first() {
+                                        if let Some(name_str) = device_name.as_str() {
+                                            debug!("找到设备: {}", name_str);
+                                            tables.push(name_str.to_string());
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
+
+                    if !tables.is_empty() {
+                        info!("使用查询 '{}' 获取到 {} 个设备: {:?}", query, tables.len(), tables);
+                        return Ok(tables);
+                    } else {
+                        debug!("查询 '{}' 没有返回设备数据", query);
+                    }
+                }
+                Err(e) => {
+                    debug!("查询 '{}' 失败: {}", query, e);
+                    continue;
                 }
             }
         }
 
-        info!("获取到 {} 个设备", tables.len());
-        Ok(tables)
+        info!("没有找到任何设备，返回空列表");
+        Ok(vec![])
     }
 
     /// 获取字段信息
@@ -371,11 +545,34 @@ impl IoTDBOfficialClient {
     /// 获取树节点
     pub async fn get_tree_nodes(&self) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::{TreeNode, TreeNodeType};
-        Ok(vec![TreeNode::new(
-            "root".to_string(),
-            "root".to_string(),
-            TreeNodeType::StorageGroup,
-        )])
+
+        debug!("获取IoTDB存储组树节点");
+
+        // 获取存储组列表
+        let storage_groups = self.get_databases().await?;
+
+        let mut nodes = Vec::new();
+        for storage_group in storage_groups {
+            let node = TreeNode::new(
+                format!("sg_{}", storage_group),
+                storage_group,
+                TreeNodeType::StorageGroup,
+            );
+            nodes.push(node);
+        }
+
+        // 如果没有存储组，添加一个默认的root节点用于探索
+        if nodes.is_empty() {
+            debug!("没有找到存储组，添加默认root节点");
+            nodes.push(TreeNode::new(
+                "root".to_string(),
+                "root".to_string(),
+                TreeNodeType::StorageGroup,
+            ));
+        }
+
+        info!("生成了 {} 个存储组节点", nodes.len());
+        Ok(nodes)
     }
 
     /// 获取树子节点
@@ -393,48 +590,374 @@ impl IoTDBOfficialClient {
         Ok(vec!["temperature".to_string(), "humidity".to_string()])
     }
 
-    /// 解析行数据
-    fn parse_row_data(&self, row_data: &[u8], columns: &[String]) -> Result<Vec<serde_json::Value>> {
-        debug!("解析行数据，长度: {} 字节，列数: {}", row_data.len(), columns.len());
+    /// 解析时间戳数据
+    fn parse_time_data(&self, time_data: &[u8]) -> Result<Vec<i64>> {
+        debug!("解析时间戳数据，长度: {} 字节", time_data.len());
+
+        let mut timestamps = Vec::new();
+        let mut offset = 0;
+
+        // IoTDB时间戳是8字节的long值
+        while offset + 8 <= time_data.len() {
+            let timestamp_bytes = &time_data[offset..offset + 8];
+            let timestamp = i64::from_be_bytes([
+                timestamp_bytes[0], timestamp_bytes[1], timestamp_bytes[2], timestamp_bytes[3],
+                timestamp_bytes[4], timestamp_bytes[5], timestamp_bytes[6], timestamp_bytes[7],
+            ]);
+            timestamps.push(timestamp);
+            offset += 8;
+        }
+
+        debug!("解析到 {} 个时间戳", timestamps.len());
+        Ok(timestamps)
+    }
+
+    /// 解析列值数据
+    fn parse_column_value(
+        &self,
+        column_data: &[u8],
+        row_index: usize,
+        data_type: &str,
+        bitmap: Option<&Vec<u8>>
+    ) -> Result<serde_json::Value> {
+        // 检查是否为空值
+        if let Some(bitmap_data) = bitmap {
+            if self.is_null_value(bitmap_data, row_index) {
+                return Ok(serde_json::Value::Null);
+            }
+        }
+
+        // 根据数据类型解析值
+        match data_type.to_uppercase().as_str() {
+            "BOOLEAN" => self.parse_boolean_value(column_data, row_index),
+            "INT32" => self.parse_int32_value(column_data, row_index),
+            "INT64" => self.parse_int64_value(column_data, row_index),
+            "FLOAT" => self.parse_float_value(column_data, row_index),
+            "DOUBLE" => self.parse_double_value(column_data, row_index),
+            "TEXT" | "STRING" => self.parse_text_value(column_data, row_index),
+            _ => {
+                debug!("未知数据类型: {}，尝试解析为文本", data_type);
+                self.parse_text_value(column_data, row_index)
+            }
+        }
+    }
+
+    /// 检查是否为空值
+    fn is_null_value(&self, bitmap: &[u8], row_index: usize) -> bool {
+        let byte_index = row_index / 8;
+        let bit_index = row_index % 8;
+
+        if byte_index < bitmap.len() {
+            let byte_value = bitmap[byte_index];
+            let bit_mask = 1 << bit_index;
+            (byte_value & bit_mask) == 0
+        } else {
+            false
+        }
+    }
+
+    /// 解析布尔值
+    fn parse_boolean_value(&self, data: &[u8], row_index: usize) -> Result<serde_json::Value> {
+        if row_index < data.len() {
+            Ok(serde_json::Value::Bool(data[row_index] != 0))
+        } else {
+            Ok(serde_json::Value::Null)
+        }
+    }
+
+    /// 解析32位整数
+    fn parse_int32_value(&self, data: &[u8], row_index: usize) -> Result<serde_json::Value> {
+        let offset = row_index * 4;
+        if offset + 4 <= data.len() {
+            let bytes = &data[offset..offset + 4];
+            let value = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+            Ok(serde_json::Value::Number(serde_json::Number::from(value)))
+        } else {
+            Ok(serde_json::Value::Null)
+        }
+    }
+
+    /// 解析64位整数
+    fn parse_int64_value(&self, data: &[u8], row_index: usize) -> Result<serde_json::Value> {
+        let offset = row_index * 8;
+        if offset + 8 <= data.len() {
+            let bytes = &data[offset..offset + 8];
+            let value = i64::from_be_bytes([
+                bytes[0], bytes[1], bytes[2], bytes[3],
+                bytes[4], bytes[5], bytes[6], bytes[7],
+            ]);
+            Ok(serde_json::Value::Number(serde_json::Number::from(value)))
+        } else {
+            Ok(serde_json::Value::Null)
+        }
+    }
+
+    /// 解析浮点数
+    fn parse_float_value(&self, data: &[u8], row_index: usize) -> Result<serde_json::Value> {
+        let offset = row_index * 4;
+        if offset + 4 <= data.len() {
+            let bytes = &data[offset..offset + 4];
+            let value = f32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+            if let Some(num) = serde_json::Number::from_f64(value as f64) {
+                Ok(serde_json::Value::Number(num))
+            } else {
+                Ok(serde_json::Value::Null)
+            }
+        } else {
+            Ok(serde_json::Value::Null)
+        }
+    }
+
+    /// 解析双精度浮点数
+    fn parse_double_value(&self, data: &[u8], row_index: usize) -> Result<serde_json::Value> {
+        let offset = row_index * 8;
+        if offset + 8 <= data.len() {
+            let bytes = &data[offset..offset + 8];
+            let value = f64::from_be_bytes([
+                bytes[0], bytes[1], bytes[2], bytes[3],
+                bytes[4], bytes[5], bytes[6], bytes[7],
+            ]);
+            if let Some(num) = serde_json::Number::from_f64(value) {
+                Ok(serde_json::Value::Number(num))
+            } else {
+                Ok(serde_json::Value::Null)
+            }
+        } else {
+            Ok(serde_json::Value::Null)
+        }
+    }
+
+    /// 解析文本值
+    fn parse_text_value(&self, data: &[u8], row_index: usize) -> Result<serde_json::Value> {
+        debug!("解析文本值，行索引: {}, 数据长度: {} 字节", row_index, data.len());
+
+        // 对于文本类型，需要先读取长度，然后读取字符串内容
+        let mut offset = 0;
+
+        // 跳过前面的字符串
+        for i in 0..row_index {
+            if offset + 4 > data.len() {
+                debug!("跳过第 {} 行时数据不足，offset: {}, 数据长度: {}", i, offset, data.len());
+                return Ok(serde_json::Value::Null);
+            }
+
+            // 读取字符串长度
+            let length_bytes = &data[offset..offset + 4];
+            let length = i32::from_be_bytes([
+                length_bytes[0], length_bytes[1], length_bytes[2], length_bytes[3]
+            ]) as usize;
+
+            debug!("跳过第 {} 行，字符串长度: {}, offset: {}", i, length, offset);
+            offset += 4 + length;
+        }
+
+        // 读取目标字符串
+        if offset + 4 <= data.len() {
+            let length_bytes = &data[offset..offset + 4];
+            let length = i32::from_be_bytes([
+                length_bytes[0], length_bytes[1], length_bytes[2], length_bytes[3]
+            ]) as usize;
+
+            debug!("目标行 {} 字符串长度: {}, offset: {}", row_index, length, offset);
+            offset += 4;
+
+            if offset + length <= data.len() {
+                let text_bytes = &data[offset..offset + length];
+                if let Ok(text) = std::str::from_utf8(text_bytes) {
+                    debug!("成功解析文本: '{}'", text);
+                    Ok(serde_json::Value::String(text.to_string()))
+                } else {
+                    debug!("UTF-8解析失败");
+                    Ok(serde_json::Value::Null)
+                }
+            } else {
+                debug!("数据长度不足，需要: {}, 实际: {}", offset + length, data.len());
+                Ok(serde_json::Value::Null)
+            }
+        } else {
+            debug!("长度前缀读取失败，offset: {}, 数据长度: {}", offset, data.len());
+            Ok(serde_json::Value::Null)
+        }
+    }
+
+    /// 解析query_result行数据
+    fn parse_query_result_row(
+        &self,
+        row_data: &[u8],
+        columns: &[String],
+        data_types: &[String]
+    ) -> Result<Vec<serde_json::Value>> {
+        debug!("解析query_result行数据，长度: {} 字节，列数: {}", row_data.len(), columns.len());
 
         let mut values = Vec::new();
         let mut offset = 0;
 
-        // 简化的数据解析 - 假设每个值都是字符串格式
-        // 在实际的IoTDB实现中，需要根据数据类型进行不同的解析
-
-        for (_col_index, column_name) in columns.iter().enumerate() {
+        for (col_index, column_name) in columns.iter().enumerate() {
             if offset >= row_data.len() {
                 debug!("数据不足，为列 {} 填充null", column_name);
                 values.push(serde_json::Value::Null);
                 continue;
             }
 
-            // 尝试解析为字符串（简化实现）
-            // 实际实现需要根据IoTDB的数据类型规范进行解析
-            if let Ok(value_str) = std::str::from_utf8(&row_data[offset..]) {
-                if let Some(null_pos) = value_str.find('\0') {
-                    let actual_value = &value_str[..null_pos];
-                    values.push(serde_json::Value::String(actual_value.to_string()));
-                    offset += null_pos + 1;
-                } else {
-                    values.push(serde_json::Value::String(value_str.to_string()));
-                    break;
+            let data_type = data_types.get(col_index).map(|s| s.as_str()).unwrap_or("TEXT");
+
+            // 根据数据类型解析值
+            let (value, bytes_consumed) = match data_type.to_uppercase().as_str() {
+                "BOOLEAN" => {
+                    if offset < row_data.len() {
+                        (serde_json::Value::Bool(row_data[offset] != 0), 1)
+                    } else {
+                        (serde_json::Value::Null, 0)
+                    }
+                },
+                "INT32" => {
+                    if offset + 4 <= row_data.len() {
+                        let bytes = &row_data[offset..offset + 4];
+                        let value = i32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+                        (serde_json::Value::Number(serde_json::Number::from(value)), 4)
+                    } else {
+                        (serde_json::Value::Null, 0)
+                    }
+                },
+                "INT64" => {
+                    if offset + 8 <= row_data.len() {
+                        let bytes = &row_data[offset..offset + 8];
+                        let value = i64::from_be_bytes([
+                            bytes[0], bytes[1], bytes[2], bytes[3],
+                            bytes[4], bytes[5], bytes[6], bytes[7],
+                        ]);
+                        (serde_json::Value::Number(serde_json::Number::from(value)), 8)
+                    } else {
+                        (serde_json::Value::Null, 0)
+                    }
+                },
+                "FLOAT" => {
+                    if offset + 4 <= row_data.len() {
+                        let bytes = &row_data[offset..offset + 4];
+                        let value = f32::from_be_bytes([bytes[0], bytes[1], bytes[2], bytes[3]]);
+                        if let Some(num) = serde_json::Number::from_f64(value as f64) {
+                            (serde_json::Value::Number(num), 4)
+                        } else {
+                            (serde_json::Value::Null, 4)
+                        }
+                    } else {
+                        (serde_json::Value::Null, 0)
+                    }
+                },
+                "DOUBLE" => {
+                    if offset + 8 <= row_data.len() {
+                        let bytes = &row_data[offset..offset + 8];
+                        let value = f64::from_be_bytes([
+                            bytes[0], bytes[1], bytes[2], bytes[3],
+                            bytes[4], bytes[5], bytes[6], bytes[7],
+                        ]);
+                        if let Some(num) = serde_json::Number::from_f64(value) {
+                            (serde_json::Value::Number(num), 8)
+                        } else {
+                            (serde_json::Value::Null, 8)
+                        }
+                    } else {
+                        (serde_json::Value::Null, 0)
+                    }
+                },
+                "TEXT" | "STRING" => {
+                    if offset + 4 <= row_data.len() {
+                        let length_bytes = &row_data[offset..offset + 4];
+                        let length = i32::from_be_bytes([
+                            length_bytes[0], length_bytes[1], length_bytes[2], length_bytes[3]
+                        ]) as usize;
+
+                        if offset + 4 + length <= row_data.len() {
+                            let text_bytes = &row_data[offset + 4..offset + 4 + length];
+                            if let Ok(text) = std::str::from_utf8(text_bytes) {
+                                (serde_json::Value::String(text.to_string()), 4 + length)
+                            } else {
+                                (serde_json::Value::Null, 4 + length)
+                            }
+                        } else {
+                            (serde_json::Value::Null, 4)
+                        }
+                    } else {
+                        (serde_json::Value::Null, 0)
+                    }
+                },
+                _ => {
+                    debug!("未知数据类型: {}，尝试解析为文本", data_type);
+                    // 尝试解析为字符串
+                    if let Ok(value_str) = std::str::from_utf8(&row_data[offset..]) {
+                        if let Some(null_pos) = value_str.find('\0') {
+                            let actual_value = &value_str[..null_pos];
+                            (serde_json::Value::String(actual_value.to_string()), null_pos + 1)
+                        } else {
+                            (serde_json::Value::String(value_str.to_string()), row_data.len() - offset)
+                        }
+                    } else {
+                        (serde_json::Value::Null, 1)
+                    }
                 }
-            } else {
-                debug!("无法解析列 {} 的数据，使用null", column_name);
-                values.push(serde_json::Value::Null);
-                offset += 1; // 跳过一个字节
-            }
+            };
+
+            values.push(value);
+            offset += bytes_consumed;
         }
 
-        // 确保返回的值数量与列数匹配
-        while values.len() < columns.len() {
-            values.push(serde_json::Value::Null);
-        }
-
-        debug!("成功解析行数据: {} 个值", values.len());
+        debug!("成功解析query_result行数据: {} 个值", values.len());
         Ok(values)
+    }
+
+    /// 估计行数
+    fn estimate_row_count(&self, data: &[u8], data_type: &str) -> usize {
+        debug!("估计行数，数据类型: {}, 数据长度: {} 字节", data_type, data.len());
+
+        let count = match data_type.to_uppercase().as_str() {
+            "BOOLEAN" => data.len(),
+            "INT32" | "FLOAT" => data.len() / 4,
+            "INT64" | "DOUBLE" => data.len() / 8,
+            "TEXT" | "STRING" => {
+                // 对于文本类型，需要解析长度前缀来计算行数
+                let mut count = 0;
+                let mut offset = 0;
+
+                while offset + 4 <= data.len() {
+                    let length_bytes = &data[offset..offset + 4];
+                    let length = i32::from_be_bytes([
+                        length_bytes[0], length_bytes[1], length_bytes[2], length_bytes[3]
+                    ]) as usize;
+
+                    debug!("第 {} 行，字符串长度: {}, offset: {}", count, length, offset);
+
+                    offset += 4 + length;
+                    count += 1;
+
+                    if offset >= data.len() {
+                        break;
+                    }
+                }
+
+                debug!("文本类型估计行数: {}", count);
+                count
+            },
+            _ => 0,
+        };
+
+        debug!("最终估计行数: {}", count);
+        count
+    }
+
+    /// 测试数据解析（用于调试）
+    fn test_parse_known_data(&self) {
+        // 测试已知的SHOW VERSION数据
+        let test_data1 = vec![0, 0, 0, 5, 50, 46, 48, 46, 52]; // "2.0.4"
+        let test_data2 = vec![0, 0, 0, 7, 51, 52, 48, 48, 102, 97, 56]; // "3400fa8"
+
+        debug!("测试解析已知数据:");
+        if let Ok(value1) = self.parse_text_value(&test_data1, 0) {
+            debug!("测试数据1解析结果: {:?}", value1);
+        }
+
+        if let Ok(value2) = self.parse_text_value(&test_data2, 0) {
+            debug!("测试数据2解析结果: {:?}", value2);
+        }
     }
 
 }
