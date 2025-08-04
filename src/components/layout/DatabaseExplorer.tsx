@@ -401,10 +401,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
             case 'iotdb':
                 // IoTDB 中需要从缓存的树节点信息中获取正确的节点类型
-                const cachedTreeNodes = treeNodeCache[connectionId] || [];
-                const cachedNode = cachedTreeNodes.find(node =>
-                    node.name === databaseName || node.id === databaseName
-                );
+                const cachedTreeNodes = treeNodeCache[connectionId as string] || [];
+                console.log(`🔍 查找节点类型: ${databaseName}, 缓存节点数量: ${cachedTreeNodes.length}`);
+                console.log(`🔍 缓存节点详情:`, cachedTreeNodes.map((n: any) => `${n.name}(${n.nodeType})`));
+
+                const cachedNode = cachedTreeNodes.find((node: any) => {
+                    const match = node.name === databaseName || node.id === databaseName;
+                    console.log(`🔍 匹配检查: ${node.name} === ${databaseName} ? ${node.name === databaseName}, ${node.id} === ${databaseName} ? ${node.id === databaseName}`);
+                    return match;
+                });
+
                 if (cachedNode?.nodeType) {
                     console.log(`🏷️ 从缓存获取节点类型: ${databaseName} -> ${cachedNode.nodeType}`);
                     return cachedNode.nodeType;
@@ -646,11 +652,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     connectionId: connection_id,
                 });
                 console.log(`✅ 成功加载树节点:`, treeNodes);
+                console.log(`🔍 树节点详细结构:`, treeNodes.map(node => ({
+                    name: node.name,
+                    id: node.id,
+                    nodeType: node.nodeType,
+                    keys: Object.keys(node)
+                })));
 
                 // 存储完整的树节点信息，用于后续的图标显示
                 setTreeNodeCache(prev => ({
                     ...prev,
-                    [connection_id]: treeNodes
+                    [connection_id as string]: treeNodes
                 }));
 
                 // 提取数据库名称用于兼容现有逻辑
@@ -821,7 +833,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     // 更新缓存
                     setTreeNodeCache(prev => ({
                         ...prev,
-                        [connection.id]: treeNodes
+                        [connection.id as string]: treeNodes
                     }));
 
                     // 提取数据库名称用于兼容现有逻辑
@@ -838,8 +850,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         const isOpened = connection.id ? isDatabaseOpened(connection.id, db) : false;
 
                         // 从缓存的树节点信息中查找对应的节点类型
-                        const cachedTreeNodes = treeNodeCache[connection.id] || [];
-                        const cachedNode = cachedTreeNodes.find(node => {
+                        const cachedTreeNodes = treeNodeCache[connection.id as string] || [];
+                        const cachedNode = cachedTreeNodes.find((node: any) => {
                             return node.name === db || node.id === db;
                         });
                         const nodeType = cachedNode?.nodeType || getDatabaseNodeType(connection.id, db);
@@ -1359,55 +1371,58 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             console.log(`📂 加载数据库列表: ${connection.name}`);
             const databases = await loadDatabases(connectionId, true); // 强制刷新
 
-            // 4. 更新树形数据，一次性显示完整结果
-            setTreeData(prevData => {
-                return prevData.map(node => {
-                    if (node.key === `connection-${connectionId}`) {
-                        const databaseChildren: DataNode[] = databases.map(databaseName => {
-                            const dbPath = `${connectionId}/${databaseName}`;
-                            const isFav = isFavorite(dbPath);
-                            const databaseKey = `database|${connectionId}|${databaseName}`;
-                            const isOpened = isDatabaseOpened(connectionId, databaseName);
+            // 4. 等待缓存设置完成，然后更新树形数据
+            // 使用 setTimeout 确保缓存已经被设置
+            setTimeout(() => {
+                setTreeData(prevData => {
+                    return prevData.map(node => {
+                        if (node.key === `connection-${connectionId}`) {
+                            const databaseChildren: DataNode[] = databases.map(databaseName => {
+                                const dbPath = `${connectionId}/${databaseName}`;
+                                const isFav = isFavorite(dbPath);
+                                const databaseKey = `database|${connectionId}|${databaseName}`;
+                                const isOpened = isDatabaseOpened(connectionId, databaseName);
+
+                                return {
+                                    title: (
+                                        <span className='flex items-center gap-1'>
+                                            {databaseName}
+                                            {isFav && <Star className='w-3 h-3 text-warning fill-current'/>}
+                                        </span>
+                                    ),
+                                    key: databaseKey,
+                                    icon: (
+                                        <DatabaseIcon
+                                            nodeType={getDatabaseNodeType(connectionId, databaseName) as any}
+                                            size={16}
+                                            isOpen={isOpened}
+                                            className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
+                                        />
+                                    ),
+                                    isLeaf: !isOpened,
+                                    children: isOpened ? [] : undefined,
+                                };
+                            });
 
                             return {
-                                title: (
-                                    <span className='flex items-center gap-1'>
-                                        {databaseName}
-                                        {isFav && <Star className='w-3 h-3 text-warning fill-current'/>}
-                                    </span>
-                                ),
-                                key: databaseKey,
-                                icon: (
-                                    <DatabaseIcon
-                                        nodeType={getDatabaseNodeType(connectionId, databaseName) as any}
-                                        size={16}
-                                        isOpen={isOpened}
-                                        className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
-                                    />
-                                ),
-                                isLeaf: !isOpened,
-                                children: isOpened ? [] : undefined,
+                                ...node,
+                                children: databaseChildren,
+                                isLeaf: databaseChildren.length === 0,
                             };
-                        });
-
-                        return {
-                            ...node,
-                            children: databaseChildren,
-                            isLeaf: databaseChildren.length === 0,
-                        };
-                    }
-                    return node;
+                        }
+                        return node;
+                    });
                 });
-            });
 
-            // 5. 自动展开连接节点
-            const connectionKey = `connection-${connectionId}`;
-            if (!expandedKeys.includes(connectionKey)) {
-                setExpandedKeys(prev => [...prev, connectionKey]);
-            }
+                // 5. 自动展开连接节点
+                const connectionKey = `connection-${connectionId}`;
+                if (!expandedKeys.includes(connectionKey)) {
+                    setExpandedKeys(prev => [...prev, connectionKey]);
+                }
 
-            showMessage.success(`已连接并加载 ${databases.length} 个数据库: ${connection.name}`);
-            console.log(`✅ 连接并加载数据库完成: ${connection.name}`);
+                showMessage.success(`已连接并加载 ${databases.length} 个数据库: ${connection.name}`);
+                console.log(`✅ 连接并加载数据库完成: ${connection.name}`);
+            }, 100); // 等待100ms确保缓存设置完成
 
         } catch (error) {
             console.error(`❌ 连接并加载数据库失败:`, error);

@@ -185,22 +185,22 @@ const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
         console.log('🔧 [ExcelStyleFilter] 值切换:', { column, value, selected: !selectedValues.has(value), totalSelected: newSelected.size });
     }, [selectedValues, onApplyFilter, column]);
 
+    // 处理DropdownMenu状态变化
+    const handleOpen = (open: boolean) => {
+        console.log('🔧 [ExcelStyleFilter] DropdownMenu状态变化:', { column, open, currentOpen: isOpen });
+
+        if (!open) {
+            // 关闭时清空搜索
+            onSearchChange('');
+        }
+        // 直接传递boolean值给onOpenChange
+        onOpenChange(open);
+    };
+
     return (
         <DropdownMenu
             open={isOpen}
-            onOpenChange={(open) => {
-                console.log('🔧 [ExcelStyleFilter] DropdownMenu状态变化:', { column, open, currentOpen: isOpen });
-                // 防止重复触发
-                if (open === isOpen) {
-                    console.log('🔧 [ExcelStyleFilter] 状态相同，跳过处理:', { column, open });
-                    return;
-                }
-                if (!open) {
-                    // 点击外部关闭时清空搜索
-                    onSearchChange('');
-                }
-                onOpenChange(open);
-            }}
+            onOpenChange={handleOpen}
         >
             <DropdownMenuTrigger asChild>
                 <Button
@@ -1279,18 +1279,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const handleFilterMenuOpenChange = useCallback((column: string | null) => {
         console.log('🔧 [UnifiedDataTable] 筛选菜单状态变化请求:', { from: filterMenuOpen, to: column });
 
-        // 如果要打开新菜单，先关闭当前菜单
-        if (column && filterMenuOpen && filterMenuOpen !== column) {
-            console.log('🔧 [UnifiedDataTable] 关闭当前菜单，打开新菜单:', { close: filterMenuOpen, open: column });
-            setFilterMenuOpen(null);
-            // 使用 setTimeout 确保状态更新完成后再打开新菜单
-            setTimeout(() => {
-                setFilterMenuOpen(column);
-            }, 10);
-        } else if (filterMenuOpen !== column) {
-            setFilterMenuOpen(column);
-            console.log('🔧 [UnifiedDataTable] 筛选菜单状态已更新:', { from: filterMenuOpen, to: column });
-        }
+        // 直接设置状态，React会自动处理状态更新
+        setFilterMenuOpen(column);
+        console.log('🔧 [UnifiedDataTable] 筛选菜单状态已更新:', { from: filterMenuOpen, to: column });
     }, [filterMenuOpen]);
 
     const handleFilterSearchChange = useCallback((text: string) => {
