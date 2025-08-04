@@ -1501,17 +1501,14 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     }, [pageSize, onPageChange]);
 
     const handlePageSizeChange = useCallback((size: string) => {
-        console.log('handlePageSizeChange called with:', size);
         if (size === 'all') {
             const totalSize = pagination ? pagination.total : data.length;
-            console.log('Setting page size to total:', totalSize);
             setPageSize(totalSize);
             setCurrentPage(1);
             setIsShowingAll(true); // 标记为用户主动选择"全部"
             onPageChange?.(1, totalSize);
         } else {
             const newSize = parseInt(size);
-            console.log('Setting page size to:', newSize);
             setPageSize(newSize);
             setCurrentPage(1);
             setIsShowingAll(false); // 标记为非"全部"模式

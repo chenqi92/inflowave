@@ -2,6 +2,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useMemo,
   memo,
   startTransition,
   useRef,
@@ -956,18 +957,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
           // 存储原始数据
           setRawData(formattedData);
-
-          // 应用客户端排序（如果需要）
-          if (sortColumn && sortColumn !== 'time' && sortColumn !== '#') {
-            const sortedData = sortDataClientSide(
-              formattedData,
-              sortColumn,
-              sortDirection
-            );
-            setData(sortedData);
-          } else {
-            setData(formattedData);
-          }
+          // 直接设置数据，排序将通过 useMemo 处理
+          setData(formattedData);
         }
       } else {
         setRawData([]);
@@ -1001,16 +992,16 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
         setRawData(result.data);
 
-        // 添加序号列
-        const dataWithIndex = result.data.map((record, index) => {
-          const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
+        // 添加序号列 - 直接修改原数组避免创建新引用
+        const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
+        result.data.forEach((record, index) => {
           if (record && typeof record === 'object') {
             (record as DataRow)['#'] = offset + index + 1;
+            (record as DataRow)._id = record._id || `row_${index}`;
           }
-          return record;
         });
 
-        setData(dataWithIndex);
+        setData(result.data);
       } else {
         setData([]);
         setRawData([]);
@@ -1072,6 +1063,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     },
     [calculateColumnWidth]
   );
+
+  // 使用 useMemo 处理排序后的数据，避免不必要的重新计算
+  const sortedData = useMemo(() => {
+    if (!sortColumn || sortColumn === 'time' || sortColumn === '#') {
+      return data;
+    }
+    return sortDataClientSide(data, sortColumn, sortDirection);
+  }, [data, sortColumn, sortDirection, sortDataClientSide]);
 
   // 处理时间列排序变化
   useEffect(() => {
@@ -1665,10 +1664,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       {/* 数据表格 - 使用统一的UnifiedDataTable组件 */}
       <div className='flex-1 min-h-0'>
         <UnifiedDataTable
-          data={data.map((row, index) => ({
-            _id: row._id || `row_${index}`,
-            ...row,
-          }))}
+          data={sortedData}
           columns={columnOrder
             .filter(col => col !== '#')
             .map(col => ({
