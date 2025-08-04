@@ -182,13 +182,10 @@ const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
 
         // 立即应用筛选
         onApplyFilter(Array.from(newSelected));
-        console.log('🔧 [ExcelStyleFilter] 值切换:', { column, value, selected: !selectedValues.has(value), totalSelected: newSelected.size });
     }, [selectedValues, onApplyFilter, column]);
 
     // 处理DropdownMenu状态变化
     const handleOpen = (open: boolean) => {
-        console.log('🔧 [ExcelStyleFilter] DropdownMenu状态变化:', { column, open, currentOpen: isOpen });
-
         if (!open) {
             // 关闭时清空搜索
             onSearchChange('');
@@ -221,11 +218,10 @@ const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
                 className="w-96 p-0"
                 onCloseAutoFocus={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => {
-                    console.log('🔧 [ExcelStyleFilter] ESC键关闭:', { column });
                     onSearchChange('');
                 }}
                 onPointerDownOutside={(e) => {
-                    console.log('🔧 [ExcelStyleFilter] 外部点击关闭:', { column });
+                    // 外部点击关闭筛选菜单
                 }}
             >
                 <div className="p-3 border-b">
@@ -528,8 +524,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
     onPageChange,
     onPageSizeChange
 }) => {
-    // 调试日志：检查分页选项
-    console.log('🔧 [PaginationControls] 分页选项:', { totalCount, pageSizeOptions });
+
 
     const isShowingAll = pageSize >= totalCount;
     const totalPages = isShowingAll ? 1 : Math.ceil(totalCount / pageSize);
@@ -1250,10 +1245,23 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         }
     }, [data, columnUniqueValues, loadingColumn]);
 
-    // 清除缓存：当数据变化时清除缓存
+    // 清除缓存：当数据变化时清除缓存 - 使用数据长度和引用来优化检测
+    const dataRef = useRef(data);
+    const dataLengthRef = useRef(data.length);
+
     useEffect(() => {
-        setColumnUniqueValues(new Map());
-        console.log('🔧 [UnifiedDataTable] 数据变化，清除唯一值缓存');
+        // 只有在数据引用或长度真正变化时才清除缓存
+        if (dataRef.current !== data || dataLengthRef.current !== data.length) {
+            setColumnUniqueValues(new Map());
+            console.log('🔧 [UnifiedDataTable] 数据变化，清除唯一值缓存', {
+                oldLength: dataLengthRef.current,
+                newLength: data.length,
+                referenceChanged: dataRef.current !== data
+            });
+
+            dataRef.current = data;
+            dataLengthRef.current = data.length;
+        }
     }, [data]);
 
     // 筛选搜索：根据搜索文本过滤唯一值
@@ -1266,23 +1274,16 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             value.toLowerCase().includes(searchText.toLowerCase())
         );
 
-        console.log('🔧 [UnifiedDataTable] 筛选搜索结果:', {
-            searchText,
-            totalCount: uniqueValues.length,
-            filteredCount: filtered.length
-        });
+
 
         return filtered;
     }, []);
 
     // 筛选菜单状态处理 - 确保同时只有一个菜单打开
     const handleFilterMenuOpenChange = useCallback((column: string | null) => {
-        console.log('🔧 [UnifiedDataTable] 筛选菜单状态变化请求:', { from: filterMenuOpen, to: column });
-
         // 直接设置状态，React会自动处理状态更新
         setFilterMenuOpen(column);
-        console.log('🔧 [UnifiedDataTable] 筛选菜单状态已更新:', { from: filterMenuOpen, to: column });
-    }, [filterMenuOpen]);
+    }, []);
 
     const handleFilterSearchChange = useCallback((text: string) => {
         // 避免重复设置相同的搜索文本
@@ -1416,11 +1417,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             return data;
         }
 
-        console.log('🔧 [UnifiedDataTable] 开始数据筛选:', {
-            totalRows: data.length,
-            filterCount: filters.length,
-            filters: filters.map(f => ({ column: f.column, operator: f.operator, valueCount: f.value.split('|').length }))
-        });
+        // 数据筛选处理
 
         const startTime = performance.now();
 

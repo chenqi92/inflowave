@@ -121,10 +121,13 @@ const getFunctionalIconPath = (nodeType: TreeNodeType, theme: 'light' | 'dark', 
 
     // 通用功能
     'function': 'function.svg',
+    'function_group': 'function-group.svg',
     'function3x': 'function3x.svg',
     'procedure': 'procedure.svg',
     'trigger': 'trigger.svg',
+    'trigger_group': 'trigger-group.svg',
     'trigger3x': 'trigger3x.svg',
+    'user_group': 'user-group.svg',
     'namespace': isOpen ? 'namespace_cur.svg' : 'namespace.svg',
     'schema': isOpen ? 'schema_cur.svg' : 'schema.svg',
     'partition': 'partition.svg',

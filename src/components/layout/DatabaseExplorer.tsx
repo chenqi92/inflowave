@@ -403,17 +403,22 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 // IoTDB 中需要从缓存的树节点信息中获取正确的节点类型
                 const cachedTreeNodes = treeNodeCache[connectionId as string] || [];
                 console.log(`🔍 查找节点类型: ${databaseName}, 缓存节点数量: ${cachedTreeNodes.length}`);
-                console.log(`🔍 缓存节点详情:`, cachedTreeNodes.map((n: any) => `${n.name}(${n.nodeType})`));
+                console.log(`🔍 缓存节点详情:`, cachedTreeNodes.map((n: any) => `${n.name}(${n.node_type || n.nodeType || 'unknown'})`));
 
                 const cachedNode = cachedTreeNodes.find((node: any) => {
                     const match = node.name === databaseName || node.id === databaseName;
-                    console.log(`🔍 匹配检查: ${node.name} === ${databaseName} ? ${node.name === databaseName}, ${node.id} === ${databaseName} ? ${node.id === databaseName}`);
+                    console.log(`🔍 匹配检查: ${node.name} === ${databaseName} ? ${node.name === databaseName}, ${node.id} === ${databaseName} ? ${node.id === databaseName}`, {
+                        node_type: node.node_type,
+                        nodeType: node.nodeType,
+                        allKeys: Object.keys(node)
+                    });
                     return match;
                 });
 
-                if (cachedNode?.nodeType) {
-                    console.log(`🏷️ 从缓存获取节点类型: ${databaseName} -> ${cachedNode.nodeType}`);
-                    return cachedNode.nodeType;
+                if (cachedNode?.node_type || cachedNode?.nodeType) {
+                    const nodeType = cachedNode.node_type || cachedNode.nodeType;
+                    console.log(`🏷️ 从缓存获取节点类型: ${databaseName} -> ${nodeType}`);
+                    return nodeType;
                 }
                 // 默认返回 storage_group
                 console.log(`⚠️ 未找到缓存节点类型，使用默认: ${databaseName} -> storage_group`);
@@ -423,6 +428,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 return 'database';
         }
     };
+
+
 
     // 根据连接类型确定表/测量节点的图标类型
     const getTableNodeType = (connectionId: string | undefined) => {
@@ -449,31 +456,75 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     };
 
-    // IoTDB 路径显示名称优化函数
-    const getIoTDBDisplayName = (fullPath: string, isField: boolean = false): string => {
+    // IoTDB 路径显示名称优化函数 - 隐藏root、折叠公共前缀、缩写中间段
+    const getIoTDBDisplayName = (fullPath: string, nodeType: string = '', isField: boolean = false): string => {
         if (!fullPath) return fullPath;
 
-        // 对于字段/时间序列，显示最后两个部分（设备.传感器）
-        if (isField) {
-            const parts = fullPath.split('.');
-            if (parts.length >= 2) {
-                return parts.slice(-2).join('.');
+        const parts = fullPath.split('.');
+
+        // 如果路径太短，直接返回
+        if (parts.length <= 2) return fullPath;
+
+        // 隐藏 root 前缀
+        let processedParts = parts[0] === 'root' ? parts.slice(1) : parts;
+
+        // 根据节点类型和路径长度进行不同的处理
+        if (processedParts.length <= 2) {
+            // 短路径直接显示
+            return processedParts.join('.');
+        } else if (processedParts.length === 3) {
+            // 三段路径：storage_group.device.measurement
+            if (isField || nodeType === 'timeseries') {
+                // 时间序列显示最后两段：device.measurement
+                return processedParts.slice(-2).join('.');
+            } else {
+                // 设备显示最后一段
+                return processedParts[processedParts.length - 1];
             }
         } else {
-            // 对于设备/表，显示最后一个部分
-            const parts = fullPath.split('.');
-            if (parts.length > 1) {
-                return parts[parts.length - 1];
+            // 长路径：缩写中间段，保留前一段和后两段
+            if (isField || nodeType === 'timeseries') {
+                // 时间序列：storage_group...device.measurement
+                const first = processedParts[0];
+                const lastTwo = processedParts.slice(-2);
+                return `${first}...${lastTwo.join('.')}`;
+            } else if (nodeType === 'device') {
+                // 设备：storage_group...device
+                const first = processedParts[0];
+                const last = processedParts[processedParts.length - 1];
+                return `${first}...${last}`;
+            } else {
+                // 其他类型显示最后一段
+                return processedParts[processedParts.length - 1];
             }
         }
-
-        return fullPath;
     };
 
     // 检查是否为 IoTDB 连接的辅助函数
     const isIoTDBConnection = (connectionId: string): boolean => {
         const connection = connections.find(c => c.id === connectionId);
         return connection?.dbType?.toLowerCase() === 'iotdb';
+    };
+
+    // IoTDB 路径显示组件 - 带有Tooltip显示完整路径
+    const IoTDBPathDisplay: React.FC<{
+        fullPath: string;
+        nodeType?: string;
+        isField?: boolean;
+        className?: string;
+    }> = ({ fullPath, nodeType = '', isField = false, className = '' }) => {
+        const displayName = getIoTDBDisplayName(fullPath, nodeType, isField);
+        const showTooltip = displayName !== fullPath && displayName.includes('...');
+
+        if (!showTooltip) {
+            return <span className={className}>{displayName}</span>;
+        }
+
+        return (
+            <Tooltip title={fullPath} placement="top">
+                <span className={className}>{displayName}</span>
+            </Tooltip>
+        );
     };
 
     const getNodeIcon = (nodeType: string, isOpened: boolean = false) => {
@@ -501,7 +552,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             'table': 'table',
             'Table': 'table',
 
-            // IoTDB 类型 - 修复图标一致性问题
+            // IoTDB 类型 - 修复图标一致性问题，确保每种类型都有正确的图标
             'storage_group': 'storage_group',
             'StorageGroup': 'storage_group',
             'device': 'device',
@@ -522,11 +573,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             'SchemaTemplate': 'schema_template',
             // IoTDB 管理节点类型映射 - 确保不同类型有不同图标
             'Function': 'function',
-            'FunctionGroup': 'function',
+            'FunctionGroup': 'function_group',
             'Trigger': 'trigger',
-            'TriggerGroup': 'trigger',
+            'TriggerGroup': 'trigger_group',
             'User': 'user1x',
-            'UserGroup': 'user1x',
+            'UserGroup': 'user_group',
             'Privilege': 'privilege',
             'PrivilegeGroup': 'privilege',
 
@@ -828,13 +879,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         connectionId: connection.id,
                     });
                     console.log(`🎯 直接获取树节点信息，节点数量: ${treeNodes.length}`);
-                    console.log(`🎯 树节点详情:`, treeNodes.map(n => `${n.name}(${n.nodeType})`));
+                    console.log(`🎯 树节点详情:`, treeNodes.map(n => `${n.name}(${n.node_type || n.nodeType})`));
 
-                    // 更新缓存
-                    setTreeNodeCache(prev => ({
-                        ...prev,
+                    // 立即更新缓存，确保后续逻辑可以使用
+                    const newCache = {
+                        ...treeNodeCache,
                         [connection.id as string]: treeNodes
-                    }));
+                    };
+                    setTreeNodeCache(newCache);
 
                     // 提取数据库名称用于兼容现有逻辑
                     const databases = treeNodes.map(node => node.name || node.id);
@@ -849,14 +901,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         const isExpanded = expandedKeys.includes(databaseKey);
                         const isOpened = connection.id ? isDatabaseOpened(connection.id, db) : false;
 
-                        // 从缓存的树节点信息中查找对应的节点类型
-                        const cachedTreeNodes = treeNodeCache[connection.id as string] || [];
-                        const cachedNode = cachedTreeNodes.find((node: any) => {
+                        // 直接从当前获取的树节点信息中查找对应的节点类型
+                        const currentNode = treeNodes.find((node: any) => {
                             return node.name === db || node.id === db;
                         });
-                        const nodeType = cachedNode?.nodeType || getDatabaseNodeType(connection.id, db);
+                        const nodeType = currentNode?.node_type || currentNode?.nodeType || getDatabaseNodeType(connection.id, db);
 
-                        console.log(`🏷️ 数据库 "${db}" 的节点类型: ${nodeType} (来源: ${cachedNode ? '缓存' : '推断'}, 缓存节点: ${cachedNode?.name})`);
+                        console.log(`🏷️ 数据库 "${db}" 的节点类型: ${nodeType} (来源: ${currentNode ? '直接获取' : '推断'}, 节点: ${currentNode?.name})`);
 
                         const nodeData: any = {
                             title: (
@@ -1437,7 +1488,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             updateConnectionNodeDisplay(connectionId, false);
         }
     }, [getConnection, connectToDatabase, closeAllDatabasesForConnection, clearDatabasesCache,
-        loadDatabases, isFavorite, isDatabaseOpened, getDatabaseNodeType, expandedKeys,
+        isFavorite, isDatabaseOpened, expandedKeys,
         ]);
 
     // 处理已连接的连接节点展开
@@ -1460,7 +1511,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
             try {
                 console.log(`📊 加载数据库列表: ${connection.name}`);
-                await addDatabaseNodesToConnection(connectionId);
+                // 重新加载数据库列表（强制刷新）
+                await loadDatabases(connectionId, true);
+                // 刷新树形数据
+                buildCompleteTreeData(true);
                 showMessage.success(`已加载数据库列表: ${connection.name}`);
             } catch (error) {
                 console.error(`❌ 加载数据库列表失败:`, error);
@@ -1663,6 +1717,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             setContextMenuOpen(false);
         }
 
+        // 防止在执行查询时重复双击
+        if (executingTableQuery) {
+            console.log('⚠️ 查询正在执行中，忽略双击事件');
+            return;
+        }
+
         if (String(key).startsWith('connection-')) {
             // 连接节点被双击，统一处理连接和数据加载
             const connectionId = String(key).replace('connection-', '');
@@ -1755,14 +1815,21 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                     const tablePath = `${connectionId}/${database}/${table}`;
                                                     const isFav = isFavorite(tablePath);
 
-                                                    // 对于 IoTDB，优化显示名称
+                                                    // 对于 IoTDB，使用优化的路径显示组件
                                                     const isIoTDB = isIoTDBConnection(connectionId);
-                                                    const displayName = isIoTDB ? getIoTDBDisplayName(table, false) : table;
 
                                                     return {
                                                         title: (
                                                             <div className='flex items-center gap-2'>
-                                                                <span className='flex-1' title={table}>{displayName}</span>
+                                                                {isIoTDB ? (
+                                                                    <IoTDBPathDisplay
+                                                                        fullPath={table}
+                                                                        nodeType="table"
+                                                                        className='flex-1'
+                                                                    />
+                                                                ) : (
+                                                                    <span className='flex-1' title={table}>{table}</span>
+                                                                )}
                                                                 {isFav && (
                                                                     <Star
                                                                         className='w-3 h-3 text-warning fill-current'/>
@@ -1927,37 +1994,57 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     };
 
-    // 执行表查询的辅助函数
+    // 防重复执行的状态
+    const [executingTableQuery, setExecutingTableQuery] = useState<string | null>(null);
+
+    // 执行表查询的辅助函数 - 添加防重复执行逻辑
     const executeTableQuery = async (connectionId: string, database: string, table: string) => {
-        // 优先使用新的数据浏览回调
-        if (onCreateDataBrowserTab) {
-            onCreateDataBrowserTab(connectionId, database, table);
-            showMessage.info(`正在打开表 "${table}" 的数据浏览器...`);
-        } else if (onTableDoubleClick) {
-            // 保留原有逻辑以便兼容，传递connectionId以正确生成查询
-            const query = generateQueryWithTimeFilter(table, connectionId);
-            onTableDoubleClick(database, table, query);
-            const timeDesc = currentTimeRange
-                ? currentTimeRange.label
-                : '最近1小时';
-            showMessage.info(
-                `正在查询表 "${table}" 的数据（时间范围：${timeDesc}）...`
-            );
-        } else if (onCreateQueryTab) {
-            // 创建新查询标签页并填入查询语句，传递connectionId
-            const query = generateQueryWithTimeFilter(table, connectionId);
-            onCreateQueryTab(query, database);
-            showMessage.info(`已创建查询标签页，查询表 "${table}"`);
-        } else {
-            // 如果没有回调，复制查询到剪贴板，传递connectionId
-            const query = generateQueryWithTimeFilter(table, connectionId);
-            const success = await writeToClipboard(query, {
-                successMessage: `查询语句已复制到剪贴板: ${query}`,
-                errorMessage: '复制失败',
-            });
-            if (!success) {
-                showMessage.info(`查询语句: ${query}`);
+        const queryKey = `${connectionId}|${database}|${table}`;
+
+        // 防止重复执行同一个查询
+        if (executingTableQuery === queryKey) {
+            console.log('⚠️ 查询正在执行中，跳过重复请求:', queryKey);
+            return;
+        }
+
+        try {
+            setExecutingTableQuery(queryKey);
+
+            // 优先使用新的数据浏览回调
+            if (onCreateDataBrowserTab) {
+                onCreateDataBrowserTab(connectionId, database, table);
+                showMessage.info(`正在打开表 "${table}" 的数据浏览器...`);
+            } else if (onTableDoubleClick) {
+                // 保留原有逻辑以便兼容，传递connectionId以正确生成查询
+                const query = generateQueryWithTimeFilter(table, connectionId);
+                onTableDoubleClick(database, table, query);
+                const timeDesc = currentTimeRange
+                    ? currentTimeRange.label
+                    : '最近1小时';
+                showMessage.info(
+                    `正在查询表 "${table}" 的数据（时间范围：${timeDesc}）...`
+                );
+            } else if (onCreateQueryTab) {
+                // 创建新查询标签页并填入查询语句，传递connectionId
+                const query = generateQueryWithTimeFilter(table, connectionId);
+                onCreateQueryTab(query, database);
+                showMessage.info(`已创建查询标签页，查询表 "${table}"`);
+            } else {
+                // 如果没有回调，复制查询到剪贴板，传递connectionId
+                const query = generateQueryWithTimeFilter(table, connectionId);
+                const success = await writeToClipboard(query, {
+                    successMessage: `查询语句已复制到剪贴板: ${query}`,
+                    errorMessage: '复制失败',
+                });
+                if (!success) {
+                    showMessage.info(`查询语句: ${query}`);
+                }
             }
+        } finally {
+            // 延迟清除执行状态，防止快速重复点击
+            setTimeout(() => {
+                setExecutingTableQuery(null);
+            }, 1000);
         }
     };
 
@@ -2841,79 +2928,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         prevActiveIdRef.current = activeConnectionId;
     }, [connectedConnectionIds, activeConnectionId, updateConnectionNodeDisplay, clearDatabasesCache]);
 
-    // 为单个连接添加数据库子节点（局部更新）
-    const addDatabaseNodesToConnection = useCallback(
-        async (connection_id: string) => {
-            console.log(`📂 为连接 ${connection_id} 加载数据库节点`);
 
-            const connection = getConnection(connection_id);
-            if (!connection) return;
 
-            try {
-                // 获取数据库列表
-                const databases = await loadDatabases(connection_id);
 
-                setTreeData(prevData => {
-                    return prevData.map(node => {
-                        if (node.key === `connection-${connection_id}`) {
-                            // 构建数据库子节点 - 根据展开状态设置属性
-                            const databaseChildren: DataNode[] = databases.map(
-                                databaseName => {
-                                    const dbPath = `${connection_id}/${databaseName}`;
-                                    const isFav = isFavorite(dbPath);
-                                    const databaseKey = `database|${connection_id}|${databaseName}`;
-                                    const isExpanded = expandedKeys.includes(databaseKey);
-                                    const isOpened = isDatabaseOpened(connection_id, databaseName);
-
-                                    const nodeData: any = {
-                                        title: (
-                                            <span className='flex items-center gap-1'>
-                        {databaseName}
-                                                {isFav && (
-                                                    <Star className='w-3 h-3 text-warning fill-current'/>
-                                                )}
-                      </span>
-                                        ),
-                                        key: databaseKey,
-                                        // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
-                                        icon: (
-                                            <DatabaseIcon
-                                                nodeType={getDatabaseNodeType(connection_id, databaseName) as any}
-                                                size={16}
-                                                isOpen={isOpened}
-                                                className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
-                                            />
-                                        ),
-                                    };
-
-                                    if (isOpened) {
-                                        // 已打开的数据库：设置为非叶子节点，有展开按钮和children数组
-                                        nodeData.isLeaf = false;
-                                        nodeData.children = []; // 空数组表示有子节点但未加载
-                                    } else {
-                                        // 未打开的数据库：设置为叶子节点，无展开按钮
-                                        nodeData.isLeaf = true;
-                                    }
-
-                                    return nodeData;
-                                }
-                            );
-
-                            return {
-                                ...node,
-                                children: databaseChildren,
-                                isLeaf: databaseChildren.length === 0,
-                            };
-                        }
-                        return node;
-                    });
-                });
-            } catch (error) {
-                console.error(`❌ 为连接 ${connection_id} 加载数据库失败:`, error);
-            }
-        },
-        [getConnection, loadDatabases, isFavorite, expandedKeys]
-    );
 
     // 清理特定连接的数据库子节点
     const clearDatabaseNodesForConnection = useCallback(
