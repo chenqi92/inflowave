@@ -374,6 +374,10 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                 })().map((column, colIndex) => {
                     // 计算列的最小宽度
                     const getColumnMinWidth = (col: string) => {
+                        // 安全检查：确保col不为null或undefined
+                        if (!col || typeof col !== 'string') {
+                            return '120px'; // 默认宽度
+                        }
                         if (col === 'time') return '180px';
                         const colLength = col.length;
                         return `${Math.max(120, colLength * 12)}px`;

@@ -1036,6 +1036,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 统一的列宽度计算函数 - 优化字段名显示
   const calculateColumnWidth = useCallback((column: string): number => {
+    // 安全检查：确保column不为null或undefined
+    if (!column || typeof column !== 'string') {
+      return 150; // 默认宽度
+    }
+
     if (column === '_actions') return 48;
     if (column === '_select') return 48;
     if (column === '#') return 80;
@@ -1053,9 +1058,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const initializeColumnWidths = useCallback(
     (cols: string[]) => {
       const widths: Record<string, number> = {};
-      cols.forEach(col => {
-        widths[col] = calculateColumnWidth(col);
-      });
+      // 安全检查：确保cols是数组且每个元素都是有效的字符串
+      if (Array.isArray(cols)) {
+        cols.forEach(col => {
+          if (col && typeof col === 'string') {
+            widths[col] = calculateColumnWidth(col);
+          }
+        });
+      }
       setColumnWidths(widths);
     },
     [calculateColumnWidth]

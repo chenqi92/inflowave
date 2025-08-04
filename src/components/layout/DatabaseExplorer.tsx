@@ -348,17 +348,27 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         const activeConnection = targetConnectionId ? getConnection(targetConnectionId) : null;
         const isIoTDB = table.startsWith('root.') || (activeConnection?.dbType === 'iotdb');
         const tableRef = isIoTDB ? table : `"${table}"`;
-        const orderBy = isIoTDB ? '' : 'ORDER BY time DESC '; // IoTDB不需要ORDER BY
 
-        if (timeCondition) {
-            return `SELECT *
-                    FROM ${tableRef}
-                    WHERE ${timeCondition}
-                    ${orderBy}${limit}`;
+        // IoTDB不支持ORDER BY语法，需要使用不同的查询方式
+        if (isIoTDB) {
+            if (timeCondition) {
+                return `SELECT * FROM ${tableRef} WHERE ${timeCondition} ${limit}`;
+            } else {
+                return `SELECT * FROM ${tableRef} ${limit}`;
+            }
         } else {
-            return `SELECT *
-                    FROM ${tableRef}
-                    ${orderBy}${limit}`;
+            // InfluxDB查询
+            const orderBy = 'ORDER BY time DESC ';
+            if (timeCondition) {
+                return `SELECT *
+                        FROM ${tableRef}
+                        WHERE ${timeCondition}
+                        ${orderBy}${limit}`;
+            } else {
+                return `SELECT *
+                        FROM ${tableRef}
+                        ${orderBy}${limit}`;
+            }
         }
     };
 
@@ -791,16 +801,39 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             if (isConnected && connection.id) {
                 console.log(`🔗 处理已连接: ${connection.name} (${connection.id})`);
                 try {
-                    const databases = await loadDatabases(connection.id);
+                    // 直接获取完整的树节点信息
+                    const treeNodes = await safeTauriInvoke<any[]>('get_tree_nodes', {
+                        connectionId: connection.id,
+                    });
+                    console.log(`🎯 直接获取树节点信息，节点数量: ${treeNodes.length}`);
+                    console.log(`🎯 树节点详情:`, treeNodes.map(n => `${n.name}(${n.nodeType})`));
+
+                    // 更新缓存
+                    setTreeNodeCache(prev => ({
+                        ...prev,
+                        [connection.id]: treeNodes
+                    }));
+
+                    // 提取数据库名称用于兼容现有逻辑
+                    const databases = treeNodes.map(node => node.name || node.id);
                     console.log(
                         `📁 为连接 ${connection.name} 创建 ${databases.length} 个数据库节点`
                     );
+
                     connectionNode.children = databases.map(db => {
                         const dbPath = `${connection.id}/${db}`;
                         const isFav = isFavorite(dbPath);
                         const databaseKey = `database|${connection.id}|${db}`;
                         const isExpanded = expandedKeys.includes(databaseKey);
                         const isOpened = connection.id ? isDatabaseOpened(connection.id, db) : false;
+
+                        // 从树节点信息中查找对应的节点类型
+                        const treeNode = treeNodes.find(node => {
+                            return node.name === db || node.id === db;
+                        });
+                        const nodeType = treeNode?.nodeType || getDatabaseNodeType(connection.id, db);
+
+                        console.log(`🏷️ 数据库 "${db}" 的节点类型: ${nodeType} (来源: ${treeNode ? '树节点' : '推断'}, 树节点: ${treeNode?.name})`);
 
                         const nodeData: any = {
                             title: (
@@ -812,10 +845,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 </span>
                             ),
                             key: databaseKey,
-                            // 根据打开状态设置图标颜色：未打开为灰色，已打开为紫色
+                            // 使用正确的节点类型显示图标
                             icon: (
                                 <DatabaseIcon
-                                    nodeType={getDatabaseNodeType(connection.id, db) as any}
+                                    nodeType={nodeType as any}
                                     size={16}
                                     isOpen={isOpened}
                                     className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
