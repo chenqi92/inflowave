@@ -2,7 +2,7 @@
 import {useNavigate} from 'react-router-dom';
 import {
     Tree,
-    TreeNode,
+    TreeNode as UITreeNode,
     SearchInput,
     Button,
     Tooltip,
@@ -43,6 +43,7 @@ import {useFavoritesStore, favoritesUtils} from '@/store/favorites';
 import {useOpenedDatabasesStore} from '@/stores/openedDatabasesStore';
 import {SimpleConnectionDialog} from '@/components/ConnectionManager/SimpleConnectionDialog';
 import type {ConnectionConfig} from '@/types';
+import type {TreeNodeType, TreeNode} from '@/types/tree';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
 import {writeToClipboard} from '@/utils/clipboard';
@@ -343,7 +344,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         const limit = 'LIMIT 500'; // 默认分页500条
 
         // 智能检测数据库类型并生成正确的查询
-        const isIoTDB = table.startsWith('root.') || (activeDatabase && activeDatabase.startsWith('root.'));
+        const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
+        const isIoTDB = table.startsWith('root.') || (activeConnection?.dbType === 'iotdb');
         const tableRef = isIoTDB ? table : `"${table}"`;
         const orderBy = isIoTDB ? '' : 'ORDER BY time DESC '; // IoTDB不需要ORDER BY
 
@@ -1054,17 +1056,33 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         [loadingNodes]
     );
 
-    // 转换 DataNode 为 TreeNode 的适配器函数
+    // 转换 UI TreeNode 为我们的 TreeNode 的适配器函数
     const loadDataAdapter = useCallback(
-        async (node: TreeNode): Promise<void> => {
+        async (uiNode: UITreeNode): Promise<void> => {
+            // 从 UI TreeNode 转换为我们的 TreeNode
+            const customNode: TreeNode = {
+                id: String(uiNode.key),
+                key: String(uiNode.key),
+                name: String(uiNode.title),
+                nodeType: 'database', // 默认类型，实际应该从元数据获取
+                children: [],
+                isLeaf: uiNode.isLeaf || false,
+                isSystem: false,
+                isExpandable: !uiNode.isLeaf,
+                isExpanded: false,
+                isLoading: false,
+                metadata: {}
+            };
+
+            // 创建对应的 DataNode
             const dataNode: DataNode = {
-                key: node.key,
-                title: node.title,
-                children: node.children as DataNode[],
-                icon: node.icon,
-                isLeaf: node.isLeaf,
-                disabled: node.disabled,
-                selectable: node.selectable,
+                key: uiNode.key,
+                title: uiNode.title,
+                children: uiNode.children as DataNode[],
+                icon: uiNode.icon,
+                isLeaf: uiNode.isLeaf,
+                disabled: uiNode.disabled,
+                selectable: uiNode.selectable,
             };
             return loadData(dataNode);
         },
@@ -1522,9 +1540,30 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     };
 
+    // UI TreeNode 到自定义 TreeNode 的转换函数
+    const convertUINodeToCustomNode = (uiNode: UITreeNode): TreeNode => {
+        return {
+            id: String(uiNode.key),
+            key: String(uiNode.key),
+            name: String(uiNode.title),
+            title: String(uiNode.title),
+            nodeType: 'database', // 默认类型，实际应该从元数据获取
+            children: [],
+            isLeaf: uiNode.isLeaf || false,
+            isSystem: false,
+            isExpandable: !uiNode.isLeaf,
+            isExpanded: false,
+            isLoading: false,
+            metadata: {},
+            icon: uiNode.icon,
+            disabled: uiNode.disabled,
+            selectable: uiNode.selectable,
+        };
+    };
+
     // 处理节点双击
-    const handleDoubleClick = async (info: { node: TreeNode }) => {
-        const {node} = info;
+    const handleDoubleClick = async (info: { node: UITreeNode }) => {
+        const node = convertUINodeToCustomNode(info.node);
         const key = node.key;
 
         console.log(`🖱️ 双击节点: ${key}`, {nodeTitle: node.title, nodeType: typeof key, keyString: String(key)});
@@ -1838,8 +1877,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const [contextMenuPosition, setContextMenuPosition] = useState({x: 0, y: 0});
 
     // 处理右键菜单
-    const handleRightClick = (info: { node: TreeNode; event?: React.MouseEvent }) => {
-        const {node, event} = info;
+    const handleRightClick = (info: { node: UITreeNode; event?: React.MouseEvent }) => {
+        const node = convertUINodeToCustomNode(info.node);
+        const {event} = info;
         event?.preventDefault();
         event?.stopPropagation();
 
@@ -2322,8 +2362,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     };
 
     // 处理节点选择
-    const handleSelect = (selectedKeys: string[], info: { selected: boolean; node: TreeNode }) => {
-        const {node} = info;
+    const handleSelect = (selectedKeys: string[], info: { selected: boolean; node: UITreeNode }) => {
+        const node = convertUINodeToCustomNode(info.node);
         console.log('选中节点:', node);
 
         const nodeKey = String(node.key);

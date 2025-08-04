@@ -330,49 +330,12 @@ impl IoTDBOfficialClient {
             }
         }
 
-        // 如果所有查询都失败，尝试查询一些常见的存储组
-        debug!("所有存储组查询都失败，尝试探测常见存储组");
-        let common_storage_groups = vec![];
-        let mut found_groups = Vec::new();
-
-        for sg in common_storage_groups {
-            // 尝试多种方式探测存储组
-            let detection_queries = vec![
-                format!("SHOW DEVICES {}", sg),
-                format!("SHOW TIMESERIES {}", sg),
-                format!("SHOW TIMESERIES {}.**", sg),
-                format!("SELECT * FROM {} LIMIT 1", sg),
-            ];
-
-            let mut sg_exists = false;
-            for query in detection_queries {
-                match self.execute_query(&query, None).await {
-                    Ok(result) => {
-                        // 检查是否有任何数据返回
-                        if let Some(results) = result.results.first() {
-                            if let Some(series_list) = &results.series {
-                                if !series_list.is_empty() {
-                                    debug!("通过查询 '{}' 探测到存储组: {}", query, sg);
-                                    found_groups.push(sg.to_string());
-                                    sg_exists = true;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    Err(e) => {
-                        debug!("探测查询 '{}' 失败: {}", query, e);
-                    }
-                }
-            }
-
-            if !sg_exists {
-                debug!("存储组 {} 不存在或无法访问", sg);
-            }
-        }
+        // 如果所有查询都失败，尝试智能探测存储组
+        debug!("所有存储组查询都失败，尝试智能探测存储组");
+        let found_groups = self.discover_storage_groups_intelligently().await?;
 
         if !found_groups.is_empty() {
-            info!("通过探测找到 {} 个存储组: {:?}", found_groups.len(), found_groups);
+            info!("通过智能探测找到 {} 个存储组: {:?}", found_groups.len(), found_groups);
             return Ok(found_groups);
         }
 
@@ -386,23 +349,23 @@ impl IoTDBOfficialClient {
 
         // 处理系统节点的特殊情况
         match database {
-            "System Information" => {
+            "System Information" | "SystemInfo" | "system_info" => {
                 debug!("处理系统信息节点");
                 return self.get_system_info_items().await;
             }
-            "Version Information" => {
+            "Version Information" | "VersionInfo" | "version_info" => {
                 debug!("处理版本信息节点");
                 return self.get_version_info_items().await;
             }
-            "Schema Templates" => {
+            "Schema Templates" | "SchemaTemplate" | "schema_template" => {
                 debug!("处理模式模板节点");
                 return self.get_schema_templates().await;
             }
-            "Functions" => {
+            "Functions" | "Function" | "function" => {
                 debug!("处理函数节点");
                 return self.get_functions().await;
             }
-            "Triggers" => {
+            "Triggers" | "Trigger" | "trigger" => {
                 debug!("处理触发器节点");
                 return self.get_triggers().await;
             }
@@ -412,8 +375,8 @@ impl IoTDBOfficialClient {
             }
         }
 
-        // 尝试不同的查询语句
-        let queries = if database.is_empty() || database == "root" {
+        // 优先使用SHOW DEVICES查询，只有在失败时才使用SHOW TIMESERIES
+        let device_queries = if database.is_empty() || database == "root" {
             vec![
                 "SHOW DEVICES".to_string(),
                 "SHOW DEVICES root".to_string(),
@@ -427,11 +390,12 @@ impl IoTDBOfficialClient {
             ]
         };
 
-        for query in queries {
-            debug!("尝试查询设备: {}", query);
+        // 首先尝试设备查询
+        for query in device_queries {
+            debug!("尝试设备查询: {}", query);
             match self.execute_query(&query, Some(database)).await {
                 Ok(result) => {
-                    debug!("查询 '{}' 成功，解析结果", query);
+                    debug!("设备查询 '{}' 成功，解析结果", query);
                     let mut tables = Vec::new();
 
                     if let Some(results) = result.results.first() {
@@ -440,10 +404,16 @@ impl IoTDBOfficialClient {
                                 debug!("处理设备series: {}, 行数: {}", series.name, series.values.len());
                                 for (row_index, row) in series.values.iter().enumerate() {
                                     debug!("处理设备第 {} 行: {:?}", row_index, row);
+
+                                    // 处理设备查询结果：第一列是设备名
                                     if let Some(device_name) = row.first() {
                                         if let Some(name_str) = device_name.as_str() {
-                                            debug!("找到设备: {}", name_str);
-                                            tables.push(name_str.to_string());
+                                            if !name_str.is_empty() {
+                                                debug!("找到设备: {}", name_str);
+                                                if !tables.contains(&name_str.to_string()) {
+                                                    tables.push(name_str.to_string());
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -452,14 +422,79 @@ impl IoTDBOfficialClient {
                     }
 
                     if !tables.is_empty() {
-                        info!("使用查询 '{}' 获取到 {} 个设备: {:?}", query, tables.len(), tables);
+                        tables.sort();
+                        tables.dedup();
+                        info!("使用设备查询 '{}' 获取到 {} 个设备: {:?}", query, tables.len(), tables);
                         return Ok(tables);
                     } else {
-                        debug!("查询 '{}' 没有返回设备数据", query);
+                        debug!("设备查询 '{}' 没有返回设备数据", query);
                     }
                 }
                 Err(e) => {
-                    debug!("查询 '{}' 失败: {}", query, e);
+                    debug!("设备查询 '{}' 失败: {}", query, e);
+                    continue;
+                }
+            }
+        }
+
+        // 如果设备查询都失败，尝试从时间序列中提取设备
+        debug!("所有设备查询都失败，尝试从时间序列中提取设备");
+        let timeseries_queries = if database.is_empty() || database == "root" {
+            vec![
+                "SHOW TIMESERIES".to_string(),
+                "SHOW TIMESERIES root.**".to_string(),
+            ]
+        } else {
+            vec![
+                format!("SHOW TIMESERIES {}.**", database),
+            ]
+        };
+
+        for query in timeseries_queries {
+            debug!("尝试时间序列查询: {}", query);
+            match self.execute_query(&query, Some(database)).await {
+                Ok(result) => {
+                    debug!("时间序列查询 '{}' 成功，解析结果", query);
+                    let mut tables = Vec::new();
+
+                    if let Some(results) = result.results.first() {
+                        if let Some(series_list) = &results.series {
+                            for series in series_list {
+                                debug!("处理时间序列series: {}, 行数: {}", series.name, series.values.len());
+                                for (row_index, row) in series.values.iter().enumerate() {
+                                    debug!("处理时间序列第 {} 行: {:?}", row_index, row);
+
+                                    // 时间序列查询：从时间序列路径提取设备名
+                                    if let Some(timeseries_path) = row.first() {
+                                        if let Some(path_str) = timeseries_path.as_str() {
+                                            if let Some(device_path) = self.extract_device_from_timeseries(path_str) {
+                                                debug!("从时间序列 '{}' 提取设备: {}", path_str, device_path);
+                                                // 检查是否已存在，避免重复添加
+                                                if !tables.contains(&device_path) {
+                                                    tables.push(device_path);
+                                                } else {
+                                                    debug!("设备 '{}' 已存在，跳过重复添加", device_path);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if !tables.is_empty() {
+                        // 去重处理
+                        tables.sort();
+                        tables.dedup();
+                        info!("使用时间序列查询 '{}' 获取到 {} 个设备（去重后）: {:?}", query, tables.len(), tables);
+                        return Ok(tables);
+                    } else {
+                        debug!("时间序列查询 '{}' 没有返回设备数据", query);
+                    }
+                }
+                Err(e) => {
+                    debug!("时间序列查询 '{}' 失败: {}", query, e);
                     continue;
                 }
             }
@@ -604,7 +639,7 @@ impl IoTDBOfficialClient {
 
         // 1. 添加系统信息节点
         let system_info_node = TreeNode::new(
-            "system_info".to_string(),
+            "SystemInfo".to_string(),
             "System Information".to_string(),
             TreeNodeType::SystemInfo,
         );
@@ -612,7 +647,7 @@ impl IoTDBOfficialClient {
 
         // 2. 添加版本信息节点
         let version_info_node = TreeNode::new(
-            "version_info".to_string(),
+            "VersionInfo".to_string(),
             "Version Information".to_string(),
             TreeNodeType::VersionInfo,
         );
@@ -620,7 +655,7 @@ impl IoTDBOfficialClient {
 
         // 3. 添加模式模板节点
         let schema_template_node = TreeNode::new(
-            "schema_templates".to_string(),
+            "SchemaTemplate".to_string(),
             "Schema Templates".to_string(),
             TreeNodeType::SchemaTemplate,
         );
@@ -641,7 +676,7 @@ impl IoTDBOfficialClient {
 
         // 5. 添加函数节点
         let functions_node = TreeNode::new(
-            "functions".to_string(),
+            "Functions".to_string(),
             "Functions".to_string(),
             TreeNodeType::Function,
         );
@@ -649,7 +684,7 @@ impl IoTDBOfficialClient {
 
         // 6. 添加触发器节点
         let triggers_node = TreeNode::new(
-            "triggers".to_string(),
+            "Triggers".to_string(),
             "Triggers".to_string(),
             TreeNodeType::Trigger,
         );
@@ -1202,6 +1237,232 @@ impl IoTDBOfficialClient {
 
         if let Ok(value2) = self.parse_text_value(&test_data2, 0) {
             debug!("测试数据2解析结果: {:?}", value2);
+        }
+    }
+
+    /// 智能探测存储组
+    async fn discover_storage_groups_intelligently(&self) -> Result<Vec<String>> {
+        debug!("开始智能探测存储组");
+        let mut found_groups = Vec::new();
+
+        // 1. 尝试通过SHOW TIMESERIES探测
+        debug!("尝试通过SHOW TIMESERIES探测存储组");
+        if let Ok(result) = self.execute_query("SHOW TIMESERIES", None).await {
+            let timeseries_groups = self.extract_storage_groups_from_timeseries(&result);
+            found_groups.extend(timeseries_groups);
+        }
+
+        // 2. 尝试通过SHOW DEVICES探测
+        debug!("尝试通过SHOW DEVICES探测存储组");
+        if let Ok(result) = self.execute_query("SHOW DEVICES", None).await {
+            let device_groups = self.extract_storage_groups_from_devices(&result);
+            found_groups.extend(device_groups);
+        }
+
+        // 3. 尝试通过SHOW CHILD PATHS探测
+        debug!("尝试通过SHOW CHILD PATHS探测存储组");
+        let root_paths = vec!["root", "root.*"];
+        for path in root_paths {
+            if let Ok(result) = self.execute_query(&format!("SHOW CHILD PATHS {}", path), None).await {
+                let path_groups = self.extract_storage_groups_from_paths(&result);
+                found_groups.extend(path_groups);
+            }
+        }
+
+        // 4. 尝试通过COUNT TIMESERIES探测
+        debug!("尝试通过COUNT TIMESERIES探测存储组");
+        if let Ok(result) = self.execute_query("COUNT TIMESERIES root.**", None).await {
+            // 如果有时间序列计数，说明至少有一个存储组存在
+            if self.has_meaningful_result(&result) {
+                // 尝试更具体的探测
+                found_groups.extend(self.probe_common_patterns().await);
+            }
+        }
+
+        // 去重并排序
+        found_groups.sort();
+        found_groups.dedup();
+
+        debug!("智能探测完成，找到 {} 个存储组: {:?}", found_groups.len(), found_groups);
+        Ok(found_groups)
+    }
+
+    /// 从时间序列结果中提取存储组
+    fn extract_storage_groups_from_timeseries(&self, result: &crate::models::QueryResult) -> Vec<String> {
+        let mut groups = Vec::new();
+
+        if let Some(results) = result.results.first() {
+            if let Some(series_list) = &results.series {
+                for series in series_list {
+                    for row in &series.values {
+                        if let Some(timeseries_path) = row.first() {
+                            if let Some(path_str) = timeseries_path.as_str() {
+                                if let Some(storage_group) = self.extract_storage_group_from_path(path_str) {
+                                    groups.push(storage_group);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        groups
+    }
+
+    /// 从设备结果中提取存储组
+    fn extract_storage_groups_from_devices(&self, result: &crate::models::QueryResult) -> Vec<String> {
+        let mut groups = Vec::new();
+
+        if let Some(results) = result.results.first() {
+            if let Some(series_list) = &results.series {
+                for series in series_list {
+                    for row in &series.values {
+                        if let Some(device_path) = row.first() {
+                            if let Some(path_str) = device_path.as_str() {
+                                if let Some(storage_group) = self.extract_storage_group_from_path(path_str) {
+                                    groups.push(storage_group);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        groups
+    }
+
+    /// 从路径结果中提取存储组
+    fn extract_storage_groups_from_paths(&self, result: &crate::models::QueryResult) -> Vec<String> {
+        let mut groups = Vec::new();
+
+        if let Some(results) = result.results.first() {
+            if let Some(series_list) = &results.series {
+                for series in series_list {
+                    for row in &series.values {
+                        if let Some(path) = row.first() {
+                            if let Some(path_str) = path.as_str() {
+                                // 对于SHOW CHILD PATHS，结果通常是直接的路径
+                                if path_str.starts_with("root.") && path_str.matches('.').count() == 1 {
+                                    groups.push(path_str.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        groups
+    }
+
+    /// 从路径中提取存储组名称
+    fn extract_storage_group_from_path(&self, path: &str) -> Option<String> {
+        if !path.starts_with("root.") {
+            return None;
+        }
+
+        // 找到第二个点的位置，存储组通常是root.xxx的格式
+        let parts: Vec<&str> = path.split('.').collect();
+        if parts.len() >= 2 {
+            Some(format!("{}.{}", parts[0], parts[1]))
+        } else {
+            None
+        }
+    }
+
+    /// 检查结果是否有意义
+    fn has_meaningful_result(&self, result: &crate::models::QueryResult) -> bool {
+        if let Some(results) = result.results.first() {
+            if let Some(series_list) = &results.series {
+                return !series_list.is_empty() &&
+                       series_list.iter().any(|s| !s.values.is_empty());
+            }
+        }
+        false
+    }
+
+    /// 探测常见的存储组模式
+    async fn probe_common_patterns(&self) -> Vec<String> {
+        debug!("探测常见的存储组模式");
+        let mut found_groups = Vec::new();
+
+        // 常见的存储组命名模式
+        let patterns = vec![
+            // 业务相关
+            "test", "demo", "example", "sample",
+            // 行业相关
+            "vehicle", "energy", "medical", "agriculture", "factory", "home", "city", "datacenter",
+            // 功能相关
+            "data", "sensor", "device", "monitor", "log", "metric",
+            // 环境相关
+            "dev", "prod", "staging", "local",
+            // 通用
+            "db", "database", "storage", "ts", "timeseries",
+        ];
+
+        for pattern in patterns {
+            let storage_group = format!("root.{}", pattern);
+
+            // 使用轻量级查询检测存储组是否存在
+            let detection_queries = vec![
+                format!("SHOW CHILD PATHS {}", storage_group),
+                format!("COUNT TIMESERIES {}.**", storage_group),
+            ];
+
+            for query in detection_queries {
+                match self.execute_query(&query, None).await {
+                    Ok(result) => {
+                        if self.has_meaningful_result(&result) {
+                            debug!("通过模式探测发现存储组: {}", storage_group);
+                            found_groups.push(storage_group.clone());
+                            break; // 找到就跳出内层循环
+                        }
+                    }
+                    Err(_) => {
+                        // 忽略错误，继续尝试下一个查询
+                    }
+                }
+            }
+        }
+
+        found_groups
+    }
+
+    /// 从时间序列路径中提取设备路径
+    fn extract_device_from_timeseries(&self, timeseries_path: &str) -> Option<String> {
+        // IoTDB时间序列格式：root.storage_group.device.measurement
+        // 或者更复杂的：root.storage_group.device.sub_device.measurement
+        // 我们需要提取到设备级别，通常是去掉最后一个部分（measurement）
+
+        if !timeseries_path.starts_with("root.") {
+            return None;
+        }
+
+        let parts: Vec<&str> = timeseries_path.split('.').collect();
+        if parts.len() >= 4 {
+            // 对于 root.storage_group.device.measurement，取前3部分
+            // 对于 root.storage_group.device.sub_device.measurement，取前4部分
+            // 智能判断：如果倒数第二个部分看起来像设备名，就多取一层
+            let device_parts = if parts.len() >= 5 &&
+                (parts[parts.len()-2].contains("sensor") ||
+                 parts[parts.len()-2].contains("device") ||
+                 parts[parts.len()-2].contains("appliances") ||
+                 parts[parts.len()-2].len() > 8) {
+                // 包含更多层级的设备路径
+                &parts[..parts.len()-1]
+            } else {
+                // 标准的三层结构：root.storage_group.device
+                &parts[..parts.len().min(4)-1]
+            };
+
+            Some(device_parts.join("."))
+        } else if parts.len() == 3 {
+            // root.storage_group.measurement，返回存储组
+            Some(parts[..2].join("."))
+        } else {
+            None
         }
     }
 

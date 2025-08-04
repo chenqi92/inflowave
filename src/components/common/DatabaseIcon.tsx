@@ -56,7 +56,7 @@ const OPENABLE_NODE_TYPES: TreeNodeType[] = [
 ];
 
 // 检查节点是否可以双击打开
-const isOpenableNode = (nodeType: TreeNodeType): boolean => {
+export const isOpenableNode = (nodeType: TreeNodeType): boolean => {
   return OPENABLE_NODE_TYPES.includes(nodeType);
 };
 
@@ -391,7 +391,7 @@ const getIconDescription = (nodeType: TreeNodeType): string => {
   return descriptions[nodeType] || '数据节点';
 };
 
-// 导出可打开节点检查函数
-export { isOpenableNode, OPENABLE_NODE_TYPES };
+// 导出可打开节点类型常量
+export { OPENABLE_NODE_TYPES };
 
 export default DatabaseIcon;

@@ -81,7 +81,9 @@ export type TreeNodeType =
 
 export interface TreeNode {
   id: string;
+  key?: string;                // 可选的键值，用于某些UI组件
   name: string;
+  title?: string;              // 可选的标题，用于向后兼容
   nodeType: TreeNodeType;
   parentId?: string;
   children: TreeNode[];
@@ -91,6 +93,10 @@ export interface TreeNode {
   isExpanded: boolean;         // 是否已展开
   isLoading: boolean;          // 是否正在加载
   metadata: Record<string, any>; // 额外元数据
+  // UI 兼容属性
+  icon?: React.ReactNode;      // 图标
+  disabled?: boolean;          // 是否禁用
+  selectable?: boolean;        // 是否可选择
 }
 
 export type DatabaseType = 'InfluxDB' | 'IoTDB' | 'InfluxDB2';
@@ -238,12 +244,24 @@ export const TreeNodeStyles: Record<TreeNodeType, string> = {
 
 /**
  * 判断节点是否为系统节点
+ * 支持 InfluxDB 和 IoTDB 的系统节点识别
  */
 export function isSystemNode(node: TreeNode): boolean {
-  return node.isSystem || 
-         node.nodeType === 'system_database' || 
+  return node.isSystem ||
+         // InfluxDB 系统节点
+         node.nodeType === 'system_database' ||
          node.nodeType === 'system_bucket' ||
-         node.name.startsWith('_');
+         node.name.startsWith('_') ||
+         // IoTDB 系统节点
+         node.nodeType === 'system_info' ||
+         node.nodeType === 'version_info' ||
+         node.nodeType === 'schema_template' ||
+         node.name.includes('_internal') ||
+         node.name.includes('_monitoring') ||
+         node.name.includes('_tasks') ||
+         node.name === 'System Information' ||
+         node.name === 'Version Information' ||
+         node.name === 'Schema Templates';
 }
 
 /**
@@ -311,6 +329,7 @@ export function normalizeNodeType(nodeType: string): TreeNodeType {
 
 /**
  * 获取节点类型的图标 - 现在由DatabaseIcon组件处理
+ * @deprecated 此函数已废弃，图标现在由DatabaseIcon组件和SVG系统处理
  */
 export function getNodeIcon(nodeType: string): string {
   // 图标现在由DatabaseIcon组件和SVG系统处理
@@ -357,7 +376,9 @@ export class TreeNodeFactory {
   ): TreeNode {
     return {
       id,
+      key: id,
       name,
+      title: name,
       nodeType,
       children: [],
       isLeaf: !canHaveChildren(nodeType),
@@ -366,6 +387,8 @@ export class TreeNodeFactory {
       isExpanded: getDefaultExpandedState(nodeType),
       isLoading: false,
       metadata: {},
+      disabled: false,
+      selectable: true,
       ...options,
     };
   }
@@ -491,11 +514,88 @@ export class TreeNodeUtils {
    */
   static filterSystemNodes(nodes: TreeNode[], showSystem = false): TreeNode[] {
     if (showSystem) return nodes;
-    
+
     return nodes.filter(node => !isSystemNode(node)).map(node => ({
       ...node,
       children: this.filterSystemNodes(node.children, showSystem)
     }));
+  }
+
+  /**
+   * 按节点类型分组节点
+   */
+  static groupNodesByType(nodes: TreeNode[]): TreeNode[] {
+  const systemNodes: TreeNode[] = [];
+  const storageNodes: TreeNode[] = [];
+  const managementNodes: TreeNode[] = [];
+
+  for (const node of nodes) {
+    if (isSystemNode(node)) {
+      systemNodes.push(node);
+    } else if (isStorageNode(node)) {
+      storageNodes.push(node);
+    } else if (isManagementNode(node)) {
+      managementNodes.push(node);
+    }
+  }
+
+  const groupedNodes: TreeNode[] = [];
+
+  // 添加系统信息分组
+  if (systemNodes.length > 0) {
+    const systemGroup: TreeNode = {
+      id: 'system_group',
+      key: 'system_group',
+      name: '📊 System Information',
+      nodeType: 'system_info',
+      isSystem: true,
+      isLeaf: false,
+      isExpandable: true,
+      isExpanded: false,
+      isLoading: false,
+      children: systemNodes,
+      metadata: {}
+    };
+    groupedNodes.push(systemGroup);
+  }
+
+  // 添加存储组
+  if (storageNodes.length > 0) {
+    const storageGroup: TreeNode = {
+      id: 'storage_group',
+      key: 'storage_group',
+      name: '📁 Storage Groups',
+      nodeType: 'storage_group',
+      isSystem: false,
+      isLeaf: false,
+      isExpandable: true,
+      isExpanded: false,
+      isLoading: false,
+      children: storageNodes,
+      metadata: {}
+    };
+    groupedNodes.push(storageGroup);
+  }
+
+  // 添加管理功能分组
+  if (managementNodes.length > 0) {
+    const managementGroup: TreeNode = {
+      id: 'management_group',
+      key: 'management_group',
+      name: '⚙️ Management',
+      nodeType: 'function',
+      isSystem: true,
+      isLeaf: false,
+      isExpandable: true,
+      isExpanded: false,
+      isLoading: false,
+      children: managementNodes,
+      metadata: {}
+    };
+    groupedNodes.push(managementGroup);
+  }
+
+    return groupedNodes;
   }
 
   /**
@@ -553,4 +653,25 @@ export class TreeNodeUtils {
     
     return ancestors;
   }
+}
+
+/**
+ * 检查是否为存储节点
+ * 支持 InfluxDB 和 IoTDB 的存储节点识别
+ */
+export function isStorageNode(node: TreeNode): boolean {
+  return node.nodeType === 'storage_group' ||
+         node.nodeType === 'database' ||
+         (!!node.name && node.name.startsWith('root.'));
+}
+
+/**
+ * 检查是否为管理节点
+ * 支持 InfluxDB 和 IoTDB 的管理节点识别
+ */
+export function isManagementNode(node: TreeNode): boolean {
+  return node.nodeType === 'function' ||
+         node.nodeType === 'trigger' ||
+         node.name === 'Functions' ||
+         node.name === 'Triggers';
 }

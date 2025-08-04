@@ -751,6 +751,12 @@ pub async fn get_field_keys(
         return Ok(vec![]);
     }
 
+    // 检查是否是系统节点（包含空格的节点名称）
+    if database.contains(' ') {
+        debug!("系统节点不支持字段查询: {}", database);
+        return Ok(vec![]);
+    }
+
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connection_id).await
         .map_err(|e| {

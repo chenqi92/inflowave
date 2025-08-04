@@ -845,7 +845,14 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           console.log('❌ 获取字段信息失败:', error);
           fieldResult = [];
         }
-        
+
+        // 定义字段查询语句
+        const fieldQueries = [
+          `SHOW FIELD KEYS FROM "${tableName}"`,
+          `SHOW FIELD KEYS ON "${selectedDatabase}" FROM "${tableName}"`,
+          `SHOW FIELD KEYS FROM ${tableName}`,
+        ];
+
         for (const query of fieldQueries) {
           try {
             console.log('\ud83d\udd0e 尝试字段查询:', query);
