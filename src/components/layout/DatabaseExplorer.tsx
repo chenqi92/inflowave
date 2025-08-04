@@ -339,12 +339,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     };
 
     // 生成带时间筛选的查询语句
-    const generateQueryWithTimeFilter = (table: string): string => {
+    const generateQueryWithTimeFilter = (table: string, connectionId?: string): string => {
         const timeCondition = generateTimeCondition();
         const limit = 'LIMIT 500'; // 默认分页500条
 
         // 智能检测数据库类型并生成正确的查询
-        const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
+        const targetConnectionId = connectionId || activeConnectionId;
+        const activeConnection = targetConnectionId ? getConnection(targetConnectionId) : null;
         const isIoTDB = table.startsWith('root.') || (activeConnection?.dbType === 'iotdb');
         const tableRef = isIoTDB ? table : `"${table}"`;
         const orderBy = isIoTDB ? '' : 'ORDER BY time DESC '; // IoTDB不需要ORDER BY
@@ -474,15 +475,34 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             'table': 'table',
             'Table': 'table',
 
-            // IoTDB 类型
+            // IoTDB 类型 - 修复图标一致性问题
             'storage_group': 'storage_group',
             'StorageGroup': 'storage_group',
             'device': 'device',
             'Device': 'device',
             'timeseries': 'timeseries',
             'TimeSeries': 'timeseries',
+            'Timeseries': 'timeseries',
             'aligned_timeseries': 'aligned_timeseries',
             'AlignedTimeSeries': 'aligned_timeseries',
+            'AlignedTimeseries': 'aligned_timeseries',
+            'template': 'template',
+            'Template': 'template',
+            'system_info': 'system_info',
+            'SystemInfo': 'system_info',
+            'version_info': 'version_info',
+            'VersionInfo': 'version_info',
+            'schema_template': 'schema_template',
+            'SchemaTemplate': 'schema_template',
+            // IoTDB 管理节点类型映射
+            'Function': 'function',
+            'FunctionGroup': 'function',
+            'Trigger': 'trigger',
+            'TriggerGroup': 'trigger',
+            'User': 'user1x',
+            'UserGroup': 'user1x',
+            'Privilege': 'privilege',
+            'PrivilegeGroup': 'privilege',
 
             // 字段和标签
             'field': 'field',
@@ -508,17 +528,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             'namespace': 'namespace',
             'Namespace': 'namespace',
             'function': 'function',
-            'Function': 'function',
             'procedure': 'procedure',
             'Procedure': 'procedure',
             'trigger': 'trigger',
-            'Trigger': 'trigger',
-
-            // IoTDB 管理节点 (使用现有类型替换)
-            'UserGroup': 'user',
-            'PrivilegeGroup': 'privilege',
-            'FunctionGroup': 'function',
-            'TriggerGroup': 'trigger',
+            'storage_engine_info': 'storage_engine_info',
+            'StorageEngineInfo': 'storage_engine_info',
+            'cluster_info': 'cluster_info',
+            'ClusterInfo': 'cluster_info',
+            'data_type': 'data_type',
+            'DataType': 'data_type',
+            'encoding': 'encoding',
+            'Encoding': 'encoding',
+            'compression': 'compression',
+            'Compression': 'compression',
         };
 
         // 获取映射后的类型，如果没有映射则使用原类型的小写版本
@@ -1059,22 +1081,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     // 转换 UI TreeNode 为我们的 TreeNode 的适配器函数
     const loadDataAdapter = useCallback(
         async (uiNode: UITreeNode): Promise<void> => {
-            // 从 UI TreeNode 转换为我们的 TreeNode
-            const customNode: TreeNode = {
-                id: String(uiNode.key),
-                key: String(uiNode.key),
-                name: String(uiNode.title),
-                nodeType: 'database', // 默认类型，实际应该从元数据获取
-                children: [],
-                isLeaf: uiNode.isLeaf || false,
-                isSystem: false,
-                isExpandable: !uiNode.isLeaf,
-                isExpanded: false,
-                isLoading: false,
-                metadata: {}
-            };
-
-            // 创建对应的 DataNode
+            // 创建对应的 DataNode，修复类型转换问题
             const dataNode: DataNode = {
                 key: uiNode.key,
                 title: uiNode.title,
@@ -1542,19 +1549,43 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
     // UI TreeNode 到自定义 TreeNode 的转换函数
     const convertUINodeToCustomNode = (uiNode: UITreeNode): TreeNode => {
+        // 尝试从原始树数据中找到对应的节点以获取正确的nodeType
+        const findOriginalNode = (nodes: DataNode[], key: string): DataNode | null => {
+            for (const node of nodes) {
+                if (node.key === key) {
+                    return node;
+                }
+                if (node.children && node.children.length > 0) {
+                    const found = findOriginalNode(node.children, key);
+                    if (found) return found;
+                }
+            }
+            return null;
+        };
+
+        const originalNode = findOriginalNode(treeData, String(uiNode.key));
+
+        // 从key推断节点类型
+        const inferNodeType = (key: string): TreeNodeType => {
+            if (key.startsWith('connection-')) return 'connection';
+            if (key.startsWith('database|')) return 'database';
+            if (key.startsWith('table|')) return 'table';
+            return 'database'; // 默认类型
+        };
+
         return {
             id: String(uiNode.key),
             key: String(uiNode.key),
             name: String(uiNode.title),
             title: String(uiNode.title),
-            nodeType: 'database', // 默认类型，实际应该从元数据获取
+            nodeType: inferNodeType(String(uiNode.key)), // 从key推断节点类型
             children: [],
             isLeaf: uiNode.isLeaf || false,
-            isSystem: false,
+            isSystem: false, // DataNode没有此属性，使用默认值
             isExpandable: !uiNode.isLeaf,
             isExpanded: false,
             isLoading: false,
-            metadata: {},
+            metadata: {}, // DataNode没有此属性，使用默认值
             icon: uiNode.icon,
             disabled: uiNode.disabled,
             selectable: uiNode.selectable,
@@ -1844,8 +1875,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             onCreateDataBrowserTab(connectionId, database, table);
             showMessage.info(`正在打开表 "${table}" 的数据浏览器...`);
         } else if (onTableDoubleClick) {
-            // 保留原有逻辑以便兼容
-            const query = generateQueryWithTimeFilter(table);
+            // 保留原有逻辑以便兼容，传递connectionId以正确生成查询
+            const query = generateQueryWithTimeFilter(table, connectionId);
             onTableDoubleClick(database, table, query);
             const timeDesc = currentTimeRange
                 ? currentTimeRange.label
@@ -1854,13 +1885,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 `正在查询表 "${table}" 的数据（时间范围：${timeDesc}）...`
             );
         } else if (onCreateQueryTab) {
-            // 创建新查询标签页并填入查询语句
-            const query = generateQueryWithTimeFilter(table);
+            // 创建新查询标签页并填入查询语句，传递connectionId
+            const query = generateQueryWithTimeFilter(table, connectionId);
             onCreateQueryTab(query, database);
             showMessage.info(`已创建查询标签页，查询表 "${table}"`);
         } else {
-            // 如果没有回调，复制查询到剪贴板
-            const query = generateQueryWithTimeFilter(table);
+            // 如果没有回调，复制查询到剪贴板，传递connectionId
+            const query = generateQueryWithTimeFilter(table, connectionId);
             const success = await writeToClipboard(query, {
                 successMessage: `查询语句已复制到剪贴板: ${query}`,
                 errorMessage: '复制失败',
@@ -2164,7 +2195,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                 case 'query_table':
                     if (contextMenuTarget.type === 'table') {
-                        const query = generateQueryWithTimeFilter(contextMenuTarget.table);
+                        const query = generateQueryWithTimeFilter(contextMenuTarget.table, contextMenuTarget.connectionId);
                         // 优先使用创建并执行查询的回调
                         if (onCreateAndExecuteQuery) {
                             onCreateAndExecuteQuery(query, contextMenuTarget.database);

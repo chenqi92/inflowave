@@ -931,7 +931,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         const series = result.results[0].series[0];
         const { columns: resultColumns, values } = series;
 
-        if (resultColumns && values) {
+        if (resultColumns && values && Array.isArray(resultColumns) && Array.isArray(values)) {
           const formattedData: DataRow[] = values.map(
             (row: any[], index: number) => {
               const record: DataRow = { _id: index };
@@ -941,9 +941,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               record['#'] = offset + index + 1;
 
               // 添加其他列数据
-              resultColumns.forEach((col: string, colIndex: number) => {
-                record[col] = row[colIndex];
-              });
+              if (Array.isArray(row) && resultColumns.length > 0) {
+                resultColumns.forEach((col: string, colIndex: number) => {
+                  if (colIndex < row.length) {
+                    record[col] = row[colIndex];
+                  }
+                });
+              }
               return record;
             }
           );
@@ -992,13 +996,15 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         query,
       });
 
-      if (result && result.data) {
+      if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
         setRawData(result.data);
 
         // 添加序号列
         const dataWithIndex = result.data.map((record, index) => {
           const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
-          (record as DataRow)['#'] = offset + index + 1;
+          if (record && typeof record === 'object') {
+            (record as DataRow)['#'] = offset + index + 1;
+          }
           return record;
         });
 
