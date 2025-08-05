@@ -55,7 +55,7 @@ import {
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
-
+import { useConnectionStore } from '@/store/connection';
 
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type { QueryResult } from '@/types';
@@ -476,6 +476,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const [searchText, setSearchText] = useState<string>('');
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [fullFieldPaths, setFullFieldPaths] = useState<string[]>([]);
+  const [connectionConfig, setConnectionConfig] = useState<any>(null);
+
+  // 获取连接配置
+  const { connections } = useConnectionStore();
+  const currentConnection = connections.find(conn => conn.id === connectionId);
 
   // 行选择状态
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
@@ -737,17 +742,20 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 生成不包含过滤条件的基础查询（避免添加过滤器时自动重新加载）
   const generateBaseQuery = useCallback(() => {
-    // 智能检测数据库类型并生成正确的SQL
-    const isIoTDB = tableName.startsWith('root.');
+    // 从连接配置中获取数据库类型，而不是仅仅依赖表名判断
+    const isIoTDB = currentConnection?.dbType === 'iotdb' ||
+                    currentConnection?.detectedType === 'iotdb' ||
+                    tableName.startsWith('root.'); // 后备判断
+
     const tableRef = isIoTDB ? tableName : `"${tableName}"`;
 
     let query: string;
 
     if (isIoTDB) {
-      // 对于IoTDB，使用SELECT *查询
-      // IoTDB不允许在SELECT子句中使用以root开头的完整路径
-      // 但SELECT *可以正常工作，会自动返回所有字段
-      console.log('🔧 [IoTDB] 使用SELECT *查询，字段路径:', fullFieldPaths);
+      // 对于IoTDB，使用SELECT *查询但需要特殊处理返回的数据
+      console.log('🔧 [IoTDB] 使用SELECT *查询，连接类型:', currentConnection?.dbType, '检测类型:', currentConnection?.detectedType);
+      console.log('🔧 [IoTDB] 字段路径:', fullFieldPaths);
+
       query = `SELECT *
                FROM ${tableRef}`;
     } else {
@@ -756,10 +764,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       if (fieldColumns.length > 0) {
         // 使用明确的字段名
         const fieldList = fieldColumns.map(field => `"${field}"`).join(', ');
+        console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', currentConnection?.dbType);
         query = `SELECT time, ${fieldList}
                  FROM ${tableRef}`;
       } else {
         // 如果没有字段信息，使用SELECT *
+        console.log('🔧 [InfluxDB] 使用SELECT *查询，连接类型:', currentConnection?.dbType);
         query = `SELECT *
                  FROM ${tableRef}`;
       }
@@ -815,13 +825,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     sortDirection,
     currentPage,
     pageSize,
+    currentConnection?.dbType,
+    currentConnection?.detectedType,
+    fullFieldPaths,
   ]);
 
   // 获取表结构信息
   const fetchTableSchema = useCallback(async () => {
     try {
-      // 智能检测数据库类型并生成正确的查询
-      const isIoTDB = tableName.startsWith('root.') || database.startsWith('root.');
+      // 从连接配置中获取数据库类型，而不是仅仅依赖表名判断
+      const isIoTDB = currentConnection?.dbType === 'iotdb' ||
+                      currentConnection?.detectedType === 'iotdb' ||
+                      tableName.startsWith('root.') || database.startsWith('root.'); // 后备判断
 
       // 获取字段键
       const fieldKeysQuery = isIoTDB
@@ -829,6 +844,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         : `SHOW FIELD KEYS FROM "${tableName}"`;
 
       console.log(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 执行字段查询:`, fieldKeysQuery);
+      console.log(`🔧 连接信息:`, {
+        connectionId,
+        dbType: currentConnection?.dbType,
+        detectedType: currentConnection?.detectedType,
+        tableName,
+        database
+      });
 
       const fieldResult = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
@@ -891,6 +913,19 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
           // 将完整路径存储到组件状态中，用于查询构建
           setFullFieldPaths(fullPaths);
+
+          // 为IoTDB创建字段名映射，用于后续数据处理
+          // SELECT * 查询返回的列顺序可能与SHOW TIMESERIES不同
+          // 需要建立正确的映射关系
+          const fieldMapping = new Map<string, string>();
+          fullPaths.forEach(path => {
+            const fieldName = path.split('.').pop();
+            if (fieldName) {
+              fieldMapping.set(path, fieldName);
+            }
+          });
+
+          console.log('🔧 [IoTDB] 字段映射关系:', Array.from(fieldMapping.entries()));
         } else {
           fieldKeys.push(...timeseriesPaths);
         }
@@ -908,6 +943,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       // 合并所有列：序号、时间、标签键、字段键
       const allColumns = ['#', 'time', ...tagKeys, ...fieldKeys];
+
+      console.log('🔧 [TableDataBrowser] 设置列状态:', {
+        设置前columns长度: columns.length,
+        设置后columns长度: allColumns.length,
+        新列: allColumns,
+        tableName
+      });
+
       setColumns(allColumns);
 
       console.log('📊 获取表结构完成:', {
@@ -916,12 +959,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         tagKeys: tagKeys.length,
         totalColumns: allColumns.length,
         columns: allColumns,
+        isInitializedRef当前值: isInitializedRef.current
       });
     } catch (error) {
       console.error('获取表结构失败:', error);
       showMessage.error('获取表结构失败');
     }
-  }, [connectionId, database, tableName]);
+  }, [connectionId, database, tableName, currentConnection?.dbType, currentConnection?.detectedType]);
 
   // 获取总数
   const fetchTotalCount = useCallback(async () => {
@@ -983,12 +1027,21 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 加载数据
   const loadData = useCallback(async () => {
-    if (columns.length === 0) return;
+    console.log('🔧 [TableDataBrowser] loadData被调用:', {
+      columns长度: columns.length,
+      tableName,
+      是否会执行: columns.length > 0
+    });
+
+    if (columns.length === 0) {
+      console.log('🔧 [TableDataBrowser] loadData跳过：columns长度为0');
+      return;
+    }
 
     setLoading(true);
     try {
       const query = generateBaseQuery();
-      console.log('执行查询:', query);
+      console.log('🔧 [TableDataBrowser] 执行数据查询:', query);
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
@@ -1003,12 +1056,42 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         const { columns: resultColumns, values } = series;
 
         if (resultColumns && values && Array.isArray(resultColumns) && Array.isArray(values)) {
+          // 检测数据库类型
+          const isIoTDB = currentConnection?.dbType === 'iotdb' ||
+                          currentConnection?.detectedType === 'iotdb' ||
+                          tableName.startsWith('root.');
+
           // 过滤掉null、undefined或空字符串的列名
-          const validColumns = resultColumns.filter(col =>
+          let validColumns = resultColumns.filter(col =>
             col !== null && col !== undefined && col !== '' && typeof col === 'string'
           );
 
+          // 对于IoTDB，需要特殊处理列名
+          if (isIoTDB) {
+            console.log('🔧 [IoTDB] 原始查询返回的列名:', validColumns);
+            console.log('🔧 [IoTDB] 字段路径:', fullFieldPaths);
+
+            // IoTDB的SELECT *查询返回的列名是完整的字段路径
+            // 我们需要构建正确的显示列名：time + 字段名（不是完整路径）
+            const iotdbColumns = ['time'];
+
+            // 从完整路径中提取字段名
+            fullFieldPaths.forEach(path => {
+              const fieldName = path.split('.').pop(); // 获取最后一部分作为字段名
+              if (fieldName) {
+                iotdbColumns.push(fieldName);
+              }
+            });
+
+            console.log('🔧 [IoTDB] 构建的显示列名:', iotdbColumns);
+            console.log('🔧 [IoTDB] 后端返回的列名:', validColumns);
+
+            // 使用构建的显示列名
+            validColumns = iotdbColumns;
+          }
+
           console.log('🔧 [TableDataBrowser] 列名过滤:', {
+            数据库类型: isIoTDB ? 'IoTDB' : 'InfluxDB',
             原始列数: resultColumns.length,
             有效列数: validColumns.length,
             原始列名: resultColumns,
@@ -1025,13 +1108,40 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
               // 添加其他列数据，只处理有效列
               if (Array.isArray(row) && validColumns.length > 0) {
-                validColumns.forEach((col: string) => {
-                  // 找到该列在原始列数组中的索引
-                  const colIndex = resultColumns.indexOf(col);
-                  if (colIndex !== -1 && colIndex < row.length) {
-                    record[col] = row[colIndex];
-                  }
-                });
+                if (isIoTDB) {
+                  // IoTDB特殊处理：后端返回的列名是完整路径，但前端显示的是简短名称
+                  validColumns.forEach((col: string, colIdx: number) => {
+                    if (col === 'time') {
+                      // time列通常是第一列（索引0）
+                      record[col] = row[0] || null;
+                    } else {
+                      // 字段列：根据字段路径找到对应的数据
+                      const fieldPath = fullFieldPaths[colIdx - 1]; // 减1因为time列占了第一个位置
+                      if (fieldPath) {
+                        // 在resultColumns中找到完整路径对应的索引
+                        const pathIndex = resultColumns.findIndex(rcol =>
+                          rcol === fieldPath || rcol.endsWith('.' + col)
+                        );
+                        if (pathIndex !== -1 && pathIndex < row.length) {
+                          record[col] = row[pathIndex];
+                        } else {
+                          // 如果找不到，尝试按顺序匹配
+                          const dataIndex = colIdx < row.length ? colIdx : colIdx - 1;
+                          record[col] = row[dataIndex] || null;
+                        }
+                      }
+                    }
+                  });
+                } else {
+                  // 非IoTDB的正常处理
+                  validColumns.forEach((col: string) => {
+                    // 找到该列在原始列数组中的索引
+                    const colIndex = resultColumns.indexOf(col);
+                    if (colIndex !== -1 && colIndex < row.length) {
+                      record[col] = row[colIndex];
+                    }
+                  });
+                }
               }
               return record;
             }
@@ -1101,14 +1211,59 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const isInitializedRef = useRef(false);
 
   useEffect(() => {
-    if (!isInitializedRef.current) {
-      isInitializedRef.current = true;
-      fetchTableSchema();
-    }
+    console.log('🔄 [TableDataBrowser] fetchTableSchema useEffect触发:', {
+      isInitialized: isInitializedRef.current,
+      connectionId,
+      database,
+      tableName
+    });
+
+    // 每次表名变化时都重新获取表结构
+    isInitializedRef.current = true;
+
+    console.log('🔄 [TableDataBrowser] 开始获取表结构:', {
+      connectionId,
+      database,
+      tableName
+    });
+
+    fetchTableSchema();
   }, [fetchTableSchema]);
 
+  // 监听表名变化，清理状态但不重置初始化标志
   useEffect(() => {
+    console.log('🔄 [TableDataBrowser] 表名变化，清理状态:', {
+      connectionId,
+      database,
+      tableName
+    });
+
+    // 清理状态，但不重置初始化标志
+    // 让fetchTableSchema useEffect来管理初始化状态
+    setData([]);
+    setRawData([]);
+    setColumns([]);
+    setColumnOrder([]);
+    setSelectedColumns([]);
+    setFullFieldPaths([]);
+    setCurrentPage(1);
+    setTotalCount(0);
+  }, [connectionId, database, tableName]);
+
+  useEffect(() => {
+    console.log('🔧 [TableDataBrowser] columns变化useEffect触发:', {
+      columns长度: columns.length,
+      是否初始化: isInitializedRef.current,
+      会执行数据加载: columns.length > 0 && isInitializedRef.current,
+      tableName
+    });
+
     if (columns.length > 0 && isInitializedRef.current) {
+      console.log('🔧 [TableDataBrowser] 开始并行执行数据加载:', {
+        columns: columns,
+        tableName
+      });
+
       // 避免重复调用，使用Promise.all并行执行
       Promise.all([
         fetchTotalCount(),
