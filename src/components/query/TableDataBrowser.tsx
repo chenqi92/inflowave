@@ -475,6 +475,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [searchText, setSearchText] = useState<string>('');
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [fullFieldPaths, setFullFieldPaths] = useState<string[]>([]);
 
   // 行选择状态
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
@@ -743,34 +744,45 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     let query: string;
 
     if (isIoTDB) {
-      // 对于IoTDB，需要明确指定字段名
+      // 对于IoTDB，使用SELECT *查询
+      // IoTDB不允许在SELECT子句中使用以root开头的完整路径
+      // 但SELECT *可以正常工作，会自动返回所有字段
+      console.log('🔧 [IoTDB] 使用SELECT *查询，字段路径:', fullFieldPaths);
+      query = `SELECT *
+               FROM ${tableRef}`;
+    } else {
+      // 对于InfluxDB，根据字段信息构建查询
       const fieldColumns = columns.filter(col => col !== '#' && col !== 'time');
       if (fieldColumns.length > 0) {
-        // 构建完整的时间序列路径
-        const fieldPaths = fieldColumns.map(field => `${tableName}.${field}`);
-        query = `SELECT ${fieldPaths.join(', ')}
+        // 使用明确的字段名
+        const fieldList = fieldColumns.map(field => `"${field}"`).join(', ');
+        query = `SELECT time, ${fieldList}
                  FROM ${tableRef}`;
       } else {
-        // 如果没有字段列，使用SELECT *作为后备
+        // 如果没有字段信息，使用SELECT *
         query = `SELECT *
                  FROM ${tableRef}`;
       }
-    } else {
-      // 对于InfluxDB，使用SELECT *
-      query = `SELECT *
-               FROM ${tableRef}`;
     }
 
-    // 添加 WHERE 条件
+    // 添加 WHERE 条件（根据数据库类型使用不同语法）
     const whereConditions: string[] = [];
 
     // 搜索条件
     if (searchText.trim() && columns && columns.length > 0) {
-      const searchConditions = columns
-        .filter(col => col !== 'time' && col !== '#')
-        .map(col => `"${col}" =~ /.*${searchText.trim()}.*/`);
-      if (searchConditions.length > 0) {
-        whereConditions.push(`(${searchConditions.join(' OR ')})`);
+      const searchColumns = columns.filter(col => col !== 'time' && col !== '#');
+      if (searchColumns.length > 0) {
+        if (isIoTDB) {
+          // IoTDB使用LIKE语法进行文本搜索
+          const searchConditions = searchColumns
+            .map(col => `${col} LIKE '%${searchText.trim()}%'`);
+          whereConditions.push(`(${searchConditions.join(' OR ')})`);
+        } else {
+          // InfluxDB使用正则表达式语法
+          const searchConditions = searchColumns
+            .map(col => `"${col}" =~ /.*${searchText.trim()}.*/`);
+          whereConditions.push(`(${searchConditions.join(' OR ')})`);
+        }
       }
     }
 
@@ -816,7 +828,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         ? `SHOW TIMESERIES ${tableName}.**`
         : `SHOW FIELD KEYS FROM "${tableName}"`;
 
-      console.log('🔧 [IoTDB] 执行时间序列查询:', fieldKeysQuery);
+      console.log(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 执行字段查询:`, fieldKeysQuery);
 
       const fieldResult = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
@@ -826,7 +838,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         },
       });
 
-      console.log('🔧 [IoTDB] 时间序列查询结果:', fieldResult);
+      console.log(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 字段查询结果:`, fieldResult);
 
       // 获取标签键
       const tagKeysQuery = isIoTDB
@@ -863,10 +875,22 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
           fieldKeys.push(...extractedFieldKeys);
 
-          console.log('🔧 [IoTDB] 时间序列路径提取:', {
+          // 同时保存完整路径用于查询构建
+          // 过滤掉表名本身，只保留字段路径
+          const fullPaths = timeseriesPaths
+            .filter(path => path && path !== '' && path !== tableName)
+            .filter(path => path.startsWith(tableName + '.'));
+
+          console.log(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 字段路径提取:`, {
             原始路径: timeseriesPaths,
-            提取的字段名: extractedFieldKeys
+            提取的字段名: extractedFieldKeys,
+            完整路径: fullPaths,
+            表名: tableName,
+            数据库类型: isIoTDB ? 'IoTDB' : 'InfluxDB'
           });
+
+          // 将完整路径存储到组件状态中，用于查询构建
+          setFullFieldPaths(fullPaths);
         } else {
           fieldKeys.push(...timeseriesPaths);
         }
