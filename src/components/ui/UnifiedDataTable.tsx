@@ -1748,7 +1748,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             <span className="ml-2">加载中...</span>
                         </div>
                     ) : data.length > 0 ? (
-                        // 统一使用虚拟化表格 - 使用flex-1自适应高度
+                        // 统一使用虚拟化表格 - 固定行高度，剩余空间显示空白
                         <div
                             className="flex-1 min-h-0 virtualized-table"
                             ref={tableContainerRef}
@@ -1756,6 +1756,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                 <TableVirtuoso
                                     ref={virtuosoRef}
                                     data={paginatedData}
+                                    defaultItemHeight={rowHeight} // 设置默认行高度
                                     fixedHeaderContent={() => (
                                         <TableHeader
                                             columnOrder={columnOrder}
@@ -1791,9 +1792,14 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     data-column="#"
                                                     data-column-index="0"
                                                     className={cn(
-                                                        "px-4 py-2 text-sm font-mono w-16 virtualized-sticky-cell text-center text-muted-foreground table-cell-selectable",
+                                                        "px-4 text-sm font-mono w-16 virtualized-sticky-cell text-center text-muted-foreground table-cell-selectable",
                                                         selectedCell === cellId && "table-cell-selected"
                                                     )}
+                                                    style={{
+                                                        height: `${rowHeight}px`,
+                                                        lineHeight: `${rowHeight}px`,
+                                                        verticalAlign: 'middle'
+                                                    }}
                                                 >
                                                     <div className="truncate w-full">
                                                         {index + 1}
@@ -1822,7 +1828,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         data-column={column}
                                                         data-column-index={colIndex + 1}
                                                         className={cn(
-                                                            "px-4 py-2 text-sm font-mono border-r table-cell-selectable",
+                                                            "px-4 text-sm font-mono border-r table-cell-selectable",
                                                             selectedCell === cellId && !isEditing && selectedCellRange.size <= 1 && "table-cell-selected",
                                                             selectedCellRange.has(cellId) && selectedCellRange.size > 1 && "table-cell-range-selected",
                                                             isEditing && "table-cell-editing"
@@ -1830,7 +1836,10 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         style={{
                                                             width: `${width}px`,
                                                             minWidth: `${width}px`,
-                                                            maxWidth: `${width}px`
+                                                            maxWidth: `${width}px`,
+                                                            height: `${rowHeight}px`,
+                                                            lineHeight: `${rowHeight}px`,
+                                                            verticalAlign: 'middle'
                                                         }}
                                                         title={String(displayValue || '')}
                                                     >
@@ -1865,7 +1874,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                 style={{
                                                     ...style,
                                                     width: '100%',
-                                                    borderCollapse: 'collapse'
+                                                    borderCollapse: 'collapse',
+                                                    tableLayout: 'fixed' // 固定表格布局
                                                 }}
                                                 className={cn(
                                                     "w-full border-collapse table-unified-scroll",
@@ -1887,7 +1897,10 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     {...props}
                                                     data-row-index={rowIndex}
                                                     style={{
-                                                        ...style
+                                                        ...style,
+                                                        height: `${rowHeight}px`,
+                                                        minHeight: `${rowHeight}px`,
+                                                        maxHeight: `${rowHeight}px`
                                                     }}
                                                     className={cn(
                                                         "border-b transition-colors hover:bg-muted/50",
