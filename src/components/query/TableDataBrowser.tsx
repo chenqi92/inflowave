@@ -1071,11 +1071,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             console.log('🔧 [IoTDB] 原始查询返回的列名:', validColumns);
             console.log('🔧 [IoTDB] 字段路径:', fullFieldPaths);
 
-            // IoTDB的SELECT *查询返回的列名是完整的字段路径
-            // 我们需要构建正确的显示列名：time + 字段名（不是完整路径）
-            const iotdbColumns = ['time'];
+            // IoTDB的SELECT *查询返回的列结构：
+            // 第1列：表名（需要过滤掉）
+            // 第2-N列：字段数据
 
-            // 从完整路径中提取字段名
+            // 从完整路径中提取字段名作为显示列名
+            const iotdbColumns: string[] = [];
             fullFieldPaths.forEach(path => {
               const fieldName = path.split('.').pop(); // 获取最后一部分作为字段名
               if (fieldName) {
@@ -1085,8 +1086,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
             console.log('🔧 [IoTDB] 构建的显示列名:', iotdbColumns);
             console.log('🔧 [IoTDB] 后端返回的列名:', validColumns);
+            console.log('🔧 [IoTDB] 列数分析:', {
+              后端返回列数: validColumns.length,
+              字段路径数量: fullFieldPaths.length,
+              构建的显示列数: iotdbColumns.length,
+              预期结构: '表名列 + 字段列'
+            });
 
-            // 使用构建的显示列名
+            // 使用构建的显示列名（不包含表名列）
             validColumns = iotdbColumns;
           }
 
@@ -1109,28 +1116,26 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               // 添加其他列数据，只处理有效列
               if (Array.isArray(row) && validColumns.length > 0) {
                 if (isIoTDB) {
-                  // IoTDB特殊处理：后端返回的列名是完整路径，但前端显示的是简短名称
+                  // IoTDB特殊处理：SELECT *查询返回的数据结构
+                  // 第0列：表名（跳过）
+                  // 第1-N列：字段数据
                   validColumns.forEach((col: string, colIdx: number) => {
-                    if (col === 'time') {
-                      // time列通常是第一列（索引0）
-                      record[col] = row[0] || null;
+                    // 跳过第0列（表名），从第1列开始映射字段数据
+                    const dataIndex = colIdx + 1;
+                    if (dataIndex < row.length) {
+                      record[col] = row[dataIndex];
                     } else {
-                      // 字段列：根据字段路径找到对应的数据
-                      const fieldPath = fullFieldPaths[colIdx - 1]; // 减1因为time列占了第一个位置
-                      if (fieldPath) {
-                        // 在resultColumns中找到完整路径对应的索引
-                        const pathIndex = resultColumns.findIndex(rcol =>
-                          rcol === fieldPath || rcol.endsWith('.' + col)
-                        );
-                        if (pathIndex !== -1 && pathIndex < row.length) {
-                          record[col] = row[pathIndex];
-                        } else {
-                          // 如果找不到，尝试按顺序匹配
-                          const dataIndex = colIdx < row.length ? colIdx : colIdx - 1;
-                          record[col] = row[dataIndex] || null;
-                        }
-                      }
+                      record[col] = null;
                     }
+                  });
+
+                  console.log('🔧 [IoTDB] 数据映射:', {
+                    行索引: index,
+                    原始数据: row,
+                    原始数据长度: row.length,
+                    映射后数据: record,
+                    列名: validColumns,
+                    映射说明: '跳过第0列(表名)，从第1列开始映射字段数据'
                   });
                 } else {
                   // 非IoTDB的正常处理
