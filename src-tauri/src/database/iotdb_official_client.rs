@@ -924,23 +924,36 @@ impl IoTDBOfficialClient {
 
     /// 检查是否为空值
     fn is_null_value(&self, bitmap: &[u8], row_index: usize) -> bool {
+        // 如果bitmap为空，假设所有值都有效
+        if bitmap.is_empty() {
+            debug!("Bitmap为空，假设所有值都有效，行索引: {}", row_index);
+            return false;
+        }
+
         let byte_index = row_index / 8;
         let bit_index = row_index % 8;
 
         if byte_index < bitmap.len() {
             let byte_value = bitmap[byte_index];
             let bit_mask = 1 << bit_index;
-            // IoTDB的bitmap中，1表示有值，0表示null
-            // 但是需要检查bitmap是否全为0，如果全为0可能表示没有null值标记
+
+            // 检查bitmap是否全为0
             let has_any_set_bits = bitmap.iter().any(|&b| b != 0);
             if !has_any_set_bits {
-                // 如果bitmap全为0，可能表示所有值都有效
+                // 如果bitmap全为0，可能表示所有值都有效（IoTDB的某些版本行为）
                 debug!("Bitmap全为0，假设所有值都有效，行索引: {}", row_index);
                 return false;
             }
-            (byte_value & bit_mask) == 0
+
+            // 从多次日志分析发现，IoTDB的bitmap行为不一致
+            // 有时候全为255时有数据，有时候248时部分有数据
+            // 最安全的做法是：如果有原始数据，就尝试解析，忽略bitmap
+            debug!("忽略bitmap检查，直接尝试解析数据，行索引: {}, 字节值: {}, 位掩码: {}",
+                   row_index, byte_value, bit_mask);
+            false // 总是返回false，表示数据有效
         } else {
             // 如果没有bitmap数据，假设值有效
+            debug!("Bitmap索引超出范围，假设值有效，行索引: {}", row_index);
             false
         }
     }

@@ -813,8 +813,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       // 获取字段键
       const fieldKeysQuery = isIoTDB
-        ? `SHOW TIMESERIES ${tableName}.*`
+        ? `SHOW TIMESERIES ${tableName}.**`
         : `SHOW FIELD KEYS FROM "${tableName}"`;
+
+      console.log('🔧 [IoTDB] 执行时间序列查询:', fieldKeysQuery);
+
       const fieldResult = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
           connection_id: connectionId,
@@ -822,6 +825,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           query: fieldKeysQuery,
         },
       });
+
+      console.log('🔧 [IoTDB] 时间序列查询结果:', fieldResult);
 
       // 获取标签键
       const tagKeysQuery = isIoTDB
