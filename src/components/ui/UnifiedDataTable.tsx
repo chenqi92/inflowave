@@ -132,29 +132,60 @@ const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
     getFilteredUniqueValues,
     isLoading
 }) => {
+    // 如果列名无效，不渲染组件
+    if (!column || column === 'null' || column === 'undefined' || typeof column !== 'string') {
+        console.warn('🔧 [ExcelStyleFilter] 无效的列名，不渲染筛选组件:', { column });
+        return null;
+    }
+
     const [selectedValues, setSelectedValues] = useState<Set<string>>(new Set());
     const [uniqueValues, setUniqueValues] = useState<{ value: string; count: number }[]>([]);
     const [filteredValues, setFilteredValues] = useState<{ value: string; count: number }[]>([]);
 
     // 当菜单打开时，懒加载唯一值
     useEffect(() => {
+        // 检查列名是否有效
+        if (!column || column === 'null' || column === 'undefined') {
+            console.warn('🔧 [ExcelStyleFilter] 无效的列名，跳过加载:', { column });
+            return;
+        }
+
         if (isOpen) {
+            console.log('🔧 [ExcelStyleFilter] 弹框打开，开始加载数据:', { column });
             setSelectedValues(new Set()); // 默认不选中任何值
 
             // 懒加载唯一值
             loadColumnUniqueValues(column).then(values => {
+                console.log('🔧 [ExcelStyleFilter] 数据加载完成:', { column, valuesCount: values.length });
                 setUniqueValues(values);
-                setFilteredValues(getFilteredUniqueValues(values, searchText));
+                setFilteredValues(getFilteredUniqueValues(values, searchText || ''));
+            }).catch(error => {
+                console.error('🔧 [ExcelStyleFilter] 数据加载失败:', { column, error });
+                setUniqueValues([]);
+                setFilteredValues([]);
             });
+        } else {
+            // 弹框关闭时清理状态
+            console.log('🔧 [ExcelStyleFilter] 弹框关闭，清理状态:', { column });
+            setUniqueValues([]);
+            setFilteredValues([]);
+            setSelectedValues(new Set());
         }
     }, [isOpen, column, loadColumnUniqueValues, getFilteredUniqueValues, searchText]);
 
     // 当搜索文本变化时，更新过滤结果
     useEffect(() => {
         if (uniqueValues.length > 0) {
-            setFilteredValues(getFilteredUniqueValues(uniqueValues, searchText));
+            const filteredResults = getFilteredUniqueValues(uniqueValues, searchText || '');
+            setFilteredValues(filteredResults);
+            console.log('🔧 [ExcelStyleFilter] 搜索结果更新:', {
+                column,
+                searchText: searchText || '',
+                totalValues: uniqueValues.length,
+                filteredCount: filteredResults.length
+            });
         }
-    }, [searchText, uniqueValues, getFilteredUniqueValues]);
+    }, [searchText, uniqueValues, getFilteredUniqueValues, column]);
 
     // 处理全选/取消全选
     const handleSelectAll = useCallback((checked: boolean) => {
@@ -186,9 +217,13 @@ const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
 
     // 处理DropdownMenu状态变化
     const handleOpen = (open: boolean) => {
+        console.log('🔧 [ExcelStyleFilter] 弹框状态变化:', { column, open, currentOpen: isOpen });
         if (!open) {
-            // 关闭时清空搜索
+            // 关闭时清空搜索和重置状态
             onSearchChange('');
+            setSelectedValues(new Set()); // 重置选中状态
+            setUniqueValues([]); // 清空唯一值缓存
+            setFilteredValues([]); // 清空过滤结果
         }
         // 直接传递boolean值给onOpenChange
         onOpenChange(open);
@@ -218,22 +253,48 @@ const ExcelStyleFilter: React.FC<ExcelStyleFilterProps> = ({
                 className="w-96 p-0"
                 onCloseAutoFocus={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => {
+                    console.log('🔧 [ExcelStyleFilter] ESC键关闭弹框:', { column });
                     onSearchChange('');
+                    onOpenChange(false);
                 }}
                 onPointerDownOutside={(e) => {
+                    console.log('🔧 [ExcelStyleFilter] 外部点击关闭弹框:', { column });
                     // 外部点击关闭筛选菜单
+                    onOpenChange(false);
                 }}
             >
                 <div className="p-3 border-b">
+                    <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">筛选 {column}</span>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                console.log('🔧 [ExcelStyleFilter] 手动关闭弹框:', { column });
+                                onOpenChange(false);
+                            }}
+                            title="关闭"
+                        >
+                            ×
+                        </Button>
+                    </div>
                     {/* 搜索框 */}
                     <Input
                         placeholder={`搜索 ${column}...`}
-                        value={searchText}
-                        onChange={(e) => onSearchChange(e.target.value)}
+                        value={searchText || ''} // 确保不显示null
+                        onChange={(e) => onSearchChange(e.target.value || '')}
                         className="h-8"
                         onClick={(e) => e.stopPropagation()}
                         onFocus={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                            e.stopPropagation();
+                            // ESC键关闭弹框
+                            if (e.key === 'Escape') {
+                                onOpenChange(false);
+                            }
+                        }}
                     />
                 </div>
 
@@ -381,7 +442,9 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                 
                 {/* 数据列表头 */}
                 {(() => {
-                    const visibleColumns = columnOrder.filter(column => selectedColumns.includes(column));
+                    const visibleColumns = columnOrder
+                        .filter(column => selectedColumns.includes(column))
+                        .filter(column => column && typeof column === 'string' && column !== 'null' && column !== 'undefined');
                     return visibleColumns;
                 })().map((column, colIndex) => {
                     // 计算列的最小宽度
@@ -1177,11 +1240,13 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const loadColumnUniqueValues = useCallback(async (column: string) => {
         // 如果已经缓存了，直接返回
         if (columnUniqueValues.has(column)) {
+            console.log('🔧 [UnifiedDataTable] 使用缓存的唯一值:', { column });
             return columnUniqueValues.get(column)!;
         }
 
         // 如果正在加载，等待完成
         if (loadingColumn === column) {
+            console.log('🔧 [UnifiedDataTable] 列正在加载中，等待完成:', { column });
             return [];
         }
 
@@ -1240,8 +1305,13 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             });
 
             return uniqueValues;
+        } catch (error) {
+            console.error('🔧 [UnifiedDataTable] 计算列唯一值失败:', { column, error });
+            return [];
         } finally {
+            // 确保loading状态被清除
             setLoadingColumn(null);
+            console.log('🔧 [UnifiedDataTable] 清除loading状态:', { column });
         }
     }, [data, columnUniqueValues, loadingColumn]);
 
@@ -1281,17 +1351,34 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
     // 筛选菜单状态处理 - 确保同时只有一个菜单打开
     const handleFilterMenuOpenChange = useCallback((column: string | null) => {
+        console.log('🔧 [UnifiedDataTable] 筛选菜单状态变化:', {
+            from: filterMenuOpen,
+            to: column,
+            action: column ? '打开' : '关闭'
+        });
+
+        // 如果要关闭当前菜单或打开新菜单，先清理搜索状态
+        if (!column || filterMenuOpen !== column) {
+            setFilterSearchText('');
+        }
+
         // 直接设置状态，React会自动处理状态更新
         setFilterMenuOpen(column);
-    }, []);
+    }, [filterMenuOpen]);
 
     const handleFilterSearchChange = useCallback((text: string) => {
+        // 确保text不为null或undefined
+        const safeText = text || '';
         // 避免重复设置相同的搜索文本
-        if (filterSearchText !== text) {
-            setFilterSearchText(text);
-            console.log('🔧 [UnifiedDataTable] 筛选搜索文本变化:', { from: filterSearchText, to: text });
+        if (filterSearchText !== safeText) {
+            setFilterSearchText(safeText);
+            console.log('🔧 [UnifiedDataTable] 筛选搜索文本变化:', {
+                from: filterSearchText,
+                to: safeText,
+                column: filterMenuOpen
+            });
         }
-    }, [filterSearchText]);
+    }, [filterSearchText, filterMenuOpen]);
 
     // 全局鼠标事件监听 - 处理表格外的鼠标释放
     useEffect(() => {
@@ -1323,6 +1410,16 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             stopAutoScroll(); // 组件卸载时停止滚动
         };
     }, [isSelecting, selectionStart, stopAutoScroll, startAutoScroll]);
+
+    // 组件卸载时清理弹框状态
+    useEffect(() => {
+        return () => {
+            console.log('🔧 [UnifiedDataTable] 组件卸载，清理弹框状态');
+            setFilterMenuOpen(null);
+            setFilterSearchText('');
+            setLoadingColumn(null);
+        };
+    }, []);
 
     // 同步外部分页配置
     useEffect(() => {

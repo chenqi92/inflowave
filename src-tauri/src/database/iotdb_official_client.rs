@@ -930,8 +930,17 @@ impl IoTDBOfficialClient {
         if byte_index < bitmap.len() {
             let byte_value = bitmap[byte_index];
             let bit_mask = 1 << bit_index;
+            // IoTDB的bitmap中，1表示有值，0表示null
+            // 但是需要检查bitmap是否全为0，如果全为0可能表示没有null值标记
+            let has_any_set_bits = bitmap.iter().any(|&b| b != 0);
+            if !has_any_set_bits {
+                // 如果bitmap全为0，可能表示所有值都有效
+                debug!("Bitmap全为0，假设所有值都有效，行索引: {}", row_index);
+                return false;
+            }
             (byte_value & bit_mask) == 0
         } else {
+            // 如果没有bitmap数据，假设值有效
             false
         }
     }
@@ -1011,7 +1020,29 @@ impl IoTDBOfficialClient {
     fn parse_text_value(&self, data: &[u8], row_index: usize) -> Result<serde_json::Value> {
         debug!("解析文本值，行索引: {}, 数据长度: {} 字节", row_index, data.len());
 
-        // 对于文本类型，需要先读取长度，然后读取字符串内容
+        // 如果数据长度为0，直接返回null
+        if data.is_empty() {
+            debug!("数据长度为0，返回null");
+            return Ok(serde_json::Value::Null);
+        }
+
+        // 对于IoTDB的TEXT类型，数据可能是以不同方式编码的
+        // 先尝试直接解析为字符串（适用于某些IoTDB版本）
+        if let Ok(text) = std::str::from_utf8(data) {
+            // 检查是否包含null终止符
+            if let Some(null_pos) = text.find('\0') {
+                let clean_text = &text[..null_pos];
+                if !clean_text.is_empty() {
+                    debug!("直接解析文本成功: '{}'", clean_text);
+                    return Ok(serde_json::Value::String(clean_text.to_string()));
+                }
+            } else if !text.is_empty() {
+                debug!("直接解析文本成功: '{}'", text);
+                return Ok(serde_json::Value::String(text.to_string()));
+            }
+        }
+
+        // 尝试按长度前缀格式解析
         let mut offset = 0;
 
         // 跳过前面的字符串
@@ -1028,6 +1059,13 @@ impl IoTDBOfficialClient {
             ]) as usize;
 
             debug!("跳过第 {} 行，字符串长度: {}, offset: {}", i, length, offset);
+
+            // 检查长度是否合理
+            if length > data.len() || length > 1024 * 1024 {
+                debug!("字符串长度异常: {}, 可能不是长度前缀格式", length);
+                return Ok(serde_json::Value::Null);
+            }
+
             offset += 4 + length;
         }
 
@@ -1039,6 +1077,13 @@ impl IoTDBOfficialClient {
             ]) as usize;
 
             debug!("目标行 {} 字符串长度: {}, offset: {}", row_index, length, offset);
+
+            // 检查长度是否合理
+            if length > data.len() || length > 1024 * 1024 {
+                debug!("目标字符串长度异常: {}, 可能不是长度前缀格式", length);
+                return Ok(serde_json::Value::Null);
+            }
+
             offset += 4;
 
             if offset + length <= data.len() {

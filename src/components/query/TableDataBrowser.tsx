@@ -740,8 +740,26 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const isIoTDB = tableName.startsWith('root.');
     const tableRef = isIoTDB ? tableName : `"${tableName}"`;
 
-    let query = `SELECT *
+    let query: string;
+
+    if (isIoTDB) {
+      // 对于IoTDB，需要明确指定字段名
+      const fieldColumns = columns.filter(col => col !== '#' && col !== 'time');
+      if (fieldColumns.length > 0) {
+        // 构建完整的时间序列路径
+        const fieldPaths = fieldColumns.map(field => `${tableName}.${field}`);
+        query = `SELECT ${fieldPaths.join(', ')}
                  FROM ${tableRef}`;
+      } else {
+        // 如果没有字段列，使用SELECT *作为后备
+        query = `SELECT *
+                 FROM ${tableRef}`;
+      }
+    } else {
+      // 对于InfluxDB，使用SELECT *
+      query = `SELECT *
+               FROM ${tableRef}`;
+    }
 
     // 添加 WHERE 条件
     const whereConditions: string[] = [];
@@ -822,19 +840,40 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       // 处理字段键结果
       if (fieldResult.results?.[0]?.series?.[0]?.values) {
-        fieldKeys.push(
-          ...fieldResult.results[0].series[0].values.map(
-            (row: any[]) => row[0] as string
-          )
-        );
+        const timeseriesPaths = fieldResult.results[0].series[0].values
+          .map((row: any[]) => row[0])
+          .filter((col: any) => col !== null && col !== undefined && col !== '')
+          .map((col: any) => String(col));
+
+        // 对于IoTDB，从时间序列路径中提取字段名
+        if (isIoTDB) {
+          const extractedFieldKeys = timeseriesPaths
+            .map(path => {
+              // 从路径中提取最后一部分作为字段名
+              // 例如：root.city.traffic.intersection01.avg_speed -> avg_speed
+              const parts = path.split('.');
+              return parts[parts.length - 1];
+            })
+            .filter(fieldName => fieldName && fieldName !== '');
+
+          fieldKeys.push(...extractedFieldKeys);
+
+          console.log('🔧 [IoTDB] 时间序列路径提取:', {
+            原始路径: timeseriesPaths,
+            提取的字段名: extractedFieldKeys
+          });
+        } else {
+          fieldKeys.push(...timeseriesPaths);
+        }
       }
 
       // 处理标签键结果
       if (tagResult.results?.[0]?.series?.[0]?.values) {
         tagKeys.push(
-          ...tagResult.results[0].series[0].values.map(
-            (row: any[]) => row[0] as string
-          )
+          ...tagResult.results[0].series[0].values
+            .map((row: any[]) => row[0])
+            .filter((col: any) => col !== null && col !== undefined && col !== '')
+            .map((col: any) => String(col))
         );
       }
 
@@ -935,6 +974,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         const { columns: resultColumns, values } = series;
 
         if (resultColumns && values && Array.isArray(resultColumns) && Array.isArray(values)) {
+          // 过滤掉null、undefined或空字符串的列名
+          const validColumns = resultColumns.filter(col =>
+            col !== null && col !== undefined && col !== '' && typeof col === 'string'
+          );
+
+          console.log('🔧 [TableDataBrowser] 列名过滤:', {
+            原始列数: resultColumns.length,
+            有效列数: validColumns.length,
+            原始列名: resultColumns,
+            有效列名: validColumns
+          });
+
           const formattedData: DataRow[] = values.map(
             (row: any[], index: number) => {
               const record: DataRow = { _id: index };
@@ -943,10 +994,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
               record['#'] = offset + index + 1;
 
-              // 添加其他列数据
-              if (Array.isArray(row) && resultColumns.length > 0) {
-                resultColumns.forEach((col: string, colIndex: number) => {
-                  if (colIndex < row.length) {
+              // 添加其他列数据，只处理有效列
+              if (Array.isArray(row) && validColumns.length > 0) {
+                validColumns.forEach((col: string) => {
+                  // 找到该列在原始列数组中的索引
+                  const colIndex = resultColumns.indexOf(col);
+                  if (colIndex !== -1 && colIndex < row.length) {
                     record[col] = row[colIndex];
                   }
                 });
@@ -997,7 +1050,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         result.data.forEach((record, index) => {
           if (record && typeof record === 'object') {
             (record as DataRow)['#'] = offset + index + 1;
-            (record as DataRow)._id = record._id || `row_${index}`;
+            (record as DataRow)._id = (record as DataRow)._id || `row_${index}`;
           }
         });
 
@@ -1015,17 +1068,27 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     }
   }, [connectionId, database, generateQuery, columns, pageSize, currentPage]);
 
-  // 初始化
+  // 初始化 - 使用ref避免重复加载
+  const isInitializedRef = useRef(false);
+
   useEffect(() => {
-    fetchTableSchema();
+    if (!isInitializedRef.current) {
+      isInitializedRef.current = true;
+      fetchTableSchema();
+    }
   }, [fetchTableSchema]);
 
   useEffect(() => {
-    if (columns.length > 0) {
-      fetchTotalCount();
-      loadData();
+    if (columns.length > 0 && isInitializedRef.current) {
+      // 避免重复调用，使用Promise.all并行执行
+      Promise.all([
+        fetchTotalCount(),
+        loadData()
+      ]).catch(error => {
+        console.error('初始化数据加载失败:', error);
+      });
     }
-  }, [columns, loadData, fetchTotalCount]);
+  }, [columns.length]); // 只依赖columns.length，避免函数引用变化导致的重复调用
 
   // 统一的列宽度计算函数 - 优化字段名显示
   const calculateColumnWidth = useCallback((column: string): number => {
@@ -1072,12 +1135,28 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     return sortDataClientSide(data, sortColumn, sortDirection);
   }, [data, sortColumn, sortDirection, sortDataClientSide]);
 
-  // 处理时间列排序变化
+  // 处理时间列排序变化 - 添加防抖避免频繁查询
+  const timeoutRef = useRef<NodeJS.Timeout>();
+
   useEffect(() => {
-    if (sortColumn === 'time' && columns.length > 0) {
-      loadData();
+    if (sortColumn === 'time' && columns.length > 0 && isInitializedRef.current) {
+      // 清除之前的定时器
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+
+      // 延迟执行，避免快速切换时的重复查询
+      timeoutRef.current = setTimeout(() => {
+        loadData();
+      }, 100);
     }
-  }, [sortColumn, sortDirection, loadData, columns.length]);
+
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [sortColumn, sortDirection, columns.length]); // 移除loadData依赖，避免函数引用变化
 
   // 初始化选中的列（默认全选，但排除序号列）
   useEffect(() => {

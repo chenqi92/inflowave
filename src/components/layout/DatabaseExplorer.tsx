@@ -521,8 +521,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
 
         return (
-            <Tooltip title={fullPath} placement="top">
-                <span className={className}>{displayName}</span>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span className={className}>{displayName}</span>
+                </TooltipTrigger>
+                <TooltipContent>
+                    {fullPath}
+                </TooltipContent>
             </Tooltip>
         );
     };
@@ -1115,7 +1120,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                             : 'bg-primary/10 text-primary text-xs px-1.5 py-0.5 h-auto';
 
                         // 对于 IoTDB，优化字段显示名称
-                        const fieldDisplayName = isIoTDB ? getIoTDBDisplayName(field.name, true) : field.name;
+                        const fieldDisplayName = isIoTDB ? getIoTDBDisplayName(field.name, '', true) : field.name;
 
                         children.push({
                             title: (

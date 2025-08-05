@@ -2,6 +2,22 @@ import React, { useRef, useCallback, useEffect, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useTheme } from '@/components/providers/ThemeProvider';
+
+// 配置Monaco Editor的Worker，避免Worker加载错误
+if (typeof window !== 'undefined') {
+  // 禁用Monaco Editor的Worker以避免在Tauri环境中的错误
+  (window as any).MonacoEnvironment = {
+    getWorker: () => {
+      // 返回一个空的Worker实现
+      return {
+        postMessage: () => {},
+        terminate: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      };
+    },
+  };
+}
 import { useConnectionStore } from '@/store/connection';
 import {
   createDatabaseSpecificCompletions
