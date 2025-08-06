@@ -104,7 +104,7 @@ export interface UnifiedDataTableProps {
     onRowSelect?: (selectedRows: Set<number>) => void;
     // 虚拟化相关配置
     virtualized?: boolean; // 是否启用虚拟化，默认当数据量>1000时自动启用
-    rowHeight?: number; // 行高，用于虚拟化计算，默认48px
+    rowHeight?: number; // 行高，用于虚拟化计算，默认36px
     maxHeight?: number; // 表格最大高度，默认600px
 }
 
@@ -378,6 +378,7 @@ interface TableHeaderProps {
     selectedRowsCount: number;
     totalRowsCount: number;
     showRowNumbers: boolean;
+    rowHeight: number; // 行高度
     onSort: (column: string) => void;
     onAddFilter: (column: string, value: string) => void;
     onSelectAll: () => void;
@@ -402,6 +403,7 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
     selectedRowsCount,
     totalRowsCount,
     showRowNumbers,
+    rowHeight,
     onSort,
     onAddFilter,
     onSelectAll,
@@ -430,10 +432,16 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                 {/* 固定的序号列表头 */}
                 {showRowNumbers && (
                     <th className={cn(
-                        "px-3 py-2 text-left align-middle font-medium w-16 border-r",
+                        "px-3 text-left align-middle font-medium w-16 border-r",
                         "text-xs text-muted-foreground bg-muted border-b-2",
                         virtualMode ? "virtualized-sticky-header" : "sticky left-0 top-0 z-50 bg-muted"
-                    )}>
+                    )}
+                    style={{
+                        height: `${rowHeight}px`,
+                        minHeight: `${rowHeight}px`,
+                        maxHeight: `${rowHeight}px`,
+                        overflow: 'hidden'
+                    }}>
                         <div className="text-center items-center gap-1">
                             <span className="text-xs">#</span>
                         </div>
@@ -464,10 +472,16 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                         <th
                             key={`header-${column}-${colIndex}`}
                             className={cn(
-                                'px-3 py-2 text-left align-middle font-medium whitespace-nowrap border-r border-b-2',
+                                'px-3 text-left align-middle font-medium whitespace-nowrap border-r border-b-2',
                                 'text-xs text-muted-foreground bg-muted hover:bg-muted/80 group'
                             )}
-                            style={{ minWidth }}
+                            style={{
+                                minWidth,
+                                height: `${rowHeight}px`,
+                                minHeight: `${rowHeight}px`,
+                                maxHeight: `${rowHeight}px`,
+                                overflow: 'hidden'
+                            }}
                         >
                             <div className="flex items-center gap-1 whitespace-nowrap">
                                 {/* 列名 - 点击选中整列 */}
@@ -670,7 +684,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     onColumnChange,
     onRowSelect,
     virtualized,
-    rowHeight = 48,
+    rowHeight = 36,
     maxHeight = 600
 }) => {
     // 状态管理
@@ -1756,7 +1770,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                 <TableVirtuoso
                                     ref={virtuosoRef}
                                     data={paginatedData}
-                                    defaultItemHeight={rowHeight} // 设置默认行高度
+                                    fixedItemHeight={rowHeight} // 设置固定行高度，防止自动拉伸
                                     fixedHeaderContent={() => (
                                         <TableHeader
                                             columnOrder={columnOrder}
@@ -1797,8 +1811,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     )}
                                                     style={{
                                                         height: `${rowHeight}px`,
+                                                        minHeight: `${rowHeight}px`,
+                                                        maxHeight: `${rowHeight}px`,
                                                         lineHeight: `${rowHeight}px`,
-                                                        verticalAlign: 'middle'
+                                                        verticalAlign: 'middle',
+                                                        overflow: 'hidden'
                                                     }}
                                                 >
                                                     <div className="truncate w-full">
@@ -1838,8 +1855,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                             minWidth: `${width}px`,
                                                             maxWidth: `${width}px`,
                                                             height: `${rowHeight}px`,
+                                                            minHeight: `${rowHeight}px`,
+                                                            maxHeight: `${rowHeight}px`,
                                                             lineHeight: `${rowHeight}px`,
-                                                            verticalAlign: 'middle'
+                                                            verticalAlign: 'middle',
+                                                            overflow: 'hidden'
                                                         }}
                                                         title={String(displayValue || '')}
                                                     >
@@ -1900,7 +1920,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         ...style,
                                                         height: `${rowHeight}px`,
                                                         minHeight: `${rowHeight}px`,
-                                                        maxHeight: `${rowHeight}px`
+                                                        maxHeight: `${rowHeight}px`,
+                                                        overflow: 'hidden'
                                                     }}
                                                     className={cn(
                                                         "border-b transition-colors hover:bg-muted/50",

@@ -86,9 +86,9 @@
     background-clip: padding-box !important;
     box-shadow: 2px 0 4px rgba(0, 0, 0, 0.15) !important;
     /* 明确的尺寸定义 */
-    min-height: 48px !important;
-    max-height: 48px !important;
-    height: 48px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+    height: 36px !important;
     /* 渲染优化 */
     transform: translate3d(0, 0, 0) !important;
     will-change: transform !important;
@@ -1412,16 +1412,16 @@ pre,
 
 /* 确保固定高度以提高虚拟化性能 */
 .virtual-table-row {
-  height: 48px;
-  min-height: 48px;
-  max-height: 48px;
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
 }
 
 /* 表头高度优化和固定样式 */
 .virtual-table-header {
-  height: 48px;
-  min-height: 48px;
-  max-height: 48px;
+  height: 36px;
+  min-height: 36px;
+  max-height: 36px;
   align-items: center;
   background: hsl(var(--background));
   border-bottom: 1px solid hsl(var(--border));
@@ -1582,15 +1582,15 @@ pre,
 
 /* 固定表格行高度 - 强制应用 */
 .table-unified-scroll tr {
-  height: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
 }
 
 .table-unified-scroll td {
-  height: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
   vertical-align: middle;
   border-right: 1px solid hsl(var(--border));
   padding: 0 16px;
@@ -1600,7 +1600,7 @@ pre,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: 48px;
+  line-height: 36px;
   box-sizing: border-box;
 }
 
@@ -1608,18 +1608,18 @@ pre,
 .virtualized-table tr,
 [data-virtuoso-scroller] tr,
 [data-test-id="virtuoso-scroller"] tr {
-  height: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
 }
 
 .virtualized-table td,
 [data-virtuoso-scroller] td,
 [data-test-id="virtuoso-scroller"] td {
-  height: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
-  line-height: 48px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  line-height: 36px !important;
   vertical-align: middle !important;
   box-sizing: border-box !important;
 }
@@ -1630,9 +1630,9 @@ pre,
 }
 
 [data-virtuoso-scroller] tbody tr {
-  height: 48px !important;
-  min-height: 48px !important;
-  max-height: 48px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
 }
 
 .table-unified-scroll td {
@@ -1679,7 +1679,7 @@ pre,
 /* 表头容器（固定列 + 滚动列） */
 .table-header-with-fixed-column {
   display: flex;
-  height: 48px;
+  height: 36px;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -1706,7 +1706,7 @@ pre,
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 48px;
+  height: 36px;
   font-size: 12px;
   font-weight: 600;
   color: hsl(var(--muted-foreground));
@@ -1747,7 +1747,7 @@ pre,
   display: flex;
   min-width: max-content;
   width: max-content;
-  height: 48px;
+  height: 36px;
   /* 确保内容宽度能够正确计算 */
   flex-shrink: 0;
 }
@@ -1772,7 +1772,7 @@ pre,
 /* 数据行容器（固定列 + 滚动列） */
 .table-row-with-fixed-column {
   display: flex;
-  height: 40px;
+  height: 36px;
   border-bottom: 1px solid hsl(var(--border));
   cursor: pointer;
   transition: background-color 0.15s ease;
@@ -1808,7 +1808,7 @@ pre,
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  height: 36px;
   font-size: 12px;
   font-weight: 500;
   color: hsl(var(--muted-foreground));
@@ -1833,7 +1833,7 @@ pre,
   display: flex;
   min-width: max-content;
   width: max-content;
-  height: 40px;
+  height: 36px;
   /* 确保内容不会因为点击而跳转 */
   position: relative;
   /* 确保内容宽度能够正确计算 */
