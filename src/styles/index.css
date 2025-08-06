@@ -1624,15 +1624,73 @@ pre,
   box-sizing: border-box !important;
 }
 
-/* 强制 TableVirtuoso 行高度 */
+/* 强制 TableVirtuoso 行高度 - 最严格的控制 */
+.virtualized-table-fixed-height [data-virtuoso-scroller] table,
+.virtualized-table [data-virtuoso-scroller] table,
 [data-virtuoso-scroller] table {
   table-layout: fixed !important;
+  border-collapse: collapse !important;
 }
 
-[data-virtuoso-scroller] tbody tr {
+.virtualized-table-fixed-height [data-virtuoso-scroller] tbody tr,
+.virtualized-table-fixed-height [data-virtuoso-scroller] thead tr,
+.virtualized-table [data-virtuoso-scroller] tbody tr,
+.virtualized-table [data-virtuoso-scroller] thead tr,
+[data-virtuoso-scroller] tbody tr,
+[data-virtuoso-scroller] thead tr {
   height: 36px !important;
   min-height: 36px !important;
   max-height: 36px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  line-height: 36px !important;
+}
+
+.virtualized-table-fixed-height [data-virtuoso-scroller] td,
+.virtualized-table-fixed-height [data-virtuoso-scroller] th,
+.virtualized-table [data-virtuoso-scroller] td,
+.virtualized-table [data-virtuoso-scroller] th,
+[data-virtuoso-scroller] td,
+[data-virtuoso-scroller] th {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  line-height: 36px !important;
+}
+
+/* 确保单元格内容容器有固定高度 */
+.virtualized-table-fixed-height [data-virtuoso-scroller] td > div,
+.virtualized-table-fixed-height [data-virtuoso-scroller] th > div,
+.virtualized-table [data-virtuoso-scroller] td > div,
+.virtualized-table [data-virtuoso-scroller] th > div,
+[data-virtuoso-scroller] td > div,
+[data-virtuoso-scroller] th > div {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  line-height: normal !important;
+}
+
+/* 确保文本内容不会撑开行高度 */
+.virtualized-table-fixed-height [data-virtuoso-scroller] td span,
+.virtualized-table-fixed-height [data-virtuoso-scroller] th span,
+.virtualized-table [data-virtuoso-scroller] td span,
+.virtualized-table [data-virtuoso-scroller] th span,
+[data-virtuoso-scroller] td span,
+[data-virtuoso-scroller] th span {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  line-height: normal !important;
+  display: block !important;
 }
 
 .table-unified-scroll td {
@@ -1854,4 +1912,109 @@ pre,
   cursor: pointer;
   user-select: none;
   transition: background-color 0.15s ease;
+}
+
+/* 虚拟滚动表格固定行高度专用样式 */
+.virtualized-table-fixed-height {
+  /* 强制所有行使用固定高度 */
+}
+
+.virtualized-table-fixed-height table {
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  width: 100% !important;
+}
+
+.virtualized-table-fixed-height tr {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.virtualized-table-fixed-height td,
+.virtualized-table-fixed-height th {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  vertical-align: top !important;
+  line-height: normal !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+}
+
+/* 单元格内容容器 */
+.virtualized-table-fixed-height td > div,
+.virtualized-table-fixed-height th > div {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+/* 文本内容 */
+.virtualized-table-fixed-height span {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+  line-height: normal !important;
+  flex: 1 !important;
+}
+
+/* 确保空白区域正确显示 */
+.virtualized-table-fixed-height td > div:empty::after {
+  content: '\00a0'; /* 不间断空格 */
+  color: transparent;
+}
+
+/* 最强制的行高度控制 - 覆盖所有可能的样式 */
+.virtualized-table-fixed-height * {
+  line-height: normal !important;
+}
+
+.virtualized-table-fixed-height table tr {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  line-height: 36px !important;
+}
+
+.virtualized-table-fixed-height table td,
+.virtualized-table-fixed-height table th {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  line-height: 36px !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* 强制所有内容容器使用固定高度 */
+.virtualized-table-fixed-height table td > *,
+.virtualized-table-fixed-height table th > * {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  line-height: normal !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* 强制所有文本元素使用正常行高 */
+.virtualized-table-fixed-height table span,
+.virtualized-table-fixed-height table div,
+.virtualized-table-fixed-height table p {
+  line-height: normal !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
 }
