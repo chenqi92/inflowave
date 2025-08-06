@@ -2018,3 +2018,49 @@ pre,
   text-overflow: ellipsis !important;
   white-space: nowrap !important;
 }
+
+/* 超级强制的行高度控制 - 使用更高的优先级 */
+.virtualized-table-fixed-height [data-virtuoso-scroller] tr,
+.virtualized-table-fixed-height [data-virtuoso-scroller] tbody tr,
+.virtualized-table-fixed-height [data-virtuoso-scroller] thead tr {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  line-height: 36px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.virtualized-table-fixed-height [data-virtuoso-scroller] td,
+.virtualized-table-fixed-height [data-virtuoso-scroller] th {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  line-height: 36px !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* 针对具体的表格类名进行强制控制 */
+.table-unified-scroll tr {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  line-height: 36px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+
+.table-unified-scroll td,
+.table-unified-scroll th {
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  line-height: 36px !important;
+  padding: 0 !important;
+  vertical-align: middle !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}

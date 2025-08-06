@@ -437,28 +437,31 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                         virtualMode ? "virtualized-sticky-header" : "sticky left-0 top-0 z-50 bg-muted"
                     )}
                     style={{
-                        height: `${rowHeight}px`,
-                        minHeight: `${rowHeight}px`,
-                        maxHeight: `${rowHeight}px`,
-                        overflow: 'hidden',
-                        padding: '0',
-                        boxSizing: 'border-box'
+                        height: `${rowHeight}px !important`,
+                        minHeight: `${rowHeight}px !important`,
+                        maxHeight: `${rowHeight}px !important`,
+                        overflow: 'hidden !important',
+                        padding: '0 !important',
+                        boxSizing: 'border-box',
+                        lineHeight: 'normal !important'
                     }}>
                         <div
                             className="flex items-center justify-center w-full h-full"
                             style={{
-                                height: `${rowHeight}px`,
-                                minHeight: `${rowHeight}px`,
-                                maxHeight: `${rowHeight}px`,
-                                padding: '0 8px',
-                                boxSizing: 'border-box'
+                                height: `${rowHeight}px !important`,
+                                minHeight: `${rowHeight}px !important`,
+                                maxHeight: `${rowHeight}px !important`,
+                                padding: '0 8px !important',
+                                boxSizing: 'border-box',
+                                lineHeight: 'normal !important',
+                                overflow: 'hidden !important'
                             }}
                         >
-                            <span className="text-xs">#</span>
+                            <span className="text-xs" style={{ lineHeight: 'normal !important' }}>#</span>
                         </div>
                     </th>
                 )}
-                
+
                 {/* 数据列表头 */}
                 {(() => {
                     const visibleColumns = columnOrder
@@ -488,22 +491,25 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                             )}
                             style={{
                                 minWidth,
-                                height: `${rowHeight}px`,
-                                minHeight: `${rowHeight}px`,
-                                maxHeight: `${rowHeight}px`,
-                                overflow: 'hidden',
-                                padding: '0',
-                                boxSizing: 'border-box'
+                                height: `${rowHeight}px !important`,
+                                minHeight: `${rowHeight}px !important`,
+                                maxHeight: `${rowHeight}px !important`,
+                                overflow: 'hidden !important',
+                                padding: '0 !important',
+                                boxSizing: 'border-box',
+                                lineHeight: 'normal !important'
                             }}
                         >
                             <div
                                 className="flex items-center gap-1 whitespace-nowrap w-full h-full"
                                 style={{
-                                    height: `${rowHeight}px`,
-                                    minHeight: `${rowHeight}px`,
-                                    maxHeight: `${rowHeight}px`,
-                                    padding: '0 12px',
-                                    boxSizing: 'border-box'
+                                    height: `${rowHeight}px !important`,
+                                    minHeight: `${rowHeight}px !important`,
+                                    maxHeight: `${rowHeight}px !important`,
+                                    padding: '0 12px !important',
+                                    boxSizing: 'border-box',
+                                    lineHeight: 'normal !important',
+                                    overflow: 'hidden !important'
                                 }}
                             >
                                 {/* 列名 - 点击选中整列 */}
@@ -514,6 +520,7 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                                         e.stopPropagation();
                                         onColumnSelect(column);
                                     }}
+                                    style={{ lineHeight: 'normal !important' }}
                                 >
                                     {column}
                                 </span>
@@ -649,7 +656,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
                     </SelectContent>
                 </Select>
                 <span className="text-sm text-muted-foreground">条/页</span>
-                
+
                 <div className="flex items-center gap-1">
                     <Button
                         variant="outline"
@@ -745,6 +752,118 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const tableScrollRef = useRef<HTMLDivElement>(null);
     const virtuosoRef = useRef<any>(null);
 
+    // 强制应用固定行高度的函数
+    const forceFixedRowHeight = useCallback(() => {
+        if (!tableContainerRef.current) return;
+
+        // 查找所有表格行并强制设置高度
+        const rows = tableContainerRef.current.querySelectorAll('tr');
+        rows.forEach(row => {
+            const element = row as HTMLElement;
+            element.style.setProperty('height', `${rowHeight}px`, 'important');
+            element.style.setProperty('min-height', `${rowHeight}px`, 'important');
+            element.style.setProperty('max-height', `${rowHeight}px`, 'important');
+            element.style.setProperty('line-height', 'normal', 'important');
+            element.style.setProperty('overflow', 'hidden', 'important');
+            element.style.setProperty('box-sizing', 'border-box', 'important');
+        });
+
+        // 查找所有单元格并强制设置高度
+        const cells = tableContainerRef.current.querySelectorAll('td, th');
+        cells.forEach(cell => {
+            const element = cell as HTMLElement;
+            element.style.setProperty('height', `${rowHeight}px`, 'important');
+            element.style.setProperty('min-height', `${rowHeight}px`, 'important');
+            element.style.setProperty('max-height', `${rowHeight}px`, 'important');
+            element.style.setProperty('line-height', 'normal', 'important');
+            element.style.setProperty('overflow', 'hidden', 'important');
+            element.style.setProperty('box-sizing', 'border-box', 'important');
+            element.style.setProperty('padding', '0', 'important');
+            element.style.setProperty('vertical-align', 'middle', 'important');
+        });
+
+        // 查找所有内容容器并强制设置高度
+        const containers = tableContainerRef.current.querySelectorAll('td > div, th > div');
+        containers.forEach(container => {
+            const element = container as HTMLElement;
+            element.style.setProperty('height', `${rowHeight}px`, 'important');
+            element.style.setProperty('min-height', `${rowHeight}px`, 'important');
+            element.style.setProperty('max-height', `${rowHeight}px`, 'important');
+            element.style.setProperty('line-height', 'normal', 'important');
+            element.style.setProperty('overflow', 'hidden', 'important');
+            element.style.setProperty('box-sizing', 'border-box', 'important');
+        });
+
+        // 查找所有文本元素并强制设置样式
+        const textElements = tableContainerRef.current.querySelectorAll('td span, th span');
+        textElements.forEach(span => {
+            const element = span as HTMLElement;
+            element.style.setProperty('line-height', 'normal', 'important');
+            element.style.setProperty('overflow', 'hidden', 'important');
+            element.style.setProperty('text-overflow', 'ellipsis', 'important');
+            element.style.setProperty('white-space', 'nowrap', 'important');
+            element.style.setProperty('display', 'block', 'important');
+        });
+
+        console.log('🔧 [UnifiedDataTable] 强制应用固定行高度:', {
+            rowsCount: rows.length,
+            cellsCount: cells.length,
+            containersCount: containers.length,
+            textElementsCount: textElements.length,
+            rowHeight
+        });
+    }, [rowHeight]);
+
+    // 定期强制应用固定行高度
+    useEffect(() => {
+        const interval = setInterval(() => {
+            forceFixedRowHeight();
+        }, 100); // 每100ms检查一次
+
+        // 初始应用
+        setTimeout(forceFixedRowHeight, 50);
+
+        return () => clearInterval(interval);
+    }, [forceFixedRowHeight]);
+
+
+
+
+
+    // 使用 MutationObserver 监听 DOM 变化并强制应用样式
+    useEffect(() => {
+        if (!tableContainerRef.current) return;
+
+        const observer = new MutationObserver((mutations) => {
+            let shouldUpdate = false;
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    // 检查是否有新的表格行或单元格被添加
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                            const element = node as Element;
+                            if (element.tagName === 'TR' || element.tagName === 'TD' || element.tagName === 'TH' ||
+                                element.querySelector('tr, td, th')) {
+                                shouldUpdate = true;
+                            }
+                        }
+                    });
+                }
+            });
+
+            if (shouldUpdate) {
+                setTimeout(forceFixedRowHeight, 10);
+            }
+        });
+
+        observer.observe(tableContainerRef.current, {
+            childList: true,
+            subtree: true
+        });
+
+        return () => observer.disconnect();
+    }, [forceFixedRowHeight]);
+
     // 初始化列 - 优先使用外部传入的状态
     useEffect(() => {
         if (columns.length > 0) {
@@ -824,7 +943,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                 } else {
                     // 方法3: 查找具有滚动样式的第一个 div 元素
                     const scrollableElements = tableContainerRef.current.querySelectorAll('div');
-                    for (const element of scrollableElements) {
+                    for (const element of Array.from(scrollableElements)) {
                         const style = window.getComputedStyle(element);
                         if ((style.overflow === 'auto' || style.overflow === 'scroll' ||
                             style.overflowY === 'auto' || style.overflowY === 'scroll') &&
@@ -1601,7 +1720,6 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         });
         return shouldVirtualize;
     }, [virtualized, filteredData.length, rowHeight]);
-
     // 计算分页数据 - 使用筛选后的数据
     const paginatedData = useMemo(() => {
         if (!pagination) {
@@ -1619,19 +1737,17 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             const startIndex = (currentPage - 1) * pageSize;
             const endIndex = startIndex + pageSize;
             return filteredData.slice(startIndex, endIndex);
-        }
-
-        // 传统模式的分页处理
-        const startIndex = (currentPage - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-
-        // 如果pageSize大于等于总数据量，返回所有数据
-        if (pageSize >= filteredData.length) {
+        } else {
+            // 非虚拟化模式，直接返回筛选后的数据
             return filteredData;
         }
+    }, [filteredData, pagination, currentPage, pageSize, shouldUseVirtualization]);
+    // 当数据变化时强制应用固定行高度
+    useEffect(() => {
+        setTimeout(forceFixedRowHeight, 50);
+    }, [paginatedData, forceFixedRowHeight]);
 
-        return filteredData.slice(startIndex, endIndex);
-    }, [filteredData, currentPage, pageSize, pagination, shouldUseVirtualization]);
+
 
 
 
@@ -1821,6 +1937,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     data={paginatedData}
                                     fixedItemHeight={rowHeight} // 设置固定行高度，防止自动拉伸
                                     overscan={5} // 减少预渲染行数以提高性能
+                                    style={{ height: '100%' }}
+
                                     fixedHeaderContent={() => (
                                         <TableHeader
                                             columnOrder={columnOrder}
@@ -1830,6 +1948,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             selectedRowsCount={selectedRows.size}
                                             totalRowsCount={filteredData.length}
                                             showRowNumbers={showRowNumbers}
+                                            rowHeight={rowHeight}
                                             onSort={handleSort}
                                             onAddFilter={handleAddFilter}
                                             onSelectAll={handleSelectAll}
@@ -1860,34 +1979,37 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         selectedCell === cellId && "table-cell-selected"
                                                     )}
                                                     style={{
-                                                        height: `${rowHeight}px`,
-                                                        minHeight: `${rowHeight}px`,
-                                                        maxHeight: `${rowHeight}px`,
-                                                        lineHeight: 'normal',
-                                                        verticalAlign: 'top',
-                                                        overflow: 'hidden',
-                                                        padding: '0',
-                                                        boxSizing: 'border-box'
+                                                        height: `${rowHeight}px !important`,
+                                                        minHeight: `${rowHeight}px !important`,
+                                                        maxHeight: `${rowHeight}px !important`,
+                                                        lineHeight: 'normal !important',
+                                                        verticalAlign: 'middle !important',
+                                                        overflow: 'hidden !important',
+                                                        padding: '0 !important',
+                                                        boxSizing: 'border-box',
+                                                        border: '1px solid hsl(var(--border)) !important'
                                                     }}
                                                 >
                                                     <div
                                                         className="flex items-center justify-center w-full h-full"
                                                         style={{
-                                                            height: `${rowHeight}px`,
-                                                            minHeight: `${rowHeight}px`,
-                                                            maxHeight: `${rowHeight}px`,
-                                                            padding: '0 8px',
-                                                            boxSizing: 'border-box'
+                                                            height: `${rowHeight}px !important`,
+                                                            minHeight: `${rowHeight}px !important`,
+                                                            maxHeight: `${rowHeight}px !important`,
+                                                            padding: '0 8px !important',
+                                                            boxSizing: 'border-box',
+                                                            lineHeight: 'normal !important',
+                                                            overflow: 'hidden !important'
                                                         }}
                                                     >
                                                         <span
                                                             className="truncate text-xs"
                                                             style={{
-                                                                lineHeight: 'normal',
-                                                                display: 'block',
-                                                                overflow: 'hidden',
-                                                                textOverflow: 'ellipsis',
-                                                                whiteSpace: 'nowrap'
+                                                                lineHeight: 'normal !important',
+                                                                display: 'block !important',
+                                                                overflow: 'hidden !important',
+                                                                textOverflow: 'ellipsis !important',
+                                                                whiteSpace: 'nowrap !important'
                                                             }}
                                                         >
                                                             {index + 1}
@@ -1926,14 +2048,15 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                             width: `${width}px`,
                                                             minWidth: `${width}px`,
                                                             maxWidth: `${width}px`,
-                                                            height: `${rowHeight}px`,
-                                                            minHeight: `${rowHeight}px`,
-                                                            maxHeight: `${rowHeight}px`,
-                                                            lineHeight: 'normal',
-                                                            verticalAlign: 'top',
-                                                            overflow: 'hidden',
-                                                            padding: '0',
-                                                            boxSizing: 'border-box'
+                                                            height: `${rowHeight}px !important`,
+                                                            minHeight: `${rowHeight}px !important`,
+                                                            maxHeight: `${rowHeight}px !important`,
+                                                            lineHeight: 'normal !important',
+                                                            verticalAlign: 'middle !important',
+                                                            overflow: 'hidden !important',
+                                                            padding: '0 !important',
+                                                            boxSizing: 'border-box',
+                                                            border: '1px solid hsl(var(--border)) !important'
                                                         }}
                                                         title={String(displayValue || '')}
                                                     >
@@ -1941,11 +2064,13 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         <div
                                                             className="flex items-center w-full h-full"
                                                             style={{
-                                                                height: `${rowHeight}px`,
-                                                                minHeight: `${rowHeight}px`,
-                                                                maxHeight: `${rowHeight}px`,
-                                                                padding: '0 12px',
-                                                                boxSizing: 'border-box'
+                                                                height: `${rowHeight}px !important`,
+                                                                minHeight: `${rowHeight}px !important`,
+                                                                maxHeight: `${rowHeight}px !important`,
+                                                                padding: '0 12px !important',
+                                                                boxSizing: 'border-box',
+                                                                lineHeight: 'normal !important',
+                                                                overflow: 'hidden !important'
                                                             }}
                                                         >
                                                             {/* 暂时注释掉编辑功能以提升性能 */}
@@ -1962,11 +2087,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                                 <span
                                                                     className="truncate w-full text-xs"
                                                                     style={{
-                                                                        lineHeight: 'normal',
-                                                                        display: 'block',
-                                                                        overflow: 'hidden',
-                                                                        textOverflow: 'ellipsis',
-                                                                        whiteSpace: 'nowrap'
+                                                                        lineHeight: 'normal !important',
+                                                                        display: 'block !important',
+                                                                        overflow: 'hidden !important',
+                                                                        textOverflow: 'ellipsis !important',
+                                                                        whiteSpace: 'nowrap !important'
                                                                     }}
                                                                 >
                                                                     {displayValue}
@@ -1978,10 +2103,6 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             })}
                                         </>
                                     )}
-                                    style={{
-                                        height: '100%',
-                                        width: '100%'
-                                    }}
                                     className="table-unified-scroll"
                                     components={{
                                         Table: ({ style, ...props }) => (
@@ -2025,12 +2146,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     data-row-index={rowIndex}
                                                     style={{
                                                         ...style,
-                                                        height: `${rowHeight}px`,
-                                                        minHeight: `${rowHeight}px`,
-                                                        maxHeight: `${rowHeight}px`,
-                                                        overflow: 'hidden',
+                                                        height: `${rowHeight}px !important`,
+                                                        minHeight: `${rowHeight}px !important`,
+                                                        maxHeight: `${rowHeight}px !important`,
+                                                        overflow: 'hidden !important',
                                                         boxSizing: 'border-box',
-                                                        lineHeight: 'normal'
+                                                        lineHeight: 'normal !important'
                                                     }}
                                                     className={cn(
                                                         "border-b transition-colors hover:bg-muted/50",
