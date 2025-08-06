@@ -1604,15 +1604,41 @@ pre,
   box-sizing: border-box;
 }
 
-/* 确保虚拟化表格的行高度固定 */
-.virtualized-table tr,
-[data-virtuoso-scroller] tr,
-[data-test-id="virtuoso-scroller"] tr {
+/* 确保虚拟化表格的行高度固定 - 分离表头和数据行 */
+/* 表头行 - 自适应高度 */
+.virtualized-table thead tr,
+[data-virtuoso-scroller] thead tr,
+[data-test-id="virtuoso-scroller"] thead tr {
+  height: auto !important;
+  min-height: 48px !important;
+  max-height: none !important;
+}
+
+/* 数据行 - 固定36px高度 */
+.virtualized-table tbody tr,
+[data-virtuoso-scroller] tbody tr,
+[data-test-id="virtuoso-scroller"] tbody tr {
   height: 36px !important;
   min-height: 36px !important;
   max-height: 36px !important;
 }
 
+/* 表头单元格 - 自适应高度 */
+.virtualized-table th,
+[data-virtuoso-scroller] th,
+[data-test-id="virtuoso-scroller"] th {
+  height: auto !important;
+  min-height: 48px !important;
+  max-height: none !important;
+  line-height: 1.4 !important;
+  vertical-align: middle !important;
+  box-sizing: border-box !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow: visible !important;
+}
+
+/* 数据单元格 - 固定36px高度 */
 .virtualized-table td,
 [data-virtuoso-scroller] td,
 [data-test-id="virtuoso-scroller"] td {
@@ -1624,7 +1650,7 @@ pre,
   box-sizing: border-box !important;
 }
 
-/* 强制 TableVirtuoso 行高度 - 最严格的控制 */
+/* 强制 TableVirtuoso 行高度 - 最严格的控制，分离表头和数据行 */
 .virtualized-table-fixed-height [data-virtuoso-scroller] table,
 .virtualized-table [data-virtuoso-scroller] table,
 [data-virtuoso-scroller] table {
@@ -1632,12 +1658,22 @@ pre,
   border-collapse: collapse !important;
 }
 
-.virtualized-table-fixed-height [data-virtuoso-scroller] tbody tr,
+/* 表头行 - 自适应高度 */
 .virtualized-table-fixed-height [data-virtuoso-scroller] thead tr,
-.virtualized-table [data-virtuoso-scroller] tbody tr,
 .virtualized-table [data-virtuoso-scroller] thead tr,
-[data-virtuoso-scroller] tbody tr,
 [data-virtuoso-scroller] thead tr {
+  height: auto !important;
+  min-height: 48px !important;
+  max-height: none !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  line-height: 1.4 !important;
+}
+
+/* 数据行 - 固定36px高度 */
+.virtualized-table-fixed-height [data-virtuoso-scroller] tbody tr,
+.virtualized-table [data-virtuoso-scroller] tbody tr,
+[data-virtuoso-scroller] tbody tr {
   height: 36px !important;
   min-height: 36px !important;
   max-height: 36px !important;
@@ -2019,10 +2055,19 @@ pre,
   white-space: nowrap !important;
 }
 
-/* 超级强制的行高度控制 - 使用更高的优先级 */
-.virtualized-table-fixed-height [data-virtuoso-scroller] tr,
-.virtualized-table-fixed-height [data-virtuoso-scroller] tbody tr,
+/* 超级强制的行高度控制 - 分别处理表头和数据行 */
+/* 表头行 - 允许自适应高度，确保内容完整显示 */
 .virtualized-table-fixed-height [data-virtuoso-scroller] thead tr {
+  height: auto !important;
+  min-height: 48px !important;
+  max-height: none !important;
+  line-height: 1.4 !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+}
+
+/* 数据行 - 强制固定36px高度 */
+.virtualized-table-fixed-height [data-virtuoso-scroller] tbody tr {
   height: 36px !important;
   min-height: 36px !important;
   max-height: 36px !important;
@@ -2031,8 +2076,22 @@ pre,
   box-sizing: border-box !important;
 }
 
-.virtualized-table-fixed-height [data-virtuoso-scroller] td,
+/* 表头单元格 - 允许自适应高度，确保列名完整显示 */
 .virtualized-table-fixed-height [data-virtuoso-scroller] th {
+  height: auto !important;
+  min-height: 48px !important;
+  max-height: none !important;
+  line-height: 1.4 !important;
+  padding: 12px 8px !important;
+  vertical-align: middle !important;
+  overflow: visible !important;
+  box-sizing: border-box !important;
+  white-space: normal !important;
+  word-wrap: break-word !important;
+}
+
+/* 数据单元格 - 强制固定36px高度 */
+.virtualized-table-fixed-height [data-virtuoso-scroller] td {
   height: 36px !important;
   min-height: 36px !important;
   max-height: 36px !important;
