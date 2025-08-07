@@ -1814,6 +1814,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                         <div
                             className="flex-1 min-h-0 virtualized-table virtualized-table-fixed-height"
                             ref={tableContainerRef}
+                            style={{
+                                height: `${maxHeight}px`,  // 使用固定高度
+                                minHeight: `${maxHeight}px`,
+                                maxHeight: `${maxHeight}px`
+                            }}
                         >
                                 {(() => {
                                     console.log('🔧 [UnifiedDataTable] TableVirtuoso 配置:', {
@@ -1828,7 +1833,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     ref={virtuosoRef}
                                     data={paginatedData}
                                     fixedItemHeight={rowHeight} // 设置固定行高度，防止自动拉伸
-                                    overscan={5} // 减少预渲染行数以提高性能
+                                    overscan={25} // 减少预渲染行数以提高性能
                                     style={{ height: '100%' }}
 
                                     fixedHeaderContent={() => (
@@ -2057,9 +2062,19 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             </div>
 
                     ) : (
-                        <div className="flex items-center justify-center h-32 text-muted-foreground">
-                            <Database className="w-8 h-8 mr-2" />
-                            <span>没有找到数据</span>
+                        // 没有数据时也显示固定高度的容器
+                        <div
+                            className="flex items-center justify-center"
+                            style={{
+                                height: `${maxHeight}px`,
+                                background: 'hsl(var(--background))',
+                                border: '1px solid hsl(var(--border))'
+                            }}
+                        >
+                            <div className="text-muted-foreground">
+                                <Database className="w-8 h-8 mr-2" />
+                                <span>没有找到数据</span>
+                            </div>
                         </div>
                     )}
                 </div>

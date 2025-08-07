@@ -2123,3 +2123,39 @@ pre,
   overflow: hidden !important;
   box-sizing: border-box !important;
 }
+/* 虚拟化表格固定容器高度 */
+.virtualized-table-fixed-container {
+  /* 固定容器高度 */
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--border));
+}
+
+/* 确保 TableVirtuoso 填满容器但不超出 */
+.virtualized-table-fixed-container > div {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+/* TableVirtuoso 的滚动容器保持最小高度 */
+.virtualized-table-fixed-container [data-virtuoso-scroller] {
+  min-height: 100% !important;
+  background: hsl(var(--background));
+}
+
+/* 当数据不足时，确保容器保持高度 */
+.virtualized-table-fixed-container [data-test-id="virtuoso-item-list"] {
+  min-height: 100%;
+}
+
+/* 空白区域背景 */
+.virtualized-table-fixed-container [data-virtuoso-scroller]::after {
+  content: '';
+  display: block;
+  min-height: 100%;
+  background: hsl(var(--background));
+}
