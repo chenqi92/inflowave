@@ -31,8 +31,8 @@ try {
     $exePath = "target\$Target\release\InfloWave.exe"
     $altExePath = "target\release\InfloWave.exe"
     
-    if (-not (Test-Path $exePath) -and -not (Test-Path $altExePath)) {
-        Write-Host "🔨 Building Rust application first..." -ForegroundColor Yellow
+    if ((-not (Test-Path $exePath)) -and (-not (Test-Path $altExePath))) {
+        Write-Host "Building Rust application first..." -ForegroundColor Yellow
         $buildArgs = @("build", "--target", $Target)
         if ($Profile -eq "release") {
             $buildArgs += "--release"
@@ -46,49 +46,51 @@ try {
             throw "Rust build failed"
         }
     } else {
-        Write-Host "✅ Executable already exists" -ForegroundColor Green
+        Write-Host "Executable already exists" -ForegroundColor Green
     }
 
     # Check if MSIX config exists
     $msixConfig = "tauri.windows-msix.conf.json"
     if (-not (Test-Path $msixConfig)) {
-        Write-Host "⚠️ MSIX config not found, creating from template..." -ForegroundColor Yellow
+        Write-Host "MSIX config not found, creating from template..." -ForegroundColor Yellow
         
         # Create MSIX configuration based on main config
         $mainConfig = Get-Content "tauri.conf.json" | ConvertFrom-Json
-        $msixConfig = $mainConfig.PSObject.Copy()
+        $msixConfigObj = $mainConfig.PSObject.Copy()
         
         # Modify for MSIX
-        $msixConfig.bundle.targets = @("msix")
-        $msixConfig.bundle.windows.webviewInstallMode = @{
+        $msixConfigObj.bundle.targets = @("msix")
+        $msixConfigObj.bundle.windows.webviewInstallMode = @{
             type = "embedBootstrapper"
             silent = $true
         }
         
         # Add Microsoft Store specific settings
-        $msixConfig.bundle.windows.msix = @{
+        $msixConfigObj.bundle.windows.msix = @{
             publisher = "CN=Kkape Team"
             publisherDisplayName = "Kkape Team"
             capabilities = @("internetClient", "privateNetworkClientServer")
             languages = @("zh-CN", "en-US")
         }
         
-        $msixConfig | ConvertTo-Json -Depth 10 | Set-Content "tauri.windows-msix.conf.json"
-        Write-Host "✅ Created MSIX configuration" -ForegroundColor Green
+        $msixConfigObj | ConvertTo-Json -Depth 10 | Set-Content "tauri.windows-msix.conf.json"
+        Write-Host "Created MSIX configuration" -ForegroundColor Green
     }
 
     # Build MSIX package using Tauri
     Write-Host "Building MSIX package..." -ForegroundColor Yellow
-    
-    $tauriArgs = @("build", "--target", $Target, "--config", "tauri.windows-msix.conf.json")
-    if ($Verbose) {
-        $tauriArgs += "--verbose"
-    }
-    
+
     # Set environment variables for MSIX build
     $env:TAURI_BUNDLE_TARGETS = "msix"
-    
-    & npm run tauri @tauriArgs
+
+    # Build using npm run tauri with proper arguments
+    $tauriCommand = "npm run tauri build --target $Target --config tauri.windows-msix.conf.json"
+    if ($Verbose) {
+        $tauriCommand += " --verbose"
+    }
+
+    Write-Host "Executing: $tauriCommand" -ForegroundColor Gray
+    Invoke-Expression $tauriCommand
     if ($LASTEXITCODE -ne 0) {
         throw "MSIX build failed"
     }
@@ -108,14 +110,14 @@ try {
     if ($msixFiles) {
         Write-Host "Generated MSIX files:" -ForegroundColor Cyan
         foreach ($file in $msixFiles) {
-            $size = [math]::Round($file.Length / 1MB, 2)
-            Write-Host "  $($file.Name) ($size MB)" -ForegroundColor White
+            $sizeMB = [math]::Round($file.Length / 1MB, 2)
+            Write-Host "  $($file.Name) ($sizeMB MB)" -ForegroundColor White
             Write-Host "  Path: $($file.FullName)" -ForegroundColor Gray
         }
     } else {
-        Write-Host "⚠️ No MSIX files found" -ForegroundColor Yellow
+        Write-Host "No MSIX files found" -ForegroundColor Yellow
         Write-Host "Searching for MSIX files in target directory..." -ForegroundColor Yellow
-        Get-ChildItem "target" -Recurse -Name "*.msix" | ForEach-Object { 
+        Get-ChildItem "target" -Recurse -Name "*.msix" -ErrorAction SilentlyContinue | ForEach-Object { 
             Write-Host "Found: $_" -ForegroundColor Gray 
         }
     }

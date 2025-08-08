@@ -236,14 +236,14 @@ const Tree = React.forwardRef<HTMLDivElement, TreeProps>(
 
             {/* 图标 */}
             {getNodeIcon(node, isExpanded) && (
-              <span className='mr-2 text-muted-foreground'>
+              <div className='mr-2 flex items-center justify-center w-4 h-4 text-muted-foreground'>
                 {getNodeIcon(node, isExpanded)}
-              </span>
+              </div>
             )}
 
             {/* 标题 */}
             <span
-              className='flex-1 text-sm'
+              className='flex-1 text-sm flex items-center'
               onClick={() => handleSelect(node.key, node)}
               onDoubleClick={(e) => {
                 e.preventDefault();

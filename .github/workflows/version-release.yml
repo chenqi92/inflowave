@@ -316,33 +316,16 @@ jobs:
           prerelease: false
           args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.conf.json
 
-      - name: Build Windows MSI (cargo-wix)
+      - name: Build Windows MSI (Tauri)
         if: matrix.platform == 'windows-latest'
         id: windows_msi_build
         continue-on-error: true
         shell: pwsh
         run: |
-          Write-Output "Building Windows MSI using cargo-wix..."
+          Write-Output "Building Windows MSI using Tauri..."
           Write-Output "Target: ${{ matrix.rust_target }}"
 
-          # 确保可执行文件存在
-          $exePath = "src-tauri/target/${{ matrix.rust_target }}/release/InfloWave.exe"
-          if (-not (Test-Path $exePath)) {
-            Write-Output "Executable not found at $exePath, checking alternative paths..."
-            $altPath = "src-tauri/target/release/InfloWave.exe"
-            if (Test-Path $altPath) {
-              Write-Output "Found executable at $altPath"
-              $exePath = $altPath
-            } else {
-              Write-Output "❌ Executable not found in any expected location"
-              Get-ChildItem "src-tauri/target" -Recurse -Name "InfloWave.exe" | ForEach-Object { Write-Output "Found: $_" }
-              exit 1
-            }
-          }
-
-          Write-Output "✅ Executable found at: $exePath"
-
-          # Use our build script with the correct executable path
+          # Use our build script
           powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Target ${{ matrix.rust_target }} -Verbose
 
       - name: Build Windows MSIX (Microsoft Store)

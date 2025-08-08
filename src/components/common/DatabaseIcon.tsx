@@ -174,7 +174,7 @@ const SVGIcon: React.FC<{
           // 确保SVG有正确的尺寸并保持居中对齐
           content = content.replace(
             /<svg([^>]*)>/,
-            `<svg$1 width="${size}" height="${size}" style="display: block;">`
+            `<svg$1 width="${size}" height="${size}" style="display: block; margin: 0; vertical-align: middle;">`
           );
           setSvgContent(content);
         } else {

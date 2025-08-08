@@ -204,7 +204,7 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
           </div>
 
           {/* 节点图标 */}
-          <div className="mr-2 flex items-center justify-center">
+          <div className="mr-2 flex items-center justify-center w-4 h-4">
             <DatabaseIcon
               nodeType={normalizedNodeType}
               isOpen={isActivated || node.isExpanded}
@@ -215,7 +215,7 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
           </div>
 
           {/* 节点名称 */}
-          <span className={`text-sm truncate ${getNodeStyle(node.nodeType, node.isSystem)}`}>
+          <span className={`text-sm truncate flex items-center ${getNodeStyle(node.nodeType, node.isSystem)}`}>
             {node.name}
           </span>
 
