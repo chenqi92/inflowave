@@ -328,20 +328,16 @@ jobs:
           # Use our build script
           powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Target ${{ matrix.rust_target }} -Verbose
 
-      - name: Build Windows MSIX (Microsoft Store)
+      - name: Build Windows MSIX (Microsoft Store) - Info Only
         if: matrix.platform == 'windows-latest'
         id: windows_msix_build
         continue-on-error: true
         shell: pwsh
         run: |
-          Write-Output "Building Windows MSIX for Microsoft Store..."
-
-          # 检查是否有 MSIX 构建脚本
-          if (Test-Path "scripts/build-msix.ps1") {
-            powershell -ExecutionPolicy Bypass -File scripts/build-msix.ps1 -Target ${{ matrix.rust_target }} -Verbose
-          } else {
-            Write-Output "⚠️ MSIX build script not found, skipping MSIX build"
-          }
+          Write-Output "MSIX packaging info:"
+          Write-Output "Tauri 2.0 doesn't have native MSIX support yet."
+          Write-Output "For Microsoft Store submission, use MSIX Packaging Tool to convert the generated .exe installer."
+          Write-Output "Generated installer will be available in the release assets."
 
 
 

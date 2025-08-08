@@ -11,9 +11,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "msix"
-    ],
+    "targets": "all",
     "icon": [
       "icons/icon.png",
       "icons/32x32.png",
@@ -42,44 +40,7 @@
         "type": "embedBootstrapper",
         "silent": true
       },
-      "allowDowngrades": false,
-      "msix": {
-        "publisher": "CN=Kkape Team",
-        "publisherDisplayName": "Kkape Team",
-        "applicationId": "InfloWave",
-        "displayName": "InfloWave",
-        "description": "Modern time-series database management tool",
-        "version": "0.6.2.0",
-        "languages": [
-          "zh-CN",
-          "en-US"
-        ],
-        "capabilities": [
-          "internetClient",
-          "privateNetworkClientServer"
-        ],
-        "fileAssociations": [
-          {
-            "ext": "sql",
-            "name": "SQL Query File",
-            "description": "SQL Query File for InfloWave",
-            "role": "Editor"
-          },
-          {
-            "ext": "json",
-            "name": "JSON Configuration File",
-            "description": "Configuration File for InfloWave",
-            "role": "Editor"
-          }
-        ],
-        "protocolSchemes": [
-          {
-            "scheme": "inflowave",
-            "displayName": "InfloWave Protocol",
-            "description": "Open InfloWave with custom protocol"
-          }
-        ]
-      }
+      "allowDowngrades": false
     }
   },
   "app": {
@@ -96,7 +57,7 @@
         "transparent": false,
         "alwaysOnTop": false,
         "skipTaskbar": false,
-        "theme": "auto"
+        "theme": "light"
       }
     ],
     "security": {

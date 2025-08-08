@@ -1,6 +1,1 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="2" y="4" width="12" height="8" fill="none" stroke="#D1D5DB" stroke-width="1"/>
-    <path d="M4 6L6 8L4 10M12 6L10 8L12 10" stroke="#D1D5DB" stroke-width="1"/>
-    <text x="8" y="9" text-anchor="middle" font-family="Arial" font-size="3" fill="#D1D5DB">ENC</text>
-</svg>
+<svg t="1754639364866" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="15871" width="16" height="16"><path d="M51.2 0h921.6c28.16 0 51.2 22.784 51.2 51.029333v921.941334c0 28.16-22.954667 51.029333-51.2 51.029333H51.2a51.114667 51.114667 0 0 1-51.2-51.029333V51.029333C0 22.784 23.04 0 51.2 0z m51.2 101.888v820.224h819.2V101.888H102.4zM512 697.002667h307.2v101.973333H512V697.002667zM341.333333 544.085333L196.522667 399.957333l72.448-72.192 217.173333 216.32-217.173333 216.32-72.448-72.192L341.333333 544.085333z" fill="#5883FF" p-id="15872"></path></svg>

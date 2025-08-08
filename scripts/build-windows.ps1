@@ -138,13 +138,10 @@ try {
     # Use Tauri to build MSI with the correct configuration
     $env:TAURI_BUNDLE_TARGETS = "msi"
 
-    $tauriCommand = "npm run tauri build --target $Target --config tauri.windows-cargo-wix.conf.json"
-    if ($Verbose) {
-        $tauriCommand += " --verbose"
-    }
+    Write-Host "Executing: tauri build --target $Target --config tauri.windows-cargo-wix.conf.json" -ForegroundColor Gray
 
-    Write-Host "Executing: $tauriCommand" -ForegroundColor Gray
-    Invoke-Expression $tauriCommand
+    # Use tauri CLI directly
+    & tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
     if ($LASTEXITCODE -ne 0) {
         throw "MSI build failed"
     }
