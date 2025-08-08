@@ -362,6 +362,52 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     };
 
+    // 根据节点名称推断节点类型
+    const inferNodeTypeFromName = (nodeName: string): string => {
+        // IoTDB 特殊节点名称映射
+        const nameTypeMap: Record<string, string> = {
+            'System Information': 'system_info',
+            'Version Information': 'version_info',
+            'Schema Templates': 'schema_template',
+            'Functions': 'function',
+            'Triggers': 'trigger',
+            'Cluster Information': 'cluster_info',
+            'Storage Engine Information': 'storage_engine_info',
+        };
+
+        // 精确匹配
+        if (nameTypeMap[nodeName]) {
+            return nameTypeMap[nodeName];
+        }
+
+        // 模糊匹配
+        const lowerName = nodeName.toLowerCase();
+        if (lowerName.includes('system') && lowerName.includes('information')) {
+            return 'system_info';
+        }
+        if (lowerName.includes('version') && lowerName.includes('information')) {
+            return 'version_info';
+        }
+        if (lowerName.includes('function')) {
+            return 'function';
+        }
+        if (lowerName.includes('trigger')) {
+            return 'trigger';
+        }
+        if (lowerName.includes('template')) {
+            return 'schema_template';
+        }
+        if (lowerName.includes('cluster')) {
+            return 'cluster_info';
+        }
+        if (lowerName.includes('storage') && lowerName.includes('engine')) {
+            return 'storage_engine_info';
+        }
+
+        // 默认为存储组
+        return 'storage_group';
+    };
+
     // 根据节点类型获取图标
     // 根据连接类型确定数据库节点的图标类型
     const getDatabaseNodeType = (connectionId: string | undefined, databaseName: string | undefined) => {
@@ -392,27 +438,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             case 'iotdb':
                 // IoTDB 中需要从缓存的树节点信息中获取正确的节点类型
                 const cachedTreeNodes = treeNodeCache[connectionId as string] || [];
-                console.log(`🔍 查找节点类型: ${databaseName}, 缓存节点数量: ${cachedTreeNodes.length}`);
-                console.log(`🔍 缓存节点详情:`, cachedTreeNodes.map((n: any) => `${n.name}(${n.node_type || n.nodeType || 'unknown'})`));
 
                 const cachedNode = cachedTreeNodes.find((node: any) => {
-                    const match = node.name === databaseName || node.id === databaseName;
-                    console.log(`🔍 匹配检查: ${node.name} === ${databaseName} ? ${node.name === databaseName}, ${node.id} === ${databaseName} ? ${node.id === databaseName}`, {
-                        node_type: node.node_type,
-                        nodeType: node.nodeType,
-                        allKeys: Object.keys(node)
-                    });
-                    return match;
+                    return node.name === databaseName || node.id === databaseName;
                 });
 
-                if (cachedNode?.node_type || cachedNode?.nodeType) {
+                if (cachedNode) {
+                    // 优先使用 node_type (后端snake_case格式)，然后是 nodeType (前端camelCase格式)
                     const nodeType = cachedNode.node_type || cachedNode.nodeType;
-                    console.log(`🏷️ 从缓存获取节点类型: ${databaseName} -> ${nodeType}`);
-                    return nodeType;
+                    if (nodeType) {
+                        return nodeType;
+                    }
                 }
-                // 默认返回 storage_group
-                console.log(`⚠️ 未找到缓存节点类型，使用默认: ${databaseName} -> storage_group`);
-                return 'storage_group';
+                // 根据节点名称推断类型
+                return inferNodeTypeFromName(databaseName);
 
             default:
                 return 'database';
@@ -900,9 +939,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         const currentNode = treeNodes.find((node: any) => {
                             return node.name === db || node.id === db;
                         });
-                        const nodeType = currentNode?.node_type || currentNode?.nodeType || getDatabaseNodeType(connection.id, db);
 
-                        console.log(`🏷️ 数据库 "${db}" 的节点类型: ${nodeType} (来源: ${currentNode ? '直接获取' : '推断'}, 节点: ${currentNode?.name})`);
+                        // 优先使用从后端获取的节点类型（snake_case格式）
+                        let nodeType = currentNode?.node_type || currentNode?.nodeType;
+
+                        // 如果没有找到，使用推断逻辑
+                        if (!nodeType) {
+                            nodeType = getDatabaseNodeType(connection.id, db);
+                        }
+
+
 
                         const nodeData: any = {
                             title: (

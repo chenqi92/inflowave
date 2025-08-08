@@ -295,9 +295,10 @@ export const ICON_MAPPING: Record<TreeNodeType, IconConfig> = {
   },
   'system_info': {
     fileName: 'system-info.svg',
+    openFileName: 'system-info_cur.svg',
     description: '系统信息',
     databases: ['iotdb'],
-    isLeaf: true,
+    isOpenable: true,
   },
   'cluster_info': {
     fileName: 'cluster-info.svg',
@@ -321,9 +322,10 @@ export const ICON_MAPPING: Record<TreeNodeType, IconConfig> = {
   // 通用功能
   'function': {
     fileName: 'function.svg',
+    openFileName: 'function_cur.svg',
     description: '函数',
     databases: ['iotdb'],
-    isLeaf: true,
+    isOpenable: true,
   },
   'function3x': {
     fileName: 'function3x.svg',

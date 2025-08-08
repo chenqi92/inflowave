@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { ChevronRight, ChevronDown, Database, Loader2, RefreshCw } from 'lucide-react';
-import { Button,Badge } from '@/components/ui';
+import { Button, Badge } from '@/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getNodeIcon, getNodeStyle } from '@/types/tree';
+import { getNodeStyle, normalizeNodeType } from '@/types/tree';
+import { DatabaseIcon } from '@/components/common/DatabaseIcon';
+import type { TreeNodeType } from '@/types/tree';
 
 interface TreeNode {
   id: string;
@@ -17,6 +19,8 @@ interface TreeNode {
   isExpanded: boolean;
   isLoading: boolean;
   metadata: Record<string, any>;
+  // 添加双击激活状态
+  isActivated?: boolean;
 }
 
 interface SimpleTreeViewProps {
@@ -32,6 +36,7 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [activatedNodeId, setActivatedNodeId] = useState<string | null>(null);
   const [databaseVersion, setDatabaseVersion] = useState<string>('');
 
   // 加载树节点
@@ -138,6 +143,14 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
     setSelectedNodeId(node.id);
   };
 
+  // 处理节点双击激活
+  const handleNodeDoubleClick = (node: TreeNode) => {
+    // 只有可展开的节点才能被激活
+    if (node.isExpandable && !node.isLeaf) {
+      setActivatedNodeId(activatedNodeId === node.id ? null : node.id);
+    }
+  };
+
   // 初始加载
   useEffect(() => {
     if (connectionId) {
@@ -148,9 +161,11 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
   // 渲染树节点
   const renderTreeNode = (node: TreeNode, level = 0): React.ReactNode => {
     const isSelected = selectedNodeId === node.id;
+    const isActivated = activatedNodeId === node.id;
     const hasChildren = node.children.length > 0 || node.isExpandable;
+    const normalizedNodeType = normalizeNodeType(node.nodeType) as TreeNodeType;
 
-    // 现在使用统一的工具函数
+
 
     return (
       <div key={node.id} className="select-none">
@@ -159,9 +174,11 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
             flex items-center py-1 px-2 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer rounded
             ${isSelected ? 'bg-blue-100 dark:bg-blue-900' : ''}
             ${node.isSystem ? 'opacity-75' : ''}
+            ${isActivated ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700' : ''}
           `}
           style={{ paddingLeft: `${level * 20 + 8}px` }}
           onClick={() => handleNodeClick(node)}
+          onDoubleClick={() => handleNodeDoubleClick(node)}
         >
           {/* 展开/折叠图标 */}
           <div
@@ -187,7 +204,15 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
           </div>
 
           {/* 节点图标 */}
-          <span className="mr-2 text-sm">{getNodeIcon(node.nodeType)}</span>
+          <div className="mr-2 flex items-center justify-center">
+            <DatabaseIcon
+              nodeType={normalizedNodeType}
+              isOpen={isActivated || node.isExpanded}
+              size={16}
+              className="flex-shrink-0"
+              title={`${node.name} (${normalizedNodeType}) - ${isActivated ? '激活' : '未激活'} - ${node.isExpanded ? '展开' : '折叠'}`}
+            />
+          </div>
 
           {/* 节点名称 */}
           <span className={`text-sm truncate ${getNodeStyle(node.nodeType, node.isSystem)}`}>
