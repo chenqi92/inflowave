@@ -1,0 +1,164 @@
+{
+  "$schema": "https://schema.tauri.app/config/2.0.0",
+  "productName": "InfloWave",
+  "version": "0.6.2",
+  "identifier": "com.kkape.inflowave",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devUrl": "http://127.0.0.1:1422",
+    "frontendDist": "../dist"
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "msix"
+    ],
+    "icon": [
+      "icons/icon.png",
+      "icons/32x32.png",
+      "icons/64x64.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/256x256.png",
+      "icons/512x512.png",
+      "icons/windows/64x64.ico",
+      "icons/windows/128x128.ico",
+      "icons/windows/256x256.ico",
+      "icons/icon.ico",
+      "icons/icon.icns"
+    ],
+    "publisher": "Kkape Team",
+    "copyright": "Copyright © 2024 InfloWave",
+    "category": "DeveloperTool",
+    "shortDescription": "Modern time-series database management tool",
+    "longDescription": "A modern, secure, and user-friendly GUI tool for managing time-series databases. Features include connection management, database operations, query execution, data visualization, and more.",
+    "externalBin": [],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "webviewInstallMode": {
+        "type": "embedBootstrapper",
+        "silent": true
+      },
+      "allowDowngrades": false,
+      "msix": {
+        "publisher": "CN=Kkape Team",
+        "publisherDisplayName": "Kkape Team",
+        "applicationId": "InfloWave",
+        "displayName": "InfloWave",
+        "description": "Modern time-series database management tool",
+        "version": "0.6.2.0",
+        "languages": [
+          "zh-CN",
+          "en-US"
+        ],
+        "capabilities": [
+          "internetClient",
+          "privateNetworkClientServer"
+        ],
+        "fileAssociations": [
+          {
+            "ext": "sql",
+            "name": "SQL Query File",
+            "description": "SQL Query File for InfloWave",
+            "role": "Editor"
+          },
+          {
+            "ext": "json",
+            "name": "JSON Configuration File",
+            "description": "Configuration File for InfloWave",
+            "role": "Editor"
+          }
+        ],
+        "protocolSchemes": [
+          {
+            "scheme": "inflowave",
+            "displayName": "InfloWave Protocol",
+            "description": "Open InfloWave with custom protocol"
+          }
+        ]
+      }
+    }
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "InfloWave",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "theme": "auto"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' ws: wss: http: https:;"
+    }
+  },
+  "plugins": {
+    "shell": {
+      "open": true,
+      "scope": [
+        {
+          "name": "open-url",
+          "cmd": "open",
+          "args": ["$URL"]
+        }
+      ]
+    },
+    "dialog": {
+      "all": true,
+      "ask": true,
+      "confirm": true,
+      "message": true,
+      "open": true,
+      "save": true
+    },
+    "fs": {
+      "all": true,
+      "readFile": true,
+      "writeFile": true,
+      "readDir": true,
+      "copyFile": true,
+      "createDir": true,
+      "removeDir": true,
+      "removeFile": true,
+      "renameFile": true,
+      "exists": true,
+      "scope": [
+        "$APPDATA/*",
+        "$APPDATA/**/*",
+        "$LOCALAPPDATA/*",
+        "$LOCALAPPDATA/**/*",
+        "$DOCUMENT/*",
+        "$DOCUMENT/**/*",
+        "$DESKTOP/*",
+        "$DESKTOP/**/*",
+        "$DOWNLOAD/*",
+        "$DOWNLOAD/**/*"
+      ]
+    },
+    "os": {
+      "all": true
+    },
+    "notification": {
+      "all": true
+    },
+    "globalShortcut": {
+      "all": true
+    },
+    "clipboardManager": {
+      "all": true,
+      "writeText": true,
+      "readText": true
+    }
+  }
+}

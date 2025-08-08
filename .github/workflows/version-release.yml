@@ -299,18 +299,7 @@ jobs:
           Write-Output "Windows build environment verified"
         shell: pwsh
 
-      # Windows 构建 - 同时生成 MSI 和 EXE
-      - name: Build Windows MSI (cargo-wix)
-        if: matrix.platform == 'windows-latest'
-        id: windows_msi_build
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          Write-Output "Building Windows MSI using cargo-wix..."
-
-          # Use our build script
-          powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Target ${{ matrix.rust_target }} -Verbose
-
+      # Windows 构建 - 先构建 EXE，再构建 MSI
       - name: Build Windows EXE (Tauri NSIS)
         if: matrix.platform == 'windows-latest'
         id: windows_exe_build
@@ -326,6 +315,50 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.conf.json
+
+      - name: Build Windows MSI (cargo-wix)
+        if: matrix.platform == 'windows-latest'
+        id: windows_msi_build
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          Write-Output "Building Windows MSI using cargo-wix..."
+          Write-Output "Target: ${{ matrix.rust_target }}"
+
+          # 确保可执行文件存在
+          $exePath = "src-tauri/target/${{ matrix.rust_target }}/release/InfloWave.exe"
+          if (-not (Test-Path $exePath)) {
+            Write-Output "Executable not found at $exePath, checking alternative paths..."
+            $altPath = "src-tauri/target/release/InfloWave.exe"
+            if (Test-Path $altPath) {
+              Write-Output "Found executable at $altPath"
+              $exePath = $altPath
+            } else {
+              Write-Output "❌ Executable not found in any expected location"
+              Get-ChildItem "src-tauri/target" -Recurse -Name "InfloWave.exe" | ForEach-Object { Write-Output "Found: $_" }
+              exit 1
+            }
+          }
+
+          Write-Output "✅ Executable found at: $exePath"
+
+          # Use our build script with the correct executable path
+          powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Target ${{ matrix.rust_target }} -Verbose
+
+      - name: Build Windows MSIX (Microsoft Store)
+        if: matrix.platform == 'windows-latest'
+        id: windows_msix_build
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          Write-Output "Building Windows MSIX for Microsoft Store..."
+
+          # 检查是否有 MSIX 构建脚本
+          if (Test-Path "scripts/build-msix.ps1") {
+            powershell -ExecutionPolicy Bypass -File scripts/build-msix.ps1 -Target ${{ matrix.rust_target }} -Verbose
+          } else {
+            Write-Output "⚠️ MSIX build script not found, skipping MSIX build"
+          }
 
 
 
@@ -417,19 +450,61 @@ jobs:
           Write-Output "Uploading Windows MSI files to Release..."
 
           # 查找 MSI 文件
-          $msiFiles = Get-ChildItem "src-tauri\target\wix\*.msi"
+          $msiFiles = Get-ChildItem "src-tauri\target\wix\*.msi" -ErrorAction SilentlyContinue
 
-          foreach ($msiFile in $msiFiles) {
-            $fileName = $msiFile.Name
-            $filePath = $msiFile.FullName
+          if ($msiFiles) {
+            foreach ($msiFile in $msiFiles) {
+              $fileName = $msiFile.Name
+              $filePath = $msiFile.FullName
 
-            Write-Output "Uploading file: $fileName"
+              Write-Output "Uploading MSI file: $fileName"
 
-            # 使用 GitHub CLI 上传文件到 Release
-            gh release upload "v${{ needs.detect-version.outputs.version }}" "$filePath" --clobber
+              # 使用 GitHub CLI 上传文件到 Release
+              gh release upload "v${{ needs.detect-version.outputs.version }}" "$filePath" --clobber
+            }
+            Write-Output "Windows MSI files uploaded successfully"
+          } else {
+            Write-Output "⚠️ No MSI files found to upload"
+          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+
+      # Windows MSIX 文件上传到 Release
+      - name: Upload Windows MSIX to Release
+        if: matrix.platform == 'windows-latest' && steps.windows_msix_build.outcome == 'success'
+        shell: pwsh
+        run: |
+          Write-Output "Uploading Windows MSIX files to Release..."
+
+          # 查找 MSIX 文件
+          $msixFiles = @()
+          $searchPaths = @(
+            "src-tauri\target\${{ matrix.rust_target }}\release\bundle\msix\*.msix",
+            "src-tauri\target\release\bundle\msix\*.msix"
+          )
+
+          foreach ($path in $searchPaths) {
+            $files = Get-ChildItem $path -ErrorAction SilentlyContinue
+            if ($files) {
+              $msixFiles += $files
+              break
+            }
           }
 
-          Write-Output "Windows MSI files uploaded successfully"
+          if ($msixFiles) {
+            foreach ($msixFile in $msixFiles) {
+              $fileName = $msixFile.Name
+              $filePath = $msixFile.FullName
+
+              Write-Output "Uploading MSIX file: $fileName"
+
+              # 使用 GitHub CLI 上传文件到 Release
+              gh release upload "v${{ needs.detect-version.outputs.version }}" "$filePath" --clobber
+            }
+            Write-Output "Windows MSIX files uploaded successfully"
+          } else {
+            Write-Output "⚠️ No MSIX files found to upload"
+          }
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 

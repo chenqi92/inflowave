@@ -82,19 +82,35 @@ try {
         Write-Host "WiX configuration exists" -ForegroundColor Green
     }
 
-    # Build application
-    Write-Host "Building Rust application..." -ForegroundColor Yellow
-    $buildArgs = @("build", "--target", $Target)
-    if ($Profile -eq "release") {
-        $buildArgs += "--release"
-    }
-    if ($Verbose) {
-        $buildArgs += "--verbose"
-    }
-    
-    & cargo @buildArgs
-    if ($LASTEXITCODE -ne 0) {
-        throw "Rust build failed"
+    # Check if application is already built
+    $exePath = "target\$Target\release\InfloWave.exe"
+    $altExePath = "target\release\InfloWave.exe"
+
+    if (Test-Path $exePath) {
+        Write-Host "✅ Executable already exists at: $exePath" -ForegroundColor Green
+    } elseif (Test-Path $altExePath) {
+        Write-Host "✅ Executable found at alternative path: $altExePath" -ForegroundColor Green
+        # Copy to expected location for WiX
+        $targetDir = Split-Path $exePath -Parent
+        if (-not (Test-Path $targetDir)) {
+            New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
+        }
+        Copy-Item $altExePath $exePath -Force
+        Write-Host "📋 Copied executable to expected WiX location" -ForegroundColor Green
+    } else {
+        Write-Host "🔨 Building Rust application..." -ForegroundColor Yellow
+        $buildArgs = @("build", "--target", $Target)
+        if ($Profile -eq "release") {
+            $buildArgs += "--release"
+        }
+        if ($Verbose) {
+            $buildArgs += "--verbose"
+        }
+
+        & cargo @buildArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "Rust build failed"
+        }
     }
 
     # Build MSI installer

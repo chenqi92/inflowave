@@ -15,6 +15,7 @@ const { execSync } = require('child_process');
  * - tauri.linux.conf.json
  * - tauri.macos.conf.json
  * - tauri.windows.conf.json
+ * - tauri.windows-msix.conf.json
  * - Cargo.toml
  * - README.md (中文)
  * - README-en.md (英文)
@@ -30,6 +31,7 @@ const tauriWindowsConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows.co
 const tauriWindowsCargoWixConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-cargo-wix.conf.json');
 const tauriWindowsNsisConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-nsis.conf.json');
 const tauriWindowsNsisOnlyConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-nsis-only.conf.json');
+const tauriWindowsMsixConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-msix.conf.json');
 
 const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
 const readmeCnPath = path.join(rootDir, 'README.md');
@@ -180,7 +182,8 @@ function getTauriConfigFiles() {
         { path: tauriWindowsConfigPath, name: 'tauri.windows.conf.json', required: false },
         { path: tauriWindowsCargoWixConfigPath, name: 'tauri.windows-cargo-wix.conf.json', required: false },
         { path: tauriWindowsNsisConfigPath, name: 'tauri.windows-nsis.conf.json', required: false },
-        { path: tauriWindowsNsisOnlyConfigPath, name: 'tauri.windows-nsis-only.conf.json', required: false }
+        { path: tauriWindowsNsisOnlyConfigPath, name: 'tauri.windows-nsis-only.conf.json', required: false },
+        { path: tauriWindowsMsixConfigPath, name: 'tauri.windows-msix.conf.json', required: false }
     ];
 }
 
@@ -486,6 +489,7 @@ function getAllVersions() {
         tauriWindowsCargoWixConfig: getSingleTauriVersion(tauriWindowsCargoWixConfigPath),
         tauriWindowsNsisConfig: getSingleTauriVersion(tauriWindowsNsisConfigPath),
         tauriWindowsNsisOnlyConfig: getSingleTauriVersion(tauriWindowsNsisOnlyConfigPath),
+        tauriWindowsMsixConfig: getSingleTauriVersion(tauriWindowsMsixConfigPath),
         cargoToml: cargoVersion
     };
 }
@@ -506,7 +510,8 @@ function checkVersionConsistency() {
         versions.tauriWindowsConfig,
         versions.tauriWindowsCargoWixConfig,
         versions.tauriWindowsNsisConfig,
-        versions.tauriWindowsNsisOnlyConfig
+        versions.tauriWindowsNsisOnlyConfig,
+        versions.tauriWindowsMsixConfig
     ];
 
     const validTauriVersions = tauriVersions.filter(v => v !== 'not found' && v !== 'invalid');
@@ -552,6 +557,7 @@ function syncVersions(targetVersion = null, options = {}) {
     log.info(`  tauri.windows-cargo-wix.conf.json:${versions.tauriWindowsCargoWixConfig}`);
     log.info(`  tauri.windows-nsis.conf.json:     ${versions.tauriWindowsNsisConfig}`);
     log.info(`  tauri.windows-nsis-only.conf.json:${versions.tauriWindowsNsisOnlyConfig}`);
+    log.info(`  tauri.windows-msix.conf.json:     ${versions.tauriWindowsMsixConfig}`);
     log.info(`  Cargo.toml:                       ${versions.cargoToml}`);
 
     const finalVersion = targetVersion || packageVersion;
@@ -860,6 +866,7 @@ function main() {
             log.info(`  tauri.windows-cargo-wix.conf.json:${versions.tauriWindowsCargoWixConfig}`);
             log.info(`  tauri.windows-nsis.conf.json:     ${versions.tauriWindowsNsisConfig}`);
             log.info(`  tauri.windows-nsis-only.conf.json:${versions.tauriWindowsNsisOnlyConfig}`);
+            log.info(`  tauri.windows-msix.conf.json:     ${versions.tauriWindowsMsixConfig}`);
             log.info(`  Cargo.toml:                       ${versions.cargoToml}`);
 
             log.divider();
@@ -934,6 +941,7 @@ ${colors.bright}🎯 功能:${colors.reset}
   • tauri.windows-cargo-wix.conf.json
   • tauri.windows-nsis.conf.json
   • tauri.windows-nsis-only.conf.json
+  • tauri.windows-msix.conf.json
   • Cargo.toml
   • README.md (中文)
   • README-en.md (英文)
@@ -970,8 +978,8 @@ ${colors.bright}✨ 特点:${colors.reset}
 ${colors.bright}💡 NPM快捷方式:${colors.reset}
   npm run version:sync        # 同步版本
   npm run version:bump        # 升级patch版本
-  npm run version:bump:minor  # 升级minor版本
-  npm run version:bump:major  # 升级major版本
+  npm run version:bump:minor  # 升级次版本
+  npm run version:bump:major  # 升级主版本
 
 ${colors.bright}📝 示例:${colors.reset}
   node scripts/sync-version.cjs                    # 同步版本
