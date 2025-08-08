@@ -3,7 +3,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { ChevronRight, ChevronDown, Database, Loader2, RefreshCw } from 'lucide-react';
 import { Button, Badge } from '@/components/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getNodeStyle, normalizeNodeType } from '@/types/tree';
+import { getNodeStyle, normalizeNodeType, getIoTDBNodeBehavior } from '@/types/tree';
 import { DatabaseIcon } from '@/components/common/DatabaseIcon';
 import type { TreeNodeType } from '@/types/tree';
 
@@ -145,10 +145,42 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
 
   // 处理节点双击激活
   const handleNodeDoubleClick = (node: TreeNode) => {
-    // 只有可展开的节点才能被激活
-    if (node.isExpandable && !node.isLeaf) {
+    // 获取节点元数据和行为配置
+    const isContainer = node.metadata?.is_container === true;
+    const normalizedNodeType = normalizeNodeType(node.nodeType) as TreeNodeType;
+    const behaviorConfig = getIoTDBNodeBehavior(normalizedNodeType, isContainer);
+
+    // 根据节点行为配置决定双击行为
+    if (behaviorConfig.canDoubleClick) {
+      // 数据节点：打开查询标签页
+      console.log(`双击数据节点: ${node.name}, 类型: ${node.nodeType}, 分类: ${node.metadata?.node_category}`);
+      // TODO: 实现打开查询标签页的逻辑
       setActivatedNodeId(activatedNodeId === node.id ? null : node.id);
+    } else if (behaviorConfig.canExpand) {
+      // 容器节点：切换展开状态
+      toggleNode(node.id);
+    } else {
+      // 其他节点：仅选中，不执行特殊操作
+      console.log(`双击非数据节点: ${node.name}, 类型: ${node.nodeType}, 不支持查询`);
     }
+  };
+
+  // 处理节点右键菜单
+  const handleNodeContextMenu = (node: TreeNode, event: React.MouseEvent) => {
+    event.preventDefault();
+
+    // 获取节点元数据和行为配置
+    const isContainer = node.metadata?.is_container === true;
+    const normalizedNodeType = normalizeNodeType(node.nodeType) as TreeNodeType;
+    const behaviorConfig = getIoTDBNodeBehavior(normalizedNodeType, isContainer);
+
+    console.log(`右键菜单: ${node.name}, 类型: ${behaviorConfig.contextMenuType}, 描述: ${behaviorConfig.description}`);
+
+    // TODO: 根据 contextMenuType 显示不同的右键菜单
+    // - 'data': 数据相关操作（查询、导出等）
+    // - 'management': 管理操作（编辑、删除等）
+    // - 'info': 信息操作（查看详情、复制等）
+    // - 'container': 容器操作（刷新、展开全部等）
   };
 
   // 初始加载
@@ -162,8 +194,15 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
   const renderTreeNode = (node: TreeNode, level = 0): React.ReactNode => {
     const isSelected = selectedNodeId === node.id;
     const isActivated = activatedNodeId === node.id;
-    const hasChildren = node.children.length > 0 || node.isExpandable;
+
+    // 获取节点元数据
+    const isContainer = node.metadata?.is_container === true;
+    const nodeCategory = node.metadata?.node_category as string;
+
+    // 根据节点行为配置决定是否显示展开按钮
     const normalizedNodeType = normalizeNodeType(node.nodeType) as TreeNodeType;
+    const behaviorConfig = getIoTDBNodeBehavior(normalizedNodeType, isContainer);
+    const hasChildren = behaviorConfig.canExpand && node.isExpandable;
 
 
 
@@ -179,6 +218,7 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
           style={{ paddingLeft: `${level * 20 + 8}px` }}
           onClick={() => handleNodeClick(node)}
           onDoubleClick={() => handleNodeDoubleClick(node)}
+          onContextMenu={(e) => handleNodeContextMenu(node, e)}
         >
           {/* 展开/折叠图标 */}
           <div

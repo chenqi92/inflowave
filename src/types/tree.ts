@@ -306,16 +306,163 @@ export function getExpectedTreeLevels(dbType: string): TreeNodeType[] {
 }
 
 /**
- * 检查节点是否可以有子节点
+ * IoTDB 节点行为配置
  */
-export function canHaveChildren(nodeType: TreeNodeType): boolean {
-  const leafNodeTypes: TreeNodeType[] = [
-    'field', 'tag', 'version_info', 'data_type', 'encoding', 'compression',
-    'column', 'privilege', 'user1x', 'user2x', 'authorization', 'continuous_query',
-    'cell', 'variable', 'check', 'notification_rule', 'notification_endpoint',
-    'scraper', 'telegraf', 'label', 'index', 'partition', 'function3x', 'procedure', 'trigger3x'
-  ];
-  return !leafNodeTypes.includes(nodeType);
+export interface NodeBehaviorConfig {
+  canExpand: boolean;           // 是否可以展开
+  canQuery: boolean;            // 是否可以查询数据
+  canDoubleClick: boolean;      // 是否支持双击打开查询
+  contextMenuType: 'data' | 'management' | 'info' | 'container'; // 右键菜单类型
+  description: string;          // 节点描述
+}
+
+/**
+ * 获取 IoTDB 节点行为配置
+ */
+export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = false): NodeBehaviorConfig {
+  // 容器节点（管理分组）
+  if (isContainer) {
+    switch (nodeType) {
+      case 'function':
+        return {
+          canExpand: true,
+          canQuery: false,
+          canDoubleClick: false,
+          contextMenuType: 'container',
+          description: '函数管理容器，包含用户定义函数列表'
+        };
+      case 'trigger':
+        return {
+          canExpand: true,
+          canQuery: false,
+          canDoubleClick: false,
+          contextMenuType: 'container',
+          description: '触发器管理容器，包含数据库触发器列表'
+        };
+      case 'schema_template':
+        return {
+          canExpand: true,
+          canQuery: false,
+          canDoubleClick: false,
+          contextMenuType: 'container',
+          description: '模式模板管理容器，包含设备模板列表'
+        };
+      case 'system_info':
+        return {
+          canExpand: true,
+          canQuery: false,
+          canDoubleClick: false,
+          contextMenuType: 'container',
+          description: '系统信息容器，包含系统状态信息'
+        };
+      case 'version_info':
+        return {
+          canExpand: true,
+          canQuery: false,
+          canDoubleClick: false,
+          contextMenuType: 'container',
+          description: '版本信息容器，包含软件版本详情'
+        };
+      default:
+        return {
+          canExpand: true,
+          canQuery: false,
+          canDoubleClick: false,
+          contextMenuType: 'container',
+          description: '管理容器节点'
+        };
+    }
+  }
+
+  // 具体节点
+  switch (nodeType) {
+    // 数据层级节点（可查询数据）
+    case 'storage_group':
+      return {
+        canExpand: true,
+        canQuery: true,
+        canDoubleClick: true,
+        contextMenuType: 'data',
+        description: '存储组，包含设备和时间序列数据'
+      };
+    case 'device':
+      return {
+        canExpand: true,
+        canQuery: true,
+        canDoubleClick: true,
+        contextMenuType: 'data',
+        description: '设备，包含多个时间序列'
+      };
+    case 'timeseries':
+    case 'aligned_timeseries':
+      return {
+        canExpand: false,
+        canQuery: true,
+        canDoubleClick: true,
+        contextMenuType: 'data',
+        description: '时间序列，存储具体的传感器数据'
+      };
+
+    // 管理功能节点（不可查询数据）
+    case 'function':
+      return {
+        canExpand: false,
+        canQuery: false,
+        canDoubleClick: false,
+        contextMenuType: 'management',
+        description: '用户定义函数，用于数据处理和计算'
+      };
+    case 'trigger':
+      return {
+        canExpand: false,
+        canQuery: false,
+        canDoubleClick: false,
+        contextMenuType: 'management',
+        description: '数据库触发器，用于自动化数据处理'
+      };
+    case 'schema_template':
+    case 'template':
+      return {
+        canExpand: false,
+        canQuery: false,
+        canDoubleClick: false,
+        contextMenuType: 'management',
+        description: '设备模板，定义设备的时间序列结构'
+      };
+
+    // 系统信息节点（只读信息）
+    case 'system_info':
+    case 'version_info':
+    case 'storage_engine_info':
+    case 'cluster_info':
+    case 'data_type':
+    case 'encoding':
+    case 'compression':
+      return {
+        canExpand: false,
+        canQuery: false,
+        canDoubleClick: false,
+        contextMenuType: 'info',
+        description: '系统信息，只读配置或状态数据'
+      };
+
+    // 默认行为
+    default:
+      return {
+        canExpand: false,
+        canQuery: false,
+        canDoubleClick: false,
+        contextMenuType: 'info',
+        description: '未知节点类型'
+      };
+  }
+}
+
+/**
+ * 检查节点是否可以有子节点（基于行为配置）
+ */
+export function canHaveChildren(nodeType: TreeNodeType, isContainer: boolean = false): boolean {
+  return getIoTDBNodeBehavior(nodeType, isContainer).canExpand;
 }
 
 /**

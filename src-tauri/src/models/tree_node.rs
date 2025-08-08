@@ -422,6 +422,7 @@ impl TreeNodeFactory {
             TreeNodeType::Timeseries,
         )
         .with_parent(parent_id)
+        .as_leaf()
     }
 
     /// 创建 IoTDB 时间序列节点（带详细信息）
@@ -438,7 +439,8 @@ impl TreeNodeFactory {
             TreeNodeType::Timeseries,
         )
         .with_parent(parent_id)
-        .with_metadata("data_type".to_string(), serde_json::Value::String(data_type));
+        .with_metadata("data_type".to_string(), serde_json::Value::String(data_type))
+        .as_leaf();
 
         if let Some(enc) = encoding {
             node = node.with_metadata("encoding".to_string(), serde_json::Value::String(enc));
@@ -458,6 +460,7 @@ impl TreeNodeFactory {
             TreeNodeType::AlignedTimeseries,
         )
         .with_parent(parent_id)
+        .as_leaf()
     }
 
     /// 创建 IoTDB 设备模板节点
@@ -478,6 +481,7 @@ impl TreeNodeFactory {
             TreeNodeType::SystemInfo,
         )
         .as_system()
+        .as_leaf()
     }
 
     /// 创建存储组管理节点

@@ -637,28 +637,36 @@ impl IoTDBOfficialClient {
 
         let mut nodes = Vec::new();
 
-        // 1. 添加系统信息节点
+        // 1. 添加系统信息节点（容器节点，可展开）
         let system_info_node = TreeNode::new(
             "SystemInfo".to_string(),
             "System Information".to_string(),
             TreeNodeType::SystemInfo,
-        );
+        )
+        .as_system()
+        .with_metadata("is_container".to_string(), serde_json::Value::Bool(true))
+        .with_metadata("node_category".to_string(), serde_json::Value::String("info_container".to_string()));
         nodes.push(system_info_node);
 
-        // 2. 添加版本信息节点
+        // 2. 添加版本信息节点（容器节点，可展开）
         let version_info_node = TreeNode::new(
             "VersionInfo".to_string(),
             "Version Information".to_string(),
             TreeNodeType::VersionInfo,
-        );
+        )
+        .as_system()
+        .with_metadata("is_container".to_string(), serde_json::Value::Bool(true))
+        .with_metadata("node_category".to_string(), serde_json::Value::String("info_container".to_string()));
         nodes.push(version_info_node);
 
-        // 3. 添加模式模板节点
+        // 3. 添加模式模板节点（容器节点，可展开）
         let schema_template_node = TreeNode::new(
             "SchemaTemplate".to_string(),
             "Schema Templates".to_string(),
             TreeNodeType::SchemaTemplate,
-        );
+        )
+        .with_metadata("is_container".to_string(), serde_json::Value::Bool(true))
+        .with_metadata("node_category".to_string(), serde_json::Value::String("management_container".to_string()));
         nodes.push(schema_template_node);
 
         // 4. 获取存储组列表
@@ -674,20 +682,24 @@ impl IoTDBOfficialClient {
             nodes.push(node);
         }
 
-        // 5. 添加函数节点
+        // 5. 添加函数节点（容器节点，可展开）
         let functions_node = TreeNode::new(
             "Functions".to_string(),
             "Functions".to_string(),
             TreeNodeType::Function,
-        );
+        )
+        .with_metadata("is_container".to_string(), serde_json::Value::Bool(true))
+        .with_metadata("node_category".to_string(), serde_json::Value::String("management_container".to_string()));
         nodes.push(functions_node);
 
-        // 6. 添加触发器节点
+        // 6. 添加触发器节点（容器节点，可展开）
         let triggers_node = TreeNode::new(
             "Triggers".to_string(),
             "Triggers".to_string(),
             TreeNodeType::Trigger,
-        );
+        )
+        .with_metadata("is_container".to_string(), serde_json::Value::Bool(true))
+        .with_metadata("node_category".to_string(), serde_json::Value::String("management_container".to_string()));
         nodes.push(triggers_node);
 
         // 如果没有存储组，添加一个默认的root节点用于探索
@@ -856,8 +868,131 @@ impl IoTDBOfficialClient {
     }
 
     /// 获取树子节点
-    pub async fn get_tree_children(&self, _parent_node_id: &str, _node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
-        Ok(vec![])
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+        use crate::models::{TreeNode, TreeNodeType};
+
+        debug!("获取树子节点: {} ({})", parent_node_id, node_type);
+
+        let mut children = Vec::new();
+
+        match node_type {
+            "SystemInfo" | "system_info" => {
+                // 系统信息节点的子节点
+                let items = self.get_system_info_items().await?;
+                for item in items {
+                    let child = TreeNode::new(
+                        format!("{}_{}", parent_node_id, item.replace(" ", "_")),
+                        item,
+                        TreeNodeType::SystemInfo,
+                    )
+                    .as_system()
+                    .as_leaf()
+                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(false))
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("info_item".to_string()));
+                    children.push(child);
+                }
+            }
+            "VersionInfo" | "version_info" => {
+                // 版本信息节点的子节点
+                let items = self.get_version_info_items().await?;
+                for item in items {
+                    let child = TreeNode::new(
+                        format!("{}_{}", parent_node_id, item.replace(" ", "_")),
+                        item,
+                        TreeNodeType::VersionInfo,
+                    )
+                    .as_system()
+                    .as_leaf()
+                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(false))
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("info_item".to_string()));
+                    children.push(child);
+                }
+            }
+            "SchemaTemplate" | "schema_template" => {
+                // 模式模板节点的子节点
+                let templates = self.get_schema_templates().await?;
+                for template in templates {
+                    let child = TreeNode::new(
+                        format!("{}_{}", parent_node_id, template.replace(" ", "_")),
+                        template,
+                        TreeNodeType::SchemaTemplate,
+                    )
+                    .as_leaf()
+                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(false))
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("management_item".to_string()));
+                    children.push(child);
+                }
+            }
+            "Function" | "function" => {
+                // 函数节点的子节点
+                let functions = self.get_functions().await?;
+                for function in functions {
+                    let child = TreeNode::new(
+                        format!("{}_{}", parent_node_id, function.replace(" ", "_")),
+                        function,
+                        TreeNodeType::Function,
+                    )
+                    .as_leaf()
+                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(false))
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("management_item".to_string()));
+                    children.push(child);
+                }
+            }
+            "Trigger" | "trigger" => {
+                // 触发器节点的子节点
+                let triggers = self.get_triggers().await?;
+                for trigger in triggers {
+                    let child = TreeNode::new(
+                        format!("{}_{}", parent_node_id, trigger.replace(" ", "_")),
+                        trigger,
+                        TreeNodeType::Trigger,
+                    )
+                    .as_leaf()
+                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(false))
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("management_item".to_string()));
+                    children.push(child);
+                }
+            }
+            "StorageGroup" | "storage_group" => {
+                // 存储组节点的子节点（设备）
+                let storage_group_name = parent_node_id.strip_prefix("sg_").unwrap_or(parent_node_id);
+                let devices = self.get_devices(storage_group_name).await?;
+                for device in devices {
+                    let child = TreeNode::new(
+                        format!("{}_{}", parent_node_id, device.replace(".", "_")),
+                        device,
+                        TreeNodeType::Device,
+                    )
+                    .with_parent(parent_node_id.to_string())
+                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(false))
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("data_node".to_string()));
+                    children.push(child);
+                }
+            }
+            "Device" | "device" => {
+                // 设备节点的子节点（时间序列）
+                let device_path = parent_node_id;
+                let timeseries = self.get_timeseries(device_path).await?;
+                for ts in timeseries {
+                    let child = TreeNode::new(
+                        format!("{}_{}", parent_node_id, ts.replace(".", "_")),
+                        ts,
+                        TreeNodeType::Timeseries,
+                    )
+                    .with_parent(parent_node_id.to_string())
+                    .as_leaf()
+                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(false))
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("data_leaf".to_string()));
+                    children.push(child);
+                }
+            }
+            _ => {
+                debug!("未知的节点类型: {}", node_type);
+            }
+        }
+
+        debug!("为节点 {} 生成了 {} 个子节点", parent_node_id, children.len());
+        Ok(children)
     }
 
     /// 获取设备

@@ -58,6 +58,7 @@ import {dialog} from '@/utils/dialog';
 // 导入弹框组件
 import TableDesignerDialog from '@/components/database/TableDesignerDialog';
 import TableInfoDialog from '@/components/database/TableInfoDialog';
+import { ManagementNodeDialog } from '@/components/database/ManagementNodeDialog';
 
 // Note: Using Input directly for search functionality
 // Note: Using TabsContent instead of TabPane
@@ -218,6 +219,15 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         mode: 'create' as 'create' | 'edit',
         database: '',
         policy: null as any,
+    });
+
+    // 管理节点弹框状态
+    const [managementNodeDialog, setManagementNodeDialog] = useState({
+        open: false,
+        connectionId: '',
+        nodeType: '',
+        nodeName: '',
+        nodeCategory: '',
     });
 
     const activeConnection = activeConnectionId
@@ -754,15 +764,54 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     keys: Object.keys(node)
                 })));
 
+                // 详细分析每个节点的结构
+                treeNodes.forEach((node, index) => {
+                    console.log(`📋 节点 ${index}: ${node.name || node.id}`, {
+                        nodeType: node.node_type || node.nodeType,
+                        metadata: node.metadata,
+                        isContainer: node.metadata?.is_container,
+                        nodeCategory: node.metadata?.node_category,
+                        isLeaf: node.is_leaf,
+                        isExpandable: node.is_expandable,
+                        allKeys: Object.keys(node)
+                    });
+                });
+
                 // 存储完整的树节点信息，用于后续的图标显示
                 setTreeNodeCache(prev => ({
                     ...prev,
                     [connection_id as string]: treeNodes
                 }));
 
-                // 提取数据库名称用于兼容现有逻辑
-                const dbList = treeNodes.map(node => node.name || node.id);
-                console.log(`✅ 提取的数据库列表:`, dbList);
+                // 区分数据库节点和管理功能节点
+                const databaseNodes = treeNodes.filter(node => {
+                    const nodeType = node.node_type || node.nodeType;
+                    const isContainer = node.metadata?.is_container === true;
+                    const nodeCategory = node.metadata?.node_category;
+
+                    // 只有真正的数据库节点才被当作数据库处理
+                    // 排除管理功能节点（Functions、Triggers等）
+                    return nodeType === 'storage_group' ||
+                           nodeType === 'database' ||
+                           (nodeCategory !== 'management_container' &&
+                            nodeCategory !== 'info_container' &&
+                            !['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType));
+                });
+
+                const managementNodes = treeNodes.filter(node => {
+                    const nodeType = node.node_type || node.nodeType;
+                    const nodeCategory = node.metadata?.node_category;
+
+                    // 管理功能节点
+                    return nodeCategory === 'management_container' ||
+                           nodeCategory === 'info_container' ||
+                           ['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType);
+                });
+
+                // 提取真正的数据库名称
+                const dbList = databaseNodes.map(node => node.name || node.id);
+                console.log(`✅ 提取的数据库列表 (${databaseNodes.length}个):`, dbList);
+                console.log(`⚙️ 管理节点列表 (${managementNodes.length}个):`, managementNodes.map(n => n.name || n.id));
 
                 // 更新缓存
                 setDatabasesCache(prev => new Map(prev).set(connection_id, dbList || []));
@@ -932,42 +981,60 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     };
                     setTreeNodeCache(newCache);
 
-                    // 提取数据库名称用于兼容现有逻辑
-                    const databases = treeNodes.map(node => node.name || node.id);
-                    console.log(
-                        `📁 为连接 ${connection.name} 创建 ${databases.length} 个数据库节点`
-                    );
+                    // 区分数据库节点和管理功能节点
+                    const databaseNodes = treeNodes.filter(node => {
+                        const nodeType = node.node_type || node.nodeType;
+                        const isContainer = node.metadata?.is_container === true;
+                        const nodeCategory = node.metadata?.node_category;
 
-                    connectionNode.children = databases.map(db => {
-                        const dbPath = `${connection.id}/${db}`;
+                        // 只有真正的数据库节点才被当作数据库处理
+                        // 排除管理功能节点（Functions、Triggers等）
+                        return nodeType === 'storage_group' ||
+                               nodeType === 'database' ||
+                               (nodeCategory !== 'management_container' &&
+                                nodeCategory !== 'info_container' &&
+                                !['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType));
+                    });
+
+                    const managementNodes = treeNodes.filter(node => {
+                        const nodeType = node.node_type || node.nodeType;
+                        const nodeCategory = node.metadata?.node_category;
+
+                        // 管理功能节点
+                        return nodeCategory === 'management_container' ||
+                               nodeCategory === 'info_container' ||
+                               ['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType);
+                    });
+
+                    console.log(`📁 为连接 ${connection.name} 创建 ${databaseNodes.length} 个数据库节点，${managementNodes.length} 个管理节点`);
+                    console.log(`🗂️ 数据库节点:`, databaseNodes.map(n => `${n.name}(${n.node_type || n.nodeType})`));
+                    console.log(`⚙️ 管理节点:`, managementNodes.map(n => `${n.name}(${n.node_type || n.nodeType})`));
+
+                    // 创建数据库子节点
+                    const databaseChildren = databaseNodes.map(dbNode => {
+                        const dbName = dbNode.name || dbNode.id;
+                        const dbPath = `${connection.id}/${dbName}`;
                         const isFav = isFavorite(dbPath);
-                        const databaseKey = `database|${connection.id}|${db}`;
+                        const databaseKey = `database|${connection.id}|${dbName}`;
                         const isExpanded = expandedKeys.includes(databaseKey);
-                        const isOpened = connection.id ? isDatabaseOpened(connection.id, db) : false;
-
-                        // 直接从当前获取的树节点信息中查找对应的节点类型
-                        const currentNode = treeNodes.find((node: any) => {
-                            return node.name === db || node.id === db;
-                        });
+                        const isOpened = connection.id ? isDatabaseOpened(connection.id, dbName) : false;
 
                         // 优先使用从后端获取的节点类型（snake_case格式）
-                        let nodeType = currentNode?.node_type || currentNode?.nodeType;
+                        let nodeType = dbNode?.node_type || dbNode?.nodeType;
 
                         // 如果没有找到，使用推断逻辑
                         if (!nodeType) {
-                            nodeType = getDatabaseNodeType(connection.id, db);
+                            nodeType = getDatabaseNodeType(connection.id, dbName);
                         }
-
-
 
                         const nodeData: any = {
                             title: (
                                 <span className='flex items-center gap-1'>
-                  {db}
+                                    {dbName}
                                     {isFav && (
                                         <Star className='w-3 h-3 text-warning fill-current'/>
                                     )}
-                </span>
+                                </span>
                             ),
                             key: databaseKey,
                             // 使用正确的节点类型显示图标
@@ -992,6 +1059,57 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                         return nodeData;
                     });
+
+                    // 创建管理功能子节点（简化版，不支持展开，双击打开弹框）
+                    const managementChildren = managementNodes.map(mgmtNode => {
+                        const nodeName = mgmtNode.name || mgmtNode.id;
+                        const nodeType = mgmtNode.node_type || mgmtNode.nodeType;
+                        const isContainer = mgmtNode.metadata?.is_container === true;
+                        const nodeCategory = mgmtNode.metadata?.node_category;
+                        const managementKey = `management|${connection.id}|${nodeType}|${nodeName}`;
+
+                        console.log(`⚙️ 创建管理节点: ${nodeName} (${nodeType}), 容器: ${isContainer}, 分类: ${nodeCategory}`);
+
+                        return {
+                            title: (
+                                <span className='flex items-center gap-1'>
+                                    {nodeName}
+                                </span>
+                            ),
+                            key: managementKey,
+                            icon: (
+                                <DatabaseIcon
+                                    nodeType={nodeType as any}
+                                    isOpen={false}
+                                    size={16}
+                                    className="flex-shrink-0"
+                                    title={`${nodeName} (${nodeType}) - 管理功能节点，双击查看详情`}
+                                />
+                            ),
+                            isLeaf: true, // 所有管理节点都设为叶子节点，不支持展开
+                            children: undefined,
+                            selectable: true,
+                            checkable: false,
+                            disabled: false,
+                            disableCheckbox: false,
+                            switcherIcon: undefined,
+                            className: `tree-node management-node`,
+                            style: {},
+                            data: {
+                                type: 'management',
+                                connectionId: connection.id,
+                                nodeType: nodeType,
+                                nodeName: nodeName,
+                                isContainer: isContainer,
+                                nodeCategory: nodeCategory,
+                                isExpanded: false,
+                                metadata: mgmtNode?.metadata || {}
+                            }
+                        };
+                    });
+
+                    // 合并数据库节点和管理节点
+                    connectionNode.children = [...databaseChildren, ...managementChildren];
                 } catch (error) {
                     console.error('❌ 加载数据库失败:', error);
                 }
@@ -1473,48 +1591,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             console.log(`📂 加载数据库列表: ${connection.name}`);
             const databases = await loadDatabases(connectionId, true); // 强制刷新
 
-            // 4. 等待缓存设置完成，然后更新树形数据
+            // 4. 等待缓存设置完成，然后重新构建完整的树形数据
             // 使用 setTimeout 确保缓存已经被设置
-            setTimeout(() => {
-                setTreeData(prevData => {
-                    return prevData.map(node => {
-                        if (node.key === `connection-${connectionId}`) {
-                            const databaseChildren: DataNode[] = databases.map(databaseName => {
-                                const dbPath = `${connectionId}/${databaseName}`;
-                                const isFav = isFavorite(dbPath);
-                                const databaseKey = `database|${connectionId}|${databaseName}`;
-                                const isOpened = isDatabaseOpened(connectionId, databaseName);
-
-                                return {
-                                    title: (
-                                        <span className='flex items-center gap-1'>
-                                            {databaseName}
-                                            {isFav && <Star className='w-3 h-3 text-warning fill-current'/>}
-                                        </span>
-                                    ),
-                                    key: databaseKey,
-                                    icon: (
-                                        <DatabaseIcon
-                                            nodeType={getDatabaseNodeType(connectionId, databaseName) as any}
-                                            size={16}
-                                            isOpen={isOpened}
-                                            className={isOpened ? 'text-purple-600' : 'text-muted-foreground'}
-                                        />
-                                    ),
-                                    isLeaf: !isOpened,
-                                    children: isOpened ? [] : undefined,
-                                };
-                            });
-
-                            return {
-                                ...node,
-                                children: databaseChildren,
-                                isLeaf: databaseChildren.length === 0,
-                            };
-                        }
-                        return node;
-                    });
-                });
+            setTimeout(async () => {
+                console.log(`🔄 连接建立后重新构建完整树形数据: ${connection.name}`);
+                await buildCompleteTreeData(false); // 不显示全局loading，因为连接过程已经有loading了
 
                 // 5. 自动展开连接节点
                 const connectionKey = `connection-${connectionId}`;
@@ -1565,7 +1646,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 // 重新加载数据库列表（强制刷新）
                 await loadDatabases(connectionId, true);
                 // 刷新树形数据
-                buildCompleteTreeData(true);
+                await buildCompleteTreeData(true);
                 showMessage.success(`已加载数据库列表: ${connection.name}`);
             } catch (error) {
                 console.error(`❌ 加载数据库列表失败:`, error);
@@ -1808,6 +1889,48 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 } else {
                     // 当前已收起，展开连接节点并确保数据已加载
                     await handleExpandConnection(connectionId);
+                }
+            }
+        } else if (String(key).startsWith('management|')) {
+            // 管理功能节点被双击
+            const parts = String(key).split('|');
+            if (parts.length >= 4) {
+                const connectionId = parts[1];
+                const nodeType = parts[2];
+                const nodeName = parts[3];
+                const managementKey = `management|${connectionId}|${nodeType}|${nodeName}`;
+
+                console.log(`🖱️ 双击管理节点 "${nodeName}" (${nodeType}):`, {
+                    connectionId,
+                    nodeType,
+                    nodeName,
+                    managementKey
+                });
+
+                // 检查连接状态
+                const isConnected = isConnectionConnected(connectionId);
+                if (!isConnected) {
+                    console.warn(`⚠️ 连接 ${connectionId} 未建立，无法操作管理节点 "${nodeName}"`);
+                    showMessage.warning(`请先建立连接后再操作管理节点 "${nodeName}"`);
+                    return;
+                }
+
+                // 根据节点类型决定双击行为
+                if (['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType)) {
+                    // 管理节点：打开详情弹框
+                    console.log(`🔍 打开管理节点详情弹框: ${nodeName} (${nodeType})`);
+
+                    setManagementNodeDialog({
+                        open: true,
+                        connectionId: connectionId,
+                        nodeType: nodeType,
+                        nodeName: nodeName,
+                        nodeCategory: 'management',
+                    });
+                } else {
+                    // 其他节点：显示详情或执行特定操作
+                    console.log(`🔍 查看管理节点详情: ${nodeName} (${nodeType})`);
+                    showMessage.info(`查看 ${nodeName} 详情`);
                 }
             }
         } else if (String(key).startsWith('database|')) {
@@ -3585,6 +3708,22 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 connection={editingConnection || undefined}
                 onCancel={handleCloseConnectionDialog}
                 onSuccess={handleConnectionSuccess}
+            />
+
+            {/* 管理节点详情弹框 */}
+            <ManagementNodeDialog
+                open={managementNodeDialog.open}
+                onClose={() => setManagementNodeDialog({
+                    open: false,
+                    connectionId: '',
+                    nodeType: '',
+                    nodeName: '',
+                    nodeCategory: '',
+                })}
+                connectionId={managementNodeDialog.connectionId}
+                nodeType={managementNodeDialog.nodeType}
+                nodeName={managementNodeDialog.nodeName}
+                nodeCategory={managementNodeDialog.nodeCategory}
             />
         </>
     );
