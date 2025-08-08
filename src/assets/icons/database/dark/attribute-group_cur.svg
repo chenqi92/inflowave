@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="3" width="12" height="10" fill="none" stroke="#10B981" stroke-width="1.5" stroke-dasharray="2,1"/>
+    <circle cx="5" cy="6" r="1" fill="#10B981"/>
+    <circle cx="8" cy="6" r="1" fill="#10B981"/>
+    <circle cx="11" cy="6" r="1" fill="#10B981"/>
+    <text x="8" y="11" text-anchor="middle" font-family="Arial" font-size="3" fill="#10B981" font-weight="bold">ATTR</text>
+</svg>

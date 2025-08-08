@@ -373,6 +373,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             'Triggers': 'trigger',
             'Cluster Information': 'cluster_info',
             'Storage Engine Information': 'storage_engine_info',
+            'Templates': 'template',
+            'Device Templates': 'template',
+            'Attribute Groups': 'attribute_group',
+            'Attributes': 'attribute_group',
         };
 
         // 精确匹配
@@ -402,6 +406,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
         if (lowerName.includes('storage') && lowerName.includes('engine')) {
             return 'storage_engine_info';
+        }
+        if (lowerName.includes('template')) {
+            return 'template';
+        }
+        if (lowerName.includes('attribute')) {
+            return 'attribute_group';
         }
 
         // 默认为存储组

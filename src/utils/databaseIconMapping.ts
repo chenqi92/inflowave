@@ -262,8 +262,10 @@ export const ICON_MAPPING: Record<TreeNodeType, IconConfig> = {
   },
   'attribute_group': {
     fileName: 'attribute-group.svg',
+    openFileName: 'attribute-group_cur.svg',
     description: '属性组',
     databases: ['iotdb'],
+    isOpenable: true,
   },
   'data_type': {
     fileName: 'data-type.svg',
@@ -285,13 +287,17 @@ export const ICON_MAPPING: Record<TreeNodeType, IconConfig> = {
   },
   'schema_template': {
     fileName: 'schema-template.svg',
+    openFileName: 'schema-template_cur.svg',
     description: '模式模板',
     databases: ['iotdb'],
+    isOpenable: true,
   },
   'template': {
     fileName: 'template.svg',
+    openFileName: 'template_cur.svg',
     description: '模板',
     databases: ['iotdb'],
+    isOpenable: true,
   },
   'system_info': {
     fileName: 'system-info.svg',
@@ -341,9 +347,10 @@ export const ICON_MAPPING: Record<TreeNodeType, IconConfig> = {
   },
   'trigger': {
     fileName: 'trigger.svg',
+    openFileName: 'trigger_cur.svg',
     description: '触发器',
     databases: ['iotdb'],
-    isLeaf: true,
+    isOpenable: true,
   },
   'trigger3x': {
     fileName: 'trigger3x.svg',
