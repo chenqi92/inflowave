@@ -136,7 +136,27 @@ export const useConnectionStore = create<ConnectionState>()(
           }
 
           console.log(`✅ 添加新连接: ${newConnection.name} (${id})`);
-          return { connections: [...state.connections, newConnection] };
+
+          // 为新连接初始化连接状态
+          const initialStatus: ConnectionStatus = {
+            id,
+            status: 'disconnected',
+            error: undefined,
+            latency: undefined,
+            lastConnected: undefined,
+          };
+
+          return {
+            connections: [...state.connections, newConnection],
+            connectionStatuses: {
+              ...state.connectionStatuses,
+              [id]: initialStatus,
+            },
+            tableConnectionStatuses: {
+              ...state.tableConnectionStatuses,
+              [id]: initialStatus,
+            },
+          };
         });
 
         return id;

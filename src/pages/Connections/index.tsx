@@ -152,41 +152,17 @@ const Connections: React.FC = () => {
   // 处理连接保存成功
   const handleConnectionSuccess = async (connection: ConnectionConfig) => {
     try {
-      console.log('💾 开始保存连接配置:', connection.name);
+      console.log('💾 连接保存成功:', connection.name);
 
       if (editingConnection?.id) {
-        // 更新现有连接 - 确保使用正确的连接ID和时间戳字段
-        const updateConfig = {
-          ...connection,
-          id: editingConnection.id,
-          created_at: editingConnection.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        console.log('📝 更新现有连接:', updateConfig.id);
-        await safeTauriInvoke('update_connection', { config: updateConfig });
-        updateConnection(editingConnection.id, updateConfig);
-        showMessage.success('连接配置已更新');
+        // 更新现有连接
+        showMessage.success(`连接 "${connection.name}" 已更新`);
       } else {
         // 创建新连接
-        const connectionWithTimestamp = {
-          ...connection,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        console.log('➕ 创建新连接:', connectionWithTimestamp.name);
-        const connectionId = await safeTauriInvoke<string>(
-          'create_connection',
-          { config: connectionWithTimestamp }
-        );
-
-        if (connectionId) {
-          const newConnection = { ...connectionWithTimestamp, id: connectionId };
-          addConnection(newConnection);
-          console.log('✅ 新连接已添加到前端状态:', connectionId);
-          showMessage.success('连接配置已创建');
-        }
+        // 注意：SimpleConnectionDialog 内部的 useConnection hook 已经处理了连接创建和添加到store
+        // 这里只需要显示成功消息
+        showMessage.success(`连接 "${connection.name}" 已创建`);
+        console.log('✅ 新连接已通过 useConnection hook 添加到前端状态:', connection.id);
       }
 
       handleCloseDialog();
@@ -195,8 +171,8 @@ const Connections: React.FC = () => {
       console.log('✅ 连接保存完成，等待DatabaseExplorer自动刷新');
 
     } catch (error) {
-      console.error('❌ 保存连接配置失败:', error);
-      showMessage.error(`保存连接配置失败: ${error}`);
+      console.error('❌ 连接保存失败:', error);
+      showMessage.error(`连接保存失败: ${error}`);
     }
   };
 

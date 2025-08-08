@@ -299,19 +299,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             // 关闭对话框
             handleCloseConnectionDialog();
 
-            // 简化刷新策略，避免竞态条件
-            console.log('🔄 新连接保存成功，等待连接状态同步后刷新树');
-
-            // 等待一小段时间让连接状态同步，然后刷新树
-            setTimeout(async () => {
-                try {
-                    console.log('🔄 开始刷新数据源树以显示新连接');
-                    await buildCompleteTreeData(true);
-                    console.log('✅ 数据源树刷新完成');
-                } catch (error) {
-                    console.error('❌ 数据源树刷新失败:', error);
-                }
-            }, 300);
+            // 注意：SimpleConnectionDialog 内部的 useConnection hook 已经调用了 addConnection
+            // 这里不需要手动刷新，因为 useEffect 会监听 connections 变化自动重建树
+            console.log('✅ 连接保存完成，等待自动刷新数据源树');
 
         } catch (error) {
             console.error('连接保存失败:', error);
