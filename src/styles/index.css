@@ -13,6 +13,8 @@
 @import './monaco-theme.css';
 /* 字体偏好设置样式 */
 @import './font-preferences.css';
+/* 鼠标指针修复样式 */
+@import './cursor-fixes.css';
 
 /* 查询页面优化样式 */
 @layer components {
@@ -117,7 +119,7 @@
 
   /* 高性能单元格选择和编辑样式 */
   .table-cell-selectable {
-    cursor: pointer;
+    cursor: default;
     position: relative;
   }
 
@@ -1094,7 +1096,7 @@ pre,
   border-bottom: 2px solid transparent;
   margin: 0 4px;
   padding: 8px 16px;
-  cursor: pointer;
+  cursor: default;
   transition: all 0.2s;
 }
 
@@ -1245,7 +1247,7 @@ pre,
 
 .tab-item {
   padding: 8px 16px;
-  cursor: pointer;
+  cursor: default;
   border-bottom: 2px solid transparent;
   transition: all 0.2s;
 }
@@ -1266,7 +1268,7 @@ pre,
   border-radius: 4px;
   border: 1px solid #d9d9d9;
   background: #fff;
-  cursor: pointer;
+  cursor: default;
   transition: all 0.2s;
 }
 
@@ -1868,7 +1870,7 @@ pre,
   display: flex;
   height: 36px;
   border-bottom: 1px solid hsl(var(--border));
-  cursor: pointer;
+  cursor: default;
   transition: background-color 0.15s ease;
   user-select: none;
   /* 防止点击时滚动跳转 */
@@ -1945,7 +1947,7 @@ pre,
   /* 防止点击时滚动跳转 */
   position: relative;
   contain: layout style;
-  cursor: pointer;
+  cursor: default;
   user-select: none;
   transition: background-color 0.15s ease;
 }

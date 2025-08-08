@@ -1,0 +1,343 @@
+/* 鼠标指针修复样式 - 桌面应用适配 */
+
+/* 
+ * 桌面应用中，只有真正可交互的元素才应该显示手型指针
+ * 其他元素应该使用默认箭头指针，符合桌面软件的用户体验习惯
+ */
+
+/* 全局重置 - 移除不必要的手型指针 */
+/* 注意：这个规则可能过于激进，先注释掉，使用更精确的规则 */
+/*
+*:not(button):not([role="button"]):not(a):not(input):not(select):not(textarea) {
+  cursor: default !important;
+}
+*/
+
+/* 只有真正的交互元素才使用手型指针 */
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+a[href],
+select,
+.btn,
+.button {
+  cursor: default;
+}
+
+/* 文本输入元素使用文本指针 */
+input[type="text"],
+input[type="password"],
+input[type="email"],
+input[type="search"],
+input[type="url"],
+input[type="tel"],
+input[type="number"],
+textarea,
+[contenteditable="true"] {
+  cursor: text;
+}
+
+/* 禁用状态的元素使用禁用指针 */
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[disabled] {
+  cursor: not-allowed;
+}
+
+/* 拖拽手柄保持专用指针 */
+.resizable-handle-horizontal,
+[data-panel-group-direction="horizontal"] .resizable-handle {
+  cursor: col-resize !important;
+}
+
+.resizable-handle-vertical,
+[data-panel-group-direction="vertical"] .resizable-handle {
+  cursor: row-resize !important;
+}
+
+/* 修复特定组件的指针问题 */
+
+/* 1. 表格相关 - 只有可点击的行才显示手型指针 */
+.table-row-with-fixed-column {
+  cursor: default; /* 默认箭头指针 */
+}
+
+.table-row-with-fixed-column.clickable,
+.table-row-with-fixed-column[data-clickable="true"] {
+  cursor: default; /* 只有明确可点击的行才显示手型指针 */
+}
+
+.table-cell-selectable {
+  cursor: default; /* 单元格默认箭头指针 */
+}
+
+.table-cell-selectable.editable,
+.table-cell-selectable[data-editable="true"] {
+  cursor: text; /* 可编辑单元格显示文本指针 */
+}
+
+/* 2. 菜单项 - 保持手型指针 */
+.menu-item,
+.desktop-menu-bar .horizontal-menu > .menu-item,
+.desktop-menu-bar .horizontal-menu > .menu-submenu {
+  cursor: default;
+}
+
+/* 3. 标签页 - 保持手型指针 */
+.tab-item {
+  cursor: default;
+}
+
+/* 4. 树形节点 - 保持手型指针 */
+.database-explorer-tree .tree-node-content {
+  cursor: default;
+}
+
+/* 5. 搜索结果项 - 保持手型指针 */
+.search-result-item,
+[data-search-result] {
+  cursor: default;
+}
+
+/* 6. 卡片和面板 - 默认箭头指针 */
+.card,
+.panel,
+[data-card],
+[data-panel] {
+  cursor: default;
+}
+
+.card.clickable,
+.panel.clickable,
+[data-card][data-clickable="true"],
+[data-panel][data-clickable="true"] {
+  cursor: default;
+}
+
+/* 7. 图标 - 默认箭头指针，除非在可点击容器内 */
+svg,
+.icon,
+.lucide-icon {
+  cursor: inherit; /* 继承父元素的指针样式 */
+}
+
+/* 8. 文本和标签 - 默认箭头指针 */
+span,
+div,
+p,
+h1, h2, h3, h4, h5, h6,
+label:not([for]) {
+  cursor: default;
+}
+
+/* 关联标签保持手型指针 */
+label[for] {
+  cursor: default;
+}
+
+/* 9. 开关组件 - 保持手型指针 */
+.switch,
+[role="switch"] {
+  cursor: default;
+}
+
+/* 10. 下拉选择器 - 保持手型指针 */
+.select-trigger,
+[data-radix-select-trigger] {
+  cursor: default;
+}
+
+/* 11. 日期选择器输入框 - 保持手型指针 */
+.date-picker input[readonly] {
+  cursor: default;
+}
+
+/* 12. 主题颜色选择器 - 保持手型指针 */
+.theme-color-option,
+[data-theme-color] {
+  cursor: default;
+}
+
+/* 13. 通知面板项 - 保持手型指针 */
+.notification-item,
+[data-notification] {
+  cursor: default;
+}
+
+/* 14. 建议项 - 保持手型指针 */
+.suggestion-item,
+[data-suggestion] {
+  cursor: default;
+}
+
+/* 15. 功能栏按钮 - 保持手型指针 */
+.function-bar-button,
+[data-function-button] {
+  cursor: default;
+}
+
+/* 特殊情况处理 */
+
+/* Monaco编辑器区域 - 使用文本指针 */
+.monaco-editor,
+.monaco-editor * {
+  cursor: text !important;
+}
+
+.monaco-editor .monaco-scrollable-element {
+  cursor: default !important;
+}
+
+/* 滚动条区域 - 使用默认指针 */
+::-webkit-scrollbar,
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-thumb {
+  cursor: default;
+}
+
+/* 加载状态 - 使用等待指针 */
+.loading,
+[data-loading="true"] {
+  cursor: wait;
+}
+
+/* 拖拽状态 - 使用移动指针 */
+.dragging,
+[data-dragging="true"] {
+  cursor: move;
+}
+
+/* 调整大小状态 - 使用对应的调整指针 */
+.resizing-horizontal {
+  cursor: col-resize;
+}
+
+.resizing-vertical {
+  cursor: row-resize;
+}
+
+.resizing-both {
+  cursor: nw-resize;
+}
+
+/* 工具提示触发器 - 使用帮助指针 */
+[data-tooltip],
+.tooltip-trigger {
+  cursor: help;
+}
+
+/* 只读元素 - 使用默认指针 */
+[readonly]:not(input[type="text"]):not(textarea) {
+  cursor: default;
+}
+
+/* 确保shadcn/ui组件的正确指针行为 */
+[data-radix-collection-item]:not([data-disabled]) {
+  cursor: default;
+}
+
+[data-radix-collection-item][data-disabled] {
+  cursor: not-allowed;
+}
+
+/* 确保按钮变体的正确指针 */
+.btn-sm {
+  cursor: default;
+}
+
+/* 链接样式的元素 */
+.link,
+[data-link] {
+  cursor: default;
+}
+
+/* 关闭按钮 */
+.close-button,
+[data-close] {
+  cursor: default;
+}
+
+/* 展开/折叠按钮 */
+.expand-button,
+.collapse-button,
+[data-expand],
+[data-collapse] {
+  cursor: default;
+}
+
+/* 特殊修复 - 精确覆盖不合适的cursor-pointer使用 */
+/* 只对非交互元素应用默认指针 */
+div.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]):not([data-clickable]):not(.search-result-item):not(.menu-item):not(.tab-item):not(.suggestion-item):not(.theme-color-option):not(.notification-item):not(.function-bar-button):not(.tree-node-content):not(.virtual-table-row):not(.virtual-table-column),
+span.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]):not([data-clickable]),
+p.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]):not([data-clickable]) {
+  cursor: default !important;
+}
+
+/* 只有明确标记为可点击的元素才使用手型指针 */
+.cursor-pointer.clickable,
+.cursor-pointer[data-clickable="true"],
+.cursor-pointer[role="button"],
+.cursor-pointer[onclick] {
+  cursor: default !important;
+}
+
+/* 保持原有的交互元素手型指针 */
+button.cursor-pointer,
+a.cursor-pointer,
+input[type="button"].cursor-pointer,
+input[type="submit"].cursor-pointer,
+select.cursor-pointer,
+[role="button"].cursor-pointer {
+  cursor: default !important;
+}
+
+/* 特定组件保持手型指针 */
+.search-result-item.cursor-pointer,
+.menu-item.cursor-pointer,
+.tab-item.cursor-pointer,
+.suggestion-item.cursor-pointer,
+.theme-color-option.cursor-pointer,
+.notification-item.cursor-pointer,
+.function-bar-button.cursor-pointer,
+.tree-node-content.cursor-pointer,
+.virtual-table-row.cursor-pointer,
+.virtual-table-column.cursor-pointer {
+  cursor: default !important;
+}
+
+/* 树形组件特殊处理 */
+.tree-node.cursor-pointer,
+.tree-item.cursor-pointer,
+[data-tree-node].cursor-pointer {
+  cursor: default !important;
+}
+
+/* 数据库浏览器特殊处理 */
+.database-explorer-tree .cursor-pointer {
+  cursor: default !important;
+}
+
+/* 修复常见的误用情况 */
+/* 纯文本元素不应该有手型指针 */
+span.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+div.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+p.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+h1.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+h2.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+h3.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+h4.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+h5.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+h6.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]) {
+  cursor: default !important;
+}
+
+/* 图标容器不应该有手型指针，除非明确可点击 */
+svg.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+.icon.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]),
+.lucide-icon.cursor-pointer:not(.clickable):not([role="button"]):not([onclick]) {
+  cursor: inherit !important;
+}

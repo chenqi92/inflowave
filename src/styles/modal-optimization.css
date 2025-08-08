@@ -16,7 +16,7 @@
   top: 16px;
   right: 16px;
   z-index: 10;
-  cursor: pointer;
+  cursor: default;
 }
 
 .modal-close:hover {
@@ -105,7 +105,7 @@
   padding: 4px 16px;
   border: 1px solid #d1d5db;
   background: #fff;
-  cursor: pointer;
+  cursor: default;
   display: flex;
   align-items: center;
   justify-content: center;
