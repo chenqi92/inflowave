@@ -918,11 +918,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
 
     // 构建完整的树形数据
-    const buildCompleteTreeData = useCallback(async (showGlobalLoading: boolean = true) => {
+    const buildCompleteTreeData = useCallback(async (showGlobalLoading: boolean = true, overrideHideSystemNodes?: boolean) => {
         console.log(
             `🏗️ 开始构建树形数据，已连接: [${connectedConnectionIds.join(', ')}]`
         );
-        console.log(`🔧 系统节点过滤状态: ${hideSystemNodes}`);
+        const currentHideSystemNodes = overrideHideSystemNodes !== undefined ? overrideHideSystemNodes : hideSystemNodes;
+        console.log(`🔧 系统节点过滤状态: ${currentHideSystemNodes}`);
 
         // 只在明确需要时才显示全局 loading
         if (showGlobalLoading) {
@@ -1004,9 +1005,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                         // 系统节点过滤：如果启用系统节点过滤，过滤掉系统相关的数据库节点
                         // 注意：这里只过滤数据库级别的节点，不过滤连接级别的节点
-                        console.log(`🔍 系统节点过滤检查: ${nodeName}, 连接类型: ${connection.dbType}, 节点类型: ${nodeType}, 过滤状态: ${hideSystemNodes}`);
+                        console.log(`🔍 系统节点过滤检查: ${nodeName}, 连接类型: ${connection.dbType}, 节点类型: ${nodeType}, 过滤状态: ${currentHideSystemNodes}`);
 
-                        if (hideSystemNodes) {
+                        if (currentHideSystemNodes) {
                             // InfluxDB: 过滤掉 _internal 等系统数据库
                             if (connection.dbType === 'influxdb' || connection.dbType === 'influxdb1' || connection.dbType === 'influxdb2') {
                                 if (nodeName.startsWith('_')) {
@@ -1054,7 +1055,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         }
 
                         // 系统节点过滤模式下不显示管理功能节点
-                        if (hideSystemNodes) {
+                        if (currentHideSystemNodes) {
                             console.log(`🚫 过滤管理节点: ${nodeName} (${nodeType})`);
                             return false;
                         }
@@ -3317,11 +3318,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                         size='sm'
                                         onClick={() => {
                                             const newHideSystemNodes = !hideSystemNodes;
-                                            setHideSystemNodes(newHideSystemNodes);
                                             console.log(`🔄 按钮点击：过滤状态从 ${hideSystemNodes} 变为 ${newHideSystemNodes}`);
-                                            // 立即重新构建树形数据以反映过滤状态的变化
+                                            setHideSystemNodes(newHideSystemNodes);
+                                            // 立即使用新状态值重新构建树形数据
                                             setTimeout(() => {
-                                                buildCompleteTreeData();
+                                                buildCompleteTreeData(true, newHideSystemNodes);
                                             }, 50);
                                         }}
                                         title={hideSystemNodes ? '显示系统节点' : '隐藏系统节点'}
