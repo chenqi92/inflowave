@@ -1576,7 +1576,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         // 设置加载状态
         setConnectionLoadingStates(prev => new Map(prev).set(connectionId, true));
-        updateConnectionNodeDisplay(connectionId, true);
 
         try {
             // 1. 建立连接
@@ -1591,21 +1590,40 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             console.log(`📂 加载数据库列表: ${connection.name}`);
             const databases = await loadDatabases(connectionId, true); // 强制刷新
 
-            // 4. 等待缓存设置完成，然后重新构建完整的树形数据
-            // 使用 setTimeout 确保缓存已经被设置
+            // 4. 等待连接状态更新完成，然后重新构建完整的树形数据
+            // 使用更长的延迟确保状态更新已经传播到组件
             setTimeout(async () => {
                 console.log(`🔄 连接建立后重新构建完整树形数据: ${connection.name}`);
-                await buildCompleteTreeData(false); // 不显示全局loading，因为连接过程已经有loading了
 
-                // 5. 自动展开连接节点
-                const connectionKey = `connection-${connectionId}`;
-                if (!expandedKeys.includes(connectionKey)) {
-                    setExpandedKeys(prev => [...prev, connectionKey]);
+                // 验证连接状态是否已更新
+                const isConnected = isConnectionConnected(connectionId);
+                console.log(`🔍 验证连接状态: ${connection.name} - ${isConnected ? '已连接' : '未连接'}`);
+
+                if (isConnected) {
+                    await buildCompleteTreeData(false); // 不显示全局loading，因为连接过程已经有loading了
+
+                    // 5. 自动展开连接节点
+                    const connectionKey = `connection-${connectionId}`;
+                    if (!expandedKeys.includes(connectionKey)) {
+                        setExpandedKeys(prev => [...prev, connectionKey]);
+                    }
+
+                    showMessage.success(`已连接并加载 ${databases.length} 个数据库: ${connection.name}`);
+                    console.log(`✅ 连接并加载数据库完成: ${connection.name}`);
+                } else {
+                    console.warn(`⚠️ 连接状态未更新，延迟重试: ${connection.name}`);
+                    // 如果状态还没更新，再等待一段时间
+                    setTimeout(async () => {
+                        await buildCompleteTreeData(false);
+                        const connectionKey = `connection-${connectionId}`;
+                        if (!expandedKeys.includes(connectionKey)) {
+                            setExpandedKeys(prev => [...prev, connectionKey]);
+                        }
+                        showMessage.success(`已连接并加载 ${databases.length} 个数据库: ${connection.name}`);
+                        console.log(`✅ 连接并加载数据库完成（延迟重试）: ${connection.name}`);
+                    }, 200);
                 }
-
-                showMessage.success(`已连接并加载 ${databases.length} 个数据库: ${connection.name}`);
-                console.log(`✅ 连接并加载数据库完成: ${connection.name}`);
-            }, 100); // 等待100ms确保缓存设置完成
+            }, 200); // 增加延迟到200ms确保状态更新完成
 
         } catch (error) {
             console.error(`❌ 连接并加载数据库失败:`, error);
@@ -1617,10 +1635,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 newMap.delete(connectionId);
                 return newMap;
             });
-            updateConnectionNodeDisplay(connectionId, false);
         }
     }, [getConnection, connectToDatabase, closeAllDatabasesForConnection, clearDatabasesCache,
-        isFavorite, isDatabaseOpened, expandedKeys,
+        isFavorite, isDatabaseOpened, expandedKeys, isConnectionConnected, buildCompleteTreeData,
+        showMessage, loadDatabases,
         ]);
 
     // 处理已连接的连接节点展开
