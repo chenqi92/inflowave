@@ -26,11 +26,13 @@ interface TreeNode {
 interface SimpleTreeViewProps {
   connectionId: string;
   className?: string;
+  useVersionAwareFilter?: boolean;
 }
 
 export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
   connectionId,
   className = '',
+  useVersionAwareFilter = false,
 }) => {
   const [treeNodes, setTreeNodes] = useState<TreeNode[]>([]);
   const [loading, setLoading] = useState(false);
@@ -47,22 +49,67 @@ export const SimpleTreeView: React.FC<SimpleTreeViewProps> = ({
     setError(null);
 
     try {
-      // 检测数据库版本
+      // 检测数据库版本 - 暂时禁用，因为需要连接信息而不是connectionId
       try {
-        const versionInfo = await safeTauriInvoke<{version: string, type: string}>('detect_database_version', {
-          connectionId,
-        });
-        setDatabaseVersion(`${versionInfo.type}-${versionInfo.version}`);
+        // TODO: 实现基于connectionId的版本检测，或者从连接信息中获取版本
+        // const versionInfo = await safeTauriInvoke<{version: string, type: string}>('detect_database_version', {
+        //   connectionId,
+        // });
+        // setDatabaseVersion(`${versionInfo.type}-${versionInfo.version}`);
+        setDatabaseVersion('unknown');
       } catch (versionError) {
         console.warn('版本检测失败，使用默认版本:', versionError);
         setDatabaseVersion('Database-1.x');
       }
 
+      // 获取连接信息
+      const connection = await safeTauriInvoke<any>('get_connection', {
+        connectionId,
+      });
+
       // 获取树节点
       const nodes = await safeTauriInvoke<TreeNode[]>('get_tree_nodes', {
         connectionId,
       });
-      setTreeNodes(nodes);
+
+      // 根据版本感知过滤设置决定是否过滤系统节点
+      const filteredNodes = useVersionAwareFilter ? nodes.filter(node => {
+        const nodeType = node.nodeType;
+        const nodeName = node.name || node.id;
+        const nodeCategory = node.metadata?.node_category;
+
+        // 过滤掉管理功能节点
+        if (nodeCategory === 'management_container' ||
+            nodeCategory === 'info_container' ||
+            ['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType)) {
+          return false;
+        }
+
+        // InfluxDB: 过滤掉 _internal 等系统数据库
+        if (connection?.dbType === 'influxdb' || connection?.dbType === 'influxdb1' || connection?.dbType === 'influxdb2') {
+          if (nodeName.startsWith('_')) {
+            return false; // 过滤掉以下划线开头的系统数据库
+          }
+        }
+
+        // IoTDB: 只显示存储组，过滤掉系统信息节点
+        if (connection?.dbType === 'iotdb') {
+          // 只保留存储组类型的节点
+          if (nodeType !== 'storage_group' && nodeType !== 'database') {
+            return false;
+          }
+          // 过滤掉系统相关的存储组
+          if (nodeName.toLowerCase().includes('system') ||
+              nodeName.toLowerCase().includes('information') ||
+              nodeName.toLowerCase().includes('schema')) {
+            return false;
+          }
+        }
+
+        return true;
+      }) : nodes; // 如果不启用版本感知过滤，直接使用原始节点
+
+      setTreeNodes(filteredNodes);
     } catch (err) {
       console.error('加载数据源树失败:', err);
       setError(err as string);

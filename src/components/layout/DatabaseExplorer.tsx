@@ -24,7 +24,7 @@ import {
     Hash,
     Tags,
     Clock,
-    GitBranch,
+    Filter,
     Star,
     StarOff,
     Plus,
@@ -47,7 +47,7 @@ import type {TreeNodeType, TreeNode} from '@/types/tree';
 import {safeTauriInvoke} from '@/utils/tauri';
 import {showMessage} from '@/utils/message';
 import {writeToClipboard} from '@/utils/clipboard';
-import {SimpleTreeView} from '@/components/database/SimpleTreeView';
+
 import {DatabaseIcon, isOpenableNode} from '@/components/common/DatabaseIcon';
 import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
 import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
@@ -191,8 +191,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         Map<string, boolean>
     >(new Map());
 
-    // 版本感知树视图状态
-    const [useVersionAwareTree, setUseVersionAwareTree] = useState(false);
+    // 系统节点过滤状态 - 默认开启（隐藏系统节点）
+    const [hideSystemNodes, setHideSystemNodes] = useState(true);
+
+    // 选中的节点keys
+    const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
     const [_updateTimeouts, setUpdateTimeouts] = useState<
         Map<string, number>
@@ -919,6 +922,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         console.log(
             `🏗️ 开始构建树形数据，已连接: [${connectedConnectionIds.join(', ')}]`
         );
+        console.log(`🔧 系统节点过滤状态: ${hideSystemNodes}`);
 
         // 只在明确需要时才显示全局 loading
         if (showGlobalLoading) {
@@ -959,8 +963,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         className={isConnected ? 'text-success' : 'text-muted-foreground'}
                     />
                 ),
-                // 只有连接状态才设置children数组，未连接状态不设置（这样就不会显示收缩按钮）
-                ...(isConnected ? {children: []} : {isLeaf: true}),
+                // 连接节点始终显示，但只有已连接时才有子节点
+                children: [],
             };
 
             // 为已连接的连接加载数据库列表
@@ -986,24 +990,77 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         const nodeType = node.node_type || node.nodeType;
                         const isContainer = node.metadata?.is_container === true;
                         const nodeCategory = node.metadata?.node_category;
+                        const nodeName = node.name || node.id;
 
-                        // 只有真正的数据库节点才被当作数据库处理
+                        // 基础过滤：只有真正的数据库节点才被当作数据库处理
                         // 排除管理功能节点（Functions、Triggers等）
-                        return nodeType === 'storage_group' ||
+                        const isBasicDatabaseNode = nodeType === 'storage_group' ||
                                nodeType === 'database' ||
                                (nodeCategory !== 'management_container' &&
                                 nodeCategory !== 'info_container' &&
                                 !['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType));
+
+                        if (!isBasicDatabaseNode) return false;
+
+                        // 系统节点过滤：如果启用系统节点过滤，过滤掉系统相关的数据库节点
+                        // 注意：这里只过滤数据库级别的节点，不过滤连接级别的节点
+                        console.log(`🔍 系统节点过滤检查: ${nodeName}, 连接类型: ${connection.dbType}, 节点类型: ${nodeType}, 过滤状态: ${hideSystemNodes}`);
+
+                        if (hideSystemNodes) {
+                            // InfluxDB: 过滤掉 _internal 等系统数据库
+                            if (connection.dbType === 'influxdb' || connection.dbType === 'influxdb1' || connection.dbType === 'influxdb2') {
+                                if (nodeName.startsWith('_')) {
+                                    console.log(`🚫 过滤InfluxDB系统数据库: ${nodeName}`);
+                                    return false; // 过滤掉以下划线开头的系统数据库
+                                }
+                            }
+
+                            // IoTDB: 过滤掉系统信息节点，只保留用户数据相关节点
+                            if (connection.dbType === 'iotdb') {
+                                // 过滤掉管理功能节点
+                                if (['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType)) {
+                                    console.log(`🚫 过滤IoTDB管理节点: ${nodeName} (${nodeType})`);
+                                    return false;
+                                }
+                                // 过滤掉系统相关的存储组
+                                if (nodeName.toLowerCase().includes('system') ||
+                                    nodeName.toLowerCase().includes('information') ||
+                                    nodeName.toLowerCase().includes('schema')) {
+                                    console.log(`🚫 过滤IoTDB系统存储组: ${nodeName}`);
+                                    return false;
+                                }
+                            }
+
+                            console.log(`✅ 系统节点过滤通过: ${nodeName}`);
+                        } else {
+                            console.log(`✅ 显示所有节点（过滤已关闭）: ${nodeName}`);
+                        }
+
+                        return true;
                     });
 
                     const managementNodes = treeNodes.filter(node => {
                         const nodeType = node.node_type || node.nodeType;
                         const nodeCategory = node.metadata?.node_category;
+                        const nodeName = node.name || node.id;
 
-                        // 管理功能节点
-                        return nodeCategory === 'management_container' ||
-                               nodeCategory === 'info_container' ||
-                               ['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType);
+                        // 检查是否是管理功能节点
+                        const isManagementNode = nodeCategory === 'management_container' ||
+                                               nodeCategory === 'info_container' ||
+                                               ['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType);
+
+                        if (!isManagementNode) {
+                            return false;
+                        }
+
+                        // 系统节点过滤模式下不显示管理功能节点
+                        if (hideSystemNodes) {
+                            console.log(`🚫 过滤管理节点: ${nodeName} (${nodeType})`);
+                            return false;
+                        }
+
+                        console.log(`✅ 显示管理节点: ${nodeName} (${nodeType})`);
+                        return true;
                     });
 
                     console.log(`📁 为连接 ${connection.name} 创建 ${databaseNodes.length} 个数据库节点，${managementNodes.length} 个管理节点`);
@@ -1136,6 +1193,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         isFavorite,
         // 移除expandedKeys依赖，避免每次展开/收起都重建整个树
         isDatabaseOpened, // 添加数据库打开状态依赖
+        hideSystemNodes, // 添加系统节点过滤状态依赖
     ]);
 
     // 动态加载节点数据
@@ -2731,7 +2789,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     };
 
     // 处理节点选择
-    const handleSelect = (selectedKeys: string[], info: { selected: boolean; node: UITreeNode }) => {
+    const handleSelect = (keys: string[], info: { selected: boolean; node: UITreeNode }) => {
+        setSelectedKeys(keys);
         const node = convertUINodeToCustomNode(info.node);
         console.log('选中节点:', node);
 
@@ -3254,16 +3313,24 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
-                                        variant={useVersionAwareTree ? 'default' : 'ghost'}
+                                        variant={hideSystemNodes ? 'ghost' : 'default'}
                                         size='sm'
-                                        onClick={() => setUseVersionAwareTree(!useVersionAwareTree)}
-                                        title={useVersionAwareTree ? '切换到传统视图' : '切换到版本感知视图'}
+                                        onClick={() => {
+                                            const newHideSystemNodes = !hideSystemNodes;
+                                            setHideSystemNodes(newHideSystemNodes);
+                                            console.log(`🔄 按钮点击：过滤状态从 ${hideSystemNodes} 变为 ${newHideSystemNodes}`);
+                                            // 立即重新构建树形数据以反映过滤状态的变化
+                                            setTimeout(() => {
+                                                buildCompleteTreeData();
+                                            }, 50);
+                                        }}
+                                        title={hideSystemNodes ? '显示系统节点' : '隐藏系统节点'}
                                     >
-                                        <GitBranch className='w-4 h-4'/>
+                                        <Filter className='w-4 h-4'/>
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                    {useVersionAwareTree ? '切换到传统视图' : '切换到版本感知视图'}
+                                    {hideSystemNodes ? '显示系统节点' : '隐藏系统节点'}
                                 </TooltipContent>
                             </Tooltip>
                             <Tooltip>
@@ -3309,24 +3376,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 {/* 主要内容：数据源树 */}
                 <CardContent className='flex-1 overflow-hidden p-0'>
                     <div className='px-2 h-full overflow-auto'>
-                        {useVersionAwareTree ? (
-                            // 版本感知树视图
-                            activeConnectionId ? (
-                                <SimpleTreeView
-                                    connectionId={activeConnectionId}
-                                    className="h-full"
-                                />
-                            ) : (
-                                <div className='flex items-center justify-center py-8 text-gray-500'>
-                                    <div className='text-center'>
-                                        <Database className='w-8 h-8 mx-auto mb-2 opacity-50'/>
-                                        <p className='text-sm'>请选择一个连接</p>
-                                    </div>
-                                </div>
-                            )
-                        ) : (
-                            // 传统树视图
-                            <>
+                        {/* 统一的树视图 */}
                                 {loading ? (
                                     <div className='flex items-center justify-center py-8'>
                                         <Spin tip='加载中...'/>
@@ -3659,8 +3709,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                         </div>
                                     </div>
                                 )}
-                            </>
-                        )}
                     </div>
                 </CardContent>
 
