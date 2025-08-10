@@ -191,86 +191,174 @@ try {
         Write-Host "Dry run completed successfully" -ForegroundColor Green
         return
     } else {
-        try {
-            if ($tauriCmd -eq "npx tauri") {
-                & npx tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
-            } else {
-                & tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
+        $maxRetries = 3
+        $retryCount = 0
+        $buildSuccess = $false
+
+        # Try MSI build with retry mechanism
+        while ($retryCount -lt $maxRetries -and -not $buildSuccess) {
+            $retryCount++
+            Write-Host "MSI build attempt $retryCount of $maxRetries..." -ForegroundColor Yellow
+
+            try {
+                if ($tauriCmd -eq "npx tauri") {
+                    & npx tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
+                } else {
+                    & tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
+                }
+
+                if ($LASTEXITCODE -eq 0) {
+                    $buildSuccess = $true
+                    Write-Host "MSI build successful on attempt $retryCount" -ForegroundColor Green
+                } else {
+                    Write-Host "MSI build attempt $retryCount failed with exit code: $LASTEXITCODE" -ForegroundColor Yellow
+                    if ($retryCount -lt $maxRetries) {
+                        Write-Host "Waiting 30 seconds before retry..." -ForegroundColor Yellow
+                        Start-Sleep -Seconds 30
+                    }
+                }
+            } catch {
+                Write-Host "MSI build attempt $retryCount failed with exception: $($_.Exception.Message)" -ForegroundColor Yellow
+                if ($retryCount -lt $maxRetries) {
+                    Write-Host "Waiting 30 seconds before retry..." -ForegroundColor Yellow
+                    Start-Sleep -Seconds 30
+                }
             }
+        }
 
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "MSI build failed, trying fallback to NSIS..." -ForegroundColor Yellow
+        # If MSI build failed, try NSIS fallback
+        $usedNsisFallback = $false
+        if (-not $buildSuccess) {
+            Write-Host "MSI build failed after $maxRetries attempts, trying NSIS fallback..." -ForegroundColor Yellow
 
-                # Fallback to NSIS if WiX fails
-                Write-Host "Attempting NSIS build as fallback..." -ForegroundColor Yellow
+            try {
                 if ($tauriCmd -eq "npx tauri") {
                     & npx tauri build --target $Target --bundles nsis
                 } else {
                     & tauri build --target $Target --bundles nsis
                 }
 
-                if ($LASTEXITCODE -ne 0) {
-                    throw "Both MSI and NSIS builds failed with exit code: $LASTEXITCODE"
-                } else {
+                if ($LASTEXITCODE -eq 0) {
                     Write-Host "NSIS fallback build completed successfully" -ForegroundColor Green
+                    $buildSuccess = $true
+                    $usedNsisFallback = $true
+                } else {
+                    throw "NSIS fallback build also failed with exit code: $LASTEXITCODE"
                 }
+            } catch {
+                throw "Both MSI and NSIS builds failed: $($_.Exception.Message)"
             }
-        } catch {
-            Write-Host "Build error: $($_.Exception.Message)" -ForegroundColor Red
-            throw "MSI build failed with exit code: $LASTEXITCODE"
+        }
+
+        if (-not $buildSuccess) {
+            throw "All build attempts failed"
         }
     }
 
     # Show build results
     Write-Host "Build completed!" -ForegroundColor Green
-    
-    # Check multiple possible MSI locations
-    $msiPaths = @(
-        "target\wix\InfloWave-*.msi",
-        "target\$Target\release\bundle\msi\*.msi",
-        "target\release\bundle\msi\*.msi"
-    )
-    
-    $msiFiles = @()
-    foreach ($path in $msiPaths) {
-        $files = Get-ChildItem $path -ErrorAction SilentlyContinue
-        if ($files) {
-            $msiFiles += $files
-            Write-Host "Found MSI files in: $(Split-Path $path -Parent)" -ForegroundColor Green
-            break
-        }
-    }
 
-    if ($msiFiles) {
-        Write-Host "Generated MSI files:" -ForegroundColor Cyan
-        foreach ($file in $msiFiles) {
-            $size = [math]::Round($file.Length / 1MB, 2)
-            Write-Host "  $($file.Name) ($size MB)" -ForegroundColor White
-            Write-Host "  Path: $($file.FullName)" -ForegroundColor Gray
-        }
-        
-        # Verify these are actual MSI files, not just executables
-        foreach ($file in $msiFiles) {
-            if ($file.Extension -eq ".msi") {
-                Write-Host "Verified MSI installer: $($file.Name)" -ForegroundColor Green
-            } else {
-                Write-Host "Warning: Found non-MSI file: $($file.Name)" -ForegroundColor Yellow
+    if ($usedNsisFallback) {
+        Write-Host "Used NSIS fallback - checking for NSIS files..." -ForegroundColor Yellow
+
+        # Check for NSIS files
+        $nsisExePaths = @(
+            "target\$Target\release\bundle\nsis\*.exe",
+            "target\release\bundle\nsis\*.exe",
+            "target\bundle\nsis\*.exe"
+        )
+
+        $nsisFiles = @()
+        foreach ($path in $nsisExePaths) {
+            $files = Get-ChildItem $path -ErrorAction SilentlyContinue
+            if ($files) {
+                $nsisFiles += $files
+                Write-Host "Found NSIS files in: $(Split-Path $path -Parent)" -ForegroundColor Green
+                break
             }
         }
+
+        if ($nsisFiles) {
+            Write-Host "Generated NSIS installer files:" -ForegroundColor Cyan
+            foreach ($file in $nsisFiles) {
+                $size = [math]::Round($file.Length / 1MB, 2)
+                Write-Host "  $($file.Name) ($size MB)" -ForegroundColor White
+                Write-Host "  Path: $($file.FullName)" -ForegroundColor Gray
+            }
+
+            foreach ($file in $nsisFiles) {
+                if ($file.Extension -eq ".exe" -and $file.Name -like "*setup*") {
+                    Write-Host "Verified NSIS installer: $($file.Name)" -ForegroundColor Green
+                } else {
+                    Write-Host "Found NSIS file: $($file.Name)" -ForegroundColor Yellow
+                }
+            }
+        } else {
+            Write-Host "No NSIS files found in any expected location!" -ForegroundColor Red
+            Write-Host "Searched in:" -ForegroundColor Yellow
+            foreach ($path in $nsisExePaths) {
+                Write-Host "  $path" -ForegroundColor Gray
+            }
+
+            # List what files were actually created
+            Write-Host "Files in target directory:" -ForegroundColor Yellow
+            Get-ChildItem "target" -Recurse -File | Where-Object { $_.Extension -in @(".msi", ".exe") } | ForEach-Object {
+                Write-Host "  $($_.FullName)" -ForegroundColor Gray
+            }
+
+            throw "NSIS build completed but no NSIS files were generated"
+        }
     } else {
-        Write-Host "No MSI files found in any expected location!" -ForegroundColor Red
-        Write-Host "Searched in:" -ForegroundColor Yellow
+        Write-Host "Used MSI build - checking for MSI files..." -ForegroundColor Yellow
+
+        # Check multiple possible MSI locations
+        $msiPaths = @(
+            "target\wix\InfloWave-*.msi",
+            "target\$Target\release\bundle\msi\*.msi",
+            "target\release\bundle\msi\*.msi"
+        )
+
+        $msiFiles = @()
         foreach ($path in $msiPaths) {
-            Write-Host "  $path" -ForegroundColor Gray
+            $files = Get-ChildItem $path -ErrorAction SilentlyContinue
+            if ($files) {
+                $msiFiles += $files
+                Write-Host "Found MSI files in: $(Split-Path $path -Parent)" -ForegroundColor Green
+                break
+            }
         }
-        
-        # List what files were actually created
-        Write-Host "Files in target directory:" -ForegroundColor Yellow
-        Get-ChildItem "target" -Recurse -File | Where-Object { $_.Extension -in @(".msi", ".exe", ".nsis") } | ForEach-Object {
-            Write-Host "  $($_.FullName)" -ForegroundColor Gray
+
+        if ($msiFiles) {
+            Write-Host "Generated MSI files:" -ForegroundColor Cyan
+            foreach ($file in $msiFiles) {
+                $size = [math]::Round($file.Length / 1MB, 2)
+                Write-Host "  $($file.Name) ($size MB)" -ForegroundColor White
+                Write-Host "  Path: $($file.FullName)" -ForegroundColor Gray
+            }
+
+            # Verify these are actual MSI files, not just executables
+            foreach ($file in $msiFiles) {
+                if ($file.Extension -eq ".msi") {
+                    Write-Host "Verified MSI installer: $($file.Name)" -ForegroundColor Green
+                } else {
+                    Write-Host "Warning: Found non-MSI file: $($file.Name)" -ForegroundColor Yellow
+                }
+            }
+        } else {
+            Write-Host "No MSI files found in any expected location!" -ForegroundColor Red
+            Write-Host "Searched in:" -ForegroundColor Yellow
+            foreach ($path in $msiPaths) {
+                Write-Host "  $path" -ForegroundColor Gray
+            }
+
+            # List what files were actually created
+            Write-Host "Files in target directory:" -ForegroundColor Yellow
+            Get-ChildItem "target" -Recurse -File | Where-Object { $_.Extension -in @(".msi", ".exe") } | ForEach-Object {
+                Write-Host "  $($_.FullName)" -ForegroundColor Gray
+            }
+
+            throw "MSI build completed but no MSI files were generated"
         }
-        
-        throw "MSI build completed but no MSI files were generated"
     }
 
 } catch {

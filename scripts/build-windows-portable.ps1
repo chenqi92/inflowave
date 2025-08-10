@@ -106,15 +106,43 @@ try {
         if ($WhatIf) {
             Write-Host "WOULD EXECUTE: $tauriCmd build --target $buildTarget --config $configFile" -ForegroundColor Yellow
         } else {
-            # Use tauri CLI to build ZIP
-            if ($tauriCmd -eq "npx tauri") {
-                & npx tauri build --target $buildTarget --config $configFile
-            } else {
-                & tauri build --target $buildTarget --config $configFile
+            # Use tauri CLI to build NSIS with retry mechanism
+            $maxRetries = 3
+            $retryCount = 0
+            $buildSuccess = $false
+
+            while ($retryCount -lt $maxRetries -and -not $buildSuccess) {
+                $retryCount++
+                Write-Host "Build attempt $retryCount of $maxRetries..." -ForegroundColor Yellow
+
+                try {
+                    if ($tauriCmd -eq "npx tauri") {
+                        & npx tauri build --target $buildTarget --config $configFile
+                    } else {
+                        & tauri build --target $buildTarget --config $configFile
+                    }
+
+                    if ($LASTEXITCODE -eq 0) {
+                        $buildSuccess = $true
+                        Write-Host "Build successful on attempt $retryCount" -ForegroundColor Green
+                    } else {
+                        Write-Host "Build attempt $retryCount failed with exit code: $LASTEXITCODE" -ForegroundColor Yellow
+                        if ($retryCount -lt $maxRetries) {
+                            Write-Host "Waiting 30 seconds before retry..." -ForegroundColor Yellow
+                            Start-Sleep -Seconds 30
+                        }
+                    }
+                } catch {
+                    Write-Host "Build attempt $retryCount failed with exception: $($_.Exception.Message)" -ForegroundColor Yellow
+                    if ($retryCount -lt $maxRetries) {
+                        Write-Host "Waiting 30 seconds before retry..." -ForegroundColor Yellow
+                        Start-Sleep -Seconds 30
+                    }
+                }
             }
 
-            if ($LASTEXITCODE -ne 0) {
-                throw "NSIS build failed for $archName with exit code: $LASTEXITCODE"
+            if (-not $buildSuccess) {
+                throw "NSIS build failed for $archName after $maxRetries attempts"
             }
 
             Write-Host "Build completed for $archName!" -ForegroundColor Green
@@ -124,52 +152,52 @@ try {
     if (-not $WhatIf) {
         # Show build results
         Write-Host "`nBuild Results:" -ForegroundColor Cyan
-        
-        # Check multiple possible ZIP locations
-        $zipPaths = @(
-            "target\$Target\release\bundle\zip\*.zip",
-            "target\release\bundle\zip\*.zip",
-            "target\bundle\zip\*.zip"
+
+        # Check multiple possible NSIS locations
+        $nsisExePaths = @(
+            "target\$Target\release\bundle\nsis\*.exe",
+            "target\release\bundle\nsis\*.exe",
+            "target\bundle\nsis\*.exe"
         )
-        
-        $allZipFiles = @()
-        foreach ($path in $zipPaths) {
+
+        $allNsisFiles = @()
+        foreach ($path in $nsisExePaths) {
             $files = Get-ChildItem $path -ErrorAction SilentlyContinue
             if ($files) {
-                $allZipFiles += $files
+                $allNsisFiles += $files
             }
         }
 
-        if ($allZipFiles) {
-            Write-Host "Generated ZIP files:" -ForegroundColor Green
-            foreach ($file in $allZipFiles) {
+        if ($allNsisFiles) {
+            Write-Host "Generated NSIS portable files:" -ForegroundColor Green
+            foreach ($file in $allNsisFiles) {
                 $size = [math]::Round($file.Length / 1MB, 2)
                 Write-Host "  $($file.Name) ($size MB)" -ForegroundColor White
                 Write-Host "  Path: $($file.FullName)" -ForegroundColor Gray
             }
-            
-            # Verify these are actual ZIP files
-            foreach ($file in $allZipFiles) {
-                if ($file.Extension -eq ".zip") {
-                    Write-Host "Verified portable ZIP: $($file.Name)" -ForegroundColor Green
+
+            # Verify these are NSIS setup files
+            foreach ($file in $allNsisFiles) {
+                if ($file.Extension -eq ".exe" -and $file.Name -like "*setup*") {
+                    Write-Host "Verified portable NSIS installer: $($file.Name)" -ForegroundColor Green
                 } else {
-                    Write-Host "Warning: Found non-ZIP file: $($file.Name)" -ForegroundColor Yellow
+                    Write-Host "Found NSIS file: $($file.Name)" -ForegroundColor Yellow
                 }
             }
         } else {
-            Write-Host "No ZIP files found in any expected location!" -ForegroundColor Red
+            Write-Host "No NSIS files found in any expected location!" -ForegroundColor Red
             Write-Host "Searched in:" -ForegroundColor Yellow
-            foreach ($path in $zipPaths) {
+            foreach ($path in $nsisExePaths) {
                 Write-Host "  $path" -ForegroundColor Gray
             }
-            
+
             # List what files were actually created
             Write-Host "Files in target directory:" -ForegroundColor Yellow
             Get-ChildItem "target" -Recurse -File | Where-Object { $_.Extension -in @(".zip", ".exe", ".msi") } | ForEach-Object {
                 Write-Host "  $($_.FullName)" -ForegroundColor Gray
             }
-            
-            throw "ZIP build completed but no ZIP files were generated"
+
+            throw "NSIS build completed but no NSIS files were generated"
         }
     } else {
         Write-Host "`nDry run completed successfully" -ForegroundColor Green

@@ -44,20 +44,11 @@
       },
       "allowDowngrades": false,
       "nsis": {
-        "displayLanguageSelector": false,
-        "installerIcon": "icons/icon.ico",
-        "installMode": "perMachine",
         "languages": [
           "English"
         ],
-        "template": null,
-        "headerImage": null,
-        "sidebarImage": null,
-        "installerHooks": null,
-        "compression": "lzma",
-        "startMenuFolder": "InfloWave",
-        "deleteAppDataOnUninstall": false,
-        "customLanguageFiles": null
+        "displayLanguageSelector": false,
+        "installerIcon": "icons/icon.ico"
       }
     }
   },
