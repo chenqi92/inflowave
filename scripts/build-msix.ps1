@@ -55,6 +55,20 @@ try {
     # Build standard Windows package
     Write-Host "Building Windows package (NSIS installer)..." -ForegroundColor Yellow
 
+    # Check and install Rust target if needed
+    Write-Host "Checking Rust target: $Target" -ForegroundColor Yellow
+    $installedTargets = rustup target list --installed 2>$null
+    if ($installedTargets -notcontains $Target) {
+        Write-Host "Installing Rust target: $Target" -ForegroundColor Yellow
+        rustup target add $Target
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to install Rust target: $Target"
+        }
+        Write-Host "Successfully installed Rust target: $Target" -ForegroundColor Green
+    } else {
+        Write-Host "Rust target already installed: $Target" -ForegroundColor Green
+    }
+
     if ($WhatIf) {
         Write-Host "WOULD EXECUTE: tauri build --target $Target" -ForegroundColor Yellow
         Write-Host "Dry run completed successfully" -ForegroundColor Green

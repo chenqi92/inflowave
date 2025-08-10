@@ -143,42 +143,46 @@ try {
     # Set environment variables for MSI build
     $env:TAURI_BUNDLE_TARGETS = "msi"
     
-    # Check if npm tauri CLI is available
-    $tauriCmd = "npm run tauri --"
+    # Check if Tauri CLI is available (prefer npx tauri)
+    $tauriCmd = "npx tauri"
     try {
-        $tauriVersion = & npm run tauri -- --version 2>$null
+        & npx tauri --version | Out-Null
         if ($LASTEXITCODE -eq 0) {
-            Write-Host "Found npm tauri CLI" -ForegroundColor Green
+            Write-Host "Found npx tauri CLI" -ForegroundColor Green
         } else {
-            throw "npm tauri not available"
+            throw "npx tauri not available"
         }
     } catch {
-        Write-Host "npm tauri not available, trying npx tauri..." -ForegroundColor Yellow
-        $tauriCmd = "npx tauri"
+        Write-Host "npx tauri not available, trying global tauri..." -ForegroundColor Yellow
+        $tauriCmd = "tauri"
         try {
-            & npx tauri --version | Out-Null
+            & tauri --version | Out-Null
             if ($LASTEXITCODE -eq 0) {
-                Write-Host "Found npx tauri CLI" -ForegroundColor Green
+                Write-Host "Found global tauri CLI" -ForegroundColor Green
             } else {
-                throw "npx tauri not available"
+                throw "Global tauri not available"
             }
         } catch {
-            Write-Host "npx tauri not available, trying global tauri..." -ForegroundColor Yellow
-            $tauriCmd = "tauri"
-            try {
-                & tauri --version | Out-Null
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Host "Found global tauri CLI" -ForegroundColor Green
-                } else {
-                    throw "Global tauri not available"
-                }
-            } catch {
-                throw "Tauri CLI not found. Please install @tauri-apps/cli"
-            }
+            throw "Tauri CLI not found. Please install @tauri-apps/cli"
         }
     }
 
     Write-Host "Using Tauri CLI: $tauriCmd" -ForegroundColor Green
+
+    # Check and install Rust target if needed
+    Write-Host "Checking Rust target: $Target" -ForegroundColor Yellow
+    $installedTargets = rustup target list --installed 2>$null
+    if ($installedTargets -notcontains $Target) {
+        Write-Host "Installing Rust target: $Target" -ForegroundColor Yellow
+        rustup target add $Target
+        if ($LASTEXITCODE -ne 0) {
+            throw "Failed to install Rust target: $Target"
+        }
+        Write-Host "Successfully installed Rust target: $Target" -ForegroundColor Green
+    } else {
+        Write-Host "Rust target already installed: $Target" -ForegroundColor Green
+    }
+
     Write-Host "Executing: $tauriCmd build --target $Target --config tauri.windows-cargo-wix.conf.json" -ForegroundColor Gray
 
     # Use tauri CLI to build MSI
@@ -187,14 +191,12 @@ try {
         Write-Host "Dry run completed successfully" -ForegroundColor Green
         return
     } else {
-        if ($tauriCmd -eq "npm run tauri --") {
-            & npm run tauri -- build --target $Target --config tauri.windows-cargo-wix.conf.json
-        } elseif ($tauriCmd -eq "npx tauri") {
+        if ($tauriCmd -eq "npx tauri") {
             & npx tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
         } else {
             & tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
         }
-        
+
         if ($LASTEXITCODE -ne 0) {
             throw "MSI build failed with exit code: $LASTEXITCODE"
         }
