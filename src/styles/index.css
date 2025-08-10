@@ -24,6 +24,12 @@
     /* 不设置overflow，让TableVirtuoso自己处理滚动 */
     /* 继承传统表格的滚动条样式 */
     scrollbar-width: auto;
+
+  /* 让虚拟化滚动容器自身负责滚动（不要让父容器抢走滚动）*/
+  .virtualized-table {
+    overflow: hidden;
+  }
+
     scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
   }
 
@@ -2167,4 +2173,14 @@ pre,
   display: block;
   min-height: 100%;
   background: hsl(var(--background));
+}
+
+/* 确保表头列名不省略（不换行，撑宽显示）*/
+[data-virtuoso-scroller] th span,
+.virtualized-table-fixed-height [data-virtuoso-scroller] th span {
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  display: inline !important;
+  line-height: 1.4 !important;
 }

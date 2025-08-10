@@ -514,13 +514,18 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                             >
                                 {/* 列名 - 点击选中整列 */}
                                 <span
-                                    className="truncate cursor-pointer flex-1 text-xs"
+                                    className="cursor-pointer flex-1 text-xs"
                                     title={`点击选中整列: ${column}`}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onColumnSelect(column);
                                     }}
-                                    style={{ lineHeight: 'normal !important' }}
+                                    style={{
+                                        lineHeight: '1.4',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'visible',
+                                        textOverflow: 'clip'
+                                    }}
                                 >
                                     {column}
                                 </span>
@@ -1846,8 +1851,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             className="flex-1 min-h-0 virtualized-table virtualized-table-fixed-height"
                             ref={tableContainerRef}
                             style={{
-                                height: `${containerHeight}px`,
-                                maxHeight: `${maxHeight}px`
+                                height: `${maxHeight}px`
                             }}
                         >
                                 {(() => {
@@ -1864,7 +1868,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     data={paginatedData}
                                     fixedItemHeight={rowHeight} // 设置固定行高度，防止自动拉伸
                                     overscan={20} // 减少预渲染行数以提高性能，避免额外高度
-                                    style={{ height: containerHeight }}
+                                    style={{ height: '100%' }}
 
                                     fixedHeaderContent={() => (
                                         <TableHeader
@@ -2044,7 +2048,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     tableLayout: 'fixed' // 固定表格布局
                                                 }}
                                                 className={cn(
-                                                    "w-full border-collapse table-unified-scroll",
+                                                    "w-full border-collapse",
                                                     isSelecting && "table-selecting"
                                                 )}
                                                 onMouseDown={handleTableMouseDown}
@@ -2055,16 +2059,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             />
                                         ),
 
-                                        // 留出一点底部空白（仅在未达到 maxHeight 时）
-                                        TableFoot: () => (
-                                            <tfoot>
-                                                {bottomSpacerHeight > 0 && (
-                                                    <tr>
-                                                        <td colSpan={totalColumns} style={{ height: bottomSpacerHeight }} />
-                                                    </tr>
-                                                )}
-                                            </tfoot>
-                                        ),
+
 
                                         TableRow: ({ style, ...props }) => {
                                             // 从props中提取行索引
