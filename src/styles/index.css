@@ -2156,24 +2156,12 @@ pre,
   position: relative;
 }
 
-/* TableVirtuoso 的滚动容器保持最小高度 */
-.virtualized-table-fixed-container [data-virtuoso-scroller] {
-  min-height: 100% !important;
-  background: hsl(var(--background));
+/* TableVirtuoso 需要的基础样式 */
+.virtualized-table-fixed-height [data-virtuoso-scroller] {
+  height: 100% !important;
 }
 
-/* 当数据不足时，确保容器保持高度 */
-.virtualized-table-fixed-container [data-test-id="virtuoso-item-list"] {
-  min-height: 100%;
-}
 
-/* 空白区域背景 */
-.virtualized-table-fixed-container [data-virtuoso-scroller]::after {
-  content: '';
-  display: block;
-  min-height: 100%;
-  background: hsl(var(--background));
-}
 
 /* 确保表头列名不省略（不换行，撑宽显示）*/
 [data-virtuoso-scroller] th span,

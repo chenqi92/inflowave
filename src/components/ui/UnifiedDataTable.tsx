@@ -1848,10 +1848,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                     ) : data.length > 0 ? (
                         // 统一使用虚拟化表格 - 固定行高度，剩余空间显示空白
                         <div
-                            className="flex-1 min-h-0 virtualized-table virtualized-table-fixed-height"
+                            className="virtualized-table virtualized-table-fixed-height"
                             ref={tableContainerRef}
                             style={{
-                                height: `${maxHeight}px`
+                                height: `${maxHeight}px`,
+                                width: '100%'
                             }}
                         >
                                 {(() => {
