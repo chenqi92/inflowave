@@ -37,6 +37,7 @@ import {
     Copy,
     BarChart,
     FolderX,
+    GitBranch,
 } from 'lucide-react';
 import {useConnectionStore} from '@/store/connection';
 import {useFavoritesStore, favoritesUtils} from '@/store/favorites';
@@ -460,7 +461,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
             case 'iotdb':
                 // IoTDB 中需要从缓存的树节点信息中获取正确的节点类型
-                const cachedTreeNodes = treeNodeCache[connectionId as string] || [];
+                { const cachedTreeNodes = treeNodeCache[connectionId as string] || [];
 
                 const cachedNode = cachedTreeNodes.find((node: any) => {
                     return node.name === databaseName || node.id === databaseName;
@@ -474,7 +475,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     }
                 }
                 // 根据节点名称推断类型
-                return inferNodeTypeFromName(databaseName);
+                return inferNodeTypeFromName(databaseName); }
 
             default:
                 return 'database';
@@ -518,7 +519,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         if (parts.length <= 2) return fullPath;
 
         // 隐藏 root 前缀
-        let processedParts = parts[0] === 'root' ? parts.slice(1) : parts;
+        const processedParts = parts[0] === 'root' ? parts.slice(1) : parts;
 
         // 根据节点类型和路径长度进行不同的处理
         if (processedParts.length <= 2) {
@@ -1009,7 +1010,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                         if (currentHideSystemNodes) {
                             // InfluxDB: 过滤掉 _internal 等系统数据库
-                            if (connection.dbType === 'influxdb' || connection.dbType === 'influxdb1' || connection.dbType === 'influxdb2') {
+                            if (connection.dbType === 'influxdb') {
                                 if (nodeName.startsWith('_')) {
                                     console.log(`🚫 过滤InfluxDB系统数据库: ${nodeName}`);
                                     return false; // 过滤掉以下划线开头的系统数据库
@@ -1156,10 +1157,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                             data: {
                                 type: 'management',
                                 connectionId: connection.id,
-                                nodeType: nodeType,
-                                nodeName: nodeName,
-                                isContainer: isContainer,
-                                nodeCategory: nodeCategory,
+                                nodeType,
+                                nodeName,
+                                isContainer,
+                                nodeCategory,
                                 isExpanded: false,
                                 metadata: mgmtNode?.metadata || {}
                             }
@@ -1999,9 +2000,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                     setManagementNodeDialog({
                         open: true,
-                        connectionId: connectionId,
-                        nodeType: nodeType,
-                        nodeName: nodeName,
+                        connectionId,
+                        nodeType,
+                        nodeName,
                         nodeCategory: 'management',
                     });
                 } else {
@@ -3320,10 +3321,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                             const newHideSystemNodes = !hideSystemNodes;
                                             console.log(`🔄 按钮点击：过滤状态从 ${hideSystemNodes} 变为 ${newHideSystemNodes}`);
                                             setHideSystemNodes(newHideSystemNodes);
-                                            // 立即使用新状态值重新构建树形数据
-                                            setTimeout(() => {
-                                                buildCompleteTreeData(true, newHideSystemNodes);
-                                            }, 50);
                                         }}
                                         title={hideSystemNodes ? '显示系统节点' : '隐藏系统节点'}
                                     >

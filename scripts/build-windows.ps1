@@ -144,22 +144,37 @@ try {
     $env:TAURI_BUNDLE_TARGETS = "msi"
 
     # Check if npm tauri CLI is available
-    $tauriCmd = "npx tauri"
+    $tauriCmd = "npm run tauri --"
     try {
-        & npx tauri --version | Out-Null
-        if ($LASTEXITCODE -ne 0) {
-            throw "npx tauri not available"
+        $tauriVersion = & npm run tauri -- --version 2>$null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Found npm tauri CLI" -ForegroundColor Green
+        } else {
+            throw "npm tauri not available"
         }
     } catch {
-        Write-Host "npx tauri not available, trying global tauri..." -ForegroundColor Yellow
-        $tauriCmd = "tauri"
+        Write-Host "npm tauri not available, trying npx tauri..." -ForegroundColor Yellow
+        $tauriCmd = "npx tauri"
         try {
-            & tauri --version | Out-Null
-            if ($LASTEXITCODE -ne 0) {
-                throw "Global tauri not available"
+            & npx tauri --version | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "Found npx tauri CLI" -ForegroundColor Green
+            } else {
+                throw "npx tauri not available"
             }
         } catch {
-            throw "Tauri CLI not found. Please install @tauri-apps/cli"
+            Write-Host "npx tauri not available, trying global tauri..." -ForegroundColor Yellow
+            $tauriCmd = "tauri"
+            try {
+                & tauri --version | Out-Null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "Found global tauri CLI" -ForegroundColor Green
+                } else {
+                    throw "Global tauri not available"
+                }
+            } catch {
+                throw "Tauri CLI not found. Please install @tauri-apps/cli"
+            }
         }
     }
 
@@ -172,7 +187,9 @@ try {
         Write-Host "✅ Dry run completed successfully" -ForegroundColor Green
         return
     } else {
-        if ($tauriCmd -eq "npx tauri") {
+        if ($tauriCmd -eq "npm run tauri --") {
+            & npm run tauri -- build --target $Target --config tauri.windows-cargo-wix.conf.json
+        } elseif ($tauriCmd -eq "npx tauri") {
             & npx tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
         } else {
             & tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
