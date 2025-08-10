@@ -16,6 +16,8 @@ const { execSync } = require('child_process');
  * - tauri.macos.conf.json
  * - tauri.windows.conf.json
  * - tauri.windows-msix.conf.json
+ * - tauri.windows-portable-x64.conf.json
+ * - tauri.windows-portable-x86.conf.json
  * - Cargo.toml
  * - README.md (中文)
  * - README-en.md (英文)
@@ -32,6 +34,8 @@ const tauriWindowsCargoWixConfigPath = path.join(rootDir, 'src-tauri', 'tauri.wi
 const tauriWindowsNsisConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-nsis.conf.json');
 const tauriWindowsNsisOnlyConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-nsis-only.conf.json');
 const tauriWindowsMsixConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-msix.conf.json');
+const tauriWindowsPortableX64ConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-portable-x64.conf.json');
+const tauriWindowsPortableX86ConfigPath = path.join(rootDir, 'src-tauri', 'tauri.windows-portable-x86.conf.json');
 
 const cargoTomlPath = path.join(rootDir, 'src-tauri', 'Cargo.toml');
 const readmeCnPath = path.join(rootDir, 'README.md');
@@ -183,7 +187,9 @@ function getTauriConfigFiles() {
         { path: tauriWindowsCargoWixConfigPath, name: 'tauri.windows-cargo-wix.conf.json', required: false },
         { path: tauriWindowsNsisConfigPath, name: 'tauri.windows-nsis.conf.json', required: false },
         { path: tauriWindowsNsisOnlyConfigPath, name: 'tauri.windows-nsis-only.conf.json', required: false },
-        { path: tauriWindowsMsixConfigPath, name: 'tauri.windows-msix.conf.json', required: false }
+        { path: tauriWindowsMsixConfigPath, name: 'tauri.windows-msix.conf.json', required: false },
+        { path: tauriWindowsPortableX64ConfigPath, name: 'tauri.windows-portable-x64.conf.json', required: false },
+        { path: tauriWindowsPortableX86ConfigPath, name: 'tauri.windows-portable-x86.conf.json', required: false }
     ];
 }
 
@@ -285,6 +291,12 @@ function updateReadmeVersion(filePath, version, createBackup = true) {
                 regex: /InfloWave[_-](\d+\.\d+\.\d+)/g,
                 replacement: (match, oldVersion) => match.replace(oldVersion, version),
                 description: 'Windows文件名版本号'
+            },
+            // Windows便携版文件名中的版本号 (InfloWave-x64-portable-1.2.3.zip 或 InfloWave-x86-portable-1.2.3.zip)
+            {
+                regex: /InfloWave-(x64|x86)-portable[_-](\d+\.\d+\.\d+)/g,
+                replacement: (match, arch, oldVersion) => match.replace(oldVersion, version),
+                description: 'Windows便携版文件名版本号'
             },
             // Linux文件名中的版本号 (inflowave_1.2.3 或 inflowave-1.2.3)
             {
@@ -490,6 +502,8 @@ function getAllVersions() {
         tauriWindowsNsisConfig: getSingleTauriVersion(tauriWindowsNsisConfigPath),
         tauriWindowsNsisOnlyConfig: getSingleTauriVersion(tauriWindowsNsisOnlyConfigPath),
         tauriWindowsMsixConfig: getSingleTauriVersion(tauriWindowsMsixConfigPath),
+        tauriWindowsPortableX64Config: getSingleTauriVersion(tauriWindowsPortableX64ConfigPath),
+        tauriWindowsPortableX86Config: getSingleTauriVersion(tauriWindowsPortableX86ConfigPath),
         cargoToml: cargoVersion
     };
 }
@@ -511,7 +525,9 @@ function checkVersionConsistency() {
         versions.tauriWindowsCargoWixConfig,
         versions.tauriWindowsNsisConfig,
         versions.tauriWindowsNsisOnlyConfig,
-        versions.tauriWindowsMsixConfig
+        versions.tauriWindowsMsixConfig,
+        versions.tauriWindowsPortableX64Config,
+        versions.tauriWindowsPortableX86Config
     ];
 
     const validTauriVersions = tauriVersions.filter(v => v !== 'not found' && v !== 'invalid');
@@ -558,6 +574,8 @@ function syncVersions(targetVersion = null, options = {}) {
     log.info(`  tauri.windows-nsis.conf.json:     ${versions.tauriWindowsNsisConfig}`);
     log.info(`  tauri.windows-nsis-only.conf.json:${versions.tauriWindowsNsisOnlyConfig}`);
     log.info(`  tauri.windows-msix.conf.json:     ${versions.tauriWindowsMsixConfig}`);
+    log.info(`  tauri.windows-portable-x64.conf.json:${versions.tauriWindowsPortableX64Config}`);
+    log.info(`  tauri.windows-portable-x86.conf.json:${versions.tauriWindowsPortableX86Config}`);
     log.info(`  Cargo.toml:                       ${versions.cargoToml}`);
 
     const finalVersion = targetVersion || packageVersion;
@@ -867,6 +885,8 @@ function main() {
             log.info(`  tauri.windows-nsis.conf.json:     ${versions.tauriWindowsNsisConfig}`);
             log.info(`  tauri.windows-nsis-only.conf.json:${versions.tauriWindowsNsisOnlyConfig}`);
             log.info(`  tauri.windows-msix.conf.json:     ${versions.tauriWindowsMsixConfig}`);
+            log.info(`  tauri.windows-portable-x64.conf.json:${versions.tauriWindowsPortableX64Config}`);
+            log.info(`  tauri.windows-portable-x86.conf.json:${versions.tauriWindowsPortableX86Config}`);
             log.info(`  Cargo.toml:                       ${versions.cargoToml}`);
 
             log.divider();
@@ -942,6 +962,8 @@ ${colors.bright}🎯 功能:${colors.reset}
   • tauri.windows-nsis.conf.json
   • tauri.windows-nsis-only.conf.json
   • tauri.windows-msix.conf.json
+  • tauri.windows-portable-x64.conf.json
+  • tauri.windows-portable-x86.conf.json
   • Cargo.toml
   • README.md (中文)
   • README-en.md (英文)

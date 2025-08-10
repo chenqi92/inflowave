@@ -6,7 +6,8 @@ param(
     [string]$Target = "x86_64-pc-windows-msvc",
     [string]$Profile = "release",
     [switch]$Clean = $false,
-    [switch]$Verbose = $false
+    [switch]$Verbose = $false,
+    [switch]$WhatIf = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,6 +15,10 @@ $ErrorActionPreference = "Stop"
 Write-Host "InfloWave MSIX Build Script" -ForegroundColor Cyan
 Write-Host "Target Platform: $Target" -ForegroundColor Green
 Write-Host "Build Profile: $Profile" -ForegroundColor Green
+
+if ($WhatIf) {
+    Write-Host "DRY RUN MODE - No actual build will be performed" -ForegroundColor Yellow
+}
 
 # Switch to src-tauri directory
 Push-Location "src-tauri"
@@ -49,13 +54,19 @@ try {
 
     # Build standard Windows package
     Write-Host "Building Windows package (NSIS installer)..." -ForegroundColor Yellow
-    
-    Write-Host "Executing: tauri build --target $Target" -ForegroundColor Gray
-    
-    # Use tauri CLI directly
-    & tauri build --target $Target
-    if ($LASTEXITCODE -ne 0) {
-        throw "Windows build failed"
+
+    if ($WhatIf) {
+        Write-Host "WOULD EXECUTE: tauri build --target $Target" -ForegroundColor Yellow
+        Write-Host "Dry run completed successfully" -ForegroundColor Green
+        return
+    } else {
+        Write-Host "Executing: tauri build --target $Target" -ForegroundColor Gray
+
+        # Use tauri CLI directly
+        & tauri build --target $Target
+        if ($LASTEXITCODE -ne 0) {
+            throw "Windows build failed"
+        }
     }
 
     # Show build results

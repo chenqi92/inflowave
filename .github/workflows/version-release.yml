@@ -328,6 +328,18 @@ jobs:
           # Use our build script
           powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Target ${{ matrix.rust_target }} -Verbose
 
+      - name: Build Windows Portable ZIP Packages
+        if: matrix.platform == 'windows-latest'
+        id: windows_zip_build
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          Write-Output "Building Windows Portable ZIP packages..."
+          Write-Output "Target: ${{ matrix.rust_target }}"
+
+          # Use our portable build script
+          powershell -ExecutionPolicy Bypass -File scripts/build-windows-portable.ps1 -Target ${{ matrix.rust_target }} -Verbose
+
       - name: Build Windows MSIX (Microsoft Store) - Info Only
         if: matrix.platform == 'windows-latest'
         id: windows_msix_build
@@ -487,4 +499,42 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
+      # Windows ZIP 文件上传到 Release
+      - name: Upload Windows ZIP to Release
+        if: matrix.platform == 'windows-latest' && steps.windows_zip_build.outcome == 'success'
+        shell: pwsh
+        run: |
+          Write-Output "Uploading Windows ZIP files to Release..."
 
+          # 查找 ZIP 文件
+          $zipFiles = @()
+          $searchPaths = @(
+            "src-tauri\target\${{ matrix.rust_target }}\release\bundle\zip\*.zip",
+            "src-tauri\target\release\bundle\zip\*.zip",
+            "src-tauri\target\bundle\zip\*.zip"
+          )
+
+          foreach ($path in $searchPaths) {
+            $files = Get-ChildItem $path -ErrorAction SilentlyContinue
+            if ($files) {
+              $zipFiles += $files
+              break
+            }
+          }
+
+          if ($zipFiles) {
+            foreach ($zipFile in $zipFiles) {
+              $fileName = $zipFile.Name
+              $filePath = $zipFile.FullName
+
+              Write-Output "Uploading ZIP file: $fileName"
+
+              # 使用 GitHub CLI 上传文件到 Release
+              gh release upload "v${{ needs.detect-version.outputs.version }}" "$filePath" --clobber
+            }
+            Write-Output "Windows ZIP files uploaded successfully"
+          } else {
+            Write-Output "⚠️ No ZIP files found to upload"
+          }
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}

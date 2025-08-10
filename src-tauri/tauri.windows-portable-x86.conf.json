@@ -12,7 +12,7 @@
   "bundle": {
     "active": true,
     "targets": [
-      "msi"
+      "zip"
     ],
     "icon": [
       "icons/icon.png",
@@ -31,8 +31,8 @@
     "publisher": "Kkape Team",
     "copyright": "Copyright © 2024 InfloWave",
     "category": "DeveloperTool",
-    "shortDescription": "Modern time-series database management tool",
-    "longDescription": "A modern, secure, and user-friendly GUI tool for managing time-series databases. Features include connection management, database operations, query execution, data visualization, and more.",
+    "shortDescription": "Modern time-series database management tool (Portable x86)",
+    "longDescription": "A modern, secure, and user-friendly GUI tool for managing time-series databases. This is the portable x86 version that can be run without installation. Features include connection management, database operations, query execution, data visualization, and more.",
     "externalBin": [],
     "windows": {
       "certificateThumbprint": null,
@@ -42,18 +42,14 @@
         "type": "downloadBootstrapper",
         "silent": false
       },
-      "allowDowngrades": false,
-      "wix": {
-        "language": "zh-CN",
-        "template": "wix/main.wxs"
-      }
+      "allowDowngrades": false
     }
   },
   "app": {
     "windows": [
       {
         "label": "main",
-        "title": "InfloWave",
+        "title": "InfloWave - Portable x86",
         "width": 1400,
         "height": 900,
         "minWidth": 1000,

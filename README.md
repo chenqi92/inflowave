@@ -45,19 +45,32 @@
 ### 🔍 如何选择适合的版本
 
 #### Windows 用户
-- **MSI 安装包 (推荐)**: 📥 **[InfloWave-0.6.6-x86_64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.6.6/InfloWave-0.6.6-x86_64.msi)**
+- **MSI 安装包 (推荐)**: 📥 **[InfloWave-0.6.7-x86_64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/InfloWave-0.6.7-x86_64.msi)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 企业级安装包，支持 GPO 部署
   - ✅ MSI 格式，系统信任度高
 
-- **EXE 安装包**: 📥 **[InfloWave_0.6.6_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.6.6/InfloWave_0.6.6_x64-setup.exe)**
+- **EXE 安装包**: 📥 **[InfloWave_0.6.7_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/InfloWave_0.6.7_x64-setup.exe)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 用户友好的安装向导
   - ✅ 支持中英文界面
 
-- **32位版本**: 📥 **[InfloWave-0.6.6-i686.msi](https://github.com/chenqi92/inflowave/releases/download/v0.6.6/InfloWave-0.6.6-i686.msi)**
+- **32位版本**: 📥 **[InfloWave-0.6.7-i686.msi](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/InfloWave-0.6.7-i686.msi)**
   - ✅ 适用于较老的32位 Windows 系统
   - ⚠️ 仅在无法运行64位版本时使用
+
+**便携版 (免安装)**
+
+- **64位便携版**: 📥 **[InfloWave-x64-portable-0.6.7.zip](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/InfloWave-x64-portable-0.6.7.zip)**
+  - ✅ 解压即用，无需安装
+  - ✅ 绿色环保，不写入注册表
+  - ✅ 便于携带，可放在U盘中
+  - ✅ 适用于 Windows 10/11 (64位)
+
+- **32位便携版**: 📥 **[InfloWave-x86-portable-0.6.7.zip](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/InfloWave-x86-portable-0.6.7.zip)**
+  - ✅ 解压即用，无需安装
+  - ✅ 兼容性更好，支持老旧系统
+  - ✅ 适用于 Windows 7/8/10/11 (32位/64位)
 
 #### macOS 用户
 
@@ -66,14 +79,14 @@
 - 💻 查看「处理器」或「芯片」信息
 
 **Apple Silicon Mac (M1/M2/M3/M4 芯片)**
-- 📥 **[InfloWave_0.6.6_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.6.6/InfloWave_0.6.6_aarch64.dmg)**
+- 📥 **[InfloWave_0.6.7_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/InfloWave_0.6.7_aarch64.dmg)**
   - ✅ 2020年11月后发布的 Mac
   - ✅ 性能最优，原生支持
   - ✅ 更低的电量消耗
   - ⚠️ **无法在 Intel Mac 上运行**
 
 **Intel Mac (Intel 处理器)**
-- 📥 **[InfloWave_0.6.6_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.6.6/InfloWave_0.6.6_x64.dmg)**
+- 📥 **[InfloWave_0.6.7_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/InfloWave_0.6.7_x64.dmg)**
   - ✅ 2020年前发布的 Mac
   - ✅ 兼容 macOS 10.15 或更高版本
   - ⚠️ 不支持 Apple Silicon 芯片
@@ -84,32 +97,40 @@
 - 运行命令: `cat /etc/os-release` 或 `lsb_release -a`
 
 **Debian/Ubuntu 系列 (推荐)**
-- 📥 **[inflowave_0.6.6_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.6.6/inflowave_0.6.6_amd64.deb)**
+- 📥 **[inflowave_0.6.7_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/inflowave_0.6.7_amd64.deb)**
   - ✅ Ubuntu 18.04+, Debian 10+
   - ✅ 系统集成度高，支持自动更新
-  - 📋 安装命令: `sudo dpkg -i inflowave_0.6.6_amd64.deb`
+  - 📋 安装命令: `sudo dpkg -i inflowave_0.6.7_amd64.deb`
   - 🔧 依赖修复: `sudo apt-get install -f`
 
 **通用 Linux (万能选择)**
-- 📥 **[inflowave_0.6.6_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.6.6/inflowave_0.6.6_amd64.AppImage)**
+- 📥 **[inflowave_0.6.7_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/inflowave_0.6.7_amd64.AppImage)**
   - ✅ 适用于大部分 x64 Linux 发行版
   - ✅ 免安装，下载后直接运行
   - ✅ 便携版，不影响系统
-  - 📋 使用方法: `chmod +x inflowave_0.6.6_amd64.AppImage && ./inflowave_0.6.6_amd64.AppImage`
+  - 📋 使用方法: `chmod +x inflowave_0.6.7_amd64.AppImage && ./inflowave_0.6.7_amd64.AppImage`
 
 **RPM 系列 (CentOS/RHEL/Fedora)**
-- 📥 **[inflowave-0.6.6-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.6.6/inflowave-0.6.6-1.x86_64.rpm)**
+- 📥 **[inflowave-0.6.7-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.6.7/inflowave-0.6.7-1.x86_64.rpm)**
   - ✅ CentOS 7+, RHEL 7+, Fedora 30+
-  - 📋 安装命令: `sudo rpm -i inflowave-0.6.6-1.x86_64.rpm`
-  - 📋 或使用: `sudo dnf install inflowave-0.6.6-1.x86_64.rpm`
+  - 📋 安装命令: `sudo rpm -i inflowave-0.6.7-1.x86_64.rpm`
+  - 📋 或使用: `sudo dnf install inflowave-0.6.7-1.x86_64.rpm`
 
 ### 📝 详细安装步骤
 
 #### Windows 安装
-1. 下载对应的 `.msi` 文件
+
+**安装版 (推荐)**
+1. 下载对应的 `.msi` 或 `.exe` 文件
 2. 双击运行安装程序
 3. 按照安装向导完成安装
 4. 从开始菜单启动 InfloWave
+
+**便携版 (免安装)**
+1. 下载对应的 `.zip` 文件
+2. 解压到任意目录 (如 `C:\InfloWave` 或 `D:\Tools\InfloWave`)
+3. 双击 `InfloWave.exe` 直接运行
+4. 首次运行可能需要安装 Microsoft Edge WebView2 运行时
 
 #### macOS 安装
 1. 下载对应的 `.dmg` 文件

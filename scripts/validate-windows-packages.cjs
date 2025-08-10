@@ -58,7 +58,37 @@ function validatePackage(packagePath, packageType) {
   log(`📦 文件大小: ${fileSize}`, 'blue');
   log(`🔐 SHA256: ${fileHash}`, 'blue');
 
-  // 基本文件大小检查
+  // ZIP 文件特殊处理
+  if (packageType === 'ZIP') {
+    // 检查 ZIP 文件头
+    try {
+      const buffer = fs.readFileSync(packagePath, { start: 0, end: 4 });
+      const signature = buffer.toString('hex').toUpperCase();
+
+      if (signature.startsWith('504B0304') || signature.startsWith('504B0506') || signature.startsWith('504B0708')) {
+        log(`✅ 有效的 ZIP 文件格式`, 'green');
+
+        // ZIP 文件大小检查
+        if (stats.size < 5 * 1024 * 1024) { // 小于 5MB
+          log(`⚠️ ZIP 文件较小，可能不包含完整应用`, 'yellow');
+        } else if (stats.size > 500 * 1024 * 1024) { // 大于 500MB
+          log(`⚠️ ZIP 文件过大，请检查是否正常`, 'yellow');
+        } else {
+          log(`✅ ZIP 文件大小正常`, 'green');
+        }
+
+        return true;
+      } else {
+        log(`❌ 无效的 ZIP 文件格式 (签名: ${signature})`, 'red');
+        return false;
+      }
+    } catch (error) {
+      log(`❌ 无法读取 ZIP 文件: ${error.message}`, 'red');
+      return false;
+    }
+  }
+
+  // 其他文件类型的大小检查
   const minSizes = {
     'MSI': 5 * 1024 * 1024,    // 5MB
     'EXE': 10 * 1024 * 1024,   // 10MB
@@ -80,10 +110,13 @@ function findWindowsPackages() {
     'src-tauri/target/wix',
     'src-tauri/target/release/bundle/nsis',
     'src-tauri/target/release/bundle/msix',
+    'src-tauri/target/release/bundle/zip',
     'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis',
     'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msix',
+    'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/zip',
     'src-tauri/target/i686-pc-windows-msvc/release/bundle/nsis',
-    'src-tauri/target/i686-pc-windows-msvc/release/bundle/msix'
+    'src-tauri/target/i686-pc-windows-msvc/release/bundle/msix',
+    'src-tauri/target/i686-pc-windows-msvc/release/bundle/zip'
   ];
 
   for (const searchPath of searchPaths) {
@@ -100,6 +133,8 @@ function findWindowsPackages() {
           packages.push({ path: filePath, type: 'EXE' });
         } else if (ext === '.msix') {
           packages.push({ path: filePath, type: 'MSIX' });
+        } else if (ext === '.zip') {
+          packages.push({ path: filePath, type: 'ZIP' });
         }
       }
     }

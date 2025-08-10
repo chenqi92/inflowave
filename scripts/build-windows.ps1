@@ -17,7 +17,7 @@ Write-Host "Target Platform: $Target" -ForegroundColor Green
 Write-Host "Build Profile: $Profile" -ForegroundColor Green
 
 if ($WhatIf) {
-    Write-Host "🔍 DRY RUN MODE - No actual build will be performed" -ForegroundColor Yellow
+    Write-Host "DRY RUN MODE - No actual build will be performed" -ForegroundColor Yellow
 }
 
 # Set up WiX environment
@@ -93,19 +93,19 @@ try {
     $wixExpectedPath = "target\release\InfloWave.exe"
 
     if (Test-Path $exePath) {
-        Write-Host "✅ Executable already exists at: $exePath" -ForegroundColor Green
+        Write-Host "Executable already exists at: $exePath" -ForegroundColor Green
         # Always copy to WiX expected location
         $targetDir = Split-Path $wixExpectedPath -Parent
         if (-not (Test-Path $targetDir)) {
             New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
         }
         Copy-Item $exePath $wixExpectedPath -Force
-        Write-Host "📋 Copied executable to WiX expected location: $wixExpectedPath" -ForegroundColor Green
+        Write-Host "Copied executable to WiX expected location: $wixExpectedPath" -ForegroundColor Green
     } elseif (Test-Path $altExePath) {
-        Write-Host "✅ Executable found at alternative path: $altExePath" -ForegroundColor Green
-        Write-Host "📋 Executable already at WiX expected location" -ForegroundColor Green
+        Write-Host "Executable found at alternative path: $altExePath" -ForegroundColor Green
+        Write-Host "Executable already at WiX expected location" -ForegroundColor Green
     } else {
-        Write-Host "🔨 Building Rust application..." -ForegroundColor Yellow
+        Write-Host "Building Rust application..." -ForegroundColor Yellow
         $buildArgs = @("build", "--target", $Target)
         if ($Profile -eq "release") {
             $buildArgs += "--release"
@@ -126,7 +126,7 @@ try {
                 New-Item -ItemType Directory -Path $targetDir -Force | Out-Null
             }
             Copy-Item $exePath $wixExpectedPath -Force
-            Write-Host "📋 Copied built executable to WiX expected location: $wixExpectedPath" -ForegroundColor Green
+            Write-Host "Copied built executable to WiX expected location: $wixExpectedPath" -ForegroundColor Green
         }
     }
 
@@ -134,7 +134,7 @@ try {
     if (-not (Test-Path $wixExpectedPath)) {
         throw "WiX expected executable not found at: $wixExpectedPath"
     } else {
-        Write-Host "✅ WiX executable verified at: $wixExpectedPath" -ForegroundColor Green
+        Write-Host "WiX executable verified at: $wixExpectedPath" -ForegroundColor Green
     }
 
     # Build MSI installer
@@ -142,7 +142,7 @@ try {
 
     # Set environment variables for MSI build
     $env:TAURI_BUNDLE_TARGETS = "msi"
-
+    
     # Check if npm tauri CLI is available
     $tauriCmd = "npm run tauri --"
     try {
@@ -183,8 +183,8 @@ try {
 
     # Use tauri CLI to build MSI
     if ($WhatIf) {
-        Write-Host "🔍 WOULD EXECUTE: $tauriCmd build --target $Target --config tauri.windows-cargo-wix.conf.json" -ForegroundColor Yellow
-        Write-Host "✅ Dry run completed successfully" -ForegroundColor Green
+        Write-Host "WOULD EXECUTE: $tauriCmd build --target $Target --config tauri.windows-cargo-wix.conf.json" -ForegroundColor Yellow
+        Write-Host "Dry run completed successfully" -ForegroundColor Green
         return
     } else {
         if ($tauriCmd -eq "npm run tauri --") {
@@ -194,7 +194,7 @@ try {
         } else {
             & tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
         }
-
+        
         if ($LASTEXITCODE -ne 0) {
             throw "MSI build failed with exit code: $LASTEXITCODE"
         }
@@ -202,14 +202,14 @@ try {
 
     # Show build results
     Write-Host "Build completed!" -ForegroundColor Green
-
+    
     # Check multiple possible MSI locations
     $msiPaths = @(
         "target\wix\InfloWave-*.msi",
         "target\$Target\release\bundle\msi\*.msi",
         "target\release\bundle\msi\*.msi"
     )
-
+    
     $msiFiles = @()
     foreach ($path in $msiPaths) {
         $files = Get-ChildItem $path -ErrorAction SilentlyContinue
@@ -227,28 +227,28 @@ try {
             Write-Host "  $($file.Name) ($size MB)" -ForegroundColor White
             Write-Host "  Path: $($file.FullName)" -ForegroundColor Gray
         }
-
+        
         # Verify these are actual MSI files, not just executables
         foreach ($file in $msiFiles) {
             if ($file.Extension -eq ".msi") {
-                Write-Host "✅ Verified MSI installer: $($file.Name)" -ForegroundColor Green
+                Write-Host "Verified MSI installer: $($file.Name)" -ForegroundColor Green
             } else {
-                Write-Host "⚠️ Warning: Found non-MSI file: $($file.Name)" -ForegroundColor Yellow
+                Write-Host "Warning: Found non-MSI file: $($file.Name)" -ForegroundColor Yellow
             }
         }
     } else {
-        Write-Host "❌ No MSI files found in any expected location!" -ForegroundColor Red
+        Write-Host "No MSI files found in any expected location!" -ForegroundColor Red
         Write-Host "Searched in:" -ForegroundColor Yellow
         foreach ($path in $msiPaths) {
             Write-Host "  $path" -ForegroundColor Gray
         }
-
+        
         # List what files were actually created
         Write-Host "Files in target directory:" -ForegroundColor Yellow
         Get-ChildItem "target" -Recurse -File | Where-Object { $_.Extension -in @(".msi", ".exe", ".nsis") } | ForEach-Object {
             Write-Host "  $($_.FullName)" -ForegroundColor Gray
         }
-
+        
         throw "MSI build completed but no MSI files were generated"
     }
 
