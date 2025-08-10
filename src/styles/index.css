@@ -113,8 +113,6 @@
     will-change: transform !important;
     /* 确保不侵占表头空间 */
     margin-top: 0 !important;
-    padding-top: 8px !important;
-    padding-bottom: 8px !important;
   }
 
   /* 高性能单元格选择和编辑样式 */
@@ -1981,8 +1979,17 @@ pre,
   padding: 0 !important;
   vertical-align: top !important;
   line-height: normal !important;
-  border-bottom: 1px solid hsl(var(--border)) !important;
+  border-bottom: 0 !important; /* 避免与固定行高冲突导致溢出 */
 }
+
+/* 使用右侧分隔线替代整行边框，避免高度误差 */
+.virtualized-table-fixed-height td {
+  border-right: 1px solid hsl(var(--border));
+}
+.virtualized-table-fixed-height td:last-child {
+  border-right: 0;
+}
+
 
 /* 单元格内容容器 */
 .virtualized-table-fixed-height td > div,

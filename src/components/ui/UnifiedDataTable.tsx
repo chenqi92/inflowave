@@ -4,7 +4,7 @@
  * 支持固定序号列、横向滚动、列管理、排序、筛选、导出等功能
  */
 
-import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, useRef, useLayoutEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { TableVirtuoso } from 'react-virtuoso';
 import {
@@ -434,16 +434,16 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                     <th className={cn(
                         "text-left align-middle font-medium w-16 border-r",
                         "text-xs text-muted-foreground bg-muted border-b-2",
-                        virtualMode ? "virtualized-sticky-header" : "sticky left-0 top-0 z-50 bg-muted"
+                        "sticky left-0 top-0 z-50 bg-muted"
                     )}
                     style={{
-                        height: `${rowHeight}px`,
-                        minHeight: `${rowHeight}px`,
-                        maxHeight: `${rowHeight}px`,
-                        overflow: 'hidden',
+                        height: 'auto',
+                        minHeight: '48px',
+                        maxHeight: 'none',
+                        overflow: 'visible',
                         padding: '0',
                         boxSizing: 'border-box',
-                        lineHeight: 'normal'
+                        lineHeight: '1.4'
                     }}>
                         <div
                             className="flex items-center justify-center w-full h-full"
@@ -491,25 +491,25 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
                             )}
                             style={{
                                 minWidth,
-                                height: `${rowHeight}px`,
-                                minHeight: `${rowHeight}px`,
-                                maxHeight: `${rowHeight}px`,
-                                overflow: 'hidden',
+                                height: 'auto',
+                                minHeight: '48px',
+                                maxHeight: 'none',
+                                overflow: 'visible',
                                 padding: '0',
                                 boxSizing: 'border-box',
-                                lineHeight: 'normal'
+                                lineHeight: '1.4'
                             }}
                         >
                             <div
-                                className="flex items-center gap-1 whitespace-nowrap w-full h-full"
+                                className="flex items-center gap-1 w-full h-full"
                                 style={{
-                                    height: `${rowHeight}px`,
-                                    minHeight: `${rowHeight}px`,
-                                    maxHeight: `${rowHeight}px`,
+                                    height: 'auto',
+                                    minHeight: '48px',
+                                    maxHeight: 'none',
                                     padding: '0 12px',
                                     boxSizing: 'border-box',
-                                    lineHeight: 'normal',
-                                    overflow: 'hidden'
+                                    lineHeight: '1.4',
+                                    overflow: 'visible'
                                 }}
                             >
                                 {/* 列名 - 点击选中整列 */}
@@ -714,7 +714,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     onRowSelect,
     virtualized,
     rowHeight = 36, // 默认行高度36px，确保固定高度
-    maxHeight = 600
+    maxHeight = 720
 }) => {
     // 状态管理
     const [searchText, setSearchText] = useState('');
@@ -751,6 +751,20 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     // refs
     const tableScrollRef = useRef<HTMLDivElement>(null);
     const virtuosoRef = useRef<any>(null);
+
+    // 实测表头高度，避免估算误差导致滚动条
+    const headerRef = useRef<HTMLTableSectionElement | null>(null);
+    const [measuredHeaderHeight, setMeasuredHeaderHeight] = useState<number | null>(null);
+
+    useLayoutEffect(() => {
+        if (!tableContainerRef.current) return;
+        // TableVirtuoso 会把 fixedHeaderContent 包装为 thead，这里取最近的 thead
+        const thead = tableContainerRef.current.querySelector('thead') as HTMLTableSectionElement | null;
+        if (thead) {
+            const rect = thead.getBoundingClientRect();
+            setMeasuredHeaderHeight(Math.ceil(rect.height));
+        }
+    }, [selectedColumns, columnOrder, showRowNumbers]);
 
     // 注释：移除了 forceFixedRowHeight 函数，现在通过CSS样式来控制行高度
     // 表头使用自适应高度，数据行使用固定36px高度
@@ -1675,6 +1689,23 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         virtualized
     });
 
+    // 动态计算容器高度：数据少时按内容高度，数据多时不超过 maxHeight
+    // 优先使用实测表头高度，fallback 到 48，避免出现 1px 溢出
+    const headerEstimatedHeight = measuredHeaderHeight ?? 48;
+    const bottomPadding = 8; // 期望底部留白
+    const fudge = 6; // 增加容错，避免少量数据时出现滚动条
+    const containerHeight = Math.min(
+        maxHeight,
+        headerEstimatedHeight + paginatedData.length * rowHeight + bottomPadding + fudge
+    );
+
+    // 计算总列数（用于tfoot留白单元格的colSpan）
+    const visibleDataColumns = columnOrder.filter((col) => selectedColumns.includes(col));
+    const totalColumns = (showRowNumbers ? 1 : 0) + visibleDataColumns.length;
+    const bottomSpacerHeight = containerHeight < maxHeight ? bottomPadding : 0;
+
+
+
     return (
         <div className={cn("h-full flex flex-col bg-background", className)}>
             {/* 工具栏 */}
@@ -1803,7 +1834,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
             {/* 数据表格 */}
             <div className="flex-1 min-h-0 p-4">
-                <div className="h-full border rounded-md overflow-hidden">
+                <div className="border rounded-md overflow-hidden">
                     {loading ? (
                         <div className="flex items-center justify-center h-32">
                             <Spin />
@@ -1815,8 +1846,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             className="flex-1 min-h-0 virtualized-table virtualized-table-fixed-height"
                             ref={tableContainerRef}
                             style={{
-                                height: `${maxHeight}px`,  // 使用固定高度
-                                minHeight: `${maxHeight}px`,
+                                height: `${containerHeight}px`,
                                 maxHeight: `${maxHeight}px`
                             }}
                         >
@@ -1833,8 +1863,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     ref={virtuosoRef}
                                     data={paginatedData}
                                     fixedItemHeight={rowHeight} // 设置固定行高度，防止自动拉伸
-                                    overscan={25} // 减少预渲染行数以提高性能
-                                    style={{ height: '100%' }}
+                                    overscan={20} // 减少预渲染行数以提高性能，避免额外高度
+                                    style={{ height: containerHeight }}
 
                                     fixedHeaderContent={() => (
                                         <TableHeader
@@ -1884,7 +1914,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         overflow: 'hidden',
                                                         padding: '0',
                                                         boxSizing: 'border-box',
-                                                        border: '1px solid hsl(var(--border))'
+                                                        borderRight: '1px solid hsl(var(--border))'
                                                     }}
                                                 >
                                                     <div
@@ -1896,7 +1926,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                             padding: '0 8px',
                                                             boxSizing: 'border-box',
                                                             lineHeight: 'normal',
-                                                            overflow: 'hidden'
+                                                            overflow: 'hidden',
+                                                            borderRight: '1px solid hsl(var(--border))'
                                                         }}
                                                     >
                                                         <span
@@ -1953,7 +1984,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                             overflow: 'hidden',
                                                             padding: '0',
                                                             boxSizing: 'border-box',
-                                                            border: '1px solid hsl(var(--border))'
+                                                            borderRight: '1px solid hsl(var(--border))'
                                                         }}
                                                         title={String(displayValue || '')}
                                                     >
@@ -2000,14 +2031,15 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             })}
                                         </>
                                     )}
-                                    className="table-unified-scroll"
+
                                     components={{
                                         Table: ({ style, ...props }) => (
                                             <table
                                                 {...props}
                                                 style={{
                                                     ...style,
-                                                    width: '100%',
+                                                    minWidth: 'max-content',
+                                                    width: 'max-content',
                                                     borderCollapse: 'collapse',
                                                     tableLayout: 'fixed' // 固定表格布局
                                                 }}
@@ -2023,19 +2055,20 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             />
                                         ),
 
+                                        // 留出一点底部空白（仅在未达到 maxHeight 时）
+                                        TableFoot: () => (
+                                            <tfoot>
+                                                {bottomSpacerHeight > 0 && (
+                                                    <tr>
+                                                        <td colSpan={totalColumns} style={{ height: bottomSpacerHeight }} />
+                                                    </tr>
+                                                )}
+                                            </tfoot>
+                                        ),
+
                                         TableRow: ({ style, ...props }) => {
                                             // 从props中提取行索引
                                             const rowIndex = props['data-index'] || 0;
-
-                                            // 添加调试日志（仅对前几行）
-                                            if (rowIndex < 3) {
-                                                console.log('🔧 [UnifiedDataTable] TableRow 渲染:', {
-                                                    rowIndex,
-                                                    rowHeight,
-                                                    originalStyle: style,
-                                                    finalHeight: `${rowHeight}px`
-                                                });
-                                            }
 
                                             return (
                                                 <tr
@@ -2051,7 +2084,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         lineHeight: 'normal'
                                                     }}
                                                     className={cn(
-                                                        "border-b transition-colors hover:bg-muted/50",
+                                                        "transition-colors hover:bg-muted/50",
                                                         selectedRows.has(rowIndex) && "table-row-selected"
                                                     )}
                                                 />
