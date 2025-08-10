@@ -18,8 +18,8 @@ pub struct PortConfig {
 impl Default for PortConfig {
     fn default() -> Self {
         Self {
-            preferred_port: 1422, // 与 tauri.conf.json 中的默认端口匹配
-            port_range: (1422, 1500),
+            preferred_port: 14222, // 与 tauri.conf.json 中的默认端口匹配
+            port_range: (14222, 15000),
             max_retries: 10,
             health_check_interval: Duration::from_secs(30),
         }

@@ -25,8 +25,8 @@ export default defineConfig({
     clearScreen: false,
     // 2. tauri expects a fixed port, but allow fallback if port is occupied
     server: {
-        host: '127.0.0.1', // 确保在 IPv4 地址上监听
-        port: 1422,
+        host: '127.0.0.1', // 使用 127.0.0.1
+        port: 14222,
         strictPort: false,
         // 增加服务器超时配置
         hmr: {

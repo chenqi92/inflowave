@@ -28,7 +28,7 @@ function isPortAvailable(port) {
 /**
  * 查找可用端口
  */
-async function findAvailablePort(startPort = 1422, endPort = 1500) {
+async function findAvailablePort(startPort = 14222, endPort = 15000) {
     for (let port = startPort; port <= endPort; port++) {
         if (await isPortAvailable(port)) {
             return port;
@@ -133,7 +133,7 @@ async function startApp() {
     try {
         console.log('🔍 检查端口可用性...');
 
-        const defaultPort = 1422;
+        const defaultPort = 14222;
 
         // 简化逻辑：让 Vite 自己处理端口冲突
         // 我们只需要在启动后检测实际使用的端口并更新 Tauri 配置

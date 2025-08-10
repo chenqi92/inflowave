@@ -57,10 +57,10 @@ InfloWave 应用内置了一套完整的错误日志系统，能够自动捕获�
 
 ```
 [2025-07-11T10:30:45.123Z] [session-abc123] [JAVASCRIPT:ERROR] 错误消息
-  URL: http://localhost:1422/query:42:15
+  URL: http://localhost:14222/query:42:15
   Page: /query
   Stack:
-    at Component.render (http://localhost:1422/query:42:15)
+    at Component.render (http://localhost:14222/query:42:15)
     at ReactDOMServer.renderToString...
   Component Stack:
     in Component (at Query.tsx:42:15)

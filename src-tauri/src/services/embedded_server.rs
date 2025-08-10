@@ -17,8 +17,8 @@ impl Default for ServerConfig {
     fn default() -> Self {
         Self {
             enabled: false,
-            preferred_port: 1422,
-            port_range: (1422, 1500),
+            preferred_port: 14222,
+            port_range: (14222, 15000),
             auto_start: false,
             features: vec!["debug".to_string()],
         }

@@ -104,16 +104,16 @@ camel_case_command!(
         let manager = manager.read().unwrap();
         
         // 检查默认端口是否可用
-        if manager.is_port_available(1422) {
+        if manager.is_port_available(14222) {
             match manager.allocate_port("frontend") {
-                Ok(_) => Ok(1422),
+                Ok(_) => Ok(14222),
                 Err(e) => Err(e.to_string())
             }
         } else {
             // 如果默认端口不可用，分配新端口
             match manager.allocate_port("frontend") {
                 Ok(port) => {
-                    log::warn!("默认端口 1422 被占用，已分配新端口: {}", port);
+                    log::warn!("默认端口 14222 被占用，已分配新端口: {}", port);
                     Ok(port)
                 }
                 Err(e) => Err(e.to_string())

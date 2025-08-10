@@ -437,8 +437,8 @@ async fn setup_embedded_server_if_needed(app_handle: tauri::AppHandle) -> Result
     
     let config = ServerConfig {
         enabled: true,
-        preferred_port: 1422,
-        port_range: (1422, 1500),
+        preferred_port: 14222,
+        port_range: (14222, 15000),
         auto_start: true,
         features: vec!["debug".to_string(), "proxy".to_string()],
     };
@@ -659,7 +659,7 @@ async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Er
     // 我们只需要检查并记录端口状态，不需要尝试分配端口
     #[cfg(debug_assertions)]
     {
-        let preferred_port = 1422;
+        let preferred_port = 14222;
         let is_preferred_available = manager.is_port_available(preferred_port);
         
         if is_preferred_available {
@@ -675,7 +675,7 @@ async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Er
     // 在生产模式下，才需要端口管理
     #[cfg(not(debug_assertions))]
     {
-        let preferred_port = 1422;
+        let preferred_port = 14222;
         let is_preferred_available = manager.is_port_available(preferred_port);
         
         if is_preferred_available {
