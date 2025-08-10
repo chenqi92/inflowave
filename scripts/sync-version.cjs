@@ -292,7 +292,7 @@ function updateReadmeVersion(filePath, version, createBackup = true) {
                 replacement: (match, oldVersion) => match.replace(oldVersion, version),
                 description: 'Windows文件名版本号'
             },
-            // Windows便携版文件名中的版本号 (InfloWave-x64-portable-1.2.3.zip 或 InfloWave-x86-portable-1.2.3.zip)
+            // Windows便携版文件名中的版本号 (InfloWave-x64-portable-1.2.3.exe 或 InfloWave-x86-portable-1.2.3.exe)
             {
                 regex: /InfloWave-(x64|x86)-portable[_-](\d+\.\d+\.\d+)/g,
                 replacement: (match, arch, oldVersion) => match.replace(oldVersion, version),

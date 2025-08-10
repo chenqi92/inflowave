@@ -110,13 +110,10 @@ function findWindowsPackages() {
     'src-tauri/target/wix',
     'src-tauri/target/release/bundle/nsis',
     'src-tauri/target/release/bundle/msix',
-    'src-tauri/target/release/bundle/zip',
     'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/nsis',
     'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/msix',
-    'src-tauri/target/x86_64-pc-windows-msvc/release/bundle/zip',
     'src-tauri/target/i686-pc-windows-msvc/release/bundle/nsis',
-    'src-tauri/target/i686-pc-windows-msvc/release/bundle/msix',
-    'src-tauri/target/i686-pc-windows-msvc/release/bundle/zip'
+    'src-tauri/target/i686-pc-windows-msvc/release/bundle/msix'
   ];
 
   for (const searchPath of searchPaths) {

@@ -155,14 +155,14 @@ function generateDownloadSection(version, type = 'release') {
 
 **便携版 (免安装)**
 
-- **64位便携版**: 📥 **[InfloWave-x64-portable-${version}.zip](https://github.com/${repository}/releases/download/v${version}/InfloWave-x64-portable-${version}.zip)**
-  - ✅ 解压即用，无需安装
-  - ✅ 绿色环保，不写入注册表
+- **64位便携版**: 📥 **[InfloWave-x64-portable-${version}.exe](https://github.com/${repository}/releases/download/v${version}/InfloWave-x64-portable-${version}.exe)**
+  - ✅ 绿色软件，无需安装
+  - ✅ 不写入注册表，不留痕迹
   - ✅ 便于携带，可放在U盘中
   - ✅ 适用于 Windows 10/11 (64位)
 
-- **32位便携版**: 📥 **[InfloWave-x86-portable-${version}.zip](https://github.com/${repository}/releases/download/v${version}/InfloWave-x86-portable-${version}.zip)**
-  - ✅ 解压即用，无需安装
+- **32位便携版**: 📥 **[InfloWave-x86-portable-${version}.exe](https://github.com/${repository}/releases/download/v${version}/InfloWave-x86-portable-${version}.exe)**
+  - ✅ 绿色软件，无需安装
   - ✅ 兼容性更好，支持老旧系统
   - ✅ 适用于 Windows 7/8/10/11 (32位/64位)
 
@@ -221,9 +221,9 @@ function generateDownloadSection(version, type = 'release') {
 4. 从开始菜单启动 InfloWave
 
 **便携版 (免安装)**
-1. 下载对应的 \`.zip\` 文件
-2. 解压到任意目录 (如 \`C:\\InfloWave\` 或 \`D:\\Tools\\InfloWave\`)
-3. 双击 \`InfloWave.exe\` 直接运行
+1. 下载对应的 \`.exe\` 文件
+2. 双击运行，选择解压目录 (如 \`C:\\InfloWave\` 或 \`D:\\Tools\\InfloWave\`)
+3. 解压完成后，双击 \`InfloWave.exe\` 直接运行
 4. 首次运行可能需要安装 Microsoft Edge WebView2 运行时
 
 #### macOS 安装

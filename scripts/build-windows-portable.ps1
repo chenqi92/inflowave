@@ -1,5 +1,5 @@
 # InfloWave Windows Portable Build Script
-# Build portable ZIP packages for Windows
+# Build portable NSIS packages for Windows
 
 param(
     [string]$Target = "x86_64-pc-windows-msvc",
@@ -21,7 +21,7 @@ if ($WhatIf) {
 }
 
 if ($BuildBoth) {
-    Write-Host "Building both x64 and x86 portable packages" -ForegroundColor Yellow
+    Write-Host "Building both x64 and x86 portable NSIS packages" -ForegroundColor Yellow
 }
 
 # Switch to src-tauri directory
@@ -81,7 +81,7 @@ try {
     }
 
     foreach ($targetInfo in $targets) {
-        Write-Host "`nBuilding portable ZIP for $($targetInfo.Name) ($($targetInfo.Target))..." -ForegroundColor Cyan
+        Write-Host "`nBuilding portable NSIS for $($targetInfo.Name) ($($targetInfo.Target))..." -ForegroundColor Cyan
         
         $buildTarget = $targetInfo.Target
         $configFile = $targetInfo.Config
@@ -114,7 +114,7 @@ try {
             }
 
             if ($LASTEXITCODE -ne 0) {
-                throw "ZIP build failed for $archName with exit code: $LASTEXITCODE"
+                throw "NSIS build failed for $archName with exit code: $LASTEXITCODE"
             }
 
             Write-Host "Build completed for $archName!" -ForegroundColor Green

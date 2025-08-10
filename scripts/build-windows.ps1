@@ -191,13 +191,32 @@ try {
         Write-Host "Dry run completed successfully" -ForegroundColor Green
         return
     } else {
-        if ($tauriCmd -eq "npx tauri") {
-            & npx tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
-        } else {
-            & tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
-        }
+        try {
+            if ($tauriCmd -eq "npx tauri") {
+                & npx tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
+            } else {
+                & tauri build --target $Target --config tauri.windows-cargo-wix.conf.json
+            }
 
-        if ($LASTEXITCODE -ne 0) {
+            if ($LASTEXITCODE -ne 0) {
+                Write-Host "MSI build failed, trying fallback to NSIS..." -ForegroundColor Yellow
+
+                # Fallback to NSIS if WiX fails
+                Write-Host "Attempting NSIS build as fallback..." -ForegroundColor Yellow
+                if ($tauriCmd -eq "npx tauri") {
+                    & npx tauri build --target $Target --bundles nsis
+                } else {
+                    & tauri build --target $Target --bundles nsis
+                }
+
+                if ($LASTEXITCODE -ne 0) {
+                    throw "Both MSI and NSIS builds failed with exit code: $LASTEXITCODE"
+                } else {
+                    Write-Host "NSIS fallback build completed successfully" -ForegroundColor Green
+                }
+            }
+        } catch {
+            Write-Host "Build error: $($_.Exception.Message)" -ForegroundColor Red
             throw "MSI build failed with exit code: $LASTEXITCODE"
         }
     }
