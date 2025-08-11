@@ -1645,11 +1645,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             closeAllDatabasesForConnection(connectionId);
             clearDatabasesCache(connectionId);
 
-            // 3. 加载数据库列表
-            console.log(`📂 加载数据库列表: ${connection.name}`);
-            const databases = await loadDatabases(connectionId, true); // 强制刷新
-
-            // 4. 等待连接状态更新完成，然后重新构建完整的树形数据
+            // 3. 等待连接状态更新完成，然后重新构建完整的树形数据
             // 使用更长的延迟确保状态更新已经传播到组件
             setTimeout(async () => {
                 console.log(`🔄 连接建立后重新构建完整树形数据: ${connection.name}`);
@@ -1659,9 +1655,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 console.log(`🔍 验证连接状态: ${connection.name} - ${isConnected ? '已连接' : '未连接'}`);
 
                 if (isConnected) {
+                    // 构建完整树形数据（内部会加载数据库列表，避免重复调用）
                     await buildCompleteTreeData(false); // 不显示全局loading，因为连接过程已经有loading了
 
-                    // 5. 自动展开连接节点
+                    // 获取数据库数量用于显示消息
+                    const databases = databasesCache.get(connectionId) || [];
+
+                    // 4. 自动展开连接节点
                     const connectionKey = `connection-${connectionId}`;
                     if (!expandedKeys.includes(connectionKey)) {
                         setExpandedKeys(prev => [...prev, connectionKey]);
@@ -1674,6 +1674,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     // 如果状态还没更新，再等待一段时间
                     setTimeout(async () => {
                         await buildCompleteTreeData(false);
+                        const databases = databasesCache.get(connectionId) || [];
                         const connectionKey = `connection-${connectionId}`;
                         if (!expandedKeys.includes(connectionKey)) {
                             setExpandedKeys(prev => [...prev, connectionKey]);
@@ -1720,9 +1721,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
             try {
                 console.log(`📊 加载数据库列表: ${connection.name}`);
-                // 重新加载数据库列表（强制刷新）
-                await loadDatabases(connectionId, true);
-                // 刷新树形数据
+                // 直接刷新树形数据（内部会调用 getTreeNodesWithCache，避免重复查询）
                 await buildCompleteTreeData(true);
                 showMessage.success(`已加载数据库列表: ${connection.name}`);
             } catch (error) {
@@ -2398,9 +2397,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         try {
                             // 清除该连接的缓存，强制重新加载
                             clearDatabasesCache(connectionId);
-                            // 重新加载数据库列表（强制刷新）
-                            await loadDatabases(connectionId, true);
-                            // 刷新树形数据
+                            // 直接刷新树形数据（内部会重新获取数据，避免重复查询）
                             buildCompleteTreeData(true);
                             showMessage.success(`连接 ${contextMenuTarget.title} 已刷新`);
                         } catch (error) {
