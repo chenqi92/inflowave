@@ -761,6 +761,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const headerRef = useRef<HTMLTableSectionElement | null>(null);
     const [measuredHeaderHeight, setMeasuredHeaderHeight] = useState<number | null>(null);
 
+    // 动态容器高度管理
+    const outerContainerRef = useRef<HTMLDivElement>(null);
+    const paginationRef = useRef<HTMLDivElement>(null);
+    const [dynamicContainerHeight, setDynamicContainerHeight] = useState<number>(maxHeight);
+    const [paginationHeight, setPaginationHeight] = useState<number>(60); // 分页区域预估高度
+
     useLayoutEffect(() => {
         if (!tableContainerRef.current) return;
         // TableVirtuoso 会把 fixedHeaderContent 包装为 thead，这里取最近的 thead
@@ -770,6 +776,51 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             setMeasuredHeaderHeight(Math.ceil(rect.height));
         }
     }, [selectedColumns, columnOrder, showRowNumbers]);
+
+    // 动态监听容器高度变化
+    useEffect(() => {
+        if (!outerContainerRef.current) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const { height } = entry.contentRect;
+                // 计算表格可用高度 = 容器总高度 - 分页区域高度 - 工具栏高度等
+                const availableHeight = Math.max(200, height - paginationHeight - (showToolbar ? 60 : 0));
+                setDynamicContainerHeight(availableHeight);
+                console.log('🔧 [UnifiedDataTable] 容器高度变化:', {
+                    containerHeight: height,
+                    availableHeight,
+                    paginationHeight,
+                    showToolbar
+                });
+            }
+        });
+
+        resizeObserver.observe(outerContainerRef.current);
+
+        return () => {
+            resizeObserver.disconnect();
+        };
+    }, [paginationHeight, showToolbar]);
+
+    // 监听分页区域高度变化
+    useEffect(() => {
+        if (!paginationRef.current) return;
+
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const { height } = entry.contentRect;
+                setPaginationHeight(height);
+                console.log('🔧 [UnifiedDataTable] 分页区域高度变化:', height);
+            }
+        });
+
+        resizeObserver.observe(paginationRef.current);
+
+        return () => {
+            resizeObserver.disconnect();
+        };
+    }, [pagination]);
 
     // 注释：移除了 forceFixedRowHeight 函数，现在通过CSS样式来控制行高度
     // 表头使用自适应高度，数据行使用固定36px高度
@@ -1694,15 +1745,20 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         virtualized
     });
 
-    // 动态计算容器高度：数据少时按内容高度，数据多时不超过 maxHeight
+    // 动态计算容器高度：优先使用动态监听的容器高度，fallback到maxHeight
     // 优先使用实测表头高度，fallback 到 48，避免出现 1px 溢出
     const headerEstimatedHeight = measuredHeaderHeight ?? 48;
     const bottomPadding = 8; // 期望底部留白
     const fudge = 6; // 增加容错，避免少量数据时出现滚动条
-    const containerHeight = Math.min(
-        maxHeight,
-        headerEstimatedHeight + paginatedData.length * rowHeight + bottomPadding + fudge
-    );
+
+    // 使用动态容器高度，确保虚拟化表格能够充分利用可用空间
+    const effectiveMaxHeight = Math.max(dynamicContainerHeight, 200); // 最小高度200px
+    const containerHeight = shouldUseVirtualization
+        ? effectiveMaxHeight // 虚拟化模式使用全部可用高度
+        : Math.min(
+            effectiveMaxHeight,
+            headerEstimatedHeight + paginatedData.length * rowHeight + bottomPadding + fudge
+        );
 
     // 计算总列数（用于tfoot留白单元格的colSpan）
     const visibleDataColumns = columnOrder.filter((col) => selectedColumns.includes(col));
@@ -1712,7 +1768,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
 
     return (
-        <div className={cn("h-full flex flex-col bg-background", className)}>
+        <div ref={outerContainerRef} className={cn("h-full flex flex-col bg-background", className)}>
             {/* 工具栏 */}
             {showToolbar && (
                 <Card className="flex-shrink-0 border-0 border-b rounded-none bg-background">
@@ -1837,24 +1893,25 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                 </Card>
             )}
 
-            {/* 数据表格 */}
-            <div className="flex-1 min-h-0 p-4">
-                <div className="border rounded-md overflow-hidden">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-32">
-                            <Spin />
-                            <span className="ml-2">加载中...</span>
-                        </div>
-                    ) : data.length > 0 ? (
-                        // 统一使用虚拟化表格 - 固定行高度，剩余空间显示空白
-                        <div
-                            className="virtualized-table virtualized-table-fixed-height"
-                            ref={tableContainerRef}
-                            style={{
-                                height: `${maxHeight}px`,
-                                width: '100%'
-                            }}
-                        >
+            {/* 数据表格容器 - 使用flex布局，为分页区域预留空间 */}
+            <div className="flex-1 min-h-0 flex flex-col">
+                <div className="flex-1 min-h-0 p-4">
+                    <div className="border rounded-md overflow-hidden h-full flex flex-col">
+                        {loading ? (
+                            <div className="flex items-center justify-center h-32">
+                                <Spin />
+                                <span className="ml-2">加载中...</span>
+                            </div>
+                        ) : data.length > 0 ? (
+                            // 统一使用虚拟化表格 - 使用动态计算的容器高度
+                            <div
+                                className="virtualized-table virtualized-table-fixed-height flex-1"
+                                ref={tableContainerRef}
+                                style={{
+                                    height: `${containerHeight}px`,
+                                    width: '100%'
+                                }}
+                            >
                                 {(() => {
                                     console.log('🔧 [UnifiedDataTable] TableVirtuoso 配置:', {
                                         dataLength: paginatedData.length,
@@ -2090,37 +2147,40 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                 />
                             </div>
 
-                    ) : (
-                        // 没有数据时也显示固定高度的容器
-                        <div
-                            className="flex items-center justify-center"
-                            style={{
-                                height: `${maxHeight}px`,
-                                background: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))'
-                            }}
-                        >
-                            <div className="text-muted-foreground">
-                                <Database className="w-8 h-8 mr-2" />
-                                <span>没有找到数据</span>
+                        ) : (
+                            // 没有数据时也显示动态高度的容器
+                            <div
+                                className="flex items-center justify-center flex-1"
+                                style={{
+                                    minHeight: '200px',
+                                    background: 'hsl(var(--background))',
+                                    border: '1px solid hsl(var(--border))'
+                                }}
+                            >
+                                <div className="text-muted-foreground flex items-center">
+                                    <Database className="w-8 h-8 mr-2" />
+                                    <span>没有找到数据</span>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
-            </div>
 
-            {/* 底部分页 - 始终显示分页控件 */}
-            {pagination && (
-                <PaginationControls
-                    currentPage={pagination.current}
-                    pageSize={pagination.pageSize}
-                    totalCount={pagination.total}
-                    loading={loading}
-                    pageSizeOptions={pagination.pageSizeOptions}
-                    onPageChange={handlePageChange}
-                    onPageSizeChange={handlePageSizeChange}
-                />
-            )}
+                {/* 底部分页 - 固定在底部，不参与flex伸缩 */}
+                {pagination && (
+                    <div ref={paginationRef} className="flex-shrink-0">
+                        <PaginationControls
+                            currentPage={pagination.current}
+                            pageSize={pagination.pageSize}
+                            totalCount={pagination.total}
+                            loading={loading}
+                            pageSizeOptions={pagination.pageSizeOptions}
+                            onPageChange={handlePageChange}
+                            onPageSizeChange={handlePageSizeChange}
+                        />
+                    </div>
+                )}
+            </div>
         </div>
     );
 };
