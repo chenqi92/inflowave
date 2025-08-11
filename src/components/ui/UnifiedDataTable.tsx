@@ -624,6 +624,7 @@ interface PaginationControlsProps {
     pageSizeOptions?: string[];
     onPageChange: (page: number) => void;
     onPageSizeChange: (size: string) => void;
+    isVirtualized?: boolean; // 是否为虚拟化模式
 }
 
 const PaginationControls: React.FC<PaginationControlsProps> = memo(({
@@ -633,19 +634,26 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
     loading,
     pageSizeOptions = ['500', '1000', '2000', '5000', 'all'],
     onPageChange,
-    onPageSizeChange
+    onPageSizeChange,
+    isVirtualized = false
 }) => {
-
 
     const isShowingAll = pageSize >= totalCount;
     const totalPages = isShowingAll ? 1 : Math.ceil(totalCount / pageSize);
-    const startIndex = isShowingAll ? 1 : (currentPage - 1) * pageSize + 1;
-    const endIndex = isShowingAll ? totalCount : Math.min(currentPage * pageSize, totalCount);
+
+    // 在虚拟化模式下，显示所有数据
+    const startIndex = isVirtualized || isShowingAll ? 1 : (currentPage - 1) * pageSize + 1;
+    const endIndex = isVirtualized || isShowingAll ? totalCount : Math.min(currentPage * pageSize, totalCount);
+
+    // 在虚拟化模式下，分页控件主要用于切换显示模式，而不是真正的分页
+    const displayText = isVirtualized
+        ? `显示全部 ${totalCount} 条（虚拟化滚动）`
+        : `显示 ${startIndex}-${endIndex} 条，共 ${totalCount} 条`;
 
     return (
         <div className="flex items-center justify-between px-4 py-3 border-t bg-background">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>显示 {startIndex}-{endIndex} 条，共 {totalCount} 条</span>
+                <span>{displayText}</span>
             </div>
             <div className="flex items-center gap-2">
                 <Select value={isShowingAll ? 'all' : pageSize.toString()} onValueChange={onPageSizeChange}>
@@ -662,29 +670,32 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
                 </Select>
                 <span className="text-sm text-muted-foreground">条/页</span>
 
-                <div className="flex items-center gap-1">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(currentPage - 1)}
-                        disabled={currentPage <= 1 || loading}
-                        className="h-8 w-8 p-0"
-                    >
-                        ‹
-                    </Button>
-                    <span className="text-sm px-2">
-                        {currentPage} / {totalPages}
-                    </span>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(currentPage + 1)}
-                        disabled={currentPage >= totalPages || loading}
-                        className="h-8 w-8 p-0"
-                    >
-                        ›
-                    </Button>
-                </div>
+                {/* 在虚拟化模式下隐藏分页按钮，因为所有数据都已显示 */}
+                {!isVirtualized && (
+                    <div className="flex items-center gap-1">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onPageChange(currentPage - 1)}
+                            disabled={currentPage <= 1 || loading}
+                            className="h-8 w-8 p-0"
+                        >
+                            ‹
+                        </Button>
+                        <span className="text-sm px-2">
+                            {currentPage} / {totalPages}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => onPageChange(currentPage + 1)}
+                            disabled={currentPage >= totalPages || loading}
+                            className="h-8 w-8 p-0"
+                        >
+                            ›
+                        </Button>
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -735,6 +746,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     // 轻量级单元格状态 - 只存储必要信息
     const [selectedCell, setSelectedCell] = useState<string | null>(null); // 格式: "row-column"
     const [editingCell, setEditingCell] = useState<string | null>(null);
+    const [editingValue, setEditingValue] = useState<string>(''); // 编辑中的值
     const [lastSelectedRow, setLastSelectedRow] = useState<number | null>(null); // 用于Shift多选
     const editingInputRef = useRef<HTMLInputElement>(null);
 
@@ -1182,7 +1194,25 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const handleEditComplete = useCallback(() => {
         console.log('🔧 [UnifiedDataTable] 编辑完成:', { editingCell });
         setEditingCell(null);
+        setEditingValue('');
     }, [editingCell]);
+
+    // 单元格编辑保存处理
+    const handleCellEditSave = useCallback(() => {
+        console.log('🔧 [UnifiedDataTable] 保存编辑:', { editingCell, editingValue });
+        // 这里可以添加保存逻辑
+        handleEditComplete();
+    }, [editingCell, editingValue, handleEditComplete]);
+
+    // 单元格编辑键盘处理
+    const handleCellEditKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter') {
+            handleCellEditSave();
+        } else if (event.key === 'Escape') {
+            setEditingCell(null);
+            setEditingValue('');
+        }
+    }, [handleCellEditSave]);
 
     // 键盘事件处理
     const handleEditKeyDown = useCallback((event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -1674,10 +1704,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             return virtualized; // 如果明确指定，使用指定值
         }
 
-        // 自动判断：数据量大于1000条时始终启用虚拟化
-        // 无论分页选择什么选项，都保持虚拟化以确保最佳用户体验
-        // 临时修改：强制启用虚拟化来测试行高固定功能
-        const shouldVirtualize = true; // filteredData.length > 1000;
+        // 自动判断：数据量大于1000条时启用虚拟化
+        // 对于分页数据，如果当前页数据量较少，不需要虚拟化
+        const shouldVirtualize = filteredData.length > 1000;
         console.log('🔧 [UnifiedDataTable] 自动判断虚拟化:', {
             dataLength: filteredData.length,
             shouldVirtualize,
@@ -1691,20 +1720,32 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             return filteredData; // 如果没有分页配置，返回所有筛选后的数据
         }
 
-        // 如果启用虚拟化，根据分页选项决定显示的数据
-        if (shouldUseVirtualization) {
-            // 如果选择了"全部"或pageSize大于等于数据总量，显示所有数据
+        // 如果启用虚拟化且数据量很大，传递全部数据给TableVirtuoso
+        // 但如果是分页模式且数据量不大，仍然使用分页逻辑
+        if (shouldUseVirtualization && filteredData.length > 1000) {
+            console.log('🔧 [UnifiedDataTable] 虚拟化模式：传递全部数据给TableVirtuoso', {
+                filteredDataLength: filteredData.length,
+                pageSize,
+                currentPage
+            });
+            return filteredData; // 虚拟化模式下传递全部数据
+        } else {
+            // 非虚拟化模式，需要进行客户端分页以避免性能问题
             if (pageSize === -1 || pageSize >= filteredData.length) {
-                return filteredData;
+                return filteredData; // 显示全部数据
             }
 
-            // 否则进行客户端分页，虚拟化会处理可见区域的渲染
             const startIndex = (currentPage - 1) * pageSize;
             const endIndex = startIndex + pageSize;
+            console.log('🔧 [UnifiedDataTable] 非虚拟化模式：客户端分页', {
+                filteredDataLength: filteredData.length,
+                pageSize,
+                currentPage,
+                startIndex,
+                endIndex,
+                slicedLength: endIndex - startIndex
+            });
             return filteredData.slice(startIndex, endIndex);
-        } else {
-            // 非虚拟化模式，直接返回筛选后的数据
-            return filteredData;
         }
     }, [filteredData, pagination, currentPage, pageSize, shouldUseVirtualization]);
     // 注释：移除了数据变化时强制应用固定行高度的useEffect
@@ -1903,25 +1944,26 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                 <span className="ml-2">加载中...</span>
                             </div>
                         ) : data.length > 0 ? (
-                            // 统一使用虚拟化表格 - 使用动态计算的容器高度
-                            <div
-                                className="virtualized-table virtualized-table-fixed-height flex-1"
-                                ref={tableContainerRef}
-                                style={{
-                                    height: `${containerHeight}px`,
-                                    width: '100%'
-                                }}
-                            >
-                                {(() => {
-                                    console.log('🔧 [UnifiedDataTable] TableVirtuoso 配置:', {
-                                        dataLength: paginatedData.length,
-                                        rowHeight,
-                                        shouldUseVirtualization,
-                                        fixedItemHeight: rowHeight
-                                    });
-                                    return null;
-                                })()}
-                                <TableVirtuoso
+                            shouldUseVirtualization ? (
+                                // 虚拟化表格 - 用于大数据量
+                                <div
+                                    className="virtualized-table virtualized-table-fixed-height flex-1"
+                                    ref={tableContainerRef}
+                                    style={{
+                                        height: `${containerHeight}px`,
+                                        width: '100%'
+                                    }}
+                                >
+                                    {(() => {
+                                        console.log('🔧 [UnifiedDataTable] TableVirtuoso 配置:', {
+                                            dataLength: paginatedData.length,
+                                            rowHeight,
+                                            shouldUseVirtualization,
+                                            fixedItemHeight: rowHeight
+                                        });
+                                        return null;
+                                    })()}
+                                    <TableVirtuoso
                                     ref={virtuosoRef}
                                     data={paginatedData}
                                     fixedItemHeight={rowHeight} // 设置固定行高度，防止自动拉伸
@@ -2146,7 +2188,226 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     }}
                                 />
                             </div>
+                            ) : (
+                                // 普通表格 - 用于小数据量，显示所有数据
+                                <div
+                                    className="flex-1 overflow-auto"
+                                    ref={tableContainerRef}
+                                    style={{
+                                        height: `${containerHeight}px`,
+                                        width: '100%'
+                                    }}
+                                >
+                                    {(() => {
+                                        console.log('🔧 [UnifiedDataTable] 普通表格配置:', {
+                                            dataLength: paginatedData.length,
+                                            rowHeight,
+                                            shouldUseVirtualization,
+                                            containerHeight
+                                        });
+                                        return null;
+                                    })()}
+                                    <table
+                                        className="w-full border-collapse"
+                                        onMouseDown={handleTableMouseDown}
+                                        onMouseMove={handleTableMouseMove}
+                                        onMouseUp={handleTableMouseUp}
+                                        onClick={handleTableClick}
+                                        onDoubleClick={handleTableDoubleClick}
+                                    >
+                                        <TableHeader
+                                            columnOrder={columnOrder}
+                                            selectedColumns={selectedColumns}
+                                            sortColumn={sortConfig?.column || ''}
+                                            sortDirection={sortConfig?.direction || 'asc'}
+                                            selectedRowsCount={selectedRows.size}
+                                            totalRowsCount={filteredData.length}
+                                            showRowNumbers={showRowNumbers}
+                                            rowHeight={rowHeight}
+                                            onSort={handleSort}
+                                            onAddFilter={handleAddFilter}
+                                            onSelectAll={handleSelectAll}
+                                            onCopySelectedRows={handleCopySelectedRows}
+                                            onColumnSelect={handleColumnSelect}
+                                            filterMenuOpen={filterMenuOpen}
+                                            filterSearchText={filterSearchText}
+                                            onFilterMenuOpenChange={handleFilterMenuOpenChange}
+                                            onFilterSearchChange={handleFilterSearchChange}
+                                            loadColumnUniqueValues={loadColumnUniqueValues}
+                                            getFilteredUniqueValues={getFilteredUniqueValues}
+                                            isLoadingColumn={loadingColumn}
+                                            virtualMode={false}
+                                        />
+                                        <tbody>
+                                            {paginatedData.map((row, index) => (
+                                                <tr
+                                                    key={index}
+                                                    data-row-index={index}
+                                                    style={{
+                                                        height: `${rowHeight}px`,
+                                                        minHeight: `${rowHeight}px`,
+                                                        maxHeight: `${rowHeight}px`,
+                                                        overflow: 'hidden',
+                                                        boxSizing: 'border-box',
+                                                        lineHeight: 'normal'
+                                                    }}
+                                                    className={cn(
+                                                        "transition-colors hover:bg-muted/50",
+                                                        selectedRows.has(index) && "table-row-selected"
+                                                    )}
+                                                >
+                                                    {/* 固定的序号列 */}
+                                                    {showRowNumbers && (
+                                                        <td
+                                                            data-column="#"
+                                                            data-column-index="0"
+                                                            className={cn(
+                                                                "px-2 text-sm font-mono w-16 text-center text-muted-foreground table-cell-selectable",
+                                                                selectedCell === `${index}-#` && "table-cell-selected"
+                                                            )}
+                                                            style={{
+                                                                height: `${rowHeight}px`,
+                                                                minHeight: `${rowHeight}px`,
+                                                                maxHeight: `${rowHeight}px`,
+                                                                lineHeight: 'normal',
+                                                                verticalAlign: 'middle',
+                                                                overflow: 'hidden',
+                                                                padding: '0',
+                                                                boxSizing: 'border-box',
+                                                                borderRight: '1px solid hsl(var(--border))'
+                                                            }}
+                                                        >
+                                                            <div
+                                                                className="flex items-center justify-center w-full h-full"
+                                                                style={{
+                                                                    height: `${rowHeight}px`,
+                                                                    minHeight: `${rowHeight}px`,
+                                                                    maxHeight: `${rowHeight}px`,
+                                                                    padding: '0 8px',
+                                                                    boxSizing: 'border-box',
+                                                                    lineHeight: 'normal',
+                                                                    overflow: 'hidden',
+                                                                    borderRight: '1px solid hsl(var(--border))'
+                                                                }}
+                                                            >
+                                                                <span
+                                                                    className="truncate text-xs"
+                                                                    style={{
+                                                                        lineHeight: 'normal !important',
+                                                                        display: 'block !important',
+                                                                        overflow: 'hidden !important',
+                                                                        textOverflow: 'ellipsis !important',
+                                                                        whiteSpace: 'nowrap !important'
+                                                                    }}
+                                                                >
+                                                                    {index + 1}
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                    )}
+                                                    {/* 数据列 */}
+                                                    {columnOrder.filter(column => selectedColumns.includes(column)).map((column, colIndex) => {
+                                                        const columnConfig = columns.find(col => col.key === column);
+                                                        const value = row[column];
+                                                        const width = columnConfig?.width || 120;
+                                                        const cellId = `${index}-${column}`;
+                                                        const isEditing = editingCell === cellId;
 
+                                                        // 格式化显示值
+                                                        const displayValue = columnConfig?.render
+                                                            ? columnConfig.render(value, row, index)
+                                                            : column === 'time' && value
+                                                                ? new Date(value).toLocaleString()
+                                                                : String(value || '-');
+
+                                                        return (
+                                                            <td
+                                                                key={`${index}-${column}-${colIndex}`}
+                                                                data-column={column}
+                                                                data-column-index={colIndex + (showRowNumbers ? 1 : 0)}
+                                                                className={cn(
+                                                                    "px-2 text-sm table-cell-selectable",
+                                                                    selectedCell === cellId && "table-cell-selected"
+                                                                )}
+                                                                style={{
+                                                                    width: `${width}px`,
+                                                                    minWidth: `${width}px`,
+                                                                    maxWidth: `${width}px`,
+                                                                    height: `${rowHeight}px`,
+                                                                    minHeight: `${rowHeight}px`,
+                                                                    maxHeight: `${rowHeight}px`,
+                                                                    lineHeight: 'normal',
+                                                                    verticalAlign: 'middle',
+                                                                    overflow: 'hidden',
+                                                                    padding: '0',
+                                                                    boxSizing: 'border-box',
+                                                                    borderRight: '1px solid hsl(var(--border))'
+                                                                }}
+                                                                onClick={(e) => {
+                                                                    // 单元格点击处理已在handleTableMouseDown中统一处理
+                                                                    console.log('🔧 [UnifiedDataTable] 单元格点击:', { cellId });
+                                                                }}
+                                                                onDoubleClick={() => {
+                                                                    // 双击进入编辑模式
+                                                                    console.log('🔧 [UnifiedDataTable] 单元格双击:', { cellId });
+                                                                    if (column !== '#') {
+                                                                        setSelectedCell(cellId);
+                                                                        setEditingCell(cellId);
+                                                                        setEditingValue(String(value || ''));
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <div
+                                                                    className="flex items-center w-full h-full"
+                                                                    style={{
+                                                                        height: `${rowHeight}px`,
+                                                                        minHeight: `${rowHeight}px`,
+                                                                        maxHeight: `${rowHeight}px`,
+                                                                        padding: '0 8px',
+                                                                        boxSizing: 'border-box',
+                                                                        lineHeight: 'normal',
+                                                                        overflow: 'hidden'
+                                                                    }}
+                                                                >
+                                                                    {editingCell === cellId ? (
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingValue}
+                                                                            onChange={(e) => setEditingValue(e.target.value)}
+                                                                            onBlur={handleCellEditSave}
+                                                                            onKeyDown={handleCellEditKeyDown}
+                                                                            className="w-full h-full bg-transparent border-none outline-none text-xs"
+                                                                            style={{
+                                                                                lineHeight: 'normal',
+                                                                                padding: '0',
+                                                                                margin: '0'
+                                                                            }}
+                                                                            autoFocus
+                                                                        />
+                                                                    ) : (
+                                                                        <span
+                                                                            className="truncate text-xs"
+                                                                            style={{
+                                                                                lineHeight: 'normal !important',
+                                                                                display: 'block !important',
+                                                                                overflow: 'hidden !important',
+                                                                                textOverflow: 'ellipsis !important',
+                                                                                whiteSpace: 'nowrap !important'
+                                                                            }}
+                                                                        >
+                                                                            {displayValue}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )
                         ) : (
                             // 没有数据时也显示动态高度的容器
                             <div
@@ -2170,13 +2431,14 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                 {pagination && (
                     <div ref={paginationRef} className="flex-shrink-0">
                         <PaginationControls
-                            currentPage={pagination.current}
-                            pageSize={pagination.pageSize}
+                            currentPage={shouldUseVirtualization ? 1 : pagination.current}
+                            pageSize={shouldUseVirtualization ? filteredData.length : pagination.pageSize}
                             totalCount={pagination.total}
                             loading={loading}
                             pageSizeOptions={pagination.pageSizeOptions}
                             onPageChange={handlePageChange}
                             onPageSizeChange={handlePageSizeChange}
+                            isVirtualized={shouldUseVirtualization}
                         />
                     </div>
                 )}

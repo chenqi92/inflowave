@@ -562,7 +562,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 <ResizablePanelGroup direction='vertical'>
                     {/* 上半部分：编辑器 */}
                     <ResizablePanel
-                        defaultSize={bottomPanelCollapsed || activeTabType !== 'query' ? 100 : 100 - bottomPanelSize}
+                        defaultSize={
+                            // 如果底部面板折叠或不是查询类型或没有查询结果，则占满整个空间
+                            bottomPanelCollapsed ||
+                            activeTabType !== 'query' ||
+                            (!queryResult && (!queryResults || queryResults.length === 0))
+                                ? 100
+                                : 100 - bottomPanelSize
+                        }
                         minSize={30}
                         className='bg-background overflow-hidden'
                     >
@@ -689,7 +696,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                         <ResizablePanelGroup direction='horizontal'>
                             {/* 中间主要工作区域 */}
                             <ResizablePanel
-                                defaultSize={rightPanelCollapsed ? 100 : 100 - rightPanelSize}
+                                defaultSize={rightPanelCollapsed ? 100 : 70}
                                 minSize={40}
                             >
                                 <div className='h-full bg-background flex flex-col'>
