@@ -695,17 +695,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         );
     };
 
-    // 加载指定连接的数据库列表
-    const loadDatabases = useCallback(
-        async (connection_id: string, forceRefresh: boolean = false): Promise<string[]> => {
+    // 获取树节点数据的统一方法（带缓存）
+    const getTreeNodesWithCache = useCallback(
+        async (connection_id: string, forceRefresh: boolean = false): Promise<any[]> => {
             // 优先使用缓存，除非强制刷新
-            if (!forceRefresh && databasesCache.has(connection_id)) {
-                const cachedDatabases = databasesCache.get(connection_id)!;
-                console.log(`✅ 使用缓存的数据库列表，连接: ${connection_id}，数据库数量: ${cachedDatabases.length}`);
-                return cachedDatabases;
+            if (!forceRefresh && treeNodeCache[connection_id]) {
+                const cachedNodes = treeNodeCache[connection_id];
+                console.log(`✅ 使用缓存的树节点数据，连接: ${connection_id}，节点数量: ${cachedNodes.length}`);
+                return cachedNodes;
             }
 
-            console.log(`🔍 开始加载连接 ${connection_id} 的数据库列表...`);
+            console.log(`🔍 开始加载连接 ${connection_id} 的树节点数据...`);
             try {
                 // 首先验证连接是否在后端存在
                 const backendConnections =
@@ -761,31 +761,39 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     connectionId: connection_id,
                 });
                 console.log(`✅ 成功加载树节点:`, treeNodes);
-                console.log(`🔍 树节点详细结构:`, treeNodes.map(node => ({
-                    name: node.name,
-                    id: node.id,
-                    nodeType: node.nodeType,
-                    keys: Object.keys(node)
-                })));
 
-                // 详细分析每个节点的结构
-                treeNodes.forEach((node, index) => {
-                    console.log(`📋 节点 ${index}: ${node.name || node.id}`, {
-                        nodeType: node.node_type || node.nodeType,
-                        metadata: node.metadata,
-                        isContainer: node.metadata?.is_container,
-                        nodeCategory: node.metadata?.node_category,
-                        isLeaf: node.is_leaf,
-                        isExpandable: node.is_expandable,
-                        allKeys: Object.keys(node)
-                    });
-                });
-
-                // 存储完整的树节点信息，用于后续的图标显示
+                // 存储到缓存
                 setTreeNodeCache(prev => ({
                     ...prev,
                     [connection_id as string]: treeNodes
                 }));
+
+                return treeNodes;
+            } catch (error) {
+                console.error(`❌ 加载树节点失败:`, error);
+                showMessage.error(`加载数据库列表失败: ${error}`);
+                return [];
+            }
+        },
+        [treeNodeCache, getConnection, addConnection]
+    );
+
+    // 加载指定连接的数据库列表
+    const loadDatabases = useCallback(
+        async (connection_id: string, forceRefresh: boolean = false): Promise<string[]> => {
+            // 优先使用缓存，除非强制刷新
+            if (!forceRefresh && databasesCache.has(connection_id)) {
+                const cachedDatabases = databasesCache.get(connection_id)!;
+                console.log(`✅ 使用缓存的数据库列表，连接: ${connection_id}，数据库数量: ${cachedDatabases.length}`);
+                return cachedDatabases;
+            }
+
+            try {
+                // 使用统一的树节点获取方法
+                const treeNodes = await getTreeNodesWithCache(connection_id, forceRefresh);
+                if (treeNodes.length === 0) {
+                    return [];
+                }
 
                 // 区分数据库节点和管理功能节点
                 const databaseNodes = treeNodes.filter(node => {
@@ -798,8 +806,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     return nodeType === 'storage_group' ||
                            nodeType === 'database' ||
                            (nodeCategory !== 'management_container' &&
-                            nodeCategory !== 'info_container' &&
-                            !['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType));
+                                nodeCategory !== 'info_container' &&
+                                !['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType));
                 });
 
                 const managementNodes = treeNodes.filter(node => {
@@ -834,7 +842,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 return [];
             }
         },
-        [getConnection, addConnection, databasesCache]
+        [getTreeNodesWithCache, databasesCache]
     );
 
     // 加载指定数据库的表列表
@@ -973,19 +981,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             if (isConnected && connection.id) {
                 console.log(`🔗 处理已连接: ${connection.name} (${connection.id})`);
                 try {
-                    // 直接获取完整的树节点信息
-                    const treeNodes = await safeTauriInvoke<any[]>('get_tree_nodes', {
-                        connectionId: connection.id,
-                    });
-                    console.log(`🎯 直接获取树节点信息，节点数量: ${treeNodes.length}`);
+                    // 使用统一的缓存方法获取树节点信息，避免重复查询
+                    const treeNodes = await getTreeNodesWithCache(connection.id, false);
+                    console.log(`🎯 获取树节点信息，节点数量: ${treeNodes.length}`);
                     console.log(`🎯 树节点详情:`, treeNodes.map(n => `${n.name}(${n.node_type || n.nodeType})`));
-
-                    // 立即更新缓存，确保后续逻辑可以使用
-                    const newCache = {
-                        ...treeNodeCache,
-                        [connection.id as string]: treeNodes
-                    };
-                    setTreeNodeCache(newCache);
 
                     // 区分数据库节点和管理功能节点
                     const databaseNodes = treeNodes.filter(node => {

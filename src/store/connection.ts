@@ -67,9 +67,17 @@ interface ConnectionState {
   stopConnectionSync: () => void;
   initializeConnectionStates: () => void;
   forceRefreshConnections: () => Promise<void>;
-  
+
+  // 连接恢复方法
+  attemptReconnectAll: () => Promise<void>;
+  attemptReconnect: (id: string) => Promise<boolean>;
+  scheduleReconnect: (id: string, delayMs?: number) => void;
+  cancelScheduledReconnect: (id: string) => void;
+
   // 同步状态
   syncInterval?: NodeJS.Timeout;
+  // 重连定时器
+  reconnectTimers: Record<string, NodeJS.Timeout>;
 }
 
 // 辅助函数：解析数据库版本字符串，支持多数据库类型
@@ -114,6 +122,7 @@ export const useConnectionStore = create<ConnectionState>()(
       monitoringActive: false,
       monitoringInterval: 30,
       poolStats: {},
+      reconnectTimers: {},
 
       // 添加连接
       addConnection: config => {
@@ -356,7 +365,7 @@ export const useConnectionStore = create<ConnectionState>()(
 
           console.log(`🚀 调用后端连接API: ${id}`);
 
-          // 确保后端有该连接配置
+          // 确保后端有该连接配置 - 改进的同步逻辑
           try {
             const backendConnection = await safeTauriInvoke('get_connection', { connectionId: id });
             if (!backendConnection) {
@@ -368,9 +377,41 @@ export const useConnectionStore = create<ConnectionState>()(
               };
               await safeTauriInvoke('create_connection', { config: connectionWithTimestamp });
               console.log(`✨ 后端连接配置创建成功: ${id}`);
+            } else {
+              // 检查配置是否需要更新
+              const needsUpdate =
+                backendConnection.host !== connection.host ||
+                backendConnection.port !== connection.port ||
+                backendConnection.username !== connection.username ||
+                backendConnection.name !== connection.name;
+
+              if (needsUpdate) {
+                console.log(`🔄 后端连接配置需要更新: ${id}`);
+                const updatedConnection = {
+                  ...connection,
+                  updated_at: new Date().toISOString(),
+                };
+                await safeTauriInvoke('update_connection', {
+                  connectionId: id,
+                  config: updatedConnection
+                });
+                console.log(`✨ 后端连接配置更新成功: ${id}`);
+              }
             }
           } catch (syncError) {
             console.warn(`⚠️ 连接配置同步检查失败，继续尝试连接: ${syncError}`);
+            // 即使同步失败，也尝试创建连接配置
+            try {
+              const connectionWithTimestamp = {
+                ...connection,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+              await safeTauriInvoke('create_connection', { config: connectionWithTimestamp });
+              console.log(`✨ 后端连接配置创建成功（重试）: ${id}`);
+            } catch (retryError) {
+              console.warn(`⚠️ 重试创建连接配置也失败: ${retryError}`);
+            }
           }
 
           // 首先建立连接（如果尚未建立）
@@ -403,22 +444,15 @@ export const useConnectionStore = create<ConnectionState>()(
           console.log(`🎉 连接完成: ${id}`);
         } catch (error) {
           console.error(`❌ 连接失败 (${id}):`, error);
-          
+
           const errorMessage = String(error);
           let finalError = errorMessage;
-          let shouldCleanupConnection = false;
-          
-          // 检查是否是连接不存在的错误
-          if (errorMessage.includes('不存在') || 
-              errorMessage.includes('not found') || 
-              errorMessage.includes('not exist')) {
-            finalError = `连接配置已被删除或损坏，请重新创建连接配置`;
-            shouldCleanupConnection = true;
-            console.log(`🧹 检测到无效连接，将清理: ${id}`);
-          }
-          
-          // 如果需要清理连接，从前端状态中移除
-          if (shouldCleanupConnection) {
+
+          // 改进的错误处理 - 不轻易删除连接配置
+          // 只有在明确确认连接配置损坏时才删除
+          if (errorMessage.includes('连接配置已被删除') ||
+              errorMessage.includes('配置文件损坏')) {
+            console.log(`🧹 检测到连接配置损坏，将清理: ${id}`);
             set(state => ({
               connections: state.connections.filter(conn => conn.id !== id),
               connectionStatuses: {
@@ -436,14 +470,11 @@ export const useConnectionStore = create<ConnectionState>()(
               ),
               activeConnectionId: state.activeConnectionId === id ? null : state.activeConnectionId,
             }));
-            
-            // 触发连接列表刷新
-            setTimeout(() => {
-              console.log('🔄 触发连接配置重新加载');
-              get().forceRefreshConnections();
-            }, 100);
+
+            finalError = `连接配置已损坏，已自动清理。请重新创建连接配置。`;
           } else {
-            // 更新状态为错误
+            // 对于其他错误（如网络问题、认证失败等），保留连接配置
+            // 更新状态为错误，但不删除配置
             set(state => ({
               connectionStatuses: {
                 ...state.connectionStatuses,
@@ -460,8 +491,15 @@ export const useConnectionStore = create<ConnectionState>()(
                 connId => connId !== id
               ),
             }));
+
+            // 如果是数据源停止的错误，提供更友好的错误信息
+            if (errorMessage.includes('connection refused') ||
+                errorMessage.includes('timeout') ||
+                errorMessage.includes('unreachable')) {
+              finalError = `无法连接到数据源 (${connection.host}:${connection.port})。请检查数据源是否正在运行，或稍后重试。连接配置已保留。`;
+            }
           }
-          
+
           throw new Error(finalError);
         }
       },
@@ -469,6 +507,10 @@ export const useConnectionStore = create<ConnectionState>()(
       // 断开数据库连接
       disconnectFromDatabase: async (id: string) => {
         console.log(`🔌 开始断开连接: ${id}`);
+
+        // 取消任何安排的重连
+        get().cancelScheduledReconnect(id);
+
         try {
           await safeTauriInvoke('disconnect_from_database', {
             connectionId: id,
@@ -1032,6 +1074,144 @@ export const useConnectionStore = create<ConnectionState>()(
           console.log('🛑 停止连接配置同步机制');
           clearInterval(syncInterval);
           set(state => ({ ...state, syncInterval: undefined }));
+        }
+      },
+
+      // 尝试重连所有失败的连接
+      attemptReconnectAll: async () => {
+        console.log('🔄 开始尝试重连所有失败的连接...');
+        const { connections, connectionStatuses } = get();
+
+        const failedConnections = connections.filter(conn => {
+          if (!conn.id) return false;
+          const status = connectionStatuses[conn.id];
+          return status && (status.status === 'error' || status.status === 'disconnected');
+        });
+
+        if (failedConnections.length === 0) {
+          console.log('✅ 没有需要重连的连接');
+          return;
+        }
+
+        console.log(`🔄 发现 ${failedConnections.length} 个需要重连的连接`);
+
+        // 并行尝试重连所有失败的连接
+        const reconnectPromises = failedConnections.map(async (connection) => {
+          if (!connection.id) return false;
+
+          try {
+            return await get().attemptReconnect(connection.id);
+          } catch (error) {
+            console.error(`重连失败 ${connection.name}:`, error);
+            return false;
+          }
+        });
+
+        const results = await Promise.all(reconnectPromises);
+        const successCount = results.filter(Boolean).length;
+
+        console.log(`🎉 重连完成: ${successCount}/${failedConnections.length} 个连接成功重连`);
+      },
+
+      // 尝试重连单个连接
+      attemptReconnect: async (id: string) => {
+        console.log(`🔄 尝试重连: ${id}`);
+
+        const connection = get().connections.find(conn => conn.id === id);
+        if (!connection) {
+          console.warn(`⚠️ 连接配置不存在，无法重连: ${id}`);
+          return false;
+        }
+
+        try {
+          // 先测试连接是否可达
+          const testResult = await get().testConnection(id);
+          if (!testResult) {
+            console.log(`❌ 连接测试失败，跳过重连: ${connection.name}`);
+            return false;
+          }
+
+          // 如果测试成功，尝试建立连接
+          await get().connectToDatabase(id);
+          console.log(`✅ 重连成功: ${connection.name}`);
+          return true;
+        } catch (error) {
+          console.error(`❌ 重连失败 ${connection.name}:`, error);
+
+          // 如果是临时性错误，安排稍后重试
+          const errorMessage = String(error);
+          if (errorMessage.includes('timeout') ||
+              errorMessage.includes('connection refused') ||
+              errorMessage.includes('unreachable')) {
+            console.log(`⏰ 安排稍后重试重连: ${connection.name}`);
+            get().scheduleReconnect(id, 30000); // 30秒后重试
+          }
+
+          return false;
+        }
+      },
+
+      // 安排重连
+      scheduleReconnect: (id: string, delayMs = 30000) => {
+        const { reconnectTimers } = get();
+
+        // 取消现有的重连定时器
+        if (reconnectTimers[id]) {
+          clearTimeout(reconnectTimers[id]);
+        }
+
+        const connection = get().connections.find(conn => conn.id === id);
+        if (!connection) return;
+
+        console.log(`⏰ 安排 ${delayMs/1000} 秒后重连: ${connection.name}`);
+
+        const timer = setTimeout(async () => {
+          console.log(`🔄 执行定时重连: ${connection.name}`);
+
+          try {
+            const success = await get().attemptReconnect(id);
+            if (!success) {
+              // 如果重连失败，安排下次重连（指数退避）
+              const nextDelay = Math.min(delayMs * 2, 300000); // 最大5分钟
+              get().scheduleReconnect(id, nextDelay);
+            }
+          } catch (error) {
+            console.error(`定时重连失败 ${connection.name}:`, error);
+          }
+
+          // 清理定时器
+          set(state => {
+            const newTimers = { ...state.reconnectTimers };
+            delete newTimers[id];
+            return { ...state, reconnectTimers: newTimers };
+          });
+        }, delayMs);
+
+        // 保存定时器
+        set(state => ({
+          ...state,
+          reconnectTimers: {
+            ...state.reconnectTimers,
+            [id]: timer,
+          },
+        }));
+      },
+
+      // 取消安排的重连
+      cancelScheduledReconnect: (id: string) => {
+        const { reconnectTimers } = get();
+
+        if (reconnectTimers[id]) {
+          clearTimeout(reconnectTimers[id]);
+
+          set(state => {
+            const newTimers = { ...state.reconnectTimers };
+            delete newTimers[id];
+            return { ...state, reconnectTimers: newTimers };
+          });
+
+          const connection = get().connections.find(conn => conn.id === id);
+          console.log(`⏹️ 取消安排的重连: ${connection?.name || id}`);
         }
       },
     }),

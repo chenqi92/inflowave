@@ -4,6 +4,7 @@ import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import ConnectionManager from '@/components/ConnectionManager';
+import { ConnectionRecovery } from '@/components/ConnectionRecovery';
 
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
 import type { ConnectionConfig, ConnectionStatus } from '@/types';
@@ -194,13 +195,21 @@ const Connections: React.FC = () => {
         </div>
       </div>
 
-      {/* 连接管理器 */}
-      <div className='flex-1 overflow-hidden bg-background'>
-        <ConnectionManager
-          onConnectionSelect={handleConnectionSelect}
-          onEditConnection={handleOpenDialog}
-          onCreateConnection={() => handleOpenDialog()}
-        />
+      {/* 主要内容区域 */}
+      <div className='flex-1 overflow-hidden bg-background flex gap-6 p-6'>
+        {/* 左侧：连接管理器 */}
+        <div className='flex-1 min-w-0'>
+          <ConnectionManager
+            onConnectionSelect={handleConnectionSelect}
+            onEditConnection={handleOpenDialog}
+            onCreateConnection={() => handleOpenDialog()}
+          />
+        </div>
+
+        {/* 右侧：连接恢复管理 */}
+        <div className='w-80 flex-shrink-0'>
+          <ConnectionRecovery />
+        </div>
       </div>
 
       {/* 连接配置对话框 */}

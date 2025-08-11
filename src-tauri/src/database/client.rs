@@ -2516,23 +2516,25 @@ impl InfluxClient {
         match self.get_databases().await {
             Ok(databases) => {
                 info!("InfluxDB 1.x 获取到 {} 个数据库，开始生成树节点", databases.len());
+
+                // 只检测一次版本信息，避免重复查询
+                let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-1.x".to_string());
+                let version_metadata = if version.contains("1.8") {
+                    "1.8+"
+                } else if version.contains("1.7") {
+                    "1.7+"
+                } else {
+                    "1.x"
+                };
+
                 for db_name in databases {
                     let is_system = db_name.starts_with('_');
 
                     // 创建 InfluxDB 1.x 数据库节点
                     let mut db_node = TreeNodeFactory::create_influxdb1_database(db_name.clone(), is_system);
 
-                    // 检测具体版本（仅用于元数据，不影响树结构）
-                    let version = self.detect_version().await.unwrap_or_else(|_| "InfluxDB-1.x".to_string());
-
-                    // 添加版本信息到元数据
-                    if version.contains("1.8") {
-                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.8+".to_string()));
-                    } else if version.contains("1.7") {
-                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.7+".to_string()));
-                    } else {
-                        db_node.metadata.insert("version".to_string(), serde_json::Value::String("1.x".to_string()));
-                    }
+                    // 添加版本信息到元数据（使用缓存的版本信息）
+                    db_node.metadata.insert("version".to_string(), serde_json::Value::String(version_metadata.to_string()));
 
                     info!("创建 InfluxDB 1.x 数据库节点: {} (系统数据库: {})", db_name, is_system);
                     nodes.push(db_node);
