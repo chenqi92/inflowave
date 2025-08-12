@@ -1097,7 +1097,10 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         event.preventDefault();
     }, [selectedCell, selectedRows, lastSelectedRow, onRowSelect]);
 
-    // 处理鼠标移动 - 拖拽选择
+    // 拖拽选择防抖引用
+    const dragSelectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // 处理鼠标移动 - 拖拽选择（优化性能）
     const handleTableMouseMove = useCallback((event: React.MouseEvent<HTMLTableElement>) => {
         if (!isSelecting || !selectionStart) return;
 
@@ -1122,20 +1125,28 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         const rowIndex = parseInt(row.dataset.rowIndex || '0');
         const column = cell.dataset.column || '';
 
-        // 跳过序号列
-        if (column === '#') return;
+        // 允许序号列拖拽选择（修复序号行拖动无法选中多行的问题）
+        const effectiveColumn = column === '#' ? getColumnByIndex(0) || column : column;
 
-        // 计算选择范围
-        const range = calculateCellRange(selectionStart, { row: rowIndex, column });
-        setSelectedCellRange(range);
+        // 清除之前的防抖定时器
+        if (dragSelectionTimeoutRef.current) {
+            clearTimeout(dragSelectionTimeoutRef.current);
+        }
 
-        console.log('🔧 [UnifiedDataTable] 拖拽选择:', {
-            start: selectionStart,
-            end: { row: rowIndex, column },
-            rangeSize: range.size,
-            mousePos: { mouseX, mouseY }
-        });
-    }, [isSelecting, selectionStart, calculateCellRange, startAutoScroll, stopAutoScroll]);
+        // 使用防抖优化性能，减少频繁的状态更新
+        dragSelectionTimeoutRef.current = setTimeout(() => {
+            // 计算选择范围
+            const range = calculateCellRange(selectionStart, { row: rowIndex, column: effectiveColumn });
+            setSelectedCellRange(range);
+
+            console.log('🔧 [UnifiedDataTable] 拖拽选择:', {
+                start: selectionStart,
+                end: { row: rowIndex, column: effectiveColumn },
+                rangeSize: range.size,
+                mousePos: { mouseX, mouseY }
+            });
+        }, 16); // 约60fps的更新频率
+    }, [isSelecting, selectionStart, calculateCellRange, startAutoScroll, stopAutoScroll, getColumnByIndex]);
 
     // 处理鼠标释放 - 结束选择
     const handleTableMouseUp = useCallback(() => {
@@ -1577,6 +1588,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             document.removeEventListener('mouseup', handleGlobalMouseUp);
             document.removeEventListener('mousemove', handleGlobalMouseMove);
             stopAutoScroll(); // 组件卸载时停止滚动
+
+            // 清理拖拽选择的防抖定时器
+            if (dragSelectionTimeoutRef.current) {
+                clearTimeout(dragSelectionTimeoutRef.current);
+                dragSelectionTimeoutRef.current = null;
+            }
         };
     }, [isSelecting, selectionStart, stopAutoScroll, startAutoScroll]);
 
@@ -1810,11 +1827,42 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     // 处理分页
     const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page);
+
+        // 分页变化时清除所有选中状态，避免选中效果残留
+        setSelectedRows(new Set());
+        setSelectedCell(null);
+        setSelectedCellRange(new Set());
+        setLastSelectedRow(null);
+        setEditingCell(null);
+        setIsSelecting(false);
+
+        // 清除拖拽选择的防抖定时器
+        if (dragSelectionTimeoutRef.current) {
+            clearTimeout(dragSelectionTimeoutRef.current);
+            dragSelectionTimeoutRef.current = null;
+        }
+
+        console.log('🔧 [UnifiedDataTable] 分页变化，清除选中状态:', { page, pageSize });
+
         onPageChange?.(page, pageSize);
     }, [pageSize, onPageChange]);
 
     const handlePageSizeChange = useCallback((size: string) => {
         console.log('🔧 [UnifiedDataTable] 页面大小变化:', { size, currentPageSize: pageSize });
+
+        // 页面大小变化时也清除所有选中状态
+        setSelectedRows(new Set());
+        setSelectedCell(null);
+        setSelectedCellRange(new Set());
+        setLastSelectedRow(null);
+        setEditingCell(null);
+        setIsSelecting(false);
+
+        // 清除拖拽选择的防抖定时器
+        if (dragSelectionTimeoutRef.current) {
+            clearTimeout(dragSelectionTimeoutRef.current);
+            dragSelectionTimeoutRef.current = null;
+        }
 
         if (size === 'all') {
             setPageSize(-1); // 使用-1表示显示全部
@@ -1828,6 +1876,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             setIsShowingAll(false); // 标记为非"全部"模式
             onPageChange?.(1, newSize);
         }
+
+        console.log('🔧 [UnifiedDataTable] 页面大小变化，清除选中状态:', { size });
     }, [onPageChange, pagination, data.length]);
 
     // 添加组件渲染日志
@@ -2325,14 +2375,20 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     )}
                                                 >
                                                     {/* 固定的序号列 */}
-                                                    {showRowNumbers && (
-                                                        <td
-                                                            data-column="#"
-                                                            data-column-index="0"
-                                                            className={cn(
-                                                                "px-2 text-sm font-mono w-16 text-center text-muted-foreground table-cell-selectable",
-                                                                selectedCell === `${index}-#` && "table-cell-selected"
-                                                            )}
+                                                    {showRowNumbers && (() => {
+                                                        const cellId = `${index}-#`;
+                                                        const isEditing = editingCell === cellId;
+
+                                                        return (
+                                                            <td
+                                                                data-column="#"
+                                                                data-column-index="0"
+                                                                className={cn(
+                                                                    "px-2 text-sm font-mono w-16 text-center text-muted-foreground table-cell-selectable",
+                                                                    selectedCell === cellId && !isEditing && selectedCellRange.size <= 1 && "table-cell-selected",
+                                                                    selectedCellRange.has(cellId) && selectedCellRange.size > 1 && "table-cell-range-selected",
+                                                                    isEditing && "table-cell-editing"
+                                                                )}
                                                             style={{
                                                                 height: `${rowHeight}px`,
                                                                 minHeight: `${rowHeight}px`,
@@ -2372,7 +2428,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                                 </span>
                                                             </div>
                                                         </td>
-                                                    )}
+                                                        );
+                                                    })()}
                                                     {/* 数据列 */}
                                                     {columnOrder.filter(column => selectedColumns.includes(column)).map((column, colIndex) => {
                                                         const columnConfig = columns.find(col => col.key === column);
