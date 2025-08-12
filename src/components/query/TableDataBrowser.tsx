@@ -814,6 +814,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     if (pageSize > 0) {
       const offset = (currentPage - 1) * pageSize;
       query += ` LIMIT ${pageSize} OFFSET ${offset}`;
+      console.log('🔧 [TableDataBrowser] 添加分页参数:', {
+        pageSize,
+        currentPage,
+        offset,
+        limitClause: `LIMIT ${pageSize} OFFSET ${offset}`
+      });
+    } else {
+      console.log('🔧 [TableDataBrowser] 显示全部数据，不添加分页参数');
     }
 
     return query;
@@ -825,6 +833,117 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     sortDirection,
     currentPage,
     pageSize,
+    currentConnection?.dbType,
+    currentConnection?.detectedType,
+    fullFieldPaths,
+  ]);
+
+  // 生成带指定分页参数的基础查询
+  const generateBaseQueryWithPagination = useCallback((targetPage: number, targetPageSize: number) => {
+    // 从连接配置中获取数据库类型，而不是仅仅依赖表名判断
+    const isIoTDB = currentConnection?.dbType === 'iotdb' ||
+                    currentConnection?.detectedType === 'iotdb' ||
+                    tableName.startsWith('root.'); // 后备判断
+
+    let query: string;
+
+    if (isIoTDB) {
+      // IoTDB查询
+      console.log('🔧 [InfluxDB] 使用IoTDB查询语法，连接类型:', currentConnection?.dbType);
+
+      // 构建字段列表
+      const fieldList = fullFieldPaths.length > 0 ? fullFieldPaths.join(', ') : '*';
+
+      query = `SELECT ${fieldList} FROM ${tableName}`;
+
+      // 添加搜索条件
+      if (searchText.trim()) {
+        // IoTDB的WHERE条件需要特殊处理
+        query += ` WHERE ${tableName} LIKE '%${searchText}%'`;
+      }
+
+      // 添加过滤条件
+      if (filters.length > 0) {
+        const filterConditions = filters.map(filter => {
+          if (filter.dataType === 'string') {
+            return `${filter.column} LIKE '%${filter.value}%'`;
+          } else if (filter.dataType === 'number') {
+            return `${filter.column} = ${filter.value}`;
+          }
+          return '';
+        }).filter(Boolean);
+
+        if (filterConditions.length > 0) {
+          const whereClause = searchText.trim() ? ' AND ' : ' WHERE ';
+          query += whereClause + filterConditions.join(' AND ');
+        }
+      }
+    } else {
+      // InfluxDB查询
+      console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', currentConnection?.dbType);
+
+      // 构建字段列表，确保包含time字段
+      const fieldList = ['time', ...columns.filter(col => col !== 'time' && col !== '#')];
+      const quotedFields = fieldList.map(field => field === 'time' ? 'time' : `"${field}"`);
+
+      query = `SELECT ${quotedFields.join(', ')}
+                 FROM "${tableName}"`;
+
+      // 添加搜索条件
+      if (searchText.trim()) {
+        query += ` WHERE time > now() - 1d`; // 示例时间过滤
+      }
+
+      // 添加过滤条件
+      if (filters.length > 0) {
+        const filterConditions = filters.map(filter => {
+          if (filter.dataType === 'string') {
+            return `"${filter.column}" =~ /.*${filter.value}.*/`;
+          } else if (filter.dataType === 'number') {
+            return `"${filter.column}" = ${filter.value}`;
+          }
+          return '';
+        }).filter(Boolean);
+
+        if (filterConditions.length > 0) {
+          const whereClause = searchText.trim() ? ' AND ' : ' WHERE ';
+          query += whereClause + filterConditions.join(' AND ');
+        }
+      }
+    }
+
+    // 添加排序 - IoTDB不支持ORDER BY，InfluxDB支持按时间排序
+    if (!isIoTDB) {
+      if (sortColumn === 'time') {
+        query += ` ORDER BY time ${sortDirection.toUpperCase()}`;
+      } else {
+        // 对于非时间列，使用默认时间排序，客户端排序将在数据加载后处理
+        query += ` ORDER BY time DESC`;
+      }
+    }
+
+    // 添加分页（如果不是"全部"选项）
+    if (targetPageSize > 0) {
+      const offset = (targetPage - 1) * targetPageSize;
+      query += ` LIMIT ${targetPageSize} OFFSET ${offset}`;
+      console.log('🔧 [TableDataBrowser] 添加分页参数:', {
+        pageSize: targetPageSize,
+        currentPage: targetPage,
+        offset,
+        limitClause: `LIMIT ${targetPageSize} OFFSET ${offset}`
+      });
+    } else {
+      console.log('🔧 [TableDataBrowser] 显示全部数据，不添加分页参数');
+    }
+
+    return query;
+  }, [
+    tableName,
+    columns,
+    searchText,
+    filters,
+    sortColumn,
+    sortDirection,
     currentConnection?.dbType,
     currentConnection?.detectedType,
     fullFieldPaths,
@@ -1025,22 +1144,24 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     []
   );
 
-  // 加载数据
-  const loadData = useCallback(async () => {
-    console.log('🔧 [TableDataBrowser] loadData被调用:', {
+  // 加载数据（带分页参数）
+  const loadDataWithPagination = useCallback(async (targetPage: number, targetPageSize: number) => {
+    console.log('🔧 [TableDataBrowser] loadDataWithPagination被调用:', {
       columns长度: columns.length,
       tableName,
+      targetPage,
+      targetPageSize,
       是否会执行: columns.length > 0
     });
 
     if (columns.length === 0) {
-      console.log('🔧 [TableDataBrowser] loadData跳过：columns长度为0');
+      console.log('🔧 [TableDataBrowser] loadDataWithPagination跳过：columns长度为0');
       return;
     }
 
     setLoading(true);
     try {
-      const query = generateBaseQuery();
+      const query = generateBaseQueryWithPagination(targetPage, targetPageSize);
       console.log('🔧 [TableDataBrowser] 执行数据查询:', query);
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
@@ -1168,7 +1289,20 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [connectionId, database, generateBaseQuery, columns]);
+  }, [
+    columns,
+    tableName,
+    generateBaseQueryWithPagination,
+    connectionId,
+    database,
+    currentConnection?.dbType,
+    currentConnection?.detectedType,
+  ]);
+
+  // 兼容的 loadData 函数，使用当前状态
+  const loadData = useCallback(async () => {
+    return loadDataWithPagination(currentPage, pageSize);
+  }, [loadDataWithPagination, currentPage, pageSize]);
 
   // 应用过滤器（延迟执行，避免添加过滤器时立即重新加载）
   const applyFilters = useCallback(async () => {
@@ -1357,21 +1491,39 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     }
   }, [columns, initializeColumnWidths]);
 
-  // 处理页面变化 - 使用 startTransition 优化响应性
+  // 处理页面变化 - 直接传递新页码参数
   const handlePageChange = useCallback((page: number) => {
-    startTransition(() => {
-      setCurrentPage(page);
+    console.log('🔧 [TableDataBrowser] 分页变化:', {
+      oldPage: currentPage,
+      newPage: page,
+      pageSize,
+      willReloadData: true
     });
-  }, []);
 
-  // 处理页面大小变化 - 使用 startTransition 优化响应性
+    // 立即更新页码状态
+    setCurrentPage(page);
+
+    // 直接使用新的页码参数执行数据加载，避免状态更新延迟
+    loadDataWithPagination(page, pageSize);
+  }, [currentPage, pageSize, loadDataWithPagination]);
+
+  // 处理页面大小变化 - 直接传递新参数
   const handlePageSizeChange = useCallback((size: string) => {
-    startTransition(() => {
-      const newSize = parseInt(size);
-      setPageSize(newSize);
-      setCurrentPage(1);
+    console.log('🔧 [TableDataBrowser] 页面大小变化:', {
+      oldSize: pageSize,
+      newSize: size,
+      currentPage,
+      willReloadData: true
     });
-  }, []);
+
+    // 立即更新状态
+    const newSize = size === 'all' ? -1 : parseInt(size);
+    setPageSize(newSize);
+    setCurrentPage(1);
+
+    // 直接使用新的分页参数执行数据加载，避免状态更新延迟
+    loadDataWithPagination(1, newSize);
+  }, [pageSize, currentPage, loadDataWithPagination]);
 
   // 处理搜索
   const handleSearch = useCallback(() => {
@@ -1976,9 +2128,20 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             }
           }}
           onPageChange={(page, size) => {
-            handlePageChange(page);
+            console.log('🔧 [TableDataBrowser] UnifiedDataTable分页回调:', {
+              page,
+              size,
+              currentPage,
+              pageSize,
+              sizeChanged: size !== pageSize
+            });
+
             if (size !== pageSize) {
+              // 页面大小变化时，只调用handlePageSizeChange，它会自动重置到第1页
               handlePageSizeChange(size.toString());
+            } else {
+              // 只有页码变化时，才调用handlePageChange
+              handlePageChange(page);
             }
           }}
           onRowSelect={selectedRowsSet => {

@@ -62,6 +62,7 @@ export interface PaginationConfig {
     total: number;
     showSizeChanger?: boolean;
     pageSizeOptions?: string[];
+    serverSide?: boolean; // 是否使用服务器端分页
 }
 
 // 排序配置类型
@@ -638,7 +639,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
     isVirtualized = false
 }) => {
 
-    const isShowingAll = pageSize >= totalCount;
+    const isShowingAll = pageSize === -1 || pageSize >= totalCount;
     const totalPages = isShowingAll ? 1 : Math.ceil(totalCount / pageSize);
 
     // 在虚拟化模式下，显示所有数据
@@ -656,7 +657,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
                 <span>{displayText}</span>
             </div>
             <div className="flex items-center gap-2">
-                <Select value={isShowingAll ? 'all' : pageSize.toString()} onValueChange={onPageSizeChange}>
+                <Select value={pageSize === -1 ? 'all' : pageSize.toString()} onValueChange={onPageSizeChange}>
                     <SelectTrigger className="w-20 h-8">
                         <SelectValue />
                     </SelectTrigger>
@@ -742,6 +743,24 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const [currentPage, setCurrentPage] = useState(pagination ? pagination.current : 1);
     const [pageSize, setPageSize] = useState(pagination ? pagination.pageSize : 500);
     const [isShowingAll, setIsShowingAll] = useState(false); // 跟踪是否用户主动选择了"全部"
+
+    // 同步外部分页状态
+    useEffect(() => {
+        if (pagination) {
+            console.log('🔧 [UnifiedDataTable] 同步外部分页状态:', {
+                externalCurrent: pagination.current,
+                externalPageSize: pagination.pageSize,
+                internalCurrent: currentPage,
+                internalPageSize: pageSize
+            });
+            if (pagination.current !== currentPage) {
+                setCurrentPage(pagination.current);
+            }
+            if (pagination.pageSize !== pageSize) {
+                setPageSize(pagination.pageSize);
+            }
+        }
+    }, [pagination && pagination.current, pagination && pagination.pageSize]);
 
     // 轻量级单元格状态 - 只存储必要信息
     const [selectedCell, setSelectedCell] = useState<string | null>(null); // 格式: "row-column"
@@ -1731,21 +1750,31 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             return filteredData; // 虚拟化模式下传递全部数据
         } else {
             // 非虚拟化模式，需要进行客户端分页以避免性能问题
-            if (pageSize === -1 || pageSize >= filteredData.length) {
+            // 只有当pageSize为-1（表示显示全部）时才返回全部数据
+            if (pageSize === -1) {
+                console.log('🔧 [UnifiedDataTable] 非虚拟化模式：显示全部数据', {
+                    filteredDataLength: filteredData.length,
+                    pageSize: 'all'
+                });
                 return filteredData; // 显示全部数据
             }
 
+            // 进行分页计算
             const startIndex = (currentPage - 1) * pageSize;
             const endIndex = startIndex + pageSize;
+            const slicedData = filteredData.slice(startIndex, endIndex);
+
             console.log('🔧 [UnifiedDataTable] 非虚拟化模式：客户端分页', {
                 filteredDataLength: filteredData.length,
                 pageSize,
                 currentPage,
                 startIndex,
                 endIndex,
-                slicedLength: endIndex - startIndex
+                slicedLength: slicedData.length,
+                actualSlicedLength: slicedData.length
             });
-            return filteredData.slice(startIndex, endIndex);
+
+            return slicedData;
         }
     }, [filteredData, pagination, currentPage, pageSize, shouldUseVirtualization]);
     // 注释：移除了数据变化时强制应用固定行高度的useEffect
@@ -1761,12 +1790,13 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     }, [pageSize, onPageChange]);
 
     const handlePageSizeChange = useCallback((size: string) => {
+        console.log('🔧 [UnifiedDataTable] 页面大小变化:', { size, currentPageSize: pageSize });
+
         if (size === 'all') {
-            const totalSize = pagination ? pagination.total : data.length;
-            setPageSize(totalSize);
+            setPageSize(-1); // 使用-1表示显示全部
             setCurrentPage(1);
             setIsShowingAll(true); // 标记为用户主动选择"全部"
-            onPageChange?.(1, totalSize);
+            onPageChange?.(1, -1);
         } else {
             const newSize = parseInt(size);
             setPageSize(newSize);
