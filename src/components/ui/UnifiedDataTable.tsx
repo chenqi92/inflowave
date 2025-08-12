@@ -1716,32 +1716,40 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         return filtered;
     }, [data, filters]);
 
-    // 判断是否启用虚拟化 - 使用筛选后的数据量
+    // 判断是否启用虚拟化 - 基于视觉范围内的数据量
     const shouldUseVirtualization = useMemo(() => {
         if (virtualized !== undefined) {
             console.log('🔧 [UnifiedDataTable] 明确指定虚拟化:', { virtualized });
             return virtualized; // 如果明确指定，使用指定值
         }
 
-        // 自动判断：数据量大于1000条时启用虚拟化
-        // 对于分页数据，如果当前页数据量较少，不需要虚拟化
-        const shouldVirtualize = filteredData.length > 1000;
+        // 计算视觉范围内可显示的行数
+        const availableHeight = dynamicContainerHeight || maxHeight;
+        const visibleRows = Math.floor(availableHeight / rowHeight);
+
+        // 临时禁用虚拟滚动进行调试
+        // 自动判断：当数据量超过视觉范围内可显示的行数时启用虚拟化
+        // 这样可以避免DOM节点过多导致的性能问题
+        const shouldVirtualize = false; // 临时禁用虚拟滚动
+        // const shouldVirtualize = filteredData.length > visibleRows * 2; // 2倍缓冲区
         console.log('🔧 [UnifiedDataTable] 自动判断虚拟化:', {
             dataLength: filteredData.length,
+            availableHeight,
+            visibleRows,
+            threshold: visibleRows * 2,
             shouldVirtualize,
             rowHeight
         });
         return shouldVirtualize;
-    }, [virtualized, filteredData.length, rowHeight]);
-    // 计算分页数据 - 使用筛选后的数据
+    }, [virtualized, filteredData.length, rowHeight, dynamicContainerHeight, maxHeight]);
+    // 计算分页数据 - 区分后端分页和前端分页
     const paginatedData = useMemo(() => {
         if (!pagination) {
             return filteredData; // 如果没有分页配置，返回所有筛选后的数据
         }
 
-        // 如果启用虚拟化且数据量很大，传递全部数据给TableVirtuoso
-        // 但如果是分页模式且数据量不大，仍然使用分页逻辑
-        if (shouldUseVirtualization && filteredData.length > 1000) {
+        // 如果启用虚拟化，传递全部数据给TableVirtuoso，让虚拟化组件处理滚动
+        if (shouldUseVirtualization) {
             console.log('🔧 [UnifiedDataTable] 虚拟化模式：传递全部数据给TableVirtuoso', {
                 filteredDataLength: filteredData.length,
                 pageSize,
@@ -1749,29 +1757,45 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             });
             return filteredData; // 虚拟化模式下传递全部数据
         } else {
-            // 非虚拟化模式，需要进行客户端分页以避免性能问题
-            // 只有当pageSize为-1（表示显示全部）时才返回全部数据
+            // 非虚拟化模式：
+            // 1. 如果是后端分页（数据已经是分页结果），直接返回
+            // 2. 如果是前端分页（数据是全量数据），需要进行客户端分页
+
+            // 判断是否为后端分页：如果数据量等于或小于页面大小，且不是"显示全部"模式，则认为是后端分页
+            const isBackendPagination = filteredData.length <= pageSize && pageSize !== -1 && filteredData.length > 0;
+
+            if (isBackendPagination) {
+                console.log('🔧 [UnifiedDataTable] 后端分页模式：直接返回数据', {
+                    filteredDataLength: filteredData.length,
+                    pageSize,
+                    currentPage,
+                    isBackendPagination: true
+                });
+                return filteredData; // 后端分页，直接返回数据
+            }
+
+            // 前端分页模式
             if (pageSize === -1) {
-                console.log('🔧 [UnifiedDataTable] 非虚拟化模式：显示全部数据', {
+                console.log('🔧 [UnifiedDataTable] 前端分页模式：显示全部数据', {
                     filteredDataLength: filteredData.length,
                     pageSize: 'all'
                 });
                 return filteredData; // 显示全部数据
             }
 
-            // 进行分页计算
+            // 进行前端分页计算
             const startIndex = (currentPage - 1) * pageSize;
             const endIndex = startIndex + pageSize;
             const slicedData = filteredData.slice(startIndex, endIndex);
 
-            console.log('🔧 [UnifiedDataTable] 非虚拟化模式：客户端分页', {
+            console.log('🔧 [UnifiedDataTable] 前端分页模式：客户端分页', {
                 filteredDataLength: filteredData.length,
                 pageSize,
                 currentPage,
                 startIndex,
                 endIndex,
                 slicedLength: slicedData.length,
-                actualSlicedLength: slicedData.length
+                isBackendPagination: false
             });
 
             return slicedData;
@@ -1825,11 +1849,20 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     // 使用动态容器高度，确保虚拟化表格能够充分利用可用空间
     const effectiveMaxHeight = Math.max(dynamicContainerHeight, 200); // 最小高度200px
     const containerHeight = shouldUseVirtualization
-        ? effectiveMaxHeight // 虚拟化模式使用全部可用高度
+        ? Math.max(effectiveMaxHeight, 400) // 虚拟化模式使用全部可用高度，最小400px确保足够的滚动空间
         : Math.min(
             effectiveMaxHeight,
             headerEstimatedHeight + paginatedData.length * rowHeight + bottomPadding + fudge
         );
+
+    console.log('🔧 [UnifiedDataTable] 容器高度计算:', {
+        shouldUseVirtualization,
+        dynamicContainerHeight,
+        effectiveMaxHeight,
+        containerHeight,
+        paginatedDataLength: paginatedData.length,
+        rowHeight
+    });
 
     // 计算总列数（用于tfoot留白单元格的colSpan）
     const visibleDataColumns = columnOrder.filter((col) => selectedColumns.includes(col));
@@ -1981,7 +2014,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     ref={tableContainerRef}
                                     style={{
                                         height: `${containerHeight}px`,
-                                        width: '100%'
+                                        width: '100%',
+                                        overflow: 'hidden' // 确保容器不会产生额外的滚动条
                                     }}
                                 >
                                     {(() => {
@@ -1997,8 +2031,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     ref={virtuosoRef}
                                     data={paginatedData}
                                     fixedItemHeight={rowHeight} // 设置固定行高度，防止自动拉伸
-                                    overscan={20} // 减少预渲染行数以提高性能，避免额外高度
-                                    style={{ height: '100%' }}
+                                    overscan={50} // 增加预渲染行数，确保滚动流畅
+                                    style={{
+                                        height: '100%',
+                                        width: '100%'
+                                    }}
+                                    totalCount={paginatedData.length} // 明确指定总数据量
 
                                     fixedHeaderContent={() => (
                                         <TableHeader
@@ -2357,7 +2395,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                                 data-column-index={colIndex + (showRowNumbers ? 1 : 0)}
                                                                 className={cn(
                                                                     "px-2 text-sm table-cell-selectable",
-                                                                    selectedCell === cellId && "table-cell-selected"
+                                                                    selectedCell === cellId && !isEditing && selectedCellRange.size <= 1 && "table-cell-selected",
+                                                                    selectedCellRange.has(cellId) && selectedCellRange.size > 1 && "table-cell-range-selected",
+                                                                    isEditing && "table-cell-editing"
                                                                 )}
                                                                 style={{
                                                                     width: `${width}px`,
