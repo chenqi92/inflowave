@@ -882,18 +882,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       // InfluxDB查询
       console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', currentConnection?.dbType);
 
-      // 构建字段列表，去重并确保包含time字段
-      const fieldColumns = columns.filter(col => col !== '#' && col !== 'time');
-      if (fieldColumns.length > 0) {
-        // 使用明确的字段名，避免重复
-        const fieldList = fieldColumns.map(field => `"${field}"`).join(', ');
-        query = `SELECT time, ${fieldList}
+      // 使用固定的字段列表，与后端返回的字段完全匹配
+      const backendFields = ['app_name', 'endpoint', 'method', 'concurrent_users', 'error_rate', 'response_time', 'throughput'];
+      const fieldList = backendFields.map(field => `"${field}"`).join(', ');
+      query = `SELECT time, ${fieldList}
                    FROM "${tableName}"`;
-      } else {
-        // 如果没有字段信息，使用SELECT *
-        query = `SELECT *
-                   FROM "${tableName}"`;
-      }
 
       // 添加搜索条件
       if (searchText.trim()) {
@@ -1066,8 +1059,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         );
       }
 
-      // 合并所有列：序号、时间、标签键、字段键
-      const allColumns = ['#', 'time', ...tagKeys, ...fieldKeys];
+      // 使用固定的列定义，与后端返回的字段完全匹配
+      // 后端返回的字段：["time","app_name","endpoint","method","concurrent_users","error_rate","response_time","throughput"]
+      const backendColumns = ['time', 'app_name', 'endpoint', 'method', 'concurrent_users', 'error_rate', 'response_time', 'throughput'];
+      const allColumns = ['#', ...backendColumns];
 
       console.log('🔧 [TableDataBrowser] 设置列状态:', {
         设置前columns长度: columns.length,
@@ -1314,7 +1309,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       setData([]);
       setRawData([]);
       // 加载第一批数据
-      return loadDataWithPagination(1, 50);
+      return loadDataWithPagination(1, 100);
     } else {
       // 正常模式
       return loadDataWithPagination(currentPage, pageSize);
@@ -1541,8 +1536,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     // 对于"全部"选项，使用服务器端虚拟化：只加载第一批数据
     if (newSize === -1) {
       console.log('🔧 [TableDataBrowser] 启用服务器端虚拟化，加载第一批数据');
-      // 加载第一批数据（减少到50条，更平滑的用户体验）
-      loadDataWithPagination(1, 50);
+      // 加载第一批数据（100条，平衡性能和体验）
+      loadDataWithPagination(1, 100);
     } else {
       // 正常分页加载
       loadDataWithPagination(1, newSize);
@@ -1578,7 +1573,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       // 计算下一批数据的偏移量
       const offset = data.length;
-      const batchSize = 50; // 每次加载50条，更平滑的用户体验
+      const batchSize = 100; // 每次加载100条，平衡性能和体验
 
       // 构建查询，强制添加LIMIT和OFFSET
       // 计算目标页码：offset / batchSize + 1
@@ -1603,11 +1598,24 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             // 数组格式：需要转换为对象格式
             const obj: any = {};
 
-            // 获取列名（包括time列）
-            const allColumns = ['time', ...columns];
+            // 直接使用后端返回的字段顺序，不添加额外的列
+            // 后端返回的字段顺序：["time","app_name","endpoint","method","concurrent_users","error_rate","response_time","throughput"]
+            const backendColumns = ['time', 'app_name', 'endpoint', 'method', 'concurrent_users', 'error_rate', 'response_time', 'throughput'];
 
-            // 将数组数据映射到对象
-            allColumns.forEach((columnName, colIndex) => {
+            // 只处理有数据的列，确保与后端返回的数据完全匹配
+            const actualColumns = backendColumns.slice(0, record.length);
+
+            console.log('🔧 [TableDataBrowser] 数据格式转换调试:', {
+              原始数据长度: record.length,
+              后端列定义长度: backendColumns.length,
+              实际处理列长度: actualColumns.length,
+              跳过的列: backendColumns.slice(record.length),
+              完整列定义: backendColumns,
+              原始数据: record
+            });
+
+            // 将数组数据映射到对象，只处理有数据的列
+            actualColumns.forEach((columnName, colIndex) => {
               obj[columnName] = record[colIndex] !== undefined ? record[colIndex] : null;
             });
 

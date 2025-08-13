@@ -574,6 +574,10 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const [hasMoreData, setHasMoreData] = useState(true);
     const [virtualizedTotalCount, setVirtualizedTotalCount] = useState(0);
 
+    // 滚动防抖状态
+    const [lastScrollTime, setLastScrollTime] = useState(0);
+    const [hasTriggeredLoad, setHasTriggeredLoad] = useState(false);
+
     // 服务器端虚拟化：检测是否需要启用
     const isServerSideVirtualization = useMemo(() => {
         return shouldUseVirtualization && (pageSize === -1 || pageSize > 1000);
@@ -800,10 +804,26 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         // 计算滚动进度
                                         const scrollProgress = scrollTop / (scrollHeight - clientHeight);
 
-                                        // 当滚动到90%时才触发加载，减少频繁触发
-                                        if (scrollProgress > 0.9 && onLoadMore) {
-                                            console.log('🔧 [UnifiedDataTable] 滚动进度90%，预加载更多数据');
+                                        // 使用距离底部的像素数而不是百分比，提供更好的用户体验
+                                        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+
+                                        // 防抖机制：避免频繁触发
+                                        const now = Date.now();
+                                        if (now - lastScrollTime < 800) { // 800ms防抖
+                                            return;
+                                        }
+
+                                        // 当距离底部200px时就开始预加载，提供无感知的用户体验
+                                        if (distanceFromBottom < 200 && onLoadMore && !hasTriggeredLoad) {
+                                            console.log('🔧 [UnifiedDataTable] 距离底部200px，预加载更多数据');
+                                            setLastScrollTime(now);
+                                            setHasTriggeredLoad(true);
                                             onLoadMore();
+
+                                            // 2秒后重置触发状态，允许下次触发
+                                            setTimeout(() => {
+                                                setHasTriggeredLoad(false);
+                                            }, 2000);
                                         }
                                     }}
                                 >
@@ -828,7 +848,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         />
                                         <tbody>
                                             {paginatedData.map((row, index) => {
-                                                const rowId = generateRowId(row, index, 'simple-');
+                                                // 生成唯一的行ID，包含时间戳避免重复
+                                                const rowId = `simple-row_${index}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
                                                 return (
                                                     <tr
                                                         key={rowId}
