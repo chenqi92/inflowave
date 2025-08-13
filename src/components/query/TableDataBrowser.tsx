@@ -1305,9 +1305,20 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     currentConnection?.detectedType,
   ]);
 
-  // 兼容的 loadData 函数，使用当前状态
+  // 兼容的 loadData 函数，使用当前状态，支持服务器端虚拟化
   const loadData = useCallback(async () => {
-    return loadDataWithPagination(currentPage, pageSize);
+    // 如果是服务器端虚拟化模式（pageSize = -1），重置数据并只加载第一批
+    if (pageSize === -1) {
+      console.log('🔧 [TableDataBrowser] 刷新数据：服务器端虚拟化模式，重置并加载第一批数据');
+      // 重置数据状态
+      setData([]);
+      setRawData([]);
+      // 加载第一批数据
+      return loadDataWithPagination(1, 50);
+    } else {
+      // 正常模式
+      return loadDataWithPagination(currentPage, pageSize);
+    }
   }, [loadDataWithPagination, currentPage, pageSize]);
 
   // 应用过滤器（延迟执行，避免添加过滤器时立即重新加载）
@@ -1530,8 +1541,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     // 对于"全部"选项，使用服务器端虚拟化：只加载第一批数据
     if (newSize === -1) {
       console.log('🔧 [TableDataBrowser] 启用服务器端虚拟化，加载第一批数据');
-      // 加载第一批数据（比如1000条）
-      loadDataWithPagination(1, 1000);
+      // 加载第一批数据（减少到50条，更平滑的用户体验）
+      loadDataWithPagination(1, 50);
     } else {
       // 正常分页加载
       loadDataWithPagination(1, newSize);
@@ -1545,23 +1556,34 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   }, [loadData]);
 
   // 服务器端虚拟化：加载更多数据
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [lastLoadTime, setLastLoadTime] = useState(0);
+
   const loadMoreData = useCallback(async () => {
-    if (pageSize !== -1 || loading) {
+    if (pageSize !== -1 || loading || isLoadingMore) {
       return; // 只在"全部"模式下且不在加载中时才加载更多
     }
+
+    // 防抖：避免频繁触发加载（至少间隔1秒）
+    const now = Date.now();
+    if (now - lastLoadTime < 1000) {
+      return;
+    }
+    setLastLoadTime(now);
 
     console.log('🔧 [TableDataBrowser] 加载更多数据，当前数据量:', data.length);
 
     try {
-      setLoading(true);
+      setIsLoadingMore(true);
 
       // 计算下一批数据的偏移量
       const offset = data.length;
-      const batchSize = 1000; // 每次加载1000条
+      const batchSize = 50; // 每次加载50条，更平滑的用户体验
 
-      // 构建查询，添加LIMIT和OFFSET
-      const baseQuery = generateBaseQuery();
-      const query = `${baseQuery} LIMIT ${batchSize} OFFSET ${offset}`;
+      // 构建查询，强制添加LIMIT和OFFSET
+      // 计算目标页码：offset / batchSize + 1
+      const targetPage = Math.floor(offset / batchSize) + 1;
+      const query = generateBaseQueryWithPagination(targetPage, batchSize);
 
       console.log('🔧 [TableDataBrowser] 加载更多数据查询:', query);
 
@@ -1574,18 +1596,45 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       });
 
       if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
-        // 添加序号列
+        // 处理数据格式：将数组格式转换为对象格式
         const offset_for_numbering = data.length;
-        result.data.forEach((record, index) => {
-          if (record && typeof record === 'object') {
+        const processedData = result.data.map((record: any, index: number) => {
+          if (Array.isArray(record)) {
+            // 数组格式：需要转换为对象格式
+            const obj: any = {};
+
+            // 获取列名（包括time列）
+            const allColumns = ['time', ...columns];
+
+            // 将数组数据映射到对象
+            allColumns.forEach((columnName, colIndex) => {
+              obj[columnName] = record[colIndex] !== undefined ? record[colIndex] : null;
+            });
+
+            // 添加序号和ID
+            obj['#'] = offset_for_numbering + index + 1;
+            obj._id = `row_${offset_for_numbering + index}`;
+
+            return obj;
+          } else if (record && typeof record === 'object') {
+            // 对象格式：直接处理
             (record as DataRow)['#'] = offset_for_numbering + index + 1;
             (record as DataRow)._id = (record as DataRow)._id || `row_${offset_for_numbering + index}`;
+            return record;
           }
+          return record;
         });
 
-        // 追加新数据到现有数据
-        setData(prevData => [...prevData, ...(result.data || [])]);
-        setRawData(prevData => [...prevData, ...(result.data || [])]);
+        console.log('🔧 [TableDataBrowser] 处理后的新数据样本:', {
+          原始第一条数据: result.data[0],
+          处理后第一条数据: processedData[0],
+          数据字段: Object.keys(processedData[0] || {}),
+          序号字段: processedData[0] ? processedData[0]['#'] : 'N/A'
+        });
+
+        // 追加处理后的数据到现有数据
+        setData(prevData => [...prevData, ...processedData]);
+        setRawData(prevData => [...prevData, ...processedData]);
 
         console.log('🔧 [TableDataBrowser] 成功加载更多数据:', {
           新增数据量: result.data.length,
@@ -1597,9 +1646,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     } catch (error) {
       console.error('🔧 [TableDataBrowser] 加载更多数据失败:', error);
     } finally {
-      setLoading(false);
+      setIsLoadingMore(false);
     }
-  }, [pageSize, loading, data.length, generateBaseQuery, connectionId, database]);
+  }, [pageSize, loading, isLoadingMore, data.length, generateBaseQuery, connectionId, database]);
 
   // 行点击处理函数
   const handleRowClick = useCallback(
@@ -2217,6 +2266,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           onRowSelect={selectedRowsSet => {
             setSelectedRows(selectedRowsSet);
           }}
+          onLoadMore={loadMoreData}
         />
       </div>
 

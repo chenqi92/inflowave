@@ -107,6 +107,7 @@ export interface UnifiedDataTableProps {
     virtualized?: boolean; // 是否启用虚拟化，默认当数据量>500时自动启用
     rowHeight?: number; // 行高，用于虚拟化计算，默认40px
     maxHeight?: number; // 表格最大高度，默认600px
+    onLoadMore?: () => void; // 加载更多数据的回调函数
 }
 
 // 简化的筛选按钮组件
@@ -415,7 +416,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     onRowSelect,
     virtualized,
     rowHeight = 36, // 默认行高度36px，与CSS保持一致
-    maxHeight = 800 // 增加默认最大高度，支持大数据量显示
+    maxHeight = 800, // 增加默认最大高度，支持大数据量显示
+    onLoadMore // 加载更多数据的回调函数
 }) => {
     // 简化的状态管理
     const [searchText, setSearchText] = useState('');
@@ -662,9 +664,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             filteredDataLength: filteredData.length,
             containerHeight,
             paginatedDataLength: paginatedData.length,
-            visibleColumnsLength: visibleColumns.length
+            visibleColumnsLength: visibleColumns.length,
+            isServerSideVirtualization,
+            rowHeight,
+            expectedVisibleRows: Math.floor(containerHeight / rowHeight)
         });
-    }, [shouldUseVirtualization, pageSize, filteredData.length, containerHeight, paginatedData.length, visibleColumns.length]);
+    }, [shouldUseVirtualization, pageSize, filteredData.length, containerHeight, paginatedData.length, visibleColumns.length, isServerSideVirtualization, rowHeight]);
 
     return (
         <div className={cn("h-full flex flex-col bg-background", className)}>
@@ -781,154 +786,121 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             </div>
                         ) : data.length > 0 ? (
                             shouldUseVirtualization ? (
-                                // 虚拟滚动表格 - 用于大数据量
+                                // 普通表格 - 暂时禁用TableVirtuoso，使用普通表格+CSS虚拟化
                                 <div
-                                    className="flex-1 virtualized-table-fixed-container"
+                                    className="flex-1 overflow-auto"
                                     style={{
                                         height: `${containerHeight}px`,
-                                        minHeight: `${containerHeight}px`,
-                                        maxHeight: `${containerHeight}px`,
-                                        overflow: 'hidden', // 让TableVirtuoso完全控制滚动
-                                        position: 'relative'
+                                        maxHeight: `${containerHeight}px`
+                                    }}
+                                    onScroll={(e) => {
+                                        const target = e.target as HTMLDivElement;
+                                        const { scrollTop, scrollHeight, clientHeight } = target;
+
+                                        // 计算滚动进度
+                                        const scrollProgress = scrollTop / (scrollHeight - clientHeight);
+
+                                        // 当滚动到90%时才触发加载，减少频繁触发
+                                        if (scrollProgress > 0.9 && onLoadMore) {
+                                            console.log('🔧 [UnifiedDataTable] 滚动进度90%，预加载更多数据');
+                                            onLoadMore();
+                                        }
                                     }}
                                 >
-                                    <TableVirtuoso
-                                        ref={virtuosoRef}
-                                        data={paginatedData}
-                                        fixedItemHeight={rowHeight}
-                                        overscan={20} // 减少overscan，提升大数据量性能
-                                        useWindowScroll={false}
-                                        totalCount={paginatedData.length} // 明确指定总数据量
-                                        className="virtualized-table virtualized-table-fixed-height"
+                                    <table
+                                        className="border-collapse"
                                         style={{
-                                            height: '100%',
-                                            width: '100%'
+                                            width: visibleColumns.length > 10 ? 'max-content' : '100%',
+                                            minWidth: visibleColumns.length > 10 ? `${visibleColumns.length * 120}px` : '100%',
+                                            tableLayout: 'auto'
                                         }}
-                                        fixedHeaderContent={() => (
-                                            <TableHeader
-                                                columnOrder={columnOrder}
-                                                selectedColumns={selectedColumns}
-                                                sortColumn={sortConfig?.column || ''}
-                                                sortDirection={sortConfig?.direction || 'asc'}
-                                                showRowNumbers={showRowNumbers}
-                                                rowHeight={rowHeight}
-                                                onSort={handleSort}
-                                                onFilter={handleFilter}
-                                                virtualMode={true}
-                                            />
-                                        )}
-                                        itemContent={(index, row) => {
-                                            // 生成唯一的行标识符
-                                            const rowId = generateRowId(row, index, 'virt-');
+                                    >
+                                        <TableHeader
+                                            columnOrder={columnOrder}
+                                            selectedColumns={selectedColumns}
+                                            sortColumn={sortConfig?.column || ''}
+                                            sortDirection={sortConfig?.direction || 'asc'}
+                                            showRowNumbers={showRowNumbers}
+                                            rowHeight={rowHeight}
+                                            onSort={handleSort}
+                                            onFilter={handleFilter}
+                                            virtualMode={false}
+                                        />
+                                        <tbody>
+                                            {paginatedData.map((row, index) => {
+                                                const rowId = generateRowId(row, index, 'simple-');
+                                                return (
+                                                    <tr
+                                                        key={rowId}
+                                                        className={`border-b hover:bg-muted/50 ${
+                                                            selectedRows.has(index) ? 'bg-muted' : ''
+                                                        }`}
+                                                        style={{ height: `${rowHeight}px` }}
+                                                    >
+                                                        {/* 序号列 */}
+                                                        {showRowNumbers && (
+                                                            <td className="px-4 py-2 text-sm text-center text-muted-foreground border-r w-16">
+                                                                {index + 1}
+                                                            </td>
+                                                        )}
 
-                                            return (
-                                                <>
-                                                    {/* 序号列 */}
-                                                    {showRowNumbers && (
-                                                        <td
-                                                            key={`row-${rowId}-number`}
-                                                            className="px-4 py-2 text-sm text-center text-muted-foreground border-r w-16"
-                                                        >
-                                                            {index + 1}
-                                                        </td>
-                                                    )}
-
-                                                    {/* 数据列 */}
-                                                    {columnOrder.filter(column => selectedColumns.includes(column)).map((column, colIndex) => {
-                                                        const columnConfig = columns.find(col => col.key === column);
-                                                        const value = row[column];
-
-                                                        // 格式化显示值
-                                                        const displayValue = columnConfig?.render
-                                                            ? columnConfig.render(value, row, index)
-                                                            : column === 'time' && value
+                                                        {/* 数据列 */}
+                                                        {visibleColumns.map((column, colIndex) => {
+                                                            const value = row[column];
+                                                            const displayValue = column === 'time' && value
                                                                 ? new Date(value).toLocaleString()
                                                                 : String(value || '-');
+                                                            const columnCount = visibleColumns.length;
 
-                                                        // 计算列宽，与表头保持一致
-                                                        const columnCount = visibleColumns.length;
-                                                        let width: string;
-                                                        let minWidth: string;
-                                                        let maxWidth: string;
+                                                            // 计算列宽
+                                                            let width: string;
+                                                            let minWidth: string;
+                                                            let maxWidth: string;
 
-                                                        if (column === 'time') {
-                                                            // 时间列固定宽度
-                                                            width = '180px';
-                                                            minWidth = '180px';
-                                                            maxWidth = '180px';
-                                                        } else if (columnCount <= 5) {
-                                                            // 少列时：平均分配剩余空间，确保不重叠
-                                                            const baseWidth = Math.max(150, column.length * 8 + 60);
-                                                            width = `${baseWidth}px`;
-                                                            minWidth = `${baseWidth}px`;
-                                                            maxWidth = 'none';
-                                                        } else if (columnCount <= 10) {
-                                                            // 中等列数：固定合理宽度
-                                                            const baseWidth = Math.max(120, column.length * 8 + 40);
-                                                            width = `${baseWidth}px`;
-                                                            minWidth = `${baseWidth}px`;
-                                                            maxWidth = 'none';
-                                                        } else {
-                                                            // 多列时：使用最小宽度，允许水平滚动
-                                                            const baseWidth = Math.max(100, column.length * 6 + 40);
-                                                            width = 'auto';
-                                                            minWidth = `${baseWidth}px`;
-                                                            maxWidth = '250px';
-                                                        }
+                                                            if (column === 'time') {
+                                                                width = '180px';
+                                                                minWidth = '180px';
+                                                                maxWidth = '180px';
+                                                            } else if (columnCount <= 5) {
+                                                                const baseWidth = Math.max(150, column.length * 8 + 60);
+                                                                width = `${baseWidth}px`;
+                                                                minWidth = `${baseWidth}px`;
+                                                                maxWidth = 'none';
+                                                            } else if (columnCount <= 10) {
+                                                                const baseWidth = Math.max(120, column.length * 8 + 40);
+                                                                width = `${baseWidth}px`;
+                                                                minWidth = `${baseWidth}px`;
+                                                                maxWidth = 'none';
+                                                            } else {
+                                                                const baseWidth = Math.max(100, column.length * 6 + 40);
+                                                                width = 'auto';
+                                                                minWidth = `${baseWidth}px`;
+                                                                maxWidth = '250px';
+                                                            }
 
-                                                        return (
-                                                            <td
-                                                                key={`row-${rowId}-col-${column}-${colIndex}`}
-                                                                className="px-4 py-2 text-sm border-r"
-                                                                style={{
-                                                                    width,
-                                                                    minWidth,
-                                                                    maxWidth,
-                                                                    overflow: 'hidden',
-                                                                    textOverflow: 'ellipsis',
-                                                                    whiteSpace: 'nowrap'
-                                                                }}
-                                                                title={String(displayValue)}
-                                                            >
-                                                                {displayValue}
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </>
-                                            );
-                                        }}
-
-                                        components={{
-                                            Table: ({ style, ...props }) => {
-                                                const columnCount = columnOrder.filter(col => selectedColumns.includes(col)).length;
-                                                // 计算表格最小宽度，确保多列时有水平滚动
-                                                const minTableWidth = columnCount > 10 ? `${columnCount * 120}px` : '100%';
-                                                return (
-                                                    <table
-                                                        {...props}
-                                                        style={{
-                                                            ...style,
-                                                            borderCollapse: 'collapse',
-                                                            width: columnCount > 10 ? 'max-content' : '100%',
-                                                            minWidth: minTableWidth,
-                                                            tableLayout: 'auto' // 始终使用auto布局，让浏览器自动计算列宽
-                                                        }}
-                                                        className="border-collapse"
-                                                    />
+                                                            return (
+                                                                <td
+                                                                    key={`${rowId}-${column}-${colIndex}`}
+                                                                    className="px-4 py-2 text-sm border-r"
+                                                                    style={{
+                                                                        width,
+                                                                        minWidth,
+                                                                        maxWidth,
+                                                                        overflow: 'hidden',
+                                                                        textOverflow: 'ellipsis',
+                                                                        whiteSpace: 'nowrap'
+                                                                    }}
+                                                                    title={String(displayValue)}
+                                                                >
+                                                                    {displayValue}
+                                                                </td>
+                                                            );
+                                                        })}
+                                                    </tr>
                                                 );
-                                            },
-                                            TableRow: ({ style, ...props }) => (
-                                                <tr
-                                                    {...props}
-                                                    style={{
-                                                        ...style,
-                                                        height: `${rowHeight}px`
-                                                    }}
-                                                    className="hover:bg-muted/50 transition-colors"
-                                                />
-                                            )
-                                        }}
-                                    />
+                                            })}
+                                        </tbody>
+                                    </table>
                                 </div>
                             ) : (
                                 // 普通表格 - 用于小数据量
