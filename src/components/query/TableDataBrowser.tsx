@@ -882,12 +882,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       // InfluxDB查询
       console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', currentConnection?.dbType);
 
-      // 构建字段列表，确保包含time字段
-      const fieldList = ['time', ...columns.filter(col => col !== 'time' && col !== '#')];
-      const quotedFields = fieldList.map(field => field === 'time' ? 'time' : `"${field}"`);
-
-      query = `SELECT ${quotedFields.join(', ')}
-                 FROM "${tableName}"`;
+      // 构建字段列表，去重并确保包含time字段
+      const fieldColumns = columns.filter(col => col !== '#' && col !== 'time');
+      if (fieldColumns.length > 0) {
+        // 使用明确的字段名，避免重复
+        const fieldList = fieldColumns.map(field => `"${field}"`).join(', ');
+        query = `SELECT time, ${fieldList}
+                   FROM "${tableName}"`;
+      } else {
+        // 如果没有字段信息，使用SELECT *
+        query = `SELECT *
+                   FROM "${tableName}"`;
+      }
 
       // 添加搜索条件
       if (searchText.trim()) {
