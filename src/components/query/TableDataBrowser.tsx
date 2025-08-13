@@ -882,11 +882,19 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       // InfluxDB查询
       console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', currentConnection?.dbType);
 
-      // 使用固定的字段列表，与后端返回的字段完全匹配
-      const backendFields = ['app_name', 'endpoint', 'method', 'concurrent_users', 'error_rate', 'response_time', 'throughput'];
-      const fieldList = backendFields.map(field => `"${field}"`).join(', ');
-      query = `SELECT time, ${fieldList}
+      // 构建字段列表，去重并确保包含time字段
+      const fieldColumns = columns.filter(col => col !== '#' && col !== 'time');
+      if (fieldColumns.length > 0) {
+        // 使用明确的字段名，去重避免重复
+        const uniqueFields = [...new Set(fieldColumns)];
+        const fieldList = uniqueFields.map(field => `"${field}"`).join(', ');
+        query = `SELECT time, ${fieldList}
                    FROM "${tableName}"`;
+      } else {
+        // 如果没有字段信息，使用SELECT *
+        query = `SELECT *
+                   FROM "${tableName}"`;
+      }
 
       // 添加搜索条件
       if (searchText.trim()) {
@@ -1059,10 +1067,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         );
       }
 
-      // 使用固定的列定义，与后端返回的字段完全匹配
-      // 后端返回的字段：["time","app_name","endpoint","method","concurrent_users","error_rate","response_time","throughput"]
-      const backendColumns = ['time', 'app_name', 'endpoint', 'method', 'concurrent_users', 'error_rate', 'response_time', 'throughput'];
-      const allColumns = ['#', ...backendColumns];
+      // 合并所有列：序号、时间、标签键、字段键，并去重
+      const allColumns = ['#', 'time', ...new Set([...tagKeys, ...fieldKeys])];
 
       console.log('🔧 [TableDataBrowser] 设置列状态:', {
         设置前columns长度: columns.length,
@@ -1598,11 +1604,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             // 数组格式：需要转换为对象格式
             const obj: any = {};
 
-            // 直接使用后端返回的字段顺序，不添加额外的列
-            // 后端返回的字段顺序：["time","app_name","endpoint","method","concurrent_users","error_rate","response_time","throughput"]
-            const backendColumns = ['time', 'app_name', 'endpoint', 'method', 'concurrent_users', 'error_rate', 'response_time', 'throughput'];
+            // 使用后端实际返回的列名，确保与数据完全匹配
+            const backendColumns = result.columns || [];
 
-            // 只处理有数据的列，确保与后端返回的数据完全匹配
+            // 只处理有数据的列，避免创建空列
             const actualColumns = backendColumns.slice(0, record.length);
 
             console.log('🔧 [TableDataBrowser] 数据格式转换调试:', {
@@ -1610,8 +1615,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               后端列定义长度: backendColumns.length,
               实际处理列长度: actualColumns.length,
               跳过的列: backendColumns.slice(record.length),
-              完整列定义: backendColumns,
-              原始数据: record
+              后端列定义: backendColumns,
+              原始数据前5个: record.slice(0, 5),
+              原始数据最后5个: record.slice(-5)
             });
 
             // 将数组数据映射到对象，只处理有数据的列
