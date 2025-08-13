@@ -326,12 +326,15 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
         return options;
     }, [totalCount]);
 
-    const totalPages = Math.ceil(totalCount / pageSize);
-    const startIndex = (currentPage - 1) * pageSize + 1;
-    const endIndex = Math.min(currentPage * pageSize, totalCount);
+    // 修复pageSize = -1时的计算问题
+    const totalPages = pageSize === -1 ? 1 : Math.ceil(totalCount / pageSize);
+    const startIndex = pageSize === -1 ? 1 : (currentPage - 1) * pageSize + 1;
+    const endIndex = pageSize === -1 ? totalCount : Math.min(currentPage * pageSize, totalCount);
 
     const displayText = isVirtualized
         ? `显示全部 ${totalCount} 条（虚拟化滚动）`
+        : pageSize === -1
+        ? `显示全部 ${totalCount} 条`
         : `显示 ${startIndex}-${endIndex} 条，共 ${totalCount} 条`;
 
     return (
@@ -340,7 +343,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
                 {displayText}
             </div>
             <div className="flex items-center gap-2">
-                <Select value={pageSize.toString()} onValueChange={onPageSizeChange}>
+                <Select value={pageSize === -1 ? 'all' : pageSize.toString()} onValueChange={onPageSizeChange}>
                     <SelectTrigger className="w-20 h-8">
                         <SelectValue />
                     </SelectTrigger>
@@ -412,7 +415,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     onRowSelect,
     virtualized,
     rowHeight = 36, // 默认行高度36px，与CSS保持一致
-    maxHeight = 600
+    maxHeight = 800 // 增加默认最大高度，支持大数据量显示
 }) => {
     // 简化的状态管理
     const [searchText, setSearchText] = useState('');
@@ -540,34 +543,55 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         });
     }, [data, filters]);
 
-    // 判断是否启用虚拟化
+    // 判断是否启用服务器端虚拟化滚动
     const shouldUseVirtualization = useMemo(() => {
         if (virtualized !== undefined) {
             return virtualized;
         }
 
-        // 处理"全部"选项（pageSize = -1）
+        // 处理"全部"选项（pageSize = -1）- 这是服务器端虚拟化的关键场景
         if (pageSize === -1) {
-            return filteredData.length > 500; // 全部数据超过500条时启用虚拟化
+            return true; // 全部数据时必须启用服务器端虚拟化
         }
 
         // 检测是否为服务器端分页模式
         const isServerSidePagination = pagination && filteredData.length <= pageSize && filteredData.length > 0 && pageSize > 0;
 
         if (isServerSidePagination) {
-            // 服务器端分页：基于用户设置的pageSize判断，而不是实际数据量
-            // 当用户设置的页面大小超过1000时启用虚拟化
+            // 服务器端分页：当用户设置的页面大小超过1000时启用服务器端虚拟化
             return pageSize > 1000;
         } else {
-            // 客户端分页或无分页：当总数据量超过500时启用虚拟化
+            // 客户端分页或无分页：当总数据量超过500时启用前端虚拟化
             return filteredData.length > 500;
         }
     }, [virtualized, filteredData.length, pagination, pageSize]);
 
+    // 服务器端虚拟化状态
+    const [virtualizedItems, setVirtualizedItems] = useState<any[]>([]);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const [hasMoreData, setHasMoreData] = useState(true);
+    const [virtualizedTotalCount, setVirtualizedTotalCount] = useState(0);
+
+    // 服务器端虚拟化：检测是否需要启用
+    const isServerSideVirtualization = useMemo(() => {
+        return shouldUseVirtualization && (pageSize === -1 || pageSize > 1000);
+    }, [shouldUseVirtualization, pageSize]);
+
     // 计算分页数据
     const paginatedData = useMemo(() => {
-        if (!pagination || shouldUseVirtualization || pageSize === -1) {
-            return filteredData; // 虚拟化模式或全部数据模式下返回全部数据
+        if (isServerSideVirtualization) {
+            // 服务器端虚拟化：使用实际数据，不使用虚拟化数组
+            // virtualizedItems是为了未来的动态加载功能预留的
+            return filteredData;
+        }
+
+        if (!pagination || pageSize === -1) {
+            return filteredData; // 全部数据模式下返回全部数据
+        }
+
+        if (shouldUseVirtualization) {
+            // 前端虚拟化模式：直接返回实际数据，让TableVirtuoso处理虚拟化
+            return filteredData;
         }
 
         // 检测是否为服务器端分页：如果数据量小于等于pageSize且大于0，认为是服务器端分页
@@ -582,7 +606,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
         return filteredData.slice(startIndex, endIndex);
-    }, [filteredData, pagination, currentPage, pageSize, shouldUseVirtualization]);
+    }, [isServerSideVirtualization, virtualizedItems, filteredData, pagination, currentPage, pageSize, shouldUseVirtualization]);
 
     // 处理分页变化
     const handlePageChange = useCallback((page: number) => {
@@ -606,9 +630,17 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     // 计算容器高度
     const containerHeight = useMemo(() => {
         if (shouldUseVirtualization) {
-            // 虚拟化模式：确保有足够的高度显示数据
+            // 虚拟化模式：使用更大的高度来显示大数据量
             const availableHeight = pagination ? maxHeight - 80 : maxHeight; // 为分页控件预留80px
-            return Math.max(500, availableHeight); // 虚拟化最小500px，确保能显示足够多的行
+
+            // 对于大数据量，使用更大的容器高度
+            if (paginatedData.length > 10000) {
+                return Math.max(800, availableHeight); // 大数据量时最小800px
+            } else if (paginatedData.length > 5000) {
+                return Math.max(700, availableHeight); // 中等数据量时最小700px
+            } else {
+                return Math.max(500, availableHeight); // 小数据量时最小500px
+            }
         } else {
             // 非虚拟化模式：根据数据量动态计算，为分页控件预留空间
             const availableHeight = pagination ? maxHeight - 80 : maxHeight;
@@ -756,7 +788,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         height: `${containerHeight}px`,
                                         minHeight: `${containerHeight}px`,
                                         maxHeight: `${containerHeight}px`,
-                                        overflow: 'auto', // 允许滚动，但主要由TableVirtuoso处理
+                                        overflow: 'hidden', // 让TableVirtuoso完全控制滚动
                                         position: 'relative'
                                     }}
                                 >
@@ -764,8 +796,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         ref={virtuosoRef}
                                         data={paginatedData}
                                         fixedItemHeight={rowHeight}
-                                        overscan={50}
+                                        overscan={20} // 减少overscan，提升大数据量性能
                                         useWindowScroll={false}
+                                        totalCount={paginatedData.length} // 明确指定总数据量
                                         className="virtualized-table virtualized-table-fixed-height"
                                         style={{
                                             height: '100%',

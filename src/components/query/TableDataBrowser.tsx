@@ -1513,7 +1513,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     loadDataWithPagination(page, pageSize);
   }, [currentPage, pageSize, loadDataWithPagination]);
 
-  // 处理页面大小变化 - 直接传递新参数
+  // 处理页面大小变化 - 支持服务器端虚拟化
   const handlePageSizeChange = useCallback((size: string) => {
     console.log('🔧 [TableDataBrowser] 页面大小变化:', {
       oldSize: pageSize,
@@ -1527,8 +1527,15 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     setPageSize(newSize);
     setCurrentPage(1);
 
-    // 直接使用新的分页参数执行数据加载，避免状态更新延迟
-    loadDataWithPagination(1, newSize);
+    // 对于"全部"选项，使用服务器端虚拟化：只加载第一批数据
+    if (newSize === -1) {
+      console.log('🔧 [TableDataBrowser] 启用服务器端虚拟化，加载第一批数据');
+      // 加载第一批数据（比如1000条）
+      loadDataWithPagination(1, 1000);
+    } else {
+      // 正常分页加载
+      loadDataWithPagination(1, newSize);
+    }
   }, [pageSize, currentPage, loadDataWithPagination]);
 
   // 处理搜索
@@ -1536,6 +1543,63 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     setCurrentPage(1);
     loadData();
   }, [loadData]);
+
+  // 服务器端虚拟化：加载更多数据
+  const loadMoreData = useCallback(async () => {
+    if (pageSize !== -1 || loading) {
+      return; // 只在"全部"模式下且不在加载中时才加载更多
+    }
+
+    console.log('🔧 [TableDataBrowser] 加载更多数据，当前数据量:', data.length);
+
+    try {
+      setLoading(true);
+
+      // 计算下一批数据的偏移量
+      const offset = data.length;
+      const batchSize = 1000; // 每次加载1000条
+
+      // 构建查询，添加LIMIT和OFFSET
+      const baseQuery = generateBaseQuery();
+      const query = `${baseQuery} LIMIT ${batchSize} OFFSET ${offset}`;
+
+      console.log('🔧 [TableDataBrowser] 加载更多数据查询:', query);
+
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
+        request: {
+          connection_id: connectionId,
+          database,
+          query,
+        },
+      });
+
+      if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
+        // 添加序号列
+        const offset_for_numbering = data.length;
+        result.data.forEach((record, index) => {
+          if (record && typeof record === 'object') {
+            (record as DataRow)['#'] = offset_for_numbering + index + 1;
+            (record as DataRow)._id = (record as DataRow)._id || `row_${offset_for_numbering + index}`;
+          }
+        });
+
+        // 追加新数据到现有数据
+        setData(prevData => [...prevData, ...(result.data || [])]);
+        setRawData(prevData => [...prevData, ...(result.data || [])]);
+
+        console.log('🔧 [TableDataBrowser] 成功加载更多数据:', {
+          新增数据量: result.data.length,
+          总数据量: data.length + result.data.length
+        });
+      } else {
+        console.log('🔧 [TableDataBrowser] 没有更多数据了');
+      }
+    } catch (error) {
+      console.error('🔧 [TableDataBrowser] 加载更多数据失败:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [pageSize, loading, data.length, generateBaseQuery, connectionId, database]);
 
   // 行点击处理函数
   const handleRowClick = useCallback(
