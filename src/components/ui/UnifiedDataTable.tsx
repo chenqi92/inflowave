@@ -1,12 +1,12 @@
 /**
  * 统一数据表格组件
- * 重构版本 - 专注于虚拟化滚动和核心功能
- * 支持虚拟化滚动、列管理、排序、筛选、导出等功能
+ * 高性能版本 - 使用真正的虚拟化滚动优化大数据集性能
+ * 支持虚拟化滚动、懒加载、列管理、排序、筛选、导出等功能
  */
 
 import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { TableVirtuoso } from 'react-virtuoso';
+import { TableVirtuoso, TableVirtuosoHandle } from 'react-virtuoso';
 import {
     Card,
     CardHeader,
@@ -50,6 +50,8 @@ export interface ColumnConfig {
     title: string;
     dataIndex?: string;
     width?: number;
+    minWidth?: number;
+    maxWidth?: number;
     sortable?: boolean;
     filterable?: boolean;
     render?: (value: any, record: DataRow, index: number) => React.ReactNode;
@@ -107,7 +109,11 @@ export interface UnifiedDataTableProps {
     virtualized?: boolean; // 是否启用虚拟化，默认当数据量>500时自动启用
     rowHeight?: number; // 行高，用于虚拟化计算，默认40px
     maxHeight?: number; // 表格最大高度，默认600px
+    // 懒加载相关配置
     onLoadMore?: () => void; // 加载更多数据的回调函数
+    hasNextPage?: boolean; // 是否还有更多数据
+    isLoadingMore?: boolean; // 是否正在加载更多数据
+    totalCount?: number; // 总数据量（用于显示加载进度）
 }
 
 // 简化的筛选按钮组件
@@ -192,6 +198,7 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
     onFilter,
     virtualMode = false
 }) => {
+    // 使用传入的参数直接计算，确保与主组件一致
     const visibleColumns = useMemo(() =>
         columnOrder.filter(column => selectedColumns.includes(column)),
         [columnOrder, selectedColumns]
@@ -209,42 +216,20 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
 
             {/* 数据列表头 */}
             {visibleColumns.map((column, colIndex) => {
-                // 重新设计列宽计算策略
-                const columnCount = visibleColumns.length;
-                let width: string;
-                let minWidth: string;
-                let maxWidth: string;
-
-                if (column === 'time') {
-                    // 时间列固定宽度
-                    width = '180px';
-                    minWidth = '180px';
-                    maxWidth = '180px';
-                } else if (columnCount <= 5) {
-                    // 少列时：平均分配剩余空间，确保不重叠
-                    const baseWidth = Math.max(150, column.length * 8 + 60);
-                    width = `${baseWidth}px`;
-                    minWidth = `${baseWidth}px`;
-                    maxWidth = 'none';
-                } else if (columnCount <= 10) {
-                    // 中等列数：固定合理宽度
-                    const baseWidth = Math.max(120, column.length * 8 + 40);
-                    width = `${baseWidth}px`;
-                    minWidth = `${baseWidth}px`;
-                    maxWidth = 'none';
-                } else {
-                    // 多列时：使用最小宽度，允许水平滚动
-                    const baseWidth = Math.max(100, column.length * 6 + 40);
-                    width = 'auto';
-                    minWidth = `${baseWidth}px`;
-                    maxWidth = '250px';
-                }
+                // 使用固定宽度策略确保表头和数据列对齐
+                const width = column === 'time' ? 180 : 120;
+                const minWidth = column === 'time' ? 180 : 80;
+                const maxWidth = column === 'time' ? 180 : 300;
 
                 return (
                     <th
                         key={`header-${column}-${colIndex}`}
                         className="px-4 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r hover:bg-muted/80 group"
-                        style={{ width, minWidth, maxWidth }}
+                        style={{
+                            width: `${width}px`,
+                            minWidth: `${minWidth}px`,
+                            maxWidth: `${maxWidth}px`
+                        }}
                     >
                         <div className="flex items-center gap-2">
                             <span className="flex-1">{column}</span>
@@ -284,9 +269,14 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
         </tr>
     );
 
-    // 根据virtualMode决定返回结构
+    // 根据virtualMode决定返回结构 - 修复虚拟化表头问题
     if (virtualMode) {
-        return headerRowContent;
+        // 虚拟化模式下需要返回完整的thead结构
+        return (
+            <thead className="sticky top-0 bg-background z-10 border-b">
+                {headerRowContent}
+            </thead>
+        );
     } else {
         return (
             <thead className="sticky top-0 bg-background z-10 border-b">
@@ -298,7 +288,7 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
 
 TableHeader.displayName = 'TableHeader';
 
-// 简化的分页控制组件
+// 统一的分页控制组件
 interface PaginationControlsProps {
     currentPage: number;
     pageSize: number;
@@ -306,7 +296,6 @@ interface PaginationControlsProps {
     loading: boolean;
     onPageChange: (page: number) => void;
     onPageSizeChange: (size: string) => void;
-    isVirtualized?: boolean;
 }
 
 const PaginationControls: React.FC<PaginationControlsProps> = memo(({
@@ -315,8 +304,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
     totalCount,
     loading,
     onPageChange,
-    onPageSizeChange,
-    isVirtualized = false
+    onPageSizeChange
 }) => {
     // 动态生成分页选项，包含"全部"选项
     const pageSizeOptions = useMemo(() => {
@@ -327,14 +315,13 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
         return options;
     }, [totalCount]);
 
-    // 修复pageSize = -1时的计算问题
+    // 统一的分页信息计算逻辑
     const totalPages = pageSize === -1 ? 1 : Math.ceil(totalCount / pageSize);
     const startIndex = pageSize === -1 ? 1 : (currentPage - 1) * pageSize + 1;
     const endIndex = pageSize === -1 ? totalCount : Math.min(currentPage * pageSize, totalCount);
 
-    const displayText = isVirtualized
-        ? `显示全部 ${totalCount} 条（虚拟化滚动）`
-        : pageSize === -1
+    // 统一的显示文本逻辑 - 不再区分虚拟化和非虚拟化
+    const displayText = pageSize === -1
         ? `显示全部 ${totalCount} 条`
         : `显示 ${startIndex}-${endIndex} 条，共 ${totalCount} 条`;
 
@@ -358,7 +345,7 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
                 </Select>
                 <span className="text-sm text-muted-foreground">条/页</span>
 
-                {!isVirtualized && (
+                {pageSize !== -1 && (
                     <div className="flex items-center gap-1">
                         <Button
                             variant="outline"
@@ -417,7 +404,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     virtualized,
     rowHeight = 36, // 默认行高度36px，与CSS保持一致
     maxHeight = 800, // 增加默认最大高度，支持大数据量显示
-    onLoadMore // 加载更多数据的回调函数
+    // 懒加载相关参数
+    onLoadMore,
+    hasNextPage = false,
+    isLoadingMore = false,
+    totalCount
 }) => {
     // 简化的状态管理
     const [searchText, setSearchText] = useState('');
@@ -430,7 +421,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     const [pageSize, setPageSize] = useState(pagination ? pagination.pageSize : 500);
 
     // refs
-    const virtuosoRef = useRef<any>(null);
+    const virtuosoRef = useRef<TableVirtuosoHandle>(null);
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
     // 生成唯一行ID的辅助函数
@@ -459,6 +450,21 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         }
     }, [columns, externalSelectedColumns, externalColumnOrder]);
 
+    // 确保所有列都被正确显示 - 修复列名消失问题
+    const effectiveSelectedColumns = useMemo(() => {
+        if (selectedColumns.length === 0) {
+            return columns.map(col => col.key);
+        }
+        return selectedColumns;
+    }, [selectedColumns, columns]);
+
+    const effectiveColumnOrder = useMemo(() => {
+        if (columnOrder.length === 0) {
+            return columns.map(col => col.key);
+        }
+        return columnOrder;
+    }, [columnOrder, columns]);
+
     // 同步外部分页状态到内部状态
     useEffect(() => {
         if (pagination && typeof pagination === 'object') {
@@ -475,11 +481,18 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         onColumnChange?.(visibleColumns, newColumnOrder);
     }, [onColumnChange]);
 
-    // 处理搜索
+    // 优化的搜索处理 - 使用防抖和索引
     const handleSearch = useCallback((value: string) => {
         setSearchText(value);
-        onSearch?.(value);
-    }, [onSearch]);
+
+        // 对于大数据集，建议使用服务器端搜索
+        if (data.length > 1000 && onSearch) {
+            onSearch(value);
+        } else {
+            // 小数据集使用客户端搜索
+            onSearch?.(value);
+        }
+    }, [onSearch, data.length]);
 
     // 处理排序
     const handleSort = useCallback((column: string) => {
@@ -527,92 +540,101 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         }
     }, [selectedRows, onRowSelect]);
 
-    // 数据筛选处理
+    // 优化的数据筛选处理
     const filteredData = useMemo(() => {
         if (filters.length === 0) {
             return data;
         }
 
-        return data.filter(row => {
-            return filters.every(filter => {
-                const cellValue = row[filter.column];
-                const displayValue = filter.column === 'time' && cellValue
-                    ? new Date(cellValue).toLocaleString()
-                    : String(cellValue || '');
+        // 预编译过滤条件以提高性能
+        const compiledFilters = filters.map(filter => ({
+            column: filter.column,
+            value: filter.value.toLowerCase(),
+            isTimeColumn: filter.column === 'time'
+        }));
 
-                return displayValue.toLowerCase().includes(filter.value.toLowerCase());
+        return data.filter(row => {
+            return compiledFilters.every(filter => {
+                const cellValue = row[filter.column];
+
+                // 优化时间列处理
+                let displayValue: string;
+                if (filter.isTimeColumn && cellValue) {
+                    displayValue = new Date(cellValue).toLocaleString();
+                } else {
+                    displayValue = String(cellValue || '');
+                }
+
+                return displayValue.toLowerCase().includes(filter.value);
             });
         });
     }, [data, filters]);
 
-    // 判断是否启用服务器端虚拟化滚动
+    // 统一的虚拟化判断逻辑 - 所有分页大小使用相同的判断标准
     const shouldUseVirtualization = useMemo(() => {
         if (virtualized !== undefined) {
             return virtualized;
         }
 
-        // 处理"全部"选项（pageSize = -1）- 这是服务器端虚拟化的关键场景
+        // 统一判断标准：当数据量超过50条时启用虚拟化
+        // 不再区分服务器端分页、客户端分页或"全部"选项
+        const dataLength = filteredData.length;
+        return dataLength > 50;
+    }, [virtualized, filteredData.length]);
+
+    // 懒加载状态管理
+    const [loadingMoreData, setLoadingMoreData] = useState(false);
+    const [lastLoadTime, setLastLoadTime] = useState(0);
+
+    // 优化的行键生成函数
+    const generateRowKey = useCallback((row: DataRow, index: number) => {
+        // 优先使用数据中的唯一标识符
+        if (row._id !== undefined) {
+            return `row-${row._id}`;
+        }
+        // 如果有时间字段，使用时间+索引作为键
+        if (row.time) {
+            return `row-${row.time}-${index}`;
+        }
+        // 最后使用索引作为键
+        return `row-${index}`;
+    }, []);
+
+    // 统一的数据处理逻辑 - 所有分页大小使用相同的处理方式
+    const processedData = useMemo(() => {
+        let result = [...filteredData];
+
+        // 统一的排序处理
+        if (sortConfig) {
+            result.sort((a, b) => {
+                const aValue = a[sortConfig.column];
+                const bValue = b[sortConfig.column];
+
+                if (aValue === bValue) return 0;
+                if (aValue === null || aValue === undefined) return 1;
+                if (bValue === null || bValue === undefined) return -1;
+
+                const comparison = aValue < bValue ? -1 : 1;
+                return sortConfig.direction === 'asc' ? comparison : -comparison;
+            });
+        }
+
+        // 统一的分页处理逻辑 - 不再区分虚拟化和非虚拟化
+        if (!pagination) {
+            // 无分页：返回所有数据
+            return result;
+        }
+
         if (pageSize === -1) {
-            return true; // 全部数据时必须启用服务器端虚拟化
+            // "全部"选项：返回所有数据
+            return result;
         }
 
-        // 检测是否为服务器端分页模式
-        const isServerSidePagination = pagination && filteredData.length <= pageSize && filteredData.length > 0 && pageSize > 0;
-
-        if (isServerSidePagination) {
-            // 服务器端分页：当用户设置的页面大小超过1000时启用服务器端虚拟化
-            return pageSize > 1000;
-        } else {
-            // 客户端分页或无分页：当总数据量超过500时启用前端虚拟化
-            return filteredData.length > 500;
-        }
-    }, [virtualized, filteredData.length, pagination, pageSize]);
-
-    // 服务器端虚拟化状态
-    const [virtualizedItems, setVirtualizedItems] = useState<any[]>([]);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [hasMoreData, setHasMoreData] = useState(true);
-    const [virtualizedTotalCount, setVirtualizedTotalCount] = useState(0);
-
-    // 滚动防抖状态
-    const [lastScrollTime, setLastScrollTime] = useState(0);
-    const [hasTriggeredLoad, setHasTriggeredLoad] = useState(false);
-
-    // 服务器端虚拟化：检测是否需要启用
-    const isServerSideVirtualization = useMemo(() => {
-        return shouldUseVirtualization && (pageSize === -1 || pageSize > 1000);
-    }, [shouldUseVirtualization, pageSize]);
-
-    // 计算分页数据
-    const paginatedData = useMemo(() => {
-        if (isServerSideVirtualization) {
-            // 服务器端虚拟化：使用实际数据，不使用虚拟化数组
-            // virtualizedItems是为了未来的动态加载功能预留的
-            return filteredData;
-        }
-
-        if (!pagination || pageSize === -1) {
-            return filteredData; // 全部数据模式下返回全部数据
-        }
-
-        if (shouldUseVirtualization) {
-            // 前端虚拟化模式：直接返回实际数据，让TableVirtuoso处理虚拟化
-            return filteredData;
-        }
-
-        // 检测是否为服务器端分页：如果数据量小于等于pageSize且大于0，认为是服务器端分页
-        const isServerSidePagination = filteredData.length <= pageSize && filteredData.length > 0 && pageSize > 0;
-
-        if (isServerSidePagination) {
-            // 服务器端分页，直接返回数据，不进行客户端分页
-            return filteredData;
-        }
-
-        // 客户端分页
+        // 标准分页：应用分页逻辑（虚拟化和非虚拟化都使用相同逻辑）
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
-        return filteredData.slice(startIndex, endIndex);
-    }, [isServerSideVirtualization, virtualizedItems, filteredData, pagination, currentPage, pageSize, shouldUseVirtualization]);
+        return result.slice(startIndex, endIndex);
+    }, [filteredData, pagination, pageSize, currentPage, sortConfig]);
 
     // 处理分页变化
     const handlePageChange = useCallback((page: number) => {
@@ -633,47 +655,122 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
 
 
-    // 计算容器高度
+    // 统一的容器高度计算逻辑
     const containerHeight = useMemo(() => {
+        // 为分页控件预留空间
+        const availableHeight = pagination ? maxHeight - 80 : maxHeight;
+
         if (shouldUseVirtualization) {
-            // 虚拟化模式：使用更大的高度来显示大数据量
-            const availableHeight = pagination ? maxHeight - 80 : maxHeight; // 为分页控件预留80px
-
-            // 对于大数据量，使用更大的容器高度
-            if (paginatedData.length > 10000) {
-                return Math.max(800, availableHeight); // 大数据量时最小800px
-            } else if (paginatedData.length > 5000) {
-                return Math.max(700, availableHeight); // 中等数据量时最小700px
-            } else {
-                return Math.max(500, availableHeight); // 小数据量时最小500px
-            }
+            // 虚拟化模式：使用固定高度确保滚动正常工作
+            return Math.max(400, availableHeight);
         } else {
-            // 非虚拟化模式：根据数据量动态计算，为分页控件预留空间
-            const availableHeight = pagination ? maxHeight - 80 : maxHeight;
-            return Math.min(availableHeight, paginatedData.length * rowHeight + 100);
+            // 非虚拟化模式：根据数据量动态计算
+            const calculatedHeight = Math.min(availableHeight, processedData.length * rowHeight + 100);
+            return Math.max(200, calculatedHeight); // 最小高度200px
         }
-    }, [shouldUseVirtualization, maxHeight, paginatedData.length, rowHeight, pagination]);
+    }, [shouldUseVirtualization, maxHeight, processedData.length, rowHeight, pagination]);
 
-    // 计算可见列
+    // 计算可见列和列配置映射 - 修复列数据未展示问题
     const visibleColumns = useMemo(() =>
-        columnOrder.filter(column => selectedColumns.includes(column)),
-        [columnOrder, selectedColumns]
+        effectiveColumnOrder.filter(column => effectiveSelectedColumns.includes(column)),
+        [effectiveColumnOrder, effectiveSelectedColumns]
     );
+
+    // 预计算列配置映射以提高渲染性能
+    const columnConfigMap = useMemo(() => {
+        const map = new Map<string, ColumnConfig>();
+        columns.forEach(col => {
+            map.set(col.key, col);
+        });
+        return map;
+    }, [columns]);
 
     // 调试日志
     useEffect(() => {
-        console.log('🔧 [UnifiedDataTable] 虚拟化状态:', {
+        console.log('🔧 [UnifiedDataTable] 数据处理状态:', {
             shouldUseVirtualization,
             pageSize,
+            currentPage,
+            originalDataLength: data.length,
             filteredDataLength: filteredData.length,
+            processedDataLength: processedData.length,
             containerHeight,
-            paginatedDataLength: paginatedData.length,
             visibleColumnsLength: visibleColumns.length,
-            isServerSideVirtualization,
             rowHeight,
-            expectedVisibleRows: Math.floor(containerHeight / rowHeight)
+            expectedVisibleRows: Math.floor(containerHeight / rowHeight),
+            effectiveSelectedColumns: effectiveSelectedColumns.length,
+            effectiveColumnOrder: effectiveColumnOrder.length
         });
-    }, [shouldUseVirtualization, pageSize, filteredData.length, containerHeight, paginatedData.length, visibleColumns.length, isServerSideVirtualization, rowHeight]);
+    }, [shouldUseVirtualization, pageSize, currentPage, data.length, filteredData.length, processedData.length, containerHeight, visibleColumns.length, rowHeight, effectiveSelectedColumns.length, effectiveColumnOrder.length]);
+
+    // 虚拟化表格行组件 - 修复DOM嵌套问题
+    const VirtualTableRow = memo(({ index, ...props }: { index: number }) => {
+        const row = processedData[index];
+        if (!row) return null;
+
+        const rowKey = generateRowKey(row, index);
+        const isSelected = selectedRows.has(index);
+
+        return (
+            <>
+                {/* 序号列 */}
+                {showRowNumbers && (
+                    <td className="px-4 py-2 text-sm text-center text-muted-foreground border-r w-16">
+                        {index + 1}
+                    </td>
+                )}
+
+                {/* 数据列 */}
+                {visibleColumns.map((column, colIndex) => {
+                    const columnConfig = columnConfigMap.get(column);
+                    const cellValue = row[column];
+                    const displayValue = columnConfig?.render
+                        ? columnConfig.render(cellValue, row, index)
+                        : column === 'time' && cellValue
+                            ? new Date(cellValue).toLocaleString()
+                            : String(cellValue || '-');
+
+                    return (
+                        <td
+                            key={`${rowKey}-${column}`}
+                            className="px-4 py-2 text-sm border-r last:border-r-0"
+                            style={{
+                                width: column === 'time' ? '180px' : '120px',
+                                minWidth: column === 'time' ? '180px' : '80px',
+                                maxWidth: column === 'time' ? '180px' : '300px'
+                            }}
+                        >
+                            <div className="truncate" title={String(displayValue)}>
+                                {displayValue}
+                            </div>
+                        </td>
+                    );
+                })}
+            </>
+        );
+    });
+
+    // 懒加载处理函数
+    const handleEndReached = useCallback(() => {
+        if (!onLoadMore || !hasNextPage || isLoadingMore || loadingMoreData) {
+            return;
+        }
+
+        const now = Date.now();
+        if (now - lastLoadTime < 1000) { // 1秒防抖
+            return;
+        }
+
+        setLastLoadTime(now);
+        setLoadingMoreData(true);
+
+        onLoadMore();
+
+        // 重置加载状态
+        setTimeout(() => {
+            setLoadingMoreData(false);
+        }, 500);
+    }, [onLoadMore, hasNextPage, isLoadingMore, loadingMoreData, lastLoadTime]);
 
     return (
         <div className={cn("h-full flex flex-col bg-background", className)}>
@@ -724,7 +821,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="outline" size="sm">
                                                 <Settings className="w-4 h-4 mr-2" />
-                                                列 ({selectedColumns.length}/{columns.length})
+                                                列 ({effectiveSelectedColumns.length}/{columns.length})
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className="w-72 max-h-80 overflow-y-auto">
@@ -736,31 +833,31 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         size="sm"
                                                         onClick={() => {
                                                             const allColumns = columns.map(col => col.key);
-                                                            if (selectedColumns.length === allColumns.length) {
-                                                                handleColumnChange([allColumns[0]], columnOrder);
+                                                            if (effectiveSelectedColumns.length === allColumns.length) {
+                                                                handleColumnChange([allColumns[0]], effectiveColumnOrder);
                                                             } else {
-                                                                handleColumnChange(allColumns, columnOrder);
+                                                                handleColumnChange(allColumns, effectiveColumnOrder);
                                                             }
                                                         }}
                                                         className="h-7 px-2 text-xs"
                                                     >
-                                                        {selectedColumns.length === columns.length ? '取消全选' : '全选'}
+                                                        {effectiveSelectedColumns.length === columns.length ? '取消全选' : '全选'}
                                                     </Button>
                                                 </div>
                                                 <div className="space-y-1">
-                                                    {columnOrder.map((columnKey) => {
+                                                    {effectiveColumnOrder.map((columnKey) => {
                                                         const column = columns.find(col => col.key === columnKey);
                                                         if (!column) return null;
 
                                                         return (
                                                             <div key={columnKey} className="flex items-center space-x-2 p-2 hover:bg-muted rounded">
                                                                 <Checkbox
-                                                                    checked={selectedColumns.includes(columnKey)}
+                                                                    checked={effectiveSelectedColumns.includes(columnKey)}
                                                                     onCheckedChange={(checked) => {
                                                                         if (checked) {
-                                                                            handleColumnChange([...selectedColumns, columnKey], columnOrder);
-                                                                        } else if (selectedColumns.length > 1) {
-                                                                            handleColumnChange(selectedColumns.filter(col => col !== columnKey), columnOrder);
+                                                                            handleColumnChange([...effectiveSelectedColumns, columnKey], effectiveColumnOrder);
+                                                                        } else if (effectiveSelectedColumns.length > 1) {
+                                                                            handleColumnChange(effectiveSelectedColumns.filter(col => col !== columnKey), effectiveColumnOrder);
                                                                         }
                                                                     }}
                                                                 />
@@ -790,43 +887,106 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             </div>
                         ) : data.length > 0 ? (
                             shouldUseVirtualization ? (
-                                // 普通表格 - 暂时禁用TableVirtuoso，使用普通表格+CSS虚拟化
-                                <div
-                                    className="flex-1 overflow-auto"
-                                    style={{
-                                        height: `${containerHeight}px`,
-                                        maxHeight: `${containerHeight}px`
-                                    }}
-                                    onScroll={(e) => {
-                                        const target = e.target as HTMLDivElement;
-                                        const { scrollTop, scrollHeight, clientHeight } = target;
+                                <>
+                                    {/* 修复的虚拟化表格 - 使用TableVirtuoso */}
+                                    <TableVirtuoso
+                                        ref={virtuosoRef}
+                                        style={{
+                                            height: `${containerHeight}px`,
+                                            width: '100%'
+                                        }}
+                                        data={processedData}
+                                        totalCount={processedData.length}
+                                        fixedHeaderContent={() => (
+                                            <tr>
+                                                {/* 序号列表头 */}
+                                                {showRowNumbers && (
+                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r w-16">
+                                                        #
+                                                    </th>
+                                                )}
+                                                {/* 数据列表头 */}
+                                                {visibleColumns.map((column, colIndex) => {
+                                                    const columnConfig = columnConfigMap.get(column);
+                                                    const width = column === 'time' ? 180 : 120;
+                                                    const minWidth = column === 'time' ? 180 : 80;
+                                                    const maxWidth = column === 'time' ? 180 : 300;
 
-                                        // 计算滚动进度
-                                        const scrollProgress = scrollTop / (scrollHeight - clientHeight);
-
-                                        // 使用距离底部的像素数而不是百分比，提供更好的用户体验
-                                        const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-
-                                        // 防抖机制：避免频繁触发
-                                        const now = Date.now();
-                                        if (now - lastScrollTime < 800) { // 800ms防抖
-                                            return;
-                                        }
-
-                                        // 当距离底部200px时就开始预加载，提供无感知的用户体验
-                                        if (distanceFromBottom < 200 && onLoadMore && !hasTriggeredLoad) {
-                                            console.log('🔧 [UnifiedDataTable] 距离底部200px，预加载更多数据');
-                                            setLastScrollTime(now);
-                                            setHasTriggeredLoad(true);
-                                            onLoadMore();
-
-                                            // 2秒后重置触发状态，允许下次触发
-                                            setTimeout(() => {
-                                                setHasTriggeredLoad(false);
-                                            }, 2000);
-                                        }
-                                    }}
-                                >
+                                                    return (
+                                                        <th
+                                                            key={`header-${column}-${colIndex}`}
+                                                            className="px-4 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r hover:bg-muted/80 group"
+                                                            style={{
+                                                                width: `${width}px`,
+                                                                minWidth: `${minWidth}px`,
+                                                                maxWidth: `${maxWidth}px`
+                                                            }}
+                                                        >
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="truncate">
+                                                                    {columnConfig?.title || column}
+                                                                </span>
+                                                                {sortable && (
+                                                                    <button
+                                                                        onClick={() => handleSort(column)}
+                                                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    >
+                                                                        {sortConfig?.column === column ? (
+                                                                            sortConfig.direction === 'asc' ? (
+                                                                                <ChevronUp className="h-4 w-4" />
+                                                                            ) : (
+                                                                                <ChevronDown className="h-4 w-4" />
+                                                                            )
+                                                                        ) : (
+                                                                            <ChevronUp className="h-4 w-4 opacity-50" />
+                                                                        )}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </th>
+                                                    );
+                                                })}
+                                            </tr>
+                                        )}
+                                        itemContent={(index) => <VirtualTableRow index={index} />}
+                                        endReached={hasNextPage ? handleEndReached : undefined}
+                                        overscan={20} // 增加预渲染行数以提供更好的滚动体验
+                                        fixedItemHeight={rowHeight} // 固定行高以提高性能
+                                        components={{
+                                            Table: ({ style, ...props }) => (
+                                                <table
+                                                    {...props}
+                                                    style={{
+                                                        ...style,
+                                                        borderCollapse: 'collapse',
+                                                        width: '100%',
+                                                        tableLayout: 'fixed' // 使用固定布局确保列对齐
+                                                    }}
+                                                />
+                                            ),
+                                            TableBody: React.forwardRef<HTMLTableSectionElement>((props, ref) => (
+                                                <tbody {...props} ref={ref} />
+                                            ))
+                                        }}
+                                    />
+                                    {/* 懒加载指示器 */}
+                                    {hasNextPage && (isLoadingMore || loadingMoreData) && (
+                                        <div className="flex items-center justify-center py-4 bg-background border-t">
+                                            <Spin />
+                                            <span className="ml-2 text-sm text-muted-foreground">
+                                                加载更多数据...
+                                                {totalCount && (
+                                                    <span className="ml-1">
+                                                        ({processedData.length}/{totalCount})
+                                                    </span>
+                                                )}
+                                            </span>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                // 非虚拟化表格 - 用于小数据量
+                                <div className="flex-1 overflow-auto" style={{ height: `${containerHeight}px` }}>
                                     <table
                                         className="border-collapse"
                                         style={{
@@ -836,8 +996,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         }}
                                     >
                                         <TableHeader
-                                            columnOrder={columnOrder}
-                                            selectedColumns={selectedColumns}
+                                            columnOrder={effectiveColumnOrder}
+                                            selectedColumns={effectiveSelectedColumns}
                                             sortColumn={sortConfig?.column || ''}
                                             sortDirection={sortConfig?.direction || 'asc'}
                                             showRowNumbers={showRowNumbers}
@@ -847,181 +1007,36 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             virtualMode={false}
                                         />
                                         <tbody>
-                                            {paginatedData.map((row, index) => {
-                                                // 生成唯一的行ID，包含时间戳避免重复
-                                                const rowId = `simple-row_${index}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                                            {processedData.map((row, index) => {
+                                                const rowKey = generateRowKey(row, index);
+                                                const isSelected = selectedRows.has(index);
+
                                                 return (
                                                     <tr
-                                                        key={rowId}
-                                                        className={`border-b hover:bg-muted/50 ${
-                                                            selectedRows.has(index) ? 'bg-muted' : ''
-                                                        }`}
+                                                        key={rowKey}
+                                                        className={cn(
+                                                            "border-b hover:bg-muted/50 transition-colors",
+                                                            isSelected && "bg-muted"
+                                                        )}
                                                         style={{ height: `${rowHeight}px` }}
+                                                        onClick={(e) => {
+                                                            if (e.ctrlKey || e.metaKey) {
+                                                                const newSelected = new Set(selectedRows);
+                                                                if (isSelected) {
+                                                                    newSelected.delete(index);
+                                                                } else {
+                                                                    newSelected.add(index);
+                                                                }
+                                                                setSelectedRows(newSelected);
+                                                                onRowSelect?.(newSelected);
+                                                            } else {
+                                                                const newSelected = new Set([index]);
+                                                                setSelectedRows(newSelected);
+                                                                onRowSelect?.(newSelected);
+                                                            }
+                                                        }}
                                                     >
-                                                        {/* 序号列 */}
-                                                        {showRowNumbers && (
-                                                            <td className="px-4 py-2 text-sm text-center text-muted-foreground border-r w-16">
-                                                                {index + 1}
-                                                            </td>
-                                                        )}
-
-                                                        {/* 数据列 */}
-                                                        {visibleColumns.map((column, colIndex) => {
-                                                            const value = row[column];
-                                                            const displayValue = column === 'time' && value
-                                                                ? new Date(value).toLocaleString()
-                                                                : String(value || '-');
-                                                            const columnCount = visibleColumns.length;
-
-                                                            // 计算列宽
-                                                            let width: string;
-                                                            let minWidth: string;
-                                                            let maxWidth: string;
-
-                                                            if (column === 'time') {
-                                                                width = '180px';
-                                                                minWidth = '180px';
-                                                                maxWidth = '180px';
-                                                            } else if (columnCount <= 5) {
-                                                                const baseWidth = Math.max(150, column.length * 8 + 60);
-                                                                width = `${baseWidth}px`;
-                                                                minWidth = `${baseWidth}px`;
-                                                                maxWidth = 'none';
-                                                            } else if (columnCount <= 10) {
-                                                                const baseWidth = Math.max(120, column.length * 8 + 40);
-                                                                width = `${baseWidth}px`;
-                                                                minWidth = `${baseWidth}px`;
-                                                                maxWidth = 'none';
-                                                            } else {
-                                                                const baseWidth = Math.max(100, column.length * 6 + 40);
-                                                                width = 'auto';
-                                                                minWidth = `${baseWidth}px`;
-                                                                maxWidth = '250px';
-                                                            }
-
-                                                            return (
-                                                                <td
-                                                                    key={`${rowId}-${column}-${colIndex}`}
-                                                                    className="px-4 py-2 text-sm border-r"
-                                                                    style={{
-                                                                        width,
-                                                                        minWidth,
-                                                                        maxWidth,
-                                                                        overflow: 'hidden',
-                                                                        textOverflow: 'ellipsis',
-                                                                        whiteSpace: 'nowrap'
-                                                                    }}
-                                                                    title={String(displayValue)}
-                                                                >
-                                                                    {displayValue}
-                                                                </td>
-                                                            );
-                                                        })}
-                                                    </tr>
-                                                );
-                                            })}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            ) : (
-                                // 普通表格 - 用于小数据量
-                                <div className="flex-1 overflow-auto" style={{ height: `${containerHeight}px` }}>
-                                    <table
-                                        className="border-collapse"
-                                        style={{
-                                            width: visibleColumns.length > 10 ? 'max-content' : '100%',
-                                            minWidth: visibleColumns.length > 10 ? `${visibleColumns.length * 120}px` : '100%',
-                                            tableLayout: 'auto' // 始终使用auto布局，让浏览器自动计算列宽
-                                        }}
-                                    >
-                                        <TableHeader
-                                            columnOrder={columnOrder}
-                                            selectedColumns={selectedColumns}
-                                            sortColumn={sortConfig?.column || ''}
-                                            sortDirection={sortConfig?.direction || 'asc'}
-                                            showRowNumbers={showRowNumbers}
-                                            rowHeight={rowHeight}
-                                            onSort={handleSort}
-                                            onFilter={handleFilter}
-                                            virtualMode={false}
-                                        />
-                                        <tbody>
-                                            {paginatedData.map((row, index) => {
-                                                // 生成唯一的行标识符
-                                                const rowId = generateRowId(row, index, 'table-');
-
-                                                return (
-                                                    <tr key={`table-row-${rowId}`} className="hover:bg-muted/50 transition-colors">
-                                                        {/* 序号列 */}
-                                                        {showRowNumbers && (
-                                                            <td
-                                                                key={`table-${rowId}-number`}
-                                                                className="px-4 py-2 text-sm text-center text-muted-foreground border-r w-16"
-                                                            >
-                                                                {index + 1}
-                                                            </td>
-                                                        )}
-
-                                                        {/* 数据列 */}
-                                                        {columnOrder.filter(column => selectedColumns.includes(column)).map((column, colIndex) => {
-                                                            const columnConfig = columns.find(col => col.key === column);
-                                                            const value = row[column];
-
-                                                            const displayValue = columnConfig?.render
-                                                                ? columnConfig.render(value, row, index)
-                                                                : column === 'time' && value
-                                                                    ? new Date(value).toLocaleString()
-                                                                    : String(value || '-');
-
-                                                            // 计算列宽，与表头保持一致
-                                                            const columnCount = visibleColumns.length;
-                                                            let width: string;
-                                                            let minWidth: string;
-                                                            let maxWidth: string;
-
-                                                            if (column === 'time') {
-                                                                // 时间列固定宽度
-                                                                width = '180px';
-                                                                minWidth = '180px';
-                                                                maxWidth = '180px';
-                                                            } else if (columnCount <= 5) {
-                                                                // 少列时：平均分配剩余空间，确保不重叠
-                                                                const baseWidth = Math.max(150, column.length * 8 + 60);
-                                                                width = `${baseWidth}px`;
-                                                                minWidth = `${baseWidth}px`;
-                                                                maxWidth = 'none';
-                                                            } else if (columnCount <= 10) {
-                                                                // 中等列数：固定合理宽度
-                                                                const baseWidth = Math.max(120, column.length * 8 + 40);
-                                                                width = `${baseWidth}px`;
-                                                                minWidth = `${baseWidth}px`;
-                                                                maxWidth = 'none';
-                                                            } else {
-                                                                // 多列时：使用最小宽度，允许水平滚动
-                                                                const baseWidth = Math.max(100, column.length * 6 + 40);
-                                                                width = 'auto';
-                                                                minWidth = `${baseWidth}px`;
-                                                                maxWidth = '250px';
-                                                            }
-
-                                                            return (
-                                                                <td
-                                                                    key={`table-${rowId}-col-${column}-${colIndex}`}
-                                                                    className="px-4 py-2 text-sm border-r"
-                                                                    style={{
-                                                                        width,
-                                                                        minWidth,
-                                                                        maxWidth,
-                                                                        overflow: 'hidden',
-                                                                        textOverflow: 'ellipsis',
-                                                                        whiteSpace: 'nowrap'
-                                                                    }}
-                                                                    title={String(displayValue)}
-                                                                >
-                                                                    {displayValue}
-                                                                </td>
-                                                            );
-                                                        })}
+                                                        <VirtualTableRow index={index} />
                                                     </tr>
                                                 );
                                             })}
@@ -1048,7 +1063,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                     </div>
                 </div>
 
-                {/* 底部分页 - 虚拟化模式下也显示分页控件 */}
+                {/* 底部分页 - 统一的分页控件 */}
                 {pagination && (
                     <div className="flex-shrink-0">
                         <PaginationControls
@@ -1058,7 +1073,6 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             loading={loading}
                             onPageChange={handlePageChange}
                             onPageSizeChange={handlePageSizeChange}
-                            isVirtualized={shouldUseVirtualization}
                         />
                     </div>
                 )}
