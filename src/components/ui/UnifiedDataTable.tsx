@@ -209,7 +209,10 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
         <tr className="border-b transition-colors hover:bg-muted/50">
             {/* 序号列表头 */}
             {showRowNumbers && (
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r w-16">
+                <th
+                    className="px-6 py-3 text-center text-sm font-medium text-muted-foreground bg-muted border-r"
+                    style={{ width: '80px', minWidth: '80px' }}
+                >
                     #
                 </th>
             )}
@@ -217,22 +220,19 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
             {/* 数据列表头 */}
             {visibleColumns.map((column, colIndex) => {
                 // 使用固定宽度策略确保表头和数据列对齐
-                const width = column === 'time' ? 180 : 120;
-                const minWidth = column === 'time' ? 180 : 80;
-                const maxWidth = column === 'time' ? 180 : 300;
+                const width = column === 'time' ? 200 : 150;
 
                 return (
                     <th
                         key={`header-${column}-${colIndex}`}
-                        className="px-4 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r hover:bg-muted/80 group"
+                        className="px-6 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r hover:bg-muted/80 group"
                         style={{
                             width: `${width}px`,
-                            minWidth: `${minWidth}px`,
-                            maxWidth: `${maxWidth}px`
+                            minWidth: `${width}px`
                         }}
                     >
-                        <div className="flex items-center gap-2">
-                            <span className="flex-1">{column}</span>
+                        <div className="flex items-center gap-3">
+                            <span className="flex-1 truncate" title={column}>{column}</span>
 
                             {/* 排序按钮 */}
                             <Button
@@ -600,7 +600,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         return `row-${index}`;
     }, []);
 
-    // 统一的数据处理逻辑 - 所有分页大小使用相同的处理方式
+    // 统一的数据处理逻辑 - 虚拟化和非虚拟化使用不同的处理方式
     const processedData = useMemo(() => {
         let result = [...filteredData];
 
@@ -619,7 +619,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             });
         }
 
-        // 统一的分页处理逻辑 - 不再区分虚拟化和非虚拟化
+        // 虚拟化表格：显示所有数据，不进行分页切片
+        if (shouldUseVirtualization) {
+            return result;
+        }
+
+        // 非虚拟化表格：应用分页逻辑
         if (!pagination) {
             // 无分页：返回所有数据
             return result;
@@ -630,11 +635,11 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             return result;
         }
 
-        // 标准分页：应用分页逻辑（虚拟化和非虚拟化都使用相同逻辑）
+        // 标准分页：应用分页逻辑
         const startIndex = (currentPage - 1) * pageSize;
         const endIndex = startIndex + pageSize;
         return result.slice(startIndex, endIndex);
-    }, [filteredData, pagination, pageSize, currentPage, sortConfig]);
+    }, [filteredData, pagination, pageSize, currentPage, sortConfig, shouldUseVirtualization]);
 
     // 处理分页变化
     const handlePageChange = useCallback((page: number) => {
@@ -699,9 +704,20 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             rowHeight,
             expectedVisibleRows: Math.floor(containerHeight / rowHeight),
             effectiveSelectedColumns: effectiveSelectedColumns.length,
-            effectiveColumnOrder: effectiveColumnOrder.length
+            effectiveColumnOrder: effectiveColumnOrder.length,
+            maxHeight,
+            pagination: !!pagination
         });
-    }, [shouldUseVirtualization, pageSize, currentPage, data.length, filteredData.length, processedData.length, containerHeight, visibleColumns.length, rowHeight, effectiveSelectedColumns.length, effectiveColumnOrder.length]);
+
+        // 虚拟化专用调试
+        if (shouldUseVirtualization) {
+            console.log('🎯 [UnifiedDataTable] 虚拟化配置:', {
+                processedDataSample: processedData.slice(0, 3),
+                visibleColumnsSample: visibleColumns.slice(0, 5),
+                virtuosoRefCurrent: !!virtuosoRef.current
+            });
+        }
+    }, [shouldUseVirtualization, pageSize, currentPage, data.length, filteredData.length, processedData.length, containerHeight, visibleColumns.length, rowHeight, effectiveSelectedColumns.length, effectiveColumnOrder.length, maxHeight, pagination, processedData, visibleColumns]);
 
     // 非虚拟化表格行组件 - 返回完整的tr元素
     const NonVirtualTableRow = memo(({ index, ...props }: { index: number }) => {
@@ -723,7 +739,10 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             >
                 {/* 序号列 */}
                 {showRowNumbers && (
-                    <td className="px-4 py-2 text-sm text-center text-muted-foreground border-r w-16">
+                    <td
+                        className="px-6 py-2 text-sm text-center text-muted-foreground border-r"
+                        style={{ width: '80px', minWidth: '80px' }}
+                    >
                         {index + 1}
                     </td>
                 )}
@@ -738,14 +757,15 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             ? new Date(cellValue).toLocaleString()
                             : String(cellValue || '-');
 
+                    const width = column === 'time' ? 200 : 150;
+
                     return (
                         <td
                             key={`${rowKey}-${column}`}
-                            className="px-4 py-2 text-sm border-r last:border-r-0"
+                            className="px-6 py-2 text-sm border-r last:border-r-0"
                             style={{
-                                width: column === 'time' ? '180px' : '120px',
-                                minWidth: column === 'time' ? '180px' : '80px',
-                                maxWidth: column === 'time' ? '180px' : '300px'
+                                width: `${width}px`,
+                                minWidth: `${width}px`
                             }}
                         >
                             <div className="truncate" title={String(displayValue)}>
@@ -896,48 +916,55 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                         ) : data.length > 0 ? (
                             shouldUseVirtualization ? (
                                 <>
-                                    {/* 修复的虚拟化表格 - 使用TableVirtuoso */}
+                                    {/* 修复的虚拟化表格 - 使用统一的TableVirtuoso */}
                                     <TableVirtuoso
                                         ref={virtuosoRef}
                                         style={{
                                             height: `${containerHeight}px`,
                                             width: '100%'
                                         }}
-                                        data={processedData}
                                         totalCount={processedData.length}
                                         fixedHeaderContent={() => (
                                             <tr>
                                                 {/* 序号列表头 */}
                                                 {showRowNumbers && (
-                                                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r w-16">
+                                                    <th
+                                                        className="px-6 py-3 text-center text-sm font-medium text-muted-foreground bg-muted border-r sticky top-0 z-10"
+                                                        style={{ width: '80px', minWidth: '80px' }}
+                                                    >
                                                         #
                                                     </th>
                                                 )}
                                                 {/* 数据列表头 */}
                                                 {visibleColumns.map((column, colIndex) => {
                                                     const columnConfig = columnConfigMap.get(column);
-                                                    const width = column === 'time' ? 180 : 120;
-                                                    const minWidth = column === 'time' ? 180 : 80;
-                                                    const maxWidth = column === 'time' ? 180 : 300;
+                                                    const width = column === 'time' ? 200 : 150; // 增加列宽度
 
                                                     return (
                                                         <th
                                                             key={`header-${column}-${colIndex}`}
-                                                            className="px-4 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r hover:bg-muted/80 group"
+                                                            className="px-6 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r hover:bg-muted/80 group sticky top-0 z-10"
                                                             style={{
                                                                 width: `${width}px`,
-                                                                minWidth: `${minWidth}px`,
-                                                                maxWidth: `${maxWidth}px`
+                                                                minWidth: `${width}px`
                                                             }}
                                                         >
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="truncate">
+                                                            <div className="flex items-center gap-3">
+                                                                <span className="flex-1 truncate" title={column}>
                                                                     {columnConfig?.title || column}
                                                                 </span>
                                                                 {sortable && (
-                                                                    <button
-                                                                        onClick={() => handleSort(column)}
-                                                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className={cn(
+                                                                            "h-5 w-5 p-0 opacity-0 group-hover:opacity-100",
+                                                                            sortConfig?.column === column && "opacity-100 bg-blue-100 text-blue-600"
+                                                                        )}
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleSort(column);
+                                                                        }}
                                                                     >
                                                                         {sortConfig?.column === column ? (
                                                                             sortConfig.direction === 'asc' ? (
@@ -948,7 +975,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                                         ) : (
                                                                             <ChevronUp className="h-4 w-4 opacity-50" />
                                                                         )}
-                                                                    </button>
+                                                                    </Button>
                                                                 )}
                                                             </div>
                                                         </th>
@@ -967,7 +994,10 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                 <>
                                                     {/* 序号列 */}
                                                     {showRowNumbers && (
-                                                        <td className="px-4 py-2 text-sm text-center text-muted-foreground border-r w-16">
+                                                        <td
+                                                            className="px-6 py-2 text-sm text-center text-muted-foreground border-r"
+                                                            style={{ width: '80px', minWidth: '80px' }}
+                                                        >
                                                             {index + 1}
                                                         </td>
                                                     )}
@@ -982,14 +1012,15 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                                 ? new Date(cellValue).toLocaleString()
                                                                 : String(cellValue || '-');
 
+                                                        const width = column === 'time' ? 200 : 150; // 与表头保持一致
+
                                                         return (
                                                             <td
                                                                 key={`${rowKey}-${column}`}
-                                                                className="px-4 py-2 text-sm border-r last:border-r-0"
+                                                                className="px-6 py-2 text-sm border-r last:border-r-0"
                                                                 style={{
-                                                                    width: column === 'time' ? '180px' : '120px',
-                                                                    minWidth: column === 'time' ? '180px' : '80px',
-                                                                    maxWidth: column === 'time' ? '180px' : '300px'
+                                                                    width: `${width}px`,
+                                                                    minWidth: `${width}px`
                                                                 }}
                                                             >
                                                                 <div className="truncate" title={String(displayValue)}>
@@ -1002,8 +1033,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             );
                                         }}
                                         endReached={hasNextPage ? handleEndReached : undefined}
-                                        overscan={20} // 增加预渲染行数以提供更好的滚动体验
-                                        fixedItemHeight={rowHeight} // 固定行高以提高性能
+                                        overscan={20}
+                                        fixedItemHeight={rowHeight}
                                         components={{
                                             Table: ({ style, ...props }) => (
                                                 <table
@@ -1011,8 +1042,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                     style={{
                                                         ...style,
                                                         borderCollapse: 'collapse',
-                                                        width: '100%',
-                                                        tableLayout: 'fixed' // 使用固定布局确保列对齐
+                                                        width: 'max-content', // 允许水平滚动
+                                                        minWidth: '100%'
                                                     }}
                                                 />
                                             ),
@@ -1021,6 +1052,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             ))
                                         }}
                                     />
+
                                     {/* 懒加载指示器 */}
                                     {hasNextPage && (isLoadingMore || loadingMoreData) && (
                                         <div className="flex items-center justify-center py-4 bg-background border-t">
@@ -1042,9 +1074,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     <table
                                         className="border-collapse"
                                         style={{
-                                            width: visibleColumns.length > 10 ? 'max-content' : '100%',
-                                            minWidth: visibleColumns.length > 10 ? `${visibleColumns.length * 120}px` : '100%',
-                                            tableLayout: 'auto'
+                                            width: 'max-content',
+                                            minWidth: '100%',
+                                            tableLayout: 'fixed'
                                         }}
                                     >
                                         <TableHeader
