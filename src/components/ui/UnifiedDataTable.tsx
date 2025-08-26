@@ -43,6 +43,8 @@ interface CustomVirtualizedTableProps {
     data: any[];
     columns: string[];
     columnConfigMap: Map<string, any>;
+    columnWidths: Map<string, number>;
+    calculateColumnWidth: (column: string) => number;
     containerHeight: number;
     rowHeight: number;
     showRowNumbers: boolean;
@@ -60,6 +62,8 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     data,
     columns,
     columnConfigMap,
+    columnWidths,
+    calculateColumnWidth,
     containerHeight,
     rowHeight,
     showRowNumbers,
@@ -78,7 +82,6 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     const tableContainerRef = useRef<HTMLDivElement>(null);
 
     // 表头高度计算 - 使用 py-3 的实际高度 (12px padding top + 12px padding bottom + text height)
-    // Fixed: Renamed variable to avoid any caching issues
     const tableHeaderHeight = 49; // py-3 with text content typically results in ~49px height
 
     // 计算可视区域 - 修复数据显示不完整问题
@@ -167,13 +170,15 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
         }
 
         // 同步浮动水平滚动条
-        const floatingScrollbar = document.querySelector('.floating-h-scrollbar') as HTMLDivElement;
-        if (floatingScrollbar && !syncingScrollRef.current) {
-            syncingScrollRef.current = true;
-            floatingScrollbar.scrollLeft = newScrollLeft;
-            setTimeout(() => {
-                syncingScrollRef.current = false;
-            }, 0);
+        if (!syncingScrollRef.current) {
+            const floatingScrollbar = document.querySelector('.floating-h-scrollbar') as HTMLDivElement;
+            if (floatingScrollbar) {
+                syncingScrollRef.current = true;
+                floatingScrollbar.scrollLeft = newScrollLeft;
+                setTimeout(() => {
+                    syncingScrollRef.current = false;
+                }, 0);
+            }
         }
 
         // 无缝预加载机制
@@ -278,7 +283,7 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                 {/* 数据列表头 */}
                 {columns.map((column, colIndex) => {
                     const columnConfig = columnConfigMap.get(column);
-                    const width = column === 'time' ? 200 : 150;
+                    const width = columnWidths.get(column) || calculateColumnWidth(column);
 
                     return (
                         <th
@@ -287,22 +292,22 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                             style={{
                                 width: `${width}px`,
                                 minWidth: `${width}px`,
-                                maxWidth: `${width}px`,
                                 height: `${tableHeaderHeight}px`,
                                 boxSizing: 'border-box',
                                 borderRightWidth: '1px',
+                                // 单行显示，不截断文本
                                 whiteSpace: 'nowrap',
-                                overflow: 'hidden'
+                                overflow: 'visible'
                             }}
                         >
                             <div className="flex items-center gap-2 w-full">
                                 <span
-                                    className="flex-1 truncate text-left"
+                                    className="flex-1 text-left"
                                     title={columnConfig?.title || column}
                                     style={{
-                                        minWidth: 0, // 允许文本收缩
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis'
+                                        // 完整显示文本，不截断
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'visible'
                                     }}
                                 >
                                     {columnConfig?.title || column}
@@ -396,7 +401,7 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                                 ? new Date(cellValue).toLocaleString()
                                 : String(cellValue || '-');
 
-                        const width = column === 'time' ? 200 : 150;
+                        const width = columnWidths.get(column) || calculateColumnWidth(column);
 
                         return (
                             <td
@@ -405,7 +410,6 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                                 style={{
                                     width: `${width}px`,
                                     minWidth: `${width}px`,
-                                    maxWidth: `${width}px`,
                                     boxSizing: 'border-box',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden'
@@ -460,13 +464,40 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
             const style = document.createElement('style');
             style.id = styleId;
             style.textContent = `
-                /* 隐藏主内容区域的水平滚动条 */
-                .unified-table-hide-h-scrollbar::-webkit-scrollbar:horizontal {
-                    display: none;
-                }
+                /* 隐藏主内容区域的水平滚动条，保留垂直滚动条 */
                 .unified-table-hide-h-scrollbar {
-                    -ms-overflow-style: none;
-                    scrollbar-width: none;
+                    /* 使用负边距技巧隐藏水平滚动条 */
+                    padding-bottom: 17px;
+                    margin-bottom: -17px;
+                }
+
+                /* WebKit浏览器 - 只隐藏水平滚动条 */
+                .unified-table-hide-h-scrollbar::-webkit-scrollbar:horizontal {
+                    height: 0px;
+                    background: transparent;
+                }
+
+                /* 保持垂直滚动条的正常显示 */
+                .unified-table-hide-h-scrollbar::-webkit-scrollbar:vertical {
+                    width: 12px;
+                }
+
+                .unified-table-hide-h-scrollbar::-webkit-scrollbar-track:vertical {
+                    background: hsl(var(--muted));
+                }
+
+                .unified-table-hide-h-scrollbar::-webkit-scrollbar-thumb:vertical {
+                    background: hsl(var(--border));
+                    border-radius: 6px;
+                }
+
+                .unified-table-hide-h-scrollbar::-webkit-scrollbar-thumb:vertical:hover {
+                    background: hsl(var(--muted-foreground));
+                }
+
+                /* 确保垂直滚动条始终可见 */
+                .unified-table-hide-h-scrollbar {
+                    scrollbar-gutter: stable;
                 }
 
                 /* 美化浮动水平滚动条 */
@@ -662,18 +693,18 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
 
                     {/* 数据表格区域 - 支持双向滚动 */}
                     <div className="flex-1 relative">
-                        {/* 主要内容区域 - 隐藏水平滚动条 */}
+                        {/* 主要内容区域 - 显示垂直滚动条，隐藏水平滚动条 */}
                         <div
                             ref={scrollContainerRef}
-                            className="absolute inset-0 overflow-auto unified-table-hide-h-scrollbar"
+                            className="absolute inset-0 unified-table-hide-h-scrollbar"
                             onScroll={handleScroll}
                             style={{
-                                // 隐藏水平滚动条但保持功能
+                                // 允许垂直和水平滚动，但水平滚动条被CSS隐藏
                                 overflowX: 'scroll',
                                 overflowY: 'auto',
-                                // 通过负边距隐藏水平滚动条
-                                paddingBottom: '17px',
-                                marginBottom: '-17px'
+                                // 确保内容可以滚动
+                                height: '100%',
+                                width: '100%'
                             }}
                         >
                             <table
@@ -1074,8 +1105,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     // refs
     const virtuosoRef = useRef<TableVirtuosoHandle>(null);
     const mainSyncingScrollRef = useRef(false);
+    const floatingScrollbarRef = useRef<HTMLDivElement>(null);
 
-    // 表头高度常量 - 与CustomVirtualizedTable保持一致
+    // 表头高度常量 - 单行显示
     const tableHeaderHeight = 49; // py-3 with text content typically results in ~49px height
 
     // 生成唯一行ID的辅助函数
@@ -1385,18 +1417,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         [effectiveColumnOrder, effectiveSelectedColumns]
     );
 
-    // 计算是否需要显示水平滚动条
-    const needsHorizontalScroll = useMemo(() => {
-        // 计算表格内容的总宽度
-        const totalWidth = visibleColumns.reduce((width: number, column: string) => {
-            return width + (column === 'time' ? 200 : 150);
-        }, 0);
 
-        // 获取容器可用宽度（减去行号列宽度）
-        const availableWidth = (tableContainerRef.current?.clientWidth || 0) - (showRowNumbers ? 60 : 0);
-
-        return totalWidth > availableWidth;
-    }, [visibleColumns, showRowNumbers]);
 
     // 预计算列配置映射以提高渲染性能
     const columnConfigMap = useMemo(() => {
@@ -1406,6 +1427,45 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         });
         return map;
     }, [columns]);
+
+    // 动态计算列宽度 - 基于列名长度和内容
+    const calculateColumnWidth = useCallback((column: string): number => {
+        const columnConfig = columnConfigMap.get(column);
+        const displayName = columnConfig?.title || column;
+
+        // 基础宽度计算：每个字符约8px，加上padding和边距
+        const textWidth = displayName.length * 8;
+        const paddingAndMargin = 48; // px-6 (24px) * 2 + 边框等
+        const sortButtonWidth = sortable ? 24 : 0; // 排序按钮宽度
+
+        // 最小宽度和计算宽度取较大值
+        const minWidth = column === 'time' ? 180 : 120;
+        const calculatedWidth = textWidth + paddingAndMargin + sortButtonWidth;
+
+        return Math.max(minWidth, calculatedWidth);
+    }, [columnConfigMap, sortable]);
+
+    // 预计算所有可见列的宽度
+    const columnWidths = useMemo(() => {
+        const widths = new Map<string, number>();
+        visibleColumns.forEach(column => {
+            widths.set(column, calculateColumnWidth(column));
+        });
+        return widths;
+    }, [visibleColumns, calculateColumnWidth]);
+
+    // 计算是否需要显示水平滚动条
+    const needsHorizontalScroll = useMemo(() => {
+        // 计算表格内容的总宽度 - 使用动态列宽
+        const totalWidth = visibleColumns.reduce((width: number, column: string) => {
+            return width + (columnWidths.get(column) || calculateColumnWidth(column));
+        }, 0);
+
+        // 获取容器可用宽度（减去行号列宽度和垂直滚动条宽度）
+        const availableWidth = (tableContainerRef.current?.clientWidth || 0) - (showRowNumbers ? 60 : 0) - 17;
+
+        return totalWidth > availableWidth;
+    }, [visibleColumns, columnWidths, calculateColumnWidth, showRowNumbers, availableHeight]);
 
     // 调试日志
     useEffect(() => {
@@ -1669,6 +1729,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         data={processedData}
                                         columns={visibleColumns}
                                         columnConfigMap={columnConfigMap}
+                                        columnWidths={columnWidths}
+                                        calculateColumnWidth={calculateColumnWidth}
                                         containerHeight={containerHeight}
                                         rowHeight={rowHeight}
                                         showRowNumbers={showRowNumbers}
@@ -1788,13 +1850,15 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                 {/* 浮动水平滚动条 - 仅在需要时显示 */}
                 {needsHorizontalScroll && shouldUseVirtualization && (
                     <div
-                        className="floating-h-scrollbar absolute bottom-0 left-0 right-0 h-4 overflow-x-auto overflow-y-hidden bg-background/90 backdrop-blur-sm border-t border-border shadow-sm transition-opacity duration-200"
+                        ref={floatingScrollbarRef}
+                        className="floating-h-scrollbar absolute bottom-0 h-4 overflow-x-auto overflow-y-hidden bg-background/90 backdrop-blur-sm border-t border-border shadow-sm transition-opacity duration-200"
                         style={{
                             zIndex: 10,
                             // 确保滚动条可见且不影响布局
                             pointerEvents: 'auto',
-                            // 为行号列预留空间
+                            // 精确对齐数据表格内容区域
                             left: showRowNumbers ? '60px' : '0',
+                            right: '17px', // 为垂直滚动条预留空间
                             // 为分页控件预留空间
                             bottom: pagination ? '60px' : '0'
                         }}
@@ -1817,13 +1881,15 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             }
                         }}
                     >
-                        {/* 滚动条内容 - 与表格宽度匹配 */}
+                        {/* 滚动条内容 - 与表格宽度精确匹配 */}
                         <div
                             style={{
                                 height: '1px',
-                                // 计算表格的实际宽度
-                                width: `${visibleColumns.reduce((w: number, col: string) => w + (col === 'time' ? 200 : 150), 0)}px`,
-                                minWidth: '100%'
+                                // 计算表格的实际宽度，使用动态列宽
+                                width: `${visibleColumns.reduce((w: number, col: string) =>
+                                    w + (columnWidths.get(col) || calculateColumnWidth(col)), 0)}px`,
+                                minWidth: 'calc(100% - 17px)', // 减去垂直滚动条宽度
+                                backgroundColor: 'transparent'
                             }}
                         />
                     </div>
