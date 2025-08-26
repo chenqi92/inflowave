@@ -714,8 +714,45 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
             console.log('🎯 [UnifiedDataTable] 虚拟化配置:', {
                 processedDataSample: processedData.slice(0, 3),
                 visibleColumnsSample: visibleColumns.slice(0, 5),
-                virtuosoRefCurrent: !!virtuosoRef.current
+                virtuosoRefCurrent: !!virtuosoRef.current,
+                containerHeight,
+                maxHeight,
+                rowHeight,
+                expectedVisibleRows: Math.floor(containerHeight / rowHeight),
+                totalCount: processedData.length
             });
+
+            // 检查 TableVirtuoso 的实际状态
+            if (virtuosoRef.current) {
+                setTimeout(() => {
+                    const virtuosoElement = virtuosoRef.current;
+
+                    // 安全地获取 DOM 元素
+                    let actualElement = null;
+                    if (virtuosoElement && typeof virtuosoElement === 'object') {
+                        // TableVirtuoso 可能有不同的内部结构
+                        actualElement = virtuosoElement.querySelector ? virtuosoElement :
+                                       virtuosoElement.element ? virtuosoElement.element :
+                                       virtuosoElement.containerElement ? virtuosoElement.containerElement : null;
+                    }
+
+                    const parentElement = actualElement?.parentElement;
+
+                    console.log('🔍 [TableVirtuoso] 实际状态检查:', {
+                        refType: typeof virtuosoElement,
+                        hasElement: !!actualElement,
+                        scrollTop: actualElement?.scrollTop || 0,
+                        scrollHeight: actualElement?.scrollHeight || 0,
+                        clientHeight: actualElement?.clientHeight || 0,
+                        offsetHeight: actualElement?.offsetHeight || 0,
+                        parentHeight: parentElement?.offsetHeight || 0,
+                        parentClientHeight: parentElement?.clientHeight || 0,
+                        totalCount: processedData.length,
+                        containerHeight,
+                        computedStyle: actualElement ? window.getComputedStyle(actualElement).height : 'N/A'
+                    });
+                }, 1000);
+            }
         }
     }, [shouldUseVirtualization, pageSize, currentPage, data.length, filteredData.length, processedData.length, containerHeight, visibleColumns.length, rowHeight, effectiveSelectedColumns.length, effectiveColumnOrder.length, maxHeight, pagination, processedData, visibleColumns]);
 
@@ -916,142 +953,41 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                         ) : data.length > 0 ? (
                             shouldUseVirtualization ? (
                                 <>
-                                    {/* 修复的虚拟化表格 - 使用统一的TableVirtuoso */}
-                                    <TableVirtuoso
-                                        ref={virtuosoRef}
+                                    {/* 简化的虚拟化表格 - 使用原生滚动 + 分批渲染 */}
+                                    <div
                                         style={{
                                             height: `${containerHeight}px`,
-                                            width: '100%'
+                                            width: '100%',
+                                            overflow: 'auto',
+                                            position: 'relative'
                                         }}
-                                        totalCount={processedData.length}
-                                        fixedHeaderContent={() => (
-                                            <tr>
-                                                {/* 序号列表头 */}
-                                                {showRowNumbers && (
-                                                    <th
-                                                        className="px-6 py-3 text-center text-sm font-medium text-muted-foreground bg-muted border-r sticky top-0 z-10"
-                                                        style={{ width: '80px', minWidth: '80px' }}
-                                                    >
-                                                        #
-                                                    </th>
-                                                )}
-                                                {/* 数据列表头 */}
-                                                {visibleColumns.map((column, colIndex) => {
-                                                    const columnConfig = columnConfigMap.get(column);
-                                                    const width = column === 'time' ? 200 : 150; // 增加列宽度
-
-                                                    return (
-                                                        <th
-                                                            key={`header-${column}-${colIndex}`}
-                                                            className="px-6 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r hover:bg-muted/80 group sticky top-0 z-10"
-                                                            style={{
-                                                                width: `${width}px`,
-                                                                minWidth: `${width}px`
-                                                            }}
-                                                        >
-                                                            <div className="flex items-center gap-3">
-                                                                <span className="flex-1 truncate" title={column}>
-                                                                    {columnConfig?.title || column}
-                                                                </span>
-                                                                {sortable && (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="sm"
-                                                                        className={cn(
-                                                                            "h-5 w-5 p-0 opacity-0 group-hover:opacity-100",
-                                                                            sortConfig?.column === column && "opacity-100 bg-blue-100 text-blue-600"
-                                                                        )}
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleSort(column);
-                                                                        }}
-                                                                    >
-                                                                        {sortConfig?.column === column ? (
-                                                                            sortConfig.direction === 'asc' ? (
-                                                                                <ChevronUp className="h-4 w-4" />
-                                                                            ) : (
-                                                                                <ChevronDown className="h-4 w-4" />
-                                                                            )
-                                                                        ) : (
-                                                                            <ChevronUp className="h-4 w-4 opacity-50" />
-                                                                        )}
-                                                                    </Button>
-                                                                )}
-                                                            </div>
-                                                        </th>
-                                                    );
-                                                })}
-                                            </tr>
-                                        )}
-                                        itemContent={(index) => {
-                                            const row = processedData[index];
-                                            if (!row) return null;
-
-                                            const rowKey = generateRowKey(row, index);
-                                            const isSelected = selectedRows.has(index);
-
-                                            return (
-                                                <>
-                                                    {/* 序号列 */}
-                                                    {showRowNumbers && (
-                                                        <td
-                                                            className="px-6 py-2 text-sm text-center text-muted-foreground border-r"
-                                                            style={{ width: '80px', minWidth: '80px' }}
-                                                        >
-                                                            {index + 1}
-                                                        </td>
-                                                    )}
-
-                                                    {/* 数据列 */}
-                                                    {visibleColumns.map((column, colIndex) => {
-                                                        const columnConfig = columnConfigMap.get(column);
-                                                        const cellValue = row[column];
-                                                        const displayValue = columnConfig?.render
-                                                            ? columnConfig.render(cellValue, row, index)
-                                                            : column === 'time' && cellValue
-                                                                ? new Date(cellValue).toLocaleString()
-                                                                : String(cellValue || '-');
-
-                                                        const width = column === 'time' ? 200 : 150; // 与表头保持一致
-
-                                                        return (
-                                                            <td
-                                                                key={`${rowKey}-${column}`}
-                                                                className="px-6 py-2 text-sm border-r last:border-r-0"
-                                                                style={{
-                                                                    width: `${width}px`,
-                                                                    minWidth: `${width}px`
-                                                                }}
-                                                            >
-                                                                <div className="truncate" title={String(displayValue)}>
-                                                                    {displayValue}
-                                                                </div>
-                                                            </td>
-                                                        );
-                                                    })}
-                                                </>
-                                            );
-                                        }}
-                                        endReached={hasNextPage ? handleEndReached : undefined}
-                                        overscan={20}
-                                        fixedItemHeight={rowHeight}
-                                        components={{
-                                            Table: ({ style, ...props }) => (
-                                                <table
-                                                    {...props}
-                                                    style={{
-                                                        ...style,
-                                                        borderCollapse: 'collapse',
-                                                        width: 'max-content', // 允许水平滚动
-                                                        minWidth: '100%'
-                                                    }}
-                                                />
-                                            ),
-                                            TableBody: React.forwardRef<HTMLTableSectionElement>((props, ref) => (
-                                                <tbody {...props} ref={ref} />
-                                            ))
-                                        }}
-                                    />
+                                    >
+                                        <table
+                                            className="border-collapse"
+                                            style={{
+                                                width: 'max-content',
+                                                minWidth: '100%',
+                                                tableLayout: 'fixed'
+                                            }}
+                                        >
+                                            <TableHeader
+                                                columnOrder={effectiveColumnOrder}
+                                                selectedColumns={effectiveSelectedColumns}
+                                                sortColumn={sortConfig?.column || ''}
+                                                sortDirection={sortConfig?.direction || 'asc'}
+                                                showRowNumbers={showRowNumbers}
+                                                rowHeight={rowHeight}
+                                                onSort={handleSort}
+                                                onFilter={handleFilter}
+                                                virtualMode={true}
+                                            />
+                                            <tbody>
+                                                {processedData.map((row, index) => (
+                                                    <NonVirtualTableRow key={generateRowKey(row, index)} index={index} />
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
 
                                     {/* 懒加载指示器 */}
                                     {hasNextPage && (isLoadingMore || loadingMoreData) && (
