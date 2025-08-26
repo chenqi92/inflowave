@@ -38,6 +38,256 @@ import {
     FileSpreadsheet,
 } from 'lucide-react';
 
+// 自定义虚拟化表格组件
+interface CustomVirtualizedTableProps {
+    data: any[];
+    columns: string[];
+    columnConfigMap: Map<string, any>;
+    containerHeight: number;
+    rowHeight: number;
+    showRowNumbers: boolean;
+    selectedRows: Set<number>;
+    onRowClick: (index: number, e: React.MouseEvent) => void;
+    sortConfig?: { column: string; direction: 'asc' | 'desc' };
+    onSort: (column: string) => void;
+    sortable: boolean;
+    hasNextPage?: boolean;
+    onEndReached?: () => void;
+    generateRowKey: (row: any, index: number) => string;
+}
+
+const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
+    data,
+    columns,
+    columnConfigMap,
+    containerHeight,
+    rowHeight,
+    showRowNumbers,
+    selectedRows,
+    onRowClick,
+    sortConfig,
+    onSort,
+    sortable,
+    hasNextPage,
+    onEndReached,
+    generateRowKey
+}) => {
+    const [scrollTop, setScrollTop] = useState(0);
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // 计算可视区域
+    const visibleRowCount = Math.ceil(containerHeight / rowHeight);
+    const overscan = 5; // 预渲染行数
+    const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
+    const endIndex = Math.min(data.length - 1, startIndex + visibleRowCount + overscan * 2);
+
+    // 虚拟化调试信息
+    useEffect(() => {
+        console.log('🎯 [CustomVirtualizedTable] 虚拟化状态:', {
+            totalRows: data.length,
+            containerHeight,
+            rowHeight,
+            visibleRowCount,
+            scrollTop,
+            startIndex,
+            endIndex,
+            renderingRows: endIndex - startIndex + 1
+        });
+    }, [data.length, containerHeight, rowHeight, scrollTop, startIndex, endIndex]);
+
+    // 处理滚动事件
+    const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+        const newScrollTop = e.currentTarget.scrollTop;
+        setScrollTop(newScrollTop);
+
+        // 检查是否需要加载更多数据
+        if (hasNextPage && onEndReached) {
+            const scrollHeight = e.currentTarget.scrollHeight;
+            const clientHeight = e.currentTarget.clientHeight;
+            const scrollBottom = newScrollTop + clientHeight;
+
+            if (scrollHeight - scrollBottom < rowHeight * 5) {
+                onEndReached();
+            }
+        }
+    }, [hasNextPage, onEndReached, rowHeight]);
+
+    // 渲染表头
+    const renderHeader = () => (
+        <thead className="sticky top-0 z-10 bg-background">
+            <tr>
+                {/* 序号列表头 */}
+                {showRowNumbers && (
+                    <th
+                        className="px-6 py-3 text-center text-sm font-medium text-muted-foreground bg-muted border-r"
+                        style={{ width: '80px', minWidth: '80px' }}
+                    >
+                        #
+                    </th>
+                )}
+                {/* 数据列表头 */}
+                {columns.map((column, colIndex) => {
+                    const columnConfig = columnConfigMap.get(column);
+                    const width = column === 'time' ? 200 : 150;
+
+                    return (
+                        <th
+                            key={`header-${column}-${colIndex}`}
+                            className="px-6 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r hover:bg-muted/80 group"
+                            style={{
+                                width: `${width}px`,
+                                minWidth: `${width}px`
+                            }}
+                        >
+                            <div className="flex items-center gap-3">
+                                <span className="flex-1 truncate" title={column}>
+                                    {columnConfig?.title || column}
+                                </span>
+                                {sortable && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className={cn(
+                                            "h-5 w-5 p-0 opacity-0 group-hover:opacity-100",
+                                            sortConfig?.column === column && "opacity-100 bg-blue-100 text-blue-600"
+                                        )}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onSort(column);
+                                        }}
+                                    >
+                                        {sortConfig?.column === column ? (
+                                            sortConfig.direction === 'asc' ? (
+                                                <ChevronUp className="h-4 w-4" />
+                                            ) : (
+                                                <ChevronDown className="h-4 w-4" />
+                                            )
+                                        ) : (
+                                            <ChevronUp className="h-4 w-4 opacity-50" />
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
+                        </th>
+                    );
+                })}
+            </tr>
+        </thead>
+    );
+
+    // 渲染虚拟化行
+    const renderVirtualizedRows = () => {
+        const rows = [];
+
+        // 添加顶部占位空间
+        if (startIndex > 0) {
+            rows.push(
+                <tr key="top-spacer" style={{ height: startIndex * rowHeight }}>
+                    <td colSpan={columns.length + (showRowNumbers ? 1 : 0)} />
+                </tr>
+            );
+        }
+
+        // 渲染可视区域内的行
+        for (let i = startIndex; i <= endIndex; i++) {
+            const row = data[i];
+            if (!row) continue;
+
+            const rowKey = generateRowKey(row, i);
+            const isSelected = selectedRows.has(i);
+
+            rows.push(
+                <tr
+                    key={rowKey}
+                    className={cn(
+                        "border-b hover:bg-muted/50 transition-colors",
+                        isSelected && "bg-muted"
+                    )}
+                    style={{ height: `${rowHeight}px` }}
+                    onClick={(e) => onRowClick(i, e)}
+                >
+                    {/* 序号列 */}
+                    {showRowNumbers && (
+                        <td
+                            className="px-6 py-2 text-sm text-center text-muted-foreground border-r"
+                            style={{ width: '80px', minWidth: '80px' }}
+                        >
+                            {i + 1}
+                        </td>
+                    )}
+
+                    {/* 数据列 */}
+                    {columns.map((column, colIndex) => {
+                        const columnConfig = columnConfigMap.get(column);
+                        const cellValue = row[column];
+                        const displayValue = columnConfig?.render
+                            ? columnConfig.render(cellValue, row, i)
+                            : column === 'time' && cellValue
+                                ? new Date(cellValue).toLocaleString()
+                                : String(cellValue || '-');
+
+                        const width = column === 'time' ? 200 : 150;
+
+                        return (
+                            <td
+                                key={`${rowKey}-${column}`}
+                                className="px-6 py-2 text-sm border-r last:border-r-0"
+                                style={{
+                                    width: `${width}px`,
+                                    minWidth: `${width}px`
+                                }}
+                            >
+                                <div className="truncate" title={String(displayValue)}>
+                                    {displayValue}
+                                </div>
+                            </td>
+                        );
+                    })}
+                </tr>
+            );
+        }
+
+        // 添加底部占位空间
+        const remainingRows = data.length - endIndex - 1;
+        if (remainingRows > 0) {
+            rows.push(
+                <tr key="bottom-spacer" style={{ height: remainingRows * rowHeight }}>
+                    <td colSpan={columns.length + (showRowNumbers ? 1 : 0)} />
+                </tr>
+            );
+        }
+
+        return rows;
+    };
+
+    return (
+        <div
+            ref={scrollContainerRef}
+            className="relative"
+            style={{
+                height: `${containerHeight}px`,
+                width: '100%',
+                overflow: 'auto'
+            }}
+            onScroll={handleScroll}
+        >
+            <table
+                className="border-collapse"
+                style={{
+                    width: 'max-content',
+                    minWidth: '100%',
+                    tableLayout: 'fixed'
+                }}
+            >
+                {renderHeader()}
+                <tbody>
+                    {renderVirtualizedRows()}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
 // 数据行类型
 export interface DataRow {
     [key: string]: any;
@@ -722,36 +972,38 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                 totalCount: processedData.length
             });
 
-            // 检查 TableVirtuoso 的实际状态
-            if (virtuosoRef.current) {
+            // 检查 TableVirtuoso 的实际状态 - 修复 DOM 引用问题
+            if (virtuosoRef.current && tableContainerRef.current) {
                 setTimeout(() => {
-                    const virtuosoElement = virtuosoRef.current;
+                    const virtuosoHandle = virtuosoRef.current;
+                    const containerElement = tableContainerRef.current;
 
-                    // 安全地获取 DOM 元素
-                    let actualElement = null;
-                    if (virtuosoElement && typeof virtuosoElement === 'object') {
-                        // TableVirtuoso 可能有不同的内部结构
-                        actualElement = virtuosoElement.querySelector ? virtuosoElement :
-                                       virtuosoElement.element ? virtuosoElement.element :
-                                       virtuosoElement.containerElement ? virtuosoElement.containerElement : null;
-                    }
-
-                    const parentElement = actualElement?.parentElement;
+                    // 查找 TableVirtuoso 创建的实际 DOM 元素
+                    const virtuosoElement = containerElement?.querySelector('[data-virtuoso-scroller]') ||
+                                           containerElement?.querySelector('[style*="overflow"]') ||
+                                           containerElement?.firstElementChild;
 
                     console.log('🔍 [TableVirtuoso] 实际状态检查:', {
-                        refType: typeof virtuosoElement,
-                        hasElement: !!actualElement,
-                        scrollTop: actualElement?.scrollTop || 0,
-                        scrollHeight: actualElement?.scrollHeight || 0,
-                        clientHeight: actualElement?.clientHeight || 0,
-                        offsetHeight: actualElement?.offsetHeight || 0,
-                        parentHeight: parentElement?.offsetHeight || 0,
-                        parentClientHeight: parentElement?.clientHeight || 0,
+                        hasVirtuosoHandle: !!virtuosoHandle,
+                        hasContainer: !!containerElement,
+                        hasVirtuosoElement: !!virtuosoElement,
+                        containerHeight: containerElement?.offsetHeight || 0,
+                        virtuosoHeight: virtuosoElement?.offsetHeight || 0,
+                        scrollTop: virtuosoElement?.scrollTop || 0,
+                        scrollHeight: virtuosoElement?.scrollHeight || 0,
+                        clientHeight: virtuosoElement?.clientHeight || 0,
                         totalCount: processedData.length,
-                        containerHeight,
-                        computedStyle: actualElement ? window.getComputedStyle(actualElement).height : 'N/A'
+                        expectedHeight: containerHeight,
+                        virtuosoMethods: virtuosoHandle ? Object.keys(virtuosoHandle) : []
                     });
-                }, 1000);
+
+                    // 尝试使用 TableVirtuoso 的 API 方法
+                    if (virtuosoHandle && typeof virtuosoHandle.scrollToIndex === 'function') {
+                        console.log('✅ [TableVirtuoso] API 方法可用，虚拟化应该正常工作');
+                    } else {
+                        console.warn('⚠️ [TableVirtuoso] API 方法不可用，可能存在初始化问题');
+                    }
+                }, 1500);
             }
         }
     }, [shouldUseVirtualization, pageSize, currentPage, data.length, filteredData.length, processedData.length, containerHeight, visibleColumns.length, rowHeight, effectiveSelectedColumns.length, effectiveColumnOrder.length, maxHeight, pagination, processedData, visibleColumns]);
@@ -953,41 +1205,23 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                         ) : data.length > 0 ? (
                             shouldUseVirtualization ? (
                                 <>
-                                    {/* 简化的虚拟化表格 - 使用原生滚动 + 分批渲染 */}
-                                    <div
-                                        style={{
-                                            height: `${containerHeight}px`,
-                                            width: '100%',
-                                            overflow: 'auto',
-                                            position: 'relative'
-                                        }}
-                                    >
-                                        <table
-                                            className="border-collapse"
-                                            style={{
-                                                width: 'max-content',
-                                                minWidth: '100%',
-                                                tableLayout: 'fixed'
-                                            }}
-                                        >
-                                            <TableHeader
-                                                columnOrder={effectiveColumnOrder}
-                                                selectedColumns={effectiveSelectedColumns}
-                                                sortColumn={sortConfig?.column || ''}
-                                                sortDirection={sortConfig?.direction || 'asc'}
-                                                showRowNumbers={showRowNumbers}
-                                                rowHeight={rowHeight}
-                                                onSort={handleSort}
-                                                onFilter={handleFilter}
-                                                virtualMode={true}
-                                            />
-                                            <tbody>
-                                                {processedData.map((row, index) => (
-                                                    <NonVirtualTableRow key={generateRowKey(row, index)} index={index} />
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                    {/* 自定义虚拟化表格 - 真正的虚拟滚动实现 */}
+                                    <CustomVirtualizedTable
+                                        data={processedData}
+                                        columns={visibleColumns}
+                                        columnConfigMap={columnConfigMap}
+                                        containerHeight={containerHeight}
+                                        rowHeight={rowHeight}
+                                        showRowNumbers={showRowNumbers}
+                                        selectedRows={selectedRows}
+                                        onRowClick={handleRowClick}
+                                        sortConfig={sortConfig}
+                                        onSort={handleSort}
+                                        sortable={sortable}
+                                        hasNextPage={hasNextPage}
+                                        onEndReached={handleEndReached}
+                                        generateRowKey={generateRowKey}
+                                    />
 
                                     {/* 懒加载指示器 */}
                                     {hasNextPage && (isLoadingMore || loadingMoreData) && (
