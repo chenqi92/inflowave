@@ -464,11 +464,11 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         });
     }, []);
 
-    // 页面大小变化处理 - 完全按照 TableDataBrowser.tsx 的实现
+    // 页面大小变化处理 - 修复"全部"选项的处理逻辑
     const handlePageSizeChange = useCallback((size: string) => {
         startTransition(() => {
-            const newSize = parseInt(size);
-            console.log(`📏 页面大小变更: ${pageSize} -> ${newSize}`);
+            const newSize = size === 'all' ? -1 : parseInt(size);
+            console.log(`📏 页面大小变更: ${pageSize} -> ${newSize} (原始值: ${size})`);
             setPageSize(newSize);
             setCurrentPage(1);
         });
