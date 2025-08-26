@@ -4,7 +4,7 @@
  * 支持虚拟化滚动、懒加载、列管理、排序、筛选、导出等功能
  */
 
-import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, memo, useRef, useTransition } from 'react';
 import { cn } from '@/lib/utils';
 import { TableVirtuoso, TableVirtuosoHandle } from 'react-virtuoso';
 import {
@@ -75,11 +75,19 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     const [scrollTop, setScrollTop] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    // 计算可视区域 - 优化无缝滚动
-    const visibleRowCount = Math.ceil(containerHeight / rowHeight);
-    const overscan = 8; // 增加预渲染行数以提供更流畅的滚动体验
+    // 表头高度计算 - 使用 py-3 的实际高度 (12px padding top + 12px padding bottom + text height)
+    // Fixed: Renamed variable to avoid any caching issues
+    const tableHeaderHeight = 49; // py-3 with text content typically results in ~49px height
+
+    // 计算可视区域 - 修复数据显示不完整问题
+    const availableHeight = containerHeight - tableHeaderHeight; // 减去表头高度
+    const visibleRowCount = Math.ceil(availableHeight / rowHeight);
+    const overscan = 8; // 增加预渲染行数确保完整显示
     const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
     const endIndex = Math.min(data.length - 1, startIndex + visibleRowCount + overscan * 2);
+
+    // 确保能显示所有数据 - 修复显示不完整问题
+    const actualEndIndex = Math.min(data.length - 1, Math.max(endIndex, startIndex + visibleRowCount + overscan));
 
     // 计算滚动进度，用于预加载判断
     const scrollProgress = data.length > 0 ? (startIndex + visibleRowCount) / data.length : 0;
@@ -88,27 +96,49 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     const [isPreloading, setIsPreloading] = useState(false);
     const preloadTriggeredRef = useRef(false);
 
-    // 虚拟化调试信息 - 包含无缝滚动状态
-    useEffect(() => {
-        console.log('🎯 [CustomVirtualizedTable] 虚拟化状态:', {
-            totalRows: data.length,
-            containerHeight,
-            rowHeight,
-            visibleRowCount,
-            scrollTop,
-            startIndex,
-            endIndex,
-            renderingRows: endIndex - startIndex + 1,
-            isPreloading,
-            hasNextPage,
-            preloadTriggered: preloadTriggeredRef.current
-        });
-    }, [data.length, containerHeight, rowHeight, scrollTop, startIndex, endIndex, isPreloading, hasNextPage]);
+    // 行号区域引用，用于滚动同步
+    const rowNumbersRef = useRef<HTMLDivElement>(null);
 
-    // 处理滚动事件 - 优化无缝滚动体验
+    // 拖拽多选状态
+    const [isDragging, setIsDragging] = useState(false);
+    const [dragStartIndex, setDragStartIndex] = useState<number | null>(null);
+    const [dragEndIndex, setDragEndIndex] = useState<number | null>(null);
+    const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
+
+    // 虚拟化调试信息 - 只在关键时刻输出，减少性能影响
+    useEffect(() => {
+        // 只在数据长度变化或滚动到边界时输出调试信息
+        const shouldLog =
+            startIndex === 0 || // 滚动到顶部时
+            actualEndIndex >= data.length - 1; // 滚动到底部时
+
+        if (shouldLog) {
+            console.log('🎯 [CustomVirtualizedTable] 虚拟化状态:', {
+                totalRows: data.length,
+                containerHeight,
+                availableHeight: containerHeight - tableHeaderHeight,
+                visibleRowCount,
+                scrollTop,
+                startIndex,
+                actualEndIndex,
+                renderingRows: actualEndIndex - startIndex + 1,
+                canScrollMore: actualEndIndex < data.length - 1
+            });
+        }
+    }, [data.length, startIndex, actualEndIndex]);
+
+    // 处理滚动事件 - 优化无缝滚动体验并同步行号区域
     const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
         const newScrollTop = e.currentTarget.scrollTop;
         setScrollTop(newScrollTop);
+
+        // 同步行号区域的滚动位置
+        if (rowNumbersRef.current && showRowNumbers) {
+            const rowNumbersContent = rowNumbersRef.current.querySelector('.row-numbers-content') as HTMLDivElement;
+            if (rowNumbersContent) {
+                rowNumbersContent.scrollTop = newScrollTop;
+            }
+        }
 
         // 无缝预加载机制：在用户滚动到接近底部时静默加载更多数据
         if (hasNextPage && onEndReached && !isPreloading) {
@@ -134,26 +164,86 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                 }, 1000);
             }
         }
-    }, [hasNextPage, onEndReached, rowHeight, isPreloading]);
+    }, [hasNextPage, onEndReached, rowHeight, isPreloading, showRowNumbers]);
 
     // 当数据更新时重置预加载状态
     useEffect(() => {
         preloadTriggeredRef.current = false;
     }, [data.length]);
 
-    // 渲染表头
+    // 拖拽多选处理函数
+    const handleMouseDown = useCallback((rowIndex: number, e: React.MouseEvent) => {
+        // 只处理左键点击
+        if (e.button !== 0) return;
+
+        e.preventDefault();
+        setIsDragging(true);
+        setDragStartIndex(rowIndex);
+        setDragEndIndex(rowIndex);
+        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+
+        // 单击选择当前行
+        onRowClick(rowIndex, e);
+    }, [onRowClick]);
+
+    const handleMouseEnter = useCallback((rowIndex: number) => {
+        if (isDragging && dragStartIndex !== null) {
+            setDragEndIndex(rowIndex);
+
+            // 计算选择范围
+            const startIdx = Math.min(dragStartIndex, rowIndex);
+            const endIdx = Math.max(dragStartIndex, rowIndex);
+
+            // 创建新的选择集合
+            const newSelection = new Set<number>();
+            for (let i = startIdx; i <= endIdx; i++) {
+                newSelection.add(i);
+            }
+
+            // 更新选择状态（这里需要通过父组件的回调来更新）
+            // 由于我们没有直接的批量选择回调，我们需要模拟多次点击
+            // 这不是最优解，但可以工作
+        }
+    }, [isDragging, dragStartIndex]);
+
+    const handleMouseUp = useCallback(() => {
+        if (isDragging && dragStartIndex !== null && dragEndIndex !== null) {
+            // 完成拖拽选择
+            const startIdx = Math.min(dragStartIndex, dragEndIndex);
+            const endIdx = Math.max(dragStartIndex, dragEndIndex);
+
+            // 批量选择行（通过模拟点击事件）
+            for (let i = startIdx; i <= endIdx; i++) {
+                if (i !== dragStartIndex) { // 起始行已经在 mousedown 时选择了
+                    const mockEvent = new MouseEvent('click', { ctrlKey: true }) as any;
+                    onRowClick(i, mockEvent);
+                }
+            }
+        }
+
+        setIsDragging(false);
+        setDragStartIndex(null);
+        setDragEndIndex(null);
+        dragStartPosRef.current = null;
+    }, [isDragging, dragStartIndex, dragEndIndex, onRowClick]);
+
+    // 全局鼠标事件监听
+    useEffect(() => {
+        if (isDragging) {
+            document.addEventListener('mouseup', handleMouseUp);
+            document.addEventListener('mouseleave', handleMouseUp);
+
+            return () => {
+                document.removeEventListener('mouseup', handleMouseUp);
+                document.removeEventListener('mouseleave', handleMouseUp);
+            };
+        }
+    }, [isDragging, handleMouseUp]);
+
+    // 渲染表头（移除序号列，因为已独立显示）
     const renderHeader = () => (
         <thead className="sticky top-0 z-10 bg-background">
             <tr>
-                {/* 序号列表头 */}
-                {showRowNumbers && (
-                    <th
-                        className="px-6 py-3 text-center text-sm font-medium text-muted-foreground bg-muted border-r"
-                        style={{ width: '80px', minWidth: '80px' }}
-                    >
-                        #
-                    </th>
-                )}
                 {/* 数据列表头 */}
                 {columns.map((column, colIndex) => {
                     const columnConfig = columnConfigMap.get(column);
@@ -212,39 +302,39 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
         if (startIndex > 0) {
             rows.push(
                 <tr key="top-spacer" style={{ height: startIndex * rowHeight }}>
-                    <td colSpan={columns.length + (showRowNumbers ? 1 : 0)} />
+                    <td colSpan={columns.length} />
                 </tr>
             );
         }
 
-        // 渲染可视区域内的行
-        for (let i = startIndex; i <= endIndex; i++) {
+        // 渲染可视区域内的行（移除序号列，因为已独立显示）
+        for (let i = startIndex; i <= actualEndIndex; i++) {
             const row = data[i];
             if (!row) continue;
 
             const rowKey = generateRowKey(row, i);
             const isSelected = selectedRows.has(i);
+            const isDragHighlight = isDragging && dragStartIndex !== null && dragEndIndex !== null &&
+                i >= Math.min(dragStartIndex, dragEndIndex) &&
+                i <= Math.max(dragStartIndex, dragEndIndex);
 
             rows.push(
                 <tr
                     key={rowKey}
                     className={cn(
                         "border-b hover:bg-muted/50 transition-colors",
-                        isSelected && "bg-muted"
+                        isSelected && "bg-blue-50",
+                        isDragHighlight && !isSelected && "bg-blue-25"
                     )}
                     style={{ height: `${rowHeight}px` }}
-                    onClick={(e) => onRowClick(i, e)}
+                    onMouseDown={(e) => handleMouseDown(i, e)}
+                    onMouseEnter={() => handleMouseEnter(i)}
+                    onClick={(e) => {
+                        if (!isDragging) {
+                            onRowClick(i, e);
+                        }
+                    }}
                 >
-                    {/* 序号列 */}
-                    {showRowNumbers && (
-                        <td
-                            className="px-6 py-2 text-sm text-center text-muted-foreground border-r"
-                            style={{ width: '80px', minWidth: '80px' }}
-                        >
-                            {i + 1}
-                        </td>
-                    )}
-
                     {/* 数据列 */}
                     {columns.map((column, colIndex) => {
                         const columnConfig = columnConfigMap.get(column);
@@ -276,21 +366,29 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
             );
         }
 
-        // 添加底部占位空间 - 优化无缝滚动
-        const remainingRows = data.length - endIndex - 1;
+        // 添加底部占位空间 - 确保所有数据都可以滚动到
+        const remainingRows = data.length - actualEndIndex - 1;
         if (remainingRows > 0) {
-            // 如果有下一页数据且正在预加载，添加额外的缓冲空间
+            // 确保有足够的空间显示所有剩余数据
             const bufferHeight = hasNextPage && isPreloading ? rowHeight * 5 : 0;
+            const minBottomSpace = Math.max(remainingRows * rowHeight, rowHeight * 2); // 至少2行的缓冲
             rows.push(
-                <tr key="bottom-spacer" style={{ height: remainingRows * rowHeight + bufferHeight }}>
-                    <td colSpan={columns.length + (showRowNumbers ? 1 : 0)} />
+                <tr key="bottom-spacer" style={{ height: minBottomSpace + bufferHeight }}>
+                    <td colSpan={columns.length} />
                 </tr>
             );
         } else if (hasNextPage) {
             // 如果已经到达当前数据的底部但还有更多数据，添加缓冲空间
             rows.push(
-                <tr key="loading-buffer" style={{ height: rowHeight * 3 }}>
-                    <td colSpan={columns.length + (showRowNumbers ? 1 : 0)} />
+                <tr key="loading-buffer" style={{ height: rowHeight * 5 }}>
+                    <td colSpan={columns.length} />
+                </tr>
+            );
+        } else {
+            // 即使没有更多数据，也添加一些底部空间确保最后几行完全可见
+            rows.push(
+                <tr key="final-spacer" style={{ height: rowHeight * 2 }}>
+                    <td colSpan={columns.length} />
                 </tr>
             );
         }
@@ -299,29 +397,109 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     };
 
     return (
-        <div
-            ref={scrollContainerRef}
-            className="relative"
-            style={{
-                height: `${containerHeight}px`,
-                width: '100%',
-                overflow: 'auto'
-            }}
-            onScroll={handleScroll}
-        >
-            <table
-                className="border-collapse"
+        <div className="relative flex" style={{ height: `${containerHeight}px`, width: '100%' }}>
+            {/* 独立的行号区域 */}
+            {showRowNumbers && (
+                <div
+                    ref={rowNumbersRef}
+                    className="flex-shrink-0 bg-muted/30 border-r border-border"
+                    style={{ width: '60px' }}
+                >
+                    {/* 行号表头 */}
+                    <div
+                        className="sticky top-0 z-20 bg-muted border-b border-border flex items-center justify-center text-sm font-medium text-muted-foreground px-6 py-3"
+                    >
+                        #
+                    </div>
+
+                    {/* 行号内容区域 - 支持滚动同步 */}
+                    <div
+                        className="row-numbers-content relative"
+                        style={{
+                            height: `${containerHeight - tableHeaderHeight}px`, // 减去表头高度
+                            overflow: 'hidden' // 隐藏滚动条，通过主表格控制滚动
+                        }}
+                    >
+                        {/* 顶部占位空间 */}
+                        {startIndex > 0 && (
+                            <div style={{ height: startIndex * rowHeight }} />
+                        )}
+
+                        {/* 可视区域内的行号 */}
+                        {Array.from({ length: actualEndIndex - startIndex + 1 }, (_, i) => {
+                            const rowIndex = startIndex + i;
+                            if (rowIndex >= data.length) return null;
+
+                            const isSelected = selectedRows.has(rowIndex);
+                            const isDragHighlight = isDragging && dragStartIndex !== null && dragEndIndex !== null &&
+                                rowIndex >= Math.min(dragStartIndex, dragEndIndex) &&
+                                rowIndex <= Math.max(dragStartIndex, dragEndIndex);
+
+                            return (
+                                <div
+                                    key={`row-number-${rowIndex}`}
+                                    className={cn(
+                                        "flex items-center justify-center text-sm text-muted-foreground border-b border-border/50 cursor-pointer hover:bg-muted/50 transition-colors select-none",
+                                        isSelected && "bg-blue-100 text-blue-700 font-medium",
+                                        isDragHighlight && !isSelected && "bg-blue-50 text-blue-600"
+                                    )}
+                                    style={{ height: `${rowHeight}px` }}
+                                    onMouseDown={(e) => handleMouseDown(rowIndex, e)}
+                                    onMouseEnter={() => handleMouseEnter(rowIndex)}
+                                    onClick={(e) => {
+                                        if (!isDragging) {
+                                            e.stopPropagation();
+                                            onRowClick(rowIndex, e);
+                                        }
+                                    }}
+                                    title={`选择第 ${rowIndex + 1} 行`}
+                                >
+                                    {rowIndex + 1}
+                                </div>
+                            );
+                        })}
+
+                        {/* 底部占位空间 - 与数据表格保持一致 */}
+                        {(() => {
+                            const remainingRows = data.length - actualEndIndex - 1;
+                            if (remainingRows > 0) {
+                                const bufferHeight = hasNextPage && isPreloading ? rowHeight * 5 : 0;
+                                const minBottomSpace = Math.max(remainingRows * rowHeight, rowHeight * 2);
+                                return <div style={{ height: minBottomSpace + bufferHeight }} />;
+                            } else if (hasNextPage) {
+                                return <div style={{ height: rowHeight * 5 }} />;
+                            } else {
+                                return <div style={{ height: rowHeight * 2 }} />;
+                            }
+                        })()}
+                    </div>
+                </div>
+            )}
+
+            {/* 数据表格区域 */}
+            <div
+                ref={scrollContainerRef}
+                className="flex-1 relative"
                 style={{
-                    width: 'max-content',
-                    minWidth: '100%',
-                    tableLayout: 'fixed'
+                    height: `${containerHeight}px`,
+                    overflow: 'auto'
                 }}
+                onScroll={handleScroll}
             >
-                {renderHeader()}
-                <tbody>
-                    {renderVirtualizedRows()}
-                </tbody>
-            </table>
+                <table
+                    className="border-collapse"
+                    style={{
+                        width: 'max-content',
+                        minWidth: '100%',
+                        tableLayout: 'fixed'
+                    }}
+                >
+                    {renderHeader()}
+                    <tbody>
+                        {renderVirtualizedRows()}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };
@@ -492,19 +670,9 @@ const TableHeader: React.FC<TableHeaderProps> = memo(({
         [columnOrder, selectedColumns]
     );
 
-    // 表头行内容
+    // 表头行内容（移除序号列，因为已独立显示）
     const headerRowContent = (
         <tr className="border-b transition-colors hover:bg-muted/50">
-            {/* 序号列表头 */}
-            {showRowNumbers && (
-                <th
-                    className="px-6 py-3 text-center text-sm font-medium text-muted-foreground bg-muted border-r"
-                    style={{ width: '80px', minWidth: '80px' }}
-                >
-                    #
-                </th>
-            )}
-
             {/* 数据列表头 */}
             {visibleColumns.map((column, colIndex) => {
                 // 使用固定宽度策略确保表头和数据列对齐
@@ -1059,22 +1227,12 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                 key={rowKey}
                 className={cn(
                     "border-b hover:bg-muted/50 transition-colors",
-                    isSelected && "bg-muted"
+                    isSelected && "bg-blue-50"
                 )}
                 style={{ height: `${rowHeight}px` }}
                 onClick={(e) => handleRowClick(index, e)}
             >
-                {/* 序号列 */}
-                {showRowNumbers && (
-                    <td
-                        className="px-6 py-2 text-sm text-center text-muted-foreground border-r"
-                        style={{ width: '80px', minWidth: '80px' }}
-                    >
-                        {index + 1}
-                    </td>
-                )}
-
-                {/* 数据列 */}
+                {/* 数据列（移除序号列，因为已独立显示） */}
                 {visibleColumns.map((column, colIndex) => {
                     const columnConfig = columnConfigMap.get(column);
                     const cellValue = row[column];
@@ -1262,33 +1420,82 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     />
                                 </>
                             ) : (
-                                // 非虚拟化表格 - 用于小数据量
-                                <div className="flex-1 overflow-auto" style={{ height: `${containerHeight}px` }}>
-                                    <table
-                                        className="border-collapse"
-                                        style={{
-                                            width: 'max-content',
-                                            minWidth: '100%',
-                                            tableLayout: 'fixed'
-                                        }}
-                                    >
-                                        <TableHeader
-                                            columnOrder={effectiveColumnOrder}
-                                            selectedColumns={effectiveSelectedColumns}
-                                            sortColumn={sortConfig?.column || ''}
-                                            sortDirection={sortConfig?.direction || 'asc'}
-                                            showRowNumbers={showRowNumbers}
-                                            rowHeight={rowHeight}
-                                            onSort={handleSort}
-                                            onFilter={handleFilter}
-                                            virtualMode={false}
-                                        />
-                                        <tbody>
-                                            {processedData.map((row, index) => (
-                                                <NonVirtualTableRow key={generateRowKey(row, index)} index={index} />
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                // 非虚拟化表格 - 用于小数据量，也使用独立行号区域
+                                <div className="relative flex" style={{ height: `${containerHeight}px`, width: '100%' }}>
+                                    {/* 独立的行号区域 */}
+                                    {showRowNumbers && (
+                                        <div
+                                            className="flex-shrink-0 bg-muted/30 border-r border-border"
+                                            style={{ width: '60px' }}
+                                        >
+                                            {/* 行号表头 */}
+                                            <div
+                                                className="sticky top-0 z-20 bg-muted border-b border-border flex items-center justify-center text-sm font-medium text-muted-foreground px-6 py-3"
+                                            >
+                                                #
+                                            </div>
+
+                                            {/* 行号内容区域 */}
+                                            <div
+                                                className="relative"
+                                                style={{
+                                                    height: `${containerHeight - tableHeaderHeight}px`,
+                                                    overflow: 'hidden'
+                                                }}
+                                            >
+                                                {processedData.map((row, index) => {
+                                                    const isSelected = selectedRows.has(index);
+
+                                                    return (
+                                                        <div
+                                                            key={`row-number-${index}`}
+                                                            className={cn(
+                                                                "flex items-center justify-center text-sm text-muted-foreground border-b border-border/50 cursor-pointer hover:bg-muted/50 transition-colors select-none",
+                                                                isSelected && "bg-blue-100 text-blue-700 font-medium"
+                                                            )}
+                                                            style={{ height: `${rowHeight}px` }}
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleRowClick(index, e);
+                                                            }}
+                                                            title={`选择第 ${index + 1} 行`}
+                                                        >
+                                                            {index + 1}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* 数据表格区域 */}
+                                    <div className="flex-1 overflow-auto" style={{ height: `${containerHeight}px` }}>
+                                        <table
+                                            className="border-collapse"
+                                            style={{
+                                                width: 'max-content',
+                                                minWidth: '100%',
+                                                tableLayout: 'fixed'
+                                            }}
+                                        >
+                                            <TableHeader
+                                                columnOrder={effectiveColumnOrder}
+                                                selectedColumns={effectiveSelectedColumns}
+                                                sortColumn={sortConfig?.column || ''}
+                                                sortDirection={sortConfig?.direction || 'asc'}
+                                                showRowNumbers={showRowNumbers}
+                                                rowHeight={rowHeight}
+                                                onSort={handleSort}
+                                                onFilter={handleFilter}
+                                                virtualMode={false}
+                                            />
+                                            <tbody>
+                                                {processedData.map((row, index) => (
+                                                    <NonVirtualTableRow key={generateRowKey(row, index)} index={index} />
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             )
                         ) : (
