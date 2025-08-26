@@ -2281,6 +2281,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             setSelectedRows(selectedRowsSet);
           }}
           onLoadMore={loadMoreData}
+          hasNextPage={pageSize === -1 && data.length < totalCount} // 只有在"全部"模式下且还有更多数据时才启用懒加载
+          isLoadingMore={isLoadingMore}
+          totalCount={totalCount}
         />
       </div>
 

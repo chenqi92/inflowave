@@ -703,8 +703,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         });
     }, [shouldUseVirtualization, pageSize, currentPage, data.length, filteredData.length, processedData.length, containerHeight, visibleColumns.length, rowHeight, effectiveSelectedColumns.length, effectiveColumnOrder.length]);
 
-    // 虚拟化表格行组件 - 修复DOM嵌套问题
-    const VirtualTableRow = memo(({ index, ...props }: { index: number }) => {
+    // 非虚拟化表格行组件 - 返回完整的tr元素
+    const NonVirtualTableRow = memo(({ index, ...props }: { index: number }) => {
         const row = processedData[index];
         if (!row) return null;
 
@@ -712,7 +712,15 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         const isSelected = selectedRows.has(index);
 
         return (
-            <>
+            <tr
+                key={rowKey}
+                className={cn(
+                    "border-b hover:bg-muted/50 transition-colors",
+                    isSelected && "bg-muted"
+                )}
+                style={{ height: `${rowHeight}px` }}
+                onClick={(e) => handleRowClick(index, e)}
+            >
                 {/* 序号列 */}
                 {showRowNumbers && (
                     <td className="px-4 py-2 text-sm text-center text-muted-foreground border-r w-16">
@@ -746,7 +754,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                         </td>
                     );
                 })}
-            </>
+            </tr>
         );
     });
 
@@ -948,7 +956,51 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                 })}
                                             </tr>
                                         )}
-                                        itemContent={(index) => <VirtualTableRow index={index} />}
+                                        itemContent={(index) => {
+                                            const row = processedData[index];
+                                            if (!row) return null;
+
+                                            const rowKey = generateRowKey(row, index);
+                                            const isSelected = selectedRows.has(index);
+
+                                            return (
+                                                <>
+                                                    {/* 序号列 */}
+                                                    {showRowNumbers && (
+                                                        <td className="px-4 py-2 text-sm text-center text-muted-foreground border-r w-16">
+                                                            {index + 1}
+                                                        </td>
+                                                    )}
+
+                                                    {/* 数据列 */}
+                                                    {visibleColumns.map((column, colIndex) => {
+                                                        const columnConfig = columnConfigMap.get(column);
+                                                        const cellValue = row[column];
+                                                        const displayValue = columnConfig?.render
+                                                            ? columnConfig.render(cellValue, row, index)
+                                                            : column === 'time' && cellValue
+                                                                ? new Date(cellValue).toLocaleString()
+                                                                : String(cellValue || '-');
+
+                                                        return (
+                                                            <td
+                                                                key={`${rowKey}-${column}`}
+                                                                className="px-4 py-2 text-sm border-r last:border-r-0"
+                                                                style={{
+                                                                    width: column === 'time' ? '180px' : '120px',
+                                                                    minWidth: column === 'time' ? '180px' : '80px',
+                                                                    maxWidth: column === 'time' ? '180px' : '300px'
+                                                                }}
+                                                            >
+                                                                <div className="truncate" title={String(displayValue)}>
+                                                                    {displayValue}
+                                                                </div>
+                                                            </td>
+                                                        );
+                                                    })}
+                                                </>
+                                            );
+                                        }}
                                         endReached={hasNextPage ? handleEndReached : undefined}
                                         overscan={20} // 增加预渲染行数以提供更好的滚动体验
                                         fixedItemHeight={rowHeight} // 固定行高以提高性能
@@ -1007,39 +1059,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                             virtualMode={false}
                                         />
                                         <tbody>
-                                            {processedData.map((row, index) => {
-                                                const rowKey = generateRowKey(row, index);
-                                                const isSelected = selectedRows.has(index);
-
-                                                return (
-                                                    <tr
-                                                        key={rowKey}
-                                                        className={cn(
-                                                            "border-b hover:bg-muted/50 transition-colors",
-                                                            isSelected && "bg-muted"
-                                                        )}
-                                                        style={{ height: `${rowHeight}px` }}
-                                                        onClick={(e) => {
-                                                            if (e.ctrlKey || e.metaKey) {
-                                                                const newSelected = new Set(selectedRows);
-                                                                if (isSelected) {
-                                                                    newSelected.delete(index);
-                                                                } else {
-                                                                    newSelected.add(index);
-                                                                }
-                                                                setSelectedRows(newSelected);
-                                                                onRowSelect?.(newSelected);
-                                                            } else {
-                                                                const newSelected = new Set([index]);
-                                                                setSelectedRows(newSelected);
-                                                                onRowSelect?.(newSelected);
-                                                            }
-                                                        }}
-                                                    >
-                                                        <VirtualTableRow index={index} />
-                                                    </tr>
-                                                );
-                                            })}
+                                            {processedData.map((row, index) => (
+                                                <NonVirtualTableRow key={generateRowKey(row, index)} index={index} />
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
