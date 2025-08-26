@@ -1565,21 +1565,21 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       return; // 只在"全部"模式下且不在加载中时才加载更多
     }
 
-    // 防抖：避免频繁触发加载（至少间隔1秒）
+    // 优化防抖：减少间隔时间以提供更流畅的无缝滚动体验
     const now = Date.now();
-    if (now - lastLoadTime < 1000) {
+    if (now - lastLoadTime < 300) { // 从1000ms减少到300ms
       return;
     }
     setLastLoadTime(now);
 
-    console.log('🔧 [TableDataBrowser] 加载更多数据，当前数据量:', data.length);
+    console.log('🔧 [TableDataBrowser] 静默加载更多数据，当前数据量:', data.length);
 
     try {
       setIsLoadingMore(true);
 
       // 计算下一批数据的偏移量
       const offset = data.length;
-      const batchSize = 100; // 每次加载100条，平衡性能和体验
+      const batchSize = 200; // 增加批次大小以减少加载频率，提供更流畅的体验
 
       // 构建查询，强制添加LIMIT和OFFSET
       // 计算目标页码：offset / batchSize + 1

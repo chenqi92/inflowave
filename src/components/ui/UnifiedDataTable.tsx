@@ -75,13 +75,20 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     const [scrollTop, setScrollTop] = useState(0);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-    // 计算可视区域
+    // 计算可视区域 - 优化无缝滚动
     const visibleRowCount = Math.ceil(containerHeight / rowHeight);
-    const overscan = 5; // 预渲染行数
+    const overscan = 8; // 增加预渲染行数以提供更流畅的滚动体验
     const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
     const endIndex = Math.min(data.length - 1, startIndex + visibleRowCount + overscan * 2);
 
-    // 虚拟化调试信息
+    // 计算滚动进度，用于预加载判断
+    const scrollProgress = data.length > 0 ? (startIndex + visibleRowCount) / data.length : 0;
+
+    // 预加载状态管理 - 必须在使用前定义
+    const [isPreloading, setIsPreloading] = useState(false);
+    const preloadTriggeredRef = useRef(false);
+
+    // 虚拟化调试信息 - 包含无缝滚动状态
     useEffect(() => {
         console.log('🎯 [CustomVirtualizedTable] 虚拟化状态:', {
             totalRows: data.length,
@@ -91,26 +98,48 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
             scrollTop,
             startIndex,
             endIndex,
-            renderingRows: endIndex - startIndex + 1
+            renderingRows: endIndex - startIndex + 1,
+            isPreloading,
+            hasNextPage,
+            preloadTriggered: preloadTriggeredRef.current
         });
-    }, [data.length, containerHeight, rowHeight, scrollTop, startIndex, endIndex]);
+    }, [data.length, containerHeight, rowHeight, scrollTop, startIndex, endIndex, isPreloading, hasNextPage]);
 
-    // 处理滚动事件
+    // 处理滚动事件 - 优化无缝滚动体验
     const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
         const newScrollTop = e.currentTarget.scrollTop;
         setScrollTop(newScrollTop);
 
-        // 检查是否需要加载更多数据
-        if (hasNextPage && onEndReached) {
+        // 无缝预加载机制：在用户滚动到接近底部时静默加载更多数据
+        if (hasNextPage && onEndReached && !isPreloading) {
             const scrollHeight = e.currentTarget.scrollHeight;
             const clientHeight = e.currentTarget.clientHeight;
             const scrollBottom = newScrollTop + clientHeight;
 
-            if (scrollHeight - scrollBottom < rowHeight * 5) {
+            // 预加载触发点：距离底部10行的位置
+            const preloadTriggerDistance = rowHeight * 10;
+            const shouldPreload = scrollHeight - scrollBottom < preloadTriggerDistance;
+
+            if (shouldPreload && !preloadTriggeredRef.current) {
+                preloadTriggeredRef.current = true;
+                setIsPreloading(true);
+
+                // 静默加载更多数据
                 onEndReached();
+
+                // 重置预加载状态
+                setTimeout(() => {
+                    setIsPreloading(false);
+                    preloadTriggeredRef.current = false;
+                }, 1000);
             }
         }
-    }, [hasNextPage, onEndReached, rowHeight]);
+    }, [hasNextPage, onEndReached, rowHeight, isPreloading]);
+
+    // 当数据更新时重置预加载状态
+    useEffect(() => {
+        preloadTriggeredRef.current = false;
+    }, [data.length]);
 
     // 渲染表头
     const renderHeader = () => (
@@ -247,11 +276,20 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
             );
         }
 
-        // 添加底部占位空间
+        // 添加底部占位空间 - 优化无缝滚动
         const remainingRows = data.length - endIndex - 1;
         if (remainingRows > 0) {
+            // 如果有下一页数据且正在预加载，添加额外的缓冲空间
+            const bufferHeight = hasNextPage && isPreloading ? rowHeight * 5 : 0;
             rows.push(
-                <tr key="bottom-spacer" style={{ height: remainingRows * rowHeight }}>
+                <tr key="bottom-spacer" style={{ height: remainingRows * rowHeight + bufferHeight }}>
+                    <td colSpan={columns.length + (showRowNumbers ? 1 : 0)} />
+                </tr>
+            );
+        } else if (hasNextPage) {
+            // 如果已经到达当前数据的底部但还有更多数据，添加缓冲空间
+            rows.push(
+                <tr key="loading-buffer" style={{ height: rowHeight * 3 }}>
                     <td colSpan={columns.length + (showRowNumbers ? 1 : 0)} />
                 </tr>
             );
@@ -1222,21 +1260,6 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         onEndReached={handleEndReached}
                                         generateRowKey={generateRowKey}
                                     />
-
-                                    {/* 懒加载指示器 */}
-                                    {hasNextPage && (isLoadingMore || loadingMoreData) && (
-                                        <div className="flex items-center justify-center py-4 bg-background border-t">
-                                            <Spin />
-                                            <span className="ml-2 text-sm text-muted-foreground">
-                                                加载更多数据...
-                                                {totalCount && (
-                                                    <span className="ml-1">
-                                                        ({processedData.length}/{totalCount})
-                                                    </span>
-                                                )}
-                                            </span>
-                                        </div>
-                                    )}
                                 </>
                             ) : (
                                 // 非虚拟化表格 - 用于小数据量
