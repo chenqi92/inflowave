@@ -85,17 +85,21 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     // 表头高度计算 - 使用 py-3 的实际高度 (12px padding top + 12px padding bottom + text height)
     const tableHeaderHeight = 49; // py-3 with text content typically results in ~49px height
 
-    // 计算可视区域 - 精确计算确保所有数据可访问
-    const availableHeight = containerHeight - tableHeaderHeight; // 减去表头高度
-    const visibleRowCount = Math.ceil(availableHeight / rowHeight);
-    const overscan = 5; // 适中的预渲染行数，避免过度渲染
+    // 窗口大小无关的虚拟滚动计算 - 确保500行在任何窗口尺寸下都可访问
+    const safeAvailableHeight = Math.max(200, containerHeight - tableHeaderHeight); // 最小200px高度
+    const visibleRowCount = Math.ceil(safeAvailableHeight / rowHeight);
+    const overscan = 5; // 适中的预渲染行数
 
-    // 精确计算起始和结束索引
+    // 简化的虚拟滚动计算 - 避免复杂的边界判断
     const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
     const endIndex = Math.min(data.length - 1, startIndex + visibleRowCount + overscan * 2);
 
-    // 确保actualEndIndex不会超出数据范围
-    const actualEndIndex = Math.min(data.length - 1, Math.max(startIndex, endIndex));
+    // 确保在接近末尾时能显示所有数据
+    const actualEndIndex = Math.min(data.length - 1, Math.max(endIndex, startIndex + visibleRowCount));
+
+    // 计算精确的最大滚动位置 - 基于实际数据高度
+    const totalDataHeight = data.length * rowHeight;
+    const maxScrollTop = Math.max(0, totalDataHeight - safeAvailableHeight);
 
     // 计算滚动进度，用于预加载判断
     const scrollProgress = data.length > 0 ? (startIndex + visibleRowCount) / data.length : 0;
@@ -118,10 +122,8 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
 
     // 虚拟化调试信息 - 只在关键时刻输出，减少性能影响
     useEffect(() => {
-        // 只在数据长度变化或滚动到边界时输出调试信息
-        const shouldLog =
-            startIndex === 0 || // 滚动到顶部时
-            actualEndIndex >= data.length - 1; // 滚动到底部时
+        // 极少量调试 - 只在数据长度变化时记录一次
+        const shouldLog = false; // 完全禁用虚拟化状态调试，避免日志泛滥
 
         if (shouldLog) {
             console.log('🎯 [CustomVirtualizedTable] 虚拟化状态:', {
@@ -148,10 +150,15 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
 
         setScrollTop(newScrollTop);
 
-        // 增强调试 - 监控滚动条同步和范围计算问题
-        if (data.length >= 500 && newScrollTop % 2000 < 50) {
+        // 使用与虚拟滚动一致的最大滚动位置计算
+        // 不在这里重复计算，直接使用虚拟滚动中的maxScrollTop
+        // 移除频繁的滚动限制，让浏览器自然处理滚动边界
+
+        // 极少量关键调试 - 只在真正到达边界时记录
+        if (data.length >= 500 && (newScrollTop <= 10 || Math.abs(newScrollTop - maxScrollTop) <= 5)) {
             const currentStartIndex = Math.max(0, Math.floor(newScrollTop / rowHeight) - 5);
-            const currentEndIndex = Math.min(data.length - 1, currentStartIndex + Math.ceil(availableHeight / rowHeight) + 10);
+            const currentAvailableHeight = Math.max(200, containerHeight - tableHeaderHeight);
+            const currentEndIndex = Math.min(data.length - 1, currentStartIndex + Math.ceil(currentAvailableHeight / rowHeight) + 10);
             const scrollProgress = scrollElement.scrollHeight > scrollElement.clientHeight
                 ? ((newScrollTop / (scrollElement.scrollHeight - scrollElement.clientHeight)) * 100).toFixed(1)
                 : '0.0';
@@ -167,7 +174,7 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
             const bottomSpacerHeight = Math.max(0, data.length - (actualEndIndex + 1)) * rowHeight;
             const expectedTotalHeight = topSpacerHeight + visibleRowsHeight + bottomSpacerHeight;
 
-            console.log('🔄 [滚动条问题全面诊断] 状态检查:', {
+            console.log('🔄 [垂直滚动条验证] 500行访问性检查:', {
                 // 垂直滚动范围精确性
                 scrollTop: newScrollTop,
                 scrollHeight: scrollElement.scrollHeight,
@@ -180,6 +187,9 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                 scrollProgress: `${scrollProgress}%`,
                 canAccessLastRow: currentEndIndex >= data.length - 1,
                 isAtBottom: newScrollTop >= scrollElement.scrollHeight - scrollElement.clientHeight - 1,
+                lastRowVisible: currentEndIndex === data.length - 1,
+                row500Accessible: currentEndIndex >= 499, // 验证第500行（索引499）可访问
+                scrollAtMaxPosition: Math.abs(newScrollTop - maxScrollTop) <= 1,
 
                 // 水平滚动同步状态
                 horizontalWrapperScrollLeft: horizontalWrapper?.scrollLeft || 0,
@@ -197,8 +207,8 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                 contentWidthMatch: (horizontalWrapper?.scrollWidth || 0) === (floatingScrollbar?.scrollWidth || 0) ? '✅' : '❌',
 
                 // 容器尺寸信息
-                containerHeight: availableHeight,
-                visibleRowCount: Math.ceil(availableHeight / rowHeight),
+                containerHeight: currentAvailableHeight,
+                visibleRowCount: Math.ceil(currentAvailableHeight / rowHeight),
                 windowInnerHeight: window.innerHeight
             });
         }
@@ -276,7 +286,7 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
         // 检测水平滚动（Shift+滚轮 或 水平滚轮）
         if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-            e.preventDefault();
+            // 不调用preventDefault，避免passive event listener错误
 
             if (horizontalWrapperRef.current) {
                 const horizontalWrapper = horizontalWrapperRef.current;
@@ -493,7 +503,13 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                         minHeight: `${rowHeight}px`,
                         maxHeight: `${rowHeight}px`,
                         boxSizing: 'border-box',
-                        borderBottomWidth: '1px' // 确保边框宽度一致
+                        // Multiple fallback approaches for visible row borders - matching column border color
+                        borderBottom: '1px solid hsl(var(--border))',
+                        borderBottomColor: 'hsl(var(--border))',
+                        borderBottomStyle: 'solid',
+                        borderBottomWidth: '1px',
+                        // Add box shadow as additional visual separator
+                        boxShadow: 'inset 0 -1px 0 0 hsl(var(--border))'
                     }}
                     onMouseDown={(e) => handleMouseDown(i, e)}
                     onMouseEnter={() => handleMouseEnter(i)}
@@ -556,14 +572,14 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
             );
         }
 
-        // 添加调试信息以验证spacer计算
-        if (data.length >= 500) {
+        // 完全禁用spacer调试 - 避免日志泛滥
+        if (false && data.length >= 500 && remainingRows === 0 && actualEndIndex === data.length - 1 && startIndex > data.length - 20) {
             const topSpacerHeight = startIndex > 0 ? startIndex * rowHeight : 0;
             const visibleRowsHeight = (actualEndIndex - startIndex + 1) * rowHeight;
             const bottomSpacerHeight = remainingRows > 0 ? remainingRows * rowHeight : 0;
             const totalCalculatedHeight = topSpacerHeight + visibleRowsHeight + bottomSpacerHeight;
 
-            console.log('📏 [Virtual Scrolling] Spacer计算验证:', {
+            console.log('📏 [Virtual Scrolling] 关键状态验证:', {
                 startIndex,
                 actualEndIndex,
                 remainingRows,
@@ -573,7 +589,9 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                 bottomSpacerHeight,
                 totalCalculatedHeight,
                 expectedHeight: data.length * rowHeight,
-                heightMatch: totalCalculatedHeight === data.length * rowHeight ? '✅' : '❌'
+                heightMatch: totalCalculatedHeight === data.length * rowHeight ? '✅' : '❌',
+                isAtEnd: actualEndIndex >= data.length - 1,
+                missingRows: data.length - 1 - actualEndIndex
             });
         }
 
@@ -587,12 +605,19 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
             const style = document.createElement('style');
             style.id = styleId;
             style.textContent = `
-                /* 主滚动容器 - 显示垂直滚动条，隐藏水平滚动条 */
+                /* 主滚动容器 - 可靠的浮动滚动条实现 */
                 .unified-table-scroll-container {
-                    /* 确保垂直滚动条始终可见 */
-                    overflow-y: scroll !important;
+                    /* 使用标准scroll，通过负边距技术实现浮动效果 */
+                    overflow-y: scroll;
                     overflow-x: hidden;
-                    scrollbar-gutter: stable;
+                    /* 完全禁用滚动条的布局空间预留 */
+                    scrollbar-gutter: none !important;
+                    /* 通过负边距抵消滚动条占用的空间 */
+                    margin-right: -17px;
+                    padding-right: 17px;
+                    /* 确保内容使用完整宽度 */
+                    box-sizing: border-box;
+                    width: calc(100% + 17px); /* 补偿负边距 */
                 }
 
                 /* 水平滚动包装器 - 隐藏水平滚动条但保持功能 */
@@ -607,32 +632,62 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                     background: transparent;
                 }
 
-                /* 确保垂直滚动条样式 */
+                /* 简化的滚动条样式 - 确保兼容性 */
                 .unified-table-scroll-container::-webkit-scrollbar {
                     width: 12px;
+                    background: transparent;
                 }
 
                 .unified-table-scroll-container::-webkit-scrollbar-track {
-                    background: hsl(var(--muted));
-                    border-radius: 6px;
+                    background: rgba(0, 0, 0, 0.05);
+                    border-radius: 7px;
+                    /* 确保轨道始终可见 */
+                    min-height: 20px;
+                    /* 半透明背景，现代浮动效果 */
+                    backdrop-filter: blur(8px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
                 }
 
                 .unified-table-scroll-container::-webkit-scrollbar-thumb {
-                    background: hsl(var(--border));
-                    border-radius: 6px;
+                    background: linear-gradient(180deg, hsl(var(--border)), hsl(var(--muted-foreground)));
+                    border-radius: 7px;
                     border: 2px solid transparent;
                     background-clip: content-box;
+                    /* 确保thumb始终有最小高度，防止消失 */
+                    min-height: 30px;
+                    /* 增强浮动效果和可见性 */
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
                 }
 
                 .unified-table-scroll-container::-webkit-scrollbar-thumb:hover {
-                    background: hsl(var(--muted-foreground));
+                    background: linear-gradient(180deg, hsl(var(--muted-foreground)), hsl(var(--foreground)));
                     background-clip: content-box;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+                    /* 确保hover状态下thumb不会消失 */
+                    min-height: 30px;
                 }
 
-                /* Firefox 滚动条样式 */
+                .unified-table-scroll-container::-webkit-scrollbar-thumb:active {
+                    background: linear-gradient(180deg, hsl(var(--foreground)), hsl(var(--muted-foreground)));
+                    background-clip: content-box;
+                    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+                    /* 确保active状态下thumb保持可见 */
+                    min-height: 30px;
+                }
+
+                /* Firefox 滚动条样式 - 浮动效果和始终可见 */
                 .unified-table-scroll-container {
                     scrollbar-width: thin;
-                    scrollbar-color: hsl(var(--border)) hsl(var(--muted));
+                    scrollbar-color: hsl(var(--border)) transparent;
+                    /* 确保Firefox中滚动条不占用布局空间 */
+                    scrollbar-gutter: none;
+                }
+
+                /* 确保滚动条在所有浏览器中都不影响布局 */
+                .unified-table-scroll-container {
+                    /* 强制内容使用全宽，忽略滚动条 */
+                    width: 100%;
+                    box-sizing: border-box;
                 }
 
                 /* 美化浮动水平滚动条 */
@@ -679,8 +734,50 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                     border-spacing: 0;
                     table-layout: fixed;
                 }
+
+                /* Force row borders to be visible - matching column border color */
+                .unified-table-data tbody tr,
+                .unified-table-data tr {
+                    border-bottom: 1px solid hsl(var(--border)) !important;
+                    box-shadow: inset 0 -1px 0 0 hsl(var(--border)) !important;
+                }
+
+                /* Force row number borders to be visible */
+                .row-numbers-content tbody tr,
+                .row-numbers-content tr {
+                    border-bottom: 1px solid hsl(var(--border)) !important;
+                    box-shadow: inset 0 -1px 0 0 hsl(var(--border)) !important;
+                }
+
+                /* Force all table rows to have visible borders with fallbacks */
+                tr[style*="border-bottom"] {
+                    border-bottom: 1px solid hsl(var(--border)) !important;
+                    border-bottom-color: hsl(var(--border)) !important;
+                    border-bottom-style: solid !important;
+                    border-bottom-width: 1px !important;
+                }
+
+                /* Additional visual separator using pseudo-elements */
+                .unified-table-data tbody tr::after,
+                .row-numbers-content tbody tr::after {
+                    content: '';
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 1px;
+                    background-color: hsl(var(--border));
+                    pointer-events: none;
+                }
+
+                /* Ensure table rows have relative positioning for pseudo-elements */
+                .unified-table-data tbody tr,
+                .row-numbers-content tbody tr {
+                    position: relative !important;
+                }
             `;
             document.head.appendChild(style);
+            console.log('🎨 [UnifiedDataTable] Row border styles applied to document head');
         }
     }, []);
 
@@ -723,12 +820,12 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                             }}
                         >
                             <table
-                                className="border-collapse unified-table-header"
+                                className="unified-table-header"
                                 style={{
                                     width: 'max-content',
                                     minWidth: '100%',
                                     tableLayout: 'fixed',
-                                    // 确保与数据表格完全一致的布局
+                                    // Use separate borders to ensure row borders are visible
                                     borderCollapse: 'separate',
                                     borderSpacing: '0'
                                 }}
@@ -773,9 +870,11 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
 
                                 {/* 可视区域内的行号 - 使用table结构确保对齐 */}
                                 <table
-                                    className="border-collapse w-full"
+                                    className="w-full"
                                     style={{
                                         tableLayout: 'fixed',
+                                        // Use separate borders to ensure row borders are visible
+                                        borderCollapse: 'separate',
                                         borderSpacing: 0
                                     }}
                                 >
@@ -802,7 +901,13 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                                                         minHeight: `${rowHeight}px`,
                                                         maxHeight: `${rowHeight}px`,
                                                         boxSizing: 'border-box',
-                                                        borderBottomWidth: '1px'
+                                                        // Multiple fallback approaches for visible row borders - matching column border color
+                                                        borderBottom: '1px solid hsl(var(--border))',
+                                                        borderBottomColor: 'hsl(var(--border))',
+                                                        borderBottomStyle: 'solid',
+                                                        borderBottomWidth: '1px',
+                                                        // Add box shadow as additional visual separator
+                                                        boxShadow: 'inset 0 -1px 0 0 hsl(var(--border))'
                                                     }}
                                                     onMouseDown={(e) => handleMouseDown(rowIndex, e)}
                                                     onMouseEnter={() => handleMouseEnter(rowIndex)}
@@ -883,11 +988,12 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                                 }}
                             >
                                 <table
-                                    className="border-collapse unified-table-data"
+                                    className="unified-table-data"
                                     style={{
                                         width: 'max-content',
                                         minWidth: '100%',
                                         tableLayout: 'fixed',
+                                        // Use separate borders to ensure row borders are visible
                                         borderCollapse: 'separate',
                                         borderSpacing: '0'
                                     }}
@@ -1551,9 +1657,19 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
         // 初始计算
         updateAvailableHeight();
 
-        // 监听窗口大小变化
+        // 监听窗口大小变化 - 确保响应式数据显示
         const handleResize = () => {
-            requestAnimationFrame(updateAvailableHeight);
+            requestAnimationFrame(() => {
+                updateAvailableHeight();
+                // 确保虚拟滚动在窗口大小变化后重新计算
+                if (data.length >= 500) {
+                    console.log('📐 [Window Resize] 窗口大小变化，重新计算虚拟滚动:', {
+                        windowHeight: window.innerHeight,
+                        dataLength: data.length,
+                        timestamp: Date.now()
+                    });
+                }
+            });
         };
 
         window.addEventListener('resize', handleResize);
@@ -1757,7 +1873,16 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                     "border-b hover:bg-muted/50 transition-colors",
                     isSelected && "bg-blue-50"
                 )}
-                style={{ height: `${rowHeight}px` }}
+                style={{
+                    height: `${rowHeight}px`,
+                    // Multiple fallback approaches for visible row borders - matching column border color
+                    borderBottom: '1px solid hsl(var(--border))',
+                    borderBottomColor: 'hsl(var(--border))',
+                    borderBottomStyle: 'solid',
+                    borderBottomWidth: '1px',
+                    // Add box shadow as additional visual separator
+                    boxShadow: 'inset 0 -1px 0 0 hsl(var(--border))'
+                }}
                 onClick={(e) => handleRowClick(index, e)}
             >
                 {/* 数据列（移除序号列，因为已独立显示） */}
@@ -1989,7 +2114,14 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                                 height: `${rowHeight}px`,
                                                                 minHeight: `${rowHeight}px`,
                                                                 maxHeight: `${rowHeight}px`,
-                                                                boxSizing: 'border-box'
+                                                                boxSizing: 'border-box',
+                                                                // Multiple fallback approaches for visible row borders - matching column border color
+                                                                borderBottom: '1px solid hsl(var(--border))',
+                                                                borderBottomColor: 'hsl(var(--border))',
+                                                                borderBottomStyle: 'solid',
+                                                                borderBottomWidth: '1px',
+                                                                // Add box shadow as additional visual separator
+                                                                boxShadow: 'inset 0 -1px 0 0 hsl(var(--border))'
                                                             }}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
@@ -2008,11 +2140,13 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                     {/* 数据表格区域 */}
                                     <div className="flex-1 overflow-auto" style={{ height: `${containerHeight}px` }}>
                                         <table
-                                            className="border-collapse"
                                             style={{
                                                 width: 'max-content',
                                                 minWidth: '100%',
-                                                tableLayout: 'fixed'
+                                                tableLayout: 'fixed',
+                                                // Use separate borders to ensure row borders are visible
+                                                borderCollapse: 'separate',
+                                                borderSpacing: '0'
                                             }}
                                         >
                                             <TableHeader
