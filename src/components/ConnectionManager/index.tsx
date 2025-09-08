@@ -7,8 +7,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui';
-import { UnifiedDataTable } from '@/components/ui/UnifiedDataTable';
-import type { ColumnConfig, DataRow } from '@/components/ui/UnifiedDataTable';
+import { GlideDataTable } from '@/components/ui/GlideDataTable';
+import type { ColumnConfig, DataRow } from '@/components/ui/GlideDataTable';
 import { useGlobalDialog } from '@/components/providers/DialogProvider';
 import {
   Trash2,
@@ -859,7 +859,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       {/* 连接表格 */}
       <div className='flex-1 overflow-hidden px-6 py-6'>
         <div className='h-full rounded-lg border overflow-hidden bg-background'>
-          <UnifiedDataTable
+          <GlideDataTable
             columns={columns}
             data={dataSource}
             loading={false}

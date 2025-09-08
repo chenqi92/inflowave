@@ -1039,12 +1039,52 @@ export const useConnectionStore = create<ConnectionState>()(
               connectedConnectionIds: state.connectedConnectionIds.filter(
                 id => !invalidConnections.includes(id)
               ),
-              activeConnectionId: state.activeConnectionId && invalidConnections.includes(state.activeConnectionId) 
-                ? null 
+              activeConnectionId: state.activeConnectionId && invalidConnections.includes(state.activeConnectionId)
+                ? null
                 : state.activeConnectionId,
             }));
           }
-          
+
+          // 同步后端连接状态
+          try {
+            console.log('🔄 同步后端连接状态...');
+            const backendStatuses = await safeTauriInvoke<Record<string, any>>('get_all_connection_statuses');
+
+            if (backendStatuses) {
+              const updatedStatuses: Record<string, ConnectionStatus> = {};
+              const connectedIds: string[] = [];
+
+              // 处理后端返回的连接状态
+              Object.entries(backendStatuses).forEach(([id, status]) => {
+                const isConnected = status?.status === 'connected' || status?.connected === true;
+
+                updatedStatuses[id] = {
+                  id,
+                  status: isConnected ? 'connected' : 'disconnected',
+                  error: status?.error,
+                  latency: status?.latency,
+                  lastConnected: isConnected ? new Date() : undefined,
+                };
+
+                if (isConnected) {
+                  connectedIds.push(id);
+                }
+              });
+
+              // 更新前端状态
+              set(state => ({
+                ...state,
+                connectionStatuses: { ...state.connectionStatuses, ...updatedStatuses },
+                tableConnectionStatuses: { ...state.tableConnectionStatuses, ...updatedStatuses },
+                connectedConnectionIds: [...new Set([...state.connectedConnectionIds, ...connectedIds])],
+              }));
+
+              console.log(`✅ 连接状态同步完成: ${connectedIds.length} 个连接已连接`);
+            }
+          } catch (statusError) {
+            console.warn('⚠️ 同步连接状态失败，将在后续重试:', statusError);
+          }
+
           console.log('✅ 连接配置同步完成');
         } catch (error) {
           console.error('❌ 同步连接配置失败:', error);

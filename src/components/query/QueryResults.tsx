@@ -1,5 +1,5 @@
 import React, {useState, useCallback, startTransition} from 'react';
-import { UnifiedDataTable, type ColumnConfig, type DataRow } from '@/components/ui/UnifiedDataTable';
+import { GlideDataTable, type ColumnConfig, type DataRow } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import {
     Tabs,
@@ -497,7 +497,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 
                     {/* 数据表格 - 完全按照 TableDataBrowser.tsx 的配置 */}
                     <div className="flex-1 min-h-0">
-                        <UnifiedDataTable
+                        <GlideDataTable
                             data={advancedDataSource}
                             columns={advancedColumns}
                             loading={false}

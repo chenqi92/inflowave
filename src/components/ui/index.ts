@@ -23,6 +23,25 @@ export {
   CardTitle,
 } from './card';
 
+// Context Menu
+export {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuCheckboxItem,
+  ContextMenuRadioItem,
+  ContextMenuLabel,
+  ContextMenuSeparator,
+  ContextMenuShortcut,
+  ContextMenuGroup,
+  ContextMenuPortal,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuRadioGroup,
+} from './context-menu';
+
 export {
   Dialog,
   DialogContent,
@@ -45,6 +64,26 @@ export {
 } from './Table';
 
 // DataTable已移除，统一使用UnifiedDataTable
+export { UnifiedDataTable } from './UnifiedDataTable';
+export type {
+  UnifiedDataTableProps,
+  DataRow as UnifiedDataRow,
+  ColumnConfig as UnifiedColumnConfig,
+  SortConfig as UnifiedSortConfig,
+  FilterConfig as UnifiedFilterConfig,
+  PaginationConfig as UnifiedPaginationConfig
+} from './UnifiedDataTable';
+
+// 新的高性能数据表格组件 - 基于 Glide Data Grid
+export { GlideDataTable } from './GlideDataTable';
+export type {
+  GlideDataTableProps,
+  DataRow,
+  ColumnConfig,
+  SortConfig,
+  FilterConfig,
+  PaginationConfig
+} from './GlideDataTable';
 
 export { Skeleton } from './Skeleton';
 

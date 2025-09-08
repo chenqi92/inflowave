@@ -33,10 +33,10 @@ export const isTauriEnvironment = (): boolean => {
   );
 };
 
-// 检查是否在浏览器开发环境中 - 桌面应用专用，始终返回false
+// 检查是否在浏览器开发环境中
 export const isBrowserEnvironment = (): boolean => {
-  // 桌面应用专用，不支持浏览器环境
-  return false;
+  // 如果不在 Tauri 环境中，则认为在浏览器环境中
+  return !isTauriEnvironment();
 };
 
 // 定义返回 void 的命令列表
@@ -153,6 +153,7 @@ export const safeTauriInvokeOptional = async <T = any>(
   command: string,
   args?: Record<string, any>
 ): Promise<T | null> => {
+
   try {
     // 直接尝试调用 Tauri API，不进行环境检测
     const { invoke } = await import('@tauri-apps/api/core');

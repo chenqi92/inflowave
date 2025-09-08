@@ -107,23 +107,8 @@ const Connections: React.FC = () => {
         await safeTauriInvoke<ConnectionConfig[]>('get_connections');
 
       if (connectionList) {
-        // 启动时强制所有连接为断开状态，确保前后端状态一致
-        for (const conn of connectionList) {
-          // 创建默认的断开状态
-          const defaultStatus: ConnectionStatus = {
-            id: conn.id!,
-            status: 'disconnected' as const,
-            error: undefined,
-            lastConnected: undefined,
-            latency: undefined,
-          };
-          setConnectionStatus(conn.id!, defaultStatus);
-        }
-
-        // 确保connectedConnectionIds也被清空
-        const { syncConnectionStates } = useConnectionStore.getState();
-        syncConnectionStates();
-
+        // 连接配置已通过 syncConnectionsFromBackend 同步，包括状态
+        console.log(`📋 连接列表加载完成: ${connectionList.length} 个连接`);
       }
     } catch (error) {
       showMessage.error(`加载连接列表失败: ${error}`);

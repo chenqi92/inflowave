@@ -26,8 +26,8 @@ import {
   DatePicker,
 } from '@/components/ui';
 import {
-  UnifiedDataTable,
-} from '@/components/ui/UnifiedDataTable';
+  GlideDataTable,
+} from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import {
   DndContext,
@@ -1179,6 +1179,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         },
       });
 
+
+
       if (result.results?.[0]?.series?.[0]) {
         const series = result.results[0].series[0];
         const { columns: resultColumns, values } = series;
@@ -1233,13 +1235,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             有效列名: validColumns
           });
 
-          const formattedData: DataRow[] = values.map(
-            (row: any[], index: number) => {
-              const record: DataRow = { _id: index };
+          console.log('🔧 [TableDataBrowser] 开始数据格式化，数据行数:', values.length);
 
-              // 添加序号列
-              const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
-              record['#'] = offset + index + 1;
+          let formattedData: DataRow[] = [];
+          try {
+            formattedData = values.map(
+              (row: any[], index: number) => {
+                try {
+                  const record: DataRow = { _id: index };
+
+                  // 添加序号列
+                  const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
+                  record['#'] = offset + index + 1;
 
               // 添加其他列数据，只处理有效列
               if (Array.isArray(row) && validColumns.length > 0) {
@@ -1267,23 +1274,63 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                   });
                 } else {
                   // 非IoTDB的正常处理
-                  validColumns.forEach((col: string) => {
-                    // 找到该列在原始列数组中的索引
-                    const colIndex = resultColumns.indexOf(col);
-                    if (colIndex !== -1 && colIndex < row.length) {
-                      record[col] = row[colIndex];
-                    }
-                  });
+                  try {
+                    validColumns.forEach((col: string) => {
+                      // 找到该列在原始列数组中的索引
+                      const colIndex = resultColumns.indexOf(col);
+                      if (colIndex !== -1 && colIndex < row.length) {
+                        record[col] = row[colIndex];
+                      }
+                    });
+                  } catch (colError) {
+                    console.error('🔧 [TableDataBrowser] 列映射失败:', {
+                      error: colError,
+                      validColumns: validColumns,
+                      resultColumns: resultColumns,
+                      row: row,
+                      rowIndex: index
+                    });
+                    throw colError;
+                  }
                 }
               }
               return record;
-            }
-          );
+                } catch (rowError) {
+                  console.error('🔧 [TableDataBrowser] 行处理失败:', {
+                    error: rowError,
+                    rowIndex: index,
+                    row: row,
+                    validColumns: validColumns,
+                    resultColumns: resultColumns
+                  });
+                  // 返回一个基本的记录，避免整个处理失败
+                  return { _id: index, '#': index + 1 };
+                }
+              }
+            );
+
+          console.log('🔧 [TableDataBrowser] 数据格式化完成:', {
+            格式化数据长度: formattedData.length,
+            格式化数据样本: formattedData.slice(0, 2)
+          });
 
           // 存储原始数据
           setRawData(formattedData);
           // 直接设置数据，排序将通过 useMemo 处理
           setData(formattedData);
+
+          console.log('🔧 [TableDataBrowser] 数据设置完成');
+        } catch (formatError) {
+          console.error('🔧 [TableDataBrowser] 数据格式化失败:', formatError);
+          console.error('🔧 [TableDataBrowser] 格式化错误详情:', {
+            error: formatError,
+            values: values?.slice(0, 2),
+            validColumns: validColumns,
+            resultColumns: resultColumns
+          });
+          setRawData([]);
+          setData([]);
+        }
         }
       } else {
         setRawData([]);
@@ -1333,9 +1380,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       console.log('应用过滤器查询:', query);
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
-        connectionId,
-        database,
-        query,
+        request: {
+          connection_id: connectionId,
+          database,
+          query,
+        },
       });
 
       if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
@@ -2216,7 +2265,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       {/* 数据表格 - 使用统一的UnifiedDataTable组件 */}
       <div className='flex-1 min-h-0'>
-        <UnifiedDataTable
+        <GlideDataTable
           data={sortedData}
           columns={columnOrder
             .filter(col => col !== '#')

@@ -530,9 +530,8 @@ const App: React.FC = () => {
           await safeTauriInvoke<void>('initialize_connections');
           console.log('连接服务初始化成功');
 
-          // 初始化前端连接状态，确保所有连接都为断开状态
-          const { initializeConnectionStates, startConnectionSync } = useConnectionStore.getState();
-          initializeConnectionStates();
+          // 启动连接配置同步机制（会自动处理连接状态）
+          const { startConnectionSync } = useConnectionStore.getState();
           console.log('前端连接状态初始化完成');
           
           // 启动连接配置同步机制

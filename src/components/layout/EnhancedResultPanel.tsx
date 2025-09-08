@@ -29,7 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui';
-import { UnifiedDataTable } from '@/components/ui/UnifiedDataTable';
+import { GlideDataTable } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import ExportOptionsDialog, { type ExportOptions } from '@/components/query/ExportOptionsDialog';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
@@ -1312,7 +1312,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
                   {/* 高级数据表格 - 完全按照 TableDataBrowser.tsx 的配置 */}
                   <div className='flex-1 min-h-0'>
-                    <UnifiedDataTable
+                    <GlideDataTable
                       data={parsedResult.data.map((row, rowIndex) => ({
                         _id: `result-${rowIndex}`,
                         ...row
@@ -1345,7 +1345,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       showToolbar={false} // 使用外部工具栏
                       showRowNumbers={true}
                       className='h-full'
-                      onPageChange={(page, size) => {
+                      onPageChange={(page: number, size: number) => {
                         handlePageChange(page);
                         if (size !== pageSize) {
                           handlePageSizeChange(size.toString());
@@ -1760,7 +1760,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
               {/* 数据表格 - 使用UnifiedDataTable组件支持高级功能 */}
               <div className='flex-1 min-h-0'>
-                <UnifiedDataTable
+                <GlideDataTable
                   data={parsedData.data.map((row, index) => ({
                     _id: `table-${index}`,
                     ...row
@@ -1788,8 +1788,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     showSizeChanger: true,
                     pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
                   }}
-                  virtualized={true} // 启用虚拟化
-                  rowHeight={48} // 设置行高
+                  height={600} // 设置高度
                   maxHeight={600} // 设置最大高度
                   searchable={true}
                   filterable={true}
