@@ -38,7 +38,7 @@ import {
     FileSpreadsheet,
 } from 'lucide-react';
 
-// 自定义虚拟化表格组件
+// 虚拟化表格组件
 interface CustomVirtualizedTableProps {
     data: any[];
     columns: string[];
@@ -56,7 +56,61 @@ interface CustomVirtualizedTableProps {
     hasNextPage?: boolean;
     onEndReached?: () => void;
     generateRowKey: (row: any, index: number) => string;
+    virtuosoRef?: React.RefObject<TableVirtuosoHandle>;
 }
+
+interface VirtualizedTableContext {
+    onRowClick: (index: number, event: React.MouseEvent) => void;
+    selectedRows: Set<number>;
+    rowHeight: number;
+}
+
+const VirtuosoTableRow = React.forwardRef<HTMLTableRowElement, any>(({ context, children, ...rowProps }, ref) => {
+    const typedContext = context as VirtualizedTableContext;
+    const index = (rowProps['data-item-index'] ?? rowProps['data-index'] ?? 0) as number;
+    const isSelected = typedContext.selectedRows.has(index);
+    const baseStyle = rowProps.style || {};
+
+    return (
+        <tr
+            {...rowProps}
+            ref={ref}
+            className={cn(
+                'border-b hover:bg-muted/50 transition-colors',
+                isSelected && 'bg-blue-50'
+            )}
+            style={{
+                ...baseStyle,
+                height: `${typedContext.rowHeight}px`,
+                minHeight: `${typedContext.rowHeight}px`,
+                maxHeight: `${typedContext.rowHeight}px`,
+                boxSizing: 'border-box'
+            }}
+            onClick={(event: React.MouseEvent<HTMLTableRowElement>) => {
+                typedContext.onRowClick(index, event);
+            }}
+        >
+            {children}
+        </tr>
+    );
+});
+VirtuosoTableRow.displayName = 'VirtuosoTableRow';
+
+const VirtuosoScroller = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+    ({ className, style, ...props }, ref) => (
+        <div
+            {...props}
+            ref={ref}
+            className={cn('unified-table-scroll-container unified-table-horizontal-wrapper overflow-auto', className)}
+            style={{
+                ...style,
+                height: '100%',
+                maxHeight: '100%'
+            }}
+        />
+    )
+);
+VirtuosoScroller.displayName = 'VirtuosoScroller';
 
 const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     data,
@@ -74,1079 +128,216 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
     sortable,
     hasNextPage,
     onEndReached,
-    generateRowKey
+    generateRowKey,
+    virtuosoRef
 }) => {
-    const [scrollTop, setScrollTop] = useState(0);
-    const scrollContainerRef = useRef<HTMLDivElement>(null);
-    const headerRef = useRef<HTMLDivElement>(null);
-    const tableContainerRef = useRef<HTMLDivElement>(null);
-    const horizontalWrapperRef = useRef<HTMLDivElement>(null);
+    const internalVirtuosoRef = useRef<TableVirtuosoHandle>(null);
+    const tableRef = virtuosoRef ?? internalVirtuosoRef;
+    const loadMoreTriggeredRef = useRef(false);
 
-    // 表头高度计算 - 使用 py-3 的实际高度 (12px padding top + 12px padding bottom + text height)
-    const tableHeaderHeight = 49; // py-3 with text content typically results in ~49px height
-
-    // 窗口大小无关的虚拟滚动计算 - 确保500行在任何窗口尺寸下都可访问
-    const safeAvailableHeight = Math.max(200, containerHeight - tableHeaderHeight); // 最小200px高度
-    const visibleRowCount = Math.ceil(safeAvailableHeight / rowHeight);
-    const overscan = 5; // 适中的预渲染行数
-
-    // 简化的虚拟滚动计算 - 避免复杂的边界判断
-    const startIndex = Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
-    const endIndex = Math.min(data.length - 1, startIndex + visibleRowCount + overscan * 2);
-
-    // 确保在接近末尾时能显示所有数据
-    const actualEndIndex = Math.min(data.length - 1, Math.max(endIndex, startIndex + visibleRowCount));
-
-    // 计算精确的最大滚动位置 - 基于实际数据高度
-    const totalDataHeight = data.length * rowHeight;
-    const maxScrollTop = Math.max(0, totalDataHeight - safeAvailableHeight);
-
-    // 计算滚动进度，用于预加载判断
-    const scrollProgress = data.length > 0 ? (startIndex + visibleRowCount) / data.length : 0;
-
-    // 预加载状态管理 - 必须在使用前定义
-    const [isPreloading, setIsPreloading] = useState(false);
-    const preloadTriggeredRef = useRef(false);
-
-    // 行号区域引用，用于滚动同步
-    const rowNumbersRef = useRef<HTMLDivElement>(null);
-
-    // 拖拽多选状态
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragStartIndex, setDragStartIndex] = useState<number | null>(null);
-    const [dragEndIndex, setDragEndIndex] = useState<number | null>(null);
-    const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
-
-    // 滚动同步状态，防止循环同步
-    const syncingScrollRef = useRef(false);
-
-    // 虚拟化调试信息 - 只在关键时刻输出，减少性能影响
     useEffect(() => {
-        // 极少量调试 - 只在数据长度变化时记录一次
-        const shouldLog = false; // 完全禁用虚拟化状态调试，避免日志泛滥
-
-        if (shouldLog) {
-            console.log('🎯 [CustomVirtualizedTable] 虚拟化状态:', {
-                totalRows: data.length,
-                containerHeight,
-                availableHeight: containerHeight - tableHeaderHeight,
-                visibleRowCount,
-                scrollTop,
-                startIndex,
-                actualEndIndex,
-                renderingRows: actualEndIndex - startIndex + 1,
-                canScrollMore: actualEndIndex < data.length - 1
-            });
-        }
-    }, [data.length, startIndex, actualEndIndex]);
-
-    // 处理滚动事件 - 同步行号区域和表头滚动
-    const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-        if (syncingScrollRef.current) return; // 防止循环同步
-
-        const scrollElement = e.currentTarget;
-        const newScrollTop = scrollElement.scrollTop;
-        const newScrollLeft = scrollElement.scrollLeft;
-
-        setScrollTop(newScrollTop);
-
-        // 使用与虚拟滚动一致的最大滚动位置计算
-        // 不在这里重复计算，直接使用虚拟滚动中的maxScrollTop
-        // 移除频繁的滚动限制，让浏览器自然处理滚动边界
-
-        // 极少量关键调试 - 只在真正到达边界时记录
-        if (data.length >= 500 && (newScrollTop <= 10 || Math.abs(newScrollTop - maxScrollTop) <= 5)) {
-            const currentStartIndex = Math.max(0, Math.floor(newScrollTop / rowHeight) - 5);
-            const currentAvailableHeight = Math.max(200, containerHeight - tableHeaderHeight);
-            const currentEndIndex = Math.min(data.length - 1, currentStartIndex + Math.ceil(currentAvailableHeight / rowHeight) + 10);
-            const scrollProgress = scrollElement.scrollHeight > scrollElement.clientHeight
-                ? ((newScrollTop / (scrollElement.scrollHeight - scrollElement.clientHeight)) * 100).toFixed(1)
-                : '0.0';
-
-            // 检查水平滚动同步状态
-            const horizontalWrapper = document.querySelector('.unified-table-horizontal-wrapper') as HTMLDivElement;
-            const headerScrollContainer = document.querySelector('.header-scroll-container') as HTMLDivElement;
-            const floatingScrollbar = document.querySelector('.floating-h-scrollbar') as HTMLDivElement;
-
-            // 计算预期的总高度（包括spacers）
-            const topSpacerHeight = Math.max(0, startIndex) * rowHeight;
-            const visibleRowsHeight = (actualEndIndex - startIndex + 1) * rowHeight;
-            const bottomSpacerHeight = Math.max(0, data.length - (actualEndIndex + 1)) * rowHeight;
-            const expectedTotalHeight = topSpacerHeight + visibleRowsHeight + bottomSpacerHeight;
-
-            console.log('🔄 [垂直滚动条验证] 500行访问性检查:', {
-                // 垂直滚动范围精确性
-                scrollTop: newScrollTop,
-                scrollHeight: scrollElement.scrollHeight,
-                clientHeight: scrollElement.clientHeight,
-                dataLength: data.length,
-                expectedTotalHeight,
-                actualTotalHeight: scrollElement.scrollHeight,
-                heightMismatch: Math.abs(scrollElement.scrollHeight - expectedTotalHeight),
-                virtualizedRange: `${startIndex}-${actualEndIndex}`,
-                scrollProgress: `${scrollProgress}%`,
-                canAccessLastRow: currentEndIndex >= data.length - 1,
-                isAtBottom: newScrollTop >= scrollElement.scrollHeight - scrollElement.clientHeight - 1,
-                lastRowVisible: currentEndIndex === data.length - 1,
-                row500Accessible: currentEndIndex >= 499, // 验证第500行（索引499）可访问
-                scrollAtMaxPosition: Math.abs(newScrollTop - maxScrollTop) <= 1,
-
-                // 水平滚动同步状态
-                horizontalWrapperScrollLeft: horizontalWrapper?.scrollLeft || 0,
-                headerScrollLeft: headerScrollContainer?.scrollLeft || 0,
-                floatingScrollbarScrollLeft: floatingScrollbar?.scrollLeft || 0,
-                horizontalSyncStatus: {
-                    wrapperToHeader: (horizontalWrapper?.scrollLeft || 0) === (headerScrollContainer?.scrollLeft || 0) ? '✅' : '❌',
-                    wrapperToFloating: (horizontalWrapper?.scrollLeft || 0) === (floatingScrollbar?.scrollLeft || 0) ? '✅' : '❌',
-                    headerToFloating: (headerScrollContainer?.scrollLeft || 0) === (floatingScrollbar?.scrollLeft || 0) ? '✅' : '❌'
-                },
-
-                // 内容宽度匹配性
-                tableContentWidth: horizontalWrapper?.scrollWidth || 0,
-                floatingScrollbarContentWidth: floatingScrollbar?.scrollWidth || 0,
-                contentWidthMatch: (horizontalWrapper?.scrollWidth || 0) === (floatingScrollbar?.scrollWidth || 0) ? '✅' : '❌',
-
-                // 容器尺寸信息
-                containerHeight: currentAvailableHeight,
-                visibleRowCount: Math.ceil(currentAvailableHeight / rowHeight),
-                windowInnerHeight: window.innerHeight
-            });
-        }
-
-        // 同步行号区域的垂直滚动位置
-        if (rowNumbersRef.current && showRowNumbers) {
-            const rowNumbersContent = rowNumbersRef.current.querySelector('.row-numbers-content') as HTMLDivElement;
-            if (rowNumbersContent) {
-                syncingScrollRef.current = true;
-                rowNumbersContent.scrollTop = newScrollTop;
-                setTimeout(() => {
-                    syncingScrollRef.current = false;
-                }, 0);
-            }
-        }
-
-        // 注意：水平滚动同步现在由 handleHorizontalScroll 处理
-
-        // 注意：浮动滚动条同步现在由 handleHorizontalScroll 处理
-
-        // 无缝预加载机制
-        if (hasNextPage && onEndReached && !isPreloading) {
-            const scrollHeight = scrollElement.scrollHeight;
-            const clientHeight = scrollElement.clientHeight;
-            const scrollBottom = newScrollTop + clientHeight;
-
-            const preloadTriggerDistance = rowHeight * 10;
-            const shouldPreload = scrollHeight - scrollBottom < preloadTriggerDistance;
-
-            if (shouldPreload && !preloadTriggeredRef.current) {
-                preloadTriggeredRef.current = true;
-                setIsPreloading(true);
-                onEndReached();
-                setTimeout(() => {
-                    setIsPreloading(false);
-                    preloadTriggeredRef.current = false;
-                }, 1000);
-            }
-        }
-    }, [hasNextPage, onEndReached, rowHeight, isPreloading, showRowNumbers]);
-
-    // 处理水平滚动事件 - 专门用于同步表头
-    const handleHorizontalScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-        if (syncingScrollRef.current) return;
-
-        const scrollElement = e.currentTarget;
-        const newScrollLeft = scrollElement.scrollLeft;
-
-        // 同步表头的水平滚动位置
-        if (headerRef.current) {
-            const headerScrollContainer = headerRef.current.querySelector('.header-scroll-container') as HTMLDivElement;
-            if (headerScrollContainer) {
-                syncingScrollRef.current = true;
-                headerScrollContainer.scrollLeft = newScrollLeft;
-                setTimeout(() => {
-                    syncingScrollRef.current = false;
-                }, 0);
-            }
-        }
-
-        // 同步浮动水平滚动条
-        if (!syncingScrollRef.current) {
-            const floatingScrollbar = document.querySelector('.floating-h-scrollbar') as HTMLDivElement;
-            if (floatingScrollbar) {
-                syncingScrollRef.current = true;
-                floatingScrollbar.scrollLeft = newScrollLeft;
-                setTimeout(() => {
-                    syncingScrollRef.current = false;
-                }, 0);
-            }
-        }
-    }, []);
-
-    // 处理鼠标滚轮事件 - 确保水平滚动时同步滚动条位置
-    const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-        // 检测水平滚动（Shift+滚轮 或 水平滚轮）
-        if (e.shiftKey || Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
-            // 不调用preventDefault，避免passive event listener错误
-
-            if (horizontalWrapperRef.current) {
-                const horizontalWrapper = horizontalWrapperRef.current;
-                const scrollAmount = e.deltaX || e.deltaY;
-                const newScrollLeft = Math.max(0, Math.min(
-                    horizontalWrapper.scrollWidth - horizontalWrapper.clientWidth,
-                    horizontalWrapper.scrollLeft + scrollAmount
-                ));
-
-                horizontalWrapper.scrollLeft = newScrollLeft;
-
-                // 手动触发同步，因为程序化设置scrollLeft不会触发scroll事件
-                if (!syncingScrollRef.current) {
-                    // 同步表头
-                    const headerScrollContainer = document.querySelector('.header-scroll-container') as HTMLDivElement;
-                    if (headerScrollContainer) {
-                        syncingScrollRef.current = true;
-                        headerScrollContainer.scrollLeft = newScrollLeft;
-                        setTimeout(() => {
-                            syncingScrollRef.current = false;
-                        }, 0);
-                    }
-
-                    // 同步浮动滚动条
-                    const floatingScrollbar = document.querySelector('.floating-h-scrollbar') as HTMLDivElement;
-                    if (floatingScrollbar) {
-                        syncingScrollRef.current = true;
-                        floatingScrollbar.scrollLeft = newScrollLeft;
-                        setTimeout(() => {
-                            syncingScrollRef.current = false;
-                        }, 0);
-                    }
-                }
-            }
-        }
-    }, [horizontalWrapperRef]);
-
-    // 当数据更新时重置预加载状态
-    useEffect(() => {
-        preloadTriggeredRef.current = false;
+        loadMoreTriggeredRef.current = false;
     }, [data.length]);
 
-    // 拖拽多选处理函数
-    const handleMouseDown = useCallback((rowIndex: number, e: React.MouseEvent) => {
-        // 只处理左键点击
-        if (e.button !== 0) return;
+    const headerHeight = 48;
 
-        e.preventDefault();
-        setIsDragging(true);
-        setDragStartIndex(rowIndex);
-        setDragEndIndex(rowIndex);
-        dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+    const tableWidth = useMemo(() => {
+        const columnsWidth = columns.reduce((width, column) => {
+            return width + (columnWidths.get(column) || calculateColumnWidth(column));
+        }, 0);
 
-        // 单击选择当前行
-        onRowClick(rowIndex, e);
-    }, [onRowClick]);
+        return columnsWidth + (showRowNumbers ? 60 : 0);
+    }, [columns, columnWidths, calculateColumnWidth, showRowNumbers]);
 
-    const handleMouseEnter = useCallback((rowIndex: number) => {
-        if (isDragging && dragStartIndex !== null) {
-            setDragEndIndex(rowIndex);
-
-            // 计算选择范围
-            const startIdx = Math.min(dragStartIndex, rowIndex);
-            const endIdx = Math.max(dragStartIndex, rowIndex);
-
-            // 创建新的选择集合
-            const newSelection = new Set<number>();
-            for (let i = startIdx; i <= endIdx; i++) {
-                newSelection.add(i);
+    const handleEndReached = useCallback(
+        () => {
+            if (!hasNextPage || !onEndReached) {
+                return;
             }
 
-            // 更新选择状态（这里需要通过父组件的回调来更新）
-            // 由于我们没有直接的批量选择回调，我们需要模拟多次点击
-            // 这不是最优解，但可以工作
-        }
-    }, [isDragging, dragStartIndex]);
-
-    const handleMouseUp = useCallback(() => {
-        if (isDragging && dragStartIndex !== null && dragEndIndex !== null) {
-            // 完成拖拽选择
-            const startIdx = Math.min(dragStartIndex, dragEndIndex);
-            const endIdx = Math.max(dragStartIndex, dragEndIndex);
-
-            // 批量选择行（通过模拟点击事件）
-            for (let i = startIdx; i <= endIdx; i++) {
-                if (i !== dragStartIndex) { // 起始行已经在 mousedown 时选择了
-                    const mockEvent = new MouseEvent('click', { ctrlKey: true }) as any;
-                    onRowClick(i, mockEvent);
-                }
+            if (loadMoreTriggeredRef.current) {
+                return;
             }
-        }
 
-        setIsDragging(false);
-        setDragStartIndex(null);
-        setDragEndIndex(null);
-        dragStartPosRef.current = null;
-    }, [isDragging, dragStartIndex, dragEndIndex, onRowClick]);
-
-    // 全局鼠标事件监听
-    useEffect(() => {
-        if (isDragging) {
-            document.addEventListener('mouseup', handleMouseUp);
-            document.addEventListener('mouseleave', handleMouseUp);
-
-            return () => {
-                document.removeEventListener('mouseup', handleMouseUp);
-                document.removeEventListener('mouseleave', handleMouseUp);
-            };
-        }
-    }, [isDragging, handleMouseUp]);
-
-    // 渲染表头（移除序号列，因为已独立显示）
-    const renderHeader = () => (
-        <thead className="bg-background">
-            <tr className="border-b" style={{ borderBottomWidth: '1px' }}>
-                {/* 数据列表头 */}
-                {columns.map((column, colIndex) => {
-                    const columnConfig = columnConfigMap.get(column);
-                    const width = columnWidths.get(column) || calculateColumnWidth(column);
-
-                    return (
-                        <th
-                            key={`header-${column}-${colIndex}`}
-                            className="px-6 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r hover:bg-muted/80 group"
-                            style={{
-                                width: `${width}px`,
-                                minWidth: `${width}px`,
-                                height: `${tableHeaderHeight}px`,
-                                boxSizing: 'border-box',
-                                borderRightWidth: '1px',
-                                // 单行显示，不截断文本
-                                whiteSpace: 'nowrap',
-                                overflow: 'visible'
-                            }}
-                        >
-                            <div className="flex items-center gap-2 w-full">
-                                <span
-                                    className="flex-1 text-left"
-                                    title={columnConfig?.title || column}
-                                    style={{
-                                        // 完整显示文本，不截断
-                                        whiteSpace: 'nowrap',
-                                        overflow: 'visible'
-                                    }}
-                                >
-                                    {columnConfig?.title || column}
-                                </span>
-                                {sortable && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className={cn(
-                                            "h-5 w-5 p-0 opacity-0 group-hover:opacity-100",
-                                            sortConfig?.column === column && "opacity-100 bg-blue-100 text-blue-600"
-                                        )}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onSort(column);
-                                        }}
-                                    >
-                                        {sortConfig?.column === column ? (
-                                            sortConfig.direction === 'asc' ? (
-                                                <ChevronUp className="h-4 w-4" />
-                                            ) : (
-                                                <ChevronDown className="h-4 w-4" />
-                                            )
-                                        ) : (
-                                            <ChevronUp className="h-4 w-4 opacity-50" />
-                                        )}
-                                    </Button>
-                                )}
-                            </div>
-                        </th>
-                    );
-                })}
-            </tr>
-        </thead>
+            loadMoreTriggeredRef.current = true;
+            onEndReached();
+        },
+        [hasNextPage, onEndReached]
     );
 
-    // 渲染虚拟化行 - 使用传统spacer方式确保正确的滚动范围
-    const renderVirtualizedRows = () => {
-        const rows = [];
-
-        // 添加顶部占位空间
-        if (startIndex > 0) {
-            rows.push(
-                <tr key="top-spacer" style={{ height: startIndex * rowHeight }}>
-                    <td colSpan={columns.length + (showRowNumbers ? 1 : 0)} />
-                </tr>
-            );
-        }
-
-        // 渲染可视区域内的行（移除序号列，因为已独立显示）
-        for (let i = startIndex; i <= actualEndIndex; i++) {
-            const row = data[i];
-            if (!row) continue;
-
-            const rowKey = generateRowKey(row, i);
-            const isSelected = selectedRows.has(i);
-            const isDragHighlight = isDragging && dragStartIndex !== null && dragEndIndex !== null &&
-                i >= Math.min(dragStartIndex, dragEndIndex) &&
-                i <= Math.max(dragStartIndex, dragEndIndex);
-
-            rows.push(
-                <tr
-                    key={rowKey}
-                    className={cn(
-                        "border-b hover:bg-muted/50 transition-colors",
-                        isSelected && "bg-blue-50",
-                        isDragHighlight && !isSelected && "bg-blue-25"
-                    )}
+    const headerContent = useMemo(() => (
+        <tr className="border-b" style={{ borderBottomWidth: '1px' }}>
+            {showRowNumbers && (
+                <th
+                    key="row-number-header"
+                    className="sticky left-0 z-20 bg-muted border-r px-4 text-left text-sm font-medium text-muted-foreground"
                     style={{
-                        height: `${rowHeight}px`,
-                        minHeight: `${rowHeight}px`,
-                        maxHeight: `${rowHeight}px`,
-                        boxSizing: 'border-box',
-                        // Multiple fallback approaches for visible row borders - matching column border color
-                        borderBottom: '1px solid hsl(var(--border))',
-                        borderBottomColor: 'hsl(var(--border))',
-                        borderBottomStyle: 'solid',
-                        borderBottomWidth: '1px',
-                        // Add box shadow as additional visual separator
-                        boxShadow: 'inset 0 -1px 0 0 hsl(var(--border))'
-                    }}
-                    onMouseDown={(e) => handleMouseDown(i, e)}
-                    onMouseEnter={() => handleMouseEnter(i)}
-                    onClick={(e) => {
-                        if (!isDragging) {
-                            onRowClick(i, e);
-                        }
+                        width: '60px',
+                        minWidth: '60px',
+                        height: `${headerHeight}px`,
+                        boxSizing: 'border-box'
                     }}
                 >
-                    {/* 数据列 */}
-                    {columns.map((column, colIndex) => {
-                        const columnConfig = columnConfigMap.get(column);
-                        const cellValue = row[column];
-                        const displayValue = columnConfig?.render
-                            ? columnConfig.render(cellValue, row, i)
-                            : column === 'time' && cellValue
-                                ? new Date(cellValue).toLocaleString()
-                                : String(cellValue || '-');
+                    #
+                </th>
+            )}
+            {columns.map((column, index) => {
+                const columnConfig = columnConfigMap.get(column);
+                const width = columnWidths.get(column) || calculateColumnWidth(column);
 
-                        const width = columnWidths.get(column) || calculateColumnWidth(column);
-
-                        return (
-                            <td
-                                key={`${rowKey}-${column}`}
-                                className="px-6 py-2 text-sm border-r last:border-r-0"
-                                style={{
-                                    width: `${width}px`,
-                                    minWidth: `${width}px`,
-                                    boxSizing: 'border-box',
-                                    whiteSpace: 'nowrap',
-                                    overflow: 'hidden'
-                                }}
-                            >
-                                <div
-                                    className="truncate"
-                                    title={String(displayValue)}
-                                    style={{
-                                        overflow: 'hidden',
-                                        textOverflow: 'ellipsis',
-                                        whiteSpace: 'nowrap'
+                return (
+                    <th
+                        key={`header-${column}-${index}`}
+                        className="px-6 py-3 text-left text-sm font-medium text-muted-foreground bg-muted border-r last:border-r-0 hover:bg-muted/80 group"
+                        style={{
+                            width: `${width}px`,
+                            minWidth: `${width}px`,
+                            height: `${headerHeight}px`,
+                            boxSizing: 'border-box'
+                        }}
+                    >
+                        <div className="flex items-center gap-2">
+                            <span className="flex-1 text-left truncate" title={columnConfig?.title || column}>
+                                {columnConfig?.title || column}
+                            </span>
+                            {sortable && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className={cn(
+                                        'h-5 w-5 p-0 opacity-0 group-hover:opacity-100',
+                                        sortConfig?.column === column && 'opacity-100 bg-blue-100 text-blue-600'
+                                    )}
+                                    onClick={(event) => {
+                                        event.stopPropagation();
+                                        onSort(column);
                                     }}
                                 >
-                                    {displayValue}
-                                </div>
-                            </td>
-                        );
-                    })}
-                </tr>
+                                    {sortConfig?.column === column ? (
+                                        sortConfig.direction === 'asc' ? (
+                                            <ChevronUp className="h-4 w-4" />
+                                        ) : (
+                                            <ChevronDown className="h-4 w-4" />
+                                        )
+                                    ) : (
+                                        <ChevronUp className="h-4 w-4 opacity-50" />
+                                    )}
+                                </Button>
+                            )}
+                        </div>
+                    </th>
+                );
+            })}
+        </tr>
+    ), [showRowNumbers, columns, columnConfigMap, columnWidths, calculateColumnWidth, headerHeight, sortable, sortConfig, onSort]);
+
+    const renderRowContent = useCallback((index: number, row: any) => {
+        const rowKey = generateRowKey(row, index);
+        const isSelected = selectedRows.has(index);
+
+        const cells: React.ReactNode[] = [];
+
+        if (showRowNumbers) {
+            cells.push(
+                <td
+                    key={`${rowKey}-row-number`}
+                    className={cn(
+                        'sticky left-0 z-10 border-r px-4 text-sm text-muted-foreground bg-background select-none',
+                        isSelected && 'bg-blue-50 text-blue-700 font-medium'
+                    )}
+                    style={{
+                        width: '60px',
+                        minWidth: '60px',
+                        boxSizing: 'border-box'
+                    }}
+                >
+                    {index + 1}
+                </td>
             );
         }
 
-        // 添加底部占位空间 - 精确计算确保滚动条范围与数据完全匹配
-        const remainingRows = Math.max(0, data.length - (actualEndIndex + 1));
-        if (remainingRows > 0) {
-            const bottomSpacerHeight = remainingRows * rowHeight;
-            rows.push(
-                <tr key="bottom-spacer" style={{ height: `${bottomSpacerHeight}px` }}>
-                    <td colSpan={columns.length + (showRowNumbers ? 1 : 0)} />
-                </tr>
+        columns.forEach((column) => {
+            const columnConfig = columnConfigMap.get(column);
+            const cellValue = row[column];
+            const displayValue = columnConfig?.render
+                ? columnConfig.render(cellValue, row, index)
+                : column === 'time' && cellValue
+                    ? new Date(cellValue).toLocaleString()
+                    : String(cellValue ?? '-');
+            const width = columnWidths.get(column) || calculateColumnWidth(column);
+
+            cells.push(
+                <td
+                    key={`${rowKey}-${column}`}
+                    className="px-6 py-2 text-sm border-r last:border-r-0"
+                    style={{
+                        width: `${width}px`,
+                        minWidth: `${width}px`,
+                        boxSizing: 'border-box'
+                    }}
+                >
+                    <div className="truncate" title={String(displayValue)}>
+                        {displayValue}
+                    </div>
+                </td>
             );
-        }
+        });
 
-        // 完全禁用spacer调试 - 避免日志泛滥
-        if (false && data.length >= 500 && remainingRows === 0 && actualEndIndex === data.length - 1 && startIndex > data.length - 20) {
-            const topSpacerHeight = startIndex > 0 ? startIndex * rowHeight : 0;
-            const visibleRowsHeight = (actualEndIndex - startIndex + 1) * rowHeight;
-            const bottomSpacerHeight = remainingRows > 0 ? remainingRows * rowHeight : 0;
-            const totalCalculatedHeight = topSpacerHeight + visibleRowsHeight + bottomSpacerHeight;
-
-            console.log('📏 [Virtual Scrolling] 关键状态验证:', {
-                startIndex,
-                actualEndIndex,
-                remainingRows,
-                dataLength: data.length,
-                topSpacerHeight,
-                visibleRowsHeight,
-                bottomSpacerHeight,
-                totalCalculatedHeight,
-                expectedHeight: data.length * rowHeight,
-                heightMatch: totalCalculatedHeight === data.length * rowHeight ? '✅' : '❌',
-                isAtEnd: actualEndIndex >= data.length - 1,
-                missingRows: data.length - 1 - actualEndIndex
-            });
-        }
-
-        return rows;
-    };
-
-    // 动态创建CSS样式来隐藏主内容区域的水平滚动条并美化浮动滚动条
-    useEffect(() => {
-        const styleId = 'unified-table-scrollbar-styles';
-        if (!document.getElementById(styleId)) {
-            const style = document.createElement('style');
-            style.id = styleId;
-            style.textContent = `
-                /* 主滚动容器 - 可靠的浮动滚动条实现 */
-                .unified-table-scroll-container {
-                    /* 使用标准scroll，通过负边距技术实现浮动效果 */
-                    overflow-y: scroll;
-                    overflow-x: hidden;
-                    /* 完全禁用滚动条的布局空间预留 */
-                    scrollbar-gutter: none !important;
-                    /* 通过负边距抵消滚动条占用的空间 */
-                    margin-right: -17px;
-                    padding-right: 17px;
-                    /* 确保内容使用完整宽度 */
-                    box-sizing: border-box;
-                    width: calc(100% + 17px); /* 补偿负边距 */
-                }
-
-                /* 水平滚动包装器 - 隐藏水平滚动条但保持功能 */
-                .unified-table-horizontal-wrapper {
-                    scrollbar-width: none; /* Firefox */
-                    -ms-overflow-style: none; /* IE/Edge */
-                }
-
-                /* WebKit浏览器 - 隐藏水平滚动条 */
-                .unified-table-horizontal-wrapper::-webkit-scrollbar {
-                    height: 0px;
-                    background: transparent;
-                }
-
-                /* 简化的滚动条样式 - 确保兼容性 */
-                .unified-table-scroll-container::-webkit-scrollbar {
-                    width: 12px;
-                    background: transparent;
-                }
-
-                .unified-table-scroll-container::-webkit-scrollbar-track {
-                    background: rgba(0, 0, 0, 0.05);
-                    border-radius: 7px;
-                    /* 确保轨道始终可见 */
-                    min-height: 20px;
-                    /* 半透明背景，现代浮动效果 */
-                    backdrop-filter: blur(8px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                }
-
-                .unified-table-scroll-container::-webkit-scrollbar-thumb {
-                    background: linear-gradient(180deg, hsl(var(--border)), hsl(var(--muted-foreground)));
-                    border-radius: 7px;
-                    border: 2px solid transparent;
-                    background-clip: content-box;
-                    /* 确保thumb始终有最小高度，防止消失 */
-                    min-height: 30px;
-                    /* 增强浮动效果和可见性 */
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-                }
-
-                .unified-table-scroll-container::-webkit-scrollbar-thumb:hover {
-                    background: linear-gradient(180deg, hsl(var(--muted-foreground)), hsl(var(--foreground)));
-                    background-clip: content-box;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-                    /* 确保hover状态下thumb不会消失 */
-                    min-height: 30px;
-                }
-
-                .unified-table-scroll-container::-webkit-scrollbar-thumb:active {
-                    background: linear-gradient(180deg, hsl(var(--foreground)), hsl(var(--muted-foreground)));
-                    background-clip: content-box;
-                    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
-                    /* 确保active状态下thumb保持可见 */
-                    min-height: 30px;
-                }
-
-                /* Firefox 滚动条样式 - 浮动效果和始终可见 */
-                .unified-table-scroll-container {
-                    scrollbar-width: thin;
-                    scrollbar-color: hsl(var(--border)) transparent;
-                    /* 确保Firefox中滚动条不占用布局空间 */
-                    scrollbar-gutter: none;
-                }
-
-                /* 确保滚动条在所有浏览器中都不影响布局 */
-                .unified-table-scroll-container {
-                    /* 强制内容使用全宽，忽略滚动条 */
-                    width: 100%;
-                    box-sizing: border-box;
-                }
-
-                /* 美化浮动水平滚动条 */
-                .floating-h-scrollbar::-webkit-scrollbar {
-                    height: 12px;
-                }
-                .floating-h-scrollbar::-webkit-scrollbar-track {
-                    background: transparent;
-                }
-                .floating-h-scrollbar::-webkit-scrollbar-thumb {
-                    background: hsl(var(--border));
-                    border-radius: 6px;
-                    border: 2px solid transparent;
-                    background-clip: content-box;
-                }
-                .floating-h-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: hsl(var(--muted-foreground));
-                    background-clip: content-box;
-                }
-
-                /* Firefox 滚动条样式 */
-                .floating-h-scrollbar {
-                    scrollbar-width: thin;
-                    scrollbar-color: hsl(var(--border)) transparent;
-                }
-
-                /* 确保表头和数据表格的列边框完美对齐 */
-                .unified-table-header th,
-                .unified-table-data td {
-                    border-right: 1px solid hsl(var(--border));
-                    box-sizing: border-box;
-                }
-
-                /* 最后一列不显示右边框 */
-                .unified-table-header th:last-child,
-                .unified-table-data td:last-child {
-                    border-right: none;
-                }
-
-                /* 确保表格布局一致性 */
-                .unified-table-header table,
-                .unified-table-data table {
-                    border-collapse: separate;
-                    border-spacing: 0;
-                    table-layout: fixed;
-                }
-
-                /* Force row borders to be visible - matching column border color */
-                .unified-table-data tbody tr,
-                .unified-table-data tr {
-                    border-bottom: 1px solid hsl(var(--border)) !important;
-                    box-shadow: inset 0 -1px 0 0 hsl(var(--border)) !important;
-                }
-
-                /* Force row number borders to be visible */
-                .row-numbers-content tbody tr,
-                .row-numbers-content tr {
-                    border-bottom: 1px solid hsl(var(--border)) !important;
-                    box-shadow: inset 0 -1px 0 0 hsl(var(--border)) !important;
-                }
-
-                /* Force all table rows to have visible borders with fallbacks */
-                tr[style*="border-bottom"] {
-                    border-bottom: 1px solid hsl(var(--border)) !important;
-                    border-bottom-color: hsl(var(--border)) !important;
-                    border-bottom-style: solid !important;
-                    border-bottom-width: 1px !important;
-                }
-
-                /* Additional visual separator using pseudo-elements */
-                .unified-table-data tbody tr::after,
-                .row-numbers-content tbody tr::after {
-                    content: '';
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    height: 1px;
-                    background-color: hsl(var(--border));
-                    pointer-events: none;
-                }
-
-                /* Ensure table rows have relative positioning for pseudo-elements */
-                .unified-table-data tbody tr,
-                .row-numbers-content tbody tr {
-                    position: relative !important;
-                }
-            `;
-            document.head.appendChild(style);
-            console.log('🎨 [UnifiedDataTable] Row border styles applied to document head');
-        }
-    }, []);
+        return cells;
+    }, [columns, columnConfigMap, columnWidths, calculateColumnWidth, showRowNumbers, generateRowKey, selectedRows]);
 
     return (
-        <div
-            ref={tableContainerRef}
-            className="relative"
-            style={{ height: `${containerHeight}px`, width: '100%' }}
-        >
-            {/* 表头区域 - 固定在顶部 */}
-            <div
-                className="absolute top-0 left-0 right-0 z-10 bg-background border-b border-border"
-                style={{ height: `${tableHeaderHeight}px` }}
-            >
-                <div className="flex h-full">
-                    {/* 行号表头 */}
-                    {showRowNumbers && (
-                        <div
-                            className="flex-shrink-0 bg-muted border-r border-border flex items-center justify-center text-sm font-medium text-muted-foreground"
-                            style={{
-                                width: '60px',
-                                height: `${tableHeaderHeight}px`,
-                                boxSizing: 'border-box',
-                                borderRightWidth: '1px'
-                            }}
-                        >
-                            #
-                        </div>
-                    )}
-
-                    {/* 数据表头 - 支持水平滚动 */}
-                    <div
-                        ref={headerRef}
-                        className="flex-1 overflow-hidden relative"
-                    >
-                        <div
-                            className="header-scroll-container overflow-hidden"
-                            style={{
-                                height: `${tableHeaderHeight}px`
-                            }}
-                        >
-                            <table
-                                className="unified-table-header"
-                                style={{
-                                    width: 'max-content',
-                                    minWidth: '100%',
-                                    tableLayout: 'fixed',
-                                    // Use separate borders to ensure row borders are visible
-                                    borderCollapse: 'separate',
-                                    borderSpacing: '0'
-                                }}
-                            >
-                                {renderHeader()}
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* 内容区域 - 位于表头下方 */}
-            <div
-                className="absolute left-0 right-0 bottom-0"
-                style={{
-                    top: `${tableHeaderHeight}px`,
-                    height: `${containerHeight - tableHeaderHeight}px`
+        <div className="relative h-full w-full">
+            <TableVirtuoso
+                ref={tableRef}
+                style={{ height: containerHeight, width: '100%' }}
+                data={data}
+                computeItemKey={(index, row) => generateRowKey(row, index)}
+                fixedHeaderContent={() => headerContent}
+                itemContent={(index, row) => renderRowContent(index, row)}
+                context={{
+                    onRowClick,
+                    selectedRows,
+                    rowHeight
                 }}
-            >
-                <div className="flex h-full">
-                    {/* 行号内容区域 */}
-                    {showRowNumbers && (
-                        <div
-                            ref={rowNumbersRef}
-                            className="flex-shrink-0 bg-muted/30 border-r border-border overflow-hidden"
+                components={{
+                    Scroller: VirtuosoScroller,
+                    Table: React.forwardRef<HTMLTableElement, any>(({ className, style, ...props }, ref) => (
+                        <table
+                            {...props}
+                            ref={ref}
+                            className={cn('w-full text-left', className)}
                             style={{
-                                width: '60px',
-                                borderRightWidth: '1px'
+                                ...style,
+                                width: `${tableWidth}px`,
+                                minWidth: '100%',
+                                tableLayout: 'fixed',
+                                borderCollapse: 'separate',
+                                borderSpacing: 0
                             }}
-                        >
-                            <div
-                                className="row-numbers-content relative"
-                                style={{
-                                    height: '100%',
-                                    overflow: 'hidden'
-                                }}
-                            >
-                                {/* 顶部占位空间 */}
-                                {startIndex > 0 && (
-                                    <div style={{ height: startIndex * rowHeight }} />
-                                )}
-
-                                {/* 可视区域内的行号 - 使用table结构确保对齐 */}
-                                <table
-                                    className="w-full"
-                                    style={{
-                                        tableLayout: 'fixed',
-                                        // Use separate borders to ensure row borders are visible
-                                        borderCollapse: 'separate',
-                                        borderSpacing: 0
-                                    }}
-                                >
-                                    <tbody>
-                                        {Array.from({ length: actualEndIndex - startIndex + 1 }, (_, i) => {
-                                            const rowIndex = startIndex + i;
-                                            if (rowIndex >= data.length) return null;
-
-                                            const isSelected = selectedRows.has(rowIndex);
-                                            const isDragHighlight = isDragging && dragStartIndex !== null && dragEndIndex !== null &&
-                                                rowIndex >= Math.min(dragStartIndex, dragEndIndex) &&
-                                                rowIndex <= Math.max(dragStartIndex, dragEndIndex);
-
-                                            return (
-                                                <tr
-                                                    key={`row-number-${rowIndex}`}
-                                                    className={cn(
-                                                        "border-b cursor-pointer hover:bg-muted/50 transition-colors",
-                                                        isSelected && "bg-blue-100",
-                                                        isDragHighlight && !isSelected && "bg-blue-50"
-                                                    )}
-                                                    style={{
-                                                        height: `${rowHeight}px`,
-                                                        minHeight: `${rowHeight}px`,
-                                                        maxHeight: `${rowHeight}px`,
-                                                        boxSizing: 'border-box',
-                                                        // Multiple fallback approaches for visible row borders - matching column border color
-                                                        borderBottom: '1px solid hsl(var(--border))',
-                                                        borderBottomColor: 'hsl(var(--border))',
-                                                        borderBottomStyle: 'solid',
-                                                        borderBottomWidth: '1px',
-                                                        // Add box shadow as additional visual separator
-                                                        boxShadow: 'inset 0 -1px 0 0 hsl(var(--border))'
-                                                    }}
-                                                    onMouseDown={(e) => handleMouseDown(rowIndex, e)}
-                                                    onMouseEnter={() => handleMouseEnter(rowIndex)}
-                                                    onClick={(e) => {
-                                                        if (!isDragging) {
-                                                            e.stopPropagation();
-                                                            onRowClick(rowIndex, e);
-                                                        }
-                                                    }}
-                                                    title={`选择第 ${rowIndex + 1} 行`}
-                                                >
-                                                    <td
-                                                        className={cn(
-                                                            "text-center text-sm text-muted-foreground select-none",
-                                                            isSelected && "text-blue-700 font-medium",
-                                                            isDragHighlight && !isSelected && "text-blue-600"
-                                                        )}
-                                                        style={{
-                                                            padding: '8px 4px',
-                                                            verticalAlign: 'middle'
-                                                        }}
-                                                    >
-                                                        {rowIndex + 1}
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-
-                                {/* 底部占位空间 */}
-                                {(() => {
-                                    const remainingRows = data.length - actualEndIndex - 1;
-                                    if (remainingRows > 0) {
-                                        const exactBottomSpace = remainingRows * rowHeight;
-                                        const loadingBuffer = hasNextPage && isPreloading ? rowHeight * 2 : 0;
-                                        return <div style={{ height: exactBottomSpace + loadingBuffer }} />;
-                                    } else if (hasNextPage) {
-                                        return <div style={{ height: rowHeight * 2 }} />;
-                                    }
-                                    return null;
-                                })()}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 数据表格区域 - 单容器滚动，确保对齐和正确的滚动范围 */}
-                    <div className="flex-1 relative">
-                        <div
-                            ref={scrollContainerRef}
-                            className="absolute inset-0 overflow-auto unified-table-scroll-container"
-                            onScroll={handleScroll}
-                            onWheel={handleWheel}
+                        />
+                    )),
+                    TableHead: React.forwardRef<HTMLTableSectionElement, any>(({ style, className, ...props }, ref) => (
+                        <thead
+                            {...props}
+                            ref={ref}
                             style={{
-                                // 显示垂直滚动条，隐藏水平滚动条（通过CSS处理）
-                                overflowY: 'scroll',
-                                overflowX: 'hidden',
-                                height: '100%',
-                                width: '100%',
-                                // 确保滚动条始终可见
-                                scrollbarGutter: 'stable'
+                                ...style,
+                                position: 'sticky',
+                                top: 0,
+                                zIndex: 30
                             }}
-                        >
-                            {/* 水平滚动包装器 */}
-                            <div
-                                ref={horizontalWrapperRef}
-                                className="unified-table-horizontal-wrapper"
-                                onScroll={handleHorizontalScroll}
-                                style={{
-                                    overflowX: 'auto',
-                                    overflowY: 'visible',
-                                    width: '100%',
-                                    // 隐藏水平滚动条但保持功能
-                                    scrollbarWidth: 'none',
-                                    msOverflowStyle: 'none',
-                                    paddingBottom: '17px',
-                                    marginBottom: '-17px'
-                                }}
-                            >
-                                <table
-                                    className="unified-table-data"
-                                    style={{
-                                        width: 'max-content',
-                                        minWidth: '100%',
-                                        tableLayout: 'fixed',
-                                        // Use separate borders to ensure row borders are visible
-                                        borderCollapse: 'separate',
-                                        borderSpacing: '0'
-                                    }}
-                                >
-                                    <tbody>
-                                        {renderVirtualizedRows()}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                            className={cn('bg-background header-scroll-container', className)}
+                        />
+                    )),
+                    TableRow: VirtuosoTableRow
+                }}
+                increaseViewportBy={{ top: rowHeight * 4, bottom: rowHeight * 6 }}
+                endReached={hasNextPage ? handleEndReached : undefined}
+            />
         </div>
     );
 };
-
-// 数据行类型
-export interface DataRow {
-    [key: string]: any;
-    _id?: string | number;
-}
-
-// 列配置类型
-export interface ColumnConfig {
-    key: string;
-    title: string;
-    dataIndex?: string;
-    width?: number;
-    minWidth?: number;
-    maxWidth?: number;
-    sortable?: boolean;
-    filterable?: boolean;
-    render?: (value: any, record: DataRow, index: number) => React.ReactNode;
-}
-
-// 分页配置类型
-export interface PaginationConfig {
-    current: number;
-    pageSize: number;
-    total: number;
-    showSizeChanger?: boolean;
-    pageSizeOptions?: string[];
-    serverSide?: boolean; // 是否使用服务器端分页
-}
-
-// 排序配置类型
-export interface SortConfig {
-    column: string;
-    direction: 'asc' | 'desc';
-}
-
-// 筛选配置类型
-export interface FilterConfig {
-    column: string;
-    value: string;
-    operator: 'contains' | 'equals' | 'startsWith' | 'endsWith' | 'in';
-}
-
-// 组件属性
-export interface UnifiedDataTableProps {
-    data: DataRow[];
-    columns: ColumnConfig[];
-    loading?: boolean;
-    pagination?: PaginationConfig | false;
-    searchable?: boolean;
-    filterable?: boolean;
-    sortable?: boolean;
-    exportable?: boolean;
-    columnManagement?: boolean;
-    showToolbar?: boolean;
-    showRowNumbers?: boolean;
-    className?: string;
-    title?: string;
-    // 外部列管理状态
-    selectedColumns?: string[];
-    columnOrder?: string[];
-    onSearch?: (searchText: string) => void;
-    onFilter?: (filters: FilterConfig[]) => void;
-    onSort?: (sort: SortConfig | null) => void;
-    onPageChange?: (page: number, pageSize: number) => void;
-    onExport?: (format: 'text' | 'json' | 'csv') => void;
-    onColumnChange?: (visibleColumns: string[], columnOrder: string[]) => void;
-    onRowSelect?: (selectedRows: Set<number>) => void;
-    // 虚拟化相关配置
-    virtualized?: boolean; // 是否启用虚拟化，默认当数据量>500时自动启用
-    rowHeight?: number; // 行高，用于虚拟化计算，默认40px
-    maxHeight?: number; // 表格最大高度，默认600px
-    // 懒加载相关配置
-    onLoadMore?: () => void; // 加载更多数据的回调函数
-    hasNextPage?: boolean; // 是否还有更多数据
-    isLoadingMore?: boolean; // 是否正在加载更多数据
-    totalCount?: number; // 总数据量（用于显示加载进度）
-}
-
-// 简化的筛选按钮组件
-interface SimpleFilterProps {
-    column: string;
-    onFilter: (column: string, value: string) => void;
-}
-
-const SimpleFilter: React.FC<SimpleFilterProps> = ({ column, onFilter }) => {
-    const [filterValue, setFilterValue] = useState('');
-    const [isOpen, setIsOpen] = useState(false);
-
-    const handleApplyFilter = () => {
-        onFilter(column, filterValue);
-        setIsOpen(false);
-    };
-
-    const handleClearFilter = () => {
-        setFilterValue('');
-        onFilter(column, '');
-        setIsOpen(false);
-    };
-
-    return (
-        <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-            <DropdownMenuTrigger asChild>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-5 w-5 p-0"
-                    title="筛选"
-                >
-                    <Filter className="h-3 w-3" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-64 p-3">
-                <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">筛选 {column}</span>
-                    </div>
-                    <Input
-                        placeholder={`输入筛选条件...`}
-                        value={filterValue}
-                        onChange={(e) => setFilterValue(e.target.value)}
-                        className="h-8"
-                    />
-                    <div className="flex gap-2">
-                        <Button size="sm" onClick={handleApplyFilter}>
-                            应用
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={handleClearFilter}>
-                            清除
-                        </Button>
-                    </div>
-                </div>
-            </DropdownMenuContent>
-        </DropdownMenu>
-    );
-};
-
 // 简化的表头组件
 interface TableHeaderProps {
     columnOrder: string[];
@@ -2074,6 +1265,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         hasNextPage={hasNextPage}
                                         onEndReached={handleEndReached}
                                         generateRowKey={generateRowKey}
+                                        virtuosoRef={virtuosoRef}
                                     />
                                 </>
                             ) : (
