@@ -175,6 +175,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   const [filters, setFilters] = useState<FilterConfig[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
+  // 列宽管理：存储用户自定义的列宽
+  const [columnWidths, setColumnWidths] = useState<Map<string, number>>(new Map());
 
   // 动态计算容器高度
   useEffect(() => {
@@ -218,6 +220,28 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const validColumnKeys = new Set(columns.map(c => c.key));
     return order.filter(key => validColumnKeys.has(key));
   }, [externalColumnOrder, effectiveSelectedColumns, columns]);
+
+  // 从 localStorage 加载保存的列宽
+  useEffect(() => {
+    const widths = new Map<string, number>();
+    columns.forEach(col => {
+      try {
+        const key = `glide-table-column-width-${col.key}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          const width = parseInt(saved);
+          if (!isNaN(width) && width > 0) {
+            widths.set(col.key, width);
+          }
+        }
+      } catch (error) {
+        console.warn('从 localStorage 加载列宽失败:', error);
+      }
+    });
+    if (widths.size > 0) {
+      setColumnWidths(widths);
+    }
+  }, [columns]);
 
   // 数据处理
   const processedData = useMemo(() => {
@@ -292,17 +316,24 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         const sortDirection = isSorted ? sortConfig.direction : undefined;
         const isLastColumn = index === effectiveColumnOrder.length - 1;
 
+        // 优先使用用户自定义的列宽，否则使用配置的默认宽度
+        const customWidth = columnWidths.get(colKey);
+        const width = customWidth || column.width || 120;
+
+        // 如果用户手动调整了最后一列的宽度，禁用 grow 以保持用户设置
+        const hasCustomWidth = columnWidths.has(colKey);
+
         cols.push({
           title: `${column.title}${isSorted ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}`,
-          width: column.width || 120,
+          width: width,
           id: column.key,
-          grow: isLastColumn ? 1 : 0, // 让最后一列自动扩展填充剩余空间
+          grow: isLastColumn && !hasCustomWidth ? 1 : 0, // 让最后一列自动扩展填充剩余空间（除非用户手动调整过）
         } as GridColumn);
       }
     });
 
     return cols;
-  }, [columns, effectiveColumnOrder, sortConfig]);
+  }, [columns, effectiveColumnOrder, sortConfig, columnWidths]);
 
   // 调试：打印组件接收到的数据
   useEffect(() => {
@@ -335,6 +366,41 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       handleSort(column.id as string);
     }
   }, [gridColumns, columns, sortable, handleSort]);
+
+  // 列宽调整处理（拖动过程中实时更新）
+  const handleColumnResize = useCallback((
+    column: GridColumn,
+    newSize: number,
+    colIndex: number
+  ) => {
+    // 实时更新列宽状态，确保拖动流畅
+    setColumnWidths(prev => {
+      const next = new Map(prev);
+      next.set(column.id as string, newSize);
+      return next;
+    });
+  }, []);
+
+  // 列宽调整结束处理（拖动结束时保存到 localStorage）
+  const handleColumnResizeEnd = useCallback((
+    column: GridColumn,
+    newSize: number,
+    colIndex: number
+  ) => {
+    console.log('📏 [GlideDataTable] 列宽调整完成:', {
+      列: column.id,
+      新宽度: newSize,
+      列索引: colIndex
+    });
+
+    // 保存到 localStorage 以持久化用户偏好
+    try {
+      const key = `glide-table-column-width-${column.id}`;
+      localStorage.setItem(key, String(newSize));
+    } catch (error) {
+      console.warn('保存列宽到 localStorage 失败:', error);
+    }
+  }, []);
 
   // 获取单元格数据
   const getCellContent = useCallback((cell: Item): GridCell => {
@@ -525,6 +591,11 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 smoothScrollY={true}
                 rowMarkers="both"
                 onHeaderClicked={onHeaderClicked}
+                onColumnResize={handleColumnResize}
+                onColumnResizeEnd={handleColumnResizeEnd}
+                minColumnWidth={80}
+                maxColumnWidth={800}
+                maxColumnAutoWidth={500}
                 keybindings={{
                   copy: true,
                   paste: false,
