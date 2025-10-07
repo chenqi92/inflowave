@@ -1,4 +1,4 @@
-import React, {useState, useCallback, startTransition} from 'react';
+import React, {useState, useCallback, startTransition, useEffect, useRef} from 'react';
 import { GlideDataTable, type ColumnConfig, type DataRow } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import {
@@ -202,11 +202,29 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 
         const series = queryResult.results[0].series[0];
 
+        // 计算自适应列宽
+        const columnCount = series.columns.length;
+        const minColumnWidth = 120;
+        const timeColumnWidth = 180;
+        // 假设容器宽度约为 1200px（可以根据实际情况调整）
+        const containerWidth = 1200;
+        const availableWidth = containerWidth - 60; // 减去行号列和边距
+
+        // 计算每列的宽度
+        let defaultColumnWidth = minColumnWidth;
+        if (columnCount > 0) {
+            const totalMinWidth = timeColumnWidth + (columnCount - 1) * minColumnWidth;
+            if (totalMinWidth < availableWidth) {
+                // 如果总宽度小于容器宽度，平均分配剩余空间
+                defaultColumnWidth = Math.floor((availableWidth - timeColumnWidth) / (columnCount - 1));
+            }
+        }
+
         // 创建列配置 - 符合 GlideDataTable 的 ColumnConfig 类型
         const columns = series.columns.map((col: string) => ({
             key: col,
             title: col,
-            width: col === 'time' ? 180 : 120,
+            width: col === 'time' ? timeColumnWidth : defaultColumnWidth,
             sortable: true,
             filterable: true,
             render: col === 'time'
@@ -332,6 +350,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
     // 分页状态管理
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(500);
+    const previousResultRef = useRef<QueryResult | null>(null);
 
     // 动态生成分页选项 - 根据数据量智能生成，以500为基础阶段
     const generatePaginationOptions = useCallback((totalRows: number) => {
@@ -386,21 +405,30 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         });
     }, [pageSize]);
 
-    // 根据数据量动态调整初始 pageSize
+    // 当查询结果变化时（新的查询），重置分页状态
     useEffect(() => {
-        if (advancedDataSource.length > 0) {
-            const options = generatePaginationOptions(advancedDataSource.length);
-            // 如果当前 pageSize 不在选项中，重置为第一个选项
-            const currentSizeStr = pageSize === -1 ? 'all' : String(pageSize);
-            if (!options.includes(currentSizeStr)) {
+        // 检查是否是新的查询结果
+        if (result && result !== previousResultRef.current) {
+            previousResultRef.current = result;
+
+            const actualDataLength = advancedDataSource.length;
+            if (actualDataLength > 0) {
+                const options = generatePaginationOptions(actualDataLength);
                 const firstOption = options[0];
-                const newSize = firstOption === 'all' ? -1 : parseInt(firstOption);
-                console.log(`📏 初始化页面大小: ${pageSize} -> ${newSize} (数据量: ${advancedDataSource.length})`);
-                setPageSize(newSize);
+                const defaultSize = firstOption === 'all' ? -1 : parseInt(firstOption);
+
+                console.log(`📏 新查询结果，重置分页:`, {
+                    实际数据量: actualDataLength,
+                    默认大小: defaultSize,
+                    选项: options,
+                    rowCount: result.rowCount
+                });
+
+                setPageSize(defaultSize);
                 setCurrentPage(1);
             }
         }
-    }, [advancedDataSource.length, generatePaginationOptions]);
+    }, [result, advancedDataSource.length, generatePaginationOptions]);
 
     const renderTableTab = () => (
         <div className="h-full flex flex-col bg-background">

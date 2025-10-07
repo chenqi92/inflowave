@@ -213,9 +213,11 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   }, [externalSelectedColumns, columns]);
 
   const effectiveColumnOrder = useMemo(() => {
-    if (externalColumnOrder) return externalColumnOrder;
-    return effectiveSelectedColumns;
-  }, [externalColumnOrder, effectiveSelectedColumns]);
+    const order = externalColumnOrder || effectiveSelectedColumns;
+    // 过滤掉不在 columns 中的列（如 _id）
+    const validColumnKeys = new Set(columns.map(c => c.key));
+    return order.filter(key => validColumnKeys.has(key));
+  }, [externalColumnOrder, effectiveSelectedColumns, columns]);
 
   // 数据处理
   const processedData = useMemo(() => {
@@ -424,6 +426,14 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const totalPages = pageSize === -1 ? 1 : Math.ceil(total / pageSize);
     const start = pageSize === -1 ? 1 : (current - 1) * pageSize + 1;
     const end = pageSize === -1 ? total : Math.min(current * pageSize, total);
+    const pageSizeOptions = pagination.pageSizeOptions || ['500', '1000', '2000', '5000', 'all'];
+
+    console.log('📊 [GlideDataTable] 分页信息:', {
+      pageSize,
+      pageSizeStr: pageSize === -1 ? 'all' : String(pageSize),
+      pageSizeOptions,
+      包含当前值: pageSizeOptions.includes(pageSize === -1 ? 'all' : String(pageSize))
+    });
 
     return {
       total,
@@ -433,7 +443,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       start,
       end,
       showSizeChanger: pagination.showSizeChanger !== false,
-      pageSizeOptions: pagination.pageSizeOptions || ['500', '1000', '2000', '5000', 'all'],
+      pageSizeOptions,
     };
   }, [pagination, processedData.length]);
 
@@ -572,7 +582,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                     onValueChange={handlePageSizeChange}
                   >
                     <SelectTrigger className="h-8 w-24">
-                      <SelectValue />
+                      <SelectValue placeholder="选择" />
                     </SelectTrigger>
                     <SelectContent>
                       {paginationInfo.pageSizeOptions.map(option => (

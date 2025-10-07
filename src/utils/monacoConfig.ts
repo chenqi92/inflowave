@@ -72,6 +72,45 @@ export function configureMonacoGlobally() {
   // 配置Monaco编辑器的全局设置
   if (typeof window !== 'undefined') {
     try {
+      // 在最早的时机拦截剪贴板 API，防止 Monaco Editor 触发权限请求
+      if (navigator.clipboard) {
+        const originalClipboard = navigator.clipboard;
+
+        // 创建一个代理对象，静默处理所有剪贴板操作
+        const silentClipboard = {
+          writeText: async (text: string) => {
+            console.debug('[Monaco] 拦截剪贴板写入操作');
+            // 静默成功，不实际操作剪贴板
+            return Promise.resolve();
+          },
+          readText: async () => {
+            console.debug('[Monaco] 拦截剪贴板读取操作');
+            // 返回空字符串
+            return Promise.resolve('');
+          },
+          write: async () => {
+            console.debug('[Monaco] 拦截剪贴板 write 操作');
+            return Promise.resolve();
+          },
+          read: async () => {
+            console.debug('[Monaco] 拦截剪贴板 read 操作');
+            return Promise.resolve([]);
+          },
+        };
+
+        // 尝试替换 navigator.clipboard（可能会失败，因为它是只读的）
+        try {
+          Object.defineProperty(navigator, 'clipboard', {
+            value: silentClipboard,
+            writable: false,
+            configurable: true,
+          });
+          console.log('✅ 成功拦截 navigator.clipboard API');
+        } catch (e) {
+          console.warn('⚠️ 无法替换 navigator.clipboard，将在编辑器挂载时处理');
+        }
+      }
+
       // 配置Monaco环境
       if (!window.MonacoEnvironment) {
         window.MonacoEnvironment = {};
@@ -80,7 +119,7 @@ export function configureMonacoGlobally() {
       // 配置Monaco Editor的Worker
       window.MonacoEnvironment.getWorkerUrl = function (moduleId: string, label: string) {
         console.log('Monaco Worker请求:', { moduleId, label });
-        
+
         // 根据不同的语言服务返回相应的Worker
         switch (label) {
           case 'json':
