@@ -1354,20 +1354,16 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     currentConnection?.detectedType,
   ]);
 
-  // 兼容的 loadData 函数，使用当前状态，支持服务器端虚拟化
+  // 兼容的 loadData 函数，使用当前状态
   const loadData = useCallback(async () => {
-    // 如果是服务器端虚拟化模式（pageSize = -1），重置数据并只加载第一批
-    if (pageSize === -1) {
-      console.log('🔧 [TableDataBrowser] 刷新数据：服务器端虚拟化模式，重置并加载第一批数据');
-      // 重置数据状态
-      setData([]);
-      setRawData([]);
-      // 加载第一批数据
-      return loadDataWithPagination(1, 100);
-    } else {
-      // 正常模式
-      return loadDataWithPagination(currentPage, pageSize);
-    }
+    // 直接使用当前的分页状态加载数据
+    // pageSize === -1 表示加载全部数据
+    console.log('🔧 [TableDataBrowser] 刷新数据:', {
+      currentPage,
+      pageSize,
+      模式: pageSize === -1 ? '全部数据' : '分页模式'
+    });
+    return loadDataWithPagination(currentPage, pageSize);
   }, [loadDataWithPagination, currentPage, pageSize]);
 
   // 应用过滤器（延迟执行，避免添加过滤器时立即重新加载）
@@ -1454,6 +1450,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     setSelectedColumns([]);
     setFullFieldPaths([]);
     setCurrentPage(1);
+    setPageSize(500); // 重置为默认分页大小
     setTotalCount(0);
   }, [connectionId, database, tableName]);
 
