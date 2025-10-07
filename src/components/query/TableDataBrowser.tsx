@@ -496,6 +496,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     lazy_loading_batch_size: 500,
   });
 
+  // 预加载缓存：存储预加载的下一批数据
+  const [prefetchedData, setPrefetchedData] = useState<DataRow[]>([]);
+  const [isPrefetching, setIsPrefetching] = useState(false);
+
+  // 使用 ref 存储预加载函数引用，避免循环依赖
+  const prefetchNextBatchRef = useRef<((dataLength: number) => Promise<void>) | null>(null);
+  const triggerPrefetch = (dataLength: number) => {
+    if (prefetchNextBatchRef.current) {
+      prefetchNextBatchRef.current(dataLength);
+    }
+  };
+
   // 加载查询设置
   useEffect(() => {
     const loadQuerySettings = async () => {
@@ -1385,6 +1397,19 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         setRawData([]);
         setData([]);
       }
+
+      // 🚀 如果是懒加载模式的首次加载，触发预加载
+      // 注意：这里不能直接调用 prefetchNextBatch，因为它在后面定义
+      // 使用 setTimeout 和事件循环来延迟调用
+      if (targetPageSize > 0 && targetPageSize !== -1 && querySettings.enable_lazy_loading && pageSize === -1) {
+        console.log('🚀 [TableDataBrowser] 首次加载完成，将触发预加载');
+        const dataLength = targetPageSize;
+        // 延迟执行预加载，确保所有函数都已定义
+        setTimeout(() => {
+          // 在这里直接实现预加载逻辑，避免循环依赖
+          triggerPrefetch(dataLength);
+        }, 100);
+      }
     } catch (error) {
       console.error('加载数据失败:', error);
       showMessage.error('加载数据失败');
@@ -1400,6 +1425,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     database,
     currentConnection?.dbType,
     currentConnection?.detectedType,
+    querySettings.enable_lazy_loading,
+    pageSize,
   ]);
 
   // 兼容的 loadData 函数，使用当前状态
@@ -1572,7 +1599,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   }, [data, sortColumn, sortDirection, sortDataClientSide]);
 
   // 处理时间列排序变化 - 添加防抖避免频繁查询
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
     if (sortColumn === 'time' && columns.length > 0 && isInitializedRef.current) {
@@ -1636,6 +1663,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     setPageSize(newSize);
     setCurrentPage(1);
 
+    // 清空预加载缓存（切换分页模式时）
+    setPrefetchedData([]);
+
     // 对于"全部"选项，根据设置决定是否使用懒加载模式
     if (newSize === -1) {
       console.log('🔧 [TableDataBrowser] 检查懒加载设置:', {
@@ -1685,12 +1715,105 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [lastLoadTime, setLastLoadTime] = useState(0);
 
+  // 预加载下一批数据
+  const prefetchNextBatch = useCallback(async (currentDataLength: number) => {
+    if (isPrefetching || !querySettings.enable_lazy_loading) {
+      return;
+    }
+
+    const batchSize = querySettings.lazy_loading_batch_size;
+    const nextOffset = currentDataLength + batchSize; // 跳过当前批次和下一批次，预加载再下一批次
+
+    // 如果已经到达或超过总数，不需要预加载
+    if (nextOffset >= totalCount) {
+      console.log('🚀 [TableDataBrowser] 无需预加载：已接近数据末尾');
+      return;
+    }
+
+    console.log('🚀 [TableDataBrowser] 开始预加载下一批数据:', {
+      当前数据量: currentDataLength,
+      批次大小: batchSize,
+      预加载偏移: nextOffset,
+      总数据量: totalCount,
+    });
+
+    try {
+      setIsPrefetching(true);
+
+      // 计算预加载的页码
+      const targetPage = Math.floor(nextOffset / batchSize) + 1;
+      const query = generateBaseQueryWithPagination(targetPage, batchSize);
+
+      console.log('🚀 [TableDataBrowser] 预加载查询:', query);
+
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
+        request: {
+          connection_id: connectionId,
+          database,
+          query,
+        },
+      });
+
+      if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
+        // 处理数据格式：与 loadMoreData 保持一致
+        const processedData = result.data.map((record: any, index: number) => {
+          if (Array.isArray(record)) {
+            // 数组格式：需要转换为对象格式
+            const obj: any = {};
+
+            // 使用后端实际返回的列名，确保与数据完全匹配
+            const backendColumns = result.columns || [];
+
+            // 只处理有数据的列，避免创建空列
+            const actualColumns = backendColumns.slice(0, record.length);
+
+            // 将数组数据映射到对象，只处理有数据的列
+            actualColumns.forEach((columnName, colIndex) => {
+              obj[columnName] = record[colIndex] !== undefined ? record[colIndex] : null;
+            });
+
+            // 添加序号和ID
+            obj['#'] = nextOffset + index + 1;
+            obj._id = `row_${nextOffset + index}`;
+
+            return obj;
+          } else if (record && typeof record === 'object') {
+            // 对象格式：直接处理
+            (record as DataRow)['#'] = nextOffset + index + 1;
+            (record as DataRow)._id = (record as DataRow)._id || `row_${nextOffset + index}`;
+            return record;
+          }
+          return record;
+        });
+
+        setPrefetchedData(processedData);
+        console.log('✅ [TableDataBrowser] 预加载成功:', {
+          预加载数据量: processedData.length,
+          预加载范围: `${nextOffset + 1} - ${nextOffset + processedData.length}`,
+          数据样本: processedData[0],
+          数据字段: Object.keys(processedData[0] || {}),
+          后端返回列: result.columns,
+        });
+      }
+    } catch (error) {
+      console.error('❌ [TableDataBrowser] 预加载失败:', error);
+    } finally {
+      setIsPrefetching(false);
+    }
+  }, [isPrefetching, querySettings.enable_lazy_loading, querySettings.lazy_loading_batch_size, totalCount, generateBaseQueryWithPagination, connectionId, database]);
+
+  // 更新 ref 引用
+  useEffect(() => {
+    prefetchNextBatchRef.current = prefetchNextBatch;
+  }, [prefetchNextBatch]);
+
   const loadMoreData = useCallback(async () => {
     console.log('🔧 [TableDataBrowser] loadMoreData 被调用:', {
       pageSize,
       enable_lazy_loading: querySettings.enable_lazy_loading,
       loading,
       isLoadingMore,
+      hasPrefetchedData: prefetchedData.length > 0,
       将执行: pageSize === -1 && querySettings.enable_lazy_loading && !loading && !isLoadingMore,
     });
 
@@ -1716,6 +1839,30 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       const offset = data.length;
       // 懒加载批次大小：从设置中读取
       const batchSize = querySettings.lazy_loading_batch_size;
+
+      // 🚀 优化：优先使用预加载的数据
+      if (prefetchedData.length > 0) {
+        console.log('⚡ [TableDataBrowser] 使用预加载数据，无需等待查询!', {
+          预加载数据量: prefetchedData.length,
+          当前数据量: data.length,
+        });
+
+        // 直接使用预加载的数据
+        setData(prevData => [...prevData, ...prefetchedData]);
+        setRawData(prevData => [...prevData, ...prefetchedData]);
+
+        // 清空预加载缓存
+        const usedPrefetchedData = prefetchedData;
+        setPrefetchedData([]);
+
+        // 立即触发下一批数据的预加载
+        const newDataLength = data.length + usedPrefetchedData.length;
+        console.log('🚀 [TableDataBrowser] 触发下一批预加载，当前数据量:', newDataLength);
+        triggerPrefetch(newDataLength);
+
+        setIsLoadingMore(false);
+        return;
+      }
 
       // 构建查询，强制添加LIMIT和OFFSET
       // 计算目标页码：offset / batchSize + 1
@@ -1790,6 +1937,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           新增数据量: result.data.length,
           总数据量: data.length + result.data.length
         });
+
+        // 🚀 加载完成后，立即预加载下一批数据
+        const newDataLength = data.length + processedData.length;
+        console.log('🚀 [TableDataBrowser] 触发预加载，当前数据量:', newDataLength);
+        triggerPrefetch(newDataLength);
       } else {
         console.log('🔧 [TableDataBrowser] 没有更多数据了');
       }
@@ -1798,7 +1950,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [pageSize, querySettings.enable_lazy_loading, querySettings.lazy_loading_batch_size, loading, isLoadingMore, data.length, generateBaseQuery, connectionId, database]);
+  }, [pageSize, querySettings.enable_lazy_loading, querySettings.lazy_loading_batch_size, loading, isLoadingMore, data.length, prefetchedData, generateBaseQueryWithPagination, connectionId, database]);
 
   // 行点击处理函数
   const handleRowClick = useCallback(
