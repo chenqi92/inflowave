@@ -210,13 +210,24 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         const containerWidth = 1200;
         const availableWidth = containerWidth - 60; // 减去行号列和边距
 
+        // 统计 time 列和其他列的数量
+        const hasTimeColumn = series.columns.includes('time');
+        const timeColumnCount = hasTimeColumn ? 1 : 0;
+        const otherColumnCount = columnCount - timeColumnCount;
+
         // 计算每列的宽度
         let defaultColumnWidth = minColumnWidth;
         if (columnCount > 0) {
-            const totalMinWidth = timeColumnWidth + (columnCount - 1) * minColumnWidth;
+            const totalMinWidth = timeColumnCount * timeColumnWidth + otherColumnCount * minColumnWidth;
             if (totalMinWidth < availableWidth) {
                 // 如果总宽度小于容器宽度，平均分配剩余空间
-                defaultColumnWidth = Math.floor((availableWidth - timeColumnWidth) / (columnCount - 1));
+                if (otherColumnCount > 0) {
+                    const remainingWidth = availableWidth - timeColumnCount * timeColumnWidth;
+                    defaultColumnWidth = Math.floor(remainingWidth / otherColumnCount);
+                } else {
+                    // 只有 time 列，让它占满整个宽度
+                    defaultColumnWidth = availableWidth;
+                }
             }
         }
 
@@ -224,7 +235,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         const columns = series.columns.map((col: string) => ({
             key: col,
             title: col,
-            width: col === 'time' ? timeColumnWidth : defaultColumnWidth,
+            width: col === 'time' ? (hasTimeColumn && otherColumnCount > 0 ? timeColumnWidth : defaultColumnWidth) : defaultColumnWidth,
             sortable: true,
             filterable: true,
             render: col === 'time'
@@ -244,8 +255,14 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         console.log('📊 QueryResults formatResultForAdvancedTable:', {
             列数: columns.length,
             数据行数: dataSource.length,
-            列配置样本: columns.slice(0, 3),
-            数据样本: dataSource.slice(0, 2)
+            列配置: columns.map(c => ({ key: c.key, title: c.title, width: c.width })),
+            数据样本: dataSource.slice(0, 2),
+            原始列: series.columns,
+            容器宽度: containerWidth,
+            可用宽度: availableWidth,
+            time列数: timeColumnCount,
+            其他列数: otherColumnCount,
+            默认列宽: defaultColumnWidth
         });
 
         return {columns, dataSource};
@@ -411,7 +428,8 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         if (result && result !== previousResultRef.current) {
             previousResultRef.current = result;
 
-            const actualDataLength = advancedDataSource.length;
+            // 直接从 result 中获取数据长度
+            const actualDataLength = result.results?.[0]?.series?.[0]?.values?.length || 0;
             if (actualDataLength > 0) {
                 const options = generatePaginationOptions(actualDataLength);
                 const firstOption = options[0];
@@ -420,6 +438,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                 console.log(`📏 新查询结果，重置分页:`, {
                     实际数据量: actualDataLength,
                     默认大小: defaultSize,
+                    默认大小字符串: firstOption,
                     选项: options,
                     rowCount: result.rowCount
                 });
@@ -428,7 +447,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                 setCurrentPage(1);
             }
         }
-    }, [result, advancedDataSource.length, generatePaginationOptions]);
+    }, [result, generatePaginationOptions]);
 
     const renderTableTab = () => (
         <div className="h-full flex flex-col bg-background">

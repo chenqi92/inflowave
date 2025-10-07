@@ -285,16 +285,18 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const cols: GridColumn[] = [];
 
     // 数据列
-    effectiveColumnOrder.forEach(colKey => {
+    effectiveColumnOrder.forEach((colKey, index) => {
       const column = columns.find(c => c.key === colKey);
       if (column) {
         const isSorted = sortConfig?.column === column.key;
         const sortDirection = isSorted ? sortConfig.direction : undefined;
+        const isLastColumn = index === effectiveColumnOrder.length - 1;
 
         cols.push({
           title: `${column.title}${isSorted ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}`,
           width: column.width || 120,
           id: column.key,
+          grow: isLastColumn ? 1 : 0, // 让最后一列自动扩展填充剩余空间
         } as GridColumn);
       }
     });
@@ -534,6 +536,11 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 freezeColumns={0}
                 headerHeight={36}
                 rowHeight={32}
+                rightElement={undefined}
+                rightElementProps={{
+                  fill: false,
+                  sticky: false,
+                }}
                 theme={{
               accentColor: getCSSVariable('--primary', '#0066cc'),
               accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
@@ -578,11 +585,14 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                   <span className="mx-2">|</span>
                   <span>每页</span>
                   <Select
+                    key={`pagesize-${paginationInfo.pageSize}-${paginationInfo.pageSizeOptions.join('-')}`}
                     value={paginationInfo.pageSize === -1 ? 'all' : String(paginationInfo.pageSize)}
                     onValueChange={handlePageSizeChange}
                   >
                     <SelectTrigger className="h-8 w-24">
-                      <SelectValue placeholder="选择" />
+                      <SelectValue placeholder="选择">
+                        {paginationInfo.pageSize === -1 ? '全部' : String(paginationInfo.pageSize)}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {paginationInfo.pageSizeOptions.map(option => (
