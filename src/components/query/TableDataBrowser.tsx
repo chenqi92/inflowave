@@ -2295,7 +2295,6 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           exportable={false} // 使用外部导出
           columnManagement={true} // 启用内置列管理作为备用
           showToolbar={false} // 使用外部工具栏
-          showRowNumbers={true}
           className='h-full'
           // 传递外部列管理状态
           selectedColumns={selectedColumns}

@@ -202,40 +202,17 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 
         const series = queryResult.results[0].series[0];
 
-        // 创建列配置
-        const columns: ColumnConfig[] = series.columns.map((col: string) => {
-            // 检测数据类型
-            let dataType: 'string' | 'number' | 'date' | 'boolean' = 'string';
-            if (col === 'time') {
-                dataType = 'date';
-            } else {
-                // 检查前几行数据来推断类型
-                for (let i = 0; i < Math.min(5, series.values.length); i++) {
-                    const colIndex = series.columns.indexOf(col);
-                    const value = series.values[i][colIndex];
-                    if (value !== null && value !== undefined) {
-                        if (typeof value === 'number') {
-                            dataType = 'number';
-                            break;
-                        }
-                        if (typeof value === 'boolean') {
-                            dataType = 'boolean';
-                            break;
-                        }
-                    }
-                }
-            }
-
-            return {
-                key: col,
-                title: col,
-                dataType,
-                width: col === 'time' ? 180 : 120,
-                sortable: true,
-                filterable: true,
-                visible: true,
-            };
-        });
+        // 创建列配置 - 符合 GlideDataTable 的 ColumnConfig 类型
+        const columns = series.columns.map((col: string) => ({
+            key: col,
+            title: col,
+            width: col === 'time' ? 180 : 120,
+            sortable: true,
+            filterable: true,
+            render: col === 'time'
+                ? (value: any) => value ? new Date(value).toLocaleString() : '-'
+                : undefined,
+        }));
 
         // 创建数据源
         const dataSource: DataRow[] = series.values.map((row: unknown[], index: number) => {
@@ -246,78 +223,17 @@ const QueryResults: React.FC<QueryResultsProps> = ({
             return record;
         });
 
-        return {columns, dataSource};
-    };
-
-    // 格式化查询结果为表格数据（保留原有的DataTable格式）
-    const formatResultForTable = (queryResult: QueryResult) => {
-        if (
-            !queryResult ||
-            !queryResult.results ||
-            queryResult.results.length === 0 ||
-            !queryResult.results[0].series ||
-            queryResult.results[0].series.length === 0
-        ) {
-            return {columns: [], dataSource: []};
-        }
-
-        const series = queryResult.results[0].series[0];
-        const columns: ColumnConfig[] = series.columns.map(
-            (col: string, index: number) => ({
-                title: col,
-                key: col,
-                dataIndex: col,
-                width: index === 0 ? 200 : 120, // 时间列宽一些
-                sortable: true, // 启用排序
-                render: (value: any, record: DataRow, _index: number) => {
-                    const cellContent = (() => {
-                        if (value === null || value === undefined) {
-                            return <Text className="text-muted-foreground">NULL</Text>;
-                        }
-                        if (typeof value === 'number') {
-                            return <Text
-                                className="font-mono bg-muted px-1 rounded text-sm">{value.toLocaleString()}</Text>;
-                        }
-                        if (
-                            typeof value === 'string' &&
-                            value.includes('T') &&
-                            value.includes('Z')
-                        ) {
-                            // 可能是时间戳
-                            try {
-                                const date = new Date(value);
-                                return <Text
-                                    className="font-mono bg-muted px-1 rounded text-sm">{date.toLocaleString()}</Text>;
-                            } catch {
-                                return <Text>{value}</Text>;
-                            }
-                        }
-                        return <Text>{String(value)}</Text>;
-                    })();
-
-                    return (
-                        <div
-                            onContextMenu={(e) => handleCellRightClick(e, record, col, value)}
-                            className="cursor-context-menu"
-                            title="右键查看更多操作"
-                        >
-                            {cellContent}
-                        </div>
-                    );
-                },
-            })
-        );
-
-        const dataSource = series.values.map((row: unknown[], index: number) => {
-            const record: Record<string, unknown> = {key: index};
-            series.columns.forEach((col: string, colIndex: number) => {
-                record[col] = row[colIndex];
-            });
-            return record;
+        console.log('📊 QueryResults formatResultForAdvancedTable:', {
+            列数: columns.length,
+            数据行数: dataSource.length,
+            列配置样本: columns.slice(0, 3),
+            数据样本: dataSource.slice(0, 2)
         });
 
         return {columns, dataSource};
     };
+
+
 
     // 获取结果统计信息
     const getResultStats = (queryResult: QueryResult) => {
@@ -406,15 +322,11 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         };
     };
 
-    // 为高级表格准备数据
+    // 为表格准备数据
     const {columns: advancedColumns, dataSource: advancedDataSource} = result
         ? formatResultForAdvancedTable(result)
         : {columns: [], dataSource: []};
 
-    // 为原有DataTable准备数据（保持兼容性）
-    const {columns, dataSource} = result
-        ? formatResultForTable(result)
-        : {columns: [], dataSource: []};
     const stats = result ? getResultStats(result) : null;
 
     // 分页状态管理
@@ -514,7 +426,6 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                             exportable={false} // 使用外部导出
                             columnManagement={true}
                             showToolbar={false} // 使用外部工具栏
-                            showRowNumbers={true}
                             className="h-full"
                             onPageChange={(page, size) => {
                                 handlePageChange(page);

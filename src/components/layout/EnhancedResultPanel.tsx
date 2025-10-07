@@ -1343,7 +1343,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       exportable={false} // 使用外部导出
                       columnManagement={true}
                       showToolbar={false} // 使用外部工具栏
-                      showRowNumbers={true}
                       className='h-full'
                       onPageChange={(page: number, size: number) => {
                         handlePageChange(page);
@@ -1795,7 +1794,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   sortable={true}
                   exportable={true}
                   columnManagement={true}
-                  showRowNumbers={true}
                   className="h-full"
                   onPageChange={handlePageChange}
                 />

@@ -15,6 +15,7 @@ import { configureMonacoGlobally } from '@/utils/monacoConfig';
 
 import './styles/index.css';
 import './styles/font-preview.css';
+import '@glideapps/glide-data-grid/dist/index.css';
 
 // 配置 dayjs
 dayjs.extend(relativeTime);

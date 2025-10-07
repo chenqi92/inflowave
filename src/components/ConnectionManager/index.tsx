@@ -864,7 +864,6 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             data={dataSource}
             loading={false}
             className='w-full h-full connection-table'
-            showRowNumbers={false}
             showToolbar={false}
             searchable={false}
             filterable={false}
