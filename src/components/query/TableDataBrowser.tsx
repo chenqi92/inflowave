@@ -510,18 +510,29 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           lazy_loading_batch_size: number;
         }>('get_query_settings');
 
+        console.log('✅ [TableDataBrowser] 加载查询设置成功:', {
+          enable_lazy_loading: settings.enable_lazy_loading,
+          lazy_loading_batch_size: settings.lazy_loading_batch_size,
+          完整设置: settings,
+        });
+
         setQuerySettings({
           enable_lazy_loading: settings.enable_lazy_loading,
           lazy_loading_batch_size: settings.lazy_loading_batch_size,
         });
       } catch (error) {
-        console.error('加载查询设置失败:', error);
+        console.error('❌ [TableDataBrowser] 加载查询设置失败:', error);
         // 使用默认值
       }
     };
 
     loadQuerySettings();
   }, []);
+
+  // 监听 querySettings 变化
+  useEffect(() => {
+    console.log('🔄 [TableDataBrowser] 查询设置已更新:', querySettings);
+  }, [querySettings]);
 
   // 拖动选择状态
   const [isDragging, setIsDragging] = useState(false);
@@ -1616,6 +1627,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       newSize: size,
       currentPage,
       totalCount,
+      querySettings,
       willReloadData: true
     });
 
@@ -1626,6 +1638,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 对于"全部"选项，根据设置决定是否使用懒加载模式
     if (newSize === -1) {
+      console.log('🔧 [TableDataBrowser] 检查懒加载设置:', {
+        enable_lazy_loading: querySettings.enable_lazy_loading,
+        lazy_loading_batch_size: querySettings.lazy_loading_batch_size,
+        将使用模式: querySettings.enable_lazy_loading ? '懒加载' : '一次性加载'
+      });
+
       if (querySettings.enable_lazy_loading) {
         // 懒加载模式：初始加载一批数据，滚动时自动加载更多
         const INITIAL_BATCH_SIZE = querySettings.lazy_loading_batch_size;
@@ -1668,8 +1686,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const [lastLoadTime, setLastLoadTime] = useState(0);
 
   const loadMoreData = useCallback(async () => {
+    console.log('🔧 [TableDataBrowser] loadMoreData 被调用:', {
+      pageSize,
+      enable_lazy_loading: querySettings.enable_lazy_loading,
+      loading,
+      isLoadingMore,
+      将执行: pageSize === -1 && querySettings.enable_lazy_loading && !loading && !isLoadingMore,
+    });
+
     // 只在"全部"模式下、启用懒加载、且不在加载中时才加载更多
     if (pageSize !== -1 || !querySettings.enable_lazy_loading || loading || isLoadingMore) {
+      console.log('🔧 [TableDataBrowser] loadMoreData 跳过执行');
       return;
     }
 
@@ -2398,7 +2425,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             setColumnOrder(newColumnOrder);
           }}
           onLoadMore={loadMoreData}
-          hasNextPage={pageSize === -1 && querySettings.enable_lazy_loading && data.length < totalCount} // 只有在"全部"模式下、启用懒加载且还有更多数据时才启用懒加载
+          hasNextPage={(() => {
+            const hasNext = pageSize === -1 && querySettings.enable_lazy_loading && data.length < totalCount;
+            console.log('🔧 [TableDataBrowser] hasNextPage 计算:', {
+              pageSize,
+              enable_lazy_loading: querySettings.enable_lazy_loading,
+              dataLength: data.length,
+              totalCount,
+              hasNext,
+            });
+            return hasNext;
+          })()} // 只有在"全部"模式下、启用懒加载且还有更多数据时才启用懒加载
           isLoadingMore={isLoadingMore}
           totalCount={totalCount}
         />
