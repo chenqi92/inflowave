@@ -4,7 +4,6 @@ import React, {
   useCallback,
   useMemo,
   memo,
-  startTransition,
   useRef,
 } from 'react';
 import {
@@ -1088,7 +1087,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           // 过滤掉表名本身，只保留字段路径
           const fullPaths = timeseriesPaths
             .filter(path => path && path !== '' && path !== tableName)
-            .filter(path => path.startsWith(tableName + '.'));
+            .filter(path => path.startsWith(`${tableName  }.`));
 
           console.log(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 字段路径提取:`, {
             原始路径: timeseriesPaths,
@@ -1346,9 +1345,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                   } catch (colError) {
                     console.error('🔧 [TableDataBrowser] 列映射失败:', {
                       error: colError,
-                      validColumns: validColumns,
-                      resultColumns: resultColumns,
-                      row: row,
+                      validColumns,
+                      resultColumns,
+                      row,
                       rowIndex: index
                     });
                     throw colError;
@@ -1360,9 +1359,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                   console.error('🔧 [TableDataBrowser] 行处理失败:', {
                     error: rowError,
                     rowIndex: index,
-                    row: row,
-                    validColumns: validColumns,
-                    resultColumns: resultColumns
+                    row,
+                    validColumns,
+                    resultColumns
                   });
                   // 返回一个基本的记录，避免整个处理失败
                   return { _id: index, '#': index + 1 };
@@ -1386,8 +1385,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           console.error('🔧 [TableDataBrowser] 格式化错误详情:', {
             error: formatError,
             values: values?.slice(0, 2),
-            validColumns: validColumns,
-            resultColumns: resultColumns
+            validColumns,
+            resultColumns
           });
           setRawData([]);
           setData([]);
@@ -1539,7 +1538,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     if (columns.length > 0 && isInitializedRef.current) {
       console.log('🔧 [TableDataBrowser] 开始并行执行数据加载:', {
-        columns: columns,
+        columns,
         tableName
       });
 
