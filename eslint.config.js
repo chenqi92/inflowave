@@ -71,7 +71,7 @@ export default [
       '@typescript-eslint/no-unused-vars': 'off', // Turn off the base rule as it's replaced by unused-imports
 
       '@typescript-eslint/no-explicit-any': 'warn',
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['warn', { allow: ['log', 'warn', 'error', 'info', 'debug'] }],
       'prefer-const': 'error',
       'no-var': 'error',
       'object-shorthand': 'error',

@@ -82,9 +82,11 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
   // 获取数据源类型
   const getDataSourceType = useCallback((): DataSourceType => {
-    const connection = connections.find(c => c.id === activeConnectionId);
+    // 优先使用当前tab的connectionId,如果没有则使用全局activeConnectionId
+    const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
+    const connection = connections.find(c => c.id === effectiveConnectionId);
     return (connection?.version as DataSourceType) || 'unknown';
-  }, [connections, activeConnectionId]);
+  }, [connections, activeConnectionId, currentTab?.connectionId]);
 
   // 智能提示Hook
   const {
@@ -95,7 +97,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     hideSuggestions,
     selectSuggestion,
   } = useSmartSuggestion({
-    connectionId: activeConnectionId || '',
+    connectionId: currentTab?.connectionId || activeConnectionId || '',
     database: selectedDatabase || '',
     dataSourceType: getDataSourceType(),
   });
@@ -128,66 +130,6 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     registerAllLanguages();
   }, []); // 只在组件初始化时执行一次
 
-  // 监听连接状态变化，主动刷新语法高亮
-  useEffect(() => {
-    if (!editorRef.current) return;
-
-    console.log('🔄 连接状态变化，检查语法高亮...');
-    const editor = editorRef.current;
-    const model = editor.getModel();
-
-    if (model) {
-      // 延迟执行，确保连接状态已稳定
-      const timer = setTimeout(() => {
-        try {
-          // 使用简化语法高亮系统
-          const languageType = getDatabaseLanguageType();
-          const currentLanguage = unifiedSyntaxManager.getLanguageId(languageType);
-          const currentTheme = unifiedSyntaxManager.getThemeName(languageType, resolvedTheme === 'dark');
-
-          console.log('🔧 连接状态变化后重新应用简化语言和主题:', {
-            languageType,
-            language: currentLanguage,
-            theme: currentTheme,
-            connectionId: activeConnectionId
-          });
-
-          // 重新设置语言
-          monaco.editor.setModelLanguage(model, currentLanguage);
-
-          // 重新应用主题
-          monaco.editor.setTheme(currentTheme);
-
-          // 触发重新渲染
-          editor.render(true);
-
-          // 验证语法高亮并尝试修复
-          setTimeout(() => {
-            unifiedSyntaxManager.validateSyntaxHighlight(editor);
-
-            // 验证原生SQL语法高亮
-            setTimeout(() => {
-              console.log('🔍 验证原生SQL语法高亮效果...');
-              const model = editor.getModel();
-              if (model) {
-                console.log('📋 编辑器信息:', {
-                  language: model.getLanguageId(),
-                  content: `${model.getValue().substring(0, 50)  }...`
-                });
-              }
-            }, 500);
-          }, 300);
-
-          console.log('✅ 连接状态变化后语法高亮刷新完成');
-        } catch (error) {
-          console.warn('⚠️ 连接状态变化后语法高亮刷新失败:', error);
-        }
-      }, 300);
-
-      return () => clearTimeout(timer);
-    }
-  }, [activeConnectionId]); // 依赖连接ID变化
-
   // 组件卸载时清理键盘事件监听器
   useEffect(() => {
     return () => {
@@ -201,27 +143,32 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
 
   // 获取数据库语言类型
   const getDatabaseLanguageType = useCallback((): DatabaseLanguageType => {
+    // 优先使用当前tab的connectionId,如果没有则使用全局activeConnectionId
+    const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
+
     // 如果没有活动连接，默认使用SQL
-    if (!activeConnectionId) {
+    if (!effectiveConnectionId) {
       console.log('没有活动连接，使用SQL语言');
       return 'sql';
     }
 
-    const connection = connections.find(c => c.id === activeConnectionId);
+    const connection = connections.find(c => c.id === effectiveConnectionId);
     if (!connection) {
-      console.log('找不到连接，使用SQL语言');
+      console.log('找不到连接，使用SQL语言, connectionId:', effectiveConnectionId);
       return 'sql';
     }
 
     const languageType = versionToLanguageType(connection.version || 'unknown', connection.dbType);
-    console.log('数据库版本:', connection.version, '语言类型:', languageType, '连接ID:', activeConnectionId);
+    console.log('数据库版本:', connection.version, '语言类型:', languageType, '连接ID:', effectiveConnectionId);
 
     return languageType;
-  }, [connections, activeConnectionId]);
+  }, [connections, activeConnectionId, currentTab?.connectionId]);
 
   // 获取数据库类型（用于语法高亮）
   const getDatabaseType = useCallback(() => {
-    const currentConnection = connections.find(c => c.id === activeConnectionId);
+    // 优先使用当前tab的connectionId,如果没有则使用全局activeConnectionId
+    const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
+    const currentConnection = connections.find(c => c.id === effectiveConnectionId);
     if (!currentConnection || !currentConnection.version) return 'unknown';
 
     const version = currentConnection.version;
@@ -237,7 +184,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     if (version.includes('IoTDB')) return 'iotdb';
 
     return 'unknown';
-  }, [connections, activeConnectionId]);
+  }, [connections, activeConnectionId, currentTab?.connectionId]);
 
   // 获取编辑器语言ID（基于数据库类型）
   const getEditorLanguage = useCallback(() => {
@@ -325,12 +272,13 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
             );
 
             // 如果有活跃连接和数据库，获取动态建议
-            if (activeConnectionId && database) {
+            const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
+            if (effectiveConnectionId && database) {
               try {
                 const suggestions = await safeTauriInvoke<string[]>(
                   'get_query_suggestions',
                   {
-                    connectionId: activeConnectionId,
+                    connectionId: effectiveConnectionId,
                     database,
                     partialQuery: word.word || '',
                   }
@@ -479,7 +427,8 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       }
 
       // 根据选择的数据源类型设置智能提示
-      const currentConnection = connections.find(c => c.id === activeConnectionId);
+      const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
+      const currentConnection = connections.find(c => c.id === effectiveConnectionId);
       const databaseType: SQLFormatterDatabaseType = currentConnection?.version as SQLFormatterDatabaseType || 'unknown';
 
       // 注意：不在这里设置编辑器语言，因为Editor组件已经通过language属性设置了
@@ -1198,7 +1147,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     } catch (error) {
       console.error('⚠️ Monaco编辑器挂载失败:', error);
     }
-  }, [connections, activeConnectionId, selectedDatabase, setupEnhancedAutoComplete, resolvedTheme, onExecuteQuery, showSuggestions, hideSuggestions, suggestionVisible]);
+  }, [connections, activeConnectionId, currentTab?.connectionId, selectedDatabase, setupEnhancedAutoComplete, resolvedTheme, onExecuteQuery, showSuggestions, hideSuggestions, suggestionVisible]);
 
   // 点击其他地方隐藏右键菜单
   useEffect(() => {
@@ -1216,6 +1165,67 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     }
   }, [contextMenu.visible]);
 
+  // 监听连接状态变化，主动刷新语法高亮
+  useEffect(() => {
+    if (!editorRef.current) return;
+
+    console.log('🔄 连接状态变化，检查语法高亮...');
+    const editor = editorRef.current;
+    const model = editor.getModel();
+
+    if (model) {
+      // 延迟执行，确保连接状态已稳定
+      const timer = setTimeout(() => {
+        try {
+          // 使用简化语法高亮系统
+          const languageType = getDatabaseLanguageType();
+          const currentLanguage = unifiedSyntaxManager.getLanguageId(languageType);
+          const currentTheme = unifiedSyntaxManager.getThemeName(languageType, resolvedTheme === 'dark');
+
+          const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
+          console.log('🔧 连接状态变化后重新应用简化语言和主题:', {
+            languageType,
+            language: currentLanguage,
+            theme: currentTheme,
+            connectionId: effectiveConnectionId
+          });
+
+          // 重新设置语言
+          monaco.editor.setModelLanguage(model, currentLanguage);
+
+          // 重新应用主题
+          monaco.editor.setTheme(currentTheme);
+
+          // 触发重新渲染
+          editor.render(true);
+
+          // 验证语法高亮并尝试修复
+          setTimeout(() => {
+            unifiedSyntaxManager.validateSyntaxHighlight(editor);
+
+            // 验证原生SQL语法高亮
+            setTimeout(() => {
+              console.log('🔍 验证原生SQL语法高亮效果...');
+              const model = editor.getModel();
+              if (model) {
+                console.log('📋 编辑器信息:', {
+                  language: model.getLanguageId(),
+                  content: `${model.getValue().substring(0, 50)  }...`
+                });
+              }
+            }, 500);
+          }, 300);
+
+          console.log('✅ 连接状态变化后语法高亮刷新完成');
+        } catch (error) {
+          console.warn('⚠️ 连接状态变化后语法高亮刷新失败:', error);
+        }
+      }, 300);
+
+      return () => clearTimeout(timer);
+    }
+  }, [activeConnectionId, currentTab?.connectionId, getDatabaseLanguageType, resolvedTheme]); // 依赖连接ID变化
+
   // 监听数据源变化，记录日志
   useEffect(() => {
     if (currentTab?.type === 'query') {
@@ -1225,7 +1235,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       console.log('🔄 数据源变化，当前语言类型:', languageType, '统一语言ID:', languageId);
       // 语言更新由Editor组件的key属性变化自动处理
     }
-  }, [activeConnectionId, connections, currentTab?.type, getDatabaseLanguageType]);
+  }, [activeConnectionId, currentTab?.connectionId, connections, currentTab?.type, getDatabaseLanguageType]);
 
   if (!currentTab) {
     return null;

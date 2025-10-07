@@ -230,7 +230,7 @@ export const useTabOperations = () => {
   } = store;
 
   // 创建新的查询tab
-  const createQueryTab = (database?: string, query?: string) => {
+  const createQueryTab = (database?: string, query?: string, connectionId?: string) => {
     // 生成唯一的 tab ID
     const timestamp = Date.now();
     const random = Math.random().toString(36).substr(2, 9);
@@ -248,6 +248,7 @@ export const useTabOperations = () => {
       modified: true,
       saved: false,
       database,
+      connectionId, // 设置连接ID
     };
 
     addTab(newTab);

@@ -89,8 +89,8 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
   }, [savedQueries, searchText, selectedDatabase]);
 
   // 处理查询执行
-  const handleExecuteQuery = (query: string, database?: string) => {
-    createQueryTab(database, query);
+  const handleExecuteQuery = (query: string, database?: string, connectionId?: string) => {
+    createQueryTab(database, query, connectionId);
     showMessage.success('查询已加载到新标签页');
   };
 
@@ -189,7 +189,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
             <Button
               size="sm"
               variant="outline"
-              onClick={() => handleExecuteQuery(item.query, item.database)}
+              onClick={() => handleExecuteQuery(item.query, item.database, item.connectionId)}
               className="h-7 text-xs"
             >
               <Play className="w-3 h-3 mr-1" />

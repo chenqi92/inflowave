@@ -46,8 +46,8 @@ export interface TabEditorRef {
   executeQueryWithContent: (query: string, database: string) => void;
   createDataBrowserTab: (connectionId: string, database: string, tableName: string) => void;
   createNewTab: (type?: 'query' | 'table' | 'database') => void;
-  createQueryTabWithDatabase: (database: string, query?: string) => void;
-  createAndExecuteQuery: (query: string, database: string) => Promise<void>;
+  createQueryTabWithDatabase: (database: string, query?: string, connectionId?: string) => void;
+  createAndExecuteQuery: (query: string, database: string, connectionId?: string) => Promise<void>;
   setSelectedDatabase: (database: string) => void;
 }
 
@@ -161,7 +161,8 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
     // 创建新标签
     const createNewTab = useCallback((type: 'query' | 'table' | 'database' = 'query') => {
       if (type === 'query') {
-        createQueryTab(selectedDatabase);
+        // 使用当前活动的连接ID
+        createQueryTab(selectedDatabase, undefined, activeConnectionId);
       } else {
         // 对于其他类型，使用原有逻辑
         const newTab: EditorTab = {
@@ -192,21 +193,21 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
     }, [createDataBrowserTab, onQueryResult, onBatchQueryResults]);
 
     // 创建带数据库选择的查询标签页
-    const createQueryTabWithDatabase = useCallback((database: string, query?: string) => {
-      const newTab = createQueryTab(database, query);
+    const createQueryTabWithDatabase = useCallback((database: string, query?: string, connectionId?: string) => {
+      const newTab = createQueryTab(database, query, connectionId);
       setSelectedDatabase(database);
 
       // 清空查询结果
       onQueryResult?.(null);
       onBatchQueryResults?.([], [], 0);
 
-      console.log(`✅ 创建查询标签页并选中数据库: ${database}`);
+      console.log(`✅ 创建查询标签页并选中数据库: ${database}, connectionId: ${connectionId}`);
     }, [createQueryTab, setSelectedDatabase, onQueryResult, onBatchQueryResults]);
 
     // 创建查询标签页并自动执行查询
-    const createAndExecuteQuery = useCallback(async (query: string, database: string) => {
+    const createAndExecuteQuery = useCallback(async (query: string, database: string, connectionId?: string) => {
       // 首先创建新的查询标签页
-      const newTab = createQueryTab(database, query);
+      const newTab = createQueryTab(database, query, connectionId);
       setSelectedDatabase(database);
 
       // 清空之前的查询结果

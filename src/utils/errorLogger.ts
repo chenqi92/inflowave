@@ -110,6 +110,14 @@ class ErrorLogger {
 
     // Promise 未处理拒绝
     window.addEventListener('unhandledrejection', event => {
+      // 过滤掉Monaco Editor的Canceled错误
+      const reasonStr = event.reason?.toString() || '';
+      if (reasonStr.includes('Canceled: Canceled') || reasonStr.includes('Canceled')) {
+        // 阻止默认的错误处理,避免在控制台显示
+        event.preventDefault();
+        return;
+      }
+
       this.logError({
         type: 'promise',
         level: 'error',

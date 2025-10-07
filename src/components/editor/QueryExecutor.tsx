@@ -34,7 +34,7 @@ export const useQueryExecutor = ({
   const [actualExecutedQueries, setActualExecutedQueries] = useState<string[]>([]);
 
   // 为查询添加时间范围条件
-  const addTimeRangeToQuery = useCallback((query: string): string => {
+  const addTimeRangeToQuery = useCallback((query: string, connectionId?: string): string => {
     if (!selectedTimeRange || selectedTimeRange.value === 'none') {
       return query;
     }
@@ -47,7 +47,8 @@ export const useQueryExecutor = ({
     }
 
     // 获取连接信息以确定数据库类型
-    const connection = connections.find(c => c.id === activeConnectionId);
+    const effectiveConnectionId = connectionId || currentTab?.connectionId || activeConnectionId;
+    const connection = connections.find(c => c.id === effectiveConnectionId);
     const databaseType = connection?.version || '1.x';
 
     let timeCondition = '';
@@ -80,7 +81,7 @@ export const useQueryExecutor = ({
     }
 
     return query;
-  }, [selectedTimeRange, connections, activeConnectionId]);
+  }, [selectedTimeRange, connections, activeConnectionId, currentTab?.connectionId]);
 
   // 检查是否有任何已连接的InfluxDB连接
   const hasAnyConnectedInfluxDB = useCallback(() => {
@@ -98,7 +99,10 @@ export const useQueryExecutor = ({
       return;
     }
 
-    if (!activeConnectionId) {
+    // 优先使用当前tab的connectionId,如果没有则使用全局activeConnectionId
+    const effectiveConnectionId = currentTab.connectionId || activeConnectionId;
+
+    if (!effectiveConnectionId) {
       showMessage.warning('请先选择数据库连接');
       return;
     }
@@ -119,7 +123,7 @@ export const useQueryExecutor = ({
 
     try {
       console.log('🚀 开始执行查询:', {
-        connection_id: activeConnectionId,
+        connection_id: effectiveConnectionId,
         database: selectedDatabase,
         query: queryContent,
       });
@@ -127,7 +131,7 @@ export const useQueryExecutor = ({
       // 解析SQL语句，支持批量执行
       const parser = new SQLParser();
       const statements = parser.parseStatements(queryContent);
-      
+
       if (statements.length === 0) {
         showMessage.warning('未找到有效的SQL语句');
         setLoading(false);
@@ -145,13 +149,13 @@ export const useQueryExecutor = ({
         if (!statement) continue;
 
         // 为查询添加时间范围条件
-        statement = addTimeRangeToQuery(statement);
+        statement = addTimeRangeToQuery(statement, effectiveConnectionId);
 
         console.log(`🔄 执行第 ${i + 1} 条语句:`, statement);
 
         try {
           const request: QueryRequest = {
-            connectionId: activeConnectionId,
+            connectionId: effectiveConnectionId,
             database: selectedDatabase,
             query: statement,
           };
@@ -258,7 +262,10 @@ export const useQueryExecutor = ({
 
   // 执行指定内容和数据库的查询
   const executeQueryWithContent = useCallback(async (query: string, database: string) => {
-    if (!activeConnectionId) {
+    // 优先使用当前tab的connectionId,如果没有则使用全局activeConnectionId
+    const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
+
+    if (!effectiveConnectionId) {
       showMessage.warning('请先选择数据库连接');
       return;
     }
@@ -268,7 +275,7 @@ export const useQueryExecutor = ({
     const tableName = tableMatch ? tableMatch[1] : '未知表';
 
     console.log('🚀 执行表双击查询:', {
-      connection_id: activeConnectionId,
+      connection_id: effectiveConnectionId,
       database,
       query: query.trim(),
     });
@@ -289,7 +296,7 @@ export const useQueryExecutor = ({
       setActualExecutedQueries([processedQuery]);
 
       const request: QueryRequest = {
-        connectionId: activeConnectionId,
+        connectionId: effectiveConnectionId,
         database,
         query: processedQuery,
       };
@@ -318,7 +325,7 @@ export const useQueryExecutor = ({
     } finally {
       setLoading(false);
     }
-  }, [activeConnectionId, onQueryResult, onBatchQueryResults]);
+  }, [activeConnectionId, currentTab?.connectionId, onQueryResult, onBatchQueryResults]);
 
   // 测试智能提示
   const testIntelligentHints = useCallback(async () => {

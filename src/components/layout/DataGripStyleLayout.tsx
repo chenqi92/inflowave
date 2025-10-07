@@ -469,14 +469,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     };
 
     // 处理创建查询标签页事件
-    const handleCreateQueryTab = (query?: string, database?: string) => {
+    const handleCreateQueryTab = (query?: string, database?: string, connectionId?: string) => {
         // 切换到查询视图
         setCurrentView('query');
 
         // 总是创建新的查询标签页，不直接执行查询
         if (database && tabEditorRef.current?.createQueryTabWithDatabase) {
             // 使用新的方法创建带数据库选择的查询标签页，并填入查询内容
-            tabEditorRef.current.createQueryTabWithDatabase(database, query);
+            tabEditorRef.current.createQueryTabWithDatabase(database, query, connectionId);
         } else if (query && tabEditorRef.current?.createNewTab) {
             // 如果没有数据库信息，创建新标签页后需要手动设置内容
             tabEditorRef.current.createNewTab('query');
@@ -490,16 +490,16 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     };
 
     // 处理创建查询标签页并自动执行事件
-    const handleCreateAndExecuteQuery = async (query: string, database: string) => {
+    const handleCreateAndExecuteQuery = async (query: string, database: string, connectionId?: string) => {
         // 切换到查询视图
         setCurrentView('query');
 
         // 创建新的查询标签页并自动执行查询
         if (tabEditorRef.current?.createAndExecuteQuery) {
-            await tabEditorRef.current.createAndExecuteQuery(query, database);
+            await tabEditorRef.current.createAndExecuteQuery(query, database, connectionId);
         } else {
             // 回退到创建标签页
-            handleCreateQueryTab(query, database);
+            handleCreateQueryTab(query, database, connectionId);
         }
     };
 

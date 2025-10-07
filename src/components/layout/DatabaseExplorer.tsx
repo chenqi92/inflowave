@@ -91,8 +91,8 @@ interface DatabaseExplorerProps {
     refreshTrigger?: number; // 用于触发刷新
     onTableDoubleClick?: (database: string, table: string, query: string) => void; // 表格双击回调（保留兼容性）
     onCreateDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void; // 创建数据浏览tab回调
-    onCreateQueryTab?: (query?: string, database?: string) => void; // 创建查询标签页回调
-    onCreateAndExecuteQuery?: (query: string, database: string) => void; // 创建查询标签页并自动执行回调
+    onCreateQueryTab?: (query?: string, database?: string, connectionId?: string) => void; // 创建查询标签页回调
+    onCreateAndExecuteQuery?: (query: string, database: string, connectionId?: string) => void; // 创建查询标签页并自动执行回调
     onViewChange?: (view: string) => void; // 视图切换回调
     onGetCurrentView?: () => string; // 获取当前视图回调
     onExpandedDatabasesChange?: (databases: string[]) => void; // 已展开数据库列表变化回调
@@ -2277,7 +2277,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             } else if (onCreateQueryTab) {
                 // 创建新查询标签页并填入查询语句，传递connectionId
                 const query = generateQueryWithTimeFilter(table, connectionId);
-                onCreateQueryTab(query, database);
+                onCreateQueryTab(query, database, connectionId);
                 showMessage.info(`已创建查询标签页，查询表 "${table}"`);
             } else {
                 // 如果没有回调，复制查询到剪贴板，传递connectionId
@@ -2592,7 +2592,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         const query = generateQueryWithTimeFilter(contextMenuTarget.table, contextMenuTarget.connectionId);
                         // 优先使用创建并执行查询的回调
                         if (onCreateAndExecuteQuery) {
-                            onCreateAndExecuteQuery(query, contextMenuTarget.database);
+                            onCreateAndExecuteQuery(query, contextMenuTarget.database, contextMenuTarget.connectionId);
                             showMessage.success(`正在查询表 "${contextMenuTarget.table}"`);
                         } else {
                             // 回退到原有逻辑
