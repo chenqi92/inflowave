@@ -386,6 +386,22 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         });
     }, [pageSize]);
 
+    // 根据数据量动态调整初始 pageSize
+    useEffect(() => {
+        if (advancedDataSource.length > 0) {
+            const options = generatePaginationOptions(advancedDataSource.length);
+            // 如果当前 pageSize 不在选项中，重置为第一个选项
+            const currentSizeStr = pageSize === -1 ? 'all' : String(pageSize);
+            if (!options.includes(currentSizeStr)) {
+                const firstOption = options[0];
+                const newSize = firstOption === 'all' ? -1 : parseInt(firstOption);
+                console.log(`📏 初始化页面大小: ${pageSize} -> ${newSize} (数据量: ${advancedDataSource.length})`);
+                setPageSize(newSize);
+                setCurrentPage(1);
+            }
+        }
+    }, [advancedDataSource.length, generatePaginationOptions]);
+
     const renderTableTab = () => (
         <div className="h-full flex flex-col bg-background">
             {result ? (
@@ -419,6 +435,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                 total: advancedDataSource.length,
                                 showSizeChanger: true,
                                 pageSizeOptions: generatePaginationOptions(advancedDataSource.length),
+                                serverSide: false, // 客户端分页
                             }}
                             searchable={false} // 使用外部搜索
                             filterable={true}

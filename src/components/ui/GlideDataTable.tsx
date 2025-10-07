@@ -268,8 +268,15 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       });
     }
 
+    // 客户端分页（如果启用了分页且不是服务器端分页）
+    if (pagination && pagination.pageSize > 0 && !pagination.serverSide) {
+      const start = (pagination.current - 1) * pagination.pageSize;
+      const end = start + pagination.pageSize;
+      result = result.slice(start, end);
+    }
+
     return result;
-  }, [data, searchText, filters, sortConfig, columns.length]);
+  }, [data, searchText, filters, sortConfig, columns.length, pagination]);
 
   // 转换为 Glide Data Grid 格式的列定义
   const gridColumns: GridColumn[] = useMemo(() => {

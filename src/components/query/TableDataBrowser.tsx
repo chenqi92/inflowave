@@ -2266,7 +2266,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         <GlideDataTable
           data={sortedData}
           columns={columnOrder
-            .filter(col => col !== '#')
+            .filter(col => col !== '#' && selectedColumns.includes(col))
             .map(col => ({
               key: col,
               title: col,
@@ -2286,6 +2286,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             total: totalCount,
             showSizeChanger: true,
             pageSizeOptions: ['500', '1000', '2000', '5000', 'all'],
+            serverSide: true, // 服务器端分页
           }}
           searchable={false} // 使用外部搜索
           filterable={true}
@@ -2325,6 +2326,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           }}
           onRowSelect={selectedRowsSet => {
             setSelectedRows(selectedRowsSet);
+          }}
+          onColumnChange={(visibleColumns, newColumnOrder) => {
+            console.log('🔧 [TableDataBrowser] GlideDataTable列变化回调:', {
+              visibleColumns,
+              newColumnOrder
+            });
+            setSelectedColumns(visibleColumns);
+            setColumnOrder(newColumnOrder);
           }}
           onLoadMore={loadMoreData}
           hasNextPage={pageSize === -1 && data.length < totalCount} // 只有在"全部"模式下且还有更多数据时才启用懒加载
