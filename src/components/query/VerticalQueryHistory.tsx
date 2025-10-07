@@ -316,8 +316,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
       <div className={`h-full flex flex-col bg-background ${className}`}>
         {/* 头部 */}
         <div className="p-3 border-b">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold">查询历史</h2>
+          <div className="flex items-center justify-end mb-3">
             <Button
               variant="ghost"
               size="sm"

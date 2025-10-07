@@ -379,29 +379,27 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
       <div className={`h-full flex flex-col bg-background ${className}`}>
         {/* 头部 */}
         <div className="p-3 border-b">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold">数据可视化</h2>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={loadCharts}
-                disabled={loading}
-                className="h-7 w-7 p-0"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-              <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 text-xs">
-                    <Plus className="w-3 h-3 mr-1" />
-                    新建
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>创建新图表</DialogTitle>
-                  </DialogHeader>
+          <div className="flex items-center justify-end gap-1 mb-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={loadCharts}
+              disabled={loading}
+              className="h-7 w-7 p-0"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-xs">
+                  <Plus className="w-3 h-3 mr-1" />
+                  新建
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>创建新图表</DialogTitle>
+                </DialogHeader>
                   <div className="space-y-4">
                     <div>
                       <label className="text-xs font-medium">图表标题</label>
@@ -474,7 +472,6 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
                 </DialogContent>
               </Dialog>
             </div>
-          </div>
 
           {/* 搜索和过滤 */}
           <div className="space-y-2">

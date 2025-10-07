@@ -394,29 +394,27 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
       <div className={`h-full flex flex-col bg-background ${className}`}>
         {/* 头部 */}
         <div className="p-3 border-b">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold">扩展管理</h2>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={loadData}
-                disabled={loading}
-                className="h-7 w-7 p-0"
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-              <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-7 text-xs">
-                    <Plus className="w-3 h-3 mr-1" />
-                    添加
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>添加扩展</DialogTitle>
-                  </DialogHeader>
+          <div className="flex items-center justify-end gap-1 mb-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={loadData}
+              disabled={loading}
+              className="h-7 w-7 p-0"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </Button>
+            <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="h-7 text-xs">
+                  <Plus className="w-3 h-3 mr-1" />
+                  添加
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>添加扩展</DialogTitle>
+                </DialogHeader>
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">
                       选择要添加的扩展类型
@@ -443,7 +441,6 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
                 </DialogContent>
               </Dialog>
             </div>
-          </div>
 
           {/* 搜索框 */}
           <div className="mb-3">

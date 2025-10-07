@@ -60,8 +60,8 @@ const functionItems: FunctionItem[] = [
   {
     key: 'tools',
     icon: <Wrench className="w-4 h-4" />,
-    label: '工具',
-    description: '开发工具',
+    label: '数据生成',
+    description: '测试数据生成',
   },
 ];
 

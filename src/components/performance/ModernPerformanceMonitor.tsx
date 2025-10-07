@@ -322,12 +322,6 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
           <div className={`${layout.isNarrow ? 'p-2' : 'p-4'} border-b border-border`}>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                {!layout.isNarrow && (
-                  <h2 className="text-lg font-semibold">性能监控</h2>
-                )}
-                {layout.isNarrow && (
-                  <h2 className="text-sm font-semibold">监控</h2>
-                )}
                 <Button
                   variant="ghost"
                   size="sm"

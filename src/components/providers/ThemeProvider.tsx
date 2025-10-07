@@ -76,6 +76,21 @@ export function ThemeProvider({
 
     let currentTheme: 'light' | 'dark' = 'light';
 
+    // 同步Tauri窗口主题的函数
+    const syncTauriWindowTheme = async (themeValue: 'light' | 'dark') => {
+      if (typeof window !== 'undefined' && (window as any).__TAURI__) {
+        try {
+          const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
+          const window = getCurrentWebviewWindow();
+          // Tauri 2.0 API: setTheme accepts 'light' | 'dark' | 'auto'
+          await window.setTheme(themeValue);
+          console.log(`✅ Tauri窗口主题已同步为: ${themeValue}`);
+        } catch (error) {
+          console.warn('同步Tauri窗口主题失败:', error);
+        }
+      }
+    };
+
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
@@ -87,6 +102,9 @@ export function ThemeProvider({
       setResolvedTheme(systemTheme);
       applyThemeColors(colorScheme, systemTheme === 'dark');
 
+      // 同步Tauri窗口主题
+      syncTauriWindowTheme(systemTheme);
+
       // 监听系统主题变化
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = () => {
@@ -96,6 +114,9 @@ export function ThemeProvider({
           root.classList.add(newSystemTheme);
           setResolvedTheme(newSystemTheme);
           applyThemeColors(colorScheme, newSystemTheme === 'dark');
+
+          // 同步Tauri窗口主题
+          syncTauriWindowTheme(newSystemTheme);
 
           // 强制触发重新渲染，确保所有组件都能响应主题变化
           setTimeout(() => {
@@ -120,6 +141,9 @@ export function ThemeProvider({
         currentTheme = 'light';
         setResolvedTheme('light');
       }
+
+      // 同步Tauri窗口主题
+      syncTauriWindowTheme(currentTheme);
     }
 
     // 应用颜色主题

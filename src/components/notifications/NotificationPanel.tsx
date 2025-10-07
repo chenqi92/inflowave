@@ -102,10 +102,6 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       {/* 面板头部 */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 dark:bg-muted/20">
         <div className="flex items-center gap-2">
-          <Bell className="w-5 h-5 text-foreground dark:text-foreground" />
-          <h3 className="text-lg font-semibold text-foreground dark:text-foreground">
-            消息通知
-          </h3>
           {unreadCount > 0 && (
             <Badge variant="destructive" className="text-xs">
               {unreadCount}
@@ -125,7 +121,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
               <CheckCheck className="w-4 h-4" />
             </Button>
           )}
-          
+
           {/* 清空所有通知 */}
           {notifications.length > 0 && (
             <Button
@@ -138,7 +134,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
               <Trash2 className="w-4 h-4" />
             </Button>
           )}
-          
+
           {/* 关闭按钮 */}
           <Button
             variant="ghost"
