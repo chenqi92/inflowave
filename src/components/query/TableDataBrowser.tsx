@@ -930,6 +930,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     }
 
     // 添加分页（如果不是"全部"选项）
+    // targetPageSize === -1 表示加载全部数据
     if (targetPageSize > 0) {
       const offset = (targetPage - 1) * targetPageSize;
       query += ` LIMIT ${targetPageSize} OFFSET ${offset}`;
@@ -940,7 +941,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         limitClause: `LIMIT ${targetPageSize} OFFSET ${offset}`
       });
     } else {
-      console.log('🔧 [TableDataBrowser] 显示全部数据，不添加分页参数');
+      console.log('🔧 [TableDataBrowser] 显示全部数据，不添加 LIMIT 子句');
     }
 
     return query;
@@ -1574,7 +1575,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     loadDataWithPagination(page, pageSize);
   }, [currentPage, pageSize, loadDataWithPagination]);
 
-  // 处理页面大小变化 - 支持服务器端虚拟化
+  // 处理页面大小变化 - 支持加载全部数据
   const handlePageSizeChange = useCallback((size: string) => {
     console.log('🔧 [TableDataBrowser] 页面大小变化:', {
       oldSize: pageSize,
@@ -1588,16 +1589,16 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     setPageSize(newSize);
     setCurrentPage(1);
 
-    // 对于"全部"选项，使用服务器端虚拟化：只加载第一批数据
+    // 对于"全部"选项，加载所有数据（利用 Glide Data Grid 的虚拟滚动）
     if (newSize === -1) {
-      console.log('🔧 [TableDataBrowser] 启用服务器端虚拟化，加载第一批数据');
-      // 加载第一批数据（100条，平衡性能和体验）
-      loadDataWithPagination(1, 100);
+      console.log('🔧 [TableDataBrowser] 加载全部数据，总数:', totalCount);
+      // 传递 -1 表示不分页，加载所有数据
+      loadDataWithPagination(1, -1);
     } else {
       // 正常分页加载
       loadDataWithPagination(1, newSize);
     }
-  }, [pageSize, currentPage, loadDataWithPagination]);
+  }, [pageSize, currentPage, totalCount, loadDataWithPagination]);
 
   // 处理搜索
   const handleSearch = useCallback(() => {
