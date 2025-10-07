@@ -11,10 +11,11 @@ export const SQL_KEYWORDS = [
 ];
 
 // SQL函数
+// 注意: 'time' 是字段名,不是函数,应该保持小写
 export const SQL_FUNCTIONS = [
   'COUNT', 'SUM', 'AVG', 'MIN', 'MAX', 'FIRST', 'LAST', 'MEAN', 'MEDIAN',
   'MODE', 'STDDEV', 'SPREAD', 'PERCENTILE', 'DERIVATIVE', 'DIFFERENCE',
-  'ELAPSED', 'MOVING_AVERAGE', 'CUMULATIVE_SUM', 'TIME', 'NOW', 'AGO',
+  'ELAPSED', 'MOVING_AVERAGE', 'CUMULATIVE_SUM', 'NOW', 'AGO',
   'DURATION', 'FILL', 'SLIMIT', 'SOFFSET'
 ];
 

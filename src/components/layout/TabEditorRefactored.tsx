@@ -143,13 +143,14 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
         const currentContent = currentTab.content;
         const connection = connections.find(c => c.id === activeConnectionId);
         const databaseType = (connection?.version || 'unknown') as DatabaseType;
-        
+
         try {
-          const formattedSQL = formatSQL(currentContent, databaseType);
-          
+          // 确保databaseType不是null,如果是null则使用undefined
+          const formattedSQL = formatSQL(currentContent, databaseType || undefined);
+
           // 更新tab内容
           updateTabContent(currentTab.id, formattedSQL);
-          
+
           showMessage.success('SQL格式化完成');
         } catch (error) {
           console.error('SQL格式化失败:', error);
@@ -161,8 +162,8 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
     // 创建新标签
     const createNewTab = useCallback((type: 'query' | 'table' | 'database' = 'query') => {
       if (type === 'query') {
-        // 使用当前活动的连接ID
-        createQueryTab(selectedDatabase, undefined, activeConnectionId);
+        // 使用当前活动的连接ID,将null转换为undefined
+        createQueryTab(selectedDatabase, undefined, activeConnectionId || undefined);
       } else {
         // 对于其他类型，使用原有逻辑
         const newTab: EditorTab = {

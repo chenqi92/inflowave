@@ -9,23 +9,25 @@ import type { DatabaseType as SQLFormatterDatabaseType } from './sqlFormatter';
 
 /**
  * InfluxDB 1.x (InfluxQL) 关键字和函数
+ * 注意: 'time' 是字段名,不是关键字,应该保持小写
+ * 注意: InfluxDB 1.x 只支持 'ORDER BY time',不支持 ASC/DESC
  */
 export const INFLUXQL_KEYWORDS = [
   // 基本查询关键字
   'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET',
   'SHOW', 'CREATE', 'DROP', 'DELETE', 'INSERT', 'INTO', 'VALUES',
-  
+
   // InfluxDB特有关键字
-  'DATABASES', 'MEASUREMENTS', 'SERIES', 'TAG', 'FIELD', 'TIME',
+  'DATABASES', 'MEASUREMENTS', 'SERIES', 'TAG', 'FIELD',
   'RETENTION', 'POLICY', 'CONTINUOUS', 'QUERY', 'USER', 'USERS',
   'GRANTS', 'REVOKE', 'GRANT', 'PRIVILEGES', 'ON', 'TO',
-  
+
   // 逻辑操作符
-  'AND', 'OR', 'NOT', 'IN', 'LIKE', 'REGEXP', 'AS', 'ASC', 'DESC',
-  
+  'AND', 'OR', 'NOT', 'IN', 'LIKE', 'REGEXP', 'AS',
+
   // 时间相关
   'NOW', 'DURATION', 'FILL', 'NULL', 'NONE', 'LINEAR', 'PREVIOUS',
-  
+
   // 聚合函数
   'MEAN', 'MEDIAN', 'MODE', 'SPREAD', 'STDDEV', 'SUM', 'COUNT',
   'DISTINCT', 'INTEGRAL', 'DERIVATIVE', 'DIFFERENCE', 'NON_NEGATIVE_DERIVATIVE',
@@ -243,7 +245,7 @@ export function createDatabaseSpecificCompletions(
       });
     });
   }
-  
+
   // 添加标签名称补全
   if (context?.tags) {
     context.tags.forEach(tag => {
@@ -256,7 +258,22 @@ export function createDatabaseSpecificCompletions(
       });
     });
   }
-  
+
+  // 为InfluxDB 1.x添加常用字段建议(包括time字段)
+  if (version === '1.x') {
+    const commonFields = ['time', 'value', 'host', 'region'];
+    commonFields.forEach(field => {
+      completions.push({
+        label: field,
+        kind: monaco.languages.CompletionItemKind.Field,
+        insertText: field,
+        documentation: `常用字段: ${field}`,
+        sortText: `0_${field}`, // 优先显示
+        range,
+      });
+    });
+  }
+
   return completions;
 }
 

@@ -52,6 +52,7 @@ class AutocompleteService {
     tags: new Map(),
   };
 
+  // InfluxDB 1.x 只支持 'ORDER BY time',不支持 ASC/DESC
   private influxQLKeywords = [
     'SELECT',
     'FROM',
@@ -79,8 +80,6 @@ class AutocompleteService {
     'TRUE',
     'FALSE',
     'AS',
-    'ASC',
-    'DESC',
     'DISTINCT',
     'ON',
     'FILL',

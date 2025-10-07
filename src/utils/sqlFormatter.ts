@@ -19,13 +19,15 @@ const DEFAULT_OPTIONS: FormatOptions = {
 
 /**
  * InfluxDB 1.x (InfluxQL) 关键字
+ * 注意: 'time' 字段名必须保持小写,不能大写
+ * 注意: InfluxDB 1.x 只支持 'ORDER BY time' 或 'ORDER BY time ASC',不支持 DESC
  */
 const INFLUXQL_KEYWORDS = [
   'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET',
   'SHOW', 'CREATE', 'DROP', 'DELETE', 'INSERT', 'INTO', 'VALUES',
-  'DATABASES', 'MEASUREMENTS', 'SERIES', 'TAG', 'FIELD', 'TIME',
+  'DATABASES', 'MEASUREMENTS', 'SERIES', 'TAG', 'FIELD',
   'RETENTION', 'POLICY', 'CONTINUOUS', 'QUERY', 'USER', 'USERS',
-  'AND', 'OR', 'NOT', 'IN', 'LIKE', 'REGEXP', 'AS', 'ASC', 'DESC',
+  'AND', 'OR', 'NOT', 'IN', 'LIKE', 'REGEXP', 'AS',
   'FILL', 'NULL', 'NONE', 'LINEAR', 'PREVIOUS', 'NOW', 'DURATION',
   'MEAN', 'MEDIAN', 'MODE', 'SPREAD', 'STDDEV', 'SUM', 'COUNT',
   'DISTINCT', 'INTEGRAL', 'DERIVATIVE', 'DIFFERENCE', 'NON_NEGATIVE_DERIVATIVE',
@@ -109,6 +111,14 @@ function formatInfluxQL(sql: string, options: FormatOptions): string {
     });
   }
 
+  // 特殊处理: 确保 'time' 字段名保持小写
+  // InfluxDB 1.x 要求 time 字段必须小写
+  formatted = formatted.replace(/\bTIME\b/g, 'time');
+
+  // 特殊处理: 移除 ORDER BY 后的 DESC/ASC (InfluxDB 1.x 不支持)
+  // InfluxDB 1.x 只支持 'ORDER BY time' 或 'ORDER BY time ASC'
+  formatted = formatted.replace(/\bORDER\s+BY\s+time\s+(DESC|ASC)\b/gi, 'ORDER BY time');
+
   // 基本格式化
   formatted = formatted
     // 在主要关键字前添加换行
@@ -171,7 +181,7 @@ function formatFlux(sql: string, options: FormatOptions): string {
   // Flux使用管道操作符，需要特殊处理
   formatted = formatted
     // 在管道操作符前添加换行和缩进
-    .replace(/\s*\|\>\s*/g, '\n  |> ')
+    .replace(/\s*\|>\s*/g, '\n  |> ')
     // 在函数调用后添加适当格式
     .replace(/(\w+)\s*\(/g, '$1(')
     // 处理参数格式，在逗号后添加空格

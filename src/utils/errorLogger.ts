@@ -112,7 +112,15 @@ class ErrorLogger {
     window.addEventListener('unhandledrejection', event => {
       // 过滤掉Monaco Editor的Canceled错误
       const reasonStr = event.reason?.toString() || '';
-      if (reasonStr.includes('Canceled: Canceled') || reasonStr.includes('Canceled')) {
+      const stackStr = event.reason?.stack?.toString() || '';
+
+      // 检查是否是Monaco Editor的Canceled错误
+      if (
+        reasonStr.includes('Canceled') ||
+        stackStr.includes('errors.ts') ||
+        stackStr.includes('errors.js') ||
+        stackStr.includes('monaco')
+      ) {
         // 阻止默认的错误处理,避免在控制台显示
         event.preventDefault();
         return;
@@ -201,6 +209,19 @@ class ErrorLogger {
   }
 
   public logError(errorInfo: Partial<ErrorLogEntry>): void {
+    // 过滤掉Monaco Editor的Canceled错误
+    const messageStr = errorInfo.message?.toString() || '';
+    const stackStr = errorInfo.stack?.toString() || '';
+
+    if (
+      messageStr.includes('Canceled') ||
+      stackStr.includes('errors.ts') ||
+      stackStr.includes('errors.js') ||
+      stackStr.includes('monaco-editor')
+    ) {
+      return; // 直接忽略,不记录
+    }
+
     const logEntry: ErrorLogEntry = {
       id: this.generateId(),
       timestamp: new Date().toISOString(),

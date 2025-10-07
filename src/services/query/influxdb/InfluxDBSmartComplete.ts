@@ -168,6 +168,8 @@ export class InfluxDBSmartComplete extends SmartComplete {
 
   /**
    * 获取 InfluxQL 关键字
+   * 注意: 'time' 是字段名,不是关键字,应该保持小写
+   * 注意: InfluxDB 1.x 只支持 'ORDER BY time',不支持 DESC
    */
   private getInfluxQLKeywords(): string[] {
     return [
@@ -177,7 +179,7 @@ export class InfluxDBSmartComplete extends SmartComplete {
       'DROP', 'DELETE', 'GRANT', 'REVOKE',
       'AND', 'OR', 'NOT', 'LIKE', 'REGEXP', 'IN',
       'FILL', 'NULL', 'NONE', 'LINEAR', 'PREVIOUS',
-      'TIME', 'NOW', 'ASC', 'DESC'
+      'NOW'
     ];
   }
 
