@@ -871,6 +871,7 @@ async fn main() {
             reset_app_settings,
             update_general_settings,
             update_editor_settings,
+            get_query_settings,
             update_query_settings,
             update_visualization_settings,
             update_security_settings,

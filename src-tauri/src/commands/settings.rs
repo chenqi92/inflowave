@@ -40,6 +40,8 @@ pub struct QuerySettings {
     pub auto_complete: bool,
     pub syntax_highlight: bool,
     pub format_on_save: bool,
+    pub enable_lazy_loading: bool,
+    pub lazy_loading_batch_size: u32,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -103,6 +105,8 @@ impl Default for AppSettings {
                 auto_complete: true,
                 syntax_highlight: true,
                 format_on_save: false,
+                enable_lazy_loading: true,
+                lazy_loading_batch_size: 500,
             },
             visualization: VisualizationSettings {
                 default_chart_type: "line".to_string(),
@@ -219,6 +223,21 @@ pub async fn update_editor_settings(
     Ok(())
 }
 
+/// 获取查询设置
+#[tauri::command]
+pub async fn get_query_settings(
+    settings_storage: State<'_, SettingsStorage>,
+) -> Result<QuerySettings, String> {
+    debug!("获取查询设置");
+
+    let settings = settings_storage.lock().map_err(|e| {
+        error!("获取设置锁失败: {}", e);
+        "获取设置锁失败".to_string()
+    })?;
+
+    Ok(settings.query.clone())
+}
+
 /// 更新查询设置
 #[tauri::command(rename_all = "camelCase")]
 pub async fn update_query_settings(
@@ -226,7 +245,7 @@ pub async fn update_query_settings(
     query_settings: QuerySettings,
 ) -> Result<(), String> {
     debug!("更新查询设置");
-    
+
     let mut settings = settings_storage.lock().map_err(|e| {
         error!("获取设置存储锁失败: {}", e);
         "存储访问失败".to_string()

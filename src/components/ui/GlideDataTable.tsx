@@ -402,6 +402,31 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     }
   }, []);
 
+  // 懒加载：检测滚动到底部
+  const handleVisibleRegionChanged = useCallback((range: any) => {
+    if (!hasNextPage || !onLoadMore || isLoadingMore) {
+      return;
+    }
+
+    // range.y 是可见行的起始索引，range.height 是可见行数
+    const visibleEndRow = range.y + range.height;
+    const totalRows = processedData.length;
+
+    // 当滚动到剩余 20% 的位置时，触发加载更多
+    const threshold = totalRows * 0.8;
+
+    if (visibleEndRow >= threshold) {
+      console.log('🔧 [GlideDataTable] 触发懒加载:', {
+        visibleEndRow,
+        totalRows,
+        threshold,
+        hasNextPage,
+        isLoadingMore
+      });
+      onLoadMore();
+    }
+  }, [hasNextPage, onLoadMore, isLoadingMore, processedData.length]);
+
   // 获取单元格数据
   const getCellContent = useCallback((cell: Item): GridCell => {
     const [col, row] = cell;
@@ -593,6 +618,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 onHeaderClicked={onHeaderClicked}
                 onColumnResize={handleColumnResize}
                 onColumnResizeEnd={handleColumnResizeEnd}
+                onVisibleRegionChanged={handleVisibleRegionChanged}
                 minColumnWidth={80}
                 maxColumnWidth={800}
                 maxColumnAutoWidth={500}

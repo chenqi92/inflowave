@@ -14,6 +14,12 @@ import {
   Badge,
   Title,
   Text,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import {
@@ -25,6 +31,8 @@ import {
   RefreshCw,
   Lock,
   Unlock,
+  Zap,
+  Layers,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 
@@ -36,47 +44,85 @@ interface ControllerSettings {
   require_confirmation_for_drop: boolean;
 }
 
+interface QuerySettings {
+  timeout: number;
+  max_results: number;
+  auto_complete: boolean;
+  syntax_highlight: boolean;
+  format_on_save: boolean;
+  enable_lazy_loading: boolean;
+  lazy_loading_batch_size: number;
+}
+
+interface CombinedSettings {
+  controller: ControllerSettings;
+  query: QuerySettings;
+}
+
 const ControllerSettings: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const [settings, setSettings] = useState<ControllerSettings>({
-    allow_delete_statements: false,
-    allow_drop_statements: false,
-    allow_dangerous_operations: false,
-    require_confirmation_for_delete: true,
-    require_confirmation_for_drop: true,
+  const [settings, setSettings] = useState<CombinedSettings>({
+    controller: {
+      allow_delete_statements: false,
+      allow_drop_statements: false,
+      allow_dangerous_operations: false,
+      require_confirmation_for_delete: true,
+      require_confirmation_for_drop: true,
+    },
+    query: {
+      timeout: 30000,
+      max_results: 10000,
+      auto_complete: true,
+      syntax_highlight: true,
+      format_on_save: false,
+      enable_lazy_loading: true,
+      lazy_loading_batch_size: 500,
+    },
   });
 
-  const form = useForm<ControllerSettings>({
+  const form = useForm<CombinedSettings>({
     defaultValues: settings,
   });
 
-  // 加载控制器设置
+  // 加载控制器设置和查询设置
   const loadSettings = async () => {
     try {
-      const controllerSettings = await safeTauriInvoke<ControllerSettings>(
-        'get_controller_settings'
-      );
-      setSettings(controllerSettings);
-      form.reset(controllerSettings);
+      const [controllerSettings, querySettings] = await Promise.all([
+        safeTauriInvoke<ControllerSettings>('get_controller_settings'),
+        safeTauriInvoke<QuerySettings>('get_query_settings'),
+      ]);
+
+      const combined: CombinedSettings = {
+        controller: controllerSettings,
+        query: querySettings,
+      };
+
+      setSettings(combined);
+      form.reset(combined);
     } catch (error) {
-      console.error('加载控制器设置失败:', error);
-      showMessage.error('加载控制器设置失败');
+      console.error('加载设置失败:', error);
+      showMessage.error('加载设置失败');
     }
   };
 
-  // 保存控制器设置
-  const saveSettings = async (values: ControllerSettings) => {
+  // 保存控制器设置和查询设置
+  const saveSettings = async (values: CombinedSettings) => {
     setLoading(true);
     try {
-      await safeTauriInvoke('update_controller_settings', {
-        controllerSettings: values,
-      });
+      await Promise.all([
+        safeTauriInvoke('update_controller_settings', {
+          controllerSettings: values.controller,
+        }),
+        safeTauriInvoke('update_query_settings', {
+          querySettings: values.query,
+        }),
+      ]);
 
       setSettings(values);
-      showMessage.success('控制器设置已保存');
+      showMessage.success('设置已保存');
     } catch (error) {
-      console.error('保存控制器设置失败:', error);
-      showMessage.error('保存控制器设置失败');
+      console.error('保存设置失败:', error);
+      showMessage.error('保存设置失败');
     } finally {
       setLoading(false);
     }
@@ -84,12 +130,23 @@ const ControllerSettings: React.FC = () => {
 
   // 重置设置
   const resetSettings = () => {
-    const defaultSettings: ControllerSettings = {
-      allow_delete_statements: false,
-      allow_drop_statements: false,
-      allow_dangerous_operations: false,
-      require_confirmation_for_delete: true,
-      require_confirmation_for_drop: true,
+    const defaultSettings: CombinedSettings = {
+      controller: {
+        allow_delete_statements: false,
+        allow_drop_statements: false,
+        allow_dangerous_operations: false,
+        require_confirmation_for_delete: true,
+        require_confirmation_for_drop: true,
+      },
+      query: {
+        timeout: 30000,
+        max_results: 10000,
+        auto_complete: true,
+        syntax_highlight: true,
+        format_on_save: false,
+        enable_lazy_loading: true,
+        lazy_loading_batch_size: 500,
+      },
     };
 
     form.reset(defaultSettings);
@@ -139,7 +196,7 @@ const ControllerSettings: React.FC = () => {
                 {/* DELETE语句权限 */}
                 <FormField
                   control={form.control}
-                  name='allow_delete_statements'
+                  name='controller.allow_delete_statements'
                   render={({ field }) => (
                     <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
                       <div className='space-y-0.5'>
@@ -175,7 +232,7 @@ const ControllerSettings: React.FC = () => {
                 {/* DROP语句权限 */}
                 <FormField
                   control={form.control}
-                  name='allow_drop_statements'
+                  name='controller.allow_drop_statements'
                   render={({ field }) => (
                     <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
                       <div className='space-y-0.5'>
@@ -211,7 +268,7 @@ const ControllerSettings: React.FC = () => {
                 {/* 危险操作权限 */}
                 <FormField
                   control={form.control}
-                  name='allow_dangerous_operations'
+                  name='controller.allow_dangerous_operations'
                   render={({ field }) => (
                     <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
                       <div className='space-y-0.5'>
@@ -261,7 +318,7 @@ const ControllerSettings: React.FC = () => {
                 {/* DELETE确认 */}
                 <FormField
                   control={form.control}
-                  name='require_confirmation_for_delete'
+                  name='controller.require_confirmation_for_delete'
                   render={({ field }) => (
                     <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
                       <div className='space-y-0.5'>
@@ -276,7 +333,7 @@ const ControllerSettings: React.FC = () => {
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
-                          disabled={!watchedValues.allow_delete_statements}
+                          disabled={!watchedValues.controller?.allow_delete_statements}
                         />
                       </FormControl>
                     </FormItem>
@@ -286,7 +343,7 @@ const ControllerSettings: React.FC = () => {
                 {/* DROP确认 */}
                 <FormField
                   control={form.control}
-                  name='require_confirmation_for_drop'
+                  name='controller.require_confirmation_for_drop'
                   render={({ field }) => (
                     <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
                       <div className='space-y-0.5'>
@@ -301,9 +358,98 @@ const ControllerSettings: React.FC = () => {
                         <Switch
                           checked={field.value}
                           onCheckedChange={field.onChange}
-                          disabled={!watchedValues.allow_drop_statements}
+                          disabled={!watchedValues.controller?.allow_drop_statements}
                         />
                       </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* 查询性能优化 */}
+            <div className='rounded-lg border bg-card text-card-foreground shadow-sm'>
+              <div className='p-6 pb-4'>
+                <Title level={3} className='flex items-center gap-2 mb-2'>
+                  <Zap className='w-5 h-5' />
+                  查询性能优化
+                </Title>
+                <Text type='secondary' className='text-sm'>
+                  配置查询执行的性能优化选项
+                </Text>
+              </div>
+              <div className='p-6 pt-0 space-y-6'>
+                {/* 启用懒加载 */}
+                <FormField
+                  control={form.control}
+                  name='query.enable_lazy_loading'
+                  render={({ field }) => (
+                    <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                      <div className='space-y-0.5'>
+                        <FormLabel className='text-base flex items-center gap-2'>
+                          <Layers className='w-4 h-4' />
+                          启用懒加载模式
+                          {field.value ? (
+                            <Badge variant='default' className='ml-2'>
+                              已启用
+                            </Badge>
+                          ) : (
+                            <Badge variant='secondary' className='ml-2'>
+                              已禁用
+                            </Badge>
+                          )}
+                        </FormLabel>
+                        <FormDescription>
+                          点击"全部"时使用懒加载模式，分批加载数据以减轻数据库压力。禁用后将一次性加载所有数据（可能导致性能问题）
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {/* 懒加载批次大小 */}
+                <FormField
+                  control={form.control}
+                  name='query.lazy_loading_batch_size'
+                  render={({ field }) => (
+                    <FormItem className='rounded-lg border p-4'>
+                      <div className='space-y-2'>
+                        <FormLabel className='text-base'>
+                          懒加载批次大小
+                        </FormLabel>
+                        <FormDescription>
+                          每次加载的数据行数（推荐：500-1000）
+                        </FormDescription>
+                        <div className='flex items-center gap-4'>
+                          <FormControl>
+                            <Select
+                              value={String(field.value)}
+                              onValueChange={(value) => field.onChange(parseInt(value))}
+                              disabled={!watchedValues.query?.enable_lazy_loading}
+                            >
+                              <SelectTrigger className='w-[200px]'>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value='200'>200 行</SelectItem>
+                                <SelectItem value='500'>500 行（推荐）</SelectItem>
+                                <SelectItem value='1000'>1000 行</SelectItem>
+                                <SelectItem value='2000'>2000 行</SelectItem>
+                                <SelectItem value='5000'>5000 行</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <Text type='secondary' className='text-sm'>
+                            当前：{field.value} 行/批次
+                          </Text>
+                        </div>
+                      </div>
                     </FormItem>
                   )}
                 />

@@ -25,6 +25,7 @@ import {
   Input,
   DatePicker,
 } from '@/components/ui';
+import { toast } from 'sonner';
 import {
   GlideDataTable,
 } from '@/components/ui/GlideDataTable';
@@ -485,6 +486,42 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 行选择状态
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1);
+
+  // 查询设置
+  const [querySettings, setQuerySettings] = useState<{
+    enable_lazy_loading: boolean;
+    lazy_loading_batch_size: number;
+  }>({
+    enable_lazy_loading: true,
+    lazy_loading_batch_size: 500,
+  });
+
+  // 加载查询设置
+  useEffect(() => {
+    const loadQuerySettings = async () => {
+      try {
+        const settings = await safeTauriInvoke<{
+          timeout: number;
+          max_results: number;
+          auto_complete: boolean;
+          syntax_highlight: boolean;
+          format_on_save: boolean;
+          enable_lazy_loading: boolean;
+          lazy_loading_batch_size: number;
+        }>('get_query_settings');
+
+        setQuerySettings({
+          enable_lazy_loading: settings.enable_lazy_loading,
+          lazy_loading_batch_size: settings.lazy_loading_batch_size,
+        });
+      } catch (error) {
+        console.error('加载查询设置失败:', error);
+        // 使用默认值
+      }
+    };
+
+    loadQuerySettings();
+  }, []);
 
   // 拖动选择状态
   const [isDragging, setIsDragging] = useState(false);
@@ -1572,12 +1609,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     loadDataWithPagination(page, pageSize);
   }, [currentPage, pageSize, loadDataWithPagination]);
 
-  // 处理页面大小变化 - 支持加载全部数据
+  // 处理页面大小变化 - "全部"模式使用懒加载
   const handlePageSizeChange = useCallback((size: string) => {
     console.log('🔧 [TableDataBrowser] 页面大小变化:', {
       oldSize: pageSize,
       newSize: size,
       currentPage,
+      totalCount,
       willReloadData: true
     });
 
@@ -1586,16 +1624,38 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     setPageSize(newSize);
     setCurrentPage(1);
 
-    // 对于"全部"选项，加载所有数据（利用 Glide Data Grid 的虚拟滚动）
+    // 对于"全部"选项，根据设置决定是否使用懒加载模式
     if (newSize === -1) {
-      console.log('🔧 [TableDataBrowser] 加载全部数据，总数:', totalCount);
-      // 传递 -1 表示不分页，加载所有数据
-      loadDataWithPagination(1, -1);
+      if (querySettings.enable_lazy_loading) {
+        // 懒加载模式：初始加载一批数据，滚动时自动加载更多
+        const INITIAL_BATCH_SIZE = querySettings.lazy_loading_batch_size;
+        console.log(`🔧 [TableDataBrowser] 启用懒加载模式，初始加载 ${INITIAL_BATCH_SIZE} 行，总数: ${totalCount}`);
+
+        // 加载第一批数据
+        loadDataWithPagination(1, INITIAL_BATCH_SIZE);
+
+        // 提示用户已启用懒加载
+        if (totalCount > INITIAL_BATCH_SIZE) {
+          toast.info(`已加载前 ${INITIAL_BATCH_SIZE.toLocaleString()} 行数据，滚动到底部将自动加载更多`, {
+            duration: 3000,
+          });
+        }
+      } else {
+        // 一次性加载所有数据（不推荐，可能导致性能问题）
+        console.log(`🔧 [TableDataBrowser] 一次性加载所有数据，总数: ${totalCount}`);
+        loadDataWithPagination(1, -1);
+
+        if (totalCount > 10000) {
+          toast.warning(`正在加载 ${totalCount.toLocaleString()} 行数据，可能需要较长时间`, {
+            duration: 5000,
+          });
+        }
+      }
     } else {
       // 正常分页加载
       loadDataWithPagination(1, newSize);
     }
-  }, [pageSize, currentPage, totalCount, loadDataWithPagination]);
+  }, [pageSize, currentPage, totalCount, querySettings.enable_lazy_loading, querySettings.lazy_loading_batch_size, loadDataWithPagination]);
 
   // 处理搜索
   const handleSearch = useCallback(() => {
@@ -1608,8 +1668,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const [lastLoadTime, setLastLoadTime] = useState(0);
 
   const loadMoreData = useCallback(async () => {
-    if (pageSize !== -1 || loading || isLoadingMore) {
-      return; // 只在"全部"模式下且不在加载中时才加载更多
+    // 只在"全部"模式下、启用懒加载、且不在加载中时才加载更多
+    if (pageSize !== -1 || !querySettings.enable_lazy_loading || loading || isLoadingMore) {
+      return;
     }
 
     // 优化防抖：减少间隔时间以提供更流畅的无缝滚动体验
@@ -1626,7 +1687,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       // 计算下一批数据的偏移量
       const offset = data.length;
-      const batchSize = 200; // 增加批次大小以减少加载频率，提供更流畅的体验
+      // 懒加载批次大小：从设置中读取
+      const batchSize = querySettings.lazy_loading_batch_size;
 
       // 构建查询，强制添加LIMIT和OFFSET
       // 计算目标页码：offset / batchSize + 1
@@ -1709,7 +1771,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [pageSize, loading, isLoadingMore, data.length, generateBaseQuery, connectionId, database]);
+  }, [pageSize, querySettings.enable_lazy_loading, querySettings.lazy_loading_batch_size, loading, isLoadingMore, data.length, generateBaseQuery, connectionId, database]);
 
   // 行点击处理函数
   const handleRowClick = useCallback(
@@ -2336,7 +2398,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             setColumnOrder(newColumnOrder);
           }}
           onLoadMore={loadMoreData}
-          hasNextPage={pageSize === -1 && data.length < totalCount} // 只有在"全部"模式下且还有更多数据时才启用懒加载
+          hasNextPage={pageSize === -1 && querySettings.enable_lazy_loading && data.length < totalCount} // 只有在"全部"模式下、启用懒加载且还有更多数据时才启用懒加载
           isLoadingMore={isLoadingMore}
           totalCount={totalCount}
         />
