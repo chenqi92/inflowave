@@ -33,6 +33,7 @@ import {
   DropdownMenuLabel,
   Input,
   Slider,
+  ScrollArea,
 } from '@/components/ui';
 import { GlideDataTable } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
@@ -1250,82 +1251,237 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           )}
         </TabsList>
 
-        {/* 执行器标签页 */}
-        <TabsContent value='executor' className='flex-1 overflow-hidden mt-0'>
-          <div className='h-full p-4'>
-            <Card>
-              <CardHeader className='pb-3'>
-                <CardTitle className='text-sm flex items-center gap-2'>
-                  <Play className='w-4 h-4' />
-                  查询执行信息
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='space-y-4'>
-                  <div className='grid grid-cols-2 gap-4'>
-                    <div className='space-y-2'>
-                      <div className='text-xs text-muted-foreground'>
-                        执行状态
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <CheckCircle className='w-4 h-4 text-green-500' />
-                        <span className='text-sm'>
-                          {allResults.length > 0 ? '执行成功' : '等待执行'}
-                        </span>
-                      </div>
+        {/* 执行器标签页 - 优化后的版本 */}
+        <TabsContent value='executor' className='flex-1 overflow-auto mt-0'>
+          <div className='h-full p-4 space-y-4'>
+            {/* 顶部统计卡片 */}
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
+              {/* 执行概览卡片 */}
+              <Card>
+                <CardHeader className='pb-2'>
+                  <CardTitle className='text-sm flex items-center gap-2'>
+                    <Activity className='w-4 h-4' />
+                    执行概览
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className='space-y-2'>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-xs text-muted-foreground'>状态</span>
+                      <Badge
+                        variant={allResults.length > 0 ? 'default' : 'secondary'}
+                        className='text-xs'
+                      >
+                        {allResults.length > 0 ? (
+                          <>
+                            <CheckCircle className='w-3 h-3 mr-1' />
+                            成功
+                          </>
+                        ) : (
+                          <>
+                            <Clock className='w-3 h-3 mr-1' />
+                            待执行
+                          </>
+                        )}
+                      </Badge>
                     </div>
-                    <div className='space-y-2'>
-                      <div className='text-xs text-muted-foreground'>
-                        执行时间
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <Clock className='w-4 h-4 text-blue-500' />
+                    <div className='flex items-center justify-between'>
+                      <span className='text-xs text-muted-foreground'>查询数</span>
+                      <span className='text-sm font-mono font-semibold'>
+                        {executedQueries.length}
+                      </span>
+                    </div>
+                    <div className='flex items-center justify-between'>
+                      <span className='text-xs text-muted-foreground'>总耗时</span>
+                      <span className='text-sm font-mono font-semibold'>
+                        {executionTime}ms
+                      </span>
+                    </div>
+                    {executedQueries.length > 0 && (
+                      <div className='flex items-center justify-between'>
+                        <span className='text-xs text-muted-foreground'>平均耗时</span>
                         <span className='text-sm font-mono'>
-                          {executionTime}ms
+                          {Math.round(executionTime / executedQueries.length)}ms
                         </span>
                       </div>
-                    </div>
+                    )}
                   </div>
+                </CardContent>
+              </Card>
 
-                  {executedQueries.length > 0 && (
-                    <div className='space-y-2'>
-                      <div className='text-xs text-muted-foreground'>
-                        执行的查询 ({executedQueries.length})
+              {/* 性能指标卡片 - 针对多查询优化 */}
+              <Card>
+                <CardHeader className='pb-2'>
+                  <CardTitle className='text-sm flex items-center gap-2'>
+                    <Zap className='w-4 h-4' />
+                    性能分析
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className='space-y-3'>
+                    <div>
+                      <div className='flex justify-between text-xs mb-1'>
+                        <span>执行效率</span>
+                        <span className='font-medium'>
+                          {executionTime < 1000
+                            ? '优秀'
+                            : executionTime < 5000
+                              ? '良好'
+                              : '需优化'}
+                        </span>
                       </div>
-                      <div className='space-y-2 max-h-[400px] overflow-y-auto pr-2'>
-                        {executedQueries.map((query, index) => (
-                          <div
-                            key={index}
-                            className='bg-muted/50 rounded p-3 relative group'
-                          >
-                            <div className='flex items-center justify-between mb-2'>
-                              <div className='text-xs text-muted-foreground'>
+                      <Progress
+                        value={Math.min(
+                          100,
+                          Math.max(0, 100 - executionTime / 100)
+                        )}
+                        className='h-2'
+                      />
+                    </div>
+                    {allResults.length > 0 && (
+                      <div>
+                        <div className='flex justify-between text-xs mb-1'>
+                          <span>总返回行数</span>
+                          <span className='font-mono font-medium'>
+                            {allResults
+                              .reduce((sum, r) => sum + (r.rowCount || 0), 0)
+                              .toLocaleString()}
+                          </span>
+                        </div>
+                        <Progress
+                          value={Math.min(
+                            100,
+                            (allResults.reduce((sum, r) => sum + (r.rowCount || 0), 0) / 10000) * 100
+                          )}
+                          className='h-2'
+                        />
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 查询建议卡片 - 替换原来的"最近查询" */}
+              <Card>
+                <CardHeader className='pb-2'>
+                  <CardTitle className='text-sm flex items-center gap-2'>
+                    <Lightbulb className='w-4 h-4' />
+                    优化建议
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className='space-y-2 text-xs'>
+                    {executionTime > 5000 ? (
+                      <div className='flex items-start gap-2 text-orange-600 dark:text-orange-400'>
+                        <AlertTriangle className='w-3 h-3 mt-0.5 flex-shrink-0' />
+                        <span>查询较慢，建议添加时间范围或索引</span>
+                      </div>
+                    ) : executionTime > 1000 ? (
+                      <div className='flex items-start gap-2 text-blue-600 dark:text-blue-400'>
+                        <Info className='w-3 h-3 mt-0.5 flex-shrink-0' />
+                        <span>性能良好，可考虑进一步优化</span>
+                      </div>
+                    ) : (
+                      <div className='flex items-start gap-2 text-green-600 dark:text-green-400'>
+                        <CheckCircle className='w-3 h-3 mt-0.5 flex-shrink-0' />
+                        <span>查询性能优秀</span>
+                      </div>
+                    )}
+                    {allResults.reduce((sum, r) => sum + (r.rowCount || 0), 0) > 10000 && (
+                      <div className='flex items-start gap-2 text-blue-600 dark:text-blue-400'>
+                        <Info className='w-3 h-3 mt-0.5 flex-shrink-0' />
+                        <span>数据量较大，建议使用聚合查询</span>
+                      </div>
+                    )}
+                    {executedQueries.length > 1 && (
+                      <div className='flex items-start gap-2 text-muted-foreground'>
+                        <Info className='w-3 h-3 mt-0.5 flex-shrink-0' />
+                        <span>批量执行了 {executedQueries.length} 条查询</span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* 每个查询的详细信息 - 使用完整高度的滚动区域 */}
+            {executedQueries.length > 0 && (
+              <Card className='flex-1'>
+                <CardHeader className='pb-3'>
+                  <CardTitle className='text-sm flex items-center gap-2'>
+                    <Database className='w-4 h-4' />
+                    执行的查询详情 ({executedQueries.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className='space-y-3'>
+                    {executedQueries.map((query, index) => {
+                      const result = allResults[index];
+                      const rowCount = result?.rowCount || 0;
+                      const hasError = result?.error;
+
+                      return (
+                        <div
+                          key={index}
+                          className='border rounded-lg p-4 space-y-3 bg-card hover:bg-accent/5 transition-colors'
+                        >
+                          {/* 查询头部 - 状态和统计 */}
+                          <div className='flex items-center justify-between'>
+                            <div className='flex items-center gap-2'>
+                              <Badge variant='outline' className='text-xs'>
                                 查询 {index + 1}
-                              </div>
-                              <Button
-                                variant='ghost'
-                                size='sm'
-                                className='h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity'
-                                onClick={() => {
-                                  navigator.clipboard.writeText(query);
-                                  showMessage.success('SQL已复制到剪贴板');
-                                }}
-                              >
-                                <Copy className='w-3 h-3 mr-1' />
-                                <span className='text-xs'>复制</span>
-                              </Button>
+                              </Badge>
+                              {hasError ? (
+                                <Badge variant='destructive' className='text-xs'>
+                                  <X className='w-3 h-3 mr-1' />
+                                  失败
+                                </Badge>
+                              ) : (
+                                <Badge variant='default' className='text-xs bg-green-500'>
+                                  <CheckCircle className='w-3 h-3 mr-1' />
+                                  成功
+                                </Badge>
+                              )}
+                              {!hasError && (
+                                <span className='text-xs text-muted-foreground'>
+                                  返回 <span className='font-mono font-semibold'>{rowCount.toLocaleString()}</span> 行
+                                </span>
+                              )}
                             </div>
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className='h-7 px-2'
+                              onClick={() => {
+                                navigator.clipboard.writeText(query);
+                                showMessage.success('SQL已复制到剪贴板');
+                              }}
+                            >
+                              <Copy className='w-3 h-3 mr-1' />
+                              <span className='text-xs'>复制</span>
+                            </Button>
+                          </div>
+
+                          {/* SQL语句 */}
+                          <div className='bg-muted/50 rounded p-3'>
                             <code className='text-xs font-mono block whitespace-pre-wrap break-all'>
                               {query}
                             </code>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+
+                          {/* 错误信息 */}
+                          {hasError && (
+                            <div className='bg-destructive/10 border border-destructive/20 rounded p-2'>
+                              <p className='text-xs text-destructive'>{result.error}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
 
@@ -1705,136 +1861,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               </div>
             </div>
           )}
-        </TabsContent>
-
-        {/* 查询执行器标签页 */}
-        <TabsContent value='executor' className='flex-1 p-4 space-y-4 mt-0'>
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-            {/* 执行状态卡片 */}
-            <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-sm flex items-center gap-2'>
-                  <Activity className='w-4 h-4' />
-                  执行状态
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='space-y-2'>
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-muted-foreground'>状态</span>
-                    <Badge
-                      variant={queryResult ? 'default' : 'secondary'}
-                      className='text-xs'
-                    >
-                      {queryResult ? (
-                        <>
-                          <CheckCircle className='w-3 h-3 mr-1' />
-                          成功
-                        </>
-                      ) : (
-                        <>
-                          <Clock className='w-3 h-3 mr-1' />
-                          待执行
-                        </>
-                      )}
-                    </Badge>
-                  </div>
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-muted-foreground'>
-                      执行时间
-                    </span>
-                    <span className='text-sm font-mono'>{executionTime}ms</span>
-                  </div>
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-muted-foreground'>
-                      查询数
-                    </span>
-                    <span className='text-sm font-mono'>
-                      {executedQueries.length}
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 性能指标卡片 */}
-            <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-sm flex items-center gap-2'>
-                  <Zap className='w-4 h-4' />
-                  性能指标
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='space-y-3'>
-                  <div>
-                    <div className='flex justify-between text-sm mb-1'>
-                      <span>执行效率</span>
-                      <span>
-                        {executionTime < 1000
-                          ? '优秀'
-                          : executionTime < 5000
-                            ? '良好'
-                            : '需优化'}
-                      </span>
-                    </div>
-                    <Progress
-                      value={Math.min(
-                        100,
-                        Math.max(0, 100 - executionTime / 100)
-                      )}
-                      className='h-2'
-                    />
-                  </div>
-                  {parsedData && (
-                    <div>
-                      <div className='flex justify-between text-sm mb-1'>
-                        <span>数据量</span>
-                        <span className='font-mono'>
-                          {parsedData.rowCount.toLocaleString()}
-                        </span>
-                      </div>
-                      <Progress
-                        value={Math.min(
-                          100,
-                          (parsedData.rowCount / 10000) * 100
-                        )}
-                        className='h-2'
-                      />
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 查询历史卡片 */}
-            <Card>
-              <CardHeader className='pb-2'>
-                <CardTitle className='text-sm flex items-center gap-2'>
-                  <Database className='w-4 h-4' />
-                  最近查询
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className='space-y-2 max-h-32 overflow-y-auto'>
-                  {executedQueries.length > 0 ? (
-                    executedQueries.slice(-3).map((query, index) => (
-                      <div key={index} className='text-xs p-2 bg-muted rounded'>
-                        <div className='font-mono truncate'>{query}</div>
-                        <div className='text-muted-foreground mt-1'>
-                          {new Date().toLocaleTimeString()}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className='text-sm text-muted-foreground text-center py-4'>
-                      暂无查询历史
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
 
         {/* 数据样本标签页 */}
