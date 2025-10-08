@@ -664,7 +664,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     }
   };
 
-  // 计算字段统计信息
+  // 计算字段统计信息 - 单个查询结果（保留用于向后兼容）
   const fieldStatistics = useMemo((): FieldStatistics[] => {
     if (!parsedData) return [];
 
@@ -715,6 +715,80 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       return stat;
     });
   }, [parsedData]);
+
+  // 计算所有查询结果的字段统计信息
+  const allFieldStatistics = useMemo((): Array<{
+    queryIndex: number;
+    queryText: string;
+    statistics: FieldStatistics[];
+    rowCount: number;
+  }> => {
+    return allResults.map((result, index) => {
+      const parsed = parseQueryResult(result);
+      if (!parsed) {
+        return {
+          queryIndex: index,
+          queryText: executedQueries[index] || `查询 ${index + 1}`,
+          statistics: [],
+          rowCount: 0,
+        };
+      }
+
+      const stats = parsed.columns.map(column => {
+        const values = parsed.data
+          .map(row => row[column])
+          .filter(val => val !== null && val !== undefined);
+        const nullCount = parsed.rowCount - values.length;
+        const uniqueValues = new Set(values);
+
+        // 判断数据类型
+        const firstValue = values[0];
+        let dataType = 'string';
+        if (typeof firstValue === 'number') {
+          dataType = 'number';
+        } else if (typeof firstValue === 'boolean') {
+          dataType = 'boolean';
+        } else if (
+          firstValue instanceof Date ||
+          /^\d{4}-\d{2}-\d{2}/.test(String(firstValue))
+        ) {
+          dataType = 'datetime';
+        }
+
+        const stat: FieldStatistics = {
+          fieldName: column,
+          dataType,
+          nullCount,
+          uniqueCount: uniqueValues.size,
+        };
+
+        // 计算数值统计
+        if (dataType === 'number') {
+          const numericValues = values as number[];
+          stat.min = Math.min(...numericValues);
+          stat.max = Math.max(...numericValues);
+          stat.mean =
+            numericValues.reduce((sum, val) => sum + val, 0) /
+            numericValues.length;
+
+          const sorted = [...numericValues].sort((a, b) => a - b);
+          stat.median =
+            sorted.length % 2 === 0
+              ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+              : sorted[Math.floor(sorted.length / 2)];
+        }
+
+        return stat;
+      });
+
+      return {
+        queryIndex: index,
+        queryText: executedQueries[index] || `查询 ${index + 1}`,
+        statistics: stats,
+        rowCount: parsed.rowCount,
+      };
+    });
+  }, [allResults, executedQueries, parseQueryResult]);
 
   // 自动选择默认字段（当数据变化时）
   useEffect(() => {
@@ -1123,15 +1197,17 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         onValueChange={setActiveTab}
         className='h-full flex flex-col'
       >
-        <TabsList className='inline-flex h-8 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground w-auto'>
-          {/* 执行器tab */}
-          <TabsTrigger
-            value='executor'
-            className='flex items-center gap-1 px-3 py-1 text-xs'
-          >
-            <Play className='w-3 h-3' />
-            执行器
-          </TabsTrigger>
+        {/* 可滚动的Tab列表 */}
+        <ScrollArea className='flex-shrink-0 w-full border-b'>
+          <TabsList className='inline-flex h-8 items-center justify-start rounded-none bg-muted p-1 text-muted-foreground w-max min-w-full'>
+            {/* 执行器tab */}
+            <TabsTrigger
+              value='executor'
+              className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
+            >
+              <Play className='w-3 h-3' />
+              执行器
+            </TabsTrigger>
 
           {/* 动态数据tab - 根据SQL语句类型显示不同的tab */}
           {allResults.map((result, index) => {
@@ -1179,7 +1255,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               <TabsTrigger
                 key={`data-${index}`}
                 value={`data-${index}`}
-                className='flex items-center gap-1 px-3 py-1 text-xs'
+                className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
               >
                 {getTabIcon()}
                 {getTabLabel()} {allResults.length > 1 ? `${index + 1}` : ''}
@@ -1201,13 +1277,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           {allResults.length > 0 && (
             <TabsTrigger
               value='statistics'
-              className='flex items-center gap-1 px-3 py-1 text-xs'
+              className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
             >
               <Info className='w-3 h-3' />
               字段统计
-              {fieldStatistics.length > 0 && (
+              {allResults.length > 0 && (
                 <Badge variant='secondary' className='ml-1 text-xs px-1'>
-                  {fieldStatistics.length}
+                  {allResults.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -1226,7 +1302,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               <TabsTrigger
                 key={`visualization-${index}`}
                 value={`visualization-${index}`}
-                className='flex items-center gap-1 px-3 py-1 text-xs'
+                className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
               >
                 <BarChart3 className='w-3 h-3' />
                 可视化 {allResults.length > 1 ? `${index + 1}` : ''}
@@ -1238,7 +1314,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           {allResults.length > 0 && (
             <TabsTrigger
               value='insights'
-              className='flex items-center gap-1 px-3 py-1 text-xs'
+              className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
             >
               <Brain className='w-3 h-3' />
               洞察
@@ -1249,7 +1325,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               )}
             </TabsTrigger>
           )}
-        </TabsList>
+          </TabsList>
+        </ScrollArea>
 
         {/* 执行器标签页 - 优化后的版本 */}
         <TabsContent value='executor' className='flex-1 overflow-auto mt-0'>
@@ -1704,9 +1781,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           );
         })}
 
-        {/* 字段统计标签页 */}
+        {/* 字段统计标签页 - 优化为显示所有查询的统计 */}
         <TabsContent value='statistics' className='flex-1 overflow-hidden mt-0'>
-          {parsedData ? (
+          {allFieldStatistics.length > 0 ? (
             <div className='h-full flex flex-col'>
               {/* 字段统计头部 */}
               <div className='flex-shrink-0 bg-muted/50 border-b px-4 py-2'>
@@ -1715,7 +1792,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     <Info className='w-4 h-4' />
                     <span className='text-sm font-medium'>字段统计信息</span>
                     <Badge variant='outline' className='text-xs'>
-                      {fieldStatistics.length} 个字段
+                      {allFieldStatistics.length} 个查询
+                    </Badge>
+                    <Badge variant='secondary' className='text-xs'>
+                      {allFieldStatistics.reduce((sum, q) => sum + q.statistics.length, 0)} 个字段
                     </Badge>
                   </div>
                   <div className='flex items-center gap-2'>
@@ -1732,126 +1812,145 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 </div>
               </div>
 
-              {/* 可滚动的统计表格 */}
-              <div className='flex-1 overflow-auto relative'>
-                <div className='min-w-full'>
-                  <Table>
-                    <TableHeader className='sticky top-0 bg-background z-10'>
-                      <TableRow>
-                        <TableHead className='px-3 py-2 text-xs font-medium'>
-                          字段名
-                        </TableHead>
-                        <TableHead className='px-3 py-2 text-xs font-medium'>
-                          数据类型
-                        </TableHead>
-                        <TableHead className='px-3 py-2 text-xs font-medium'>
-                          空值数量
-                        </TableHead>
-                        <TableHead className='px-3 py-2 text-xs font-medium'>
-                          唯一值数量
-                        </TableHead>
-                        <TableHead className='px-3 py-2 text-xs font-medium'>
-                          最小值
-                        </TableHead>
-                        <TableHead className='px-3 py-2 text-xs font-medium'>
-                          最大值
-                        </TableHead>
-                        <TableHead className='px-3 py-2 text-xs font-medium'>
-                          平均值
-                        </TableHead>
-                        <TableHead className='px-3 py-2 text-xs font-medium'>
-                          中位数
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {fieldStatistics.map((stat, index) => (
-                        <TableRow
-                          key={index}
-                          className='hover:bg-muted/30 transition-colors'
-                        >
-                          <TableCell className='px-3 py-2 font-mono text-xs font-medium'>
-                            {stat.fieldName}
-                          </TableCell>
-                          <TableCell className='px-3 py-2 text-xs'>
-                            <Badge
-                              variant='outline'
-                              className={`text-xs ${
-                                stat.dataType === 'number'
-                                  ? 'border-blue-200 text-blue-700'
-                                  : stat.dataType === 'datetime'
-                                    ? 'border-green-200 text-green-700'
-                                    : stat.dataType === 'boolean'
-                                      ? 'border-purple-200 text-purple-700'
-                                      : 'border-gray-200 text-gray-700'
-                              }`}
-                            >
-                              {stat.dataType}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className='px-3 py-2 text-xs'>
-                            <div className='flex items-center gap-2'>
-                              <span className='font-mono'>
-                                {stat.nullCount}
-                              </span>
-                              {stat.nullCount > 0 && (
-                                <Badge variant='secondary' className='text-xs'>
-                                  {(
-                                    (stat.nullCount / parsedData.rowCount) *
-                                    100
-                                  ).toFixed(1)}
-                                  %
-                                </Badge>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell className='px-3 py-2 text-xs font-mono'>
-                            {stat.uniqueCount.toLocaleString()}
-                          </TableCell>
-                          <TableCell className='px-3 py-2 text-xs font-mono'>
-                            {stat.dataType === 'number' &&
-                            stat.min !== undefined
-                              ? typeof stat.min === 'number'
-                                ? stat.min.toFixed(2)
-                                : stat.min
-                              : '-'}
-                          </TableCell>
-                          <TableCell className='px-3 py-2 text-xs font-mono'>
-                            {stat.dataType === 'number' &&
-                            stat.max !== undefined
-                              ? typeof stat.max === 'number'
-                                ? stat.max.toFixed(2)
-                                : stat.max
-                              : '-'}
-                          </TableCell>
-                          <TableCell className='px-3 py-2 text-xs font-mono'>
-                            {stat.dataType === 'number' &&
-                            stat.mean !== undefined
-                              ? stat.mean.toFixed(3)
-                              : '-'}
-                          </TableCell>
-                          <TableCell className='px-3 py-2 text-xs font-mono'>
-                            {stat.dataType === 'number' &&
-                            stat.median !== undefined
-                              ? stat.median.toFixed(3)
-                              : '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
+              {/* 可滚动的统计内容 - 按查询分组 */}
+              <ScrollArea className='flex-1'>
+                <div className='p-4 space-y-6'>
+                  {allFieldStatistics.map((queryStats, queryIndex) => (
+                    <div key={queryIndex} className='space-y-3'>
+                      {/* 查询标题 */}
+                      <div className='flex items-center gap-2 pb-2 border-b'>
+                        <Badge variant='default' className='text-xs'>
+                          查询 {queryIndex + 1}
+                        </Badge>
+                        <span className='text-xs text-muted-foreground font-mono truncate max-w-md'>
+                          {queryStats.queryText}
+                        </span>
+                        <Badge variant='secondary' className='text-xs ml-auto'>
+                          {queryStats.statistics.length} 个字段
+                        </Badge>
+                        <Badge variant='outline' className='text-xs'>
+                          {queryStats.rowCount.toLocaleString()} 行
+                        </Badge>
+                      </div>
 
-              {/* 底部状态栏 */}
-              <div className='flex-shrink-0 bg-muted/30 border-t px-4 py-2'>
-                <div className='flex items-center justify-between text-xs text-muted-foreground'>
-                  <span>共 {fieldStatistics.length} 个字段</span>
-                  <span>
-                    数据总行数: {parsedData.rowCount.toLocaleString()}
-                  </span>
+                      {/* 字段统计表格 */}
+                      {queryStats.statistics.length > 0 ? (
+                        <div className='rounded-md border'>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className='px-3 py-2 text-xs font-medium'>
+                                  字段名
+                                </TableHead>
+                                <TableHead className='px-3 py-2 text-xs font-medium'>
+                                  数据类型
+                                </TableHead>
+                                <TableHead className='px-3 py-2 text-xs font-medium'>
+                                  空值数量
+                                </TableHead>
+                                <TableHead className='px-3 py-2 text-xs font-medium'>
+                                  唯一值数量
+                                </TableHead>
+                                <TableHead className='px-3 py-2 text-xs font-medium'>
+                                  最小值
+                                </TableHead>
+                                <TableHead className='px-3 py-2 text-xs font-medium'>
+                                  最大值
+                                </TableHead>
+                                <TableHead className='px-3 py-2 text-xs font-medium'>
+                                  平均值
+                                </TableHead>
+                                <TableHead className='px-3 py-2 text-xs font-medium'>
+                                  中位数
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {queryStats.statistics.map((stat, statIndex) => (
+                                <TableRow
+                                  key={statIndex}
+                                  className='hover:bg-muted/30 transition-colors'
+                                >
+                                  <TableCell className='px-3 py-2 font-mono text-xs font-medium'>
+                                    {stat.fieldName}
+                                  </TableCell>
+                                  <TableCell className='px-3 py-2 text-xs'>
+                                    <Badge
+                                      variant='outline'
+                                      className={`text-xs ${
+                                        stat.dataType === 'number'
+                                          ? 'border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-400'
+                                          : stat.dataType === 'datetime'
+                                            ? 'border-green-200 text-green-700 dark:border-green-800 dark:text-green-400'
+                                            : stat.dataType === 'boolean'
+                                              ? 'border-purple-200 text-purple-700 dark:border-purple-800 dark:text-purple-400'
+                                              : 'border-gray-200 text-gray-700 dark:border-gray-800 dark:text-gray-400'
+                                      }`}
+                                    >
+                                      {stat.dataType}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className='px-3 py-2 text-xs'>
+                                    <div className='flex items-center gap-2'>
+                                      <span className='font-mono'>
+                                        {stat.nullCount}
+                                      </span>
+                                      {stat.nullCount > 0 && queryStats.rowCount > 0 && (
+                                        <Badge variant='secondary' className='text-xs'>
+                                          {(
+                                            (stat.nullCount / queryStats.rowCount) *
+                                            100
+                                          ).toFixed(1)}
+                                          %
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className='px-3 py-2 text-xs font-mono'>
+                                    {stat.uniqueCount.toLocaleString()}
+                                  </TableCell>
+                                  <TableCell className='px-3 py-2 text-xs font-mono'>
+                                    {stat.dataType === 'number' &&
+                                    stat.min !== undefined
+                                      ? typeof stat.min === 'number'
+                                        ? stat.min.toFixed(2)
+                                        : stat.min
+                                      : '-'}
+                                  </TableCell>
+                                  <TableCell className='px-3 py-2 text-xs font-mono'>
+                                    {stat.dataType === 'number' &&
+                                    stat.max !== undefined
+                                      ? typeof stat.max === 'number'
+                                        ? stat.max.toFixed(2)
+                                        : stat.max
+                                      : '-'}
+                                  </TableCell>
+                                  <TableCell className='px-3 py-2 text-xs font-mono'>
+                                    {stat.dataType === 'number' &&
+                                    stat.mean !== undefined
+                                      ? stat.mean.toFixed(2)
+                                      : '-'}
+                                  </TableCell>
+                                  <TableCell className='px-3 py-2 text-xs font-mono'>
+                                    {stat.dataType === 'number' &&
+                                    stat.median !== undefined
+                                      ? stat.median.toFixed(2)
+                                      : '-'}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      ) : (
+                        <div className='text-center py-8 text-muted-foreground text-sm'>
+                          该查询无字段统计信息
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              </div>
+              </ScrollArea>
             </div>
           ) : (
             <div className='h-full flex items-center justify-center'>
