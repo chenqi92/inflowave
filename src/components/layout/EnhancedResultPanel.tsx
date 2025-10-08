@@ -127,6 +127,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
   // 导出状态
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showStatisticsExportDialog, setShowStatisticsExportDialog] = useState(false);
   
   // 分页状态管理
   const [currentPage, setCurrentPage] = useState(1);
@@ -574,6 +575,73 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     } catch (error) {
       console.error('导出数据失败:', error);
       showMessage.error('导出数据失败');
+    }
+  };
+
+  // 导出字段统计
+  const handleExportStatistics = async (options: ExportOptions) => {
+    try {
+      if (!fieldStatistics || fieldStatistics.length === 0) {
+        showMessage.warning('没有可导出的字段统计数据');
+        return;
+      }
+
+      // 将字段统计转换为 QueryResult 格式
+      const columns = [
+        '字段名',
+        '数据类型',
+        '空值数量',
+        '唯一值数量',
+        '最小值',
+        '最大值',
+        '平均值',
+        '中位数'
+      ];
+
+      const values = fieldStatistics.map(stat => [
+        stat.fieldName,
+        stat.dataType,
+        stat.nullCount,
+        stat.uniqueCount,
+        stat.min !== undefined ? String(stat.min) : '-',
+        stat.max !== undefined ? String(stat.max) : '-',
+        stat.mean !== undefined ? stat.mean.toFixed(3) : '-',
+        stat.median !== undefined ? stat.median.toFixed(3) : '-'
+      ]);
+
+      const statisticsResult: QueryResult = {
+        results: [{
+          series: [{
+            name: 'field_statistics',
+            columns,
+            values
+          }]
+        }],
+        executionTime: 0,
+        rowCount: fieldStatistics.length,
+        columns,
+        data: values
+      };
+
+      // 生成默认文件名
+      const defaultFilename = generateTimestampedFilename('field_statistics', options.format);
+
+      // 使用原生导出对话框
+      const success = await exportWithNativeDialog(statisticsResult, {
+        format: options.format,
+        includeHeaders: options.includeHeaders,
+        delimiter: options.delimiter || (options.format === 'tsv' ? '\t' : ','),
+        defaultFilename,
+        tableName: 'field_statistics'
+      });
+
+      if (success) {
+        showMessage.success(`字段统计已导出为 ${options.format.toUpperCase()} 格式`);
+        setShowStatisticsExportDialog(false);
+      }
+    } catch (error) {
+      console.error('导出字段统计失败:', error);
+      showMessage.error('导出字段统计失败');
     }
   };
 
@@ -1482,7 +1550,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     </Badge>
                   </div>
                   <div className='flex items-center gap-2'>
-                    <Button variant='outline' size='sm' className='text-xs'>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      className='text-xs'
+                      onClick={() => setShowStatisticsExportDialog(true)}
+                    >
                       <Download className='w-3 h-3 mr-1' />
                       导出统计
                     </Button>
@@ -2073,6 +2146,16 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         })()}
         rowCount={parsedData?.rowCount || 0}
         columnCount={parsedData?.columns.length || 0}
+      />
+
+      {/* 字段统计导出对话框 */}
+      <ExportOptionsDialog
+        open={showStatisticsExportDialog}
+        onClose={() => setShowStatisticsExportDialog(false)}
+        onExport={handleExportStatistics}
+        defaultTableName="field_statistics"
+        rowCount={fieldStatistics.length}
+        columnCount={8}
       />
     </div>
   );
