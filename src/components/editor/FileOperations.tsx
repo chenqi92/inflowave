@@ -27,15 +27,15 @@ export const useFileOperations = ({
     }
 
     try {
-      // 调用后端保存到工作区 - 使用正确的命令
+      // 调用后端保存到工作区 - 使用 camelCase 参数名
       await safeTauriInvoke('save_tab_to_workspace', {
-        tab_id: currentTab.id,
+        tabId: currentTab.id,
         title: currentTab.title,
         content: currentTab.content,
-        tab_type: currentTab.type,
+        tabType: currentTab.type,
         database: currentTab.database || null,
-        connection_id: currentTab.connectionId || null,
-        table_name: currentTab.tableName || null,
+        connectionId: currentTab.connectionId || null,
+        tableName: currentTab.tableName || null,
       });
 
       // 更新标签状态
@@ -227,13 +227,13 @@ export const useFileOperations = ({
 
     try {
       await safeTauriInvoke('save_tab_to_workspace', {
-        tab_id: tab.id,
+        tabId: tab.id,
         title: tab.title,
         content: tab.content,
-        tab_type: tab.type,
+        tabType: tab.type,
         database: tab.database || null,
-        connection_id: tab.connectionId || null,
-        table_name: tab.tableName || null,
+        connectionId: tab.connectionId || null,
+        tableName: tab.tableName || null,
       });
 
       // 更新标签状态
@@ -261,15 +261,15 @@ export const useFileOperations = ({
 
     try {
       const savePromises = modifiedTabs.map(async (tab) => {
-        // 使用正确的工作区保存命令
+        // 使用正确的工作区保存命令和 camelCase 参数名
         await safeTauriInvoke('save_tab_to_workspace', {
-          tab_id: tab.id,
+          tabId: tab.id,
           title: tab.title,
           content: tab.content,
-          tab_type: tab.type,
+          tabType: tab.type,
           database: tab.database || null,
-          connection_id: tab.connectionId || null,
-          table_name: tab.tableName || null,
+          connectionId: tab.connectionId || null,
+          tableName: tab.tableName || null,
         });
       });
 
