@@ -192,8 +192,13 @@ export const useQueryExecutor = ({
         }
       }
 
+      // 计算后端返回的实际执行时间总和（而不是前端计算的总时间）
+      const backendExecutionTime = results.reduce((sum, result) => {
+        return sum + (result.executionTime || 0);
+      }, 0);
+
       const totalExecutionTime = Date.now() - startTime;
-      console.log(`🎉 批量查询完成，总耗时: ${totalExecutionTime}ms`);
+      console.log(`🎉 批量查询完成，后端执行耗时: ${backendExecutionTime}ms，总耗时（含通信）: ${totalExecutionTime}ms`);
 
       // 保存实际执行的查询
       setActualExecutedQueries(executedQueries);
@@ -203,7 +208,7 @@ export const useQueryExecutor = ({
         onUpdateTab(currentTab.id, {
           queryResults: results,
           executedQueries,
-          executionTime: totalExecutionTime,
+          executionTime: backendExecutionTime, // 使用后端返回的时间
         });
       }
 
@@ -213,8 +218,8 @@ export const useQueryExecutor = ({
         onQueryResult?.(results[0]);
       }
 
-      // 批量查询结果
-      onBatchQueryResults?.(results, executedQueries, totalExecutionTime);
+      // 批量查询结果 - 使用后端返回的执行时间
+      onBatchQueryResults?.(results, executedQueries, backendExecutionTime);
 
       // 显示成功消息
       if (results.length === 1) {
@@ -232,11 +237,11 @@ export const useQueryExecutor = ({
 
         if (errorCount === 0) {
           showMessage.success(
-            `批量查询执行成功，共 ${results.length} 条语句，耗时 ${totalExecutionTime}ms`
+            `批量查询执行成功，共 ${results.length} 条语句，耗时 ${backendExecutionTime}ms`
           );
         } else {
           showMessage.warning(
-            `批量查询完成，成功 ${successCount} 条，失败 ${errorCount} 条，耗时 ${totalExecutionTime}ms`
+            `批量查询完成，成功 ${successCount} 条，失败 ${errorCount} 条，耗时 ${backendExecutionTime}ms`
           );
         }
       }
