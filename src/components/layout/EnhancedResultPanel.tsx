@@ -703,53 +703,210 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
     const insights: DataInsight[] = [];
 
-    // 数据量洞察
-    if (parsedData.rowCount > 10000) {
+    // 1. 查询性能分析
+    if (executionTime > 5000) {
       insights.push({
         type: 'suggestion',
-        title: '大数据集优化建议',
-        description: `查询返回了 ${parsedData.rowCount.toLocaleString()} 行数据，建议使用分页或添加时间范围限制以提高性能。`,
-        severity: 'medium',
-        confidence: 0.9,
-      });
-    }
-
-    // 数据质量检查
-    const highNullFields = fieldStatistics.filter(
-      stat => stat.nullCount / parsedData.rowCount > 0.3
-    );
-    if (highNullFields.length > 0) {
-      insights.push({
-        type: 'anomaly',
-        title: '数据质量问题',
-        description: `字段 ${highNullFields.map(f => f.fieldName).join(', ')} 包含超过30%的空值，可能影响分析结果。`,
+        title: '查询性能较慢',
+        description: `查询耗时 ${(executionTime / 1000).toFixed(2)} 秒，建议添加时间范围限制、使用索引或优化查询条件以提高性能。`,
         severity: 'high',
-        confidence: 0.95,
+        confidence: 1.0,
       });
-    }
-
-    // 时序数据模式识别
-    const timeColumn = fieldStatistics.find(
-      stat => stat.dataType === 'datetime'
-    );
-    if (timeColumn) {
+    } else if (executionTime > 1000) {
       insights.push({
-        type: 'pattern',
-        title: '时序数据检测',
-        description: `检测到时间字段 "${timeColumn.fieldName}"，建议使用时序图表进行可视化分析。`,
+        type: 'suggestion',
+        title: '查询性能可优化',
+        description: `查询耗时 ${(executionTime / 1000).toFixed(2)} 秒，性能尚可，但仍有优化空间。`,
         severity: 'low',
         confidence: 0.8,
       });
     }
 
-    // 性能洞察
-    if (executionTime > 5000) {
+    // 2. 数据量分析和建议
+    if (parsedData.rowCount > 50000) {
       insights.push({
         type: 'suggestion',
-        title: '查询性能优化',
-        description: `查询耗时 ${(executionTime / 1000).toFixed(2)} 秒，建议检查索引或优化查询条件。`,
+        title: '大数据集聚合建议',
+        description: `查询返回了 ${parsedData.rowCount.toLocaleString()} 行数据，建议使用 GROUP BY 进行时间聚合（如按分钟、小时聚合）以减少数据量并提高可读性。`,
+        severity: 'high',
+        confidence: 0.95,
+      });
+    } else if (parsedData.rowCount > 10000) {
+      insights.push({
+        type: 'suggestion',
+        title: '数据量较大',
+        description: `查询返回了 ${parsedData.rowCount.toLocaleString()} 行数据，建议考虑使用时间范围限制或聚合查询以提高性能。`,
         severity: 'medium',
         confidence: 0.85,
+      });
+    } else if (parsedData.rowCount < 10) {
+      insights.push({
+        type: 'pattern',
+        title: '数据量较少',
+        description: `查询仅返回了 ${parsedData.rowCount} 行数据，可能需要检查时间范围或查询条件是否过于严格。`,
+        severity: 'low',
+        confidence: 0.7,
+      });
+    }
+
+    // 3. 数据质量分析
+    const highNullFields = fieldStatistics.filter(
+      stat => stat.nullCount / parsedData.rowCount > 0.5
+    );
+    if (highNullFields.length > 0) {
+      insights.push({
+        type: 'anomaly',
+        title: '数据质量问题',
+        description: `字段 ${highNullFields.map(f => f.fieldName).join(', ')} 包含超过50%的空值，可能影响数据分析的准确性。`,
+        severity: 'high',
+        confidence: 1.0,
+      });
+    } else {
+      const mediumNullFields = fieldStatistics.filter(
+        stat => stat.nullCount / parsedData.rowCount > 0.2 && stat.nullCount > 0
+      );
+      if (mediumNullFields.length > 0) {
+        insights.push({
+          type: 'pattern',
+          title: '部分字段存在空值',
+          description: `字段 ${mediumNullFields.map(f => f.fieldName).join(', ')} 包含 20%-50% 的空值，建议在分析时注意处理空值情况。`,
+          severity: 'medium',
+          confidence: 0.9,
+        });
+      }
+    }
+
+    // 4. 时序数据分析
+    const timeColumn = fieldStatistics.find(
+      stat => stat.dataType === 'datetime'
+    );
+    if (timeColumn && parsedData.rowCount > 1) {
+      // 分析时间跨度
+      const timeValues = parsedData.data
+        .map(row => row[timeColumn.fieldName])
+        .filter(val => val !== null && val !== undefined)
+        .map(val => new Date(val).getTime())
+        .sort((a, b) => a - b);
+
+      if (timeValues.length > 1) {
+        const timeSpan = timeValues[timeValues.length - 1] - timeValues[0];
+        const timeSpanHours = timeSpan / (1000 * 60 * 60);
+        const timeSpanDays = timeSpan / (1000 * 60 * 60 * 24);
+
+        if (timeSpanDays > 30) {
+          insights.push({
+            type: 'pattern',
+            title: '长时间跨度数据',
+            description: `数据时间跨度为 ${timeSpanDays.toFixed(1)} 天，建议使用时间聚合（GROUP BY time(1h) 或 time(1d)）来提高可视化效果。`,
+            severity: 'medium',
+            confidence: 0.9,
+          });
+        } else if (timeSpanHours < 1) {
+          insights.push({
+            type: 'pattern',
+            title: '短时间跨度数据',
+            description: `数据时间跨度仅为 ${(timeSpanHours * 60).toFixed(1)} 分钟，适合进行细粒度的实时监控分析。`,
+            severity: 'low',
+            confidence: 0.85,
+          });
+        }
+
+        // 分析数据密度（采样率）
+        if (timeValues.length > 2) {
+          const intervals = [];
+          for (let i = 1; i < Math.min(timeValues.length, 100); i++) {
+            intervals.push(timeValues[i] - timeValues[i - 1]);
+          }
+          const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+          const avgIntervalSeconds = avgInterval / 1000;
+
+          if (avgIntervalSeconds < 1) {
+            insights.push({
+              type: 'pattern',
+              title: '高频采样数据',
+              description: `平均采样间隔约 ${(avgIntervalSeconds * 1000).toFixed(0)} 毫秒，数据采集频率很高，适合实时监控场景。`,
+              severity: 'low',
+              confidence: 0.8,
+            });
+          } else if (avgIntervalSeconds < 60) {
+            insights.push({
+              type: 'pattern',
+              title: '秒级采样数据',
+              description: `平均采样间隔约 ${avgIntervalSeconds.toFixed(1)} 秒，数据密度适中，适合短期趋势分析。`,
+              severity: 'low',
+              confidence: 0.8,
+            });
+          } else if (avgIntervalSeconds < 3600) {
+            insights.push({
+              type: 'pattern',
+              title: '分钟级采样数据',
+              description: `平均采样间隔约 ${(avgIntervalSeconds / 60).toFixed(1)} 分钟，适合中期趋势分析。`,
+              severity: 'low',
+              confidence: 0.8,
+            });
+          }
+        }
+      }
+    }
+
+    // 5. 数值字段趋势分析
+    const numericFields = fieldStatistics.filter(stat => stat.dataType === 'number' && stat.mean !== undefined);
+    if (numericFields.length > 0 && timeColumn && parsedData.rowCount > 10) {
+      numericFields.forEach(field => {
+        const values = parsedData.data
+          .map(row => row[field.fieldName])
+          .filter(val => typeof val === 'number');
+
+        if (values.length > 10) {
+          // 计算趋势（简单线性回归）
+          const n = Math.min(values.length, 100); // 只取前100个点避免计算量过大
+          const recentValues = values.slice(-n);
+          const avgValue = recentValues.reduce((a, b) => a + b, 0) / n;
+          const firstHalf = recentValues.slice(0, Math.floor(n / 2));
+          const secondHalf = recentValues.slice(Math.floor(n / 2));
+          const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+          const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+          const trend = ((secondAvg - firstAvg) / firstAvg) * 100;
+
+          if (Math.abs(trend) > 20) {
+            insights.push({
+              type: 'trend',
+              title: `${field.fieldName} 显著${trend > 0 ? '上升' : '下降'}趋势`,
+              description: `字段 ${field.fieldName} 在查询时间范围内${trend > 0 ? '上升' : '下降'}了约 ${Math.abs(trend).toFixed(1)}%，建议关注此变化趋势。`,
+              severity: 'medium',
+              confidence: 0.85,
+            });
+          }
+
+          // 检测异常值（超出3倍标准差）
+          const stdDev = Math.sqrt(
+            recentValues.reduce((sum, val) => sum + Math.pow(val - avgValue, 2), 0) / n
+          );
+          const outliers = recentValues.filter(val => Math.abs(val - avgValue) > 3 * stdDev);
+          if (outliers.length > 0 && outliers.length / n < 0.1) {
+            insights.push({
+              type: 'anomaly',
+              title: `${field.fieldName} 存在异常值`,
+              description: `检测到 ${outliers.length} 个异常数据点（超出3倍标准差），建议检查数据采集是否正常。`,
+              severity: 'medium',
+              confidence: 0.75,
+            });
+          }
+        }
+      });
+    }
+
+    // 6. 字段唯一性分析
+    const lowCardinalityFields = fieldStatistics.filter(
+      stat => stat.uniqueCount < 10 && stat.uniqueCount > 1 && stat.dataType !== 'boolean'
+    );
+    if (lowCardinalityFields.length > 0) {
+      insights.push({
+        type: 'pattern',
+        title: '低基数字段检测',
+        description: `字段 ${lowCardinalityFields.map(f => f.fieldName).join(', ')} 的唯一值数量较少（<10），适合用作分组或分类维度。`,
+        severity: 'low',
+        confidence: 0.9,
       });
     }
 
