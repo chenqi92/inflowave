@@ -90,6 +90,7 @@ import {
   Edit2,
   Check,
   X,
+  Tag,
 } from 'lucide-react';
 import EChartsReact from 'echarts-for-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -140,7 +141,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('executor');
   const [visualizationType, setVisualizationType] = useState<
-    'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar'
+    'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar' | 'category-bar' | 'category-pie'
   >('line');
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
@@ -154,6 +155,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
   // 饼图和雷达图的时间点选择
   const [timePointIndex, setTimePointIndex] = useState<number>(0);
+
+  // 分类字段统计
+  const [selectedCategoryField, setSelectedCategoryField] = useState<string>('');
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const chartRef = useRef<any>(null);
@@ -346,9 +350,32 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       const numericColumns = fieldStats
         .filter(stat => stat.dataType === 'number')
         .map(stat => stat.fieldName);
+      const stringColumns = fieldStats
+        .filter(stat => stat.dataType === 'string')
+        .map(stat => stat.fieldName);
 
       // 使用新的图表配置系统
       const themeConfig = getThemeConfig();
+
+      // 对于分类图表，使用分类字段
+      if (chartType === 'category-bar' || chartType === 'category-pie') {
+        return generateChartConfig(
+          chartType,
+          {
+            timeColumn,
+            numericColumns,
+            selectedFields: [],
+            data: parsedResult.data,
+            rowCount: parsedResult.rowCount,
+            customTitle: customChartTitle,
+            fieldAliases,
+            categoryField: selectedCategoryField || stringColumns[0],
+          },
+          themeConfig
+        );
+      }
+
+      // 对于数值图表，使用数值字段
       const fieldsToDisplay =
         selectedFields.length > 0
           ? selectedFields.filter(f => numericColumns.includes(f))
@@ -367,7 +394,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           rowCount: parsedResult.rowCount,
           customTitle: customChartTitle,
           fieldAliases,
-          timeIndex: timePointIndex, // 传递时间点索引
+          timeIndex: timePointIndex,
         },
         themeConfig
       );
@@ -379,6 +406,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       customChartTitle,
       fieldAliases,
       timePointIndex,
+      selectedCategoryField,
     ]
   );
 
@@ -1901,6 +1929,16 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               ? extractTableName(executedQueries[index])
               : '';
 
+          // 计算可用的字符串字段
+          const availableStringFields = parsedResult
+            ? parsedResult.columns.filter(col => {
+                const values = parsedResult.data.map(row => row[col]).filter(v => v !== null && v !== undefined);
+                if (values.length === 0) return false;
+                const firstValue = values[0];
+                return typeof firstValue === 'string' && !/^\d{4}-\d{2}-\d{2}/.test(firstValue);
+              })
+            : [];
+
           return (
             <TabsContent
               key={`visualization-${index}`}
@@ -2009,6 +2047,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             {visualizationType === 'radar' && (
                               <Radar className='w-3 h-3 mr-1' />
                             )}
+                            {visualizationType === 'category-bar' && (
+                              <BarChart className='w-3 h-3 mr-1' />
+                            )}
+                            {visualizationType === 'category-pie' && (
+                              <PieChart className='w-3 h-3 mr-1' />
+                            )}
                             {visualizationType === 'line' && '折线图'}
                             {visualizationType === 'bar' && '柱状图'}
                             {visualizationType === 'pie' && '饼图'}
@@ -2016,6 +2060,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             {visualizationType === 'scatter' && '散点图'}
                             {visualizationType === 'heatmap' && '热力图'}
                             {visualizationType === 'radar' && '雷达图'}
+                            {visualizationType === 'category-bar' && '分类柱状图'}
+                            {visualizationType === 'category-pie' && '分类饼图'}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
@@ -2060,6 +2106,22 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           >
                             <PieChart className='w-3 h-3 mr-2' />
                             饼图
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuLabel className='text-xs'>
+                            分类字段统计
+                          </DropdownMenuLabel>
+                          <DropdownMenuItem
+                            onClick={() => setVisualizationType('category-bar')}
+                          >
+                            <BarChart className='w-3 h-3 mr-2' />
+                            分类柱状图
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setVisualizationType('category-pie')}
+                          >
+                            <PieChart className='w-3 h-3 mr-2' />
+                            分类饼图
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -2149,6 +2211,41 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                   </Button>
                                 )}
                               </div>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                      {/* 分类字段选择器 - 仅在分类图表时显示 */}
+                      {(visualizationType === 'category-bar' || visualizationType === 'category-pie') &&
+                       availableStringFields.length > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='text-xs'
+                            >
+                              <Tag className='w-3 h-3 mr-1' />
+                              {selectedCategoryField
+                                ? getFieldDisplayName(selectedCategoryField)
+                                : '选择分类字段'}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className='w-56'>
+                            <DropdownMenuLabel>选择分类字段</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {availableStringFields.map(field => (
+                              <DropdownMenuItem
+                                key={field}
+                                onClick={() => setSelectedCategoryField(field)}
+                              >
+                                {getFieldDisplayName(field)}
+                                {fieldAliases[field] && (
+                                  <span className='text-xs text-muted-foreground ml-1'>
+                                    ({field})
+                                  </span>
+                                )}
+                              </DropdownMenuItem>
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>

@@ -21,9 +21,10 @@ export interface ChartDataConfig {
   customTitle?: string;
   fieldAliases?: Record<string, string>;
   timeIndex?: number;  // 用于饼图和雷达图选择特定时间点
+  categoryField?: string;  // 用于分类字段统计
 }
 
-export type ChartType = 'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar';
+export type ChartType = 'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar' | 'category-bar' | 'category-pie';
 
 /**
  * 计算时间跨度并返回合适的时间格式
@@ -935,6 +936,180 @@ export const generateRadarChart = (
 };
 
 /**
+ * 生成分类字段柱状图配置
+ * 统计字符串字段中每个值出现的次数
+ */
+export const generateCategoryBarChart = (
+  config: ChartDataConfig,
+  theme: ChartThemeConfig
+) => {
+  const { data, categoryField, customTitle, fieldAliases = {} } = config;
+
+  if (!categoryField || data.length === 0) return null;
+
+  // 统计每个分类值的出现次数
+  const categoryCount: Record<string, number> = {};
+  data.forEach(row => {
+    const value = String(row[categoryField] || '未知');
+    categoryCount[value] = (categoryCount[value] || 0) + 1;
+  });
+
+  // 转换为图表数据格式并排序
+  const chartData = Object.entries(categoryCount)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 50); // 最多显示前50个分类
+
+  const categories = chartData.map(item => item.name);
+  const values = chartData.map(item => item.value);
+
+  const fieldDisplayName = fieldAliases[categoryField] || categoryField;
+
+  return {
+    backgroundColor: theme.backgroundColor,
+    textStyle: { color: theme.textColor },
+    color: theme.colors,
+    title: {
+      text: customTitle || `${fieldDisplayName} 分布统计`,
+      left: 'center',
+      textStyle: { color: theme.textColor, fontSize: 14 },
+    },
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: {
+        type: 'shadow',
+      },
+      formatter: (params: any) => {
+        const item = params[0];
+        const percentage = ((item.value / data.length) * 100).toFixed(2);
+        return `${item.name}<br/>数量: ${item.value}<br/>占比: ${percentage}%`;
+      },
+      backgroundColor: theme.tooltipBgColor,
+      borderColor: theme.borderColor,
+      textStyle: { color: theme.textColor },
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '15%',
+      top: '15%',
+      containLabel: true,
+    },
+    xAxis: {
+      type: 'category',
+      data: categories,
+      axisLabel: {
+        color: theme.textColor,
+        rotate: 45,
+        interval: 0,
+      },
+      axisLine: { lineStyle: { color: theme.borderColor } },
+    },
+    yAxis: {
+      type: 'value',
+      name: '数量',
+      nameTextStyle: { color: theme.textColor },
+      axisLabel: { color: theme.textColor },
+      axisLine: { lineStyle: { color: theme.borderColor } },
+      splitLine: { lineStyle: { color: theme.gridColor } },
+    },
+    series: [
+      {
+        name: '数量',
+        type: 'bar',
+        data: values,
+        itemStyle: {
+          borderRadius: [4, 4, 0, 0],
+        },
+        label: {
+          show: true,
+          position: 'top',
+          color: theme.textColor,
+          fontSize: 10,
+        },
+      },
+    ],
+  };
+};
+
+/**
+ * 生成分类字段饼图配置
+ * 统计字符串字段中每个值出现的次数
+ */
+export const generateCategoryPieChart = (
+  config: ChartDataConfig,
+  theme: ChartThemeConfig
+) => {
+  const { data, categoryField, customTitle, fieldAliases = {} } = config;
+
+  if (!categoryField || data.length === 0) return null;
+
+  // 统计每个分类值的出现次数
+  const categoryCount: Record<string, number> = {};
+  data.forEach(row => {
+    const value = String(row[categoryField] || '未知');
+    categoryCount[value] = (categoryCount[value] || 0) + 1;
+  });
+
+  // 转换为图表数据格式并排序
+  const chartData = Object.entries(categoryCount)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 20); // 饼图最多显示前20个分类
+
+  const fieldDisplayName = fieldAliases[categoryField] || categoryField;
+
+  return {
+    backgroundColor: theme.backgroundColor,
+    textStyle: { color: theme.textColor },
+    color: theme.colors,
+    title: {
+      text: customTitle || `${fieldDisplayName} 分布占比`,
+      left: 'center',
+      textStyle: { color: theme.textColor, fontSize: 14 },
+    },
+    tooltip: {
+      trigger: 'item',
+      formatter: (params: any) => {
+        return `${params.name}<br/>数量: ${params.value}<br/>占比: ${params.percent}%`;
+      },
+      backgroundColor: theme.tooltipBgColor,
+      borderColor: theme.borderColor,
+      textStyle: { color: theme.textColor },
+    },
+    legend: {
+      type: 'scroll',
+      orient: 'vertical',
+      right: 10,
+      top: 60,
+      bottom: 20,
+      textStyle: { color: theme.textColor },
+    },
+    series: [
+      {
+        name: fieldDisplayName,
+        type: 'pie',
+        radius: ['40%', '70%'],
+        center: ['40%', '50%'],
+        data: chartData,
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)',
+          },
+        },
+        label: {
+          show: true,
+          formatter: '{b}: {d}%',
+          color: theme.textColor,
+        },
+      },
+    ],
+  };
+};
+
+/**
  * 根据图表类型生成配置
  */
 export const generateChartConfig = (
@@ -957,6 +1132,10 @@ export const generateChartConfig = (
       return generateHeatmapChart(dataConfig, themeConfig);
     case 'radar':
       return generateRadarChart(dataConfig, themeConfig);
+    case 'category-bar':
+      return generateCategoryBarChart(dataConfig, themeConfig);
+    case 'category-pie':
+      return generateCategoryPieChart(dataConfig, themeConfig);
     default:
       return generateTimeSeriesLineChart(dataConfig, themeConfig);
   }
