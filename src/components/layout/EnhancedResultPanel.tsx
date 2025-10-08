@@ -1185,6 +1185,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           severity: 'low',
           confidence: 0.8,
         });
+      } else if (queryExecutionTime < 100) {
+        queryInsights.push({
+          type: 'pattern',
+          title: '查询性能优秀',
+          description: `查询耗时仅 ${queryExecutionTime.toFixed(0)} 毫秒，响应速度非常快，适合实时查询场景。`,
+          severity: 'low',
+          confidence: 0.9,
+        });
       }
 
       // 2. 数据量分析
@@ -1222,8 +1230,33 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         queryInsights.push({
           type: 'anomaly',
           title: '数据质量问题',
-          description: `字段 ${highNullFields.map(f => f.fieldName).join(', ')} 包含超过50%的空值。`,
+          description: `字段 ${highNullFields.map(f => f.fieldName).join(', ')} 包含超过50%的空值，可能影响数据分析准确性。`,
           severity: 'high',
+          confidence: 1.0,
+        });
+      } else {
+        const mediumNullFields = queryFieldStats.filter(
+          stat => stat.nullCount / parsed.rowCount > 0.2 && stat.nullCount > 0
+        );
+        if (mediumNullFields.length > 0) {
+          queryInsights.push({
+            type: 'pattern',
+            title: '部分字段存在空值',
+            description: `字段 ${mediumNullFields.map(f => f.fieldName).join(', ')} 包含 20%-50% 的空值，建议在分析时注意处理。`,
+            severity: 'medium',
+            confidence: 0.9,
+          });
+        }
+      }
+
+      // 检测完全无空值的情况（数据质量好）
+      const noNullFields = queryFieldStats.filter(stat => stat.nullCount === 0);
+      if (noNullFields.length === queryFieldStats.length && queryFieldStats.length > 0) {
+        queryInsights.push({
+          type: 'pattern',
+          title: '数据完整性良好',
+          description: `所有字段均无空值，数据完整性为100%，数据质量优秀。`,
+          severity: 'low',
           confidence: 1.0,
         });
       }
@@ -1242,17 +1275,255 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         if (timeValues.length > 1) {
           const timeSpan = timeValues[timeValues.length - 1] - timeValues[0];
           const timeSpanDays = timeSpan / (1000 * 60 * 60 * 24);
+          const timeSpanHours = timeSpan / (1000 * 60 * 60);
 
-          if (timeSpanDays > 30) {
+          if (timeSpanDays > 365) {
+            queryInsights.push({
+              type: 'pattern',
+              title: '超长时间跨度数据',
+              description: `数据时间跨度超过 ${(timeSpanDays / 365).toFixed(1)} 年，建议使用按天或按周聚合来提高可视化效果。`,
+              severity: 'medium',
+              confidence: 0.95,
+            });
+          } else if (timeSpanDays > 30) {
             queryInsights.push({
               type: 'pattern',
               title: '长时间跨度数据',
-              description: `数据时间跨度为 ${timeSpanDays.toFixed(1)} 天，建议使用时间聚合来提高可视化效果。`,
+              description: `数据时间跨度为 ${timeSpanDays.toFixed(1)} 天，建议使用时间聚合（按小时或按天）来提高可视化效果。`,
               severity: 'medium',
               confidence: 0.9,
             });
+          } else if (timeSpanHours < 1) {
+            queryInsights.push({
+              type: 'pattern',
+              title: '短时间跨度数据',
+              description: `数据时间跨度仅为 ${(timeSpanHours * 60).toFixed(1)} 分钟，适合进行细粒度的实时监控分析。`,
+              severity: 'low',
+              confidence: 0.85,
+            });
+          }
+
+          // 分析数据采样率
+          if (timeValues.length > 2) {
+            const intervals = [];
+            for (let i = 1; i < Math.min(timeValues.length, 100); i++) {
+              intervals.push(timeValues[i] - timeValues[i - 1]);
+            }
+            const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+            const avgIntervalSeconds = avgInterval / 1000;
+
+            if (avgIntervalSeconds < 1) {
+              queryInsights.push({
+                type: 'pattern',
+                title: '高频采样数据',
+                description: `平均采样间隔约 ${(avgIntervalSeconds * 1000).toFixed(0)} 毫秒，数据采集频率很高，适合实时监控场景。`,
+                severity: 'low',
+                confidence: 0.8,
+              });
+            } else if (avgIntervalSeconds < 60) {
+              queryInsights.push({
+                type: 'pattern',
+                title: '秒级采样数据',
+                description: `平均采样间隔约 ${avgIntervalSeconds.toFixed(1)} 秒，数据密度适中，适合短期趋势分析。`,
+                severity: 'low',
+                confidence: 0.8,
+              });
+            } else if (avgIntervalSeconds < 3600) {
+              queryInsights.push({
+                type: 'pattern',
+                title: '分钟级采样数据',
+                description: `平均采样间隔约 ${(avgIntervalSeconds / 60).toFixed(1)} 分钟，适合中期趋势分析。`,
+                severity: 'low',
+                confidence: 0.8,
+              });
+            } else if (avgIntervalSeconds < 86400) {
+              queryInsights.push({
+                type: 'pattern',
+                title: '小时级采样数据',
+                description: `平均采样间隔约 ${(avgIntervalSeconds / 3600).toFixed(1)} 小时，适合长期趋势分析。`,
+                severity: 'low',
+                confidence: 0.8,
+              });
+            }
+
+            // 检测采样间隔不均匀
+            const stdDev = Math.sqrt(
+              intervals.reduce((sum, val) => sum + Math.pow(val - avgInterval, 2), 0) / intervals.length
+            );
+            const coefficientOfVariation = stdDev / avgInterval;
+            if (coefficientOfVariation > 0.5) {
+              queryInsights.push({
+                type: 'anomaly',
+                title: '采样间隔不均匀',
+                description: `数据采样间隔变化较大（变异系数 ${(coefficientOfVariation * 100).toFixed(1)}%），可能存在数据缺失或采集不稳定。`,
+                severity: 'medium',
+                confidence: 0.75,
+              });
+            }
           }
         }
+      }
+
+      // 5. 数值字段分析
+      const numericFields = queryFieldStats.filter(stat => stat.dataType === 'number');
+      if (numericFields.length > 0) {
+        numericFields.forEach(field => {
+          const values = parsed.data
+            .map(row => row[field.fieldName])
+            .filter(val => typeof val === 'number');
+
+          if (values.length > 0) {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+
+            // 检测零值
+            const zeroCount = values.filter(v => v === 0).length;
+            if (zeroCount / values.length > 0.5) {
+              queryInsights.push({
+                type: 'pattern',
+                title: `${field.fieldName} 包含大量零值`,
+                description: `字段 ${field.fieldName} 中有 ${((zeroCount / values.length) * 100).toFixed(1)}% 的值为0，可能需要检查数据采集或传感器状态。`,
+                severity: 'medium',
+                confidence: 0.85,
+              });
+            }
+
+            // 检测负值（对于某些场景可能异常）
+            const negativeCount = values.filter(v => v < 0).length;
+            if (negativeCount > 0 && negativeCount / values.length < 0.1) {
+              queryInsights.push({
+                type: 'anomaly',
+                title: `${field.fieldName} 存在负值`,
+                description: `字段 ${field.fieldName} 中有 ${negativeCount} 个负值（${((negativeCount / values.length) * 100).toFixed(1)}%），如果该字段不应为负，请检查数据源。`,
+                severity: 'medium',
+                confidence: 0.7,
+              });
+            }
+
+            // 检测数值范围异常
+            const range = max - min;
+            if (range === 0 && values.length > 1) {
+              queryInsights.push({
+                type: 'pattern',
+                title: `${field.fieldName} 为常量字段`,
+                description: `字段 ${field.fieldName} 的所有值都相同（${min}），可能不需要包含在查询结果中。`,
+                severity: 'low',
+                confidence: 1.0,
+              });
+            } else if (range > 0) {
+              // 计算变异系数
+              const stdDev = Math.sqrt(
+                values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length
+              );
+              const cv = stdDev / Math.abs(avg);
+
+              if (cv > 2) {
+                queryInsights.push({
+                  type: 'pattern',
+                  title: `${field.fieldName} 数值波动较大`,
+                  description: `字段 ${field.fieldName} 的变异系数为 ${cv.toFixed(2)}，数值波动很大，范围从 ${min.toFixed(2)} 到 ${max.toFixed(2)}。`,
+                  severity: 'low',
+                  confidence: 0.8,
+                });
+              }
+            }
+          }
+        });
+      }
+
+      // 6. 字段统计分析
+      if (queryFieldStats.length > 20) {
+        queryInsights.push({
+          type: 'suggestion',
+          title: '字段数量较多',
+          description: `查询返回了 ${queryFieldStats.length} 个字段，建议只选择需要的字段以提高查询性能和可读性。`,
+          severity: 'low',
+          confidence: 0.85,
+        });
+      }
+
+      // 检测低基数字段（适合分组）
+      const lowCardinalityFields = queryFieldStats.filter(
+        stat => stat.uniqueCount < 10 && stat.uniqueCount > 1 && stat.dataType !== 'boolean'
+      );
+      if (lowCardinalityFields.length > 0) {
+        queryInsights.push({
+          type: 'suggestion',
+          title: '检测到分类字段',
+          description: `字段 ${lowCardinalityFields.map(f => f.fieldName).join(', ')} 的唯一值数量较少（<10），适合用作分组或分类维度进行聚合分析。`,
+          severity: 'low',
+          confidence: 0.9,
+        });
+      }
+
+      // 检测高基数字段
+      const highCardinalityFields = queryFieldStats.filter(
+        stat => stat.uniqueCount === parsed.rowCount && parsed.rowCount > 100
+      );
+      if (highCardinalityFields.length > 0) {
+        queryInsights.push({
+          type: 'pattern',
+          title: '检测到唯一标识字段',
+          description: `字段 ${highCardinalityFields.map(f => f.fieldName).join(', ')} 的每个值都唯一，可能是ID或时间戳字段。`,
+          severity: 'low',
+          confidence: 0.95,
+        });
+      }
+
+      // 7. 数据趋势分析（针对数值字段）
+      if (numericFields.length > 0 && timeColumn && parsed.rowCount > 10) {
+        numericFields.slice(0, 3).forEach(field => {
+          const values = parsed.data
+            .map(row => row[field.fieldName])
+            .filter(val => typeof val === 'number');
+
+          if (values.length > 10) {
+            // 简单趋势分析：比较前半部分和后半部分的平均值
+            const n = Math.min(values.length, 100);
+            const recentValues = values.slice(-n);
+            const firstHalf = recentValues.slice(0, Math.floor(n / 2));
+            const secondHalf = recentValues.slice(Math.floor(n / 2));
+            const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+            const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+            const trend = ((secondAvg - firstAvg) / Math.abs(firstAvg)) * 100;
+
+            if (Math.abs(trend) > 50) {
+              queryInsights.push({
+                type: 'trend',
+                title: `${field.fieldName} 显著${trend > 0 ? '上升' : '下降'}趋势`,
+                description: `字段 ${field.fieldName} 在查询时间范围内${trend > 0 ? '上升' : '下降'}了约 ${Math.abs(trend).toFixed(1)}%，建议关注此显著变化。`,
+                severity: 'high',
+                confidence: 0.85,
+              });
+            } else if (Math.abs(trend) > 20) {
+              queryInsights.push({
+                type: 'trend',
+                title: `${field.fieldName} ${trend > 0 ? '上升' : '下降'}趋势`,
+                description: `字段 ${field.fieldName} 在查询时间范围内${trend > 0 ? '上升' : '下降'}了约 ${Math.abs(trend).toFixed(1)}%。`,
+                severity: 'medium',
+                confidence: 0.8,
+              });
+            }
+
+            // 检测异常值
+            const avgValue = recentValues.reduce((a, b) => a + b, 0) / n;
+            const stdDev = Math.sqrt(
+              recentValues.reduce((sum, val) => sum + Math.pow(val - avgValue, 2), 0) / n
+            );
+            const outliers = recentValues.filter(val => Math.abs(val - avgValue) > 3 * stdDev);
+
+            if (outliers.length > 0 && outliers.length / n < 0.05) {
+              queryInsights.push({
+                type: 'anomaly',
+                title: `${field.fieldName} 存在异常值`,
+                description: `检测到 ${outliers.length} 个异常数据点（超出3倍标准差），占比 ${((outliers.length / n) * 100).toFixed(1)}%，建议检查数据采集是否正常。`,
+                severity: 'medium',
+                confidence: 0.75,
+              });
+            }
+          }
+        });
       }
 
       return {
