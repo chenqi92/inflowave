@@ -101,7 +101,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         return preferences?.workspace.panel_positions?.['left-panel'] || 25;
     });
     const [bottomPanelSize, setBottomPanelSize] = useState(() => {
-        return preferences?.workspace.panel_positions?.['bottom-panel'] || 40;
+        return preferences?.workspace.panel_positions?.['bottom-panel'] || 65;
     });
     const [rightPanelSize, setRightPanelSize] = useState(() => {
         return preferences?.workspace.panel_positions?.['right-panel'] || 30;

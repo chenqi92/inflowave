@@ -69,6 +69,7 @@ import {
   Settings,
   Shield,
   FileText,
+  Copy,
 } from 'lucide-react';
 import EChartsReact from 'echarts-for-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -1235,15 +1236,31 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   {executedQueries.length > 0 && (
                     <div className='space-y-2'>
                       <div className='text-xs text-muted-foreground'>
-                        执行的查询
+                        执行的查询 ({executedQueries.length})
                       </div>
-                      <div className='space-y-2'>
+                      <div className='space-y-2 max-h-[400px] overflow-y-auto pr-2'>
                         {executedQueries.map((query, index) => (
-                          <div key={index} className='bg-muted/50 rounded p-2'>
-                            <div className='text-xs text-muted-foreground mb-1'>
-                              查询 {index + 1}
+                          <div key={index} className='bg-muted/50 rounded p-3 relative group'>
+                            <div className='flex items-center justify-between mb-2'>
+                              <div className='text-xs text-muted-foreground'>
+                                查询 {index + 1}
+                              </div>
+                              <Button
+                                variant='ghost'
+                                size='sm'
+                                className='h-6 px-2 opacity-0 group-hover:opacity-100 transition-opacity'
+                                onClick={() => {
+                                  navigator.clipboard.writeText(query);
+                                  showMessage.success('SQL已复制到剪贴板');
+                                }}
+                              >
+                                <Copy className='w-3 h-3 mr-1' />
+                                <span className='text-xs'>复制</span>
+                              </Button>
                             </div>
-                            <code className='text-xs font-mono'>{query}</code>
+                            <code className='text-xs font-mono block whitespace-pre-wrap break-all'>
+                              {query}
+                            </code>
                           </div>
                         ))}
                       </div>
