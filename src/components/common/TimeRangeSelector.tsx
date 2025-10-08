@@ -17,12 +17,6 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from '@/components/ui';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from '@/components/ui';
 import {Clock, Calendar, ChevronDown} from 'lucide-react';
 import {showMessage} from '@/utils/message';
 import dayjs from 'dayjs';
@@ -98,22 +92,15 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                                                  disabled = false,
                                                                  className = '',
                                                              }) => {
-    const [selectedRange, setSelectedRange] = useState<TimeRange>(
-        value || TIME_RANGES[0] // 默认选择不限制时间
-    );
+    // 使用外部传入的value，如果没有则使用默认值
+    const selectedRange = value || TIME_RANGES[0];
+
     const [showCustomDialog, setShowCustomDialog] = useState(false);
     const [customStartDate, setCustomStartDate] = useState<Date | null>(null);
     const [customEndDate, setCustomEndDate] = useState<Date | null>(null);
 
-    // 当外部传入的value发生变化时，更新内部状态
-    React.useEffect(() => {
-        if (value && value !== selectedRange) {
-            setSelectedRange(value);
-        }
-    }, [value, selectedRange]);
-
     const handleRangeSelect = (range: TimeRange) => {
-        setSelectedRange(range);
+        // 直接调用onChange，不维护内部状态
         onChange?.(range);
     };
 
@@ -175,7 +162,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
             end: formatDateToInfluxQL(customEndDate),
         };
 
-        setSelectedRange(customRange);
+        // 直接调用onChange，不维护内部状态
         onChange?.(customRange);
         setShowCustomDialog(false);
         showMessage.success('自定义时间范围已设置');
@@ -188,69 +175,32 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         setCustomEndDate(null);
     };
 
-    // 生成详细的Tooltip内容
-    const getTooltipContent = () => {
-        if (selectedRange.value === 'none') {
-            return (
-                <div className="space-y-1">
-                    <div className="font-medium">🕐 时间范围筛选</div>
-                    <div className="text-xs">当前：不限制时间范围</div>
-                    <div className="text-xs text-muted-foreground">所有数据都会被查询，不进行时间筛选</div>
-                </div>
-            );
-        }
-
-        return (
-            <div className="space-y-1">
-                <div className="font-medium">🕐 时间范围筛选</div>
-                <div className="text-xs">当前：{selectedRange.label}</div>
-                <div className="text-xs text-muted-foreground">
-                    所有数据查询都会自动应用此时间范围筛选
-                </div>
-                <div className="text-xs text-muted-foreground border-t pt-1 mt-1">
-                    开始：{selectedRange.start}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                    结束：{selectedRange.end}
-                </div>
-            </div>
-        );
-    };
-
     return (
-        <TooltipProvider>
-            <div className={`flex items-center gap-2 ${className}`}>
-                <DropdownMenu>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <DropdownMenuTrigger asChild>
-                                <Button
-                                    variant='outline'
-                                    size='sm'
-                                    className={`
-                                        h-8 min-w-24 gap-1 relative
-                                        ${selectedRange.value !== 'none'
-                                            ? 'border-red-500 bg-red-50 hover:bg-red-100 text-red-700 shadow-sm'
-                                            : 'hover:bg-accent hover:text-accent-foreground'
-                                        }
-                                        transition-all duration-200
-                                    `}
-                                    disabled={disabled}
-                                >
-                                    {/* 红色强调指示器 */}
-                                    {selectedRange.value !== 'none' && (
-                                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                                    )}
-                                    <Clock className={`w-3 h-3 ${selectedRange.value !== 'none' ? 'text-red-600' : ''}`}/>
-                                    <span className='text-xs font-medium'>{selectedRange.label}</span>
-                                    <ChevronDown className={`w-3 h-3 ${selectedRange.value !== 'none' ? 'text-red-600' : ''}`}/>
-                                </Button>
-                            </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                            {getTooltipContent()}
-                        </TooltipContent>
-                    </Tooltip>
+        <div className={`flex items-center gap-2 ${className}`}>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button
+                        variant='outline'
+                        size='sm'
+                        className={`
+                            h-8 min-w-24 gap-1 relative
+                            ${selectedRange.value !== 'none'
+                                ? 'border-red-500 bg-red-50 hover:bg-red-100 text-red-700 shadow-sm'
+                                : 'hover:bg-accent hover:text-accent-foreground'
+                            }
+                            transition-all duration-200
+                        `}
+                        disabled={disabled}
+                    >
+                        {/* 红色强调指示器 */}
+                        {selectedRange.value !== 'none' && (
+                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        )}
+                        <Clock className={`w-3 h-3 ${selectedRange.value !== 'none' ? 'text-red-600' : ''}`}/>
+                        <span className='text-xs font-medium'>{selectedRange.label}</span>
+                        <ChevronDown className={`w-3 h-3 ${selectedRange.value !== 'none' ? 'text-red-600' : ''}`}/>
+                    </Button>
+                </DropdownMenuTrigger>
 
                     <DropdownMenuContent align='start' className='w-56'>
                         <div className='px-3 py-2 text-xs font-medium text-muted-foreground border-b bg-muted/50'>
@@ -304,9 +254,9 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                             <div className="text-xs text-muted-foreground">⚙️</div>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
-                </DropdownMenu>
+            </DropdownMenu>
 
-                {/* 自定义时间范围对话框 */}
+            {/* 自定义时间范围对话框 */}
                 <Dialog open={showCustomDialog} onOpenChange={setShowCustomDialog}>
                     <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
@@ -372,8 +322,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-            </div>
-        </TooltipProvider>
+        </div>
     );
 };
 
