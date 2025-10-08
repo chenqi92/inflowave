@@ -2999,12 +2999,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
               {/* 可滚动的洞察内容 - 按查询分组 */}
               <ScrollArea className='flex-1'>
-                <div className='p-4 space-y-6'>
+                <div className='p-3 space-y-4'>
                   {allDataInsights.map((queryInsights, queryIndex) => (
                     queryInsights.insights.length > 0 && (
-                      <div key={queryIndex} className='space-y-3'>
+                      <div key={queryIndex} className='space-y-2'>
                         {/* 查询标题 */}
-                        <div className='flex items-center gap-2 pb-2 border-b'>
+                        <div className='flex items-center gap-2 pb-1.5 border-b'>
                           <Badge variant='default' className='text-xs'>
                             查询 {queryIndex + 1}
                           </Badge>
@@ -3017,7 +3017,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         </div>
 
                         {/* 洞察卡片列表 */}
-                        <div className='space-y-3'>
+                        <div className='space-y-2'>
                           {queryInsights.insights.map((insight, insightIndex) => (
                             <Card
                               key={insightIndex}
@@ -3029,19 +3029,19 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                     : 'border-l-blue-500 dark:border-l-blue-600'
                               }`}
                             >
-                              <CardHeader className='pb-2'>
+                              <CardHeader className='p-3 pb-1.5'>
                                 <CardTitle className='text-sm flex items-center gap-2'>
                                   {insight.type === 'trend' && (
-                                    <TrendingUp className='w-4 h-4' />
+                                    <TrendingUp className='w-3.5 h-3.5' />
                                   )}
                                   {insight.type === 'anomaly' && (
-                                    <AlertTriangle className='w-4 h-4' />
+                                    <AlertTriangle className='w-3.5 h-3.5' />
                                   )}
                                   {insight.type === 'pattern' && (
-                                    <Eye className='w-4 h-4' />
+                                    <Eye className='w-3.5 h-3.5' />
                                   )}
                                   {insight.type === 'suggestion' && (
-                                    <Lightbulb className='w-4 h-4' />
+                                    <Lightbulb className='w-3.5 h-3.5' />
                                   )}
                                   {insight.title}
                                   <Badge
@@ -3062,11 +3062,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                   </Badge>
                                 </CardTitle>
                               </CardHeader>
-                              <CardContent>
-                                <p className='text-sm text-muted-foreground'>
+                              <CardContent className='p-3 pt-0'>
+                                <p className='text-sm text-muted-foreground leading-relaxed'>
                                   {insight.description}
                                 </p>
-                                <div className='mt-2 flex items-center gap-2'>
+                                <div className='mt-1.5 flex items-center gap-2'>
                                   <span className='text-xs text-muted-foreground'>
                                     置信度:
                                   </span>
