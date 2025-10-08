@@ -24,7 +24,6 @@
         "decorations": true,
         "alwaysOnTop": false,
         "skipTaskbar": false,
-        "theme": "Light",
         "titleBarStyle": "Visible",
         "maximized": false,
         "visible": true,

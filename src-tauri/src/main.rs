@@ -1012,6 +1012,9 @@ async fn main() {
             download_update,
             install_update,
             download_and_install_update,
+
+            // Window theme commands
+            commands::window_theme::set_window_background,
         ])
         .setup(|app| {
             info!("Application setup started");

@@ -24,15 +24,13 @@
         "decorations": true,
         "alwaysOnTop": false,
         "skipTaskbar": false,
-        "theme": "Light",
-        "titleBarStyle": "Transparent",
+        "titleBarStyle": "Visible",
         "hiddenTitle": false,
         "acceptFirstMouse": true,
         "tabbingIdentifier": "main",
         "maximized": false,
         "visible": true,
         "shadow": true,
-        "backgroundColor": "#ffffff",
         "url": "index.html",
         "transparent": false
       }

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { applyThemeColors } from '@/lib/theme-colors';
 import { useAppStore } from '@/store/app';
+import { isTauriEnvironment } from '@/utils/tauri';
 
 type Theme = 'dark' | 'light' | 'system';
 
@@ -61,6 +62,83 @@ export function ThemeProvider({
 
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
+  // 同步Tauri应用主题的函数（提取到组件级别以便复用）
+  const syncTauriAppTheme = React.useCallback(async (themeValue: 'light' | 'dark') => {
+    console.log(`🎨 [ThemeProvider] 准备同步Tauri应用主题: ${themeValue}`);
+
+    if (typeof window === 'undefined') {
+      console.warn('⚠️ [ThemeProvider] window 未定义，跳过主题同步');
+      return;
+    }
+
+    // 检查环境详情
+    const envDetails = {
+      __TAURI__: !!(window as any).__TAURI__,
+      __TAURI_INTERNALS__: !!(window as any).__TAURI_INTERNALS__,
+      userAgent: navigator.userAgent,
+      protocol: window.location.protocol,
+      isTauriEnv: isTauriEnvironment()
+    };
+
+    console.log('🔍 [ThemeProvider] 环境检测详情:', envDetails);
+
+    // 尝试直接调用 API，不依赖环境检测
+    try {
+      console.log('📦 [ThemeProvider] 尝试导入 app API...');
+      const { setTheme } = await import('@tauri-apps/api/app');
+
+      console.log(`🔧 [ThemeProvider] 调用 setTheme(${themeValue})...`);
+      await setTheme(themeValue);
+
+      console.log(`✅ [ThemeProvider] Tauri应用主题已成功同步为: ${themeValue}`);
+
+      // 在 macOS 上，额外设置窗口背景色以匹配主题
+      if (isTauriEnvironment()) {
+        try {
+          console.log('🎨 [ThemeProvider] 尝试设置窗口背景色...');
+          const { invoke } = await import('@tauri-apps/api/core');
+          await invoke('set_window_background', { theme: themeValue });
+          console.log(`✅ [ThemeProvider] 窗口背景色已设置为: ${themeValue}`);
+        } catch (bgError) {
+          console.warn('⚠️ [ThemeProvider] 设置窗口背景色失败:', bgError);
+        }
+      }
+    } catch (error) {
+      // 只在真正的 Tauri 环境中才报错，否则静默跳过
+      if (isTauriEnvironment()) {
+        console.error('❌ [ThemeProvider] 同步Tauri应用主题失败:', error);
+      } else {
+        console.log('ℹ️ [ThemeProvider] 非Tauri环境，跳过主题同步');
+      }
+    }
+  }, []);
+
+  // 初始化时立即同步Tauri窗口主题
+  useEffect(() => {
+    const initializeTheme = async () => {
+      console.log(`🚀 [ThemeProvider] 初始化主题同步，当前theme配置: ${theme}`);
+
+      // 确定初始主题
+      let initialTheme: 'light' | 'dark' = 'light';
+
+      if (theme === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        initialTheme = isDark ? 'dark' : 'light';
+        console.log(`🖥️ [ThemeProvider] 系统主题检测: ${initialTheme} (isDark: ${isDark})`);
+      } else if (theme === 'light' || theme === 'dark') {
+        initialTheme = theme;
+        console.log(`🎯 [ThemeProvider] 使用指定主题: ${initialTheme}`);
+      }
+
+      console.log(`⏰ [ThemeProvider] 准备初始化同步主题: ${initialTheme}`);
+      // 立即同步到Tauri应用
+      await syncTauriAppTheme(initialTheme);
+    };
+
+    initializeTheme();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // 只在组件挂载时执行一次
+
   // 同步 useAppStore 中的主题变化
   useEffect(() => {
     if (config?.theme && config.theme !== theme) {
@@ -69,6 +147,8 @@ export function ThemeProvider({
   }, [config?.theme, theme]);
 
   useEffect(() => {
+    console.log(`🔄 [ThemeProvider] 主题effect触发，theme: ${theme}, colorScheme: ${colorScheme}`);
+
     const root = window.document.documentElement;
 
     // 移除之前的主题类
@@ -76,34 +156,22 @@ export function ThemeProvider({
 
     let currentTheme: 'light' | 'dark' = 'light';
 
-    // 同步Tauri窗口主题的函数
-    const syncTauriWindowTheme = async (themeValue: 'light' | 'dark') => {
-      if (typeof window !== 'undefined' && (window as any).__TAURI__) {
-        try {
-          const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow');
-          const window = getCurrentWebviewWindow();
-          // Tauri 2.0 API: setTheme accepts 'light' | 'dark' | 'auto'
-          await window.setTheme(themeValue);
-          console.log(`✅ Tauri窗口主题已同步为: ${themeValue}`);
-        } catch (error) {
-          console.warn('同步Tauri窗口主题失败:', error);
-        }
-      }
-    };
-
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
         .matches
         ? 'dark'
         : 'light';
 
+      console.log(`🖥️ [ThemeProvider] 系统主题模式: ${systemTheme}`);
+
       root.classList.add(systemTheme);
       currentTheme = systemTheme;
       setResolvedTheme(systemTheme);
       applyThemeColors(colorScheme, systemTheme === 'dark');
 
-      // 同步Tauri窗口主题
-      syncTauriWindowTheme(systemTheme);
+      // 同步Tauri应用主题
+      console.log(`📤 [ThemeProvider] 同步系统主题到Tauri: ${systemTheme}`);
+      syncTauriAppTheme(systemTheme);
 
       // 监听系统主题变化
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
@@ -115,8 +183,8 @@ export function ThemeProvider({
           setResolvedTheme(newSystemTheme);
           applyThemeColors(colorScheme, newSystemTheme === 'dark');
 
-          // 同步Tauri窗口主题
-          syncTauriWindowTheme(newSystemTheme);
+          // 同步Tauri应用主题
+          syncTauriAppTheme(newSystemTheme);
 
           // 强制触发重新渲染，确保所有组件都能响应主题变化
           setTimeout(() => {
@@ -132,23 +200,26 @@ export function ThemeProvider({
     } else {
       // 确保theme不是空字符串
       if (theme && theme.trim() && (theme === 'light' || theme === 'dark')) {
+        console.log(`🎯 [ThemeProvider] 使用指定主题: ${theme}`);
         root.classList.add(theme);
         currentTheme = theme as 'light' | 'dark';
         setResolvedTheme(theme as 'light' | 'dark');
       } else {
         // 如果theme为空或无效，使用默认的light主题
+        console.warn(`⚠️ [ThemeProvider] 主题值无效 (${theme})，使用默认light主题`);
         root.classList.add('light');
         currentTheme = 'light';
         setResolvedTheme('light');
       }
 
-      // 同步Tauri窗口主题
-      syncTauriWindowTheme(currentTheme);
+      // 同步Tauri应用主题
+      console.log(`📤 [ThemeProvider] 同步指定主题到Tauri: ${currentTheme}`);
+      syncTauriAppTheme(currentTheme);
     }
 
     // 应用颜色主题
     applyThemeColors(colorScheme, currentTheme === 'dark');
-  }, [theme, colorScheme]);
+  }, [theme, colorScheme, syncTauriAppTheme]);
 
   const value = {
     theme,

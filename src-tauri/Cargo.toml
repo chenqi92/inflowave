@@ -87,6 +87,10 @@ arrow-schema = { version = "53.0", optional = true }
 tonic = { version = "0.12", optional = true }
 prost = { version = "0.13", optional = true }
 
+# macOS平台特定依赖 - 用于窗口背景色设置
+[target.'cfg(target_os = "macos")'.dependencies]
+cocoa = "0.25"
+
 # Linux平台特定依赖 - 启用原生菜单支持
 [target.'cfg(target_os = "linux")'.dependencies]
 tauri = { version = "2.0", features = ["linux-libxdo"] }
