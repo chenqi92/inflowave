@@ -1088,6 +1088,167 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     return insights;
   }, [parsedData, fieldStatistics, executionTime]);
 
+  // 为所有查询生成数据洞察
+  const allDataInsights = useMemo((): Array<{
+    queryIndex: number;
+    queryText: string;
+    insights: DataInsight[];
+  }> => {
+    return allResults.map((result, index) => {
+      const parsed = parseQueryResult(result);
+      if (!parsed || parsed.rowCount === 0) {
+        return {
+          queryIndex: index,
+          queryText: executedQueries[index] || `查询 ${index + 1}`,
+          insights: [],
+        };
+      }
+
+      // 计算该查询的字段统计
+      const queryFieldStats = parsed.columns.map(column => {
+        const values = parsed.data
+          .map(row => row[column])
+          .filter(val => val !== null && val !== undefined);
+        const nullCount = parsed.rowCount - values.length;
+        const uniqueValues = new Set(values);
+
+        const firstValue = values[0];
+        let dataType = 'string';
+        if (typeof firstValue === 'number') {
+          dataType = 'number';
+        } else if (typeof firstValue === 'boolean') {
+          dataType = 'boolean';
+        } else if (
+          firstValue instanceof Date ||
+          /^\d{4}-\d{2}-\d{2}/.test(String(firstValue))
+        ) {
+          dataType = 'datetime';
+        }
+
+        const stat: FieldStatistics = {
+          fieldName: column,
+          dataType,
+          nullCount,
+          uniqueCount: uniqueValues.size,
+        };
+
+        if (dataType === 'number') {
+          const numericValues = values as number[];
+          stat.min = Math.min(...numericValues);
+          stat.max = Math.max(...numericValues);
+          stat.mean =
+            numericValues.reduce((sum, val) => sum + val, 0) /
+            numericValues.length;
+
+          const sorted = [...numericValues].sort((a, b) => a - b);
+          stat.median =
+            sorted.length % 2 === 0
+              ? (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2
+              : sorted[Math.floor(sorted.length / 2)];
+        }
+
+        return stat;
+      });
+
+      // 生成该查询的洞察
+      const queryInsights: DataInsight[] = [];
+      const queryExecutionTime = executionTime / allResults.length; // 简化处理
+
+      // 1. 查询性能分析
+      if (queryExecutionTime > 5000) {
+        queryInsights.push({
+          type: 'suggestion',
+          title: '查询性能较慢',
+          description: `查询耗时约 ${(queryExecutionTime / 1000).toFixed(2)} 秒，建议添加时间范围限制、使用索引或优化查询条件。`,
+          severity: 'high',
+          confidence: 1.0,
+        });
+      } else if (queryExecutionTime > 1000) {
+        queryInsights.push({
+          type: 'suggestion',
+          title: '查询性能可优化',
+          description: `查询耗时约 ${(queryExecutionTime / 1000).toFixed(2)} 秒，性能尚可，但仍有优化空间。`,
+          severity: 'low',
+          confidence: 0.8,
+        });
+      }
+
+      // 2. 数据量分析
+      if (parsed.rowCount > 50000) {
+        queryInsights.push({
+          type: 'suggestion',
+          title: '大数据集聚合建议',
+          description: `查询返回了 ${parsed.rowCount.toLocaleString()} 行数据，建议使用 GROUP BY 进行时间聚合以减少数据量。`,
+          severity: 'high',
+          confidence: 0.95,
+        });
+      } else if (parsed.rowCount > 10000) {
+        queryInsights.push({
+          type: 'suggestion',
+          title: '数据量较大',
+          description: `查询返回了 ${parsed.rowCount.toLocaleString()} 行数据，建议考虑使用时间范围限制或聚合查询。`,
+          severity: 'medium',
+          confidence: 0.85,
+        });
+      } else if (parsed.rowCount < 10) {
+        queryInsights.push({
+          type: 'pattern',
+          title: '数据量较少',
+          description: `查询仅返回了 ${parsed.rowCount} 行数据，可能需要检查时间范围或查询条件。`,
+          severity: 'low',
+          confidence: 0.7,
+        });
+      }
+
+      // 3. 数据质量分析
+      const highNullFields = queryFieldStats.filter(
+        stat => stat.nullCount / parsed.rowCount > 0.5
+      );
+      if (highNullFields.length > 0) {
+        queryInsights.push({
+          type: 'anomaly',
+          title: '数据质量问题',
+          description: `字段 ${highNullFields.map(f => f.fieldName).join(', ')} 包含超过50%的空值。`,
+          severity: 'high',
+          confidence: 1.0,
+        });
+      }
+
+      // 4. 时序数据分析
+      const timeColumn = queryFieldStats.find(
+        stat => stat.dataType === 'datetime'
+      );
+      if (timeColumn && parsed.rowCount > 1) {
+        const timeValues = parsed.data
+          .map(row => row[timeColumn.fieldName])
+          .filter(val => val !== null && val !== undefined)
+          .map(val => new Date(val).getTime())
+          .sort((a, b) => a - b);
+
+        if (timeValues.length > 1) {
+          const timeSpan = timeValues[timeValues.length - 1] - timeValues[0];
+          const timeSpanDays = timeSpan / (1000 * 60 * 60 * 24);
+
+          if (timeSpanDays > 30) {
+            queryInsights.push({
+              type: 'pattern',
+              title: '长时间跨度数据',
+              description: `数据时间跨度为 ${timeSpanDays.toFixed(1)} 天，建议使用时间聚合来提高可视化效果。`,
+              severity: 'medium',
+              confidence: 0.9,
+            });
+          }
+        }
+      }
+
+      return {
+        queryIndex: index,
+        queryText: executedQueries[index] || `查询 ${index + 1}`,
+        insights: queryInsights,
+      };
+    });
+  }, [allResults, executedQueries, executionTime, parseQueryResult]);
+
   // 生成可视化图表配置
   const chartOption = useMemo(() => {
     if (!parsedData || parsedData.rowCount === 0) return null;
@@ -1328,9 +1489,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             >
               <Brain className='w-3 h-3' />
               洞察
-              {dataInsights.length > 0 && (
+              {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0) > 0 && (
                 <Badge variant='secondary' className='ml-1 text-xs px-1'>
-                  {dataInsights.length}
+                  {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0)}
                 </Badge>
               )}
             </TabsTrigger>
@@ -2478,73 +2639,114 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           );
         })}
 
-        {/* 数据洞察标签页 */}
-        <TabsContent value='insights' className='flex-1 p-4 space-y-4 mt-0'>
-          {dataInsights.length > 0 ? (
-            <div className='space-y-3'>
-              {dataInsights.map((insight, index) => (
-                <Card
-                  key={index}
-                  className={`border-l-4 ${
-                    insight.severity === 'high'
-                      ? 'border-l-red-500'
-                      : insight.severity === 'medium'
-                        ? 'border-l-yellow-500'
-                        : 'border-l-blue-500'
-                  }`}
-                >
-                  <CardHeader className='pb-2'>
-                    <CardTitle className='text-sm flex items-center gap-2'>
-                      {insight.type === 'trend' && (
-                        <TrendingUp className='w-4 h-4' />
-                      )}
-                      {insight.type === 'anomaly' && (
-                        <AlertTriangle className='w-4 h-4' />
-                      )}
-                      {insight.type === 'pattern' && (
-                        <Eye className='w-4 h-4' />
-                      )}
-                      {insight.type === 'suggestion' && (
-                        <Lightbulb className='w-4 h-4' />
-                      )}
-                      {insight.title}
-                      <Badge
-                        variant={
-                          insight.severity === 'high'
-                            ? 'destructive'
-                            : insight.severity === 'medium'
-                              ? 'default'
-                              : 'secondary'
-                        }
-                        className='text-xs ml-auto'
-                      >
-                        {insight.severity === 'high'
-                          ? '高'
-                          : insight.severity === 'medium'
-                            ? '中'
-                            : '低'}
-                      </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className='text-sm text-muted-foreground'>
-                      {insight.description}
-                    </p>
-                    <div className='mt-2 flex items-center gap-2'>
-                      <span className='text-xs text-muted-foreground'>
-                        置信度:
-                      </span>
-                      <Progress
-                        value={insight.confidence * 100}
-                        className='h-1 flex-1'
-                      />
-                      <span className='text-xs font-mono'>
-                        {(insight.confidence * 100).toFixed(0)}%
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+        {/* 数据洞察标签页 - 优化为显示所有查询的洞察 */}
+        <TabsContent value='insights' className='flex-1 overflow-hidden mt-0'>
+          {allDataInsights.length > 0 && allDataInsights.some(q => q.insights.length > 0) ? (
+            <div className='h-full flex flex-col'>
+              {/* 洞察头部 */}
+              <div className='flex-shrink-0 bg-muted/50 border-b px-4 py-2'>
+                <div className='flex items-center gap-2'>
+                  <Brain className='w-4 h-4' />
+                  <span className='text-sm font-medium'>智能数据洞察</span>
+                  <Badge variant='outline' className='text-xs'>
+                    {allDataInsights.length} 个查询
+                  </Badge>
+                  <Badge variant='secondary' className='text-xs'>
+                    {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0)} 条洞察
+                  </Badge>
+                </div>
+              </div>
+
+              {/* 可滚动的洞察内容 - 按查询分组 */}
+              <ScrollArea className='flex-1'>
+                <div className='p-4 space-y-6'>
+                  {allDataInsights.map((queryInsights, queryIndex) => (
+                    queryInsights.insights.length > 0 && (
+                      <div key={queryIndex} className='space-y-3'>
+                        {/* 查询标题 */}
+                        <div className='flex items-center gap-2 pb-2 border-b'>
+                          <Badge variant='default' className='text-xs'>
+                            查询 {queryIndex + 1}
+                          </Badge>
+                          <span className='text-xs text-muted-foreground font-mono truncate max-w-md'>
+                            {queryInsights.queryText}
+                          </span>
+                          <Badge variant='secondary' className='text-xs ml-auto'>
+                            {queryInsights.insights.length} 条洞察
+                          </Badge>
+                        </div>
+
+                        {/* 洞察卡片列表 */}
+                        <div className='space-y-3'>
+                          {queryInsights.insights.map((insight, insightIndex) => (
+                            <Card
+                              key={insightIndex}
+                              className={`border-l-4 ${
+                                insight.severity === 'high'
+                                  ? 'border-l-red-500 dark:border-l-red-600'
+                                  : insight.severity === 'medium'
+                                    ? 'border-l-yellow-500 dark:border-l-yellow-600'
+                                    : 'border-l-blue-500 dark:border-l-blue-600'
+                              }`}
+                            >
+                              <CardHeader className='pb-2'>
+                                <CardTitle className='text-sm flex items-center gap-2'>
+                                  {insight.type === 'trend' && (
+                                    <TrendingUp className='w-4 h-4' />
+                                  )}
+                                  {insight.type === 'anomaly' && (
+                                    <AlertTriangle className='w-4 h-4' />
+                                  )}
+                                  {insight.type === 'pattern' && (
+                                    <Eye className='w-4 h-4' />
+                                  )}
+                                  {insight.type === 'suggestion' && (
+                                    <Lightbulb className='w-4 h-4' />
+                                  )}
+                                  {insight.title}
+                                  <Badge
+                                    variant={
+                                      insight.severity === 'high'
+                                        ? 'destructive'
+                                        : insight.severity === 'medium'
+                                          ? 'default'
+                                          : 'secondary'
+                                    }
+                                    className='text-xs ml-auto'
+                                  >
+                                    {insight.severity === 'high'
+                                      ? '高'
+                                      : insight.severity === 'medium'
+                                        ? '中'
+                                        : '低'}
+                                  </Badge>
+                                </CardTitle>
+                              </CardHeader>
+                              <CardContent>
+                                <p className='text-sm text-muted-foreground'>
+                                  {insight.description}
+                                </p>
+                                <div className='mt-2 flex items-center gap-2'>
+                                  <span className='text-xs text-muted-foreground'>
+                                    置信度:
+                                  </span>
+                                  <Progress
+                                    value={insight.confidence * 100}
+                                    className='h-1 flex-1'
+                                  />
+                                  <span className='text-xs font-mono'>
+                                    {(insight.confidence * 100).toFixed(0)}%
+                                  </span>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           ) : (
             <div className='flex items-center justify-center h-full'>
