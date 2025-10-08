@@ -6,6 +6,7 @@
 
 import * as monaco from 'monaco-editor';
 import { writeText, readText } from '@tauri-apps/plugin-clipboard-manager';
+import { unifiedSyntaxManager } from './unifiedSyntaxHighlight';
 
 /**
  * 获取Monaco编辑器配置（桌面应用版本）
@@ -185,6 +186,15 @@ export function configureMonacoGlobally() {
       };
 
       console.log('✅ Monaco Editor全局配置已完成（桌面应用模式，使用Tauri剪贴板）');
+
+      // 预先注册所有增强语言
+      console.log('📝 预先注册增强语言...');
+      unifiedSyntaxManager.createEnhancedLanguage('influxdb-1.x');
+      unifiedSyntaxManager.createEnhancedLanguage('influxdb-2.x');
+      unifiedSyntaxManager.createEnhancedLanguage('influxdb-3.x');
+      unifiedSyntaxManager.createEnhancedLanguage('iotdb');
+      console.log('✅ 所有增强语言预注册完成');
+
     } catch (error) {
       console.warn('⚠️ 无法配置Monaco全局设置:', error);
 

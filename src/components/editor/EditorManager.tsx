@@ -215,13 +215,14 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
     // 根据数据库类型获取特定的语言
     if (databaseType && databaseType !== 'unknown') {
       const enhancedLanguage = unifiedSyntaxManager.getLanguageForDatabase(databaseType);
-      console.log('🎯 使用增强语言:', enhancedLanguage);
+      console.log('🎯 使用增强语言:', enhancedLanguage, '数据库类型:', databaseType);
       return enhancedLanguage;
     }
 
     // 回退到原生SQL
+    console.log('⚠️ 数据库类型未知，回退到SQL');
     return 'sql';
-  }, [getDatabaseLanguageType]);
+  }, [getDatabaseLanguageType, getDatabaseType]);
 
   // 获取编辑器主题（基于数据库类型）
   const getEditorTheme = useCallback(() => {
@@ -452,7 +453,21 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
       // 注意：不在这里设置编辑器语言，因为Editor组件已经通过language属性设置了
       // 语言设置由Editor组件的language属性和key属性的变化来控制
-      console.log('编辑器挂载，当前数据库类型:', databaseType, '语言:', getEditorLanguage());
+      const currentLanguage = getEditorLanguage();
+      console.log('📝 编辑器挂载，当前数据库类型:', databaseType, '目标语言:', currentLanguage);
+
+      // 验证编辑器模型的语言设置
+      const model = editor.getModel();
+      if (model) {
+        const actualLanguage = model.getLanguageId();
+        console.log('📋 编辑器模型语言:', actualLanguage, '期望语言:', currentLanguage);
+
+        // 如果语言不匹配，强制设置
+        if (actualLanguage !== currentLanguage) {
+          console.warn('⚠️ 语言不匹配，强制设置为:', currentLanguage);
+          monaco.editor.setModelLanguage(model, currentLanguage);
+        }
+      }
 
       // 设置智能自动补全
       setupEnhancedAutoComplete(monaco, editor, databaseType, selectedDatabase);
@@ -1066,14 +1081,14 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
       // 延迟执行，确保连接状态已稳定
       const timer = setTimeout(() => {
         try {
-          // 使用简化语法高亮系统
-          const languageType = getDatabaseLanguageType();
-          const currentLanguage = unifiedSyntaxManager.getLanguageId(languageType);
-          const currentTheme = unifiedSyntaxManager.getThemeName(languageType, resolvedTheme === 'dark');
+          // 使用统一的语言获取方法
+          const databaseType = getDatabaseType();
+          const currentLanguage = getEditorLanguage();
+          const currentTheme = getEditorTheme();
 
           const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
-          console.log('🔧 连接状态变化后重新应用简化语言和主题:', {
-            languageType,
+          console.log('🔧 连接状态变化后重新应用语言和主题:', {
+            databaseType,
             language: currentLanguage,
             theme: currentTheme,
             connectionId: effectiveConnectionId
@@ -1113,7 +1128,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
       return () => clearTimeout(timer);
     }
-  }, [activeConnectionId, currentTab?.connectionId, getDatabaseLanguageType, resolvedTheme]); // 依赖连接ID变化
+  }, [activeConnectionId, currentTab?.connectionId, getDatabaseType, getEditorLanguage, getEditorTheme, resolvedTheme]); // 依赖连接ID变化
 
   // 监听数据源变化，记录日志
   useEffect(() => {
