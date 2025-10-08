@@ -28,12 +28,16 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from '@/components/ui';
 import { GlideDataTable } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import ExportOptionsDialog, { type ExportOptions } from '@/components/query/ExportOptionsDialog';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import { showMessage } from '@/utils/message';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 // 生成带时间戳的文件名
 const generateTimestampedFilename = (baseName: string, format: string): string => {
@@ -70,6 +74,11 @@ import {
   Shield,
   FileText,
   Copy,
+  AreaChart,
+  ScatterChart,
+  Grid3x3,
+  Filter,
+  Radar,
 } from 'lucide-react';
 import EChartsReact from 'echarts-for-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -80,6 +89,7 @@ import {
   getSQLStatementDisplayInfo,
   getResultStatsLabels
 } from '@/utils/sqlTypeDetector';
+import { generateChartConfig, type ChartType } from '@/utils/chartConfig';
 
 interface EnhancedResultPanelProps {
   collapsed?: boolean;
@@ -119,8 +129,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState('executor');
   const [visualizationType, setVisualizationType] = useState<
-    'line' | 'bar' | 'pie'
+    'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar'
   >('line');
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const chartRef = useRef<any>(null);
@@ -128,7 +139,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   // 导出状态
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showStatisticsExportDialog, setShowStatisticsExportDialog] = useState(false);
-  
+
   // 分页状态管理
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(500);
@@ -283,7 +294,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
   // 生成图表配置
   const generateChartOption = useCallback(
-    (result: QueryResult, chartType: 'line' | 'bar' | 'pie') => {
+    (result: QueryResult, chartType: ChartType) => {
       const parsedResult = parseQueryResult(result);
       if (!parsedResult || parsedResult.rowCount === 0) return null;
 
@@ -312,120 +323,25 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         .filter(stat => stat.dataType === 'number')
         .map(stat => stat.fieldName);
 
-      if (!timeColumn && numericColumns.length > 0) {
-        // 数值型数据图表
-        const categories = parsedResult.data
-          .slice(0, 10)
-          .map((_, index) => `行 ${index + 1}`);
-        const firstNumericCol = numericColumns[0];
-        const values = parsedResult.data
-          .slice(0, 10)
-          .map(row => row[firstNumericCol] || 0);
+      // 使用新的图表配置系统
+      const themeConfig = getThemeConfig();
+      const fieldsToDisplay = selectedFields.length > 0
+        ? selectedFields.filter(f => numericColumns.includes(f))
+        : numericColumns.slice(0, 3);
 
-        if (chartType === 'pie') {
-          return {
-            title: { text: `${firstNumericCol} 分布`, left: 'center' },
-            tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
-            series: [
-              {
-                name: firstNumericCol,
-                type: 'pie',
-                radius: ['40%', '70%'],
-                center: ['40%', '50%'],
-                data: categories.map((cat, index) => ({
-                  name: cat,
-                  value: Math.abs(values[index]) || 1,
-                })),
-              },
-            ],
-          };
-        } else if (chartType === 'bar') {
-          return {
-            title: { text: `${firstNumericCol} 数据分布`, left: 'center' },
-            tooltip: { trigger: 'axis' },
-            xAxis: { type: 'category', data: categories },
-            yAxis: { type: 'value', name: firstNumericCol },
-            series: [{ name: firstNumericCol, type: 'bar', data: values }],
-          };
-        } else {
-          return {
-            title: { text: `${firstNumericCol} 趋势`, left: 'center' },
-            tooltip: { trigger: 'axis' },
-            xAxis: { type: 'category', data: categories },
-            yAxis: { type: 'value', name: firstNumericCol },
-            series: [
-              {
-                name: firstNumericCol,
-                type: 'line',
-                data: values,
-                smooth: true,
-              },
-            ],
-          };
-        }
-      }
-
-      if (timeColumn && numericColumns.length > 0) {
-        // 时序图表
-        if (chartType === 'pie') {
-          // 对于饼图，使用最后一个时间点的数据
-          const lastTimeData = parsedResult.data[parsedResult.data.length - 1];
-          const pieData = numericColumns
-            .map(column => ({
-              name: column,
-              value: Math.abs(lastTimeData[column]) || 0,
-            }))
-            .filter(item => item.value > 0);
-
-          return {
-            title: { text: '数据分布（最新时间点）', left: 'center' },
-            tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
-            series: [
-              {
-                name: '数据分布',
-                type: 'pie',
-                radius: ['40%', '70%'],
-                center: ['50%', '50%'],
-                data: pieData,
-                emphasis: {
-                  itemStyle: {
-                    shadowBlur: 10,
-                    shadowOffsetX: 0,
-                    shadowColor: 'rgba(0, 0, 0, 0.5)',
-                  },
-                },
-              },
-            ],
-          };
-        } else {
-          // 其他图表类型
-          const seriesData = numericColumns.slice(0, 3).map((column, index) => {
-            const colors = ['#5470c6', '#91cc75', '#fac858'];
-            return {
-              name: column,
-              type: chartType,
-              data: parsedResult.data.map(row => [
-                row[timeColumn],
-                row[column],
-              ]),
-              smooth: chartType === 'line',
-              itemStyle: { color: colors[index] },
-            };
-          });
-
-          return {
-            title: { text: '时序数据趋势', left: 'center' },
-            tooltip: { trigger: 'axis' },
-            xAxis: { type: 'time', name: timeColumn },
-            yAxis: { type: 'value', name: '数值' },
-            series: seriesData,
-          };
-        }
-      }
-
-      return null;
+      return generateChartConfig(
+        chartType,
+        {
+          timeColumn,
+          numericColumns,
+          selectedFields: fieldsToDisplay.length > 0 ? fieldsToDisplay : numericColumns.slice(0, 3),
+          data: parsedResult.data,
+          rowCount: parsedResult.rowCount,
+        },
+        themeConfig
+      );
     },
-    [parseQueryResult]
+    [parseQueryResult, getThemeConfig, selectedFields]
   );
 
   // 自动切换到数据标签页当有查询结果时
@@ -697,6 +613,38 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     });
   }, [parsedData]);
 
+  // 自动选择默认字段（当数据变化时）
+  useEffect(() => {
+    if (parsedData && fieldStatistics.length > 0) {
+      const numericFields = fieldStatistics
+        .filter(stat => stat.dataType === 'number')
+        .map(stat => stat.fieldName);
+
+      // 默认选择前3个数值字段
+      setSelectedFields(numericFields.slice(0, 3));
+    }
+  }, [parsedData, fieldStatistics]);
+
+  // 处理字段选择
+  const handleFieldToggle = useCallback((fieldName: string) => {
+    setSelectedFields(prev => {
+      if (prev.includes(fieldName)) {
+        // 取消选择，但至少保留一个字段
+        return prev.length > 1 ? prev.filter(f => f !== fieldName) : prev;
+      } else {
+        // 添加选择
+        return [...prev, fieldName];
+      }
+    });
+  }, []);
+
+  // 获取可用的数值字段
+  const availableNumericFields = useMemo(() => {
+    return fieldStatistics
+      .filter(stat => stat.dataType === 'number')
+      .map(stat => stat.fieldName);
+  }, [fieldStatistics]);
+
   // 生成数据洞察
   const dataInsights = useMemo((): DataInsight[] => {
     if (!parsedData || parsedData.rowCount === 0) return [];
@@ -925,354 +873,105 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       .filter(stat => stat.dataType === 'number')
       .map(stat => stat.fieldName);
 
-    if (!timeColumn && numericColumns.length > 0) {
-      // 数值型数据图表
-      const categories = parsedData.data
-        .slice(0, 10)
-        .map((_, index) => `行 ${index + 1}`);
-      const firstNumericCol = numericColumns[0];
-      const values = parsedData.data
-        .slice(0, 10)
-        .map(row => row[firstNumericCol] || 0);
+    // 使用选中的字段，如果没有选中则使用所有数值字段
+    const fieldsToDisplay = selectedFields.length > 0
+      ? selectedFields.filter(f => numericColumns.includes(f))
+      : numericColumns.slice(0, 3);
 
-      if (visualizationType === 'pie') {
-        // 饼图配置
-        return {
-          backgroundColor: themeConfig.backgroundColor,
-          textStyle: { color: themeConfig.textColor },
-          color: themeConfig.colors,
-          title: {
-            text: `${firstNumericCol} 分布`,
-            left: 'center',
-            textStyle: { color: themeConfig.textColor },
-          },
-          tooltip: {
-            trigger: 'item',
-            formatter: '{a} <br/>{b}: {c} ({d}%)',
-            backgroundColor: themeConfig.tooltipBgColor,
-            borderColor: themeConfig.borderColor,
-            textStyle: { color: themeConfig.textColor },
-          },
-          legend: {
-            type: 'scroll',
-            orient: 'vertical',
-            right: 10,
-            top: 20,
-            bottom: 20,
-            textStyle: { color: themeConfig.textColor },
-          },
-          series: [
-            {
-              name: firstNumericCol,
-              type: 'pie',
-              radius: ['40%', '70%'],
-              center: ['40%', '50%'],
-              data: categories.map((cat, index) => ({
-                name: cat,
-                value: Math.abs(values[index]) || 1,
-              })),
-              emphasis: {
-                itemStyle: {
-                  shadowBlur: 10,
-                  shadowOffsetX: 0,
-                  shadowColor:
-                    resolvedTheme === 'dark'
-                      ? 'rgba(255, 255, 255, 0.3)'
-                      : 'rgba(0, 0, 0, 0.5)',
-                },
-              },
-              label: {
-                show: true,
-                formatter: '{b}: {d}%',
-                color: themeConfig.textColor,
-              },
-            },
-          ],
-        };
-      } else if (visualizationType === 'bar') {
-        // 柱状图配置
-        return {
-          backgroundColor: themeConfig.backgroundColor,
-          textStyle: { color: themeConfig.textColor },
-          color: themeConfig.colors,
-          title: {
-            text: `${firstNumericCol} 数据分布`,
-            left: 'center',
-            textStyle: { color: themeConfig.textColor },
-          },
-          tooltip: {
-            trigger: 'axis',
-            axisPointer: { type: 'shadow' },
-            backgroundColor: themeConfig.tooltipBgColor,
-            borderColor: themeConfig.borderColor,
-            textStyle: { color: themeConfig.textColor },
-          },
-          grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            containLabel: true,
-            borderColor: themeConfig.borderColor,
-          },
-          xAxis: {
-            type: 'category',
-            data: categories,
-            axisTick: { alignWithLabel: true },
-            axisLabel: { color: themeConfig.textColor },
-            axisLine: { lineStyle: { color: themeConfig.borderColor } },
-          },
-          yAxis: {
-            type: 'value',
-            name: firstNumericCol,
-            axisLabel: { color: themeConfig.textColor },
-            axisLine: { lineStyle: { color: themeConfig.borderColor } },
-            splitLine: { lineStyle: { color: themeConfig.gridColor } },
-          },
-          series: [
-            {
-              name: firstNumericCol,
-              type: 'bar',
-              data: values,
-              itemStyle: {
-                color: themeConfig.colors[0],
-              },
-              emphasis: {
-                itemStyle: {
-                  shadowBlur: 10,
-                  shadowColor:
-                    resolvedTheme === 'dark'
-                      ? 'rgba(255, 255, 255, 0.3)'
-                      : 'rgba(0, 0, 0, 0.5)',
-                },
-              },
-            },
-          ],
-        };
-      } else {
-        // 折线图配置
-        return {
-          backgroundColor: themeConfig.backgroundColor,
-          textStyle: { color: themeConfig.textColor },
-          color: themeConfig.colors,
-          title: {
-            text: `${firstNumericCol} 趋势`,
-            left: 'center',
-            textStyle: { color: themeConfig.textColor },
-          },
-          tooltip: { trigger: 'axis' },
-          grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            containLabel: true,
-          },
-          xAxis: {
-            type: 'category',
-            data: categories,
-            boundaryGap: false,
-          },
-          yAxis: {
-            type: 'value',
-            name: firstNumericCol,
-          },
-          series: [
-            {
-              name: firstNumericCol,
-              type: 'line',
-              data: values,
-              smooth: true,
-              itemStyle: { color: '#5470c6' },
-              areaStyle: { opacity: 0.3 },
-            },
-          ],
-        };
-      }
-    }
-
-    if (timeColumn && numericColumns.length > 0) {
-      // 时序图表
-      if (visualizationType === 'pie') {
-        // 对于饼图，使用最后一个时间点的数据
-        const lastTimeData = parsedData.data[parsedData.data.length - 1];
-        const pieData = numericColumns
-          .map(column => ({
-            name: column,
-            value: Math.abs(lastTimeData[column]) || 0,
-          }))
-          .filter(item => item.value > 0);
-
-        return {
-          title: { text: '数据分布（最新时间点）', left: 'center' },
-          tooltip: { trigger: 'item', formatter: '{a} <br/>{b}: {c} ({d}%)' },
-          backgroundColor: themeConfig.backgroundColor,
-          textStyle: { color: themeConfig.textColor },
-          series: [
-            {
-              name: '数据分布',
-              type: 'pie',
-              radius: ['40%', '70%'],
-              center: ['50%', '50%'],
-              data: pieData,
-              emphasis: {
-                itemStyle: {
-                  shadowBlur: 10,
-                  shadowOffsetX: 0,
-                  shadowColor:
-                    resolvedTheme === 'dark'
-                      ? 'rgba(255, 255, 255, 0.3)'
-                      : 'rgba(0, 0, 0, 0.5)',
-                },
-              },
-              label: {
-                show: true,
-                formatter: '{b}: {d}%',
-                color: themeConfig.textColor,
-              },
-            },
-          ],
-        };
-      } else {
-        // 其他图表类型
-        const seriesData = numericColumns.slice(0, 3).map((column, index) => {
-          const colors = ['#5470c6', '#91cc75', '#fac858'];
-          return {
-            name: column,
-            type: visualizationType,
-            data: parsedData.data.map(row => [row[timeColumn], row[column]]),
-            smooth: visualizationType === 'line',
-            itemStyle: { color: colors[index] },
-            ...(visualizationType === 'line'
-              ? { areaStyle: { opacity: 0.2 } }
-              : {}),
-          };
-        });
-        return {
-          title: { text: '时序数据趋势', left: 'center' },
-          tooltip: {
-            trigger: 'axis',
-            axisPointer: { type: 'cross' },
-          },
-          legend: {
-            top: 30,
-            type: 'scroll',
-          },
-          grid: {
-            left: '3%',
-            right: '4%',
-            bottom: '3%',
-            containLabel: true,
-          },
-          xAxis: {
-            type: 'time',
-            name: timeColumn,
-          },
-          yAxis: {
-            type: 'value',
-            name: '数值',
-          },
-          series: seriesData,
-          dataZoom: [
-            {
-              type: 'inside',
-              start: 0,
-              end: 100,
-            },
-            {
-              start: 0,
-              end: 100,
-              handleIcon:
-                'M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23.1h6.6V24.4z M13.3,19.6H6.7v-1.2h6.6V19.6z',
-              handleSize: '80%',
-              handleStyle: {
-                color: '#fff',
-                shadowBlur: 3,
-                shadowColor: 'rgba(0, 0, 0, 0.6)',
-                shadowOffsetX: 2,
-                shadowOffsetY: 2,
-              },
-            },
-          ],
-        };
-      }
-    }
-
-    // 无可视化数据
-    return null;
+    // 使用新的图表配置工具
+    return generateChartConfig(
+      visualizationType as ChartType,
+      {
+        timeColumn,
+        numericColumns,
+        selectedFields: fieldsToDisplay,
+        data: parsedData.data,
+        rowCount: parsedData.rowCount,
+      },
+      themeConfig
+    );
   }, [
     parsedData,
     fieldStatistics,
     visualizationType,
-    resolvedTheme,
+    selectedFields,
     getThemeConfig,
   ]);
 
   // 导出图表功能
   const handleExportChart = useCallback(
-    (format: 'png' | 'svg' | 'pdf' = 'png') => {
+    async (format: 'png' | 'svg' = 'png') => {
       if (!chartRef.current) {
-        console.error('图表实例未找到');
+        showMessage.error('图表实例未找到');
         return;
       }
 
       try {
         const chartInstance = chartRef.current.getEchartsInstance();
         if (!chartInstance) {
-          console.error('ECharts实例未找到');
+          showMessage.error('ECharts实例未找到');
           return;
         }
 
-        let dataURL: string;
-        let fileName: string;
+        let dataContent: string;
+        let extension: string;
+        let mimeType: string;
 
-        switch (format) {
-          case 'svg': {
-            dataURL = chartInstance.renderToSVGString();
-            fileName = `chart_${new Date().getTime()}.svg`;
-            // 创建SVG Blob并下载
-            const svgBlob = new Blob([dataURL], { type: 'image/svg+xml' });
-            const svgUrl = URL.createObjectURL(svgBlob);
-            const svgLink = document.createElement('a');
-            svgLink.href = svgUrl;
-            svgLink.download = fileName;
-            document.body.appendChild(svgLink);
-            svgLink.click();
-            document.body.removeChild(svgLink);
-            URL.revokeObjectURL(svgUrl);
-            break;
+        if (format === 'svg') {
+          dataContent = chartInstance.renderToSVGString();
+          extension = 'svg';
+          mimeType = 'image/svg+xml';
+        } else {
+          // PNG格式
+          const dataURL = chartInstance.getDataURL({
+            type: 'png',
+            pixelRatio: 2,
+            backgroundColor: '#fff',
+          });
+          // 移除data URL前缀
+          dataContent = dataURL.split(',')[1];
+          extension = 'png';
+          mimeType = 'image/png';
+        }
+
+        // 使用Tauri原生保存对话框
+        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
+        const defaultFilename = `chart_${timestamp}.${extension}`;
+
+        const filePath = await safeTauriInvoke<string>('show_save_file_dialog', {
+          params: {
+            default_path: defaultFilename,
+            filters: [{
+              name: `${extension.toUpperCase()} 图片`,
+              extensions: [extension]
+            }]
           }
+        });
 
-          case 'pdf':
-            // PDF导出需要额外的库支持，这里先使用PNG替代
-            dataURL = chartInstance.getDataURL({
-              type: 'png',
-              pixelRatio: 2,
-              backgroundColor: '#fff',
-            });
-            fileName = `chart_${new Date().getTime()}.png`;
-            break;
-
-          default: // png
-            dataURL = chartInstance.getDataURL({
-              type: 'png',
-              pixelRatio: 2,
-              backgroundColor: '#fff',
-            });
-            fileName = `chart_${new Date().getTime()}.png`;
+        if (!filePath) {
+          // 用户取消了保存
+          return;
         }
 
-        if (format !== 'svg') {
-          // 对于PNG和PDF，使用dataURL下载
-          const link = document.createElement('a');
-          link.href = dataURL;
-          link.download = fileName;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+        // 保存文件
+        if (format === 'svg') {
+          // SVG是文本格式，直接写入
+          await safeTauriInvoke('write_text_file', {
+            path: filePath,
+            contents: dataContent
+          });
+        } else {
+          // PNG是二进制格式，需要base64解码后写入
+          await safeTauriInvoke('write_binary_file', {
+            path: filePath,
+            contents: Array.from(atob(dataContent), c => c.charCodeAt(0))
+          });
         }
 
-        console.log(`图表已导出为 ${format.toUpperCase()} 格式`);
+        showMessage.success(`图表已导出为 ${format.toUpperCase()} 格式`);
       } catch (error) {
         console.error('导出图表失败:', error);
+        showMessage.error(`导出图表失败: ${error}`);
       }
     },
     []
@@ -2113,11 +1812,25 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             {visualizationType === 'pie' && (
                               <PieChart className='w-3 h-3 mr-1' />
                             )}
-                            {visualizationType === 'line'
-                              ? '折线图'
-                              : visualizationType === 'bar'
-                                ? '柱状图'
-                                : '饼图'}
+                            {visualizationType === 'area' && (
+                              <AreaChart className='w-3 h-3 mr-1' />
+                            )}
+                            {visualizationType === 'scatter' && (
+                              <ScatterChart className='w-3 h-3 mr-1' />
+                            )}
+                            {visualizationType === 'heatmap' && (
+                              <Grid3x3 className='w-3 h-3 mr-1' />
+                            )}
+                            {visualizationType === 'radar' && (
+                              <Radar className='w-3 h-3 mr-1' />
+                            )}
+                            {visualizationType === 'line' && '折线图'}
+                            {visualizationType === 'bar' && '柱状图'}
+                            {visualizationType === 'pie' && '饼图'}
+                            {visualizationType === 'area' && '面积图'}
+                            {visualizationType === 'scatter' && '散点图'}
+                            {visualizationType === 'heatmap' && '热力图'}
+                            {visualizationType === 'radar' && '雷达图'}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
@@ -2128,10 +1841,34 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             折线图
                           </DropdownMenuItem>
                           <DropdownMenuItem
+                            onClick={() => setVisualizationType('area')}
+                          >
+                            <AreaChart className='w-3 h-3 mr-2' />
+                            面积图
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
                             onClick={() => setVisualizationType('bar')}
                           >
                             <BarChart className='w-3 h-3 mr-2' />
                             柱状图
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setVisualizationType('scatter')}
+                          >
+                            <ScatterChart className='w-3 h-3 mr-2' />
+                            散点图
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setVisualizationType('heatmap')}
+                          >
+                            <Grid3x3 className='w-3 h-3 mr-2' />
+                            热力图
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setVisualizationType('radar')}
+                          >
+                            <Radar className='w-3 h-3 mr-2' />
+                            雷达图
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setVisualizationType('pie')}
@@ -2141,6 +1878,34 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      {/* 字段选择器 - 所有图表类型都支持 */}
+                      {availableNumericFields.length > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant='outline'
+                              size='sm'
+                              className='text-xs'
+                            >
+                              <Filter className='w-3 h-3 mr-1' />
+                              字段 ({selectedFields.length}/{availableNumericFields.length})
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className='w-56'>
+                            <DropdownMenuLabel>选择显示字段</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {availableNumericFields.map(field => (
+                              <DropdownMenuCheckboxItem
+                                key={field}
+                                checked={selectedFields.includes(field)}
+                                onCheckedChange={() => handleFieldToggle(field)}
+                              >
+                                {field}
+                              </DropdownMenuCheckboxItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -2164,12 +1929,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           >
                             <Download className='w-3 h-3 mr-2' />
                             导出为 SVG
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleExportChart('pdf')}
-                          >
-                            <Download className='w-3 h-3 mr-2' />
-                            导出为 PDF
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
