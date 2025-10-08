@@ -32,21 +32,28 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
   Input,
+  Slider,
 } from '@/components/ui';
 import { GlideDataTable } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
-import ExportOptionsDialog, { type ExportOptions } from '@/components/query/ExportOptionsDialog';
+import ExportOptionsDialog, {
+  type ExportOptions,
+} from '@/components/query/ExportOptionsDialog';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
 
 // 生成带时间戳的文件名
-const generateTimestampedFilename = (baseName: string, format: string): string => {
+const generateTimestampedFilename = (
+  baseName: string,
+  format: string
+): string => {
   const now = new Date();
-  const timestamp = now.toISOString()
-    .replace(/:/g, '-')  // 替换冒号为连字符
+  const timestamp = now
+    .toISOString()
+    .replace(/:/g, '-') // 替换冒号为连字符
     .replace(/\./g, '-') // 替换点为连字符
-    .slice(0, 19);       // 只保留到秒，格式：2025-07-20T09-30-45
+    .slice(0, 19); // 只保留到秒，格式：2025-07-20T09-30-45
 
   const extension = format === 'excel' ? 'xlsx' : format;
   return `${baseName}_${timestamp}.${extension}`;
@@ -91,7 +98,7 @@ import {
   detectSQLStatementType,
   getSQLStatementCategory,
   getSQLStatementDisplayInfo,
-  getResultStatsLabels
+  getResultStatsLabels,
 } from '@/utils/sqlTypeDetector';
 import { generateChartConfig, type ChartType } from '@/utils/chartConfig';
 
@@ -141,14 +148,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   const [customChartTitle, setCustomChartTitle] = useState<string>('');
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [fieldAliases, setFieldAliases] = useState<Record<string, string>>({});
-  const [editingFieldAlias, setEditingFieldAlias] = useState<string | null>(null);
+  const [editingFieldAlias, setEditingFieldAlias] = useState<string | null>(
+    null
+  );
+
+  // 饼图和雷达图的时间点选择
+  const [timePointIndex, setTimePointIndex] = useState<number>(0);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const chartRef = useRef<any>(null);
 
   // 导出状态
   const [showExportDialog, setShowExportDialog] = useState(false);
-  const [showStatisticsExportDialog, setShowStatisticsExportDialog] = useState(false);
+  const [showStatisticsExportDialog, setShowStatisticsExportDialog] =
+    useState(false);
 
   // 分页状态管理
   const [currentPage, setCurrentPage] = useState(1);
@@ -156,13 +169,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
   // 动态生成分页选项 - 根据数据量智能生成，以500为基础阶段
   const generatePaginationOptions = useCallback((totalRows: number) => {
-    console.log(`🔢 生成分页选项，总行数: ${totalRows}`);
     const options: string[] = [];
 
     // 如果数据量小于等于500，只显示"全部"
     if (totalRows <= 500) {
       options.push('all');
-      console.log(`📄 数据量≤500，分页选项: [${options.join(', ')}]`);
       return options;
     }
 
@@ -186,10 +197,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     // 始终添加"全部"选项
     options.push('all');
 
-    console.log(`📊 最终分页选项: [${options.join(', ')}]`);
     return options;
   }, []);
-  
+
   const { resolvedTheme } = useTheme();
 
   // 分页处理函数 - 完全按照 TableDataBrowser.tsx 的实现
@@ -200,14 +210,17 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   }, []);
 
   // 页面大小变化处理 - 完全按照 TableDataBrowser.tsx 的实现
-  const handlePageSizeChange = useCallback((size: string) => {
-    startTransition(() => {
-      const newSize = parseInt(size);
-      console.log(`📏 页面大小变更: ${pageSize} -> ${newSize}`);
-      setPageSize(newSize);
-      setCurrentPage(1);
-    });
-  }, [pageSize]);
+  const handlePageSizeChange = useCallback(
+    (size: string) => {
+      startTransition(() => {
+        const newSize = parseInt(size);
+        console.log(`📏 页面大小变更: ${pageSize} -> ${newSize}`);
+        setPageSize(newSize);
+        setCurrentPage(1);
+      });
+    },
+    [pageSize]
+  );
 
   // 主题配置生成函数
   const getThemeConfig = useCallback(() => {
@@ -249,7 +262,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
   // 获取主要的语句类型（如果有多个查询，取第一个）
   const primaryStatementType = sqlStatementTypes[0] || 'UNKNOWN';
-  const primaryStatementCategory = getSQLStatementCategory(primaryStatementType);
+  const primaryStatementCategory =
+    getSQLStatementCategory(primaryStatementType);
   const primaryDisplayInfo = getSQLStatementDisplayInfo(primaryStatementType);
 
   // 从SQL查询中提取表名
@@ -335,25 +349,37 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       // 使用新的图表配置系统
       const themeConfig = getThemeConfig();
-      const fieldsToDisplay = selectedFields.length > 0
-        ? selectedFields.filter(f => numericColumns.includes(f))
-        : numericColumns.slice(0, 3);
+      const fieldsToDisplay =
+        selectedFields.length > 0
+          ? selectedFields.filter(f => numericColumns.includes(f))
+          : numericColumns.slice(0, 3);
 
       return generateChartConfig(
         chartType,
         {
           timeColumn,
           numericColumns,
-          selectedFields: fieldsToDisplay.length > 0 ? fieldsToDisplay : numericColumns.slice(0, 3),
+          selectedFields:
+            fieldsToDisplay.length > 0
+              ? fieldsToDisplay
+              : numericColumns.slice(0, 3),
           data: parsedResult.data,
           rowCount: parsedResult.rowCount,
           customTitle: customChartTitle,
-          fieldAliases: fieldAliases,
+          fieldAliases,
+          timeIndex: timePointIndex, // 传递时间点索引
         },
         themeConfig
       );
     },
-    [parseQueryResult, getThemeConfig, selectedFields, customChartTitle, fieldAliases]
+    [
+      parseQueryResult,
+      getThemeConfig,
+      selectedFields,
+      customChartTitle,
+      fieldAliases,
+      timePointIndex,
+    ]
   );
 
   // 自动切换到数据标签页当有查询结果时
@@ -362,6 +388,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       setActiveTab('data-0'); // 切换到第一个数据tab
     }
   }, [allResults]);
+
+  // 当切换到饼图或雷达图时，重置时间点索引到最后一个
+  useEffect(() => {
+    if (
+      (visualizationType === 'pie' || visualizationType === 'radar') &&
+      allResults.length > 0
+    ) {
+      const firstResult = allResults[0];
+      const parsed = parseQueryResult(firstResult);
+      if (parsed && parsed.data.length > 0) {
+        setTimePointIndex(parsed.data.length - 1);
+      }
+    }
+  }, [visualizationType, allResults, parseQueryResult]);
 
   // 解析查询结果数据
   const parsedData = useMemo(() => {
@@ -435,7 +475,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   };
 
   // 导出数据函数
-  const handleExportData = async (options: ExportOptions, resultIndex: number) => {
+  const handleExportData = async (
+    options: ExportOptions,
+    resultIndex: number
+  ) => {
     try {
       const result = allResults[resultIndex];
       if (!result) {
@@ -452,30 +495,38 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       // 过滤掉不应该导出的列（如#序号列）
       const filteredColumns = series.columns.filter(col => col !== '#');
-      const columnIndexes = filteredColumns.map(col => series.columns.indexOf(col));
+      const columnIndexes = filteredColumns.map(col =>
+        series.columns.indexOf(col)
+      );
       const filteredValues = series.values.map(row =>
         columnIndexes.map(index => row[index])
       );
 
       // 构造符合 QueryResult 格式的数据
       const queryResult: QueryResult = {
-        results: [{
-          series: [{
-            name: series.name || 'query_result',
-            columns: filteredColumns,
-            values: filteredValues
-          }]
-        }],
+        results: [
+          {
+            series: [
+              {
+                name: series.name || 'query_result',
+                columns: filteredColumns,
+                values: filteredValues,
+              },
+            ],
+          },
+        ],
         executionTime: executionTime || 0,
         rowCount: filteredValues.length,
         // 添加兼容性字段
         columns: filteredColumns,
-        data: filteredValues
+        data: filteredValues,
       };
 
       // 生成默认文件名
       const defaultTableName = series.name || `query_result_${resultIndex + 1}`;
-      const defaultFilename = options.filename || generateTimestampedFilename(defaultTableName, options.format);
+      const defaultFilename =
+        options.filename ||
+        generateTimestampedFilename(defaultTableName, options.format);
 
       // 调试日志
       console.log('EnhancedResultPanel导出调试:', {
@@ -484,7 +535,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         defaultTableName,
         optionsFilename: options.filename,
         finalDefaultFilename: defaultFilename,
-        format: options.format
+        format: options.format,
       });
 
       // 使用原生导出对话框
@@ -493,11 +544,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         includeHeaders: options.includeHeaders,
         delimiter: options.delimiter || (options.format === 'tsv' ? '\t' : ','),
         defaultFilename,
-        tableName: options.tableName || defaultTableName
+        tableName: options.tableName || defaultTableName,
       });
 
       if (success) {
-        showMessage.success(`数据已导出为 ${options.format.toUpperCase()} 格式`);
+        showMessage.success(
+          `数据已导出为 ${options.format.toUpperCase()} 格式`
+        );
         setShowExportDialog(false);
       }
     } catch (error) {
@@ -523,7 +576,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         '最小值',
         '最大值',
         '平均值',
-        '中位数'
+        '中位数',
       ];
 
       const values = fieldStatistics.map(stat => [
@@ -534,25 +587,32 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         stat.min !== undefined ? String(stat.min) : '-',
         stat.max !== undefined ? String(stat.max) : '-',
         stat.mean !== undefined ? stat.mean.toFixed(3) : '-',
-        stat.median !== undefined ? stat.median.toFixed(3) : '-'
+        stat.median !== undefined ? stat.median.toFixed(3) : '-',
       ]);
 
       const statisticsResult: QueryResult = {
-        results: [{
-          series: [{
-            name: 'field_statistics',
-            columns,
-            values
-          }]
-        }],
+        results: [
+          {
+            series: [
+              {
+                name: 'field_statistics',
+                columns,
+                values,
+              },
+            ],
+          },
+        ],
         executionTime: 0,
         rowCount: fieldStatistics.length,
         columns,
-        data: values
+        data: values,
       };
 
       // 生成默认文件名
-      const defaultFilename = generateTimestampedFilename('field_statistics', options.format);
+      const defaultFilename = generateTimestampedFilename(
+        'field_statistics',
+        options.format
+      );
 
       // 使用原生导出对话框
       const success = await exportWithNativeDialog(statisticsResult, {
@@ -560,11 +620,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         includeHeaders: options.includeHeaders,
         delimiter: options.delimiter || (options.format === 'tsv' ? '\t' : ','),
         defaultFilename,
-        tableName: 'field_statistics'
+        tableName: 'field_statistics',
       });
 
       if (success) {
-        showMessage.success(`字段统计已导出为 ${options.format.toUpperCase()} 格式`);
+        showMessage.success(
+          `字段统计已导出为 ${options.format.toUpperCase()} 格式`
+        );
         setShowStatisticsExportDialog(false);
       }
     } catch (error) {
@@ -651,25 +713,31 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   }, []);
 
   // 处理字段别名设置
-  const handleSetFieldAlias = useCallback((fieldName: string, alias: string) => {
-    setFieldAliases(prev => {
-      if (alias.trim() === '') {
-        // 如果别名为空，删除别名
-        const newAliases = { ...prev };
-        delete newAliases[fieldName];
-        return newAliases;
-      }
-      return {
-        ...prev,
-        [fieldName]: alias.trim()
-      };
-    });
-  }, []);
+  const handleSetFieldAlias = useCallback(
+    (fieldName: string, alias: string) => {
+      setFieldAliases(prev => {
+        if (alias.trim() === '') {
+          // 如果别名为空，删除别名
+          const newAliases = { ...prev };
+          delete newAliases[fieldName];
+          return newAliases;
+        }
+        return {
+          ...prev,
+          [fieldName]: alias.trim(),
+        };
+      });
+    },
+    []
+  );
 
   // 获取字段显示名称（别名或原名）
-  const getFieldDisplayName = useCallback((fieldName: string) => {
-    return fieldAliases[fieldName] || fieldName;
-  }, [fieldAliases]);
+  const getFieldDisplayName = useCallback(
+    (fieldName: string) => {
+      return fieldAliases[fieldName] || fieldName;
+    },
+    [fieldAliases]
+  );
 
   // 获取可用的数值字段
   const availableNumericFields = useMemo(() => {
@@ -798,7 +866,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           for (let i = 1; i < Math.min(timeValues.length, 100); i++) {
             intervals.push(timeValues[i] - timeValues[i - 1]);
           }
-          const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+          const avgInterval =
+            intervals.reduce((a, b) => a + b, 0) / intervals.length;
           const avgIntervalSeconds = avgInterval / 1000;
 
           if (avgIntervalSeconds < 1) {
@@ -831,7 +900,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     }
 
     // 5. 数值字段趋势分析
-    const numericFields = fieldStatistics.filter(stat => stat.dataType === 'number' && stat.mean !== undefined);
+    const numericFields = fieldStatistics.filter(
+      stat => stat.dataType === 'number' && stat.mean !== undefined
+    );
     if (numericFields.length > 0 && timeColumn && parsedData.rowCount > 10) {
       numericFields.forEach(field => {
         const values = parsedData.data
@@ -845,8 +916,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           const avgValue = recentValues.reduce((a, b) => a + b, 0) / n;
           const firstHalf = recentValues.slice(0, Math.floor(n / 2));
           const secondHalf = recentValues.slice(Math.floor(n / 2));
-          const firstAvg = firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
-          const secondAvg = secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
+          const firstAvg =
+            firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length;
+          const secondAvg =
+            secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length;
           const trend = ((secondAvg - firstAvg) / firstAvg) * 100;
 
           if (Math.abs(trend) > 20) {
@@ -861,9 +934,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
           // 检测异常值（超出3倍标准差）
           const stdDev = Math.sqrt(
-            recentValues.reduce((sum, val) => sum + Math.pow(val - avgValue, 2), 0) / n
+            recentValues.reduce(
+              (sum, val) => sum + Math.pow(val - avgValue, 2),
+              0
+            ) / n
           );
-          const outliers = recentValues.filter(val => Math.abs(val - avgValue) > 3 * stdDev);
+          const outliers = recentValues.filter(
+            val => Math.abs(val - avgValue) > 3 * stdDev
+          );
           if (outliers.length > 0 && outliers.length / n < 0.1) {
             insights.push({
               type: 'anomaly',
@@ -879,7 +957,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
     // 6. 字段唯一性分析
     const lowCardinalityFields = fieldStatistics.filter(
-      stat => stat.uniqueCount < 10 && stat.uniqueCount > 1 && stat.dataType !== 'boolean'
+      stat =>
+        stat.uniqueCount < 10 &&
+        stat.uniqueCount > 1 &&
+        stat.dataType !== 'boolean'
     );
     if (lowCardinalityFields.length > 0) {
       insights.push({
@@ -907,9 +988,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       .map(stat => stat.fieldName);
 
     // 使用选中的字段，如果没有选中则使用所有数值字段
-    const fieldsToDisplay = selectedFields.length > 0
-      ? selectedFields.filter(f => numericColumns.includes(f))
-      : numericColumns.slice(0, 3);
+    const fieldsToDisplay =
+      selectedFields.length > 0
+        ? selectedFields.filter(f => numericColumns.includes(f))
+        : numericColumns.slice(0, 3);
 
     // 使用新的图表配置工具
     return generateChartConfig(
@@ -932,64 +1014,69 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   ]);
 
   // 导出图表功能
-  const handleExportChart = useCallback(
-    async () => {
-      if (!chartRef.current) {
-        showMessage.error('图表实例未找到');
+  const handleExportChart = useCallback(async () => {
+    if (!chartRef.current) {
+      showMessage.error('图表实例未找到');
+      return;
+    }
+
+    try {
+      const chartInstance = chartRef.current.getEchartsInstance();
+      if (!chartInstance) {
+        showMessage.error('ECharts实例未找到');
         return;
       }
 
-      try {
-        const chartInstance = chartRef.current.getEchartsInstance();
-        if (!chartInstance) {
-          showMessage.error('ECharts实例未找到');
-          return;
-        }
+      // 获取PNG格式的图表数据
+      const dataURL = chartInstance.getDataURL({
+        type: 'png',
+        pixelRatio: 2,
+        backgroundColor: '#fff',
+      });
 
-        // 获取PNG格式的图表数据
-        const dataURL = chartInstance.getDataURL({
-          type: 'png',
-          pixelRatio: 2,
-          backgroundColor: '#fff',
-        });
+      // 移除data URL前缀，获取base64数据
+      const base64Data = dataURL.split(',')[1];
 
-        // 移除data URL前缀，获取base64数据
-        const base64Data = dataURL.split(',')[1];
+      // 使用Tauri原生保存对话框
+      const timestamp = new Date()
+        .toISOString()
+        .replace(/:/g, '-')
+        .slice(0, 19);
+      const defaultFilename = `chart_${timestamp}.png`;
 
-        // 使用Tauri原生保存对话框
-        const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-        const defaultFilename = `chart_${timestamp}.png`;
-
-        // Tauri命令期望接收一个名为params的参数
-        const result = await safeTauriInvoke<{ path: string; name: string } | null>('save_file_dialog', {
-          params: {
-            default_path: defaultFilename,
-            filters: [{
+      // Tauri命令期望接收一个名为params的参数
+      const result = await safeTauriInvoke<{
+        path: string;
+        name: string;
+      } | null>('save_file_dialog', {
+        params: {
+          default_path: defaultFilename,
+          filters: [
+            {
               name: 'PNG 图片',
-              extensions: ['png']
-            }]
-          }
-        });
+              extensions: ['png'],
+            },
+          ],
+        },
+      });
 
-        if (!result || !result.path) {
-          // 用户取消了保存
-          return;
-        }
-
-        // 保存文件 - PNG是二进制格式，使用base64字符串
-        await safeTauriInvoke('write_binary_file', {
-          path: result.path,
-          data: base64Data
-        });
-
-        showMessage.success('图表已导出为 PNG 格式');
-      } catch (error) {
-        console.error('导出图表失败:', error);
-        showMessage.error(`导出图表失败: ${error}`);
+      if (!result || !result.path) {
+        // 用户取消了保存
+        return;
       }
-    },
-    []
-  );
+
+      // 保存文件 - PNG是二进制格式，使用base64字符串
+      await safeTauriInvoke('write_binary_file', {
+        path: result.path,
+        data: base64Data,
+      });
+
+      showMessage.success('图表已导出为 PNG 格式');
+    } catch (error) {
+      console.error('导出图表失败:', error);
+      showMessage.error(`导出图表失败: ${error}`);
+    }
+  }, []);
 
   if (collapsed) {
     return (
@@ -1178,7 +1265,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       </div>
                       <div className='space-y-2 max-h-[400px] overflow-y-auto pr-2'>
                         {executedQueries.map((query, index) => (
-                          <div key={index} className='bg-muted/50 rounded p-3 relative group'>
+                          <div
+                            key={index}
+                            className='bg-muted/50 rounded p-3 relative group'
+                          >
                             <div className='flex items-center justify-between mb-2'>
                               <div className='text-xs text-muted-foreground'>
                                 查询 {index + 1}
@@ -1221,6 +1311,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           const statementCategory = getSQLStatementCategory(statementType);
           const displayInfo = getSQLStatementDisplayInfo(statementType);
           const statsLabels = getResultStatsLabels(statementType);
+
+          // 缓存分页选项，避免每次渲染都重新计算
+          const paginationOptions = parsedResult
+            ? generatePaginationOptions(parsedResult.data.length)
+            : ['all'];
 
           return (
             <TabsContent
@@ -1270,18 +1365,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     <GlideDataTable
                       data={parsedResult.data.map((row, rowIndex) => ({
                         _id: `result-${rowIndex}`,
-                        ...row
+                        ...row,
                       }))}
-                      columns={parsedResult.columns.map((column) => {
+                      columns={parsedResult.columns.map(column => {
                         return {
                           key: column,
                           title: column,
                           width: column === 'time' ? 180 : 120,
                           sortable: true,
                           filterable: true,
-                          render: column === 'time'
-                            ? (value: any) => value ? new Date(value).toLocaleString() : '-'
-                            : undefined,
+                          render:
+                            column === 'time'
+                              ? (value: any) =>
+                                  value ? new Date(value).toLocaleString() : '-'
+                              : undefined,
                         };
                       })}
                       loading={false}
@@ -1290,7 +1387,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         pageSize,
                         total: parsedResult.data.length,
                         showSizeChanger: true,
-                        pageSizeOptions: generatePaginationOptions(parsedResult.data.length),
+                        pageSizeOptions: paginationOptions,
                       }}
                       searchable={false} // 使用外部搜索
                       filterable={true}
@@ -1324,13 +1421,24 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   <div className='flex-shrink-0 bg-muted/50 border-b px-4 py-2'>
                     <div className='flex items-center justify-between'>
                       <div className='flex items-center gap-2'>
-                        {statementCategory === 'write' && <CheckCircle className='w-4 h-4 text-green-500' />}
-                        {statementCategory === 'delete' && <Trash2 className='w-4 h-4 text-orange-500' />}
-                        {statementCategory === 'ddl' && <Settings className='w-4 h-4 text-blue-500' />}
-                        {statementCategory === 'permission' && <Shield className='w-4 h-4 text-purple-500' />}
-                        {statementCategory === 'unknown' && <FileText className='w-4 h-4' />}
+                        {statementCategory === 'write' && (
+                          <CheckCircle className='w-4 h-4 text-green-500' />
+                        )}
+                        {statementCategory === 'delete' && (
+                          <Trash2 className='w-4 h-4 text-orange-500' />
+                        )}
+                        {statementCategory === 'ddl' && (
+                          <Settings className='w-4 h-4 text-blue-500' />
+                        )}
+                        {statementCategory === 'permission' && (
+                          <Shield className='w-4 h-4 text-purple-500' />
+                        )}
+                        {statementCategory === 'unknown' && (
+                          <FileText className='w-4 h-4' />
+                        )}
                         <span className='text-sm font-medium'>
-                          {displayInfo.title} {allResults.length > 1 ? `${index + 1}` : ''}
+                          {displayInfo.title}{' '}
+                          {allResults.length > 1 ? `${index + 1}` : ''}
                         </span>
                         <Badge variant='outline' className='text-xs'>
                           {statementType}
@@ -1369,7 +1477,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       </div>
                       {result?.rowCount !== undefined && (
                         <div className='flex justify-between'>
-                          <span className='text-muted-foreground'>{statsLabels.rowCount}:</span>
+                          <span className='text-muted-foreground'>
+                            {statsLabels.rowCount}:
+                          </span>
                           <span className='font-mono'>{result.rowCount}</span>
                         </div>
                       )}
@@ -1382,7 +1492,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     {/* 执行的语句 */}
                     {executedQueries[index] && (
                       <div>
-                        <span className='font-medium mb-2 block'>执行的语句:</span>
+                        <span className='font-medium mb-2 block'>
+                          执行的语句:
+                        </span>
                         <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto'>
                           {executedQueries[index]}
                         </pre>
@@ -1392,7 +1504,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     {/* JSON结果（如果有） */}
                     {result && (
                       <div>
-                        <span className='font-medium mb-2 block'>详细结果:</span>
+                        <span className='font-medium mb-2 block'>
+                          详细结果:
+                        </span>
                         <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto max-h-64'>
                           {JSON.stringify(result, null, 2)}
                         </pre>
@@ -1722,9 +1836,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 <GlideDataTable
                   data={parsedData.data.map((row, index) => ({
                     _id: `table-${index}`,
-                    ...row
+                    ...row,
                   }))}
-                  columns={parsedData.columns.map((column) => {
+                  columns={parsedData.columns.map(column => {
                     return {
                       key: column,
                       title: column,
@@ -1735,8 +1849,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         if (column === 'time' && value) {
                           return new Date(value).toLocaleString();
                         }
-                        return value !== null && value !== undefined ? String(value) : '-';
-                      }
+                        return value !== null && value !== undefined
+                          ? String(value)
+                          : '-';
+                      },
                     };
                   })}
                   loading={false}
@@ -1754,7 +1870,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   sortable={true}
                   exportable={true}
                   columnManagement={true}
-                  className="h-full"
+                  className='h-full'
                   onPageChange={handlePageChange}
                 />
               </div>
@@ -1779,6 +1895,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           if (!isChartable) return null;
 
           const chartOption = generateChartOption(result, visualizationType);
+          const parsedResult = parseQueryResult(result);
           const tableName =
             executedQueries && executedQueries[index]
               ? extractTableName(executedQueries[index])
@@ -1816,11 +1933,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           <div className='flex items-center gap-1'>
                             <Input
                               value={customChartTitle}
-                              onChange={(e) => setCustomChartTitle(e.target.value)}
+                              onChange={e =>
+                                setCustomChartTitle(e.target.value)
+                              }
                               placeholder='输入图表标题'
                               className='h-7 w-40 text-xs'
                               autoFocus
-                              onKeyDown={(e) => {
+                              onKeyDown={e => {
                                 if (e.key === 'Enter') {
                                   setIsEditingTitle(false);
                                 } else if (e.key === 'Escape') {
@@ -1954,17 +2073,23 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                               className='text-xs'
                             >
                               <Filter className='w-3 h-3 mr-1' />
-                              字段 ({selectedFields.length}/{availableNumericFields.length})
+                              字段 ({selectedFields.length}/
+                              {availableNumericFields.length})
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className='w-72'>
                             <DropdownMenuLabel>选择显示字段</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {availableNumericFields.map(field => (
-                              <div key={field} className='flex items-center gap-1 px-2 py-1.5 hover:bg-accent'>
+                              <div
+                                key={field}
+                                className='flex items-center gap-1 px-2 py-1.5 hover:bg-accent'
+                              >
                                 <DropdownMenuCheckboxItem
                                   checked={selectedFields.includes(field)}
-                                  onCheckedChange={() => handleFieldToggle(field)}
+                                  onCheckedChange={() =>
+                                    handleFieldToggle(field)
+                                  }
                                   className='flex-1 cursor-pointer'
                                 >
                                   <span className='flex-1'>
@@ -1977,14 +2102,22 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                   </span>
                                 </DropdownMenuCheckboxItem>
                                 {editingFieldAlias === field ? (
-                                  <div className='flex items-center gap-1' onClick={(e) => e.stopPropagation()}>
+                                  <div
+                                    className='flex items-center gap-1'
+                                    onClick={e => e.stopPropagation()}
+                                  >
                                     <Input
                                       value={fieldAliases[field] || ''}
-                                      onChange={(e) => handleSetFieldAlias(field, e.target.value)}
+                                      onChange={e =>
+                                        handleSetFieldAlias(
+                                          field,
+                                          e.target.value
+                                        )
+                                      }
                                       placeholder={field}
                                       className='h-6 w-24 text-xs'
                                       autoFocus
-                                      onKeyDown={(e) => {
+                                      onKeyDown={e => {
                                         if (e.key === 'Enter') {
                                           setEditingFieldAlias(null);
                                         } else if (e.key === 'Escape') {
@@ -2007,7 +2140,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                     variant='ghost'
                                     size='sm'
                                     className='h-6 w-6 p-0'
-                                    onClick={(e) => {
+                                    onClick={e => {
                                       e.stopPropagation();
                                       setEditingFieldAlias(field);
                                     }}
@@ -2031,15 +2164,66 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       </Button>
                     </div>
                   </div>
-                  <div className='flex-1 bg-background rounded border'>
-                    <EChartsReact
-                      ref={chartRef}
-                      option={chartOption}
-                      style={{ height: '100%' }}
-                      notMerge={true}
-                      lazyUpdate={true}
-                      theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
-                    />
+                  <div className='flex-1 bg-background rounded border flex flex-col'>
+                    <div className='flex-1'>
+                      <EChartsReact
+                        ref={chartRef}
+                        option={chartOption}
+                        style={{ height: '100%' }}
+                        notMerge={true}
+                        lazyUpdate={true}
+                        theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
+                      />
+                    </div>
+                    {/* 饼图和雷达图的时间轴控制器 */}
+                    {(visualizationType === 'pie' ||
+                      visualizationType === 'radar') &&
+                      parsedResult &&
+                      parsedResult.data.length > 1 && (
+                        <div className='px-6 py-3 border-t bg-muted/30'>
+                          <div className='flex items-center gap-4'>
+                            <span className='text-xs text-muted-foreground whitespace-nowrap'>
+                              时间点:
+                            </span>
+                            <Slider
+                              value={[timePointIndex]}
+                              onValueChange={value =>
+                                setTimePointIndex(value[0])
+                              }
+                              min={0}
+                              max={parsedResult.data.length - 1}
+                              step={1}
+                              className='flex-1'
+                            />
+                            <span className='text-xs text-muted-foreground whitespace-nowrap min-w-[140px]'>
+                              {parsedResult.data[timePointIndex] &&
+                                parsedResult.columns.find(col => {
+                                  const firstValue = parsedResult.data[0][col];
+                                  return (
+                                    firstValue instanceof Date ||
+                                    /^\d{4}-\d{2}-\d{2}/.test(
+                                      String(firstValue)
+                                    )
+                                  );
+                                }) &&
+                                new Date(
+                                  parsedResult.data[timePointIndex][
+                                    parsedResult.columns.find(col => {
+                                      const firstValue =
+                                        parsedResult.data[0][col];
+                                      return (
+                                        firstValue instanceof Date ||
+                                        /^\d{4}-\d{2}-\d{2}/.test(
+                                          String(firstValue)
+                                        )
+                                      );
+                                    })!
+                                  ]
+                                ).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                   </div>
                 </div>
               ) : (
@@ -2143,7 +2327,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       <ExportOptionsDialog
         open={showExportDialog}
         onClose={() => setShowExportDialog(false)}
-        onExport={(options) => {
+        onExport={options => {
           // 找到当前活跃的查询结果索引
           const activeTabMatch = activeTab.match(/^data-(\d+)$/);
           const resultIndex = activeTabMatch ? parseInt(activeTabMatch[1]) : 0;
@@ -2166,7 +2350,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         open={showStatisticsExportDialog}
         onClose={() => setShowStatisticsExportDialog(false)}
         onExport={handleExportStatistics}
-        defaultTableName="field_statistics"
+        defaultTableName='field_statistics'
         rowCount={fieldStatistics.length}
         columnCount={8}
       />

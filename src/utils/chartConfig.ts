@@ -20,6 +20,7 @@ export interface ChartDataConfig {
   rowCount: number;
   customTitle?: string;
   fieldAliases?: Record<string, string>;
+  timeIndex?: number;  // 用于饼图和雷达图选择特定时间点
 }
 
 export type ChartType = 'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar';
@@ -634,27 +635,37 @@ export const generatePieChart = (
   config: ChartDataConfig,
   theme: ChartThemeConfig
 ) => {
-  const { data, selectedFields, customTitle, fieldAliases = {} } = config;
+  const { data, selectedFields, customTitle, fieldAliases = {}, timeIndex, timeColumn } = config;
 
   if (selectedFields.length === 0 || data.length === 0) return null;
 
-  // 使用最后一个时间点的数据
-  const lastData = data[data.length - 1];
+  // 使用指定时间点的数据，默认使用最后一个时间点
+  const dataIndex = timeIndex !== undefined ? timeIndex : data.length - 1;
+  const currentData = data[dataIndex];
   const pieData = selectedFields
     .map(field => ({
       name: fieldAliases[field] || field,
-      value: Math.abs(lastData[field]) || 0,
+      value: Math.abs(currentData[field]) || 0,
     }))
     .filter(item => item.value > 0);
+
+  // 获取时间标签
+  let timeLabel = '';
+  if (timeColumn && currentData[timeColumn]) {
+    const time = new Date(currentData[timeColumn]);
+    timeLabel = time.toLocaleString();
+  }
 
   return {
     backgroundColor: theme.backgroundColor,
     textStyle: { color: theme.textColor },
     color: theme.colors,
     title: {
-      text: customTitle || '数据分布（最新时间点）',
+      text: customTitle || '数据分布',
+      subtext: timeLabel ? `时间: ${timeLabel}` : '',
       left: 'center',
       textStyle: { color: theme.textColor, fontSize: 14 },
+      subtextStyle: { color: theme.textColor, fontSize: 11 },
     },
     tooltip: {
       trigger: 'item',
@@ -824,12 +835,13 @@ export const generateRadarChart = (
   config: ChartDataConfig,
   theme: ChartThemeConfig
 ) => {
-  const { data, selectedFields, customTitle, fieldAliases = {} } = config;
+  const { data, selectedFields, customTitle, fieldAliases = {}, timeIndex, timeColumn } = config;
 
   if (selectedFields.length === 0 || data.length === 0) return null;
 
-  // 使用最后一个时间点的数据
-  const lastData = data[data.length - 1];
+  // 使用指定时间点的数据，默认使用最后一个时间点
+  const dataIndex = timeIndex !== undefined ? timeIndex : data.length - 1;
+  const currentData = data[dataIndex];
 
   // 计算每个字段的最大值用于雷达图的最大范围
   const indicators = selectedFields.map(field => {
@@ -843,16 +855,26 @@ export const generateRadarChart = (
     };
   });
 
-  const radarData = selectedFields.map(field => Math.abs(lastData[field]) || 0);
+  const radarData = selectedFields.map(field => Math.abs(currentData[field]) || 0);
+
+  // 获取时间标签
+  let timeLabel = '';
+  if (timeColumn && currentData[timeColumn]) {
+    const time = new Date(currentData[timeColumn]);
+    timeLabel = time.toLocaleString();
+  }
 
   return {
     backgroundColor: theme.backgroundColor,
     textStyle: { color: theme.textColor },
     color: theme.colors,
     title: {
-      text: customTitle || '多维度雷达图（最新时间点）',
+      text: customTitle || '多维度雷达图',
+      subtext: timeLabel ? `时间: ${timeLabel}` : '',
       left: 'center',
+      top: 10,
       textStyle: { color: theme.textColor, fontSize: 14 },
+      subtextStyle: { color: theme.textColor, fontSize: 11 },
     },
     tooltip: {
       trigger: 'item',
@@ -861,16 +883,18 @@ export const generateRadarChart = (
       textStyle: { color: theme.textColor },
     },
     legend: {
-      top: 35,
-      textStyle: { color: theme.textColor },
+      show: false,  // 隐藏legend避免与字段名称重叠
     },
     radar: {
       indicator: indicators,
       shape: 'polygon',
       splitNumber: 5,
+      center: ['50%', '55%'],  // 向下移动中心点，避免与标题重叠
+      radius: '65%',  // 调整半径
       name: {
         textStyle: {
           color: theme.textColor,
+          fontSize: 12,
         },
       },
       splitLine: {
