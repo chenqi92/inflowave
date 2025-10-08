@@ -23,7 +23,7 @@ import {
   createDatabaseSpecificCompletions
 } from '@/utils/sqlIntelliSense';
 import { safeTauriInvoke } from '@/utils/tauri';
-import type { DatabaseType as SQLFormatterDatabaseType } from '@/utils/sqlFormatter';
+import { formatSQL, type DatabaseType as SQLFormatterDatabaseType } from '@/utils/sqlFormatter';
 import type { EditorTab } from './TabManager';
 import { useSmartSuggestion } from '@/hooks/useSmartSuggestion';
 import { SmartSuggestionPopup } from './SmartSuggestionPopup';
@@ -66,6 +66,9 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   // 键盘事件清理函数引用
   const keyboardCleanupRef = useRef<(() => void) | null>(null);
+  // 用于防止不必要的内容更新
+  const isInternalChangeRef = useRef(false);
+  const lastContentRef = useRef<string>('');
   const { resolvedTheme } = useTheme();
   const { activeConnectionId, connections } = useConnectionStore();
 
@@ -244,8 +247,18 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
   // 处理编辑器内容变化
   const handleEditorChange = useCallback((value: string | undefined) => {
+    // 如果是内部触发的变化（如通过setValue），跳过处理
+    if (isInternalChangeRef.current) {
+      return;
+    }
+
     const content = value || '';
-    onContentChange(content);
+
+    // 只有当内容真的变化时才通知父组件
+    if (content !== lastContentRef.current) {
+      lastContentRef.current = content;
+      onContentChange(content);
+    }
 
     // 触发智能提示
     if (editorRef.current && content.length > 0) {
@@ -472,9 +485,28 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
       // 设置智能自动补全
       setupEnhancedAutoComplete(monaco, editor, databaseType, selectedDatabase);
 
+      // 注册格式化提供者（使用已声明的 currentLanguage 变量）
+      const formatProvider = monaco.languages.registerDocumentFormattingEditProvider(currentLanguage, {
+        provideDocumentFormattingEdits: (model) => {
+          const text = model.getValue();
+          const formatted = formatSQL(text, databaseType);
+          return [{
+            range: model.getFullModelRange(),
+            text: formatted,
+          }];
+        },
+      });
+
       console.log('🎨 Monaco编辑器已挂载，使用原生主题:', resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light');
 
       console.log('🎯 编辑器挂载完成，当前语言:', getEditorLanguage());
+
+      // 清理函数中添加格式化提供者的清理
+      const originalCleanup = keyboardCleanupRef.current;
+      keyboardCleanupRef.current = () => {
+        originalCleanup?.();
+        formatProvider.dispose();
+      };
 
       // 阻止浏览器默认的键盘行为（桌面应用专用）
       console.log('🔒 设置桌面应用键盘行为...');
@@ -1141,6 +1173,42 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
     }
   }, [activeConnectionId, currentTab?.connectionId, connections, currentTab?.type, getDatabaseLanguageType]);
 
+  // 同步tab内容变化到编辑器，同时保持光标位置
+  useEffect(() => {
+    if (!editorRef.current || !currentTab) return;
+
+    const editor = editorRef.current;
+    const currentContent = editor.getValue();
+    const newContent = currentTab.content || '';
+
+    // 只有当内容真的不同时才更新
+    if (currentContent !== newContent) {
+      // 保存当前光标位置和滚动位置
+      const position = editor.getPosition();
+      const scrollTop = editor.getScrollTop();
+      const scrollLeft = editor.getScrollLeft();
+
+      // 标记为内部变化，避免触发onChange
+      isInternalChangeRef.current = true;
+
+      // 更新内容
+      editor.setValue(newContent);
+      lastContentRef.current = newContent;
+
+      // 恢复光标位置和滚动位置
+      if (position) {
+        editor.setPosition(position);
+      }
+      editor.setScrollTop(scrollTop);
+      editor.setScrollLeft(scrollLeft);
+
+      // 重置标记
+      isInternalChangeRef.current = false;
+
+      console.log('📝 同步tab内容到编辑器，保持光标位置');
+    }
+  }, [currentTab?.content, currentTab?.id]);
+
   if (!currentTab) {
     return null;
   }
@@ -1170,7 +1238,18 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
         },
         wordWrap: 'on',
         automaticLayout: true,
-        // 启用Monaco内置的智能提示，确保正常的编辑体验
+
+        // 缩进配置 - 根据数据库类型优化
+        tabSize: 2,
+        insertSpaces: true,
+        detectIndentation: true,
+        autoIndent: 'full',
+
+        // 格式化配置
+        formatOnPaste: true,
+        formatOnType: true,
+
+        // 智能提示配置
         quickSuggestions: {
           other: true,
           comments: false,
@@ -1178,29 +1257,43 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
         },
         suggestOnTriggerCharacters: true,
         parameterHints: { enabled: true },
-        formatOnPaste: true,
-        formatOnType: true,
         acceptSuggestionOnEnter: 'on',
         tabCompletion: 'on',
         hover: { enabled: true },
         wordBasedSuggestions: 'currentDocument',
-        // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
+
+        // 编辑器行为
         contextmenu: false,
-        // 关键：完全禁用所有可能触发剪贴板权限的功能
-        copyWithSyntaxHighlighting: false,  // 禁用语法高亮复制
+        copyWithSyntaxHighlighting: false,
         links: false,
         dragAndDrop: false,
         selectionClipboard: false,
-        // 禁用所有剪贴板相关的快捷键和操作
-        multiCursorModifier: 'alt',  // 避免Ctrl+C等快捷键冲突
-        useTabStops: false,
+        multiCursorModifier: 'alt',
+        useTabStops: true,
         accessibilitySupport: 'off',
-        // 禁用可能触发剪贴板的编辑器功能
+
+        // 查找配置
         find: {
           addExtraSpaceOnTop: false,
           autoFindInSelection: 'never',
-          seedSearchStringFromSelection: 'never',  // 避免从选择中获取搜索字符串
+          seedSearchStringFromSelection: 'never',
         },
+
+        // 括号匹配和高亮
+        matchBrackets: 'always',
+        bracketPairColorization: {
+          enabled: true,
+        },
+
+        // 代码折叠
+        folding: true,
+        foldingStrategy: 'indentation',
+        showFoldingControls: 'always',
+
+        // 平滑滚动和动画
+        smoothScrolling: true,
+        cursorBlinking: 'smooth',
+        cursorSmoothCaretAnimation: 'on',
       }}
       />
 
