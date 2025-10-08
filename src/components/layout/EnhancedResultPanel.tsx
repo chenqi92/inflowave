@@ -588,15 +588,16 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     }
   };
 
-  // 导出字段统计
+  // 导出字段统计 - 支持多个查询的统计信息
   const handleExportStatistics = async (options: ExportOptions) => {
     try {
-      if (!fieldStatistics || fieldStatistics.length === 0) {
+      // 检查是否有统计数据
+      if (allFieldStatistics.length === 0) {
         showMessage.warning('没有可导出的字段统计数据');
         return;
       }
 
-      // 将字段统计转换为 QueryResult 格式
+      // 定义列名
       const columns = [
         '字段名',
         '数据类型',
@@ -608,33 +609,42 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         '中位数',
       ];
 
-      const values = fieldStatistics.map(stat => [
-        stat.fieldName,
-        stat.dataType,
-        stat.nullCount,
-        stat.uniqueCount,
-        stat.min !== undefined ? String(stat.min) : '-',
-        stat.max !== undefined ? String(stat.max) : '-',
-        stat.mean !== undefined ? stat.mean.toFixed(3) : '-',
-        stat.median !== undefined ? stat.median.toFixed(3) : '-',
-      ]);
+      // 为每个查询创建一个 series（工作表）
+      const series = allFieldStatistics.map((queryStats, index) => {
+        const values = queryStats.statistics.map(stat => [
+          stat.fieldName,
+          stat.dataType,
+          stat.nullCount,
+          stat.uniqueCount,
+          stat.min !== undefined ? String(stat.min) : '-',
+          stat.max !== undefined ? String(stat.max) : '-',
+          stat.mean !== undefined ? stat.mean.toFixed(2) : '-',
+          stat.median !== undefined ? stat.median.toFixed(2) : '-',
+        ]);
+
+        return {
+          name: `查询${index + 1}_统计`,
+          columns,
+          values,
+        };
+      });
+
+      // 计算总行数
+      const totalRows = allFieldStatistics.reduce(
+        (sum, q) => sum + q.statistics.length,
+        0
+      );
 
       const statisticsResult: QueryResult = {
         results: [
           {
-            series: [
-              {
-                name: 'field_statistics',
-                columns,
-                values,
-              },
-            ],
+            series,
           },
         ],
         executionTime: 0,
-        rowCount: fieldStatistics.length,
+        rowCount: totalRows,
         columns,
-        data: values,
+        data: [], // 多工作表导出时不使用这个字段
       };
 
       // 生成默认文件名
@@ -1198,8 +1208,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         className='h-full flex flex-col'
       >
         {/* 可滚动的Tab列表 */}
-        <ScrollArea className='flex-shrink-0 w-full border-b'>
-          <TabsList className='inline-flex h-8 items-center justify-start rounded-none bg-muted p-1 text-muted-foreground w-max min-w-full'>
+        <div className='flex-shrink-0 w-full border-b overflow-x-auto overflow-y-hidden'>
+          <TabsList className='inline-flex h-8 items-center justify-start rounded-none bg-muted p-1 text-muted-foreground w-max'>
             {/* 执行器tab */}
             <TabsTrigger
               value='executor'
@@ -1326,7 +1336,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             </TabsTrigger>
           )}
           </TabsList>
-        </ScrollArea>
+        </div>
 
         {/* 执行器标签页 - 优化后的版本 */}
         <TabsContent value='executor' className='flex-1 overflow-auto mt-0'>
@@ -2576,7 +2586,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         onClose={() => setShowStatisticsExportDialog(false)}
         onExport={handleExportStatistics}
         defaultTableName='field_statistics'
-        rowCount={fieldStatistics.length}
+        rowCount={allFieldStatistics.reduce((sum, q) => sum + q.statistics.length, 0)}
         columnCount={8}
       />
     </div>
