@@ -2230,59 +2230,387 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   </div>
 
                   {/* 操作结果内容 */}
-                  <div className='flex-1 p-4 space-y-4'>
-                    {/* 执行状态 */}
-                    <div className='flex items-center gap-2'>
-                      <CheckCircle className='w-5 h-5 text-green-500' />
-                      <span className='font-medium text-green-700'>
-                        {displayInfo.description}执行成功
-                      </span>
-                    </div>
+                  <ScrollArea className='flex-1'>
+                    <div className='p-4 space-y-4'>
+                      {/* 执行状态 */}
+                      <Card className='border-l-4 border-l-green-500'>
+                        <CardContent className='p-4'>
+                          <div className='flex items-center gap-3'>
+                            <div className='flex-shrink-0 w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center'>
+                              <CheckCircle className='w-5 h-5 text-green-600 dark:text-green-400' />
+                            </div>
+                            <div className='flex-1'>
+                              <h3 className='font-semibold text-green-700 dark:text-green-400'>
+                                {displayInfo.description}执行成功
+                              </h3>
+                              <p className='text-sm text-muted-foreground mt-0.5'>
+                                操作已成功完成，耗时 {executionTime}ms
+                              </p>
+                            </div>
+                            <Badge variant='outline' className='text-xs'>
+                              {statementType}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                    {/* 执行统计 */}
-                    <div className='bg-muted/50 rounded-lg p-4 space-y-2'>
-                      <div className='flex justify-between'>
-                        <span className='text-muted-foreground'>执行时间:</span>
-                        <span className='font-mono'>{executionTime}ms</span>
-                      </div>
-                      {result?.rowCount !== undefined && (
-                        <div className='flex justify-between'>
-                          <span className='text-muted-foreground'>
-                            {statsLabels.rowCount}:
-                          </span>
-                          <span className='font-mono'>{result.rowCount}</span>
-                        </div>
+                      {/* DELETE语句专属展示 */}
+                      {statementCategory === 'delete' && (
+                        <>
+                          {/* 删除操作详情 */}
+                          <Card>
+                            <CardHeader className='pb-3'>
+                              <CardTitle className='text-base flex items-center gap-2'>
+                                <Trash2 className='w-4 h-4' />
+                                删除操作详情
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className='space-y-3'>
+                              {/* 解析DELETE语句信息 */}
+                              {(() => {
+                                const query = executedQueries[index] || '';
+                                const measurementMatch = query.match(/FROM\s+["']?(\w+)["']?/i);
+                                const whereMatch = query.match(/WHERE\s+(.+)$/i);
+
+                                return (
+                                  <>
+                                    {measurementMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>目标Measurement:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
+                                          {measurementMatch[1]}
+                                        </code>
+                                      </div>
+                                    )}
+                                    {whereMatch && (
+                                      <div className='flex flex-col gap-2 py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>删除条件:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-xs font-mono'>
+                                          {whereMatch[1]}
+                                        </code>
+                                      </div>
+                                    )}
+                                    <div className='flex items-center justify-between py-2 border-b'>
+                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='font-mono text-sm'>{executionTime}ms</span>
+                                    </div>
+                                    <div className='flex items-center justify-between py-2'>
+                                      <span className='text-sm text-muted-foreground'>操作状态:</span>
+                                      <Badge variant='default' className='bg-green-600'>
+                                        已完成
+                                      </Badge>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </CardContent>
+                          </Card>
+
+                          {/* 重要提示 */}
+                          <Card className='border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20'>
+                            <CardContent className='p-4'>
+                              <div className='flex items-start gap-3'>
+                                <AlertTriangle className='w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5' />
+                                <div className='flex-1 space-y-2'>
+                                  <h4 className='font-medium text-orange-900 dark:text-orange-200'>
+                                    重要提示
+                                  </h4>
+                                  <ul className='text-sm text-orange-800 dark:text-orange-300 space-y-1.5'>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-orange-600 dark:text-orange-400 mt-0.5'>•</span>
+                                      <span>DELETE 操作不返回删除的具体行数</span>
+                                    </li>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-orange-600 dark:text-orange-400 mt-0.5'>•</span>
+                                      <span>建议执行 SELECT 查询验证数据是否已删除</span>
+                                    </li>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-orange-600 dark:text-orange-400 mt-0.5'>•</span>
+                                      <span>DELETE 操作不可撤销，请谨慎使用</span>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </>
                       )}
-                      <div className='flex justify-between'>
-                        <span className='text-muted-foreground'>语句类型:</span>
-                        <span className='font-mono'>{statementType}</span>
-                      </div>
+
+                      {/* INSERT语句专属展示 */}
+                      {statementCategory === 'write' && (
+                        <>
+                          {/* 写入操作详情 */}
+                          <Card>
+                            <CardHeader className='pb-3'>
+                              <CardTitle className='text-base flex items-center gap-2'>
+                                <Zap className='w-4 h-4' />
+                                数据写入详情
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className='space-y-3'>
+                              {(() => {
+                                const query = executedQueries[index] || '';
+                                const measurementMatch = query.match(/INTO\s+["']?(\w+)["']?/i);
+                                const fieldsMatch = query.match(/\(([^)]+)\)\s+VALUES/i);
+                                const valuesMatch = query.match(/VALUES\s*\(([^)]+)\)/i);
+
+                                return (
+                                  <>
+                                    {measurementMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>目标Measurement:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
+                                          {measurementMatch[1]}
+                                        </code>
+                                      </div>
+                                    )}
+                                    {fieldsMatch && (
+                                      <div className='flex flex-col gap-2 py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>写入字段:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-xs font-mono'>
+                                          {fieldsMatch[1]}
+                                        </code>
+                                      </div>
+                                    )}
+                                    {valuesMatch && (
+                                      <div className='flex flex-col gap-2 py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>写入值:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-xs font-mono'>
+                                          {valuesMatch[1]}
+                                        </code>
+                                      </div>
+                                    )}
+                                    <div className='flex items-center justify-between py-2 border-b'>
+                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='font-mono text-sm'>{executionTime}ms</span>
+                                    </div>
+                                    {result?.rowCount !== undefined && result.rowCount > 0 && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>写入数据点:</span>
+                                        <span className='font-mono text-sm text-green-600 dark:text-green-400'>
+                                          {result.rowCount} 个
+                                        </span>
+                                      </div>
+                                    )}
+                                    <div className='flex items-center justify-between py-2'>
+                                      <span className='text-sm text-muted-foreground'>写入状态:</span>
+                                      <Badge variant='default' className='bg-green-600'>
+                                        成功
+                                      </Badge>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </CardContent>
+                          </Card>
+
+                          {/* 写入成功提示 */}
+                          <Card className='border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20'>
+                            <CardContent className='p-4'>
+                              <div className='flex items-start gap-3'>
+                                <CheckCircle className='w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5' />
+                                <div className='flex-1 space-y-2'>
+                                  <h4 className='font-medium text-green-900 dark:text-green-200'>
+                                    写入操作提示
+                                  </h4>
+                                  <ul className='text-sm text-green-800 dark:text-green-300 space-y-1.5'>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
+                                      <span>数据已成功写入到InfluxDB</span>
+                                    </li>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
+                                      <span>可以执行 SELECT 查询验证写入的数据</span>
+                                    </li>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
+                                      <span>InfluxDB 会自动为数据点添加时间戳（如果未指定）</span>
+                                    </li>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
+                                      <span>相同时间戳和tag组合的数据会覆盖旧值</span>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          {/* InfluxDB Line Protocol 提示（如果适用） */}
+                          {(() => {
+                            const query = executedQueries[index] || '';
+                            const isLineProtocol = !query.toUpperCase().includes('INSERT INTO');
+
+                            if (isLineProtocol) {
+                              return (
+                                <Card className='border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20'>
+                                  <CardContent className='p-4'>
+                                    <div className='flex items-start gap-3'>
+                                      <Info className='w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5' />
+                                      <div className='flex-1 space-y-2'>
+                                        <h4 className='font-medium text-blue-900 dark:text-blue-200'>
+                                          Line Protocol 格式
+                                        </h4>
+                                        <p className='text-sm text-blue-800 dark:text-blue-300'>
+                                          使用了 InfluxDB Line Protocol 格式写入数据。格式：
+                                        </p>
+                                        <code className='block px-3 py-2 bg-blue-100 dark:bg-blue-900/30 rounded text-xs font-mono text-blue-900 dark:text-blue-200'>
+                                          measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp
+                                        </code>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </>
+                      )}
+
+                      {/* DROP语句专属展示 */}
+                      {statementCategory === 'ddl' && statementType === 'DROP' && (
+                        <>
+                          {/* DROP操作详情 */}
+                          <Card>
+                            <CardHeader className='pb-3'>
+                              <CardTitle className='text-base flex items-center gap-2'>
+                                <Database className='w-4 h-4' />
+                                DROP 操作详情
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className='space-y-3'>
+                              {(() => {
+                                const query = executedQueries[index] || '';
+                                const dropTypeMatch = query.match(/DROP\s+(DATABASE|MEASUREMENT|SERIES|RETENTION\s+POLICY)/i);
+                                const objectMatch = query.match(/DROP\s+(?:DATABASE|MEASUREMENT|SERIES|RETENTION\s+POLICY)\s+["']?(\w+)["']?/i);
+
+                                return (
+                                  <>
+                                    {dropTypeMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>操作类型:</span>
+                                        <code className='px-2 py-1 bg-destructive/10 text-destructive rounded text-sm font-mono'>
+                                          DROP {dropTypeMatch[1].toUpperCase()}
+                                        </code>
+                                      </div>
+                                    )}
+                                    {objectMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>删除对象:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
+                                          {objectMatch[1]}
+                                        </code>
+                                      </div>
+                                    )}
+                                    <div className='flex items-center justify-between py-2 border-b'>
+                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='font-mono text-sm'>{executionTime}ms</span>
+                                    </div>
+                                    <div className='flex items-center justify-between py-2'>
+                                      <span className='text-sm text-muted-foreground'>操作状态:</span>
+                                      <Badge variant='default' className='bg-green-600'>
+                                        已完成
+                                      </Badge>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </CardContent>
+                          </Card>
+
+                          {/* DROP警告 */}
+                          <Card className='border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20'>
+                            <CardContent className='p-4'>
+                              <div className='flex items-start gap-3'>
+                                <AlertTriangle className='w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
+                                <div className='flex-1 space-y-2'>
+                                  <h4 className='font-medium text-red-900 dark:text-red-200'>
+                                    危险操作警告
+                                  </h4>
+                                  <ul className='text-sm text-red-800 dark:text-red-300 space-y-1.5'>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-red-600 dark:text-red-400 mt-0.5'>•</span>
+                                      <span>DROP 操作会永久删除数据，无法恢复</span>
+                                    </li>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-red-600 dark:text-red-400 mt-0.5'>•</span>
+                                      <span>删除的对象及其所有数据已被移除</span>
+                                    </li>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-red-600 dark:text-red-400 mt-0.5'>•</span>
+                                      <span>请确保已做好数据备份</span>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </>
+                      )}
+
+                      {/* 其他DML/DDL语句的通用展示 */}
+                      {statementCategory !== 'delete' && !(statementCategory === 'ddl' && statementType === 'DROP') && (
+                        <Card>
+                          <CardHeader className='pb-3'>
+                            <CardTitle className='text-base'>执行统计</CardTitle>
+                          </CardHeader>
+                          <CardContent className='space-y-3'>
+                            <div className='flex items-center justify-between py-2 border-b'>
+                              <span className='text-sm text-muted-foreground'>执行时间:</span>
+                              <span className='font-mono text-sm'>{executionTime}ms</span>
+                            </div>
+                            {result?.rowCount !== undefined && result.rowCount > 0 && (
+                              <div className='flex items-center justify-between py-2 border-b'>
+                                <span className='text-sm text-muted-foreground'>
+                                  {statsLabels.rowCount}:
+                                </span>
+                                <span className='font-mono text-sm'>{result.rowCount}</span>
+                              </div>
+                            )}
+                            <div className='flex items-center justify-between py-2'>
+                              <span className='text-sm text-muted-foreground'>语句类型:</span>
+                              <Badge variant='outline'>{statementType}</Badge>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* 执行的SQL语句 */}
+                      {executedQueries[index] && (
+                        <Card>
+                          <CardHeader className='pb-3'>
+                            <CardTitle className='text-base flex items-center gap-2'>
+                              <FileText className='w-4 h-4' />
+                              执行的SQL语句
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto'>
+                              {executedQueries[index]}
+                            </pre>
+                          </CardContent>
+                        </Card>
+                      )}
+
+                      {/* 服务器响应（调试信息） */}
+                      {result && (
+                        <Card>
+                          <CardHeader className='pb-3'>
+                            <CardTitle className='text-base flex items-center gap-2'>
+                              <Info className='w-4 h-4' />
+                              服务器响应
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto max-h-64'>
+                              {JSON.stringify(result, null, 2)}
+                            </pre>
+                          </CardContent>
+                        </Card>
+                      )}
                     </div>
-
-                    {/* 执行的语句 */}
-                    {executedQueries[index] && (
-                      <div>
-                        <span className='font-medium mb-2 block'>
-                          执行的语句:
-                        </span>
-                        <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto'>
-                          {executedQueries[index]}
-                        </pre>
-                      </div>
-                    )}
-
-                    {/* JSON结果（如果有） */}
-                    {result && (
-                      <div>
-                        <span className='font-medium mb-2 block'>
-                          详细结果:
-                        </span>
-                        <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto max-h-64'>
-                          {JSON.stringify(result, null, 2)}
-                        </pre>
-                      </div>
-                    )}
-                  </div>
+                  </ScrollArea>
                 </div>
               )}
             </TabsContent>

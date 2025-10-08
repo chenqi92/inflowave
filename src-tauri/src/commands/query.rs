@@ -4,7 +4,7 @@ use crate::utils::validation::ValidationUtils;
 use crate::database::client::DatabaseClient;
 use crate::commands::settings::SettingsStorage;
 use tauri::State;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use std::sync::Arc;
 
 /// 执行查询
@@ -558,12 +558,28 @@ async fn execute_delete_statement(
             let execution_time = start_time.elapsed().as_millis() as u64;
             result.execution_time = Some(execution_time);
 
-            info!("DELETE执行成功，耗时: {}ms", execution_time);
+            // 为DELETE操作构造更友好的结果
+            // InfluxDB的DELETE通常不返回数据，只返回成功状态
+            if result.results.is_empty() || result.results[0].series.is_none() {
+                // 构造一个成功的结果
+                result.row_count = Some(0); // DELETE不返回具体删除的行数
+                info!("DELETE执行成功，耗时: {}ms", execution_time);
+            } else {
+                info!("DELETE执行成功，耗时: {}ms，返回结果: {:?}", execution_time, result);
+            }
+
             Ok(result)
         }
         Err(e) => {
             error!("DELETE执行失败: {}", e);
-            Err(format!("DELETE执行失败: {}", e))
+            let error_msg = e.to_string();
+
+            // 提供更友好的错误提示
+            if error_msg.contains("unable to parse") || error_msg.contains("invalid") {
+                Err(format!("DELETE语句语法错误: {}\n\n提示：InfluxDB DELETE 语法：\n1. DELETE FROM <measurement> WHERE <tag_key>='<tag_value>'\n2. DELETE FROM <measurement> WHERE time >= '<start_time>' AND time <= '<end_time>'\n3. DELETE FROM <measurement> WHERE <tag_key>='<tag_value>' AND time >= '<start_time>'", error_msg))
+            } else {
+                Err(format!("DELETE执行失败: {}", error_msg))
+            }
         }
     }
 }
