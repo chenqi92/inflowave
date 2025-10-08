@@ -483,14 +483,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const { connections } = useConnectionStore();
   const currentConnection = connections.find(conn => conn.id === connectionId);
 
+  // 缓存数据库类型值，避免对象引用变化导致无限循环
+  const dbType = useMemo(() => currentConnection?.dbType, [currentConnection?.dbType]);
+  const detectedType = useMemo(() => currentConnection?.detectedType, [currentConnection?.detectedType]);
+
   // 确定数据源类型
   const dataSourceType: DataSourceType = useMemo(() => {
     if (!currentConnection) return 'generic';
 
-    const dbType = currentConnection.dbType;
+    const dbTypeValue = currentConnection.dbType;
     const version = currentConnection.version;
 
-    if (dbType === 'iotdb') {
+    if (dbTypeValue === 'iotdb') {
       return 'iotdb';
     }
 
@@ -828,8 +832,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 生成不包含过滤条件的基础查询（避免添加过滤器时自动重新加载）
   const generateBaseQuery = useCallback(() => {
     // 从连接配置中获取数据库类型，而不是仅仅依赖表名判断
-    const isIoTDB = currentConnection?.dbType === 'iotdb' ||
-                    currentConnection?.detectedType === 'iotdb' ||
+    const isIoTDB = dbType === 'iotdb' ||
+                    detectedType === 'iotdb' ||
                     tableName.startsWith('root.'); // 后备判断
 
     const tableRef = isIoTDB ? tableName : `"${tableName}"`;
@@ -838,7 +842,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     if (isIoTDB) {
       // 对于IoTDB，使用SELECT *查询但需要特殊处理返回的数据
-      console.log('🔧 [IoTDB] 使用SELECT *查询，连接类型:', currentConnection?.dbType, '检测类型:', currentConnection?.detectedType);
+      console.log('🔧 [IoTDB] 使用SELECT *查询，连接类型:', dbType, '检测类型:', detectedType);
       console.log('🔧 [IoTDB] 字段路径:', fullFieldPaths);
 
       query = `SELECT *
@@ -849,12 +853,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       if (fieldColumns.length > 0) {
         // 使用明确的字段名
         const fieldList = fieldColumns.map(field => `"${field}"`).join(', ');
-        console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', currentConnection?.dbType);
+        console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', dbType);
         query = `SELECT time, ${fieldList}
                  FROM ${tableRef}`;
       } else {
         // 如果没有字段信息，使用SELECT *
-        console.log('🔧 [InfluxDB] 使用SELECT *查询，连接类型:', currentConnection?.dbType);
+        console.log('🔧 [InfluxDB] 使用SELECT *查询，连接类型:', dbType);
         query = `SELECT *
                  FROM ${tableRef}`;
       }
@@ -918,23 +922,23 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     sortDirection,
     currentPage,
     pageSize,
-    currentConnection?.dbType,
-    currentConnection?.detectedType,
+    dbType,
+    detectedType,
     fullFieldPaths,
   ]);
 
   // 生成带指定分页参数的基础查询
   const generateBaseQueryWithPagination = useCallback((targetPage: number, targetPageSize: number) => {
     // 从连接配置中获取数据库类型，而不是仅仅依赖表名判断
-    const isIoTDB = currentConnection?.dbType === 'iotdb' ||
-                    currentConnection?.detectedType === 'iotdb' ||
+    const isIoTDB = dbType === 'iotdb' ||
+                    detectedType === 'iotdb' ||
                     tableName.startsWith('root.'); // 后备判断
 
     let query: string;
 
     if (isIoTDB) {
       // IoTDB查询
-      console.log('🔧 [InfluxDB] 使用IoTDB查询语法，连接类型:', currentConnection?.dbType);
+      console.log('🔧 [IoTDB] 使用IoTDB查询语法，连接类型:', dbType);
 
       // 构建字段列表
       const fieldList = fullFieldPaths.length > 0 ? fullFieldPaths.join(', ') : '*';
@@ -965,7 +969,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       }
     } else {
       // InfluxDB查询
-      console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', currentConnection?.dbType);
+      console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', dbType);
 
       // 构建字段列表，去重并确保包含time字段
       const fieldColumns = columns.filter(col => col !== '#' && col !== 'time');
@@ -1037,8 +1041,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     filters,
     sortColumn,
     sortDirection,
-    currentConnection?.dbType,
-    currentConnection?.detectedType,
+    dbType,
+    detectedType,
     fullFieldPaths,
   ]);
 
@@ -1046,8 +1050,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const fetchTableSchema = useCallback(async () => {
     try {
       // 从连接配置中获取数据库类型，而不是仅仅依赖表名判断
-      const isIoTDB = currentConnection?.dbType === 'iotdb' ||
-                      currentConnection?.detectedType === 'iotdb' ||
+      const isIoTDB = dbType === 'iotdb' ||
+                      detectedType === 'iotdb' ||
                       tableName.startsWith('root.') || database.startsWith('root.'); // 后备判断
 
       // 获取字段键
@@ -1058,8 +1062,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       console.log(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 执行字段查询:`, fieldKeysQuery);
       console.log(`🔧 连接信息:`, {
         connectionId,
-        dbType: currentConnection?.dbType,
-        detectedType: currentConnection?.detectedType,
+        dbType,
+        detectedType,
         tableName,
         database
       });
@@ -1177,7 +1181,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       console.error('获取表结构失败:', error);
       showMessage.error('获取表结构失败');
     }
-  }, [connectionId, database, tableName, currentConnection?.dbType, currentConnection?.detectedType]);
+  }, [connectionId, database, tableName, dbType, detectedType]);
 
   // 获取总数
   const fetchTotalCount = useCallback(async () => {
@@ -1273,8 +1277,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         if (resultColumns && values && Array.isArray(resultColumns) && Array.isArray(values)) {
           // 检测数据库类型
-          const isIoTDB = currentConnection?.dbType === 'iotdb' ||
-                          currentConnection?.detectedType === 'iotdb' ||
+          const isIoTDB = dbType === 'iotdb' ||
+                          detectedType === 'iotdb' ||
                           tableName.startsWith('root.');
 
           // 过滤掉null、undefined或空字符串的列名
@@ -1448,8 +1452,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     generateBaseQueryWithPagination,
     connectionId,
     database,
-    currentConnection?.dbType,
-    currentConnection?.detectedType,
+    dbType,
+    detectedType,
     querySettings.enable_lazy_loading,
     pageSize,
   ]);
