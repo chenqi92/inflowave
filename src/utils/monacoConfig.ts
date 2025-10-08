@@ -1,13 +1,15 @@
 /**
  * Monaco Editor 全局配置工具
- * 统一管理Monaco编辑器的配置，特别是Worker和剪贴板相关设置
+ * 统一管理Monaco编辑器的配置
+ * 注意：这是桌面应用，完全支持剪贴板功能
  */
 
 import * as monaco from 'monaco-editor';
+import { writeText, readText } from '@tauri-apps/plugin-clipboard-manager';
 
 /**
- * 获取安全的Monaco编辑器配置
- * 禁用所有可能触发浏览器剪贴板权限的功能
+ * 获取Monaco编辑器配置（桌面应用版本）
+ * 完全启用剪贴板和所有编辑器功能
  */
 export function getSafeMonacoOptions(): monaco.editor.IStandaloneEditorConstructionOptions {
   return {
@@ -23,7 +25,7 @@ export function getSafeMonacoOptions(): monaco.editor.IStandaloneEditorConstruct
     },
     wordWrap: 'on',
     automaticLayout: true,
-    
+
     // 智能提示配置
     suggestOnTriggerCharacters: true,
     quickSuggestions: {
@@ -40,26 +42,24 @@ export function getSafeMonacoOptions(): monaco.editor.IStandaloneEditorConstruct
     quickSuggestionsDelay: 50,
     suggestSelection: 'first',
     wordBasedSuggestions: 'currentDocument',
-    
+
     // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
     contextmenu: false,
-    
-    // 关键：禁用所有可能触发剪贴板权限的功能
-    copyWithSyntaxHighlighting: false, // 禁用语法高亮复制，避免剪贴板权限问题
-    links: false, // 禁用链接检测，避免触发剪贴板权限
-    dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
-    selectionClipboard: false, // 禁用选择自动复制到剪贴板
 
-    // 额外的剪贴板安全配置
-    useTabStops: false, // 禁用Tab停止，避免某些剪贴板相关操作
-    multiCursorModifier: 'alt', // 使用Alt键进行多光标操作，避免Ctrl+Click触发剪贴板
-    accessibilitySupport: 'off', // 禁用辅助功能支持，避免剪贴板相关操作
+    // 桌面应用：完全启用剪贴板功能
+    copyWithSyntaxHighlighting: true, // 启用语法高亮复制
+    links: true, // 启用链接检测
+    dragAndDrop: true, // 启用拖拽
+    selectionClipboard: false, // 禁用Linux风格的选择即复制（保持Windows/Mac行为）
 
-    // 查找配置 - 避免自动复制选择内容
+    // 多光标配置
+    multiCursorModifier: 'alt',
+
+    // 查找配置
     find: {
       addExtraSpaceOnTop: false,
       autoFindInSelection: 'never',
-      seedSearchStringFromSelection: 'never', // 避免自动从选择复制到搜索
+      seedSearchStringFromSelection: 'selection', // 从选择自动填充搜索
     },
   };
 }
@@ -67,48 +67,92 @@ export function getSafeMonacoOptions(): monaco.editor.IStandaloneEditorConstruct
 /**
  * 配置Monaco编辑器的全局设置
  * 在应用启动时调用一次
+ * 桌面应用版本：使用Tauri剪贴板API替代浏览器API
  */
 export function configureMonacoGlobally() {
-  // 配置Monaco编辑器的全局设置
   if (typeof window !== 'undefined') {
     try {
-      // 在最早的时机拦截剪贴板 API，防止 Monaco Editor 触发权限请求
-      if (navigator.clipboard) {
-        const originalClipboard = navigator.clipboard;
-
-        // 创建一个代理对象，静默处理所有剪贴板操作
-        const silentClipboard = {
-          writeText: async (text: string) => {
-            console.debug('[Monaco] 拦截剪贴板写入操作');
-            // 静默成功，不实际操作剪贴板
+      // 为Monaco创建剪贴板polyfill，使用Tauri的剪贴板API
+      // 这样Monaco内部的剪贴板操作会通过Tauri执行，避免权限错误
+      const tauriClipboard = {
+        writeText: async (text: string) => {
+          try {
+            await writeText(text);
             return Promise.resolve();
-          },
-          readText: async () => {
-            console.debug('[Monaco] 拦截剪贴板读取操作');
-            // 返回空字符串
-            return Promise.resolve('');
-          },
-          write: async () => {
-            console.debug('[Monaco] 拦截剪贴板 write 操作');
+          } catch (error) {
+            console.error('Tauri剪贴板写入失败:', error);
+            return Promise.reject(error);
+          }
+        },
+        readText: async () => {
+          try {
+            const text = await readText();
+            return Promise.resolve(text || '');
+          } catch (error) {
+            console.error('Tauri剪贴板读取失败:', error);
+            return Promise.reject(error);
+          }
+        },
+        // write 和 read 方法用于处理富文本，这里简化处理
+        write: async (data: any) => {
+          try {
+            // 尝试从ClipboardItem中提取文本
+            if (data && data.length > 0) {
+              const item = data[0];
+              if (item && typeof item.getType === 'function') {
+                try {
+                  const blob = await item.getType('text/plain');
+                  const text = await blob.text();
+                  await writeText(text);
+                  return Promise.resolve();
+                } catch (e) {
+                  // 如果无法提取，静默成功
+                  return Promise.resolve();
+                }
+              }
+            }
             return Promise.resolve();
-          },
-          read: async () => {
-            console.debug('[Monaco] 拦截剪贴板 read 操作');
+          } catch (error) {
+            console.error('Tauri剪贴板write失败:', error);
+            return Promise.resolve(); // 静默成功，避免Monaco报错
+          }
+        },
+        read: async () => {
+          try {
+            const text = await readText();
+            if (text) {
+              // 创建ClipboardItem格式的数据
+              const blob = new Blob([text], { type: 'text/plain' });
+              return Promise.resolve([
+                {
+                  types: ['text/plain'],
+                  getType: async (type: string) => {
+                    if (type === 'text/plain') {
+                      return blob;
+                    }
+                    throw new Error('Type not supported');
+                  }
+                }
+              ] as any);
+            }
             return Promise.resolve([]);
-          },
-        };
-
-        // 尝试替换 navigator.clipboard（可能会失败，因为它是只读的）
-        try {
-          Object.defineProperty(navigator, 'clipboard', {
-            value: silentClipboard,
-            writable: false,
-            configurable: true,
-          });
-          console.log('✅ 成功拦截 navigator.clipboard API');
-        } catch (e) {
-          console.warn('⚠️ 无法替换 navigator.clipboard，将在编辑器挂载时处理');
+          } catch (error) {
+            console.error('Tauri剪贴板read失败:', error);
+            return Promise.resolve([]);
+          }
         }
+      };
+
+      // 替换navigator.clipboard
+      try {
+        Object.defineProperty(navigator, 'clipboard', {
+          value: tauriClipboard,
+          writable: false,
+          configurable: true,
+        });
+        console.log('✅ 成功将navigator.clipboard重定向到Tauri剪贴板API');
+      } catch (e) {
+        console.warn('⚠️ 无法替换navigator.clipboard，Monaco可能无法使用剪贴板');
       }
 
       // 配置Monaco环境
@@ -140,10 +184,10 @@ export function configureMonacoGlobally() {
         }
       };
 
-      console.log('✅ Monaco Editor全局配置已完成，Worker配置已设置');
+      console.log('✅ Monaco Editor全局配置已完成（桌面应用模式，使用Tauri剪贴板）');
     } catch (error) {
       console.warn('⚠️ 无法配置Monaco全局设置:', error);
-      
+
       // 回退到简单的Worker配置
       if (window.MonacoEnvironment) {
         window.MonacoEnvironment.getWorkerUrl = () => {

@@ -381,12 +381,10 @@ export class SmartSuggestionService {
       if (!fieldsAndTags) {
         console.log('缓存中没有字段数据，开始从API获取');
 
-        // 尝试多种方法获取字段和标签
+        // 使用正确的Tauri命令获取字段和标签
         const methods = [
           { name: 'get_field_keys', params: { connectionId, database, measurement: tableName } },
-          { name: 'get_tag_keys', params: { connectionId, database, measurement: tableName } },
-          { name: 'show_field_keys', params: { connectionId, database, measurement: tableName } },
-          { name: 'show_tag_keys', params: { connectionId, database, measurement: tableName } }
+          { name: 'get_tag_keys', params: { connectionId, database, measurement: tableName } }
         ];
 
         const fields: string[] = [];
