@@ -155,7 +155,9 @@ export class UnifiedSyntaxHighlightManager {
             return 'sql';
         }
 
-        const languageId = `enhanced-${databaseType}`;
+        // Monaco Editor不允许主题名称中包含点号，将点号替换为下划线
+        const safeDbType = databaseType.replace(/\./g, '_');
+        const languageId = `enhanced-${safeDbType}`;
 
         if (this.registeredLanguages.has(languageId)) {
             console.log(`✅ 语言 ${languageId} 已注册，跳过`);
@@ -210,7 +212,7 @@ export class UnifiedSyntaxHighlightManager {
             [/`([^`\\]|\\.)*`/, 'string'], // 反引号字符串
 
             // 数字
-            [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+            [/\d*\.\d+([eE][+-]?\d+)?/, 'number.float'],
             [/\d+/, 'number'],
         ];
 
@@ -224,7 +226,7 @@ export class UnifiedSyntaxHighlightManager {
         tokenizerRules.push(
             // 操作符
             [/[=!<>]=?/, 'operator'],
-            [/[+\-*/]/, 'operator'],
+            [/[+*/-]/, 'operator'],
             [/=~|!~/, 'operator'],
             [/\*/, 'operator'],
 
@@ -397,7 +399,7 @@ export class UnifiedSyntaxHighlightManager {
                         [/"/, 'string', '@dstring'],
 
                         // 数字
-                        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+                        [/\d*\.\d+([eE][+-]?\d+)?/, 'number.float'],
                         [/\d+/, 'number'],
 
                         // 关键字和函数
@@ -411,7 +413,7 @@ export class UnifiedSyntaxHighlightManager {
 
                         // 操作符
                         [/[=!<>]=?/, 'operator'],
-                        [/[+\-*/]/, 'operator'],
+                        [/[+*/-]/, 'operator'],
 
                         // 分隔符
                         [/[;,.]/, 'delimiter'],
@@ -535,7 +537,7 @@ export class UnifiedSyntaxHighlightManager {
                         [/"/, 'string', '@dstring'],
 
                         // 数字
-                        [/\d*\.\d+([eE][\-+]?\d+)?/, 'number.float'],
+                        [/\d*\.\d+([eE][+-]?\d+)?/, 'number.float'],
                         [/\d+/, 'number'],
 
                         // 管道操作符
@@ -552,7 +554,7 @@ export class UnifiedSyntaxHighlightManager {
 
                         // 操作符
                         [/[=!<>]=?/, 'operator'],
-                        [/[+\-*/]/, 'operator'],
+                        [/[+*/-]/, 'operator'],
 
                         // 分隔符
                         [/[;,.]/, 'delimiter'],
