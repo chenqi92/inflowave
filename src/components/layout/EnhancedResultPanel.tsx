@@ -35,7 +35,7 @@ import {
   Slider,
   ScrollArea,
 } from '@/components/ui';
-import { GlideDataTable } from '@/components/ui/GlideDataTable';
+import { GlideDataTable, type DataSourceType } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import ExportOptionsDialog, {
   type ExportOptions,
@@ -43,6 +43,7 @@ import ExportOptionsDialog, {
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { useConnectionStore } from '@/store/connection';
 
 // 生成带时间戳的文件名
 const generateTimestampedFilename = (
@@ -140,6 +141,51 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   executionTime = 0,
   onClearResult,
 }) => {
+  // 获取当前连接信息
+  const { connections, activeConnectionId } = useConnectionStore();
+  const currentConnection = connections.find(c => c.id === activeConnectionId);
+
+  // 确定数据源类型
+  const dataSourceType: DataSourceType = useMemo(() => {
+    if (!currentConnection) {
+      console.log('⚠️ [EnhancedResultPanel] 没有当前连接，使用 generic');
+      return 'generic';
+    }
+
+    const dbType = currentConnection.dbType;
+    const version = currentConnection.version;
+
+    console.log('🔍 [EnhancedResultPanel] 当前连接信息:', {
+      dbType,
+      version,
+      connectionId: currentConnection.id,
+      name: currentConnection.name,
+    });
+
+    if (dbType === 'iotdb') {
+      console.log('✅ [EnhancedResultPanel] 识别为 IoTDB');
+      return 'iotdb';
+    }
+
+    if (dbType === 'influxdb') {
+      if (version === '1.x' || version?.includes('1.')) {
+        console.log('✅ [EnhancedResultPanel] 识别为 InfluxDB 1.x');
+        return 'influxdb1';
+      } else if (version === '2.x' || version?.includes('2.')) {
+        console.log('✅ [EnhancedResultPanel] 识别为 InfluxDB 2.x');
+        return 'influxdb2';
+      } else if (version === '3.x' || version?.includes('3.')) {
+        console.log('✅ [EnhancedResultPanel] 识别为 InfluxDB 3.x');
+        return 'influxdb3';
+      }
+      console.log('⚠️ [EnhancedResultPanel] InfluxDB 版本未知，默认使用 1.x');
+      return 'influxdb1'; // 默认
+    }
+
+    console.log('⚠️ [EnhancedResultPanel] 未知数据库类型，使用 generic');
+    return 'generic';
+  }, [currentConnection]);
+
   const [activeTab, setActiveTab] = useState('executor');
   const [visualizationType, setVisualizationType] = useState<
     'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar' | 'category-bar' | 'category-pie'
@@ -2117,6 +2163,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       columnManagement={true}
                       showToolbar={false} // 使用外部工具栏
                       className='h-full'
+                      tableName={tableName || 'query_result'}
+                      dataSourceType={dataSourceType}
+                      database={currentConnection?.database}
                       onPageChange={(page: number, size: number) => {
                         handlePageChange(page);
                         if (size !== pageSize) {
@@ -2484,6 +2533,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   exportable={true}
                   columnManagement={true}
                   className='h-full'
+                  tableName='data_preview'
+                  dataSourceType={dataSourceType}
+                  database={currentConnection?.database}
                   onPageChange={handlePageChange}
                 />
               </div>

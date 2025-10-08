@@ -10,7 +10,10 @@ import {
   GridColumn,
   GridCell,
   GridCellKind,
-  Item
+  Item,
+  GridSelection,
+  CompactSelection,
+  Rectangle,
 } from '@glideapps/glide-data-grid';
 import { cn } from '@/lib/utils';
 import {
@@ -28,8 +31,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  toast,
 } from '@/components/ui';
+import { toast } from 'sonner';
 import {
   Search,
   ChevronLeft,
@@ -103,6 +106,9 @@ export interface PaginationConfig {
   serverSide?: boolean;
 }
 
+// 数据源类型
+export type DataSourceType = 'influxdb1' | 'influxdb2' | 'influxdb3' | 'iotdb' | 'mysql' | 'postgresql' | 'generic';
+
 // 组件属性
 export interface GlideDataTableProps {
   data: DataRow[];
@@ -135,6 +141,12 @@ export interface GlideDataTableProps {
   // 高度配置
   height?: number;
   maxHeight?: number;
+  // 表名（用于生成 INSERT SQL）
+  tableName?: string;
+  // 数据源类型（用于生成对应的 SQL 语法）
+  dataSourceType?: DataSourceType;
+  // 数据库名称（某些数据源需要）
+  database?: string;
 }
 
 
@@ -168,6 +180,9 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   totalCount,
   height = 600,
   maxHeight = 800,
+  tableName,
+  dataSourceType = 'generic',
+  database,
 }) => {
   // 状态管理
   const [searchText, setSearchText] = useState('');
@@ -325,7 +340,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
         cols.push({
           title: `${column.title}${isSorted ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}`,
-          width: width,
+          width,
           id: column.key,
           grow: isLastColumn && !hasCustomWidth ? 1 : 0, // 让最后一列自动扩展填充剩余空间（除非用户手动调整过）
         } as GridColumn);
@@ -491,6 +506,203 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     onFilter?.(newFilters);
   }, [filters, onFilter]);
 
+  // 格式化值为 SQL 字符串
+  const formatValueForSQL = useCallback((value: any, dataSourceType: DataSourceType): string => {
+    if (value === null || value === undefined) {
+      return 'NULL';
+    }
+
+    if (typeof value === 'string') {
+      const escapedValue = value.replace(/'/g, "''");
+      return `'${escapedValue}'`;
+    }
+
+    if (typeof value === 'number') {
+      return String(value);
+    }
+
+    if (typeof value === 'boolean') {
+      // InfluxDB 和 IoTDB 使用小写
+      if (dataSourceType === 'influxdb1' || dataSourceType === 'influxdb2' || dataSourceType === 'influxdb3' || dataSourceType === 'iotdb') {
+        return value ? 'true' : 'false';
+      }
+      return value ? 'TRUE' : 'FALSE';
+    }
+
+    if (value instanceof Date) {
+      const isoString = value.toISOString();
+      // InfluxDB 使用纳秒时间戳或 RFC3339 格式
+      if (dataSourceType === 'influxdb1' || dataSourceType === 'influxdb2') {
+        return `'${isoString}'`;
+      }
+      return `'${isoString}'`;
+    }
+
+    // 其他类型转为字符串
+    const escapedValue = String(value).replace(/'/g, "''");
+    return `'${escapedValue}'`;
+  }, []);
+
+  // 将选中的数据转换为 INSERT SQL 语句
+  const convertToInsertSQL = useCallback((selectedData: { col: number; row: number }[]): string => {
+    if (selectedData.length === 0) return '';
+
+    console.log('🔧 [convertToInsertSQL] 数据源类型:', dataSourceType, '表名:', tableName);
+
+    // 按行分组选中的单元格
+    const rowMap = new Map<number, Set<number>>();
+    selectedData.forEach(({ col, row }) => {
+      if (!rowMap.has(row)) {
+        rowMap.set(row, new Set());
+      }
+      rowMap.get(row)!.add(col);
+    });
+
+    // 获取所有涉及的列
+    const allCols = new Set<number>();
+    selectedData.forEach(({ col }) => allCols.add(col));
+    const sortedCols = Array.from(allCols).sort((a, b) => a - b);
+
+    // 获取列名
+    const columnNames = sortedCols.map(colIndex => gridColumns[colIndex]?.id as string).filter(Boolean);
+
+    if (columnNames.length === 0) return '';
+
+    const table = tableName || 'table_name';
+    const sqlStatements: string[] = [];
+
+    // 遍历每一行
+    Array.from(rowMap.keys()).sort((a, b) => a - b).forEach(rowIndex => {
+      const rowData = processedData[rowIndex];
+      if (!rowData) return;
+
+      const values = columnNames.map(colName => formatValueForSQL(rowData[colName], dataSourceType));
+
+      // 根据数据源类型生成不同的 SQL
+      // 注意：所有数据源都生成标准 SQL INSERT 语句，便于跨数据库使用
+      let insertSQL = '';
+
+      switch (dataSourceType) {
+        case 'iotdb':
+          // IoTDB: INSERT INTO root.db.table(timestamp, field1, field2) VALUES (time, value1, value2)
+          insertSQL = `INSERT INTO ${table}(${columnNames.join(', ')}) VALUES (${values.join(', ')});`;
+          break;
+
+        case 'influxdb1':
+        case 'influxdb2':
+        case 'influxdb3':
+          // InfluxDB: 统一生成标准 SQL INSERT 语句
+          // 注意：InfluxDB 1.x/2.x 实际使用 Line Protocol，但这里生成 SQL 便于理解和跨数据库使用
+          insertSQL = `INSERT INTO ${table} (${columnNames.join(', ')}) VALUES (${values.join(', ')});`;
+          break;
+
+        case 'mysql':
+        case 'postgresql':
+        case 'generic':
+        default:
+          // 标准 SQL INSERT 语句
+          insertSQL = `INSERT INTO ${table} (${columnNames.join(', ')}) VALUES (${values.join(', ')});`;
+          break;
+      }
+
+      sqlStatements.push(insertSQL);
+    });
+
+    return sqlStatements.join('\n');
+  }, [gridColumns, processedData, tableName, dataSourceType, formatValueForSQL]);
+
+  // 跟踪当前选中的单元格
+  const [gridSelection, setGridSelection] = useState<GridSelection>({
+    columns: CompactSelection.empty(),
+    rows: CompactSelection.empty(),
+  });
+
+  // 使用 ref 存储最新的选择状态
+  const gridSelectionRef = useRef(gridSelection);
+  useEffect(() => {
+    gridSelectionRef.current = gridSelection;
+  }, [gridSelection]);
+
+  // 使用全局键盘事件监听复制
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // 检测 Cmd+C (Mac) 或 Ctrl+C (Windows/Linux)
+      const isCopyShortcut = (e.metaKey || e.ctrlKey) && e.key === 'c';
+
+      if (!isCopyShortcut) return;
+
+      console.log('🔍 [GlideDataTable] 检测到复制快捷键:', {
+        current: gridSelection.current,
+        dataSourceType,
+      });
+
+      // 检查是否有选中的单元格
+      if (!gridSelection.current) {
+        console.log('⚠️ [GlideDataTable] 没有选中任何内容');
+        return;
+      }
+
+      // 构建选中的单元格列表
+      const selectedCells: { col: number; row: number }[] = [];
+
+      const { cell, range } = gridSelection.current;
+
+      if (range) {
+        // 有范围选择
+        const startCol = range.x;
+        const endCol = range.x + range.width - 1;
+        const startRow = range.y;
+        const endRow = range.y + range.height - 1;
+
+        console.log('📊 [GlideDataTable] 选择区域:', { startCol, endCol, startRow, endRow });
+
+        for (let row = startRow; row <= endRow; row++) {
+          for (let col = startCol; col <= endCol; col++) {
+            selectedCells.push({ col, row });
+          }
+        }
+      } else {
+        // 单个单元格选择
+        selectedCells.push({ col: cell[0], row: cell[1] });
+      }
+
+      if (selectedCells.length === 0) {
+        console.log('⚠️ [GlideDataTable] 选中的单元格列表为空');
+        return;
+      }
+
+      console.log('✅ [GlideDataTable] 选中了', selectedCells.length, '个单元格', '数据源类型:', dataSourceType);
+
+      // 生成 INSERT SQL
+      const insertSQL = convertToInsertSQL(selectedCells);
+
+      if (insertSQL) {
+        console.log('📋 [GlideDataTable] 生成的 SQL:', insertSQL.substring(0, 200));
+
+        // 阻止默认复制行为
+        e.preventDefault();
+        e.stopPropagation();
+
+        // 复制到剪贴板
+        navigator.clipboard.writeText(insertSQL).then(() => {
+          toast.success('已复制为 INSERT SQL', {
+            description: `已复制 ${selectedCells.length} 个单元格的数据`,
+          });
+        }).catch(err => {
+          console.error('❌ [GlideDataTable] 复制失败:', err);
+          toast.error('复制失败', {
+            description: '无法访问剪贴板',
+          });
+        });
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [gridSelection, gridColumns, processedData, convertToInsertSQL, dataSourceType]);
+
 
 
 
@@ -619,17 +831,18 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 onColumnResize={handleColumnResize}
                 onColumnResizeEnd={handleColumnResizeEnd}
                 onVisibleRegionChanged={handleVisibleRegionChanged}
+                gridSelection={gridSelection}
+                onGridSelectionChange={setGridSelection}
                 minColumnWidth={80}
                 maxColumnWidth={800}
                 maxColumnAutoWidth={500}
                 keybindings={{
-                  copy: true,
+                  copy: false,  // 禁用默认复制，使用自定义处理
                   paste: false,
                   selectAll: true,
                   selectRow: true,
                   selectColumn: true,
                 }}
-                getCellsForSelection={true}
                 freezeColumns={0}
                 headerHeight={36}
                 rowHeight={32}

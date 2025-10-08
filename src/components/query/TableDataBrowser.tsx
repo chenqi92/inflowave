@@ -27,6 +27,7 @@ import {
 import { toast } from 'sonner';
 import {
   GlideDataTable,
+  type DataSourceType,
 } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
 import {
@@ -481,6 +482,31 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 获取连接配置
   const { connections } = useConnectionStore();
   const currentConnection = connections.find(conn => conn.id === connectionId);
+
+  // 确定数据源类型
+  const dataSourceType: DataSourceType = useMemo(() => {
+    if (!currentConnection) return 'generic';
+
+    const dbType = currentConnection.dbType;
+    const version = currentConnection.version;
+
+    if (dbType === 'iotdb') {
+      return 'iotdb';
+    }
+
+    if (dbType === 'influxdb') {
+      if (version === '1.x' || version?.includes('1.')) {
+        return 'influxdb1';
+      } else if (version === '2.x' || version?.includes('2.')) {
+        return 'influxdb2';
+      } else if (version === '3.x' || version?.includes('3.')) {
+        return 'influxdb3';
+      }
+      return 'influxdb1'; // 默认
+    }
+
+    return 'generic';
+  }, [currentConnection]);
 
   // 行选择状态
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
@@ -2535,6 +2561,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           columnManagement={true} // 启用内置列管理作为备用
           showToolbar={false} // 使用外部工具栏
           className='h-full'
+          tableName={tableName}
+          dataSourceType={dataSourceType}
+          database={database}
           // 传递外部列管理状态
           selectedColumns={selectedColumns}
           columnOrder={columnOrder}
