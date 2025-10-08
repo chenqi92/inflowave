@@ -315,7 +315,36 @@ export const getInfluxDBQueryError = (error: string): UserFriendlyError => {
       suggestion: '请检查数据库名称是否正确，或创建相应的数据库'
     };
   }
-  
+
+  // 检查是否是类型不兼容错误
+  if (errorLower.includes('not compatible') || errorLower.includes('type mismatch')) {
+    return {
+      title: '数据类型不兼容',
+      message: '查询中的数据类型不匹配',
+      suggestion: '请检查时间条件的格式，确保时间函数（如now()）没有被引号包裹'
+    };
+  }
+
+  // 如果错误信息中包含具体的InfluxDB错误，提取并显示
+  if (error.includes('influxdb error:')) {
+    try {
+      const match = error.match(/influxdb error: "({.*})"/);
+      if (match && match[1]) {
+        const errorObj = JSON.parse(match[1]);
+        if (errorObj.results && errorObj.results[0] && errorObj.results[0].error) {
+          const influxError = errorObj.results[0].error;
+          return {
+            title: '查询执行失败',
+            message: influxError,
+            suggestion: '请检查查询语句的语法和数据类型'
+          };
+        }
+      }
+    } catch (e) {
+      // JSON解析失败，继续使用默认错误
+    }
+  }
+
   return {
     title: '查询执行失败',
     message: '查询执行过程中发生错误',

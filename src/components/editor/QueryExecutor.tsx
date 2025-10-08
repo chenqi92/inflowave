@@ -58,7 +58,14 @@ export const useQueryExecutor = ({
     if (databaseType === '1.x') {
       // InfluxDB 1.x (InfluxQL) 时间条件
       if (selectedTimeRange.start && selectedTimeRange.end) {
-        timeCondition = `time >= '${selectedTimeRange.start}' AND time <= '${selectedTimeRange.end}'`;
+        // 检查是否是函数表达式（如 now() - 1h）还是绝对时间戳
+        const isStartFunction = selectedTimeRange.start.includes('now()') || selectedTimeRange.start.includes('NOW()');
+        const isEndFunction = selectedTimeRange.end.includes('now()') || selectedTimeRange.end.includes('NOW()');
+
+        const startValue = isStartFunction ? selectedTimeRange.start : `'${selectedTimeRange.start}'`;
+        const endValue = isEndFunction ? selectedTimeRange.end : `'${selectedTimeRange.end}'`;
+
+        timeCondition = `time >= ${startValue} AND time <= ${endValue}`;
       } else if (selectedTimeRange.value.includes('h')) {
         // 相对时间，如 '1h', '24h'
         timeCondition = `time >= now() - ${selectedTimeRange.value}`;
