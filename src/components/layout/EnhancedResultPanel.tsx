@@ -900,7 +900,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
   // 导出图表功能
   const handleExportChart = useCallback(
-    async (format: 'png' | 'svg' = 'png') => {
+    async () => {
       if (!chartRef.current) {
         showMessage.error('图表实例未找到');
         return;
@@ -913,62 +913,43 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           return;
         }
 
-        let dataContent: string;
-        let extension: string;
-        let mimeType: string;
+        // 获取PNG格式的图表数据
+        const dataURL = chartInstance.getDataURL({
+          type: 'png',
+          pixelRatio: 2,
+          backgroundColor: '#fff',
+        });
 
-        if (format === 'svg') {
-          dataContent = chartInstance.renderToSVGString();
-          extension = 'svg';
-          mimeType = 'image/svg+xml';
-        } else {
-          // PNG格式
-          const dataURL = chartInstance.getDataURL({
-            type: 'png',
-            pixelRatio: 2,
-            backgroundColor: '#fff',
-          });
-          // 移除data URL前缀
-          dataContent = dataURL.split(',')[1];
-          extension = 'png';
-          mimeType = 'image/png';
-        }
+        // 移除data URL前缀，获取base64数据
+        const base64Data = dataURL.split(',')[1];
 
         // 使用Tauri原生保存对话框
         const timestamp = new Date().toISOString().replace(/:/g, '-').slice(0, 19);
-        const defaultFilename = `chart_${timestamp}.${extension}`;
+        const defaultFilename = `chart_${timestamp}.png`;
 
-        const filePath = await safeTauriInvoke<string>('show_save_file_dialog', {
+        // Tauri命令期望接收一个名为params的参数
+        const result = await safeTauriInvoke<{ path: string; name: string } | null>('save_file_dialog', {
           params: {
             default_path: defaultFilename,
             filters: [{
-              name: `${extension.toUpperCase()} 图片`,
-              extensions: [extension]
+              name: 'PNG 图片',
+              extensions: ['png']
             }]
           }
         });
 
-        if (!filePath) {
+        if (!result || !result.path) {
           // 用户取消了保存
           return;
         }
 
-        // 保存文件
-        if (format === 'svg') {
-          // SVG是文本格式，直接写入
-          await safeTauriInvoke('write_text_file', {
-            path: filePath,
-            contents: dataContent
-          });
-        } else {
-          // PNG是二进制格式，需要base64解码后写入
-          await safeTauriInvoke('write_binary_file', {
-            path: filePath,
-            contents: Array.from(atob(dataContent), c => c.charCodeAt(0))
-          });
-        }
+        // 保存文件 - PNG是二进制格式，使用base64字符串
+        await safeTauriInvoke('write_binary_file', {
+          path: result.path,
+          data: base64Data
+        });
 
-        showMessage.success(`图表已导出为 ${format.toUpperCase()} 格式`);
+        showMessage.success('图表已导出为 PNG 格式');
       } catch (error) {
         console.error('导出图表失败:', error);
         showMessage.error(`导出图表失败: ${error}`);
@@ -1906,32 +1887,15 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           </DropdownMenuContent>
                         </DropdownMenu>
                       )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant='outline'
-                            size='sm'
-                            className='text-xs'
-                          >
-                            <Download className='w-3 h-3 mr-1' />
-                            导出图表
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent>
-                          <DropdownMenuItem
-                            onClick={() => handleExportChart('png')}
-                          >
-                            <Download className='w-3 h-3 mr-2' />
-                            导出为 PNG
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => handleExportChart('svg')}
-                          >
-                            <Download className='w-3 h-3 mr-2' />
-                            导出为 SVG
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        className='text-xs'
+                        onClick={handleExportChart}
+                      >
+                        <Download className='w-3 h-3 mr-1' />
+                        导出图表
+                      </Button>
                     </div>
                   </div>
                   <div className='flex-1 bg-background rounded border'>

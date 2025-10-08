@@ -200,18 +200,7 @@ export const generateTimeSeriesLineChart = (
         },
       },
     ],
-    toolbox: {
-      feature: {
-        dataZoom: {
-          yAxisIndex: 'none',
-        },
-        restore: {},
-        saveAsImage: {},
-      },
-      iconStyle: {
-        borderColor: theme.textColor,
-      },
-    },
+    // 移除toolbox，因为在桌面应用中不需要
   };
 };
 
