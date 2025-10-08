@@ -1693,7 +1693,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   return (
     <>
       <Dialog open={visible} onOpenChange={open => !open && onCancel()}>
-        <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
+        <DialogContent
+          className='max-w-4xl max-h-[90vh] overflow-y-auto'
+          style={{
+            scrollbarGutter: 'stable'
+          }}
+        >
           <DialogHeader className='pb-4'>
             <DialogTitle className='text-xl font-semibold'>
               {isEditing ? '编辑连接' : '新建连接'}
