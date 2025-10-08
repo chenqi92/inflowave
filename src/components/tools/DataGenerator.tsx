@@ -1963,11 +1963,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 } 
               />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="min-w-[160px] max-w-[300px]">
               {databases.length > 0 ? (
                 databases.map(db => (
                   <SelectItem key={db} value={db}>
-                    {db}
+                    <span className="truncate block" title={db}>{db}</span>
                   </SelectItem>
                 ))
               ) : (
@@ -2026,11 +2026,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                     } 
                   />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="min-w-[160px] max-w-[300px]">
                   {tables.length > 0 ? (
                     tables.map(table => (
                       <SelectItem key={table} value={table}>
-                        {table}
+                        <span className="truncate block" title={table}>{table}</span>
                       </SelectItem>
                     ))
                   ) : (

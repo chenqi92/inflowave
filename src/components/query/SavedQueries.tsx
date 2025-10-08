@@ -391,10 +391,10 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
                       <SelectValue placeholder='选择数据库（可选）' />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className="min-w-[120px] max-w-[300px]">
                     {allDatabases.map(db => (
                       <SelectItem key={db} value={db || ''}>
-                        {db}
+                        <span className="truncate block" title={db}>{db}</span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -484,11 +484,11 @@ const SavedQueries: React.FC<SavedQueriesProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder='筛选数据库' />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="min-w-[120px] max-w-[300px]">
                 <SelectItem value=''>全部数据库</SelectItem>
                 {allDatabases.map(db => (
                   <SelectItem key={db} value={db || ''}>
-                    {db}
+                    <span className="truncate block" title={db}>{db}</span>
                   </SelectItem>
                 ))}
               </SelectContent>

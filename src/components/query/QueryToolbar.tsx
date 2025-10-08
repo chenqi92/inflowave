@@ -119,14 +119,14 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
             }
           />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="min-w-[200px] max-w-[400px]">
           {connectedConnections.map(conn => {
             const displayInfo = getConnectionDisplayInfo(conn);
             return (
               <SelectItem key={conn.id} value={conn.id!}>
-                <div className="flex items-center gap-2">
-                  <span className={displayInfo.statusColor}>{displayInfo.statusIcon}</span>
-                  <span>{displayInfo.label}</span>
+                <div className="flex items-center gap-2 w-full min-w-0">
+                  <span className={`${displayInfo.statusColor} flex-shrink-0`}>{displayInfo.statusIcon}</span>
+                  <span className="truncate" title={displayInfo.label}>{displayInfo.label}</span>
                 </div>
               </SelectItem>
             );
@@ -151,10 +151,10 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
             }
           />
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent className="min-w-[120px] max-w-[300px]">
           {currentConnectionDatabases.map(db => (
             <SelectItem key={db} value={db}>
-              {db}
+              <span className="truncate block" title={db}>{db}</span>
             </SelectItem>
           ))}
         </SelectContent>
