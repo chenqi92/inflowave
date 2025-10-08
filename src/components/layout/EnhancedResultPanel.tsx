@@ -1072,8 +1072,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         .slice(0, 19);
       const defaultFilename = `chart_${timestamp}.png`;
 
-      // Tauri命令期望接收一个名为params的参数
-      const result = await safeTauriInvoke<{
+      // 直接使用invoke以处理用户取消的情况（返回null）
+      const { invoke } = await import('@tauri-apps/api/core');
+      const result = await invoke<{
         path: string;
         name: string;
       } | null>('save_file_dialog', {
@@ -1089,7 +1090,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       });
 
       if (!result || !result.path) {
-        // 用户取消了保存
+        // 用户取消了保存，不显示错误消息
         return;
       }
 
@@ -2010,7 +2011,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           <Button
                             variant='outline'
                             size='sm'
-                            className='text-xs h-7'
+                            className='text-xs'
                             onClick={() => setIsEditingTitle(true)}
                           >
                             <Edit2 className='w-3 h-3 mr-1' />
@@ -2125,8 +2126,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      {/* 字段选择器 - 所有图表类型都支持 */}
-                      {availableNumericFields.length > 0 && (
+                      {/* 数值字段选择器 - 仅在数值图表时显示 */}
+                      {visualizationType !== 'category-bar' &&
+                       visualizationType !== 'category-pie' &&
+                       availableNumericFields.length > 0 && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
