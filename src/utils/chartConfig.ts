@@ -642,7 +642,16 @@ export const generatePieChart = (
 
   // 使用指定时间点的数据，默认使用最后一个时间点
   const dataIndex = timeIndex !== undefined ? timeIndex : data.length - 1;
-  const currentData = data[dataIndex];
+  // 确保索引在有效范围内
+  const safeIndex = Math.max(0, Math.min(dataIndex, data.length - 1));
+  const currentData = data[safeIndex];
+
+  // 如果 currentData 仍然是 undefined，返回 null
+  if (!currentData) {
+    console.warn('generatePieChart: currentData is undefined', { dataIndex, safeIndex, dataLength: data.length });
+    return null;
+  }
+
   const pieData = selectedFields
     .map(field => ({
       name: fieldAliases[field] || field,
@@ -842,7 +851,15 @@ export const generateRadarChart = (
 
   // 使用指定时间点的数据，默认使用最后一个时间点
   const dataIndex = timeIndex !== undefined ? timeIndex : data.length - 1;
-  const currentData = data[dataIndex];
+  // 确保索引在有效范围内
+  const safeIndex = Math.max(0, Math.min(dataIndex, data.length - 1));
+  const currentData = data[safeIndex];
+
+  // 如果 currentData 仍然是 undefined，返回 null
+  if (!currentData) {
+    console.warn('generateRadarChart: currentData is undefined', { dataIndex, safeIndex, dataLength: data.length });
+    return null;
+  }
 
   // 计算每个字段的最大值用于雷达图的最大范围
   const indicators = selectedFields.map(field => {

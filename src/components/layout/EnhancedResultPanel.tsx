@@ -432,6 +432,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     }
   }, [visualizationType, allResults, parseQueryResult]);
 
+  // 当切换活动tab时，重置时间点索引
+  useEffect(() => {
+    if (activeTab.startsWith('visualization-')) {
+      const index = parseInt(activeTab.replace('visualization-', ''));
+      if (!isNaN(index) && allResults[index]) {
+        const parsed = parseQueryResult(allResults[index]);
+        if (parsed && parsed.data.length > 0) {
+          // 重置到该查询结果的最后一个时间点
+          setTimePointIndex(Math.min(timePointIndex, parsed.data.length - 1));
+        }
+      }
+    }
+  }, [activeTab, allResults, parseQueryResult]);
+
   // 解析查询结果数据
   const parsedData = useMemo(() => {
     if (!queryResult?.results?.[0]?.series?.[0]) return null;
