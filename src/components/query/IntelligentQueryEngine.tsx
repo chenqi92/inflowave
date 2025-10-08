@@ -529,6 +529,12 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   // 禁用空格和tab的可视化显示
                   renderWhitespace: 'none',
                   renderControlCharacters: false,
+                  // 禁用缩进参考线（纵向分割线）
+                  guides: {
+                    indentation: false,
+                    bracketPairs: false,
+                    highlightActiveIndentation: false,
+                  },
                   find: {
                     addExtraSpaceOnTop: false,
                     autoFindInSelection: 'never',

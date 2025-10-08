@@ -1294,6 +1294,13 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
         renderWhitespace: 'none',
         renderControlCharacters: false,
 
+        // 禁用缩进参考线（纵向分割线）
+        guides: {
+          indentation: false,
+          bracketPairs: false,
+          highlightActiveIndentation: false,
+        },
+
         // 平滑滚动和动画
         smoothScrolling: true,
         cursorBlinking: 'smooth',
