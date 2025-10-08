@@ -523,6 +523,12 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   links: false, // 禁用链接检测，避免触发剪贴板权限
                   dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
                   selectionClipboard: false, // 禁用选择自动复制到剪贴板
+                  // 禁用代码折叠
+                  folding: false,
+                  showFoldingControls: 'never',
+                  // 禁用空格和tab的可视化显示
+                  renderWhitespace: 'none',
+                  renderControlCharacters: false,
                   find: {
                     addExtraSpaceOnTop: false,
                     autoFindInSelection: 'never',

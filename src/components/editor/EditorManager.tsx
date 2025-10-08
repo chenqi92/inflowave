@@ -1285,10 +1285,14 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
           enabled: true,
         },
 
-        // 代码折叠
-        folding: true,
+        // 代码折叠 - 禁用
+        folding: false,
         foldingStrategy: 'indentation',
-        showFoldingControls: 'always',
+        showFoldingControls: 'never',
+
+        // 禁用空格和tab的可视化显示
+        renderWhitespace: 'none',
+        renderControlCharacters: false,
 
         // 平滑滚动和动画
         smoothScrolling: true,
