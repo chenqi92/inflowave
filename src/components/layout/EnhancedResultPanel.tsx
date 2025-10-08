@@ -1072,12 +1072,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         .slice(0, 19);
       const defaultFilename = `chart_${timestamp}.png`;
 
-      // 直接使用invoke以处理用户取消的情况（返回null）
-      const { invoke } = await import('@tauri-apps/api/core');
-      const result = await invoke<{
+      // 使用safeTauriInvokeOptional以处理用户取消的情况（返回null）
+      const { safeTauriInvokeOptional } = await import('@/utils/tauri');
+      const result = await safeTauriInvokeOptional<{
         path: string;
         name: string;
-      } | null>('save_file_dialog', {
+      }>('save_file_dialog', {
         params: {
           default_path: defaultFilename,
           filters: [
@@ -1091,7 +1091,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       if (!result || !result.path) {
         // 用户取消了保存，不显示错误消息
-        console.log('用户取消了保存操作');
         return;
       }
 
@@ -1103,14 +1102,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       showMessage.success('图表已导出为 PNG 格式');
     } catch (error) {
-      // 检查是否是用户取消操作导致的错误
-      const errorMessage = String(error);
-      if (errorMessage.includes('save_file_dialog') && errorMessage.includes('null or undefined')) {
-        // 用户取消了保存，不显示错误消息
-        console.log('用户取消了保存操作');
-        return;
-      }
-
       console.error('导出图表失败:', error);
       showMessage.error(`导出图表失败: ${error}`);
     }
