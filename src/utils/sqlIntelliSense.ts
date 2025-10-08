@@ -102,18 +102,31 @@ export function getKeywordsByDatabaseVersion(version: SQLFormatterDatabaseType):
 
 /**
  * 创建关键字补全项
+ * 支持智能大小写：根据用户输入的大小写风格自动调整
  */
 export function createKeywordCompletions(
   keywords: string[],
-  range: monaco.IRange
+  range: monaco.IRange,
+  userInput?: string
 ): monaco.languages.CompletionItem[] {
-  return keywords.map(keyword => ({
-    label: keyword,
-    kind: monaco.languages.CompletionItemKind.Keyword,
-    insertText: keyword,
-    documentation: `关键字: ${keyword}`,
-    range,
-  }));
+  return keywords.map(keyword => {
+    // 智能大小写：如果用户输入是小写，则建议小写；否则建议大写
+    let insertText = keyword;
+    if (userInput) {
+      const isUserLowerCase = userInput === userInput.toLowerCase();
+      if (isUserLowerCase) {
+        insertText = keyword.toLowerCase();
+      }
+    }
+
+    return {
+      label: keyword,
+      kind: monaco.languages.CompletionItemKind.Keyword,
+      insertText: insertText,
+      documentation: `关键字: ${keyword}`,
+      range,
+    };
+  });
 }
 
 /**
@@ -194,13 +207,14 @@ export function createDatabaseSpecificCompletions(
     measurements?: string[];
     fields?: string[];
     tags?: string[];
+    userInput?: string; // 用户当前输入，用于智能大小写
   }
 ): monaco.languages.CompletionItem[] {
   const completions: monaco.languages.CompletionItem[] = [];
-  
-  // 添加关键字补全
+
+  // 添加关键字补全（支持智能大小写）
   const keywords = getKeywordsByDatabaseVersion(version);
-  completions.push(...createKeywordCompletions(keywords, range));
+  completions.push(...createKeywordCompletions(keywords, range, context?.userInput));
 
   // 添加函数补全
   if (version === '2.x' || version === '3.x') {

@@ -300,6 +300,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
               range,
               {
                 databases,
+                userInput: word.word || '', // 传递用户输入用于智能大小写
                 // 这里可以添加更多上下文信息，如测量名、字段名等
               }
             );

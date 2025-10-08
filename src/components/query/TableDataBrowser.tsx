@@ -29,7 +29,7 @@ import {
   GlideDataTable,
   type DataSourceType,
 } from '@/components/ui/GlideDataTable';
-import { TableToolbar } from '@/components/ui/TableToolbar';
+import { TableToolbar, type CopyFormat } from '@/components/ui/TableToolbar';
 import {
   DndContext,
   closestCenter,
@@ -2245,6 +2245,108 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     [data]
   );
 
+  // 复制所有数据（用于TableToolbar）
+  const handleCopyAllData = useCallback(
+    async (format: CopyFormat) => {
+      if (data.length === 0) {
+        toast.error('没有可复制的数据');
+        return;
+      }
+
+      const visibleColumns = columnOrder.filter(col =>
+        selectedColumns.includes(col) && col !== '#'
+      );
+
+      let textToCopy = '';
+
+      try {
+        switch (format) {
+          case 'text':
+            // 文本格式：列之间用空格分隔
+            textToCopy = visibleColumns.join(' ') + '\n';
+            textToCopy += data.map(row =>
+              visibleColumns.map(col => row[col] || '').join(' ')
+            ).join('\n');
+            break;
+
+          case 'insert':
+            // INSERT语句格式
+            const insertStatements = data.map(row => {
+              const values = visibleColumns.map(col => {
+                const val = row[col];
+                if (val === null || val === undefined) return 'NULL';
+                if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+                return val;
+              }).join(', ');
+              return `INSERT INTO "${tableName}" (${visibleColumns.map(c => `"${c}"`).join(', ')}) VALUES (${values});`;
+            });
+            textToCopy = insertStatements.join('\n');
+            break;
+
+          case 'markdown':
+            // Markdown表格格式
+            textToCopy = '| ' + visibleColumns.join(' | ') + ' |\n';
+            textToCopy += '| ' + visibleColumns.map(() => '---').join(' | ') + ' |\n';
+            textToCopy += data.map(row =>
+              '| ' + visibleColumns.map(col => row[col] || '').join(' | ') + ' |'
+            ).join('\n');
+            break;
+
+          case 'json':
+            // JSON格式
+            const jsonData = data.map(row => {
+              const obj: Record<string, any> = {};
+              visibleColumns.forEach(col => {
+                obj[col] = row[col];
+              });
+              return obj;
+            });
+            textToCopy = JSON.stringify(jsonData, null, 2);
+            break;
+
+          case 'csv':
+            // CSV格式
+            const escapeCsvValue = (val: any) => {
+              if (val === null || val === undefined) return '';
+              const str = String(val);
+              if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                return `"${str.replace(/"/g, '""')}"`;
+              }
+              return str;
+            };
+            textToCopy = visibleColumns.map(escapeCsvValue).join(',') + '\n';
+            textToCopy += data.map(row =>
+              visibleColumns.map(col => escapeCsvValue(row[col])).join(',')
+            ).join('\n');
+            break;
+
+          default:
+            toast.error('不支持的复制格式');
+            return;
+        }
+
+        // 复制到剪贴板
+        await navigator.clipboard.writeText(textToCopy);
+
+        const formatNames: Record<CopyFormat, string> = {
+          text: '文本',
+          insert: 'INSERT 语句',
+          markdown: 'Markdown',
+          json: 'JSON',
+          csv: 'CSV'
+        };
+
+        toast.success(`已复制为 ${formatNames[format]}`, {
+          description: `已复制 ${data.length} 行数据`
+        });
+      } catch (error) {
+        console.error('复制数据失败:', error);
+        toast.error('复制数据失败');
+      }
+    },
+    [data, columnOrder, selectedColumns, tableName]
+  );
+
   // 处理排序
   const handleSort = (column: string) => {
     const newDirection =
@@ -2417,6 +2519,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         loading={loading}
         showRefresh={true}
         onRefresh={loadData}
+        showCopy={true}
+        onCopy={handleCopyAllData}
         onQuickExportCSV={quickExportCSV}
         onAdvancedExport={() => setShowExportDialog(true)}
         showColumnSelector={true}

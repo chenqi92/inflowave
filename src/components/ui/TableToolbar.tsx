@@ -26,7 +26,13 @@ import {
     Settings,
     Table as TableIcon,
     RefreshCw,
+    Copy,
+    Code,
+    FileSpreadsheet,
+    Database,
 } from 'lucide-react';
+
+export type CopyFormat = 'text' | 'insert' | 'markdown' | 'json' | 'csv';
 
 export interface TableToolbarProps {
     title: string;
@@ -37,6 +43,9 @@ export interface TableToolbarProps {
     onRefresh?: () => void;
     onQuickExportCSV?: () => void;
     onAdvancedExport?: () => void;
+    // 复制功能相关
+    showCopy?: boolean;
+    onCopy?: (format: CopyFormat) => void;
     className?: string;
     children?: React.ReactNode; // 用于添加额外的工具栏内容
     // 列选择相关属性
@@ -56,6 +65,8 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     onRefresh,
     onQuickExportCSV,
     onAdvancedExport,
+    showCopy = false,
+    onCopy,
     className,
     children,
     showColumnSelector = false,
@@ -93,7 +104,47 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                 <TooltipContent>刷新数据</TooltipContent>
                             </Tooltip>
                         )}
-                        
+
+                        {/* 复制按钮 */}
+                        {showCopy && onCopy && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        disabled={rowCount === 0}
+                                        className="h-8 px-2"
+                                    >
+                                        <Copy className="w-3 h-3 mr-1" />
+                                        <ChevronDown className="w-3 h-3" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => onCopy('text')}>
+                                        <FileText className="w-4 h-4 mr-2" />
+                                        复制为文本
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onCopy('insert')}>
+                                        <Database className="w-4 h-4 mr-2" />
+                                        复制为 INSERT 语句
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onCopy('markdown')}>
+                                        <FileText className="w-4 h-4 mr-2" />
+                                        复制为 Markdown
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => onCopy('json')}>
+                                        <Code className="w-4 h-4 mr-2" />
+                                        复制为 JSON
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => onCopy('csv')}>
+                                        <FileSpreadsheet className="w-4 h-4 mr-2" />
+                                        复制为 CSV
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
+
                         {/* 导出按钮 */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>

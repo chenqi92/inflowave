@@ -36,7 +36,7 @@ import {
   ScrollArea,
 } from '@/components/ui';
 import { GlideDataTable, type DataSourceType } from '@/components/ui/GlideDataTable';
-import { TableToolbar } from '@/components/ui/TableToolbar';
+import { TableToolbar, type CopyFormat } from '@/components/ui/TableToolbar';
 import ExportOptionsDialog, {
   type ExportOptions,
 } from '@/components/query/ExportOptionsDialog';
@@ -44,6 +44,7 @@ import { exportWithNativeDialog } from '@/utils/nativeExport';
 import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
+import { toast } from 'sonner';
 
 // 生成带时间戳的文件名
 const generateTimestampedFilename = (
@@ -647,6 +648,108 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       showMessage.error('导出数据失败');
     }
   };
+
+  // 复制数据函数
+  const handleCopyData = useCallback(async (
+    format: CopyFormat,
+    resultIndex: number
+  ) => {
+    try {
+      const result = allResults[resultIndex];
+      if (!result) {
+        toast.error('没有可复制的数据');
+        return;
+      }
+
+      // 获取第一个series的数据
+      const series = result.results?.[0]?.series?.[0];
+      if (!series || !series.columns || !series.values) {
+        toast.error('没有可复制的数据');
+        return;
+      }
+
+      const columns = series.columns;
+      const rows = series.values;
+      let textToCopy = '';
+
+      switch (format) {
+        case 'text':
+          // 文本格式：列之间用空格分隔
+          textToCopy = columns.join(' ') + '\n';
+          textToCopy += rows.map(row => row.join(' ')).join('\n');
+          break;
+
+        case 'insert':
+          // INSERT语句格式
+          const tableName = series.name || 'table_name';
+          const insertStatements = rows.map(row => {
+            const values = row.map(val => {
+              if (val === null || val === undefined) return 'NULL';
+              if (typeof val === 'string') return `'${val.replace(/'/g, "''")}'`;
+              return val;
+            }).join(', ');
+            return `INSERT INTO "${tableName}" (${columns.map(c => `"${c}"`).join(', ')}) VALUES (${values});`;
+          });
+          textToCopy = insertStatements.join('\n');
+          break;
+
+        case 'markdown':
+          // Markdown表格格式
+          textToCopy = '| ' + columns.join(' | ') + ' |\n';
+          textToCopy += '| ' + columns.map(() => '---').join(' | ') + ' |\n';
+          textToCopy += rows.map(row => '| ' + row.join(' | ') + ' |').join('\n');
+          break;
+
+        case 'json':
+          // JSON格式
+          const jsonData = rows.map(row => {
+            const obj: Record<string, any> = {};
+            columns.forEach((col, idx) => {
+              obj[col] = row[idx];
+            });
+            return obj;
+          });
+          textToCopy = JSON.stringify(jsonData, null, 2);
+          break;
+
+        case 'csv':
+          // CSV格式
+          const escapeCsvValue = (val: any) => {
+            if (val === null || val === undefined) return '';
+            const str = String(val);
+            if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+              return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+          };
+          textToCopy = columns.map(escapeCsvValue).join(',') + '\n';
+          textToCopy += rows.map(row => row.map(escapeCsvValue).join(',')).join('\n');
+          break;
+
+        default:
+          toast.error('不支持的复制格式');
+          return;
+      }
+
+      // 复制到剪贴板
+      await navigator.clipboard.writeText(textToCopy);
+
+      const formatNames: Record<CopyFormat, string> = {
+        text: '文本',
+        insert: 'INSERT 语句',
+        markdown: 'Markdown',
+        json: 'JSON',
+        csv: 'CSV'
+      };
+
+      toast.success(`已复制为 ${formatNames[format]}`, {
+        description: `已复制 ${rows.length} 行数据`
+      });
+    } catch (error) {
+      console.error('复制数据失败:', error);
+      toast.error('复制数据失败');
+    }
+  }, [allResults]);
 
   // 导出字段统计 - 支持多个查询的统计信息
   const handleExportStatistics = async (options: ExportOptions) => {
@@ -1715,68 +1818,98 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             </TabsTrigger>
 
           {/* 动态数据tab - 根据SQL语句类型显示不同的tab */}
-          {allResults.map((result, index) => {
-            const parsedResult = parseQueryResult(result);
-            const statementType = sqlStatementTypes[index] || 'UNKNOWN';
-            const statementCategory = getSQLStatementCategory(statementType);
-            const displayInfo = getSQLStatementDisplayInfo(statementType);
+          {(() => {
+            // 将结果按类型分组
+            const groupedResults: { [key: string]: number[] } = {};
+            allResults.forEach((result, index) => {
+              const statementType = sqlStatementTypes[index] || 'UNKNOWN';
+              const statementCategory = getSQLStatementCategory(statementType);
 
-            // 根据语句类型显示不同的图标和标题
-            const getTabIcon = () => {
-              switch (statementCategory) {
-                case 'query':
-                  return <Database className='w-3 h-3' />;
-                case 'write':
-                  return <CheckCircle className='w-3 h-3 text-green-500' />;
-                case 'delete':
-                  return <Trash2 className='w-3 h-3 text-orange-500' />;
-                case 'ddl':
-                  return <Settings className='w-3 h-3 text-blue-500' />;
-                case 'permission':
-                  return <Shield className='w-3 h-3 text-purple-500' />;
-                default:
-                  return <FileText className='w-3 h-3' />;
+              // 写入操作合并到一个tab
+              if (statementCategory === 'write') {
+                if (!groupedResults['write']) {
+                  groupedResults['write'] = [];
+                }
+                groupedResults['write'].push(index);
+              } else {
+                // 其他类型每个单独一个tab
+                groupedResults[`single-${index}`] = [index];
               }
-            };
+            });
 
-            const getTabLabel = () => {
-              switch (statementCategory) {
-                case 'query':
-                  return '查询结果';
-                case 'write':
-                  return '写入结果';
-                case 'delete':
-                  return '删除结果';
-                case 'ddl':
-                  return '操作结果';
-                case 'permission':
-                  return '权限结果';
-                default:
-                  return '执行结果';
-              }
-            };
+            // 渲染分组后的tabs
+            return Object.entries(groupedResults).map(([key, indices]) => {
+              const firstIndex = indices[0];
+              const statementType = sqlStatementTypes[firstIndex] || 'UNKNOWN';
+              const statementCategory = getSQLStatementCategory(statementType);
+              const displayInfo = getSQLStatementDisplayInfo(statementType);
+              const parsedResult = parseQueryResult(allResults[firstIndex]);
 
-            return (
-              <TabsTrigger
-                key={`data-${index}`}
-                value={`data-${index}`}
-                className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
-              >
-                {getTabIcon()}
-                {getTabLabel()} {allResults.length > 1 ? `${index + 1}` : ''}
-                {parsedResult && statementCategory === 'query' && (
-                  <Badge variant='secondary' className='ml-1 text-xs px-1'>
-                    {parsedResult.rowCount}
-                  </Badge>
-                )}
-                {statementCategory !== 'query' && (
-                  <Badge variant='outline' className='ml-1 text-xs px-1'>
-                    {statementType}
-                  </Badge>
-                )}
-              </TabsTrigger>
-            );
-          })}
+              // 根据语句类型显示不同的图标和标题
+              const getTabIcon = () => {
+                switch (statementCategory) {
+                  case 'query':
+                    return <Database className='w-3 h-3' />;
+                  case 'write':
+                    return <CheckCircle className='w-3 h-3 text-green-500' />;
+                  case 'delete':
+                    return <Trash2 className='w-3 h-3 text-orange-500' />;
+                  case 'ddl':
+                    return <Settings className='w-3 h-3 text-blue-500' />;
+                  case 'permission':
+                    return <Shield className='w-3 h-3 text-purple-500' />;
+                  default:
+                    return <FileText className='w-3 h-3' />;
+                }
+              };
+
+              const getTabLabel = () => {
+                switch (statementCategory) {
+                  case 'query':
+                    return '查询结果';
+                  case 'write':
+                    return '写入结果';
+                  case 'delete':
+                    return '删除结果';
+                  case 'ddl':
+                    return '操作结果';
+                  case 'permission':
+                    return '权限结果';
+                  default:
+                    return '执行结果';
+                }
+              };
+
+              // 使用第一个索引作为tab的value，但对于write类型使用特殊标识
+              const tabValue = key === 'write' ? 'write-combined' : `data-${firstIndex}`;
+
+              return (
+                <TabsTrigger
+                  key={tabValue}
+                  value={tabValue}
+                  className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
+                >
+                  {getTabIcon()}
+                  {getTabLabel()}
+                  {parsedResult && statementCategory === 'query' && (
+                    <Badge variant='secondary' className='ml-1 text-xs px-1'>
+                      {parsedResult.rowCount}
+                    </Badge>
+                  )}
+                  {statementCategory === 'write' && indices.length > 1 && (
+                    <Badge variant='secondary' className='ml-1 text-xs px-1'>
+                      {indices.length}
+                    </Badge>
+                  )}
+                  {statementCategory !== 'query' && statementCategory !== 'write' && (
+                    <Badge variant='outline' className='ml-1 text-xs px-1'>
+                      {statementType}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              );
+            });
+          })()}
 
           {/* 字段统计tab - 合并所有结果的统计 */}
           {allResults.length > 0 && (
@@ -2067,6 +2200,123 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           </div>
         </TabsContent>
 
+        {/* 合并的写入结果tab */}
+        {(() => {
+          const writeIndices = allResults
+            .map((result, index) => {
+              const statementType = sqlStatementTypes[index] || 'UNKNOWN';
+              const statementCategory = getSQLStatementCategory(statementType);
+              return statementCategory === 'write' ? index : -1;
+            })
+            .filter(index => index !== -1);
+
+          if (writeIndices.length === 0) return null;
+
+          return (
+            <TabsContent
+              key='write-combined'
+              value='write-combined'
+              className='flex-1 overflow-hidden mt-0'
+            >
+              <ScrollArea className='h-full'>
+                <div className='p-4 space-y-4'>
+                  {/* 写入操作汇总卡片 */}
+                  <Card>
+                    <CardHeader className='pb-3'>
+                      <CardTitle className='text-base flex items-center gap-2'>
+                        <CheckCircle className='w-4 h-4 text-green-600' />
+                        批量写入操作汇总
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className='space-y-3'>
+                      <div className='flex items-center justify-between py-2 border-b'>
+                        <span className='text-sm text-muted-foreground'>写入语句数量:</span>
+                        <span className='font-mono text-sm text-green-600 dark:text-green-400'>
+                          {writeIndices.length} 条
+                        </span>
+                      </div>
+                      <div className='flex items-center justify-between py-2 border-b'>
+                        <span className='text-sm text-muted-foreground'>总执行时间:</span>
+                        <span className='font-mono text-sm'>
+                          {writeIndices.reduce((sum, idx) => sum + (allResults[idx].executionTime || 0), 0)}ms
+                        </span>
+                      </div>
+                      <div className='flex items-center justify-between py-2'>
+                        <span className='text-sm text-muted-foreground'>操作状态:</span>
+                        <Badge variant='default' className='bg-green-600'>
+                          全部成功
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* 每条写入语句的详情 */}
+                  {writeIndices.map((index, writeIndex) => {
+                    const result = allResults[index];
+                    const query = executedQueries[index] || '';
+                    const measurementMatch = query.match(/INTO\s+["']?(\w+)["']?/i);
+
+                    return (
+                      <Card key={`write-${index}`}>
+                        <CardHeader className='pb-3'>
+                          <CardTitle className='text-sm flex items-center gap-2'>
+                            <Zap className='w-4 h-4' />
+                            写入操作 {writeIndex + 1}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className='space-y-3'>
+                          {measurementMatch && (
+                            <div className='flex items-center justify-between py-2 border-b'>
+                              <span className='text-sm text-muted-foreground'>目标Measurement:</span>
+                              <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
+                                {measurementMatch[1]}
+                              </code>
+                            </div>
+                          )}
+                          <div className='flex items-center justify-between py-2 border-b'>
+                            <span className='text-sm text-muted-foreground'>执行时间:</span>
+                            <span className='font-mono text-sm'>{result.executionTime || 0}ms</span>
+                          </div>
+                          <div className='flex flex-col gap-2 py-2'>
+                            <span className='text-sm text-muted-foreground'>SQL语句:</span>
+                            <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto'>
+                              {query}
+                            </pre>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+
+                  {/* 写入成功提示 */}
+                  <Card className='border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20'>
+                    <CardContent className='p-4'>
+                      <div className='flex items-start gap-3'>
+                        <CheckCircle className='w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5' />
+                        <div className='flex-1 space-y-2'>
+                          <h4 className='font-medium text-green-900 dark:text-green-200'>
+                            批量写入完成
+                          </h4>
+                          <ul className='text-sm text-green-800 dark:text-green-300 space-y-1.5'>
+                            <li className='flex items-start gap-2'>
+                              <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
+                              <span>所有 {writeIndices.length} 条写入语句已成功执行</span>
+                            </li>
+                            <li className='flex items-start gap-2'>
+                              <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
+                              <span>可以执行 SELECT 查询验证写入的数据</span>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          );
+        })()}
+
         {/* 动态数据标签页 - 根据SQL语句类型显示不同内容 */}
         {allResults.map((result, index) => {
           const parsedResult = parseQueryResult(result);
@@ -2078,6 +2328,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           const statementCategory = getSQLStatementCategory(statementType);
           const displayInfo = getSQLStatementDisplayInfo(statementType);
           const statsLabels = getResultStatsLabels(statementType);
+
+          // 写入操作已经在合并的tab中显示，跳过
+          if (statementCategory === 'write') {
+            return null;
+          }
 
           // 缓存分页选项，避免每次渲染都重新计算
           const paginationOptions = parsedResult
@@ -2099,6 +2354,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     rowCount={parsedResult.rowCount}
                     loading={false}
                     showRefresh={false}
+                    showCopy={true}
+                    onCopy={(format) => handleCopyData(format, index)}
                     onQuickExportCSV={() => setShowExportDialog(true)}
                     onAdvancedExport={() => setShowExportDialog(true)}
                     showColumnSelector={false}
@@ -2191,9 +2448,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   <div className='flex-shrink-0 bg-muted/50 border-b px-4 py-2'>
                     <div className='flex items-center justify-between'>
                       <div className='flex items-center gap-2'>
-                        {statementCategory === 'write' && (
-                          <CheckCircle className='w-4 h-4 text-green-500' />
-                        )}
                         {statementCategory === 'delete' && (
                           <Trash2 className='w-4 h-4 text-orange-500' />
                         )}
@@ -2336,138 +2590,6 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         </>
                       )}
 
-                      {/* INSERT语句专属展示 */}
-                      {statementCategory === 'write' && (
-                        <>
-                          {/* 写入操作详情 */}
-                          <Card>
-                            <CardHeader className='pb-3'>
-                              <CardTitle className='text-base flex items-center gap-2'>
-                                <Zap className='w-4 h-4' />
-                                数据写入详情
-                              </CardTitle>
-                            </CardHeader>
-                            <CardContent className='space-y-3'>
-                              {(() => {
-                                const query = executedQueries[index] || '';
-                                const measurementMatch = query.match(/INTO\s+["']?(\w+)["']?/i);
-                                const fieldsMatch = query.match(/\(([^)]+)\)\s+VALUES/i);
-                                const valuesMatch = query.match(/VALUES\s*\(([^)]+)\)/i);
-
-                                return (
-                                  <>
-                                    {measurementMatch && (
-                                      <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>目标Measurement:</span>
-                                        <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
-                                          {measurementMatch[1]}
-                                        </code>
-                                      </div>
-                                    )}
-                                    {fieldsMatch && (
-                                      <div className='flex flex-col gap-2 py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>写入字段:</span>
-                                        <code className='px-2 py-1 bg-muted rounded text-xs font-mono'>
-                                          {fieldsMatch[1]}
-                                        </code>
-                                      </div>
-                                    )}
-                                    {valuesMatch && (
-                                      <div className='flex flex-col gap-2 py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>写入值:</span>
-                                        <code className='px-2 py-1 bg-muted rounded text-xs font-mono'>
-                                          {valuesMatch[1]}
-                                        </code>
-                                      </div>
-                                    )}
-                                    <div className='flex items-center justify-between py-2 border-b'>
-                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
-                                      <span className='font-mono text-sm'>{executionTime}ms</span>
-                                    </div>
-                                    {result?.rowCount !== undefined && result.rowCount > 0 && (
-                                      <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>写入数据点:</span>
-                                        <span className='font-mono text-sm text-green-600 dark:text-green-400'>
-                                          {result.rowCount} 个
-                                        </span>
-                                      </div>
-                                    )}
-                                    <div className='flex items-center justify-between py-2'>
-                                      <span className='text-sm text-muted-foreground'>写入状态:</span>
-                                      <Badge variant='default' className='bg-green-600'>
-                                        成功
-                                      </Badge>
-                                    </div>
-                                  </>
-                                );
-                              })()}
-                            </CardContent>
-                          </Card>
-
-                          {/* 写入成功提示 */}
-                          <Card className='border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20'>
-                            <CardContent className='p-4'>
-                              <div className='flex items-start gap-3'>
-                                <CheckCircle className='w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5' />
-                                <div className='flex-1 space-y-2'>
-                                  <h4 className='font-medium text-green-900 dark:text-green-200'>
-                                    写入操作提示
-                                  </h4>
-                                  <ul className='text-sm text-green-800 dark:text-green-300 space-y-1.5'>
-                                    <li className='flex items-start gap-2'>
-                                      <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
-                                      <span>数据已成功写入到InfluxDB</span>
-                                    </li>
-                                    <li className='flex items-start gap-2'>
-                                      <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
-                                      <span>可以执行 SELECT 查询验证写入的数据</span>
-                                    </li>
-                                    <li className='flex items-start gap-2'>
-                                      <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
-                                      <span>InfluxDB 会自动为数据点添加时间戳（如果未指定）</span>
-                                    </li>
-                                    <li className='flex items-start gap-2'>
-                                      <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
-                                      <span>相同时间戳和tag组合的数据会覆盖旧值</span>
-                                    </li>
-                                  </ul>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-
-                          {/* InfluxDB Line Protocol 提示（如果适用） */}
-                          {(() => {
-                            const query = executedQueries[index] || '';
-                            const isLineProtocol = !query.toUpperCase().includes('INSERT INTO');
-
-                            if (isLineProtocol) {
-                              return (
-                                <Card className='border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20'>
-                                  <CardContent className='p-4'>
-                                    <div className='flex items-start gap-3'>
-                                      <Info className='w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5' />
-                                      <div className='flex-1 space-y-2'>
-                                        <h4 className='font-medium text-blue-900 dark:text-blue-200'>
-                                          Line Protocol 格式
-                                        </h4>
-                                        <p className='text-sm text-blue-800 dark:text-blue-300'>
-                                          使用了 InfluxDB Line Protocol 格式写入数据。格式：
-                                        </p>
-                                        <code className='block px-3 py-2 bg-blue-100 dark:bg-blue-900/30 rounded text-xs font-mono text-blue-900 dark:text-blue-200'>
-                                          measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp
-                                        </code>
-                                      </div>
-                                    </div>
-                                  </CardContent>
-                                </Card>
-                              );
-                            }
-                            return null;
-                          })()}
-                        </>
-                      )}
-
                       {/* DROP语句专属展示 */}
                       {statementCategory === 'ddl' && statementType === 'DROP' && (
                         <>
@@ -2549,8 +2671,206 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         </>
                       )}
 
-                      {/* 其他DML/DDL语句的通用展示 */}
-                      {statementCategory !== 'delete' && !(statementCategory === 'ddl' && statementType === 'DROP') && (
+                      {/* CREATE语句专属展示 */}
+                      {statementCategory === 'ddl' && statementType === 'CREATE' && (
+                        <>
+                          {/* CREATE操作详情 */}
+                          <Card>
+                            <CardHeader className='pb-3'>
+                              <CardTitle className='text-base flex items-center gap-2'>
+                                <Database className='w-4 h-4' />
+                                CREATE 操作详情
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className='space-y-3'>
+                              {(() => {
+                                const query = executedQueries[index] || '';
+                                const createTypeMatch = query.match(/CREATE\s+(DATABASE|MEASUREMENT|RETENTION\s+POLICY|USER|CONTINUOUS\s+QUERY)/i);
+                                const objectMatch = query.match(/CREATE\s+(?:DATABASE|RETENTION\s+POLICY|USER|CONTINUOUS\s+QUERY)\s+["']?(\w+)["']?/i);
+
+                                return (
+                                  <>
+                                    {createTypeMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>操作类型:</span>
+                                        <code className='px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm font-mono'>
+                                          CREATE {createTypeMatch[1].toUpperCase()}
+                                        </code>
+                                      </div>
+                                    )}
+                                    {objectMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>创建对象:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
+                                          {objectMatch[1]}
+                                        </code>
+                                      </div>
+                                    )}
+                                    <div className='flex items-center justify-between py-2 border-b'>
+                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='font-mono text-sm'>{executionTime}ms</span>
+                                    </div>
+                                    <div className='flex items-center justify-between py-2'>
+                                      <span className='text-sm text-muted-foreground'>创建状态:</span>
+                                      <Badge variant='default' className='bg-green-600'>
+                                        已创建
+                                      </Badge>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </CardContent>
+                          </Card>
+
+                          {/* CREATE成功提示 */}
+                          <Card className='border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/20'>
+                            <CardContent className='p-4'>
+                              <div className='flex items-start gap-3'>
+                                <Info className='w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5' />
+                                <div className='flex-1 space-y-2'>
+                                  <h4 className='font-medium text-blue-900 dark:text-blue-200'>
+                                    创建操作提示
+                                  </h4>
+                                  <ul className='text-sm text-blue-800 dark:text-blue-300 space-y-1.5'>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-blue-600 dark:text-blue-400 mt-0.5'>•</span>
+                                      <span>对象已成功创建</span>
+                                    </li>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-blue-600 dark:text-blue-400 mt-0.5'>•</span>
+                                      <span>可以使用 SHOW 命令查看创建的对象</span>
+                                    </li>
+                                    <li className='flex items-start gap-2'>
+                                      <span className='text-blue-600 dark:text-blue-400 mt-0.5'>•</span>
+                                      <span>如果对象已存在，某些CREATE语句可能会失败</span>
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </>
+                      )}
+
+                      {/* ALTER语句专属展示 */}
+                      {statementCategory === 'ddl' && statementType === 'ALTER' && (
+                        <>
+                          {/* ALTER操作详情 */}
+                          <Card>
+                            <CardHeader className='pb-3'>
+                              <CardTitle className='text-base flex items-center gap-2'>
+                                <Settings className='w-4 h-4' />
+                                ALTER 操作详情
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className='space-y-3'>
+                              {(() => {
+                                const query = executedQueries[index] || '';
+                                const alterTypeMatch = query.match(/ALTER\s+(RETENTION\s+POLICY)/i);
+                                const objectMatch = query.match(/ALTER\s+RETENTION\s+POLICY\s+["']?(\w+)["']?/i);
+
+                                return (
+                                  <>
+                                    {alterTypeMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>操作类型:</span>
+                                        <code className='px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded text-sm font-mono'>
+                                          ALTER {alterTypeMatch[1].toUpperCase()}
+                                        </code>
+                                      </div>
+                                    )}
+                                    {objectMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>修改对象:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
+                                          {objectMatch[1]}
+                                        </code>
+                                      </div>
+                                    )}
+                                    <div className='flex items-center justify-between py-2 border-b'>
+                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='font-mono text-sm'>{executionTime}ms</span>
+                                    </div>
+                                    <div className='flex items-center justify-between py-2'>
+                                      <span className='text-sm text-muted-foreground'>修改状态:</span>
+                                      <Badge variant='default' className='bg-green-600'>
+                                        已修改
+                                      </Badge>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </CardContent>
+                          </Card>
+                        </>
+                      )}
+
+                      {/* 权限语句（GRANT/REVOKE）专属展示 */}
+                      {statementCategory === 'permission' && (
+                        <>
+                          {/* 权限操作详情 */}
+                          <Card>
+                            <CardHeader className='pb-3'>
+                              <CardTitle className='text-base flex items-center gap-2'>
+                                <Shield className='w-4 h-4' />
+                                权限操作详情
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent className='space-y-3'>
+                              {(() => {
+                                const query = executedQueries[index] || '';
+                                const permissionMatch = query.match(/^(GRANT|REVOKE)/i);
+                                const privilegeMatch = query.match(/(?:GRANT|REVOKE)\s+(ALL|READ|WRITE)\s+(?:ON|FROM)/i);
+                                const userMatch = query.match(/(?:TO|FROM)\s+["']?(\w+)["']?/i);
+
+                                return (
+                                  <>
+                                    {permissionMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>操作类型:</span>
+                                        <code className='px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-sm font-mono'>
+                                          {permissionMatch[1].toUpperCase()}
+                                        </code>
+                                      </div>
+                                    )}
+                                    {privilegeMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>权限类型:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
+                                          {privilegeMatch[1].toUpperCase()}
+                                        </code>
+                                      </div>
+                                    )}
+                                    {userMatch && (
+                                      <div className='flex items-center justify-between py-2 border-b'>
+                                        <span className='text-sm text-muted-foreground'>目标用户:</span>
+                                        <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
+                                          {userMatch[1]}
+                                        </code>
+                                      </div>
+                                    )}
+                                    <div className='flex items-center justify-between py-2 border-b'>
+                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='font-mono text-sm'>{executionTime}ms</span>
+                                    </div>
+                                    <div className='flex items-center justify-between py-2'>
+                                      <span className='text-sm text-muted-foreground'>操作状态:</span>
+                                      <Badge variant='default' className='bg-green-600'>
+                                        已完成
+                                      </Badge>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </CardContent>
+                          </Card>
+                        </>
+                      )}
+
+                      {/* 其他未分类语句的通用展示 */}
+                      {statementCategory !== 'delete' &&
+                       !(statementCategory === 'ddl' && (statementType === 'DROP' || statementType === 'CREATE' || statementType === 'ALTER')) &&
+                       statementCategory !== 'permission' && (
                         <Card>
                           <CardHeader className='pb-3'>
                             <CardTitle className='text-base'>执行统计</CardTitle>
