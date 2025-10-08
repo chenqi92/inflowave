@@ -134,16 +134,9 @@ const renderVersionOption = (version: string, dbType: string) => {
         alt={`${version} icon`}
         className="w-4 h-4"
       />
-      <div className='flex flex-col text-left'>
-        <span className='font-medium'>
-          {dbType === 'influxdb' ? `InfluxDB ${version}` : 'Apache IoTDB'}
-        </span>
-        <span className='text-xs text-muted-foreground'>
-          {version === '1.x' && 'InfluxQL 查询语言'}
-          {version === '2.x' && 'Flux 查询语言，API Token 认证'}
-          {version === '3.x' && 'SQL + Flux，简化架构，可选组织'}
-        </span>
-      </div>
+      <span className='font-medium'>
+        {dbType === 'influxdb' ? `InfluxDB ${version}` : 'Apache IoTDB'}
+      </span>
     </div>
   );
 };
