@@ -1694,7 +1694,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     <>
       <Dialog open={visible} onOpenChange={open => !open && onCancel()}>
         <DialogContent
-          className='max-w-4xl max-h-[90vh] overflow-y-auto'
+          className='max-w-4xl overflow-y-auto'
           style={{
             scrollbarGutter: 'stable'
           }}
