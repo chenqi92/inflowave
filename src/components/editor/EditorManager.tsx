@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useEffect, useState } from 'react';
+import React, { useRef, useCallback, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import Editor from '@monaco-editor/react';
 import * as monaco from 'monaco-editor';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -52,13 +52,17 @@ interface EditorManagerProps {
   onExecuteQuery?: () => void;
 }
 
-export const EditorManager: React.FC<EditorManagerProps> = ({
+export interface EditorManagerRef {
+  getSelectedText: () => string | null;
+}
+
+export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
   currentTab,
   selectedDatabase,
   databases,
   onContentChange,
   onExecuteQuery,
-}) => {
+}, ref) => {
   const editorRef = useRef<monaco.editor.IStandaloneCodeEditor | null>(null);
   // 键盘事件清理函数引用
   const keyboardCleanupRef = useRef<(() => void) | null>(null);
@@ -101,6 +105,21 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
     database: selectedDatabase || '',
     dataSourceType: getDataSourceType(),
   });
+
+  // 暴露方法给父组件
+  useImperativeHandle(ref, () => ({
+    getSelectedText: () => {
+      if (!editorRef.current) {
+        return null;
+      }
+      const selection = editorRef.current.getSelection();
+      if (!selection) {
+        return null;
+      }
+      const selectedText = editorRef.current.getModel()?.getValueInRange(selection);
+      return selectedText || null;
+    }
+  }));
 
   // 注册所有语言支持（在组件初始化时）
   useEffect(() => {
@@ -1375,6 +1394,7 @@ export const EditorManager: React.FC<EditorManagerProps> = ({
       )}
     </div>
   );
-};
+});
 
+EditorManager.displayName = 'EditorManager';
 

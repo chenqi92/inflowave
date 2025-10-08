@@ -18,7 +18,7 @@ import type { TimeRange } from '@/components/common/TimeRangeSelector';
 
 // 导入拆分的模块
 import { TabManager, EditorTab } from '@/components/editor/TabManager';
-import { EditorManager } from '@/components/editor/EditorManager';
+import { EditorManager, type EditorManagerRef } from '@/components/editor/EditorManager';
 import { useQueryExecutor } from '@/components/editor/QueryExecutor';
 import { useFileOperations } from '@/components/editor/FileOperations';
 import { useTabStore, useCurrentTab, useTabOperations } from '@/stores/tabStore';
@@ -101,6 +101,9 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       console.log(`Tab ${tabId} content changed`);
     }, [updateTabContent]);
 
+    // 编辑器引用，用于获取选中的文本
+    const editorManagerRef = React.useRef<EditorManagerRef>(null);
+
     // 查询执行器
     const {
       loading,
@@ -116,6 +119,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       onQueryResult,
       onBatchQueryResults,
       onUpdateTab: updateTab,
+      getSelectedText: () => editorManagerRef.current?.getSelectedText() || null,
     });
 
     // 文件操作
@@ -337,6 +341,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
                     <div className="flex-1">
                       <EditorManager
+                        ref={editorManagerRef}
                         currentTab={currentTab}
                         selectedDatabase={selectedDatabase}
                         databases={databases}

@@ -19,6 +19,7 @@ interface QueryExecutorProps {
     executionTime: number
   ) => void;
   onUpdateTab?: (tabId: string, updates: Partial<EditorTab>) => void;
+  getSelectedText?: () => string | null;
 }
 
 export const useQueryExecutor = ({
@@ -28,6 +29,7 @@ export const useQueryExecutor = ({
   onQueryResult,
   onBatchQueryResults,
   onUpdateTab,
+  getSelectedText,
 }: QueryExecutorProps) => {
   const { activeConnectionId, connections } = useConnectionStore();
   const [loading, setLoading] = useState(false);
@@ -112,10 +114,18 @@ export const useQueryExecutor = ({
       return;
     }
 
-    const queryContent = currentTab.content.trim();
+    // 优先使用选中的文本，如果没有选中则使用全部内容
+    const selectedText = getSelectedText?.();
+    const queryContent = selectedText || currentTab.content.trim();
+
     if (!queryContent) {
       showMessage.warning('请输入查询语句');
       return;
+    }
+
+    // 如果使用了选中的文本，给用户一个提示
+    if (selectedText) {
+      console.log('🎯 执行选中的SQL:', selectedText);
     }
 
     setLoading(true);
