@@ -1091,6 +1091,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       if (!result || !result.path) {
         // 用户取消了保存，不显示错误消息
+        console.log('用户取消了保存操作');
         return;
       }
 
@@ -1102,6 +1103,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       showMessage.success('图表已导出为 PNG 格式');
     } catch (error) {
+      // 检查是否是用户取消操作导致的错误
+      const errorMessage = String(error);
+      if (errorMessage.includes('save_file_dialog') && errorMessage.includes('null or undefined')) {
+        // 用户取消了保存，不显示错误消息
+        console.log('用户取消了保存操作');
+        return;
+      }
+
       console.error('导出图表失败:', error);
       showMessage.error(`导出图表失败: ${error}`);
     }
