@@ -31,6 +31,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
   DropdownMenuLabel,
+  Input,
 } from '@/components/ui';
 import { GlideDataTable } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
@@ -79,6 +80,9 @@ import {
   Grid3x3,
   Filter,
   Radar,
+  Edit2,
+  Check,
+  X,
 } from 'lucide-react';
 import EChartsReact from 'echarts-for-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -132,6 +136,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar'
   >('line');
   const [selectedFields, setSelectedFields] = useState<string[]>([]);
+
+  // 自定义标题和字段别名
+  const [customChartTitle, setCustomChartTitle] = useState<string>('');
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [fieldAliases, setFieldAliases] = useState<Record<string, string>>({});
+  const [editingFieldAlias, setEditingFieldAlias] = useState<string | null>(null);
   const [sortColumn, setSortColumn] = useState<string | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const chartRef = useRef<any>(null);
@@ -337,11 +347,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           selectedFields: fieldsToDisplay.length > 0 ? fieldsToDisplay : numericColumns.slice(0, 3),
           data: parsedResult.data,
           rowCount: parsedResult.rowCount,
+          customTitle: customChartTitle,
+          fieldAliases: fieldAliases,
         },
         themeConfig
       );
     },
-    [parseQueryResult, getThemeConfig, selectedFields]
+    [parseQueryResult, getThemeConfig, selectedFields, customChartTitle, fieldAliases]
   );
 
   // 自动切换到数据标签页当有查询结果时
@@ -637,6 +649,27 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       }
     });
   }, []);
+
+  // 处理字段别名设置
+  const handleSetFieldAlias = useCallback((fieldName: string, alias: string) => {
+    setFieldAliases(prev => {
+      if (alias.trim() === '') {
+        // 如果别名为空，删除别名
+        const newAliases = { ...prev };
+        delete newAliases[fieldName];
+        return newAliases;
+      }
+      return {
+        ...prev,
+        [fieldName]: alias.trim()
+      };
+    });
+  }, []);
+
+  // 获取字段显示名称（别名或原名）
+  const getFieldDisplayName = useCallback((fieldName: string) => {
+    return fieldAliases[fieldName] || fieldName;
+  }, [fieldAliases]);
 
   // 获取可用的数值字段
   const availableNumericFields = useMemo(() => {
@@ -1776,7 +1809,59 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         </div>
                       )}
                     </div>
-                    <div className='flex items-center gap-2'>
+                    <div className='flex items-center gap-2 flex-wrap'>
+                      {/* 图表标题编辑器 */}
+                      <div className='flex items-center gap-1'>
+                        {isEditingTitle ? (
+                          <div className='flex items-center gap-1'>
+                            <Input
+                              value={customChartTitle}
+                              onChange={(e) => setCustomChartTitle(e.target.value)}
+                              placeholder='输入图表标题'
+                              className='h-7 w-40 text-xs'
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  setIsEditingTitle(false);
+                                } else if (e.key === 'Escape') {
+                                  setCustomChartTitle('');
+                                  setIsEditingTitle(false);
+                                }
+                              }}
+                            />
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className='h-7 w-7 p-0'
+                              onClick={() => setIsEditingTitle(false)}
+                            >
+                              <Check className='w-3 h-3' />
+                            </Button>
+                            <Button
+                              variant='ghost'
+                              size='sm'
+                              className='h-7 w-7 p-0'
+                              onClick={() => {
+                                setCustomChartTitle('');
+                                setIsEditingTitle(false);
+                              }}
+                            >
+                              <X className='w-3 h-3' />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='text-xs h-7'
+                            onClick={() => setIsEditingTitle(true)}
+                          >
+                            <Edit2 className='w-3 h-3 mr-1' />
+                            {customChartTitle || '编辑标题'}
+                          </Button>
+                        )}
+                      </div>
+
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -1872,17 +1957,65 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                               字段 ({selectedFields.length}/{availableNumericFields.length})
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent className='w-56'>
+                          <DropdownMenuContent className='w-72'>
                             <DropdownMenuLabel>选择显示字段</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {availableNumericFields.map(field => (
-                              <DropdownMenuCheckboxItem
-                                key={field}
-                                checked={selectedFields.includes(field)}
-                                onCheckedChange={() => handleFieldToggle(field)}
-                              >
-                                {field}
-                              </DropdownMenuCheckboxItem>
+                              <div key={field} className='flex items-center gap-1 px-2 py-1.5 hover:bg-accent'>
+                                <DropdownMenuCheckboxItem
+                                  checked={selectedFields.includes(field)}
+                                  onCheckedChange={() => handleFieldToggle(field)}
+                                  className='flex-1 cursor-pointer'
+                                >
+                                  <span className='flex-1'>
+                                    {getFieldDisplayName(field)}
+                                    {fieldAliases[field] && (
+                                      <span className='text-xs text-muted-foreground ml-1'>
+                                        ({field})
+                                      </span>
+                                    )}
+                                  </span>
+                                </DropdownMenuCheckboxItem>
+                                {editingFieldAlias === field ? (
+                                  <div className='flex items-center gap-1' onClick={(e) => e.stopPropagation()}>
+                                    <Input
+                                      value={fieldAliases[field] || ''}
+                                      onChange={(e) => handleSetFieldAlias(field, e.target.value)}
+                                      placeholder={field}
+                                      className='h-6 w-24 text-xs'
+                                      autoFocus
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          setEditingFieldAlias(null);
+                                        } else if (e.key === 'Escape') {
+                                          handleSetFieldAlias(field, '');
+                                          setEditingFieldAlias(null);
+                                        }
+                                      }}
+                                    />
+                                    <Button
+                                      variant='ghost'
+                                      size='sm'
+                                      className='h-6 w-6 p-0'
+                                      onClick={() => setEditingFieldAlias(null)}
+                                    >
+                                      <Check className='w-3 h-3' />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Button
+                                    variant='ghost'
+                                    size='sm'
+                                    className='h-6 w-6 p-0'
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setEditingFieldAlias(field);
+                                    }}
+                                  >
+                                    <Edit2 className='w-3 h-3' />
+                                  </Button>
+                                )}
+                              </div>
                             ))}
                           </DropdownMenuContent>
                         </DropdownMenu>

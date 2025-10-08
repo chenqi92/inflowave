@@ -18,6 +18,8 @@ export interface ChartDataConfig {
   selectedFields: string[];
   data: any[];
   rowCount: number;
+  customTitle?: string;
+  fieldAliases?: Record<string, string>;
 }
 
 export type ChartType = 'line' | 'bar' | 'pie' | 'area' | 'scatter' | 'heatmap' | 'radar';
@@ -62,14 +64,14 @@ export const generateTimeSeriesLineChart = (
   config: ChartDataConfig,
   theme: ChartThemeConfig
 ) => {
-  const { timeColumn, data, selectedFields } = config;
+  const { timeColumn, data, selectedFields, customTitle, fieldAliases = {} } = config;
 
   if (!timeColumn) return null;
 
   const timeFormat = getTimeAxisFormat(data, timeColumn);
 
   const series = selectedFields.map((field, index) => ({
-    name: field,
+    name: fieldAliases[field] || field,  // 使用别名或原名
     type: 'line',
     data: data.map(row => [row[timeColumn], row[field]]),
     smooth: true,
@@ -88,7 +90,7 @@ export const generateTimeSeriesLineChart = (
     textStyle: { color: theme.textColor },
     color: theme.colors,
     title: {
-      text: '时序数据趋势',
+      text: customTitle || '时序数据趋势',  // 使用自定义标题或默认标题
       left: 'center',
       textStyle: { color: theme.textColor, fontSize: 14 },
     },
@@ -211,14 +213,14 @@ export const generateAreaChart = (
   config: ChartDataConfig,
   theme: ChartThemeConfig
 ) => {
-  const { timeColumn, data, selectedFields } = config;
+  const { timeColumn, data, selectedFields, customTitle, fieldAliases = {} } = config;
 
   if (!timeColumn) return null;
 
   const timeFormat = getTimeAxisFormat(data, timeColumn);
 
   const series = selectedFields.map((field, index) => ({
-    name: field,
+    name: fieldAliases[field] || field,
     type: 'line',
     data: data.map(row => [row[timeColumn], row[field]]),
     smooth: true,
@@ -239,7 +241,7 @@ export const generateAreaChart = (
     textStyle: { color: theme.textColor },
     color: theme.colors,
     title: {
-      text: '时序数据面积图',
+      text: customTitle || '时序数据面积图',
       left: 'center',
       textStyle: { color: theme.textColor, fontSize: 14 },
     },
@@ -357,14 +359,14 @@ export const generateScatterChart = (
   config: ChartDataConfig,
   theme: ChartThemeConfig
 ) => {
-  const { timeColumn, data, selectedFields } = config;
+  const { timeColumn, data, selectedFields, customTitle, fieldAliases = {} } = config;
 
   if (!timeColumn || selectedFields.length === 0) return null;
 
   const timeFormat = getTimeAxisFormat(data, timeColumn);
 
   const series = selectedFields.map((field) => ({
-    name: field,
+    name: fieldAliases[field] || field,
     type: 'scatter',
     data: data.map(row => [row[timeColumn], row[field]]),
     symbolSize: 8,
@@ -380,7 +382,7 @@ export const generateScatterChart = (
     textStyle: { color: theme.textColor },
     color: theme.colors,
     title: {
-      text: '时序散点图',
+      text: customTitle || '时序散点图',
       left: 'center',
       textStyle: { color: theme.textColor, fontSize: 14 },
     },
@@ -495,14 +497,14 @@ export const generateBarChart = (
   config: ChartDataConfig,
   theme: ChartThemeConfig
 ) => {
-  const { timeColumn, data, selectedFields } = config;
+  const { timeColumn, data, selectedFields, customTitle, fieldAliases = {} } = config;
 
   if (!timeColumn) return null;
 
   const timeFormat = getTimeAxisFormat(data, timeColumn);
 
   const series = selectedFields.map((field) => ({
-    name: field,
+    name: fieldAliases[field] || field,
     type: 'bar',
     data: data.map(row => [row[timeColumn], row[field]]),
     emphasis: {
@@ -515,7 +517,7 @@ export const generateBarChart = (
     textStyle: { color: theme.textColor },
     color: theme.colors,
     title: {
-      text: '时序柱状图',
+      text: customTitle || '时序柱状图',
       left: 'center',
       textStyle: { color: theme.textColor, fontSize: 14 },
     },
@@ -632,7 +634,7 @@ export const generatePieChart = (
   config: ChartDataConfig,
   theme: ChartThemeConfig
 ) => {
-  const { data, selectedFields } = config;
+  const { data, selectedFields, customTitle, fieldAliases = {} } = config;
 
   if (selectedFields.length === 0 || data.length === 0) return null;
 
@@ -640,7 +642,7 @@ export const generatePieChart = (
   const lastData = data[data.length - 1];
   const pieData = selectedFields
     .map(field => ({
-      name: field,
+      name: fieldAliases[field] || field,
       value: Math.abs(lastData[field]) || 0,
     }))
     .filter(item => item.value > 0);
@@ -650,7 +652,7 @@ export const generatePieChart = (
     textStyle: { color: theme.textColor },
     color: theme.colors,
     title: {
-      text: '数据分布（最新时间点）',
+      text: customTitle || '数据分布（最新时间点）',
       left: 'center',
       textStyle: { color: theme.textColor, fontSize: 14 },
     },
@@ -700,7 +702,7 @@ export const generateHeatmapChart = (
   config: ChartDataConfig,
   theme: ChartThemeConfig
 ) => {
-  const { timeColumn, data, selectedFields } = config;
+  const { timeColumn, data, selectedFields, customTitle, fieldAliases = {} } = config;
 
   if (!timeColumn || selectedFields.length === 0) return null;
 
@@ -738,7 +740,7 @@ export const generateHeatmapChart = (
     backgroundColor: theme.backgroundColor,
     textStyle: { color: theme.textColor },
     title: {
-      text: '数据热力图',
+      text: customTitle || '数据热力图',
       left: 'center',
       textStyle: { color: theme.textColor, fontSize: 14 },
     },
@@ -746,9 +748,10 @@ export const generateHeatmapChart = (
       position: 'top',
       formatter: (params: any) => {
         const field = selectedFields[params.value[1]];
+        const fieldName = fieldAliases[field] || field;
         const value = params.value[2];
         const time = data[params.value[0]][timeColumn];
-        return `${new Date(time).toLocaleString()}<br/>${field}: ${value.toFixed(2)}`;
+        return `${new Date(time).toLocaleString()}<br/>${fieldName}: ${value.toFixed(2)}`;
       },
       backgroundColor: theme.tooltipBgColor,
       borderColor: theme.borderColor,
@@ -776,7 +779,7 @@ export const generateHeatmapChart = (
     },
     yAxis: {
       type: 'category',
-      data: selectedFields,
+      data: selectedFields.map(field => fieldAliases[field] || field),
       splitArea: {
         show: true,
       },
@@ -821,7 +824,7 @@ export const generateRadarChart = (
   config: ChartDataConfig,
   theme: ChartThemeConfig
 ) => {
-  const { data, selectedFields } = config;
+  const { data, selectedFields, customTitle, fieldAliases = {} } = config;
 
   if (selectedFields.length === 0 || data.length === 0) return null;
 
@@ -835,7 +838,7 @@ export const generateRadarChart = (
     // 确保max值至少为1，避免为0导致的问题
     const safeMax = maxValue === 0 ? 1 : maxValue * 1.2;
     return {
-      name: field,
+      name: fieldAliases[field] || field,
       max: safeMax,
     };
   });
@@ -847,7 +850,7 @@ export const generateRadarChart = (
     textStyle: { color: theme.textColor },
     color: theme.colors,
     title: {
-      text: '多维度雷达图（最新时间点）',
+      text: customTitle || '多维度雷达图（最新时间点）',
       left: 'center',
       textStyle: { color: theme.textColor, fontSize: 14 },
     },
