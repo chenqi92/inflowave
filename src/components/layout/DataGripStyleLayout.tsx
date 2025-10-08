@@ -571,7 +571,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                                 : 100 - bottomPanelSize
                         }
                         minSize={30}
-                        className='bg-background overflow-hidden'
+                        className='bg-background'
                     >
                         <TabEditorRefactored
                             key="main-tab-editor-stable" // 使用更稳定的 key 防止重新挂载

@@ -1162,8 +1162,11 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
         lineNumbers: 'on',
         roundedSelection: false,
         scrollbar: {
-          vertical: 'auto',
-          horizontal: 'auto',
+          vertical: 'visible',
+          horizontal: 'visible',
+          verticalScrollbarSize: 10,
+          horizontalScrollbarSize: 10,
+          alwaysConsumeMouseWheel: true,
         },
         wordWrap: 'on',
         automaticLayout: true,

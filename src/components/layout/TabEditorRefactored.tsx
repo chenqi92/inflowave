@@ -308,7 +308,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
           </div>
 
           {/* 编辑器内容 */}
-          <div className='flex-1 min-h-0 overflow-hidden'>
+          <div className='flex-1 min-h-0'>
             {tabs.length > 0 ? (
               currentTab ? (
                 currentTab.type === 'data-browser' ? (
@@ -318,7 +318,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                     tableName={currentTab.tableName!}
                   />
                 ) : (
-                  <div className="h-full flex flex-col">
+                  <div className="h-full flex flex-col overflow-hidden">
                     {/* 查询工具栏 - 仅在查询类型tab中显示 */}
                     {currentTab.type === 'query' && (
                       <QueryToolbar
@@ -339,7 +339,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                       />
                     )}
 
-                    <div className="flex-1">
+                    <div className="flex-1 min-h-0 overflow-hidden">
                       <EditorManager
                         ref={editorManagerRef}
                         currentTab={currentTab}
