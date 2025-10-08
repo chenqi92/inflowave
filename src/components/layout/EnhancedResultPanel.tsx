@@ -1526,10 +1526,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         });
       }
 
+      // 按照置信度从低到高排序
+      const sortedInsights = queryInsights.sort((a, b) => a.confidence - b.confidence);
+
       return {
         queryIndex: index,
         queryText: executedQueries[index] || `查询 ${index + 1}`,
-        insights: queryInsights,
+        insights: sortedInsights,
       };
     });
   }, [allResults, executedQueries, executionTime, parseQueryResult]);
