@@ -38,6 +38,7 @@ import {
     BarChart,
     FolderX,
     GitBranch,
+    Loader2,
 } from 'lucide-react';
 import {useConnectionStore} from '@/store/connection';
 import {useFavoritesStore, favoritesUtils} from '@/store/favorites';
@@ -188,9 +189,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             console.log(`🗑️ 已清除所有数据库缓存`);
         }
     }, []);
-    const [_connectionLoadingStates, setConnectionLoadingStates] = useState<
+    const [connectionLoadingStates, setConnectionLoadingStates] = useState<
         Map<string, boolean>
     >(new Map());
+
+    // 连接错误状态 - 用于显示连接失败提示
+    const [connectionErrors, setConnectionErrors] = useState<Map<string, string>>(new Map());
 
     // 系统节点过滤状态 - 默认开启（隐藏系统节点）
     const [hideSystemNodes, setHideSystemNodes] = useState(true);
@@ -948,17 +952,24 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             const connectionPath = connection.id;
             const isFav = isFavorite(connectionPath);
             const connectionStatus = getConnectionStatus(connection.id);
-            // 检查是否正在连接中（从连接状态中获取）
-            const isConnecting = connectionStatus?.status === 'connecting';
-            // 在构建树时，只显示连接状态中的loading，不显示本地loading状态
+            // 检查是否正在连接中（从连接状态中获取或本地状态）
+            const isConnecting = connectionStatus?.status === 'connecting' || connectionLoadingStates.get(connection.id) === true;
+            // 获取连接错误信息
+            const connectionError = connectionErrors.get(connection.id);
+            // 在构建树时，显示连接状态中的loading或本地loading状态
             const showLoading = isConnecting;
 
             const connectionNode: DataNode = {
                 title: (
-                    <div className='flex items-center gap-2'>
+                    <div className='flex items-center gap-2 relative'>
                         <span className='flex-1'>{connection.name}</span>
                         {showLoading && (
-                            <RefreshCw className='w-3 h-3 text-muted-foreground animate-spin'/>
+                            <Loader2 className='w-3 h-3 text-blue-500 animate-spin'/>
+                        )}
+                        {connectionError && !showLoading && (
+                            <div className='absolute left-full ml-2 px-2 py-1 bg-destructive/90 text-destructive-foreground text-xs rounded whitespace-nowrap animate-fade-out z-50'>
+                                连接失败
+                            </div>
                         )}
                         {isFav && <Star className='w-3 h-3 text-warning fill-current'/>}
                     </div>
@@ -973,6 +984,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         className={isConnected ? 'text-success' : 'text-muted-foreground'}
                     />
                 ),
+                // 未连接时设置为叶子节点（隐藏展开箭头），已连接时可展开
+                isLeaf: !isConnected,
                 // 连接节点始终显示，但只有已连接时才有子节点
                 children: [],
             };
@@ -1633,6 +1646,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         console.log(`🚀 开始连接并加载数据库: ${connection.name}`);
 
+        // 清除之前的错误状态
+        setConnectionErrors(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(connectionId);
+            return newMap;
+        });
+
         // 设置加载状态
         setConnectionLoadingStates(prev => new Map(prev).set(connectionId, true));
 
@@ -1687,7 +1707,21 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         } catch (error) {
             console.error(`❌ 连接并加载数据库失败:`, error);
-            showMessage.error(`连接失败: ${error}`);
+            const errorMessage = String(error);
+
+            // 设置错误状态
+            setConnectionErrors(prev => new Map(prev).set(connectionId, errorMessage));
+
+            // 3秒后自动清除错误提示
+            setTimeout(() => {
+                setConnectionErrors(prev => {
+                    const newMap = new Map(prev);
+                    newMap.delete(connectionId);
+                    return newMap;
+                });
+            }, 3000);
+
+            showMessage.error(`连接失败: ${errorMessage}`);
         } finally {
             // 清除加载状态
             setConnectionLoadingStates(prev => {

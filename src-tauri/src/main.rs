@@ -1097,11 +1097,28 @@ async fn main() {
             let encryption_service = create_encryption_service()
                 .expect("Failed to create encryption service");
 
-            // Initialize connection service (connections will be loaded via initialize_connections command)
+            // Initialize connection service (will load connections asynchronously after setup)
             let connection_service = ConnectionService::new(encryption_service);
 
             // Store services in app state
             app.manage(connection_service);
+
+            // Load saved connections asynchronously after setup
+            let app_handle = app.handle().clone();
+            tokio::spawn(async move {
+                if let Some(service) = app_handle.try_state::<ConnectionService>() {
+                    match service.load_from_storage().await {
+                        Ok(_) => {
+                            info!("✅ 已自动加载保存的连接配置");
+                        }
+                        Err(e) => {
+                            warn!("⚠️ 加载连接配置失败: {}", e);
+                        }
+                    }
+                } else {
+                    error!("❌ 无法获取连接服务实例");
+                }
+            });
 
             // Initialize database version detector
             app.manage(commands::database_detection::init_detector());
