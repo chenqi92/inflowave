@@ -338,7 +338,6 @@ jobs:
       - name: Build Non-Windows Platforms
         if: matrix.platform != 'windows-latest'
         id: standard_build
-        continue-on-error: true
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
@@ -372,7 +371,11 @@ jobs:
           releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
           releaseDraft: false
           prerelease: false
-          args: --target ${{ matrix.rust_target }} ${{ matrix.rust_target == 'aarch64-unknown-linux-gnu' && '--config src-tauri/tauri.arm64.conf.json' || '' }}
+          # 根据平台和架构选择正确的配置文件
+          args: --target ${{ matrix.rust_target }} --config ${{
+            matrix.platform == 'macos-latest' && 'src-tauri/tauri.macos.conf.json' ||
+            (matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'src-tauri/tauri.arm64.conf.json' ||
+            'src-tauri/tauri.linux.conf.json') }}
 
       # 备用上传方案 - 如果tauri-action上传失败
       - name: Upload Non-Windows Packages (Fallback)
