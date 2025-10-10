@@ -68,7 +68,6 @@
         "decorations": true,
         "alwaysOnTop": false,
         "skipTaskbar": false,
-        "theme": "light",
         "titleBarStyle": "Visible",
         "maximized": false,
         "visible": true,
