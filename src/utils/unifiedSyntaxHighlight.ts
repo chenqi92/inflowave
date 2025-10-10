@@ -270,8 +270,11 @@ export class UnifiedSyntaxHighlightManager {
 
     // 定义增强的主题
     private defineEnhancedThemes(languageId: string, databaseType: string): void {
+        // Monaco Editor 不允许主题名称中包含下划线，需要替换为连字符
+        const safeLanguageId = languageId.replace(/_/g, '-');
+
         // 亮色主题
-        this.defineTheme(`${languageId}-light`, {
+        this.defineTheme(`${safeLanguageId}-light`, {
             base: 'vs',
             inherit: true,
             rules: [
@@ -293,7 +296,7 @@ export class UnifiedSyntaxHighlightManager {
         });
 
         // 暗色主题
-        this.defineTheme(`${languageId}-dark`, {
+        this.defineTheme(`${safeLanguageId}-dark`, {
             base: 'vs-dark',
             inherit: true,
             rules: [
@@ -331,7 +334,9 @@ export class UnifiedSyntaxHighlightManager {
         const languageId = this.getLanguageForDatabase(databaseType);
 
         if (languageId.startsWith('enhanced-')) {
-            return `${languageId}-${isDark ? 'dark' : 'light'}`;
+            // Monaco Editor 不允许主题名称中包含下划线，需要替换为连字符
+            const safeLanguageId = languageId.replace(/_/g, '-');
+            return `${safeLanguageId}-${isDark ? 'dark' : 'light'}`;
         }
 
         // 原生主题
