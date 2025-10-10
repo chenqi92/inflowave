@@ -149,6 +149,17 @@ export interface ConnectionTestResult extends BaseConnectionTestResult {
   databases?: string[];
   // 数据库特定的元数据
   metadata?: Record<string, any>;
+  // 版本检测信息
+  versionInfo?: {
+    database_type: string;
+    version: string;
+    major_version: number;
+    minor_version: number;
+    patch_version: number;
+    detected_type: string;
+    api_endpoints: string[];
+    supported_features: string[];
+  };
 }
 
 // Type alias for backward compatibility

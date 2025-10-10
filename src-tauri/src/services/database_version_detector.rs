@@ -126,24 +126,24 @@ impl DatabaseVersionDetector {
     ) -> Result<DatabaseVersionInfo> {
         let base_url = format!("http://{}:{}", host, port);
 
-        // 方法1: 优先尝试 InfluxDB 2.x/3.x 的 /health 端点（更准确）
+        // 方法1: 优先尝试 InfluxDB 1.x 的 /ping 端点（最可靠的版本检测方式）
+        tried_methods.push("influxdb1_ping".to_string());
+        if let Ok(version_info) = self.try_influxdb1_ping(&base_url).await {
+            return Ok(version_info);
+        }
+
+        // 方法2: 尝试 InfluxDB 2.x/3.x 的 /health 端点
         tried_methods.push("influxdb2_health".to_string());
         if let Ok(version_info) = self.try_influxdb2_health(&base_url).await {
             return Ok(version_info);
         }
 
-        // 方法2: 尝试 InfluxDB 2.x/3.x 的查询端点
+        // 方法3: 尝试 InfluxDB 2.x/3.x 的查询端点
         if let Some(token) = token {
             tried_methods.push("influxdb2_query".to_string());
             if let Ok(version_info) = self.try_influxdb2_query(&base_url, token).await {
                 return Ok(version_info);
             }
-        }
-
-        // 方法3: 尝试 InfluxDB 1.x 的 /ping 端点
-        tried_methods.push("influxdb1_ping".to_string());
-        if let Ok(version_info) = self.try_influxdb1_ping(&base_url).await {
-            return Ok(version_info);
         }
 
         // 方法4: 尝试通过查询端点检测 InfluxDB 1.x
@@ -213,57 +213,42 @@ impl DatabaseVersionDetector {
         .context("请求失败")?;
 
         if response.status().is_success() {
-            // 检查响应头中的版本信息
+            // 检查响应头中的版本信息 - 这是最可靠的版本检测方式
             if let Some(version_header) = response.headers().get("X-Influxdb-Version") {
                 if let Ok(version) = version_header.to_str() {
+                    info!("从 X-Influxdb-Version 头检测到版本: {}", version);
+
                     // 根据版本号判断是 1.x 还是 2.x/3.x
                     let detected_type = if version.starts_with("2.") {
                         "influxdb2"
                     } else if version.starts_with("3.") {
                         "influxdb3"
-                    } else {
+                    } else if version.starts_with("1.") {
                         "influxdb1"
+                    } else {
+                        // 如果版本号不以 1/2/3 开头，尝试从完整版本号判断
+                        // 例如 "v1.8.10" 或 "1.8.10"
+                        let version_clean = version.trim_start_matches('v');
+                        if version_clean.starts_with("1.") {
+                            "influxdb1"
+                        } else if version_clean.starts_with("2.") {
+                            "influxdb2"
+                        } else if version_clean.starts_with("3.") {
+                            "influxdb3"
+                        } else {
+                            // 默认假设是 1.x
+                            warn!("无法从版本号 {} 判断主版本，默认为 1.x", version);
+                            "influxdb1"
+                        }
                     };
+
                     return Ok(self.parse_influxdb_version_info(version, detected_type));
                 }
             }
 
-            // 如果没有版本头，但 ping 成功，需要进一步检测
-            // 尝试访问 InfluxDB 2.x 特有的端点来确认版本
-            let health_url = format!("{}/health", base_url);
-            if let Ok(health_response) = timeout(
-                Duration::from_secs(2),
-                self.client.get(&health_url).send()
-            ).await {
-                if let Ok(health_response) = health_response {
-                    if health_response.status().is_success() {
-                        if let Ok(text) = health_response.text().await {
-                            // 更严格地验证 /health 端点的响应
-                            if let Ok(health_info) = serde_json::from_str::<serde_json::Value>(&text) {
-                                // 检查是否包含 InfluxDB 2.x/3.x 特有的字段
-                                // 必须同时包含 name 和 version 字段才认为是有效的 2.x/3.x 响应
-                                if let (Some(name), Some(version_value)) = (health_info.get("name"), health_info.get("version")) {
-                                    if let Some(version) = version_value.as_str() {
-                                        // 进一步验证 name 字段是否符合 InfluxDB 2.x/3.x 的格式
-                                        if let Some(name_str) = name.as_str() {
-                                            if name_str.to_lowercase().contains("influx") {
-                                                let detected_type = if version.starts_with("3.") {
-                                                    "influxdb3"
-                                                } else {
-                                                    "influxdb2"
-                                                };
-                                                return Ok(self.parse_influxdb_version_info(version, detected_type));
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 如果 /health 检测失败或不符合 2.x/3.x 格式，假设是 InfluxDB 1.x
+            // 如果没有版本头，但 ping 成功，可能是 InfluxDB 1.x（某些配置下不返回版本头）
+            // 不再尝试 /health 端点，避免误判
+            warn!("Ping 成功但未找到 X-Influxdb-Version 头，假设为 InfluxDB 1.x");
             return Ok(self.parse_influxdb_version_info("1.x.x", "influxdb1"));
         }
 

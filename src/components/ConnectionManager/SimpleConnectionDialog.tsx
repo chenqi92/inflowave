@@ -39,7 +39,7 @@ import {
   type VersionDetectionResult,
 } from '@/services/databaseVersionDetection';
 import { showMessage } from '@/utils/message';
-import { VersionDetectionDialog } from './VersionDetectionDialog';
+// import { VersionDetectionDialog } from './VersionDetectionDialog'; // 不再使用
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 
 interface SimpleConnectionDialogProps {
@@ -200,11 +200,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     }
   }, [visible, testAbortController]);
 
-  // 版本检测相关状态
-  const [showVersionDialog, setShowVersionDialog] = useState(false);
-  const [versionDetectionResult, setVersionDetectionResult] =
-    useState<VersionDetectionResult | null>(null);
-  const [isDetectingVersion, setIsDetectingVersion] = useState(false);
+  // 版本检测相关状态（已废弃，保留用于兼容性）
+  // 版本检测现在在测试连接时进行，不再需要单独的对话框
+  // const [showVersionDialog, setShowVersionDialog] = useState(false);
+  // const [versionDetectionResult, setVersionDetectionResult] = useState<VersionDetectionResult | null>(null);
+  // const [isDetectingVersion, setIsDetectingVersion] = useState(false);
 
   const [formData, setFormData] = useState<FormData>(() => {
     const defaults = createDefaultConnectionConfig();
@@ -455,9 +455,19 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         return;
       }
 
-      // 处理连接测试结果
+      // 处理连接测试结果和版本检测结果
+      let finalTestResult: ConnectionTestResult;
+
       if (connectionResult.status === 'fulfilled') {
-        setTestResult(connectionResult.value);
+        finalTestResult = connectionResult.value;
+
+        // 如果版本检测成功，将版本信息添加到测试结果中
+        if (versionResult.status === 'fulfilled' && versionResult.value.success && versionResult.value.version_info) {
+          finalTestResult.versionInfo = versionResult.value.version_info;
+          finalTestResult.serverVersion = versionResult.value.version_info.version;
+        }
+
+        setTestResult(finalTestResult);
       } else {
         let errorMessage = connectionResult.reason?.message || '连接测试失败';
 
@@ -469,14 +479,16 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           errorMessage = `IoTDB 连接失败: ${errorMessage}`;
         }
 
-        setTestResult({
+        finalTestResult = {
           success: false,
           error: errorMessage,
           latency: 0,
-        });
+        };
+
+        setTestResult(finalTestResult);
       }
 
-      // 处理版本检测结果
+      // 处理版本检测结果（用于编辑连接时的版本变化检测）
       if (versionResult.status === 'fulfilled' && versionResult.value.success) {
         await handleVersionChangeDetection(versionResult.value);
       }
@@ -637,49 +649,23 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    // 如果是编辑现有连接，直接保存
-    if (isEditing) {
-      await saveConnection();
-      return;
-    }
+    // 使用测试连接时检测的版本信息（如果有）
+    const versionInfo = testResult?.versionInfo;
 
-    // 新建连接时，先进行版本检测
-    await detectVersionAndSave();
-  };
-
-  // 检测版本并保存
-  const detectVersionAndSave = async () => {
-    setIsDetectingVersion(true);
-    setShowVersionDialog(true);
-
-    try {
-      const result =
-        await DatabaseVersionDetectionService.detectDatabaseVersion({
-          host: formData.host,
-          port: formData.port,
-          username: formData.username || undefined,
-          password: formData.password || undefined,
-          token: formData.apiToken || undefined,
-        });
-
-      setVersionDetectionResult(result);
-    } catch (error) {
-      console.error('版本检测失败:', error);
-      setVersionDetectionResult({
-        success: false,
-        error_message: error instanceof Error ? error.message : '版本检测失败',
-        detection_time_ms: 0,
-        tried_methods: [],
-      });
-    } finally {
-      setIsDetectingVersion(false);
-    }
-  };
-
-  // 确认版本信息并保存连接
-  const handleVersionConfirm = async (versionInfo: DatabaseVersionInfo) => {
-    setShowVersionDialog(false);
+    // 直接保存连接，不再弹出版本检测对话框
     await saveConnection(versionInfo);
+  };
+
+  // 检测版本并保存（已废弃，保留用于兼容性）
+  const detectVersionAndSave = async () => {
+    // 不再使用，直接在测试连接时检测版本
+    console.warn('detectVersionAndSave is deprecated, version detection is now done during connection test');
+  };
+
+  // 确认版本信息并保存连接（已废弃，保留用于兼容性）
+  const handleVersionConfirm = async (versionInfo: DatabaseVersionInfo) => {
+    // 不再使用
+    console.warn('handleVersionConfirm is deprecated');
   };
 
   // 保存连接
@@ -747,7 +733,6 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         detectedType: versionInfo?.detected_type,
         versionInfo,
         lastVersionCheck: versionInfo ? new Date().toISOString() : undefined,
-        versionCheckResult: versionDetectionResult || undefined,
 
         created_at: connection?.created_at || new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -1733,12 +1718,51 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         {testResult.success ? '连接测试成功' : '连接测试失败'}
                       </h4>
                       {testResult.success ? (
-                        <div className='mt-2 text-sm text-green-700'>
+                        <div className='mt-2 text-sm text-green-700 space-y-2'>
                           <p>✅ 数据库连接正常</p>
                           {testResult.latency && (
                             <p>⚡ 响应时间: {testResult.latency}ms</p>
                           )}
-                          <p className='mt-1 text-green-600'>
+
+                          {/* 版本信息展示 */}
+                          {testResult.versionInfo && (
+                            <div className='mt-3 p-3 bg-white border border-green-200 rounded-md space-y-2'>
+                              <div className='flex items-center gap-2'>
+                                <img
+                                  src={getDatabaseBrandIcon(testResult.versionInfo.database_type)}
+                                  alt={testResult.versionInfo.database_type}
+                                  className="w-5 h-5"
+                                />
+                                <span className='font-semibold text-green-800'>
+                                  {testResult.versionInfo.database_type}
+                                </span>
+                                <span className='text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded'>
+                                  {testResult.versionInfo.detected_type === 'influxdb1' ? '1.x' :
+                                   testResult.versionInfo.detected_type === 'influxdb2' ? '2.x' :
+                                   testResult.versionInfo.detected_type === 'influxdb3' ? '3.x' : 'IoTDB'}
+                                </span>
+                              </div>
+
+                              <div className='text-xs text-gray-600'>
+                                <span className='font-medium'>版本:</span> {testResult.versionInfo.version}
+                              </div>
+
+                              {testResult.versionInfo.supported_features.length > 0 && (
+                                <div className='text-xs'>
+                                  <span className='font-medium text-gray-600'>支持特性:</span>
+                                  <div className='flex flex-wrap gap-1 mt-1'>
+                                    {testResult.versionInfo.supported_features.map((feature, idx) => (
+                                      <span key={idx} className='px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs'>
+                                        {feature}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          <p className='mt-2 text-green-600'>
                             连接配置有效，可以保存使用
                           </p>
                         </div>
@@ -1810,15 +1834,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* 版本检测确认对话框 */}
-      <VersionDetectionDialog
-        visible={showVersionDialog}
-        detectionResult={versionDetectionResult}
-        connectionName={formData.name}
-        onConfirm={handleVersionConfirm}
-        onCancel={() => setShowVersionDialog(false)}
-        loading={isDetectingVersion}
-      />
+      {/* 版本检测确认对话框 - 已移除，版本检测现在在测试连接时进行 */}
     </>
   );
 };
