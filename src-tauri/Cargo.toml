@@ -8,21 +8,9 @@ repository = "https://github.com/chenqi92/inflowave"
 edition = "2021"
 default-run = "InfloWave"
 
-# WiX 配置
-[package.metadata.wix]
-upgrade-guid = "12345678-1234-1234-1234-123456789012"
-path-guid = "87654321-4321-4321-4321-210987654321"
-license = "wix/license.rtf"
-# banner = "wix/banner.bmp"
-# dialog = "wix/dialog.bmp"
-eula = false
-# 包含所有必要的文件和依赖
-include = [
-    "target/release/InfloWave.exe",
-    "icons/*"
-]
-# 启用中文本地化
-locale = "wix/WixUI_zh-cn.wxl"
+# WiX 配置已移至 tauri.conf.json
+# Tauri 2.0 使用内置的 WiX 支持，不需要 cargo-wix
+# 如果需要自定义 MSI，请在 tauri.conf.json 的 bundle.windows.wix 中配置
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

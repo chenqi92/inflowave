@@ -1,10 +1,9 @@
 # Setup Windows build environment for InfloWave
-# This script installs WiX Toolset and cargo-wix
+# This script installs WiX Toolset for Tauri 2.0 MSI builds
 
 param(
     [switch]$Force = $false,
-    [switch]$SkipWix = $false,
-    [switch]$SkipCargoWix = $false
+    [switch]$SkipWix = $false
 )
 
 $ErrorActionPreference = "Stop"
@@ -94,46 +93,14 @@ try {
         }
     }
 
-    # Install cargo-wix
-    if (-not $SkipCargoWix) {
-        Write-Host "Installing cargo-wix..." -ForegroundColor Yellow
-        
-        try {
-            $wixVersion = cargo wix --version 2>$null
-            if ($LASTEXITCODE -eq 0 -and (-not $Force)) {
-                Write-Host "cargo-wix is already installed: $wixVersion" -ForegroundColor Green
-            } else {
-                throw "cargo-wix not found or force install requested"
-            }
-        } catch {
-            Write-Host "Installing cargo-wix..." -ForegroundColor Yellow
-            cargo install cargo-wix --force --locked
-
-            if ($LASTEXITCODE -ne 0) {
-                Write-Host "Standard install failed, trying from source..." -ForegroundColor Yellow
-                cargo install --git https://github.com/volks73/cargo-wix --force
-                
-                if ($LASTEXITCODE -ne 0) {
-                    throw "cargo-wix installation failed"
-                }
-            }
-
-            # Verify installation
-            $wixVersion = cargo wix --version
-            if ($LASTEXITCODE -eq 0) {
-                Write-Host "cargo-wix installed successfully: $wixVersion" -ForegroundColor Green
-            } else {
-                throw "cargo-wix installation verification failed"
-            }
-        }
-    }
-
     Write-Host "Windows build environment setup completed!" -ForegroundColor Green
     Write-Host "" -ForegroundColor White
-    Write-Host "You can now build Windows MSI packages using:" -ForegroundColor Cyan
-    Write-Host "  npm run build:windows:cargo-wix" -ForegroundColor White
-    Write-Host "  or" -ForegroundColor White
-    Write-Host "  powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1" -ForegroundColor White
+    Write-Host "You can now build Windows packages using:" -ForegroundColor Cyan
+    Write-Host "  npm run build:windows-x64" -ForegroundColor White
+    Write-Host "  npm run build:windows-x86" -ForegroundColor White
+    Write-Host "  npm run build:windows" -ForegroundColor White
+    Write-Host "" -ForegroundColor White
+    Write-Host "Tauri 2.0 will automatically use WiX Toolset to generate MSI packages." -ForegroundColor Yellow
 
 } catch {
     Write-Host "Setup failed: $($_.Exception.Message)" -ForegroundColor Red

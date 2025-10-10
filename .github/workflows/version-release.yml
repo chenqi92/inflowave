@@ -279,30 +279,19 @@ jobs:
           node scripts/download-fonts-ci.cjs
           echo "✅ 字体下载完成"
 
-      - name: Verify Windows Build Environment
+      # Tauri 2.0 使用内置 WiX 支持，不需要验证 cargo-wix
+      # - name: Verify Windows Build Environment
+      #   if: matrix.platform == 'windows-latest'
+      #   run: |
+      #     Write-Output "Verifying Windows build environment..."
+      #     Write-Output "Tauri 2.0 uses built-in WiX support"
+      #     Write-Output "Windows build environment verified"
+      #   shell: pwsh
+
+      # Windows 构建 - 使用 Tauri 2.0 内置 WiX 支持构建 NSIS 和 MSI
+      - name: Build Windows Packages (Tauri)
         if: matrix.platform == 'windows-latest'
-        run: |
-          Write-Output "Verifying Windows build environment..."
-
-          # Verify cargo-wix
-          cargo wix --version
-
-          # Verify WiX Toolset
-          candle.exe -? | Out-Null
-          if ($LASTEXITCODE -eq 0) {
-            Write-Output "WiX Toolset is working"
-          } else {
-            Write-Output "WiX Toolset verification failed"
-            exit 1
-          }
-
-          Write-Output "Windows build environment verified"
-        shell: pwsh
-
-      # Windows 构建 - 先构建 EXE，再构建 MSI
-      - name: Build Windows EXE (Tauri NSIS)
-        if: matrix.platform == 'windows-latest'
-        id: windows_exe_build
+        id: windows_build
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
@@ -314,19 +303,11 @@ jobs:
           releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
           releaseDraft: false
           prerelease: false
+          # 使用默认配置，同时构建 NSIS 和 MSI
           args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.conf.json
 
-      - name: Build Windows MSI (Tauri)
-        if: matrix.platform == 'windows-latest'
-        id: windows_msi_build
-        continue-on-error: true
-        shell: pwsh
-        run: |
-          Write-Output "Building Windows MSI using Tauri..."
-          Write-Output "Target: ${{ matrix.rust_target }}"
-
-          # Use our build script
-          powershell -ExecutionPolicy Bypass -File scripts/build-windows.ps1 -Target ${{ matrix.rust_target }} -Verbose
+      # MSI 已通过 tauri-action 自动构建（使用 Tauri 2.0 内置 WiX 支持）
+      # 不需要单独的构建步骤
 
       - name: Build Windows Portable ZIP Packages
         if: matrix.platform == 'windows-latest'
@@ -433,32 +414,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
-      # Windows MSI 文件上传到 Release
-      - name: Upload Windows MSI to Release
-        if: matrix.platform == 'windows-latest' && steps.windows_msi_build.outcome == 'success'
-        shell: pwsh
-        run: |
-          Write-Output "Uploading Windows MSI files to Release..."
-
-          # 查找 MSI 文件
-          $msiFiles = Get-ChildItem "src-tauri\target\wix\*.msi" -ErrorAction SilentlyContinue
-
-          if ($msiFiles) {
-            foreach ($msiFile in $msiFiles) {
-              $fileName = $msiFile.Name
-              $filePath = $msiFile.FullName
-
-              Write-Output "Uploading MSI file: $fileName"
-
-              # 使用 GitHub CLI 上传文件到 Release
-              gh release upload "v${{ needs.detect-version.outputs.version }}" "$filePath" --clobber
-            }
-            Write-Output "Windows MSI files uploaded successfully"
-          } else {
-            Write-Output "⚠️ No MSI files found to upload"
-          }
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+      # MSI 文件已通过 tauri-action 自动上传
+      # 不需要单独的上传步骤
 
       # Windows MSIX 文件上传到 Release
       - name: Upload Windows MSIX to Release

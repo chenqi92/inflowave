@@ -4,7 +4,7 @@ use crate::utils::validation::ValidationUtils;
 use crate::database::client::DatabaseClient;
 use crate::commands::settings::SettingsStorage;
 use tauri::State;
-use log::{debug, error, info, warn};
+use log::{debug, error, info};
 use std::sync::Arc;
 
 /// 执行查询
