@@ -26,9 +26,17 @@ user-agent = "cargo"
 PKG_CONFIG_ALLOW_CROSS = { value = "1", relative = true }
 
 # 目标配置
+# Windows 目标使用 x86-64-v2 以确保更好的兼容性
+# x86-64-v2 支持 2009 年后的大多数 CPU (包含 SSE4.2, POPCNT 等指令)
+# 如果需要最大兼容性，可以改为 "x86-64"（基础指令集）
 [target.x86_64-pc-windows-msvc]
-rustflags = ["-C", "target-cpu=native"]
+rustflags = ["-C", "target-cpu=x86-64-v2"]
 
+# 32 位 Windows 目标
+[target.i686-pc-windows-msvc]
+rustflags = ["-C", "target-cpu=pentium4"]
+
+# Linux 和 macOS 可以使用 native，因为通常是用户自己编译
 [target.x86_64-unknown-linux-gnu]
 rustflags = ["-C", "target-cpu=native"]
 # Linux 专用环境变量
