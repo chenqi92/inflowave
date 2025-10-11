@@ -196,6 +196,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     // 连接错误状态 - 用于显示连接失败提示
     const [connectionErrors, setConnectionErrors] = useState<Map<string, string>>(new Map());
 
+    // 数据库节点 loading 状态 - 用于显示数据库打开中的 loading 效果
+    const [databaseLoadingStates, setDatabaseLoadingStates] = useState<Map<string, boolean>>(new Map());
+
+    // 数据库节点错误状态 - 用于显示数据库打开失败提示
+    const [databaseErrors, setDatabaseErrors] = useState<Map<string, string>>(new Map());
+
     // 系统节点过滤状态 - 默认开启（隐藏系统节点）
     const [hideSystemNodes, setHideSystemNodes] = useState(true);
 
@@ -1098,14 +1104,26 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                             nodeType = getDatabaseNodeType(connection.id, dbName);
                         }
 
+                        // 获取数据库节点的 loading 和 error 状态
+                        const dbLoading = databaseLoadingStates.get(databaseKey);
+                        const dbError = databaseErrors.get(databaseKey);
+
                         const nodeData: any = {
                             title: (
-                                <span className='flex items-center gap-1'>
-                                    {dbName}
+                                <div className='flex items-center gap-2 relative'>
+                                    <span className='flex-1'>{dbName}</span>
+                                    {dbLoading && (
+                                        <Loader2 className='w-3 h-3 text-blue-500 animate-spin'/>
+                                    )}
+                                    {dbError && !dbLoading && (
+                                        <div className='absolute left-full ml-2 px-2 py-1 bg-destructive/90 text-destructive-foreground text-xs rounded whitespace-nowrap animate-fade-out z-50'>
+                                            无法打开
+                                        </div>
+                                    )}
                                     {isFav && (
                                         <Star className='w-3 h-3 text-warning fill-current'/>
                                     )}
-                                </span>
+                                </div>
                             ),
                             key: databaseKey,
                             // 使用正确的节点类型显示图标
@@ -1208,6 +1226,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         // 移除expandedKeys依赖，避免每次展开/收起都重建整个树
         isDatabaseOpened, // 添加数据库打开状态依赖
         hideSystemNodes, // 添加系统节点过滤状态依赖
+        connectionLoadingStates, // 添加连接 loading 状态依赖
+        connectionErrors, // 添加连接错误状态依赖
+        databaseLoadingStates, // 添加数据库 loading 状态依赖
+        databaseErrors, // 添加数据库错误状态依赖
     ]);
 
     // 动态加载节点数据
@@ -1712,6 +1734,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             // 设置错误状态
             setConnectionErrors(prev => new Map(prev).set(connectionId, errorMessage));
 
+            // 清除加载状态（在设置错误状态后立即清除，以便显示错误提示）
+            setConnectionLoadingStates(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(connectionId);
+                return newMap;
+            });
+
             // 3秒后自动清除错误提示
             setTimeout(() => {
                 setConnectionErrors(prev => {
@@ -1723,7 +1752,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
             showMessage.error(`连接失败: ${errorMessage}`);
         } finally {
-            // 清除加载状态
+            // 确保加载状态被清除（防止异常情况）
             setConnectionLoadingStates(prev => {
                 const newMap = new Map(prev);
                 newMap.delete(connectionId);
@@ -2075,6 +2104,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                 if (!isOpened) {
                     // 如果数据库未打开，则打开数据库并自动展开加载表列表
+
+                    // 清除之前的错误状态
+                    setDatabaseErrors(prev => {
+                        const newMap = new Map(prev);
+                        newMap.delete(databaseKey);
+                        return newMap;
+                    });
+
+                    // 设置 loading 状态
+                    setDatabaseLoadingStates(prev => new Map(prev).set(databaseKey, true));
+
                     openDatabase(connectionId, database);
                     showMessage.success(`已打开数据库 "${database}"，正在加载表列表...`);
 
@@ -2158,15 +2198,54 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         });
 
                         showMessage.success(`已打开数据库 "${database}" 并加载了 ${tables.length} 个表`);
+
+                        // 清除 loading 状态
+                        setDatabaseLoadingStates(prev => {
+                            const newMap = new Map(prev);
+                            newMap.delete(databaseKey);
+                            return newMap;
+                        });
                     } catch (error) {
                         console.error('❌ 加载表列表失败:', error);
-                        showMessage.error(`打开数据库 "${database}" 失败: ${error}`);
+                        const errorMessage = String(error);
+                        showMessage.error(`打开数据库 "${database}" 失败: ${errorMessage}`);
+
+                        // 设置错误状态
+                        setDatabaseErrors(prev => new Map(prev).set(databaseKey, errorMessage));
+
+                        // 3秒后自动清除错误提示
+                        setTimeout(() => {
+                            setDatabaseErrors(prev => {
+                                const newMap = new Map(prev);
+                                newMap.delete(databaseKey);
+                                return newMap;
+                            });
+                        }, 3000);
+
+                        // 清除 loading 状态
+                        setDatabaseLoadingStates(prev => {
+                            const newMap = new Map(prev);
+                            newMap.delete(databaseKey);
+                            return newMap;
+                        });
+
                         // 如果加载失败，回滚打开状态
                         closeDatabase(connectionId, database);
                         setExpandedKeys(expandedKeys);
                     }
                 } else if (!isDatabaseExpanded) {
                     // 如果数据库未展开，则展开数据库（加载表列表）
+
+                    // 清除之前的错误状态
+                    setDatabaseErrors(prev => {
+                        const newMap = new Map(prev);
+                        newMap.delete(databaseKey);
+                        return newMap;
+                    });
+
+                    // 设置 loading 状态
+                    setDatabaseLoadingStates(prev => new Map(prev).set(databaseKey, true));
+
                     const newExpandedKeys = [...expandedKeys, databaseKey];
                     console.log('🔄 双击展开数据库，更新 expandedKeys:', {
                         oldKeys: expandedKeys,
@@ -2240,9 +2319,37 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         });
 
                         showMessage.success(`已加载数据库 "${database}" 的 ${tables.length} 个表`);
+
+                        // 清除 loading 状态
+                        setDatabaseLoadingStates(prev => {
+                            const newMap = new Map(prev);
+                            newMap.delete(databaseKey);
+                            return newMap;
+                        });
                     }).catch(error => {
                         console.error('❌ 加载表列表失败:', error);
+                        const errorMessage = String(error);
                         showMessage.error(`加载数据库 "${database}" 的表列表失败`);
+
+                        // 设置错误状态
+                        setDatabaseErrors(prev => new Map(prev).set(databaseKey, errorMessage));
+
+                        // 3秒后自动清除错误提示
+                        setTimeout(() => {
+                            setDatabaseErrors(prev => {
+                                const newMap = new Map(prev);
+                                newMap.delete(databaseKey);
+                                return newMap;
+                            });
+                        }, 3000);
+
+                        // 清除 loading 状态
+                        setDatabaseLoadingStates(prev => {
+                            const newMap = new Map(prev);
+                            newMap.delete(databaseKey);
+                            return newMap;
+                        });
+
                         // 如果加载失败，回滚展开状态
                         const rollbackKeys = expandedKeys.filter(k => k !== databaseKey);
                         setExpandedKeys(rollbackKeys);
@@ -3162,6 +3269,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         prevConnectionsRef.current = connections;
     }, [connections, buildCompleteTreeData]);
+
+    // 监听 loading 和 error 状态变化，触发树的重新渲染
+    useEffect(() => {
+        // 当 loading 或 error 状态变化时，重新构建树以显示最新状态
+        if (connectionLoadingStates.size > 0 || connectionErrors.size > 0 ||
+            databaseLoadingStates.size > 0 || databaseErrors.size > 0) {
+            console.log('🔄 检测到 loading/error 状态变化，重新构建树');
+            // 不显示全局 loading，只更新节点状态
+            buildCompleteTreeData(false);
+        }
+    }, [connectionLoadingStates, connectionErrors, databaseLoadingStates, databaseErrors, buildCompleteTreeData]);
 
     // 监听连接状态变化（仅更新相关节点显示，不重建整棵树）
     const prevConnectedIdsRef = useRef<string[]>([]);
