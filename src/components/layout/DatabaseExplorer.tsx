@@ -14,6 +14,7 @@ import {
     Card,
     CardContent,
 } from '@/components/ui';
+import {ErrorTooltip} from '@/components/ui/ErrorTooltip';
 import {
     Database,
     Table,
@@ -31,6 +32,7 @@ import {
     TrendingUp,
     Trash2,
     X,
+    XCircle,
     Info,
     Search,
     Edit,
@@ -201,6 +203,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
     // 数据库节点错误状态 - 用于显示数据库打开失败提示
     const [databaseErrors, setDatabaseErrors] = useState<Map<string, string>>(new Map());
+
+    // 节点 ref 映射 - 用于定位错误提示
+    const nodeRefsMap = useRef<Map<string, HTMLElement>>(new Map());
 
     // 系统节点过滤状态 - 默认开启（隐藏系统节点）
     const [hideSystemNodes, setHideSystemNodes] = useState(true);
@@ -967,16 +972,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
             const connectionNode: DataNode = {
                 title: (
-                    <div className='flex items-center gap-2 relative'>
-                        <span className='flex-1'>{connection.name}</span>
+                    <div
+                        className='flex items-center gap-2 relative'
+                        ref={(el) => {
+                            if (el && connection.id) {
+                                nodeRefsMap.current.set(`connection-${connection.id}`, el);
+                            }
+                        }}
+                    >
                         {showLoading && (
-                            <Loader2 className='w-3 h-3 text-blue-500 animate-spin'/>
+                            <Loader2 className='w-3 h-3 text-blue-500 animate-spin flex-shrink-0'/>
                         )}
-                        {connectionError && !showLoading && (
-                            <div className='absolute left-full ml-2 px-2 py-1 bg-destructive/90 text-destructive-foreground text-xs rounded whitespace-nowrap animate-fade-out z-50'>
-                                连接失败
-                            </div>
-                        )}
+                        <span className='flex-1'>{connection.name}</span>
                         {isFav && <Star className='w-3 h-3 text-warning fill-current'/>}
                     </div>
                 ),
@@ -1110,16 +1117,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                         const nodeData: any = {
                             title: (
-                                <div className='flex items-center gap-2 relative'>
-                                    <span className='flex-1'>{dbName}</span>
+                                <div
+                                    className='flex items-center gap-2 relative'
+                                    ref={(el) => {
+                                        if (el && connection.id) {
+                                            nodeRefsMap.current.set(databaseKey, el);
+                                        }
+                                    }}
+                                >
                                     {dbLoading && (
-                                        <Loader2 className='w-3 h-3 text-blue-500 animate-spin'/>
+                                        <Loader2 className='w-3 h-3 text-blue-500 animate-spin flex-shrink-0'/>
                                     )}
-                                    {dbError && !dbLoading && (
-                                        <div className='absolute left-full ml-2 px-2 py-1 bg-destructive/90 text-destructive-foreground text-xs rounded whitespace-nowrap animate-fade-out z-50'>
-                                            无法打开
-                                        </div>
-                                    )}
+                                    <span className='flex-1'>{dbName}</span>
                                     {isFav && (
                                         <Star className='w-3 h-3 text-warning fill-current'/>
                                     )}
@@ -1731,7 +1740,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             console.error(`❌ 连接并加载数据库失败:`, error);
             const errorMessage = String(error);
 
-            // 设置错误状态
+            // 设置错误状态（ErrorTooltip 组件会自动处理 3秒后清除）
             setConnectionErrors(prev => new Map(prev).set(connectionId, errorMessage));
 
             // 清除加载状态（在设置错误状态后立即清除，以便显示错误提示）
@@ -1740,15 +1749,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 newMap.delete(connectionId);
                 return newMap;
             });
-
-            // 3秒后自动清除错误提示
-            setTimeout(() => {
-                setConnectionErrors(prev => {
-                    const newMap = new Map(prev);
-                    newMap.delete(connectionId);
-                    return newMap;
-                });
-            }, 3000);
 
             showMessage.error(`连接失败: ${errorMessage}`);
         } finally {
@@ -2210,17 +2210,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         const errorMessage = String(error);
                         showMessage.error(`打开数据库 "${database}" 失败: ${errorMessage}`);
 
-                        // 设置错误状态
+                        // 设置错误状态（ErrorTooltip 组件会自动处理 3秒后清除）
                         setDatabaseErrors(prev => new Map(prev).set(databaseKey, errorMessage));
-
-                        // 3秒后自动清除错误提示
-                        setTimeout(() => {
-                            setDatabaseErrors(prev => {
-                                const newMap = new Map(prev);
-                                newMap.delete(databaseKey);
-                                return newMap;
-                            });
-                        }, 3000);
 
                         // 清除 loading 状态
                         setDatabaseLoadingStates(prev => {
@@ -3937,6 +3928,52 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 nodeName={managementNodeDialog.nodeName}
                 nodeCategory={managementNodeDialog.nodeCategory}
             />
+
+            {/* 错误提示 - 使用 Portal 渲染，避免被容器遮挡 */}
+            {Array.from(connectionErrors.entries()).map(([connectionId, errorMessage]) => {
+                const nodeKey = `connection-${connectionId}`;
+                const nodeElement = nodeRefsMap.current.get(nodeKey);
+                if (!nodeElement) return null;
+
+                return (
+                    <ErrorTooltip
+                        key={nodeKey}
+                        targetRef={{ current: nodeElement }}
+                        message="连接失败"
+                        visible={true}
+                        autoHideDuration={3000}
+                        onHide={() => {
+                            setConnectionErrors(prev => {
+                                const newMap = new Map(prev);
+                                newMap.delete(connectionId);
+                                return newMap;
+                            });
+                        }}
+                    />
+                );
+            })}
+
+            {Array.from(databaseErrors.entries()).map(([databaseKey, errorMessage]) => {
+                const nodeElement = nodeRefsMap.current.get(databaseKey);
+                if (!nodeElement) return null;
+
+                return (
+                    <ErrorTooltip
+                        key={databaseKey}
+                        targetRef={{ current: nodeElement }}
+                        message="无法打开"
+                        visible={true}
+                        autoHideDuration={3000}
+                        onHide={() => {
+                            setDatabaseErrors(prev => {
+                                const newMap = new Map(prev);
+                                newMap.delete(databaseKey);
+                                return newMap;
+                            });
+                        }}
+                    />
+                );
+            })}
         </>
     );
 };
