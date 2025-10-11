@@ -779,7 +779,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {/* 连接名称 */}
         <div className='flex items-start gap-4'>
           <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-            连接名称 <span className='text-destructive'>*</span>
+            连接名称<span className='text-destructive'>*</span>:
           </Label>
           <div className='flex-1'>
             <Input
@@ -803,7 +803,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {/* 描述 */}
         <div className='flex items-start gap-4'>
           <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-            描述
+            描述:
           </Label>
           <div className='flex-1'>
             <Input
@@ -820,7 +820,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {/* 数据库类型 */}
         <div className='flex items-start gap-4'>
           <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-            数据库类型 <span className='text-destructive'>*</span>
+            数据库类型<span className='text-destructive'>*</span>:
           </Label>
           <div className='flex-1'>
             <Select
@@ -858,7 +858,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {formData.dbType === 'influxdb' && (
           <div className='flex items-start gap-4'>
             <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              版本 <span className='text-destructive'>*</span>
+              版本<span className='text-destructive'>*</span>:
             </Label>
             <div className='flex-1'>
               <Select
@@ -913,57 +913,57 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
         {/* 服务器配置 Tab */}
         <TabsContent value='server' className='space-y-6 mt-6'>
-          {/* 主机地址 */}
+          {/* 主机地址和端口 - 同一行 */}
           <div className='flex items-start gap-4'>
             <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              主机地址 <span className='text-destructive'>*</span>
+              主机地址<span className='text-destructive'>*</span>:
             </Label>
-            <div className='flex-1'>
-              <Input
-                placeholder='localhost 或 192.168.1.100'
-                value={formData.host}
-                onChange={e => handleInputChange('host', e.target.value)}
-                autoCapitalize='off'
-                autoCorrect='off'
-                className={`h-9 ${
-                  errors.host
-                    ? 'border-destructive focus-visible:ring-destructive'
-                    : ''
-                }`}
-              />
-              {errors.host && (
-                <div className='text-xs text-destructive mt-1'>
-                  {errors.host}
+            <div className='flex-1 flex gap-4'>
+              <div className='flex-1'>
+                <Input
+                  placeholder='localhost 或 192.168.1.100'
+                  value={formData.host}
+                  onChange={e => handleInputChange('host', e.target.value)}
+                  autoCapitalize='off'
+                  autoCorrect='off'
+                  className={`h-9 ${
+                    errors.host
+                      ? 'border-destructive focus-visible:ring-destructive'
+                      : ''
+                  }`}
+                />
+                {errors.host && (
+                  <div className='text-xs text-destructive mt-1'>
+                    {errors.host}
+                  </div>
+                )}
+              </div>
+              <div className='w-32'>
+                <div className='flex items-center gap-2'>
+                  <Label className='text-sm font-medium text-foreground whitespace-nowrap'>
+                    端口<span className='text-destructive'>*</span>:
+                  </Label>
+                  <InputNumber
+                    placeholder='8086'
+                    value={formData.port}
+                    onChange={value =>
+                      handleInputChange(
+                        'port',
+                        value || createDefaultConnectionConfig().port
+                      )
+                    }
+                    className={`w-full h-9 ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    min={1}
+                    max={65535}
+                    controls={false}
+                  />
                 </div>
-              )}
-            </div>
-          </div>
-
-          {/* 端口 */}
-          <div className='flex items-start gap-4'>
-            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              端口 <span className='text-destructive'>*</span>
-            </Label>
-            <div className='flex-1'>
-              <InputNumber
-                placeholder='8086'
-                value={formData.port}
-                onChange={value =>
-                  handleInputChange(
-                    'port',
-                    value || createDefaultConnectionConfig().port
-                  )
-                }
-                className={`w-full h-9 ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                min={1}
-                max={65535}
-                controls={false}
-              />
-              {errors.port && (
-                <div className='text-xs text-destructive mt-1'>
-                  {errors.port}
-                </div>
-              )}
+                {errors.port && (
+                  <div className='text-xs text-destructive mt-1'>
+                    {errors.port}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -979,43 +979,43 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </h4>
               </div>
 
-              {/* 用户名 */}
+              {/* 用户名和密码 - 同一行 */}
               <div className='flex items-start gap-4'>
                 <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  用户名
+                  用户名:
                 </Label>
-                <div className='flex-1'>
-                  <Input
-                    placeholder='可选，如 admin'
-                    value={formData.username}
-                    onChange={e =>
-                      handleInputChange('username', e.target.value)
-                    }
-                    autoCapitalize='off'
-                    autoCorrect='off'
-                    className='h-9'
-                  />
-                  <p className='text-xs text-muted-foreground mt-1'>
-                    留空表示匿名访问
-                  </p>
-                </div>
-              </div>
-
-              {/* 密码 */}
-              <div className='flex items-start gap-4'>
-                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  密码
-                </Label>
-                <div className='flex-1'>
-                  <Input
-                    type='password'
-                    placeholder='可选'
-                    value={formData.password}
-                    onChange={e =>
-                      handleInputChange('password', e.target.value)
-                    }
-                    className='h-9'
-                  />
+                <div className='flex-1 flex gap-4 items-start'>
+                  <div className='flex-1'>
+                    <Input
+                      placeholder='可选，如 admin'
+                      value={formData.username}
+                      onChange={e =>
+                        handleInputChange('username', e.target.value)
+                      }
+                      autoCapitalize='off'
+                      autoCorrect='off'
+                      className='h-9'
+                    />
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      留空表示匿名访问
+                    </p>
+                  </div>
+                  <div className='flex-1 flex items-start gap-2'>
+                    <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                      密码:
+                    </Label>
+                    <div className='flex-1'>
+                      <Input
+                        type='password'
+                        placeholder='可选'
+                        value={formData.password}
+                        onChange={e =>
+                          handleInputChange('password', e.target.value)
+                        }
+                        className='h-9'
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1042,7 +1042,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               {/* API 令牌 */}
               <div className='flex items-start gap-4'>
                 <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  API 令牌 <span className='text-destructive'>*</span>
+                  API 令牌<span className='text-destructive'>*</span>:
                 </Label>
                 <div className='flex-1'>
                   <Input
@@ -1077,7 +1077,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     </span>
                   ) : (
                     <span className='text-destructive'>*</span>
-                  )}
+                  )}:
                 </Label>
                 <div className='flex-1'>
                   <Input
@@ -1114,7 +1114,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               {/* 默认存储桶 */}
               <div className='flex items-start gap-4'>
                 <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  默认存储桶
+                  默认存储桶:
                 </Label>
                 <div className='flex-1'>
                   <Input
@@ -1145,47 +1145,47 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </h4>
               </div>
 
-              {/* 默认数据库 */}
+              {/* 默认数据库和保留策略 - 同一行 */}
               <div className='flex items-start gap-4'>
                 <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  默认数据库
+                  默认数据库:
                 </Label>
-                <div className='flex-1'>
-                  <Input
-                    placeholder='如: mydb'
-                    value={formData.database}
-                    onChange={e =>
-                      handleInputChange('database', e.target.value)
-                    }
-                    autoCapitalize='off'
-                    autoCorrect='off'
-                    className='h-9'
-                  />
-                  <p className='text-xs text-muted-foreground mt-1'>
-                    可选，连接后默认选择的数据库
-                  </p>
-                </div>
-              </div>
-
-              {/* 默认保留策略 */}
-              <div className='flex items-start gap-4'>
-                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  默认保留策略
-                </Label>
-                <div className='flex-1'>
-                  <Input
-                    placeholder='如: autogen'
-                    value={formData.retentionPolicy}
-                    onChange={e =>
-                      handleInputChange('retentionPolicy', e.target.value)
-                    }
-                    autoCapitalize='off'
-                    autoCorrect='off'
-                    className='h-9'
-                  />
-                  <p className='text-xs text-muted-foreground mt-1'>
-                    可选，默认保留策略名称
-                  </p>
+                <div className='flex-1 flex gap-4 items-start'>
+                  <div className='flex-1'>
+                    <Input
+                      placeholder='如: mydb'
+                      value={formData.database}
+                      onChange={e =>
+                        handleInputChange('database', e.target.value)
+                      }
+                      autoCapitalize='off'
+                      autoCorrect='off'
+                      className='h-9'
+                    />
+                    <p className='text-xs text-muted-foreground mt-1'>
+                      可选，连接后默认选择的数据库
+                    </p>
+                  </div>
+                  <div className='flex-1 flex items-start gap-2'>
+                    <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                      保留策略:
+                    </Label>
+                    <div className='flex-1'>
+                      <Input
+                        placeholder='如: autogen'
+                        value={formData.retentionPolicy}
+                        onChange={e =>
+                          handleInputChange('retentionPolicy', e.target.value)
+                        }
+                        autoCapitalize='off'
+                        autoCorrect='off'
+                        className='h-9'
+                      />
+                      <p className='text-xs text-muted-foreground mt-1'>
+                        可选，默认保留策略名称
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1260,69 +1260,74 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
         {/* 高级配置 Tab */}
         <TabsContent value='advanced' className='space-y-6 mt-6'>
-          <div className='grid grid-cols-3 gap-4'>
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                连接超时(秒)
-              </Label>
-              <InputNumber
-                placeholder='30'
-                value={formData.connectionTimeout}
-                onChange={value =>
-                  handleInputChange('connectionTimeout', value || 30)
-                }
-                className={`w-full h-9 ${errors.connectionTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                min={5}
-                max={300}
-                controls={false}
-              />
-              {errors.connectionTimeout && (
-                <div className='text-xs text-destructive mt-1'>
-                  {errors.connectionTimeout}
+          {/* 超时配置 - 三个字段一行 */}
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              连接超时(秒):
+            </Label>
+            <div className='flex-1 flex gap-4'>
+              <div className='flex-1'>
+                <InputNumber
+                  placeholder='30'
+                  value={formData.connectionTimeout}
+                  onChange={value =>
+                    handleInputChange('connectionTimeout', value || 30)
+                  }
+                  className={`w-full h-9 ${errors.connectionTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  min={5}
+                  max={300}
+                  controls={false}
+                />
+                {errors.connectionTimeout && (
+                  <div className='text-xs text-destructive mt-1'>
+                    {errors.connectionTimeout}
+                  </div>
+                )}
+              </div>
+              <div className='flex-1 flex items-start gap-2'>
+                <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                  查询超时(秒):
+                </Label>
+                <div className='flex-1'>
+                  <InputNumber
+                    placeholder='60'
+                    value={formData.queryTimeout}
+                    onChange={value =>
+                      handleInputChange('queryTimeout', value || 60)
+                    }
+                    className={`w-full h-9 ${errors.queryTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    min={10}
+                    max={3600}
+                    controls={false}
+                  />
+                  {errors.queryTimeout && (
+                    <div className='text-xs text-destructive mt-1'>
+                      {errors.queryTimeout}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                查询超时(秒)
-              </Label>
-              <InputNumber
-                placeholder='60'
-                value={formData.queryTimeout}
-                onChange={value =>
-                  handleInputChange('queryTimeout', value || 60)
-                }
-                className={`w-full h-9 ${errors.queryTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                min={10}
-                max={3600}
-                controls={false}
-              />
-              {errors.queryTimeout && (
-                <div className='text-xs text-destructive mt-1'>
-                  {errors.queryTimeout}
+              </div>
+              <div className='flex-1 flex items-start gap-2'>
+                <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                  超时时间(秒):
+                </Label>
+                <div className='flex-1'>
+                  <InputNumber
+                    placeholder='30'
+                    value={formData.timeout}
+                    onChange={value => handleInputChange('timeout', value || 30)}
+                    className={`w-full h-9 ${errors.timeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    min={5}
+                    max={300}
+                    controls={false}
+                  />
+                  {errors.timeout && (
+                    <div className='text-xs text-destructive mt-1'>
+                      {errors.timeout}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                超时时间(秒)
-              </Label>
-              <InputNumber
-                placeholder='30'
-                value={formData.timeout}
-                onChange={value => handleInputChange('timeout', value || 30)}
-                className={`w-full h-9 ${errors.timeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                min={5}
-                max={300}
-                controls={false}
-              />
-              {errors.timeout && (
-                <div className='text-xs text-destructive mt-1'>
-                  {errors.timeout}
-                </div>
-              )}
+              </div>
             </div>
           </div>
 
@@ -1338,58 +1343,62 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
                   连接配置
                 </h4>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div className='space-y-1'>
-                    <Label className='block text-sm font-medium text-foreground'>
-                      会话池大小
-                    </Label>
-                    <InputNumber
-                      placeholder='5'
-                      value={formData.sessionPoolSize}
-                      onChange={value =>
-                        handleInputChange('sessionPoolSize', value || 5)
-                      }
-                      className='w-full h-9'
-                      min={1}
-                      max={100}
-                      controls={false}
-                    />
-                    <div className='text-xs text-muted-foreground'>
-                      同时维护的会话连接数量，建议1-20
+                {/* 会话池大小和时区设置 - 同一行 */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    会话池大小:
+                  </Label>
+                  <div className='flex-1 flex gap-4 items-start'>
+                    <div className='flex-1'>
+                      <InputNumber
+                        placeholder='5'
+                        value={formData.sessionPoolSize}
+                        onChange={value =>
+                          handleInputChange('sessionPoolSize', value || 5)
+                        }
+                        className='w-full h-9'
+                        min={1}
+                        max={100}
+                        controls={false}
+                      />
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        同时维护的会话连接数量，建议1-20
+                      </div>
                     </div>
-                  </div>
-
-                  <div className='space-y-1'>
-                    <Label className='block text-sm font-medium text-foreground'>
-                      时区设置
-                    </Label>
-                    <Select
-                      value={formData.timeZone}
-                      onValueChange={value =>
-                        handleInputChange('timeZone', value)
-                      }
-                    >
-                      <SelectTrigger className='h-9'>
-                        <SelectValue placeholder='选择时区' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='Asia/Shanghai'>
-                          Asia/Shanghai (北京时间)
-                        </SelectItem>
-                        <SelectItem value='UTC'>UTC (协调世界时)</SelectItem>
-                        <SelectItem value='America/New_York'>
-                          America/New_York (美东时间)
-                        </SelectItem>
-                        <SelectItem value='Europe/London'>
-                          Europe/London (伦敦时间)
-                        </SelectItem>
-                        <SelectItem value='Asia/Tokyo'>
-                          Asia/Tokyo (东京时间)
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className='text-xs text-muted-foreground'>
-                      时间序列数据的时区设置
+                    <div className='flex-1 flex items-start gap-2'>
+                      <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                        时区设置:
+                      </Label>
+                      <div className='flex-1'>
+                        <Select
+                          value={formData.timeZone}
+                          onValueChange={value =>
+                            handleInputChange('timeZone', value)
+                          }
+                        >
+                          <SelectTrigger className='h-9'>
+                            <SelectValue placeholder='选择时区' />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='Asia/Shanghai'>
+                              Asia/Shanghai (北京时间)
+                            </SelectItem>
+                            <SelectItem value='UTC'>UTC (协调世界时)</SelectItem>
+                            <SelectItem value='America/New_York'>
+                              America/New_York (美东时间)
+                            </SelectItem>
+                            <SelectItem value='Europe/London'>
+                              Europe/London (伦敦时间)
+                            </SelectItem>
+                            <SelectItem value='Asia/Tokyo'>
+                              Asia/Tokyo (东京时间)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className='text-xs text-muted-foreground mt-1'>
+                          时间序列数据的时区设置
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1400,48 +1409,50 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
                   性能配置
                 </h4>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div className='space-y-1'>
-                    <Label className='block text-sm font-medium text-foreground'>
-                      数据获取大小
-                    </Label>
-                    <InputNumber
-                      placeholder='10000'
-                      value={formData.fetchSize}
-                      onChange={value =>
-                        handleInputChange('fetchSize', value || 10000)
-                      }
-                      className='w-full h-9'
-                      min={100}
-                      max={1000000}
-                      controls={false}
-                    />
-                    <div className='text-xs text-muted-foreground'>
-                      单次查询返回的最大记录数，建议1000-50000
-                    </div>
-                  </div>
-
-                  <div className='space-y-1'>
-                    <Label className='block text-sm font-medium text-foreground'>
-                      启用数据压缩
-                    </Label>
-                    <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                      <Switch
-                        id='compression-switch'
-                        checked={formData.enableCompression}
-                        onCheckedChange={checked =>
-                          handleInputChange('enableCompression', checked)
+                {/* 数据获取大小和启用数据压缩 - 同一行 */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    数据获取大小:
+                  </Label>
+                  <div className='flex-1 flex gap-4 items-start'>
+                    <div className='flex-1'>
+                      <InputNumber
+                        placeholder='10000'
+                        value={formData.fetchSize}
+                        onChange={value =>
+                          handleInputChange('fetchSize', value || 10000)
                         }
+                        className='w-full h-9'
+                        min={100}
+                        max={1000000}
+                        controls={false}
                       />
-                      <Label
-                        htmlFor='compression-switch'
-                        className='text-sm font-medium cursor-pointer'
-                      >
-                        {formData.enableCompression ? '已启用' : '已禁用'}
-                      </Label>
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        单次查询返回的最大记录数，建议1000-50000
+                      </div>
                     </div>
-                    <div className='text-xs text-muted-foreground'>
-                      启用后可减少网络传输数据量，提高查询性能
+                    <div className='flex-1'>
+                      <Label className='text-sm font-medium text-foreground mb-2 block'>
+                        启用数据压缩:
+                      </Label>
+                      <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                        <Switch
+                          id='compression-switch'
+                          checked={formData.enableCompression}
+                          onCheckedChange={checked =>
+                            handleInputChange('enableCompression', checked)
+                          }
+                        />
+                        <Label
+                          htmlFor='compression-switch'
+                          className='text-sm font-medium cursor-pointer'
+                        >
+                          {formData.enableCompression ? '已启用' : '已禁用'}
+                        </Label>
+                      </div>
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        启用后可减少网络传输数据量，提高查询性能
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1452,53 +1463,58 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
                   重试和重定向配置
                 </h4>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div className='space-y-1'>
-                    <Label className='block text-sm font-medium text-foreground'>
-                      最大重试次数
-                    </Label>
-                    <InputNumber
-                      placeholder='3'
-                      value={formData.maxRetryCount}
-                      onChange={value =>
-                        handleInputChange('maxRetryCount', value || 3)
-                      }
-                      className='w-full h-9'
-                      min={0}
-                      max={20}
-                      controls={false}
-                    />
-                    <div className='text-xs text-muted-foreground'>
-                      连接失败时的重试次数，0表示不重试
+                {/* 最大重试次数和重试间隔 - 同一行 */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    最大重试次数:
+                  </Label>
+                  <div className='flex-1 flex gap-4 items-start'>
+                    <div className='flex-1'>
+                      <InputNumber
+                        placeholder='3'
+                        value={formData.maxRetryCount}
+                        onChange={value =>
+                          handleInputChange('maxRetryCount', value || 3)
+                        }
+                        className='w-full h-9'
+                        min={0}
+                        max={20}
+                        controls={false}
+                      />
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        连接失败时的重试次数，0表示不重试
+                      </div>
                     </div>
-                  </div>
-
-                  <div className='space-y-1'>
-                    <Label className='block text-sm font-medium text-foreground'>
-                      重试间隔(毫秒)
-                    </Label>
-                    <InputNumber
-                      placeholder='1000'
-                      value={formData.retryIntervalMs}
-                      onChange={value =>
-                        handleInputChange('retryIntervalMs', value || 1000)
-                      }
-                      className='w-full h-9'
-                      min={100}
-                      max={30000}
-                      controls={false}
-                    />
-                    <div className='text-xs text-muted-foreground'>
-                      两次重试之间的等待时间
+                    <div className='flex-1 flex items-start gap-2'>
+                      <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                        重试间隔(毫秒):
+                      </Label>
+                      <div className='flex-1'>
+                        <InputNumber
+                          placeholder='1000'
+                          value={formData.retryIntervalMs}
+                          onChange={value =>
+                            handleInputChange('retryIntervalMs', value || 1000)
+                          }
+                          className='w-full h-9'
+                          min={100}
+                          max={30000}
+                          controls={false}
+                        />
+                        <div className='text-xs text-muted-foreground mt-1'>
+                          两次重试之间的等待时间
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                <div className='grid grid-cols-1 gap-4'>
-                  <div className='space-y-1'>
-                    <Label className='block text-sm font-medium text-foreground'>
-                      启用自动重定向
-                    </Label>
+                {/* 启用自动重定向 */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    自动重定向:
+                  </Label>
+                  <div className='flex-1'>
                     <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
                       <Switch
                         id='redirection-switch'
@@ -1514,7 +1530,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         {formData.enableRedirection ? '已启用' : '已禁用'}
                       </Label>
                     </div>
-                    <div className='text-xs text-muted-foreground'>
+                    <div className='text-xs text-muted-foreground mt-1'>
                       在集群环境中自动重定向到正确的节点
                     </div>
                   </div>
@@ -1523,54 +1539,55 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             </div>
           )}
 
-          {/* 查询语言和SSL配置合并为一行 */}
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                默认查询语言
-              </Label>
-              <Select
-                value={formData.defaultQueryLanguage}
-                onValueChange={value =>
-                  handleInputChange('defaultQueryLanguage', value)
-                }
-              >
-                <SelectTrigger className='h-9'>
-                  <SelectValue placeholder='选择查询语言' />
-                </SelectTrigger>
-                <SelectContent>
-                  {formData.dbType === 'influxdb' && (
-                    <>
-                      <SelectItem value='InfluxQL'>InfluxQL</SelectItem>
-                      <SelectItem value='Flux'>Flux</SelectItem>
-                      {formData.version === '3.x' && (
-                        <SelectItem value='SQL'>SQL</SelectItem>
-                      )}
-                    </>
-                  )}
-                  {formData.dbType === 'iotdb' && (
-                    <SelectItem value='SQL'>SQL</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                启用SSL
-              </Label>
-              <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                <Switch
-                  id='ssl-switch'
-                  checked={formData.ssl}
-                  onCheckedChange={checked => handleInputChange('ssl', checked)}
-                />
-                <Label
-                  htmlFor='ssl-switch'
-                  className='text-sm font-medium cursor-pointer'
+          {/* 查询语言和SSL配置 - 同一行 */}
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              默认查询语言:
+            </Label>
+            <div className='flex-1 flex gap-4 items-start'>
+              <div className='flex-1'>
+                <Select
+                  value={formData.defaultQueryLanguage}
+                  onValueChange={value =>
+                    handleInputChange('defaultQueryLanguage', value)
+                  }
                 >
-                  {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
+                  <SelectTrigger className='h-9'>
+                    <SelectValue placeholder='选择查询语言' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formData.dbType === 'influxdb' && (
+                      <>
+                        <SelectItem value='InfluxQL'>InfluxQL</SelectItem>
+                        <SelectItem value='Flux'>Flux</SelectItem>
+                        {formData.version === '3.x' && (
+                          <SelectItem value='SQL'>SQL</SelectItem>
+                        )}
+                      </>
+                    )}
+                    {formData.dbType === 'iotdb' && (
+                      <SelectItem value='SQL'>SQL</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className='flex-1'>
+                <Label className='text-sm font-medium text-foreground mb-2 block'>
+                  启用SSL:
                 </Label>
+                <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                  <Switch
+                    id='ssl-switch'
+                    checked={formData.ssl}
+                    onCheckedChange={checked => handleInputChange('ssl', checked)}
+                  />
+                  <Label
+                    htmlFor='ssl-switch'
+                    className='text-sm font-medium cursor-pointer'
+                  >
+                    {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
+                  </Label>
+                </div>
               </div>
             </div>
           </div>
@@ -1600,102 +1617,113 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             />
           </div>
 
-          <div className='grid grid-cols-3 gap-4'>
-            <div className='col-span-2 space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                代理服务器地址 <span className='text-destructive'>*</span>
-              </Label>
-              <Input
-                placeholder='127.0.0.1'
-                value={formData.proxyHost}
-                onChange={e => handleInputChange('proxyHost', e.target.value)}
-                autoCapitalize='off'
-                autoCorrect='off'
-                className={`h-9 ${
-                  errors.proxyHost
-                    ? 'border-destructive focus-visible:ring-destructive'
-                    : ''
-                }`}
-              />
-              {errors.proxyHost && (
-                <div className='text-xs text-destructive mt-1'>
-                  {errors.proxyHost}
-                </div>
-              )}
-            </div>
-
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                代理端口 <span className='text-destructive'>*</span>
-              </Label>
-              <InputNumber
-                placeholder='8080'
-                value={formData.proxyPort}
-                onChange={value =>
-                  handleInputChange('proxyPort', value || 8080)
-                }
-                className={`w-full h-9 ${errors.proxyPort ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                min={1}
-                max={65535}
-                controls={false}
-              />
-              {errors.proxyPort && (
-                <div className='text-xs text-destructive mt-1'>
-                  {errors.proxyPort}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              代理类型
+          {/* 代理服务器地址和端口 - 同一行 */}
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              代理服务器<span className='text-destructive'>*</span>:
             </Label>
-            <Select
-              value={formData.proxyType}
-              onValueChange={value => handleInputChange('proxyType', value)}
-            >
-              <SelectTrigger className='w-full max-w-xs h-9'>
-                <SelectValue placeholder='选择代理类型' />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value='http'>HTTP</SelectItem>
-                <SelectItem value='https'>HTTPS</SelectItem>
-                <SelectItem value='socks5'>SOCKS5</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className='flex-1 flex gap-4'>
+              <div className='flex-1'>
+                <Input
+                  placeholder='127.0.0.1'
+                  value={formData.proxyHost}
+                  onChange={e => handleInputChange('proxyHost', e.target.value)}
+                  autoCapitalize='off'
+                  autoCorrect='off'
+                  className={`h-9 ${
+                    errors.proxyHost
+                      ? 'border-destructive focus-visible:ring-destructive'
+                      : ''
+                  }`}
+                />
+                {errors.proxyHost && (
+                  <div className='text-xs text-destructive mt-1'>
+                    {errors.proxyHost}
+                  </div>
+                )}
+              </div>
+              <div className='w-32'>
+                <div className='flex items-center gap-2'>
+                  <Label className='text-sm font-medium text-foreground whitespace-nowrap'>
+                    端口<span className='text-destructive'>*</span>:
+                  </Label>
+                  <InputNumber
+                    placeholder='8080'
+                    value={formData.proxyPort}
+                    onChange={value =>
+                      handleInputChange('proxyPort', value || 8080)
+                    }
+                    className={`w-full h-9 ${errors.proxyPort ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    min={1}
+                    max={65535}
+                    controls={false}
+                  />
+                </div>
+                {errors.proxyPort && (
+                  <div className='text-xs text-destructive mt-1'>
+                    {errors.proxyPort}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
 
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                代理用户名
-              </Label>
-              <Input
-                placeholder='可选'
-                value={formData.proxyUsername}
-                onChange={e =>
-                  handleInputChange('proxyUsername', e.target.value)
-                }
-                autoCapitalize='off'
-                autoCorrect='off'
-                className='h-9'
-              />
+          {/* 代理类型 */}
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              代理类型:
+            </Label>
+            <div className='flex-1'>
+              <Select
+                value={formData.proxyType}
+                onValueChange={value => handleInputChange('proxyType', value)}
+              >
+                <SelectTrigger className='w-full max-w-xs h-9'>
+                  <SelectValue placeholder='选择代理类型' />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='http'>HTTP</SelectItem>
+                  <SelectItem value='https'>HTTPS</SelectItem>
+                  <SelectItem value='socks5'>SOCKS5</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
 
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                代理密码
-              </Label>
-              <Input
-                type='password'
-                placeholder='可选'
-                value={formData.proxyPassword}
-                onChange={e =>
-                  handleInputChange('proxyPassword', e.target.value)
-                }
-                className='h-9'
-              />
+          {/* 代理用户名和密码 - 同一行 */}
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              代理用户名:
+            </Label>
+            <div className='flex-1 flex gap-4 items-start'>
+              <div className='flex-1'>
+                <Input
+                  placeholder='可选'
+                  value={formData.proxyUsername}
+                  onChange={e =>
+                    handleInputChange('proxyUsername', e.target.value)
+                  }
+                  autoCapitalize='off'
+                  autoCorrect='off'
+                  className='h-9'
+                />
+              </div>
+              <div className='flex-1 flex items-start gap-2'>
+                <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                  代理密码:
+                </Label>
+                <div className='flex-1'>
+                  <Input
+                    type='password'
+                    placeholder='可选'
+                    value={formData.proxyPassword}
+                    onChange={e =>
+                      handleInputChange('proxyPassword', e.target.value)
+                    }
+                    className='h-9'
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </TabsContent>
