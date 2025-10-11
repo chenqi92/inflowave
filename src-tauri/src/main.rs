@@ -708,12 +708,9 @@ async fn handle_port_conflicts_at_startup() -> Result<(), Box<dyn std::error::Er
 
 #[tokio::main]
 async fn main() {
-    // Initialize logger with better error handling
-    if let Err(e) = env_logger::try_init() {
-        eprintln!("Failed to initialize logger: {}", e);
-    }
-
-    info!("Starting InfloWave v{}", env!("CARGO_PKG_VERSION"));
+    // 注意：日志系统将在 setup 钩子中初始化，因为需要 app_handle
+    // 这里只输出基本信息到 stderr
+    eprintln!("Starting InfloWave v{}", env!("CARGO_PKG_VERSION"));
 
     // IoTDB官方客户端无需预加载
 
@@ -1015,6 +1012,11 @@ async fn main() {
 
             // Window theme commands
             commands::window_theme::set_window_background,
+
+            // Log commands
+            commands::logs::read_backend_logs,
+            commands::logs::clear_backend_logs,
+            commands::logs::get_backend_log_path,
         ])
         .setup(|app| {
             info!("Application setup started");
@@ -1151,9 +1153,16 @@ async fn main() {
             // Initialize workspace storage
             app.manage(commands::workspace::WorkspaceStorage::new(commands::workspace::WorkspaceData::default()));
 
+            // Initialize logging system first
+            if let Err(e) = utils::logger::init_logger(app.handle()) {
+                eprintln!("Failed to initialize logger: {}", e);
+            } else {
+                tracing::info!("日志系统初始化成功");
+            }
+
             // Initialize application configuration
             if let Err(e) = config::init_config(app.handle()) {
-                log::error!("Failed to initialize config: {}", e);
+                tracing::error!("Failed to initialize config: {}", e);
             }
 
             // Initialize port manager and handle port conflicts

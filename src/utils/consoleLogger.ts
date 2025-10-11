@@ -1,7 +1,10 @@
 /**
  * 控制台日志拦截器
  * 拦截并记录所有控制台日志，包括 console.log, console.error, console.warn 等
+ * 支持实时写入文件，应用重启时自动清空旧日志
  */
+
+import { FileOperations } from './fileOperations';
 
 export interface ConsoleLogEntry {
   id: string;
@@ -17,6 +20,11 @@ class ConsoleLogger {
   private logs: ConsoleLogEntry[] = [];
   private listeners: Array<(log: ConsoleLogEntry) => void> = [];
   private maxLogs = 1000; // 最大日志数量
+  private logFilePath = 'logs/frontend.log';
+  private sessionId: string;
+  private logBuffer: ConsoleLogEntry[] = [];
+  private flushTimer: number | null = null;
+  private flushInterval = 2000; // 2秒批量写入一次
   private originalConsole: {
     log: typeof console.log;
     info: typeof console.info;
@@ -35,7 +43,61 @@ class ConsoleLogger {
       debug: console.debug.bind(console),
     };
 
+    this.sessionId = this.generateSessionId();
+    this.initializeLogging();
     this.setupInterceptors();
+  }
+
+  private generateSessionId(): string {
+    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  private async initializeLogging(): Promise<void> {
+    try {
+      // 清除旧的前端日志
+      await this.clearOldLogs();
+
+      // 写入会话开始标记
+      await this.writeSessionStart();
+
+      this.originalConsole.log(`📝 前端日志系统已启动 - Session: ${this.sessionId}`);
+    } catch (error) {
+      this.originalConsole.error('前端日志系统初始化失败:', error);
+    }
+  }
+
+  private async clearOldLogs(): Promise<void> {
+    try {
+      // 确保日志目录存在
+      await FileOperations.createDir('logs');
+
+      // 检查并删除旧的日志文件
+      const exists = await FileOperations.fileExists(this.logFilePath);
+      if (exists) {
+        await FileOperations.deleteFile(this.logFilePath);
+        this.originalConsole.log('已清除旧的前端日志');
+      }
+    } catch (error) {
+      this.originalConsole.warn('清除旧前端日志时出错:', error);
+    }
+  }
+
+  private async writeSessionStart(): Promise<void> {
+    const sessionInfo = `
+${'='.repeat(80)}
+=== 前端日志会话开始 ===
+Session ID: ${this.sessionId}
+时间: ${new Date().toISOString()}
+User Agent: ${navigator.userAgent}
+URL: ${window.location.href}
+${'='.repeat(80)}
+`;
+
+    try {
+      await FileOperations.writeFile(this.logFilePath, sessionInfo);
+    } catch (error) {
+      this.originalConsole.error('写入会话开始标记失败:', error);
+    }
   }
 
   // 判断是否应该过滤特定的日志
@@ -156,6 +218,10 @@ class ConsoleLogger {
       this.logs = this.logs.slice(0, this.maxLogs);
     }
 
+    // 添加到缓冲区，准备写入文件
+    this.logBuffer.push(logEntry);
+    this.scheduleFlush();
+
     // 通知所有监听器
     this.listeners.forEach(listener => {
       try {
@@ -166,6 +232,64 @@ class ConsoleLogger {
     });
 
     return true; // 返回true表示应该继续处理日志
+  }
+
+  private scheduleFlush(): void {
+    if (this.flushTimer !== null) {
+      return; // 已经有定时器在运行
+    }
+
+    this.flushTimer = window.setTimeout(() => {
+      this.flushLogs();
+      this.flushTimer = null;
+    }, this.flushInterval);
+  }
+
+  private async flushLogs(): Promise<void> {
+    if (this.logBuffer.length === 0) {
+      return;
+    }
+
+    const logsToWrite = [...this.logBuffer];
+    this.logBuffer = [];
+
+    try {
+      await this.writeLogEntries(logsToWrite);
+    } catch (error) {
+      this.originalConsole.error('写入前端日志失败:', error);
+    }
+  }
+
+  private async writeLogEntries(entries: ConsoleLogEntry[]): Promise<void> {
+    const logContent = entries.map(entry => this.formatLogEntry(entry)).join('\n') + '\n';
+
+    try {
+      await FileOperations.appendToFile(this.logFilePath, logContent);
+    } catch (error) {
+      // 如果追加失败，尝试创建新文件
+      try {
+        await FileOperations.writeFile(this.logFilePath, logContent);
+      } catch (writeError) {
+        this.originalConsole.error('无法写入前端日志文件:', writeError);
+      }
+    }
+  }
+
+  private formatLogEntry(entry: ConsoleLogEntry): string {
+    const timestamp = entry.timestamp.toISOString();
+    const levelStr = entry.level.toUpperCase().padEnd(5);
+
+    let formatted = `[${timestamp}] [${levelStr}] ${entry.message}`;
+
+    if (entry.source) {
+      formatted += `\n  Source: ${entry.source}`;
+    }
+
+    if (entry.stack && (entry.level === 'error' || entry.level === 'warn')) {
+      formatted += `\n  Stack: ${entry.stack.split('\n').slice(0, 5).join('\n         ')}`;
+    }
+
+    return formatted;
   }
 
   // 获取所有日志
