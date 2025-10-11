@@ -776,11 +776,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           基本信息
         </h3>
 
-        <div className='grid grid-cols-2 gap-4'>
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              连接名称 <span className='text-destructive'>*</span>
-            </Label>
+        {/* 连接名称 */}
+        <div className='flex items-start gap-4'>
+          <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+            连接名称 <span className='text-destructive'>*</span>
+          </Label>
+          <div className='flex-1'>
             <Input
               placeholder='例如: 生产环境 InfluxDB'
               value={formData.name}
@@ -797,11 +798,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <div className='text-xs text-destructive mt-1'>{errors.name}</div>
             )}
           </div>
+        </div>
 
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              描述
-            </Label>
+        {/* 描述 */}
+        <div className='flex items-start gap-4'>
+          <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+            描述
+          </Label>
+          <div className='flex-1'>
             <Input
               placeholder='连接描述（可选）'
               value={formData.description}
@@ -813,11 +817,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           </div>
         </div>
 
-        <div className='grid grid-cols-2 gap-4'>
-          <div className='space-y-1'>
-            <Label className='block text-sm font-medium text-foreground'>
-              数据库类型 <span className='text-destructive'>*</span>
-            </Label>
+        {/* 数据库类型 */}
+        <div className='flex items-start gap-4'>
+          <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+            数据库类型 <span className='text-destructive'>*</span>
+          </Label>
+          <div className='flex-1'>
             <Select
               value={formData.dbType}
               onValueChange={value => {
@@ -847,13 +852,15 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               </SelectContent>
             </Select>
           </div>
+        </div>
 
-          {/* InfluxDB 版本选择器 */}
-          {formData.dbType === 'influxdb' && (
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                版本 <span className='text-destructive'>*</span>
-              </Label>
+        {/* InfluxDB 版本选择器 */}
+        {formData.dbType === 'influxdb' && (
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              版本 <span className='text-destructive'>*</span>
+            </Label>
+            <div className='flex-1'>
               <Select
                 value={formData.version}
                 onValueChange={value => {
@@ -888,12 +895,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   </SelectItem>
                 </SelectContent>
               </Select>
-              <p className='text-xs text-muted-foreground'>
+              <p className='text-xs text-muted-foreground mt-1'>
                 不同版本使用不同的认证方式和查询语言
               </p>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Tab 配置区域 */}
@@ -906,11 +913,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
         {/* 服务器配置 Tab */}
         <TabsContent value='server' className='space-y-6 mt-6'>
-          <div className='grid grid-cols-3 gap-4'>
-            <div className='col-span-2 space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                主机地址 <span className='text-destructive'>*</span>
-              </Label>
+          {/* 主机地址 */}
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              主机地址 <span className='text-destructive'>*</span>
+            </Label>
+            <div className='flex-1'>
               <Input
                 placeholder='localhost 或 192.168.1.100'
                 value={formData.host}
@@ -929,11 +937,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </div>
               )}
             </div>
+          </div>
 
-            <div className='space-y-1'>
-              <Label className='block text-sm font-medium text-foreground'>
-                端口 <span className='text-destructive'>*</span>
-              </Label>
+          {/* 端口 */}
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              端口 <span className='text-destructive'>*</span>
+            </Label>
+            <div className='flex-1'>
               <InputNumber
                 placeholder='8086'
                 value={formData.port}
@@ -967,11 +978,13 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   用户名/密码认证
                 </h4>
               </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    用户名
-                  </Label>
+
+              {/* 用户名 */}
+              <div className='flex items-start gap-4'>
+                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                  用户名
+                </Label>
+                <div className='flex-1'>
                   <Input
                     placeholder='可选，如 admin'
                     value={formData.username}
@@ -982,15 +995,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     autoCorrect='off'
                     className='h-9'
                   />
-                  <p className='text-xs text-muted-foreground'>
+                  <p className='text-xs text-muted-foreground mt-1'>
                     留空表示匿名访问
                   </p>
                 </div>
+              </div>
 
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    密码
-                  </Label>
+              {/* 密码 */}
+              <div className='flex items-start gap-4'>
+                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                  密码
+                </Label>
+                <div className='flex-1'>
                   <Input
                     type='password'
                     placeholder='可选'
@@ -1023,43 +1039,47 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </h4>
               </div>
 
-              <div className='space-y-1'>
-                <Label className='block text-sm font-medium text-foreground'>
+              {/* API 令牌 */}
+              <div className='flex items-start gap-4'>
+                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
                   API 令牌 <span className='text-destructive'>*</span>
                 </Label>
-                <Input
-                  type='password'
-                  placeholder='请输入 API Token'
-                  value={formData.apiToken}
-                  onChange={e => handleInputChange('apiToken', e.target.value)}
-                  className={`h-9 ${
-                    errors.apiToken
-                      ? 'border-destructive focus-visible:ring-destructive'
-                      : ''
-                  }`}
-                />
-                {errors.apiToken && (
-                  <div className='text-xs text-destructive mt-1'>
-                    {errors.apiToken}
-                  </div>
-                )}
-                <p className='text-xs text-muted-foreground'>
-                  在 InfluxDB UI 中生成的 API Token，具有读写权限
-                </p>
+                <div className='flex-1'>
+                  <Input
+                    type='password'
+                    placeholder='请输入 API Token'
+                    value={formData.apiToken}
+                    onChange={e => handleInputChange('apiToken', e.target.value)}
+                    className={`h-9 ${
+                      errors.apiToken
+                        ? 'border-destructive focus-visible:ring-destructive'
+                        : ''
+                    }`}
+                  />
+                  {errors.apiToken && (
+                    <div className='text-xs text-destructive mt-1'>
+                      {errors.apiToken}
+                    </div>
+                  )}
+                  <p className='text-xs text-muted-foreground mt-1'>
+                    在 InfluxDB UI 中生成的 API Token，具有读写权限
+                  </p>
+                </div>
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    组织 ID/名称{' '}
-                    {formData.version === '3.x' ? (
-                      <span className='text-muted-foreground text-xs'>
-                        (可选)
-                      </span>
-                    ) : (
-                      <span className='text-destructive'>*</span>
-                    )}
-                  </Label>
+              {/* 组织 ID/名称 */}
+              <div className='flex items-start gap-4'>
+                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                  组织 ID/名称{' '}
+                  {formData.version === '3.x' ? (
+                    <span className='text-muted-foreground text-xs'>
+                      (可选)
+                    </span>
+                  ) : (
+                    <span className='text-destructive'>*</span>
+                  )}
+                </Label>
+                <div className='flex-1'>
                   <Input
                     placeholder={
                       formData.version === '3.x'
@@ -1083,17 +1103,20 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       {errors.organization}
                     </div>
                   )}
-                  <p className='text-xs text-muted-foreground'>
+                  <p className='text-xs text-muted-foreground mt-1'>
                     {formData.version === '3.x'
                       ? '可选，某些 InfluxDB 3.x 部署不需要组织'
                       : '组织名称或 ID'}
                   </p>
                 </div>
+              </div>
 
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    默认存储桶
-                  </Label>
+              {/* 默认存储桶 */}
+              <div className='flex items-start gap-4'>
+                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                  默认存储桶
+                </Label>
+                <div className='flex-1'>
                   <Input
                     placeholder='如: mybucket'
                     value={formData.bucket}
@@ -1102,7 +1125,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     autoCorrect='off'
                     className='h-9'
                   />
-                  <p className='text-xs text-muted-foreground'>
+                  <p className='text-xs text-muted-foreground mt-1'>
                     可选，连接后默认选择的存储桶
                   </p>
                 </div>
@@ -1121,11 +1144,13 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   数据库配置
                 </h4>
               </div>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    默认数据库
-                  </Label>
+
+              {/* 默认数据库 */}
+              <div className='flex items-start gap-4'>
+                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                  默认数据库
+                </Label>
+                <div className='flex-1'>
                   <Input
                     placeholder='如: mydb'
                     value={formData.database}
@@ -1136,15 +1161,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     autoCorrect='off'
                     className='h-9'
                   />
-                  <p className='text-xs text-muted-foreground'>
+                  <p className='text-xs text-muted-foreground mt-1'>
                     可选，连接后默认选择的数据库
                   </p>
                 </div>
+              </div>
 
-                <div className='space-y-1'>
-                  <Label className='block text-sm font-medium text-foreground'>
-                    默认保留策略
-                  </Label>
+              {/* 默认保留策略 */}
+              <div className='flex items-start gap-4'>
+                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                  默认保留策略
+                </Label>
+                <div className='flex-1'>
                   <Input
                     placeholder='如: autogen'
                     value={formData.retentionPolicy}
@@ -1155,7 +1183,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     autoCorrect='off'
                     className='h-9'
                   />
-                  <p className='text-xs text-muted-foreground'>
+                  <p className='text-xs text-muted-foreground mt-1'>
                     可选，默认保留策略名称
                   </p>
                 </div>
@@ -1678,23 +1706,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   return (
     <>
       <Dialog open={visible} onOpenChange={open => !open && onCancel()}>
-        <DialogContent
-          className='max-w-4xl overflow-y-auto'
-          style={{
-            scrollbarGutter: 'stable'
-          }}
-        >
-          <DialogHeader className='pb-4'>
+        <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col p-0'>
+          {/* 固定头部 */}
+          <DialogHeader className='px-6 py-4 border-b flex-shrink-0'>
             <DialogTitle className='text-xl font-semibold'>
               {isEditing ? '编辑连接' : '新建连接'}
             </DialogTitle>
           </DialogHeader>
-          <div className='space-y-6'>
-            {/* 连接配置表单 */}
-            {renderConnectionForm()}
 
-            {/* 测试结果显示区域 */}
-            {testResult && (
+          {/* 可滚动内容区域 */}
+          <div className='flex-1 overflow-y-auto px-6 py-4' style={{ scrollbarGutter: 'stable' }}>
+            <div className='space-y-6'>
+              {/* 连接配置表单 */}
+              {renderConnectionForm()}
+
+              {/* 测试结果显示区域 */}
+              {testResult && (
               <div className='border-t pt-4'>
                 <div
                   className={`p-4 rounded-lg border ${
@@ -1796,9 +1823,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </div>
               </div>
             )}
+            </div>
+          </div>
 
-            {/* 操作按钮 */}
-            <div className='flex justify-end gap-3 pt-4 border-t'>
+          {/* 固定底部按钮 */}
+          <div className='px-6 py-4 border-t flex-shrink-0 bg-background'>
+            <div className='flex justify-end gap-3'>
               <Button onClick={handleCancel} variant='outline' size='sm'>
                 取消
               </Button>
