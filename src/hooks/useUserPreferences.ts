@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { getUserPreferencesError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 
@@ -178,7 +178,7 @@ export const useUserPreferences = () => {
     [preferences, updatePreferences]
   );
 
-  // 更新工作区设置
+  // 更新工作区设置 - 添加防抖机制
   const updateWorkspaceSettings = useCallback(
     async (workspace: WorkspaceSettings) => {
       if (!preferences) return false;
@@ -192,6 +192,30 @@ export const useUserPreferences = () => {
     },
     [preferences, updatePreferences]
   );
+
+  // 创建防抖版本的工作区设置更新函数
+  const debouncedUpdateWorkspaceSettings = useMemo(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    let lastCallTime = 0;
+
+    return async (workspace: WorkspaceSettings) => {
+      const now = Date.now();
+      const timeSinceLastCall = now - lastCallTime;
+
+      // 如果距离上次调用少于3秒，清除之前的定时器并重新设置
+      if (timeSinceLastCall < 3000 && timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      return new Promise<boolean>((resolve) => {
+        timeoutId = setTimeout(async () => {
+          lastCallTime = Date.now();
+          const result = await updateWorkspaceSettings(workspace);
+          resolve(result);
+        }, 500); // 500ms 防抖延迟
+      });
+    };
+  }, [updateWorkspaceSettings]);
 
   // 重置为默认设置
   const resetToDefaults = useCallback(async () => {
@@ -228,6 +252,7 @@ export const useUserPreferences = () => {
     updateNotificationSettings,
     updateAccessibilitySettings,
     updateWorkspaceSettings,
+    debouncedUpdateWorkspaceSettings, // 导出防抖版本
     resetToDefaults,
   };
 };

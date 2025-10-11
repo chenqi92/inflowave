@@ -39,7 +39,7 @@ export interface DataGripLayoutRef {
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                                                                      children,
                                                                  }) => {
-    const {preferences, updateWorkspaceSettings} = useUserPreferences();
+    const {preferences, debouncedUpdateWorkspaceSettings} = useUserPreferences();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -157,7 +157,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
         if (hasChanges) {
             console.log('工作区设置有变化，保存到用户偏好');
-            await updateWorkspaceSettings(updatedWorkspace);
+            await debouncedUpdateWorkspaceSettings(updatedWorkspace);
         } else {
             console.log('工作区设置无变化，跳过保存');
         }
@@ -170,7 +170,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         leftPanelSize,
         bottomPanelSize,
         rightPanelSize,
-        updateWorkspaceSettings,
+        debouncedUpdateWorkspaceSettings,
     ]);
 
     // 使用 ref 来存储 saveWorkspaceSettings 函数，避免依赖问题
@@ -549,7 +549,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             // 🔧 修复：移除立即更新偏好设置的逻辑，避免与路径导航冲突
             // 偏好设置的更新由自动保存机制处理，避免在导航过程中产生状态冲突
         },
-        [currentView, navigate, location.pathname, preferences?.workspace, updateWorkspaceSettings]
+        [currentView, navigate, location.pathname, preferences?.workspace, debouncedUpdateWorkspaceSettings]
     );
 
     // 中间栏根据当前视图显示不同内容
