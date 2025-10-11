@@ -5,36 +5,54 @@ use tauri::Manager;
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 
+/// 获取日志目录路径
+///
+/// 开发环境：使用项目根目录的 logs/
+/// 生产环境：使用应用数据目录的 logs/
+fn get_log_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
+    let log_dir = if cfg!(debug_assertions) {
+        // 开发环境：使用项目根目录
+        let current_dir = std::env::current_dir()
+            .map_err(|e| anyhow::anyhow!("获取当前目录失败: {}", e))?;
+        current_dir.join("logs")
+    } else {
+        // 生产环境：使用应用数据目录
+        let app_dir = app_handle
+            .path()
+            .app_data_dir()
+            .map_err(|e| anyhow::anyhow!("获取应用数据目录失败: {}", e))?;
+        app_dir.join("logs")
+    };
+
+    Ok(log_dir)
+}
+
 /// 初始化日志系统
-/// 
+///
 /// 功能：
 /// 1. 清除旧的日志文件
 /// 2. 配置日志输出到文件和控制台
 /// 3. 设置日志格式和级别
 pub fn init_logger(app_handle: &tauri::AppHandle) -> Result<()> {
-    // 获取应用数据目录
-    let app_dir = app_handle
-        .path()
-        .app_data_dir()
-        .map_err(|e| anyhow::anyhow!("获取应用数据目录失败: {}", e))?;
-    
-    let log_dir = app_dir.join("logs");
-    
+    // 获取日志目录（根据环境自动选择）
+    let log_dir = get_log_dir(app_handle)?;
+
     // 确保日志目录存在
     fs::create_dir_all(&log_dir)?;
-    
+
     // 清除旧的后端日志文件
     clear_old_logs(&log_dir)?;
-    
+
     // 写入会话开始标记
     write_session_start(&log_dir)?;
-    
+
     // 配置日志输出
     setup_logging(&log_dir)?;
-    
-    tracing::info!("📝 后端日志系统已启动");
+
+    let env_type = if cfg!(debug_assertions) { "开发" } else { "生产" };
+    tracing::info!("📝 后端日志系统已启动 [{}环境]", env_type);
     tracing::info!("日志目录: {:?}", log_dir);
-    
+
     Ok(())
 }
 
@@ -140,12 +158,8 @@ fn setup_logging(log_dir: &PathBuf) -> Result<()> {
 
 /// 获取日志文件路径
 pub fn get_log_file_path(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
-    let app_dir = app_handle
-        .path()
-        .app_data_dir()
-        .map_err(|e| anyhow::anyhow!("获取应用数据目录失败: {}", e))?;
-    
-    Ok(app_dir.join("logs").join("backend.log"))
+    let log_dir = get_log_dir(app_handle)?;
+    Ok(log_dir.join("backend.log"))
 }
 
 /// 读取日志文件内容

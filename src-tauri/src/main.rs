@@ -836,6 +836,12 @@ async fn main() {
             get_file_info,
             show_message_dialog,
             close_app,
+            // Environment-aware file operations
+            write_file_env,
+            read_file_env,
+            delete_file_env,
+            file_exists_env,
+            create_dir_env,
 
             // Data write operations
             write_data,

@@ -3,7 +3,7 @@ use crate::services::ConnectionService;
 use tauri::{State, Manager, AppHandle};
 use log::{debug, error, info, warn};
 use tauri::Emitter;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use anyhow::Error;
 
 /// 获取系统信息
@@ -532,11 +532,36 @@ pub async fn save_file_dialog(
     }
 }
 
+/// 解析路径：根据环境将相对路径转换为绝对路径
+/// 开发环境：相对于项目根目录
+/// 生产环境：相对于应用数据目录
+fn resolve_path(app: &tauri::AppHandle, path: &str) -> Result<PathBuf, String> {
+    let path_buf = Path::new(path);
+
+    // 如果已经是绝对路径，直接返回
+    if path_buf.is_absolute() {
+        return Ok(path_buf.to_path_buf());
+    }
+
+    // 相对路径需要根据环境解析
+    let base_dir = if cfg!(debug_assertions) {
+        // 开发环境：使用项目根目录
+        std::env::current_dir().map_err(|e| format!("获取当前目录失败: {}", e))?
+    } else {
+        // 生产环境：使用应用数据目录
+        app.path()
+            .app_data_dir()
+            .map_err(|e| format!("获取应用数据目录失败: {}", e))?
+    };
+
+    Ok(base_dir.join(path))
+}
+
 /// 读取文件内容
 #[tauri::command]
 pub async fn read_file(path: String) -> Result<String, String> {
     debug!("读取文件: {}", path);
-    
+
     match std::fs::read_to_string(&path) {
         Ok(content) => {
             info!("成功读取文件: {}", path);
@@ -622,6 +647,94 @@ pub async fn create_dir(path: String) -> Result<(), String> {
 
     info!("成功创建目录: {}", path);
     Ok(())
+}
+
+/// 环境感知的文件写入（开发环境使用项目根目录，生产环境使用应用数据目录）
+#[tauri::command]
+pub async fn write_file_env(app: tauri::AppHandle, path: String, content: String) -> Result<bool, String> {
+    let resolved_path = resolve_path(&app, &path)?;
+    debug!("写入文件 [环境感知]: {} -> {:?}", path, resolved_path);
+
+    // 确保目录存在
+    if let Some(parent) = resolved_path.parent() {
+        if !parent.exists() {
+            std::fs::create_dir_all(parent).map_err(|e| {
+                error!("创建目录失败: {}: {}", parent.display(), e);
+                format!("创建目录失败: {}", e)
+            })?;
+        }
+    }
+
+    match std::fs::write(&resolved_path, content) {
+        Ok(_) => {
+            info!("成功写入文件: {:?}", resolved_path);
+            Ok(true)
+        }
+        Err(e) => {
+            error!("写入文件失败: {:?}: {}", resolved_path, e);
+            Err(format!("写入文件失败: {}", e))
+        }
+    }
+}
+
+/// 环境感知的文件读取
+#[tauri::command]
+pub async fn read_file_env(app: tauri::AppHandle, path: String) -> Result<String, String> {
+    let resolved_path = resolve_path(&app, &path)?;
+    debug!("读取文件 [环境感知]: {} -> {:?}", path, resolved_path);
+
+    match std::fs::read_to_string(&resolved_path) {
+        Ok(content) => {
+            info!("成功读取文件: {:?}", resolved_path);
+            Ok(content)
+        }
+        Err(e) => {
+            error!("读取文件失败: {:?}: {}", resolved_path, e);
+            Err(format!("读取文件失败: {}", e))
+        }
+    }
+}
+
+/// 环境感知的文件删除
+#[tauri::command]
+pub async fn delete_file_env(app: tauri::AppHandle, path: String) -> Result<bool, String> {
+    let resolved_path = resolve_path(&app, &path)?;
+    debug!("删除文件 [环境感知]: {} -> {:?}", path, resolved_path);
+
+    match std::fs::remove_file(&resolved_path) {
+        Ok(_) => {
+            info!("成功删除文件: {:?}", resolved_path);
+            Ok(true)
+        }
+        Err(e) => {
+            error!("删除文件失败: {:?}: {}", resolved_path, e);
+            Err(format!("删除文件失败: {}", e))
+        }
+    }
+}
+
+/// 环境感知的文件存在性检查
+#[tauri::command]
+pub async fn file_exists_env(app: tauri::AppHandle, path: String) -> Result<bool, String> {
+    let resolved_path = resolve_path(&app, &path)?;
+    debug!("检查文件存在性 [环境感知]: {} -> {:?}", path, resolved_path);
+
+    Ok(resolved_path.exists())
+}
+
+/// 环境感知的目录创建
+#[tauri::command]
+pub async fn create_dir_env(app: tauri::AppHandle, path: String) -> Result<bool, String> {
+    let resolved_path = resolve_path(&app, &path)?;
+    debug!("创建目录 [环境感知]: {} -> {:?}", path, resolved_path);
+
+    std::fs::create_dir_all(&resolved_path).map_err(|e| {
+        error!("创建目录失败: {:?}: {}", resolved_path, e);
+        format!("创建目录失败: {}", e)
+    })?;
+
+    info!("成功创建目录: {:?}", resolved_path);
+    Ok(true)
 }
 
 /// 获取用户下载目录

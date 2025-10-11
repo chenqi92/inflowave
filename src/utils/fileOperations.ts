@@ -3,16 +3,20 @@ import { safeTauriInvoke } from './tauri';
 /**
  * 文件操作工具类
  * 提供文件读写、删除等功能的安全封装
+ *
+ * 环境感知：
+ * - 开发环境：使用项目根目录
+ * - 生产环境：使用应用数据目录
  */
 export class FileOperations {
   /**
-   * 写入文件
-   * @param path 文件路径
+   * 写入文件（环境感知）
+   * @param path 文件路径（相对路径会根据环境自动解析）
    * @param content 文件内容
    */
   static async writeFile(path: string, content: string): Promise<void> {
     try {
-      await safeTauriInvoke('write_file', {
+      await safeTauriInvoke('write_file_env', {
         path,
         content,
       });
@@ -23,8 +27,8 @@ export class FileOperations {
   }
 
   /**
-   * 追加内容到文件
-   * @param path 文件路径
+   * 追加内容到文件（环境感知）
+   * @param path 文件路径（相对路径会根据环境自动解析）
    * @param content 要追加的内容
    */
   static async appendToFile(path: string, content: string): Promise<void> {
@@ -48,8 +52,8 @@ export class FileOperations {
       // 追加新内容
       const newContent = existingContent + content;
 
-      // 写入完整内容
-      await safeTauriInvoke('write_file', {
+      // 写入完整内容（使用环境感知命令）
+      await safeTauriInvoke('write_file_env', {
         path,
         content: newContent,
       });
@@ -60,13 +64,13 @@ export class FileOperations {
   }
 
   /**
-   * 读取文件
-   * @param path 文件路径
+   * 读取文件（环境感知）
+   * @param path 文件路径（相对路径会根据环境自动解析）
    * @returns 文件内容
    */
   static async readFile(path: string): Promise<string> {
     try {
-      const result = await safeTauriInvoke<string>('read_file', { path });
+      const result = await safeTauriInvoke<string>('read_file_env', { path });
       return result || '';
     } catch (error) {
       console.error(`读取文件失败 ${path}:`, error);
@@ -75,12 +79,12 @@ export class FileOperations {
   }
 
   /**
-   * 删除文件
-   * @param path 文件路径
+   * 删除文件（环境感知）
+   * @param path 文件路径（相对路径会根据环境自动解析）
    */
   static async deleteFile(path: string): Promise<void> {
     try {
-      await safeTauriInvoke('delete_file', { path });
+      await safeTauriInvoke('delete_file_env', { path });
     } catch (error) {
       console.error(`删除文件失败 ${path}:`, error);
       throw error;
@@ -88,13 +92,13 @@ export class FileOperations {
   }
 
   /**
-   * 检查文件是否存在
-   * @param path 文件路径
+   * 检查文件是否存在（环境感知）
+   * @param path 文件路径（相对路径会根据环境自动解析）
    * @returns 是否存在
    */
   static async fileExists(path: string): Promise<boolean> {
     try {
-      const result = await safeTauriInvoke<boolean>('file_exists', { path });
+      const result = await safeTauriInvoke<boolean>('file_exists_env', { path });
       return result || false;
     } catch (error) {
       console.error(`检查文件存在性失败 ${path}:`, error);
@@ -103,12 +107,12 @@ export class FileOperations {
   }
 
   /**
-   * 创建目录
-   * @param path 目录路径
+   * 创建目录（环境感知）
+   * @param path 目录路径（相对路径会根据环境自动解析）
    */
   static async createDir(path: string): Promise<void> {
     try {
-      await safeTauriInvoke('create_dir', { path });
+      await safeTauriInvoke('create_dir_env', { path });
     } catch (error) {
       console.error(`创建目录失败 ${path}:`, error);
       throw error;
