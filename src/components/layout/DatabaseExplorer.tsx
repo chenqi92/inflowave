@@ -1,4 +1,4 @@
-﻿import React, {useState, useEffect, useCallback, useRef} from 'react';
+﻿import React, {useState, useEffect, useCallback, useRef, useMemo} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {
     SearchInput,
@@ -2528,6 +2528,114 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     }, [buildCompleteTreeData, connections]);
 
+    // 缓存回调函数，避免每次渲染都创建新函数
+    const handleNodeSelect = useCallback((node: any) => {
+        if (node) {
+            console.log('选中节点:', node);
+        }
+    }, []);
+
+    const handleNodeActivate = useCallback(async (node: any) => {
+        console.log('🖱️ 双击节点:', node);
+
+        // 关闭右键菜单
+        if (contextMenuOpen) {
+            setContextMenuOpen(false);
+        }
+
+        const nodeType = node.nodeType;
+        const metadata = node.metadata || {};
+        const connectionId = metadata.connectionId || '';
+        const database = metadata.database || metadata.databaseName || '';
+        const table = metadata.table || metadata.tableName || '';
+
+        // 容器节点（connection, database 等）已经由 MultiConnectionTreeView 的 handleToggle 处理
+        // 这里只处理叶子节点
+
+        if (nodeType === 'measurement' || nodeType === 'table') {
+            // 表节点：创建数据浏览器标签页
+            if (onCreateDataBrowserTab) {
+                onCreateDataBrowserTab(connectionId, database, table);
+                showMessage.success(`正在打开表 "${table}"`);
+            }
+        } else if (nodeType === 'timeseries' || nodeType === 'aligned_timeseries') {
+            // IoTDB 时间序列节点：创建数据浏览器标签页
+            if (onCreateDataBrowserTab) {
+                onCreateDataBrowserTab(connectionId, database, table);
+                showMessage.success(`正在打开时间序列 "${table}"`);
+            }
+        } else if (nodeType === 'field' || nodeType === 'tag') {
+            // 字段/标签节点：显示详情
+            showMessage.info(`字段/标签: ${node.name}`);
+        } else if (nodeType === 'function' || nodeType === 'trigger' || nodeType === 'system_info' || nodeType === 'version_info' || nodeType === 'schema_template') {
+            // 管理节点：打开详情弹框
+            setManagementNodeDialog({
+                open: true,
+                connectionId,
+                nodeType: nodeType,
+                nodeName: node.name,
+                nodeCategory: 'management',
+            });
+        } else {
+            console.log(`ℹ️ 节点类型 ${nodeType} 的双击行为由 handleToggle 处理`);
+        }
+    }, [contextMenuOpen, onCreateDataBrowserTab]);
+
+    const handleNodeContextMenu = useCallback((node: any, event: React.MouseEvent) => {
+        event.preventDefault();
+        setContextMenuPosition({
+            x: event.clientX,
+            y: event.clientY
+        });
+        setContextMenuTarget(node);
+        setTimeout(() => setContextMenuOpen(true), 50);
+    }, []);
+
+    const handleTreeRefresh = useCallback(() => {
+        buildCompleteTreeData(true);
+    }, [buildCompleteTreeData]);
+
+    // 创建稳定的 connections 序列化 key，用于 useMemo 依赖
+    const connectionsKey = useMemo(() => {
+        return connections.map(conn =>
+            `${conn.id}:${conn.name}:${conn.dbType}:${isConnectionConnected(conn.id || '')}`
+        ).join('|');
+    }, [connections, connectionStatuses]);
+
+    // 创建稳定的 connectionStatuses 序列化 key，用于 useMemo 依赖
+    const connectionStatusesKey = useMemo(() => {
+        return connections.map(conn => {
+            const status = connectionStatuses[conn.id || '']?.status || 'disconnected';
+            return `${conn.id}:${status}`;
+        }).join('|');
+    }, [connections, connectionStatuses]);
+
+    // 缓存 connections 数组，避免每次渲染都创建新数组
+    const memoizedConnections = useMemo(() => {
+        return connections.map(conn => ({
+            id: conn.id || '',
+            name: conn.name,
+            dbType: conn.dbType,
+            host: conn.host,
+            port: conn.port,
+            isConnected: isConnectionConnected(conn.id || ''),
+        }));
+    }, [connectionsKey]); // 使用序列化的 key 作为依赖
+
+    // 缓存 connectionStatuses Map，避免每次渲染都创建新 Map
+    const memoizedConnectionStatuses = useMemo(() => {
+        return new Map(
+            connections.map(conn => {
+                const status = connectionStatuses[conn.id || '']?.status || 'disconnected';
+                // 过滤掉 'error' 状态，将其映射为 'disconnected'
+                return [
+                    conn.id || '',
+                    status === 'error' ? 'disconnected' : status
+                ] as [string, 'connecting' | 'connected' | 'disconnected'];
+            })
+        );
+    }, [connectionStatusesKey]); // 使用序列化的 key 作为依赖
+
     // 更新特定连接节点的显示状态（不影响其他节点）
     const updateConnectionNodeDisplay = useCallback(
         (connection_id: string, forceLoading?: boolean) => {
@@ -2895,93 +3003,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     <div className='px-2 h-full'>
                         {/* 使用新的 MultiConnectionTreeView */}
                         <MultiConnectionTreeView
-                            connections={connections.map(conn => ({
-                                id: conn.id || '',
-                                name: conn.name,
-                                dbType: conn.dbType,
-                                host: conn.host,
-                                port: conn.port,
-                                isConnected: isConnectionConnected(conn.id || ''),
-                            }))}
+                            connections={memoizedConnections}
                             searchValue={searchValue}
                             useVersionAwareFilter={hideSystemNodes}
-                            connectionStatuses={new Map(
-                                connections.map(conn => {
-                                    const status = connectionStatuses[conn.id || '']?.status || 'disconnected';
-                                    // 过滤掉 'error' 状态，将其映射为 'disconnected'
-                                    return [
-                                        conn.id || '',
-                                        status === 'error' ? 'disconnected' : status
-                                    ] as [string, 'connecting' | 'connected' | 'disconnected'];
-                                })
-                            )}
+                            connectionStatuses={memoizedConnectionStatuses}
                             databaseLoadingStates={databaseLoadingStates}
                             connectionErrors={connectionErrors}
                             databaseErrors={databaseErrors}
-                            isFavorite={(path) => isFavorite(path)}
+                            isFavorite={isFavorite}
                             onConnectionToggle={handleConnectionAndLoadDatabases}
-                            onNodeSelect={(node) => {
-                                if (node) {
-                                    console.log('选中节点:', node);
-                                }
-                            }}
-                            onNodeActivate={async (node) => {
-                                console.log('🖱️ 双击节点:', node);
-
-                                // 关闭右键菜单
-                                if (contextMenuOpen) {
-                                    setContextMenuOpen(false);
-                                }
-
-                                const nodeType = node.nodeType;
-                                const metadata = node.metadata || {};
-                                const connectionId = metadata.connectionId || '';
-                                const database = metadata.database || metadata.databaseName || '';
-                                const table = metadata.table || metadata.tableName || '';
-
-                                // 容器节点（connection, database 等）已经由 MultiConnectionTreeView 的 handleToggle 处理
-                                // 这里只处理叶子节点
-
-                                if (nodeType === 'measurement' || nodeType === 'table') {
-                                    // 表节点：创建数据浏览器标签页
-                                    if (onCreateDataBrowserTab) {
-                                        onCreateDataBrowserTab(connectionId, database, table);
-                                        showMessage.success(`正在打开表 "${table}"`);
-                                    }
-                                } else if (nodeType === 'timeseries' || nodeType === 'aligned_timeseries') {
-                                    // IoTDB 时间序列节点：创建数据浏览器标签页
-                                    if (onCreateDataBrowserTab) {
-                                        onCreateDataBrowserTab(connectionId, database, table);
-                                        showMessage.success(`正在打开时间序列 "${table}"`);
-                                    }
-                                } else if (nodeType === 'field' || nodeType === 'tag') {
-                                    // 字段/标签节点：显示详情
-                                    showMessage.info(`字段/标签: ${node.name}`);
-                                } else if (nodeType === 'function' || nodeType === 'trigger' || nodeType === 'system_info' || nodeType === 'version_info' || nodeType === 'schema_template') {
-                                    // 管理节点：打开详情弹框
-                                    setManagementNodeDialog({
-                                        open: true,
-                                        connectionId,
-                                        nodeType: nodeType,
-                                        nodeName: node.name,
-                                        nodeCategory: 'management',
-                                    });
-                                } else {
-                                    console.log(`ℹ️ 节点类型 ${nodeType} 的双击行为由 handleToggle 处理`);
-                                }
-                            }}
-                            onNodeContextMenu={(node, event) => {
-                                event.preventDefault();
-                                setContextMenuPosition({
-                                    x: event.clientX,
-                                    y: event.clientY
-                                });
-                                setContextMenuTarget(node);
-                                setTimeout(() => setContextMenuOpen(true), 50);
-                            }}
-                            onRefresh={() => {
-                                buildCompleteTreeData(true);
-                            }}
+                            onNodeSelect={handleNodeSelect}
+                            onNodeActivate={handleNodeActivate}
+                            onNodeContextMenu={handleNodeContextMenu}
+                            onRefresh={handleTreeRefresh}
                             className='h-full'
                         />
 
