@@ -2042,11 +2042,29 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     }
                     break;
 
+                case 'open_database':
+                    if (nodeType.includes('database')) {
+                        try {
+                            console.log(`📂 打开数据库连接: ${database}`);
+                            openDatabase(connectionId, database);
+                            showMessage.success(`已打开数据库 "${database}"`);
+                        } catch (error) {
+                            console.error('❌ 打开数据库失败:', error);
+                            showMessage.error(`打开数据库失败: ${error}`);
+                        }
+                    }
+                    break;
+
                 case 'close_database':
                     if (nodeType.includes('database')) {
-                        closeDatabase(connectionId, database);
-                        showMessage.success(`已关闭数据库 "${database}"`);
-                        buildCompleteTreeData(true);
+                        try {
+                            console.log(`📂 关闭数据库连接: ${database}`);
+                            closeDatabase(connectionId, database);
+                            showMessage.success(`已关闭数据库 "${database}"`);
+                        } catch (error) {
+                            console.error('❌ 关闭数据库失败:', error);
+                            showMessage.error(`关闭数据库失败: ${error}`);
+                        }
                     }
                     break;
 
@@ -2089,7 +2107,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                         setRetentionPolicyDialog({
                             open: true,
                             mode: 'create',
-                            database: database,
+                            database,
                             policy: null,
                         });
                     }
@@ -3011,6 +3029,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                             connectionErrors={connectionErrors}
                             databaseErrors={databaseErrors}
                             isFavorite={isFavorite}
+                            isDatabaseOpened={isDatabaseOpened}
                             onConnectionToggle={handleConnectionAndLoadDatabases}
                             onNodeSelect={handleNodeSelect}
                             onNodeActivate={handleNodeActivate}

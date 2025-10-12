@@ -54,6 +54,8 @@ interface MultiConnectionTreeViewProps {
   databaseErrors?: Map<string, string>;
   // 收藏状态
   isFavorite?: (path: string) => boolean;
+  // 数据库打开状态
+  isDatabaseOpened?: (connectionId: string, database: string) => boolean;
 }
 
 export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = ({
@@ -71,6 +73,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   connectionErrors,
   databaseErrors,
   isFavorite,
+  isDatabaseOpened,
 }) => {
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -97,18 +100,26 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   }, []);
 
   // 加载所有连接的树节点
+  // clearCache: 是否清除缓存并重新加载整个树
+  // 注意：只有在点击"刷新"按钮时才应该传入 clearCache=true
+  // 其他操作（如展开节点、打开表数据）不应该触发全树重新加载
   const loadAllTreeNodes = useCallback(async (clearCache = false) => {
     if (connections.length === 0) {
       setTreeData([]);
       return;
     }
 
-    setLoading(true);
+    // 优化：只在初始加载或强制刷新时显示全局 loading
+    // 避免在更新节点状态时整个树闪烁
+    const isInitialLoad = treeData.length === 0;
+    if (isInitialLoad || clearCache) {
+      setLoading(true);
+    }
     setError(null);
 
     // 清除缓存
     if (clearCache) {
-      console.log('🗑️ 清除节点缓存');
+      console.log('🗑️ 清除节点缓存，重新加载整个树');
       setLoadedNodes(new Set());
     }
 
@@ -316,11 +327,56 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
     console.log(`🔄 懒加载节点: ${nodeId}`, nodeData);
 
+    // 设置节点为 loading 状态
+    setTreeData(prevData => {
+      const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
+        let hasChanges = false;
+        const newNodes = nodes.map(n => {
+          if (n.id === nodeId) {
+            hasChanges = true;
+            return { ...n, isLoading: true };
+          }
+          if (n.children) {
+            const updatedChildren = updateNode(n.children);
+            if (updatedChildren !== n.children) {
+              hasChanges = true;
+              return { ...n, children: updatedChildren };
+            }
+          }
+          return n;
+        });
+        return hasChanges ? newNodes : nodes;
+      };
+      return updateNode(prevData);
+    });
+
     try {
       // 获取连接 ID
       const connectionId = nodeData.metadata?.connectionId;
       if (!connectionId) {
         console.error('节点缺少 connectionId:', nodeData);
+        // 清除 loading 状态
+        setTreeData(prevData => {
+          const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
+            let hasChanges = false;
+            const newNodes = nodes.map(n => {
+              if (n.id === nodeId) {
+                hasChanges = true;
+                return { ...n, isLoading: false };
+              }
+              if (n.children) {
+                const updatedChildren = updateNode(n.children);
+                if (updatedChildren !== n.children) {
+                  hasChanges = true;
+                  return { ...n, children: updatedChildren };
+                }
+              }
+              return n;
+            });
+            return hasChanges ? newNodes : nodes;
+          };
+          return updateNode(prevData);
+        });
         return;
       }
 
@@ -343,7 +399,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
       // 转换子节点格式
       const convertedChildren = children.map(child =>
-        convertToArboristFormat(child, connection, connectionId)
+        convertToArboristFormat(child, connection, connectionId, isDatabaseOpened)
       );
 
       // 一次性更新节点数据，避免多次 setTreeData 调用
@@ -385,18 +441,45 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       }
     } catch (err) {
       console.error(`❌ 加载子节点失败:`, err);
+      // 清除 loading 状态
+      setTreeData(prevData => {
+        const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
+          let hasChanges = false;
+          const newNodes = nodes.map(n => {
+            if (n.id === nodeId) {
+              hasChanges = true;
+              return { ...n, isLoading: false, error: String(err) };
+            }
+            if (n.children) {
+              const updatedChildren = updateNode(n.children);
+              if (updatedChildren !== n.children) {
+                hasChanges = true;
+                return { ...n, children: updatedChildren };
+              }
+            }
+            return n;
+          });
+          return hasChanges ? newNodes : nodes;
+        };
+        return updateNode(prevData);
+      });
     }
   }, [loadedNodes, connections, connectionStatuses, databaseLoadingStates, connectionErrors, databaseErrors, isFavorite, onConnectionToggle]);
 
   // 转换节点格式为 React Arborist 格式
-  const convertToArboristFormat = (node: any, connection: any, connectionId: string): TreeNodeData => {
+  const convertToArboristFormat = (
+    node: any,
+    connection: any,
+    connectionId: string,
+    isDatabaseOpenedFn?: (connectionId: string, database: string) => boolean
+  ): TreeNodeData => {
     const hasChildren = node.children && node.children.length > 0;
     const isExpandable = node.isExpandable || node.is_expandable || node.metadata?.is_container || false;
     const nodeType = node.nodeType || node.node_type;
 
     // 获取节点状态
     const nodeId = node.id;
-    const database = node.metadata?.database || node.metadata?.databaseName || '';
+    const database = node.metadata?.database || node.metadata?.databaseName || node.name || '';
     const table = node.metadata?.table || node.metadata?.tableName || '';
 
     // 检查加载状态
@@ -425,6 +508,13 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       isFav = isFavorite(favPath);
     }
 
+    // 检查数据库是否已打开（用于控制图标颜色）
+    let isActivated = false;
+    if (nodeType.includes('database') && isDatabaseOpenedFn && database) {
+      isActivated = isDatabaseOpenedFn(connectionId, database);
+      console.log(`🎨 数据库节点 ${database} 的 isActivated 状态: ${isActivated}`);
+    }
+
     // 只为连接节点设置 isConnected 属性
     const result: TreeNodeData = {
       id: node.id,
@@ -440,9 +530,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       isLoading,
       error,
       isFavorite: isFav,
+      isActivated, // 设置 isActivated 状态
       // 如果有子节点，直接设置；如果可展开但没有子节点，设置为 undefined 表示需要懒加载
       children: hasChildren
-        ? node.children.map((child: any) => convertToArboristFormat(child, connection, connectionId))
+        ? node.children.map((child: any) => convertToArboristFormat(child, connection, connectionId, isDatabaseOpenedFn))
         : isExpandable
           ? undefined
           : [],
@@ -472,11 +563,40 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   // 使用 ref 来跟踪需要清除缓存的节点
   const disconnectedNodesRef = useRef<Map<string, TreeNodeData>>(new Map());
 
+  // 使用 ref 来跟踪上次的连接状态，避免不必要的更新
+  const prevConnectionStatusesRef = useRef<Map<string, 'connecting' | 'connected' | 'disconnected'>>(new Map());
+
   // 监听连接状态变化，更新节点状态（不重新加载整个树）
   useEffect(() => {
     if (!connectionStatuses) return;
 
-    console.log('🔄 [MultiConnectionTreeView] connectionStatuses 变化');
+    // 检查连接状态是否真的发生了变化
+    let statusChanged = false;
+    const prevStatuses = prevConnectionStatusesRef.current;
+
+    // 检查是否有新的状态或状态值变化
+    connectionStatuses.forEach((status, connectionId) => {
+      if (prevStatuses.get(connectionId) !== status) {
+        statusChanged = true;
+      }
+    });
+
+    // 检查是否有连接被移除
+    prevStatuses.forEach((status, connectionId) => {
+      if (!connectionStatuses.has(connectionId)) {
+        statusChanged = true;
+      }
+    });
+
+    if (!statusChanged) {
+      console.log('👀 [MultiConnectionTreeView] 连接状态无实际变化，跳过更新');
+      return;
+    }
+
+    console.log('🔄 [MultiConnectionTreeView] 连接状态发生变化，更新树节点');
+
+    // 更新 ref
+    prevConnectionStatusesRef.current = new Map(connectionStatuses);
 
     setTreeData(prevData => {
       let hasChanges = false;
@@ -636,8 +756,16 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
       // 特殊处理：连接节点未连接时，先建立连接
       if (nodeType === 'connection' && !nodeData.isConnected) {
-        console.log(`📂 双击容器节点，加载子节点: ${nodeType}`);
+        console.log(`📂 双击未连接的连接节点，建立连接: ${nodeType}`);
         await handleToggle(node.id);
+        return;
+      }
+
+      // 特殊处理：数据库节点
+      // 如果数据库节点已经打开连接（isActivated），双击只切换展开/收起，不改变连接状态
+      if ((nodeType === 'database' || nodeType === 'system_database') && nodeData.isActivated) {
+        console.log(`📂 双击已打开的数据库节点，切换展开/收起: ${nodeType}`);
+        node.toggle();
         return;
       }
 
@@ -672,7 +800,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     onRefresh?.();
   }, [loadAllTreeNodes, onRefresh]);
 
-  if (loading && treeData.length === 0) {
+  // 优化：只在初始加载且没有数据时显示全局 loading
+  // 避免在后续操作时整个树闪烁
+  if (loading && treeData.length === 0 && !loadedNodes.size) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
@@ -680,7 +810,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     );
   }
 
-  if (error) {
+  // 优化：只在没有任何数据时显示全局错误
+  // 如果已经有部分数据，错误会显示在具体的节点上
+  if (error && treeData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2 text-destructive">
         <p>加载失败: {error}</p>

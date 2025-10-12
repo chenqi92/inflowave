@@ -35,8 +35,11 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
 }) => {
   const data = node.data;
   const isSelected = node.isSelected;
-  const isActivated = data.isActivated || false;
-  const isLoading = data.isLoading || false;
+  const isActivated = data.isActivated ?? false;
+  const isLoading = data.isLoading ?? false;
+  const isConnected = data.isConnected ?? false;
+  const isFavorite = data.isFavorite ?? false;
+  const isSystem = data.isSystem ?? false;
 
   // 获取节点元数据
   const isContainer = data.metadata?.is_container === true;
@@ -50,13 +53,13 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
   let hasChildren = false;
   if (normalizedNodeType === 'connection') {
     // 连接节点：只有已连接才显示箭头
-    hasChildren = data.isConnected === true && (data.children === undefined || (data.children && data.children.length > 0));
+    hasChildren = isConnected && (data.children === undefined || (data.children && data.children.length > 0));
   } else if (normalizedNodeType === 'database' || normalizedNodeType === 'system_database') {
     // 数据库节点：只有当 children 是非空数组时才显示箭头（未打开时不显示箭头）
-    hasChildren = data.children && data.children.length > 0;
+    hasChildren = !!(data.children && data.children.length > 0);
   } else {
     // 其他节点：未加载(undefined)或有子节点时显示箭头
-    hasChildren = data.children === undefined || (data.children && data.children.length > 0);
+    hasChildren = data.children === undefined || !!(data.children && data.children.length > 0);
   }
 
   return (
@@ -68,7 +71,7 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
         'hover:bg-accent hover:text-accent-foreground',
         isSelected && 'bg-accent text-accent-foreground',
         isActivated && 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700',
-        data.isSystem && 'opacity-75',
+        isSystem && 'opacity-75',
         data.error && 'border-l-2 border-destructive'
       )}
       onDoubleClick={(e) => {
@@ -110,8 +113,14 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
       )}>
         <DatabaseIcon
           nodeType={normalizedNodeType}
-          isOpen={isActivated || node.isOpen}
-          isConnected={data.isConnected}
+          isOpen={
+            // 对于数据库节点，只使用 isActivated（数据库是否被打开）
+            // 对于其他容器节点，使用 node.isOpen（节点是否展开）
+            normalizedNodeType.includes('database')
+              ? isActivated
+              : (isActivated || node.isOpen)
+          }
+          isConnected={isConnected}
           dbType={data.dbType}
           size={16}
           className="flex-shrink-0"
@@ -128,7 +137,7 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
       </span>
 
       {/* 收藏图标 */}
-      {data.isFavorite && (
+      {isFavorite && (
         <Star className="w-3 h-3 ml-1 text-yellow-500 fill-yellow-500 flex-shrink-0" />
       )}
 
@@ -142,7 +151,7 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
       )}
 
       {/* 系统节点标识 */}
-      {data.isSystem && (
+      {isSystem && (
         <span className="ml-2 text-xs text-muted-foreground italic">system</span>
       )}
     </div>
