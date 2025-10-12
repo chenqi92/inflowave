@@ -287,6 +287,17 @@ export const DatabaseIcon: React.FC<DatabaseIconProps> = ({
   const { resolvedTheme } = useTheme();
   const iconTitle = title || getIconDescription(nodeType);
 
+  // 调试日志：数据库节点的图标状态（仅在开发环境且状态变化时输出）
+  // 注释掉以减少日志输出，需要时可以取消注释
+  // if (nodeType === 'database' || nodeType === 'system_database') {
+  //   console.log(`🎨 [DatabaseIcon] 渲染数据库图标`, {
+  //     nodeType,
+  //     isOpen,
+  //     resolvedTheme,
+  //     willUseIcon: isOpen ? `${nodeType}_cur.svg` : `${nodeType}.svg`
+  //   });
+  // }
+
   // 如果是连接节点，使用品牌图标
   if (nodeType === 'connection' && dbType) {
     const iconPath = getBrandIconPath(dbType, isConnected, dbVersion);

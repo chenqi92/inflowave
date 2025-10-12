@@ -46,6 +46,17 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
   const normalizedNodeType = normalizeNodeType(data.nodeType) as TreeNodeType;
   const behaviorConfig = getIoTDBNodeBehavior(normalizedNodeType, isContainer);
 
+  // 调试日志：数据库节点的状态（仅在开发环境且状态变化时输出）
+  // 注释掉以减少日志输出，需要时可以取消注释
+  // if (normalizedNodeType === 'database' || normalizedNodeType === 'system_database') {
+  //   console.log(`🎨 [TreeNodeRenderer] 渲染数据库节点: ${data.name}`, {
+  //     nodeType: normalizedNodeType,
+  //     isActivated,
+  //     isOpen: node.isOpen,
+  //     willPassToIcon: normalizedNodeType.includes('database') ? isActivated : (isActivated || node.isOpen)
+  //   });
+  // }
+
   // 判断是否显示展开箭头
   // children === undefined: 未加载，可能有子节点
   // children.length > 0: 已加载且有子节点，显示箭头
@@ -70,7 +81,8 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
         'flex items-center py-1 px-2 cursor-pointer rounded transition-colors select-none',
         'hover:bg-accent hover:text-accent-foreground',
         isSelected && 'bg-accent text-accent-foreground',
-        isActivated && 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700',
+        // 移除绿色选中效果，已打开的数据库节点通过图标颜色区分
+        // isActivated && 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700',
         isSystem && 'opacity-75',
         data.error && 'border-l-2 border-destructive'
       )}

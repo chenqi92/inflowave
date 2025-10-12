@@ -21,7 +21,7 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
     set((state) => {
       const newOpenedDatabases = new Set(state.openedDatabases);
       newOpenedDatabases.add(key);
-      
+
       // 提取数据库名称列表
       const newOpenedDatabasesList = Array.from(newOpenedDatabases)
         .map(k => {
@@ -30,13 +30,12 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
         })
         .filter(db => db !== '');
 
-      if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
-        console.log(`📂 [Store] 打开数据库: ${key}`, {
-          before: Array.from(state.openedDatabases),
-          after: Array.from(newOpenedDatabases),
-          databasesList: newOpenedDatabasesList
-        });
-      }
+      // 始终打印日志，方便调试
+      console.log(`📂 [Store] 打开数据库: ${key}`, {
+        before: Array.from(state.openedDatabases),
+        after: Array.from(newOpenedDatabases),
+        databasesList: newOpenedDatabasesList
+      });
 
       return {
         openedDatabases: newOpenedDatabases,
@@ -50,7 +49,7 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
     set((state) => {
       const newOpenedDatabases = new Set(state.openedDatabases);
       const wasDeleted = newOpenedDatabases.delete(key);
-      
+
       // 提取数据库名称列表
       const newOpenedDatabasesList = Array.from(newOpenedDatabases)
         .map(k => {
@@ -59,14 +58,13 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
         })
         .filter(db => db !== '');
 
-      if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
-        console.log(`📁 [Store] 关闭数据库: ${key}`, {
-          wasDeleted,
-          before: Array.from(state.openedDatabases),
-          after: Array.from(newOpenedDatabases),
-          databasesList: newOpenedDatabasesList
-        });
-      }
+      // 始终打印日志，方便调试
+      console.log(`📁 [Store] 关闭数据库: ${key}`, {
+        wasDeleted,
+        before: Array.from(state.openedDatabases),
+        after: Array.from(newOpenedDatabases),
+        databasesList: newOpenedDatabasesList
+      });
 
       return {
         openedDatabases: newOpenedDatabases,

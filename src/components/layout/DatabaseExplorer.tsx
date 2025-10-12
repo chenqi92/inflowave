@@ -2045,8 +2045,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 case 'open_database':
                     if (nodeType.includes('database')) {
                         try {
-                            console.log(`📂 打开数据库连接: ${database}`);
+                            console.log(`📂 [DatabaseExplorer] 打开数据库连接: ${database}, connectionId: ${connectionId}`);
+                            console.log(`📂 [DatabaseExplorer] 打开前状态: ${isDatabaseOpened(connectionId, database)}`);
+
                             openDatabase(connectionId, database);
+
+                            console.log(`📂 [DatabaseExplorer] 打开后状态: ${isDatabaseOpened(connectionId, database)}`);
+                            console.log(`📂 [DatabaseExplorer] 不触发树重建，只更新节点状态`);
+
                             showMessage.success(`已打开数据库 "${database}"`);
                         } catch (error) {
                             console.error('❌ 打开数据库失败:', error);
@@ -2058,8 +2064,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 case 'close_database':
                     if (nodeType.includes('database')) {
                         try {
-                            console.log(`📂 关闭数据库连接: ${database}`);
+                            console.log(`📂 [DatabaseExplorer] 关闭数据库连接: ${database}, connectionId: ${connectionId}`);
+                            console.log(`📂 [DatabaseExplorer] 关闭前状态: ${isDatabaseOpened(connectionId, database)}`);
+
                             closeDatabase(connectionId, database);
+
+                            console.log(`📂 [DatabaseExplorer] 关闭后状态: ${isDatabaseOpened(connectionId, database)}`);
+                            console.log(`📂 [DatabaseExplorer] 不触发树重建，只更新节点状态`);
+
                             showMessage.success(`已关闭数据库 "${database}"`);
                         } catch (error) {
                             console.error('❌ 关闭数据库失败:', error);
@@ -2567,7 +2579,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         const database = metadata.database || metadata.databaseName || '';
         const table = metadata.table || metadata.tableName || '';
 
-        // 容器节点（connection, database 等）已经由 MultiConnectionTreeView 的 handleToggle 处理
+        // 数据库节点：双击打开数据库
+        if (nodeType === 'database' || nodeType === 'system_database') {
+            console.log(`📂 [DatabaseExplorer] 双击数据库节点，打开数据库: ${database}`);
+            if (!isDatabaseOpened(connectionId, database)) {
+                openDatabase(connectionId, database);
+                showMessage.success(`已打开数据库 "${database}"`);
+            } else {
+                console.log(`📂 [DatabaseExplorer] 数据库已打开，跳过: ${database}`);
+            }
+            return;
+        }
+
+        // 容器节点（connection 等）已经由 MultiConnectionTreeView 的 handleToggle 处理
         // 这里只处理叶子节点
 
         if (nodeType === 'measurement' || nodeType === 'table') {

@@ -113,6 +113,8 @@ export const DatabaseExplorerContextMenu: React.FC<DatabaseExplorerContextMenuPr
         const database = node.name;
         const isOpened = isDatabaseOpened?.(connectionId, database) || false;
 
+        console.log(`📂 [右键菜单] 数据库节点: ${database}, connectionId: ${connectionId}, isOpened: ${isOpened}`);
+
         return (
           <>
             <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">

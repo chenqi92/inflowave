@@ -25,6 +25,7 @@ import { Input } from '@/components/ui/Input';
 import { TreeNodeRenderer, TreeNodeData } from './TreeNodeRenderer';
 import { TreeNodeType } from '@/types/tree';
 import useResizeObserver from 'use-resize-observer';
+import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 
 interface ConnectionInfo {
   id: string;
@@ -75,14 +76,25 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   isFavorite,
   isDatabaseOpened,
 }) => {
+  // 添加渲染计数器
+  const renderCountRef = useRef(0);
+  renderCountRef.current++;
+  console.log(`🎨 [Render] MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
+
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 直接订阅 openedDatabasesList 以监听数据库打开/关闭状态变化
+  const openedDatabasesList = useOpenedDatabasesStore(state => state.openedDatabasesList);
   const [loadedNodes, setLoadedNodes] = useState<Set<string>>(new Set());
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
   // 移除 selectedNode 状态，避免不必要的重新渲染
   // const [selectedNode, setSelectedNode] = useState<TreeNodeData | null>(null);
   const treeRef = useRef<any>(null);
+
+  // 跟踪需要自动展开的数据库节点
+  const nodesToAutoExpandRef = useRef<Set<string>>(new Set());
 
   // 防止双击重复触发
   const lastActivateTimeRef = useRef<number>(0);
@@ -104,6 +116,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   // 注意：只有在点击"刷新"按钮时才应该传入 clearCache=true
   // 其他操作（如展开节点、打开表数据）不应该触发全树重新加载
   const loadAllTreeNodes = useCallback(async (clearCache = false) => {
+    console.log(`🔄 [树刷新] loadAllTreeNodes 被调用, clearCache: ${clearCache}`);
+    console.trace('🔄 [树刷新] 调用栈:');
+
     if (connections.length === 0) {
       setTreeData([]);
       return;
@@ -119,8 +134,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
     // 清除缓存
     if (clearCache) {
-      console.log('🗑️ 清除节点缓存，重新加载整个树');
+      console.log('🗑️ [树刷新] 清除节点缓存，重新加载整个树');
       setLoadedNodes(new Set());
+    } else {
+      console.log('⏭️ [树刷新] 不清除缓存，只更新节点状态');
     }
 
     try {
@@ -326,6 +343,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     }
 
     console.log(`🔄 懒加载节点: ${nodeId}`, nodeData);
+    console.log(`📊 [性能] 当前树节点总数: ${treeData.length}, 已加载节点数: ${loadedNodes.size}`);
 
     // 设置节点为 loading 状态
     setTreeData(prevData => {
@@ -687,9 +705,146 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     disconnectedNodesRef.current.clear();
   }, [treeData, clearNodeAndChildrenCache]);
 
+  // 监听 openedDatabasesList 的变化，更新数据库节点的 isActivated 状态
+  useEffect(() => {
+    if (!isDatabaseOpened || treeData.length === 0) return;
+
+    console.log('🔄 [MultiConnectionTreeView] openedDatabasesList 变化，更新数据库节点状态', openedDatabasesList);
+    console.log('🔄 [状态更新] 准备更新 treeData，当前节点数:', treeData.length);
+
+    setTreeData(prevData => {
+      console.log('🔄 [状态更新] setTreeData 回调执行，prevData 节点数:', prevData.length);
+      let hasChanges = false;
+
+      const updateNodeActivation = (nodes: TreeNodeData[]): TreeNodeData[] => {
+        let arrayChanged = false;
+        const newNodes = nodes.map(node => {
+          // 只处理数据库节点
+          if (node.nodeType === 'database' || node.nodeType === 'system_database') {
+            const connectionId = node.metadata?.connectionId || '';
+            const database = node.name;
+            const isActivated = isDatabaseOpened(connectionId, database);
+
+            // 检查 isActivated 状态是否变化
+            if (node.isActivated !== isActivated) {
+              hasChanges = true;
+              arrayChanged = true;
+              console.log(`🎨 [图标] 更新数据库节点 ${database} 的 isActivated: ${node.isActivated} -> ${isActivated}`);
+
+              // 如果数据库被关闭，清除其子节点并清除缓存
+              if (!isActivated && node.isActivated) {
+                console.log(`🗑️ [MultiConnectionTreeView] 数据库关闭，清除子节点: ${database}`);
+
+                // 清除该数据库节点及其所有子节点的缓存
+                setLoadedNodes(prev => {
+                  const newSet = new Set(prev);
+                  clearNodeAndChildrenCache(node, newSet);
+                  return newSet;
+                });
+
+                return {
+                  ...node,
+                  isActivated,
+                  children: undefined, // 清除子节点
+                };
+              }
+
+              return {
+                ...node,
+                isActivated,
+                // 递归更新子节点
+                children: node.children ? updateNodeActivation(node.children) : node.children
+              };
+            }
+          }
+
+          // 递归处理子节点
+          if (node.children) {
+            const updatedChildren = updateNodeActivation(node.children);
+            if (updatedChildren !== node.children) {
+              hasChanges = true;
+              arrayChanged = true;
+              return { ...node, children: updatedChildren };
+            }
+          }
+
+          return node;
+        });
+
+        // 只有在数组真正有变化时才返回新数组，否则返回原数组
+        return arrayChanged ? newNodes : nodes;
+      };
+
+      const newData = updateNodeActivation(prevData);
+
+      if (hasChanges) {
+        console.log('✅ [MultiConnectionTreeView] 数据库打开状态已更新');
+
+        // 检查是否有需要自动展开的节点
+        if (nodesToAutoExpandRef.current.size > 0) {
+          console.log('🔓 [打开数据库] 检查需要自动展开的节点:', Array.from(nodesToAutoExpandRef.current));
+
+          // 使用 setTimeout 确保状态更新完成后再展开节点
+          setTimeout(() => {
+            nodesToAutoExpandRef.current.forEach(nodeId => {
+              const node = treeRef.current?.get(nodeId);
+              if (node) {
+                const nodeData = node.data as TreeNodeData;
+                // 只展开已打开的数据库节点
+                if (nodeData.isActivated && !node.isOpen) {
+                  console.log(`🔓 [打开数据库] 自动展开节点: ${nodeId}`);
+                  // 先展开节点，然后加载子节点
+                  node.open();
+                  // 如果子节点未加载，触发加载
+                  if (nodeData.children === undefined && !loadedNodes.has(nodeId)) {
+                    console.log(`🔓 [打开数据库] 触发子节点加载: ${nodeId}`);
+                    handleToggle(nodeId);
+                  }
+                }
+              }
+            });
+            // 清空待展开列表
+            nodesToAutoExpandRef.current.clear();
+          }, 100);
+        }
+      } else {
+        console.log('⏭️ [MultiConnectionTreeView] 数据库打开状态无变化，跳过更新');
+      }
+
+      return hasChanges ? newData : prevData;
+    });
+  }, [openedDatabasesList, isDatabaseOpened, clearNodeAndChildrenCache, loadedNodes, handleToggle]); // 监听 openedDatabasesList 的变化
+
   // 搜索过滤
+  // 优化：使用 ref 缓存上次的 treeData，避免因引用变化导致不必要的重新计算
+  const prevTreeDataRef = useRef<TreeNodeData[]>([]);
+  const prevFilteredDataRef = useRef<TreeNodeData[]>([]);
+  const prevSearchValueRef = useRef<string>('');
+
   const filteredData = useMemo(() => {
-    if (!searchValue.trim()) return treeData;
+    // 如果 treeData 和 searchValue 都没有实质性变化，返回缓存的结果
+    const treeDataChanged = prevTreeDataRef.current !== treeData;
+    const searchValueChanged = prevSearchValueRef.current !== searchValue;
+
+    if (!treeDataChanged && !searchValueChanged) {
+      console.log('🎨 [性能] filteredData 使用缓存，避免重新计算');
+      return prevFilteredDataRef.current;
+    }
+
+    console.log('🎨 [性能] filteredData 重新计算', {
+      treeDataChanged,
+      searchValueChanged,
+      treeDataLength: treeData.length,
+      searchValue
+    });
+
+    prevTreeDataRef.current = treeData;
+    prevSearchValueRef.current = searchValue;
+
+    if (!searchValue.trim()) {
+      prevFilteredDataRef.current = treeData;
+      return treeData;
+    }
 
     const filterNodes = (nodes: TreeNodeData[]): TreeNodeData[] => {
       return nodes.reduce((acc: TreeNodeData[], node) => {
@@ -707,7 +862,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       }, []);
     };
 
-    return filterNodes(treeData);
+    const result = filterNodes(treeData);
+    prevFilteredDataRef.current = result;
+    return result;
   }, [treeData, searchValue]);
 
   // 处理节点选择
@@ -762,14 +919,25 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       }
 
       // 特殊处理：数据库节点
-      // 如果数据库节点已经打开连接（isActivated），双击只切换展开/收起，不改变连接状态
-      if ((nodeType === 'database' || nodeType === 'system_database') && nodeData.isActivated) {
+      if (nodeType === 'database' || nodeType === 'system_database') {
+        // 如果数据库未打开，双击应该打开数据库
+        if (!nodeData.isActivated) {
+          console.log(`🔓 [打开数据库] 双击未打开的数据库节点: ${nodeData.name}`);
+          // 标记此节点需要在打开后自动展开
+          nodesToAutoExpandRef.current.add(nodeId);
+          console.log(`🔓 [打开数据库] 标记节点 ${nodeId} 需要自动展开`);
+          // 通知父组件打开数据库（通过 onNodeActivate）
+          onNodeActivate?.(nodeData);
+          return;
+        }
+
+        // 如果数据库已打开，双击只切换展开/收起
         console.log(`📂 双击已打开的数据库节点，切换展开/收起: ${nodeType}`);
         node.toggle();
         return;
       }
 
-      // 如果节点已加载子节点（children !== undefined），直接切换展开/收起状态
+      // 其他容器节点：如果已加载子节点，直接切换展开/收起状态
       if (nodeData.children !== undefined) {
         console.log(`📂 双击已加载的容器节点，切换展开/收起: ${nodeType}`);
         node.toggle();
