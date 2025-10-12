@@ -23,10 +23,15 @@ export interface TreeNodeData {
   isFavorite?: boolean;
 }
 
-export const TreeNodeRenderer: React.FC<NodeRendererProps<TreeNodeData>> = ({
+interface TreeNodeRendererProps extends NodeRendererProps<TreeNodeData> {
+  onNodeDoubleClick?: (nodeData: TreeNodeData, node: any) => void;
+}
+
+export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
   node,
   style,
   dragHandle,
+  onNodeDoubleClick,
 }) => {
   const data = node.data;
   const isSelected = node.isSelected;
@@ -66,6 +71,12 @@ export const TreeNodeRenderer: React.FC<NodeRendererProps<TreeNodeData>> = ({
         data.isSystem && 'opacity-75',
         data.error && 'border-l-2 border-destructive'
       )}
+      onDoubleClick={(e) => {
+        // 双击时调用回调
+        e.stopPropagation();
+        console.log('🖱️🖱️ TreeNodeRenderer 双击事件:', node.id);
+        onNodeDoubleClick?.(data, node);
+      }}
     >
       {/* 展开/折叠图标 */}
       <div className="w-4 h-4 flex items-center justify-center mr-1">

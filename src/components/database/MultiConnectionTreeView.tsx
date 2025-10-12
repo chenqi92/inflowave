@@ -364,19 +364,59 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     return true; // 暂时返回 true，保留所有节点
   };
 
-  // 初始加载
+  // 初始加载 - 只在 connections 变化时重新加载
   useEffect(() => {
     loadAllTreeNodes();
-  }, [loadAllTreeNodes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connections]);
 
-  // 监听连接状态变化，当连接断开时清除缓存
+  // 监听连接状态变化，更新节点状态（不重新加载整个树）
   useEffect(() => {
     if (!connectionStatuses) return;
 
+    setTreeData(prevData => {
+      let hasChanges = false;
+      const newData = prevData.map(node => {
+        if (node.nodeType === 'connection') {
+          const connectionId = node.metadata?.connectionId;
+          const status = connectionStatuses.get(connectionId);
+          const error = connectionErrors?.get(connectionId);
+          const isConnected = status === 'connected';
+          const isLoading = status === 'connecting';
+
+          // 检查是否有变化
+          if (node.isConnected !== isConnected || node.isLoading !== isLoading || node.error !== error) {
+            hasChanges = true;
+
+            // 如果连接断开，清除子节点
+            if (status === 'disconnected') {
+              console.log(`🗑️ 连接断开，清除子节点: ${connectionId}`);
+              return {
+                ...node,
+                isConnected,
+                isLoading,
+                error,
+                children: undefined,
+              };
+            }
+
+            return {
+              ...node,
+              isConnected,
+              isLoading,
+              error,
+            };
+          }
+        }
+        return node;
+      });
+
+      return hasChanges ? newData : prevData;
+    });
+
+    // 清除断开连接的缓存
     connectionStatuses.forEach((status, connectionId) => {
       const nodeId = `connection-${connectionId}`;
-
-      // 如果连接断开，清除该连接的缓存
       if (status === 'disconnected' && loadedNodes.has(nodeId)) {
         console.log(`🗑️ 连接断开，清除缓存: ${nodeId}`);
         setLoadedNodes(prev => {
@@ -386,7 +426,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         });
       }
     });
-  }, [connectionStatuses, loadedNodes]);
+  }, [connectionStatuses, connectionErrors, loadedNodes]);
 
   // 搜索过滤
   const filteredData = useMemo(() => {
@@ -411,59 +451,28 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     return filterNodes(treeData);
   }, [treeData, searchValue]);
 
-  // 用于跟踪最后一次选择的时间和节点
-  const lastSelectTimeRef = useRef<number>(0);
-  const lastSelectNodeRef = useRef<string | null>(null);
-
   // 处理节点选择
   const handleSelect = useCallback((nodes: NodeApi<TreeNodeData>[]) => {
     const selected = nodes.length > 0 ? nodes[0].data : null;
-    const nodeId = nodes.length > 0 ? nodes[0].id : null;
-    const now = Date.now();
-
     setSelectedNode(selected);
     onNodeSelect?.(selected);
-
-    // 记录选择时间和节点，用于在 handleActivate 中判断是否是双击
-    if (nodeId) {
-      console.log('🖱️ onSelect 被调用:', nodeId);
-      lastSelectTimeRef.current = now;
-      lastSelectNodeRef.current = nodeId;
-    }
   }, [onNodeSelect]);
 
-  // 处理节点激活 (双击)
-  const handleActivate = useCallback(async (node: NodeApi<TreeNodeData>) => {
-    const nodeData = node.data;
+  // 处理节点双击
+  const handleNodeDoubleClick = useCallback(async (nodeData: TreeNodeData, node: any) => {
     const now = Date.now();
+    const nodeId = nodeData.id;
 
-    console.log(`🖱️ handleActivate 被调用: ${node.id}, 节点类型: ${nodeData.nodeType}`);
-
-    // 检查是否是真正的双击
-    // React Arborist 的 onActivate 会在以下情况触发：
-    // 1. 双击节点（onSelect 和 onActivate 几乎同时触发，间隔 < 100ms）
-    // 2. 单击已选中的节点（onSelect 不会触发，或者间隔 > 300ms）
-    const timeSinceLastSelect = now - lastSelectTimeRef.current;
-    const isSameNode = lastSelectNodeRef.current === node.id;
-
-    // 如果 onSelect 在 100ms 内被调用，且是同一个节点，说明是双击
-    const isDoubleClick = isSameNode && timeSinceLastSelect < 100;
-
-    if (!isDoubleClick) {
-      console.log(`⚠️ 忽略单击已选中节点触发的 activate 事件: ${node.id}, 距离上次 select: ${timeSinceLastSelect}ms`);
-      return;
-    }
-
-    console.log(`✅ 确认为双击事件: ${node.id}`);
+    console.log(`🖱️🖱️ 双击节点: ${nodeId}, 节点类型: ${nodeData.nodeType}`);
 
     // 防止双击重复触发（300ms 内的重复双击会被忽略）
-    if (lastActivateNodeRef.current === node.id && now - lastActivateTimeRef.current < 300) {
-      console.log('⚠️ 忽略重复的双击事件:', node.id);
+    if (lastActivateNodeRef.current === nodeId && now - lastActivateTimeRef.current < 300) {
+      console.log('⚠️ 忽略重复的双击事件:', nodeId);
       return;
     }
 
     lastActivateTimeRef.current = now;
-    lastActivateNodeRef.current = node.id;
+    lastActivateNodeRef.current = nodeId;
 
     const nodeType = nodeData.nodeType;
 
@@ -553,7 +562,6 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         rowHeight={32}
         overscanCount={10}
         onSelect={handleSelect}
-        onActivate={handleActivate}
         onToggle={async (nodeId) => {
           const node = treeRef.current?.get(nodeId);
           if (!node) return;
@@ -575,7 +583,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       >
         {(props) => (
           <div onContextMenu={(e) => handleContextMenu(props.node, e)}>
-            <TreeNodeRenderer {...props} />
+            <TreeNodeRenderer {...props} onNodeDoubleClick={handleNodeDoubleClick} />
           </div>
         )}
       </Tree>
