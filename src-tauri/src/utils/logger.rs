@@ -37,21 +37,50 @@ pub fn init_logger(app_handle: &tauri::AppHandle) -> Result<()> {
     // 获取日志目录（根据环境自动选择）
     let log_dir = get_log_dir(app_handle)?;
 
+    println!("🔍 [Logger] 日志目录: {:?}", log_dir);
+    println!("🔍 [Logger] 当前工作目录: {:?}", std::env::current_dir());
+    println!("🔍 [Logger] 操作系统: {} {}", std::env::consts::OS, std::env::consts::ARCH);
+
     // 确保日志目录存在
-    fs::create_dir_all(&log_dir)?;
+    match fs::create_dir_all(&log_dir) {
+        Ok(_) => println!("✅ [Logger] 日志目录创建成功"),
+        Err(e) => {
+            eprintln!("❌ [Logger] 创建日志目录失败: {}", e);
+            return Err(anyhow::anyhow!("创建日志目录失败: {}", e));
+        }
+    }
 
     // 清除旧的后端日志文件
-    clear_old_logs(&log_dir)?;
+    match clear_old_logs(&log_dir) {
+        Ok(_) => println!("✅ [Logger] 清除旧日志成功"),
+        Err(e) => {
+            eprintln!("⚠️ [Logger] 清除旧日志失败: {}", e);
+        }
+    }
 
     // 写入会话开始标记
-    write_session_start(&log_dir)?;
+    match write_session_start(&log_dir) {
+        Ok(_) => println!("✅ [Logger] 写入会话标记成功"),
+        Err(e) => {
+            eprintln!("❌ [Logger] 写入会话标记失败: {}", e);
+            return Err(anyhow::anyhow!("写入会话标记失败: {}", e));
+        }
+    }
 
     // 配置日志输出
-    setup_logging(&log_dir)?;
+    match setup_logging(&log_dir) {
+        Ok(_) => println!("✅ [Logger] 日志系统配置成功"),
+        Err(e) => {
+            eprintln!("❌ [Logger] 配置日志系统失败: {}", e);
+            return Err(anyhow::anyhow!("配置日志系统失败: {}", e));
+        }
+    }
 
     let env_type = if cfg!(debug_assertions) { "开发" } else { "生产" };
     tracing::info!("📝 后端日志系统已启动 [{}环境]", env_type);
     tracing::info!("日志目录: {:?}", log_dir);
+
+    println!("✅ [Logger] 日志系统初始化完成");
 
     Ok(())
 }
@@ -97,14 +126,25 @@ Session ID: {}
 
 /// 设置日志记录
 fn setup_logging(log_dir: &PathBuf) -> Result<()> {
+    println!("🔍 [Logger] 开始配置日志系统...");
+    println!("🔍 [Logger] 日志文件路径: {:?}", log_dir.join("backend.log"));
+
     // 创建文件日志 appender - 不使用滚动，每次启动都是新文件
-    let file_appender = RollingFileAppender::builder()
+    let file_appender = match RollingFileAppender::builder()
         .rotation(Rotation::NEVER) // 不自动滚动
         .filename_prefix("backend")
         .filename_suffix("log")
-        .build(log_dir)
-        .map_err(|e| anyhow::anyhow!("创建文件日志 appender 失败: {}", e))?;
-    
+        .build(log_dir) {
+            Ok(appender) => {
+                println!("✅ [Logger] 文件 appender 创建成功");
+                appender
+            },
+            Err(e) => {
+                eprintln!("❌ [Logger] 创建文件日志 appender 失败: {}", e);
+                return Err(anyhow::anyhow!("创建文件日志 appender 失败: {}", e));
+            }
+        };
+
     // 文件日志层 - 记录所有级别
     let file_layer = fmt::layer()
         .with_writer(file_appender)
@@ -114,9 +154,12 @@ fn setup_logging(log_dir: &PathBuf) -> Result<()> {
         .with_thread_names(false)
         .with_line_number(true)
         .with_file(true);
-    
+
+    println!("✅ [Logger] 文件日志层配置完成");
+
     // 控制台日志层 - 只在开发模式下启用
     let console_layer = if cfg!(debug_assertions) {
+        println!("✅ [Logger] 启用控制台日志层（开发模式）");
         Some(
             fmt::layer()
                 .with_writer(std::io::stdout)
@@ -128,32 +171,42 @@ fn setup_logging(log_dir: &PathBuf) -> Result<()> {
                 .with_file(false)
         )
     } else {
+        println!("⚠️ [Logger] 控制台日志层已禁用（生产模式）");
         None
     };
-    
+
     // 环境过滤器 - 默认 info 级别
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| {
             if cfg!(debug_assertions) {
+                println!("🔍 [Logger] 使用 DEBUG 级别");
                 EnvFilter::new("debug")
             } else {
+                println!("🔍 [Logger] 使用 INFO 级别");
                 EnvFilter::new("info")
             }
         });
-    
+
     // 组合所有层
     let subscriber = tracing_subscriber::registry()
         .with(env_filter)
         .with(file_layer);
-    
+
     // 如果有控制台层，添加它
-    if let Some(console) = console_layer {
-        subscriber.with(console).init();
+    match if let Some(console) = console_layer {
+        subscriber.with(console).try_init()
     } else {
-        subscriber.init();
+        subscriber.try_init()
+    } {
+        Ok(_) => {
+            println!("✅ [Logger] tracing subscriber 初始化成功");
+            Ok(())
+        },
+        Err(e) => {
+            eprintln!("❌ [Logger] tracing subscriber 初始化失败: {}", e);
+            Err(anyhow::anyhow!("tracing subscriber 初始化失败: {}", e))
+        }
     }
-    
-    Ok(())
 }
 
 /// 获取日志文件路径

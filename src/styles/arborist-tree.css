@@ -1,0 +1,65 @@
+/* React Arborist Tree Styles - shadcn/ui compatible */
+
+.arborist-tree {
+  @apply bg-transparent;
+}
+
+/* 树容器 */
+.arborist-tree .react-arborist-tree {
+  @apply bg-transparent;
+}
+
+/* 虚拟滚动容器 */
+.arborist-tree .react-arborist-viewport {
+  @apply bg-transparent;
+}
+
+/* 节点行 */
+.arborist-tree .react-arborist-node-row {
+  @apply bg-transparent;
+}
+
+/* 拖拽预览 */
+.arborist-tree .react-arborist-drag-preview {
+  @apply bg-background border border-border rounded-md shadow-lg opacity-80;
+}
+
+/* 拖拽光标 */
+.arborist-tree .react-arborist-cursor {
+  @apply bg-primary;
+  height: 2px;
+}
+
+.arborist-tree .react-arborist-cursor::before {
+  @apply bg-primary;
+  content: '';
+  position: absolute;
+  left: 0;
+  top: -3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* 焦点样式 */
+.arborist-tree:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2;
+}
+
+/* 滚动条样式 */
+.arborist-tree .react-arborist-viewport::-webkit-scrollbar {
+  @apply w-2;
+}
+
+.arborist-tree .react-arborist-viewport::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+.arborist-tree .react-arborist-viewport::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+
+.arborist-tree .react-arborist-viewport::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/50;
+}
+

@@ -15,6 +15,8 @@
 @import './font-preferences.css';
 /* 鼠标指针修复样式 */
 @import './cursor-fixes.css';
+/* React Arborist 树组件样式 */
+@import './arborist-tree.css';
 
 /* 查询页面优化样式 */
 @layer components {

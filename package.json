@@ -142,6 +142,7 @@
     "minimatch": "^10.0.3",
     "node-fetch": "^3.3.2",
     "react": "^18.2.0",
+    "react-arborist": "^3.4.3",
     "react-dom": "^18.2.0",
     "react-grid-layout": "^1.5.2",
     "react-hook-form": "^7.60.0",
@@ -152,6 +153,7 @@
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
+    "use-resize-observer": "^9.1.0",
     "xlsx": "^0.18.5",
     "zod": "^4.0.5",
     "zustand": "^4.4.7"

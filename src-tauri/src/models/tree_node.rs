@@ -259,18 +259,22 @@ impl TreeNodeFactory {
     pub fn create_database(name: String) -> TreeNode {
         TreeNode::new(
             format!("db_{}", name),
-            name,
+            name.clone(),
             TreeNodeType::Database,
         )
+        .with_metadata("database".to_string(), serde_json::Value::String(name.clone()))
+        .with_metadata("databaseName".to_string(), serde_json::Value::String(name))
     }
 
     /// 创建系统数据库节点
     pub fn create_system_database(name: String) -> TreeNode {
         TreeNode::new(
             format!("sysdb_{}", name),
-            name,
+            name.clone(),
             TreeNodeType::SystemDatabase,
         )
+        .with_metadata("database".to_string(), serde_json::Value::String(name.clone()))
+        .with_metadata("databaseName".to_string(), serde_json::Value::String(name))
         .as_system()
     }
 
@@ -725,10 +729,15 @@ impl TreeNodeFactory {
     pub fn create_measurement(parent_id: String, name: String) -> TreeNode {
         TreeNode::new(
             format!("measurement_{}_{}", parent_id, name),
-            name,
+            name.clone(),
             TreeNodeType::Measurement,
         )
-        .with_parent(parent_id)
+        .with_parent(parent_id.clone())
+        .with_metadata("database".to_string(), serde_json::Value::String(parent_id.clone()))
+        .with_metadata("measurement".to_string(), serde_json::Value::String(name.clone()))
+        .with_metadata("table".to_string(), serde_json::Value::String(name.clone()))
+        .with_metadata("tableName".to_string(), serde_json::Value::String(name))
+        // 不标记为叶子节点，允许展开查看 tags 和 fields
     }
     
     /// 创建字段分组节点
@@ -753,15 +762,15 @@ impl TreeNodeFactory {
     
     /// 创建字段节点
     pub fn create_field(name: String, parent_id: String, field_type: String) -> TreeNode {
-        let display_name = format!("{} ({})", name, field_type);
-
+        // 只显示字段名，不显示类型
         TreeNode::new(
             format!("{}/field_{}", parent_id, name),
-            display_name,
+            name.clone(),
             TreeNodeType::Field,
         )
         .with_parent(parent_id)
         .with_metadata("field_type".to_string(), serde_json::Value::String(field_type))
+        .with_metadata("fieldName".to_string(), serde_json::Value::String(name))
         .as_leaf()
     }
 

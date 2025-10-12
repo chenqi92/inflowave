@@ -1,8 +1,6 @@
 ﻿import React, {useState, useEffect, useCallback, useRef} from 'react';
 import {useNavigate} from 'react-router-dom';
 import {
-    Tree,
-    TreeNode as UITreeNode,
     SearchInput,
     Button,
     Tooltip,
@@ -14,6 +12,9 @@ import {
     Card,
     CardContent,
 } from '@/components/ui';
+import { MultiConnectionTreeView } from '@/components/database/MultiConnectionTreeView';
+import { DatabaseExplorerContextMenu } from '@/components/database/DatabaseExplorerContextMenu';
+import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import {ErrorTooltip} from '@/components/ui/ErrorTooltip';
 import {
     Database,
@@ -1457,23 +1458,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         [loadingNodes]
     );
 
-    // 转换 UI TreeNode 为我们的 TreeNode 的适配器函数
-    const loadDataAdapter = useCallback(
-        async (uiNode: UITreeNode): Promise<void> => {
-            // 创建对应的 DataNode，修复类型转换问题
-            const dataNode: DataNode = {
-                key: uiNode.key,
-                title: uiNode.title,
-                children: uiNode.children as DataNode[],
-                icon: uiNode.icon,
-                isLeaf: uiNode.isLeaf,
-                disabled: uiNode.disabled,
-                selectable: uiNode.selectable,
-            };
-            return loadData(dataNode);
-        },
-        [loadData]
-    );
+
 
     // 处理收藏操作
     const handleToggleFavorite = useCallback(
@@ -1696,45 +1681,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
             closeAllDatabasesForConnection(connectionId);
             clearDatabasesCache(connectionId);
 
-            // 3. 等待连接状态更新完成，然后重新构建完整的树形数据
-            // 使用更长的延迟确保状态更新已经传播到组件
-            setTimeout(async () => {
-                console.log(`🔄 连接建立后重新构建完整树形数据: ${connection.name}`);
+            // 3. 连接成功，显示成功消息
+            // 不再调用 buildCompleteTreeData，让 MultiConnectionTreeView 的懒加载机制来处理
+            showMessage.success(`已连接: ${connection.name}`);
+            console.log(`✅ 连接建立成功: ${connection.name}`);
 
-                // 验证连接状态是否已更新
-                const isConnected = isConnectionConnected(connectionId);
-                console.log(`🔍 验证连接状态: ${connection.name} - ${isConnected ? '已连接' : '未连接'}`);
-
-                if (isConnected) {
-                    // 构建完整树形数据（内部会加载数据库列表，避免重复调用）
-                    await buildCompleteTreeData(false); // 不显示全局loading，因为连接过程已经有loading了
-
-                    // 获取数据库数量用于显示消息
-                    const databases = databasesCache.get(connectionId) || [];
-
-                    // 4. 自动展开连接节点
-                    const connectionKey = `connection-${connectionId}`;
-                    if (!expandedKeys.includes(connectionKey)) {
-                        setExpandedKeys(prev => [...prev, connectionKey]);
-                    }
-
-                    showMessage.success(`已连接并加载 ${databases.length} 个数据库: ${connection.name}`);
-                    console.log(`✅ 连接并加载数据库完成: ${connection.name}`);
-                } else {
-                    console.warn(`⚠️ 连接状态未更新，延迟重试: ${connection.name}`);
-                    // 如果状态还没更新，再等待一段时间
-                    setTimeout(async () => {
-                        await buildCompleteTreeData(false);
-                        const databases = databasesCache.get(connectionId) || [];
-                        const connectionKey = `connection-${connectionId}`;
-                        if (!expandedKeys.includes(connectionKey)) {
-                            setExpandedKeys(prev => [...prev, connectionKey]);
-                        }
-                        showMessage.success(`已连接并加载 ${databases.length} 个数据库: ${connection.name}`);
-                        console.log(`✅ 连接并加载数据库完成（延迟重试）: ${connection.name}`);
-                    }, 200);
-                }
-            }, 200); // 增加延迟到200ms确保状态更新完成
+            // 清除加载状态
+            setConnectionLoadingStates(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(connectionId);
+                return newMap;
+            });
 
         } catch (error) {
             console.error(`❌ 连接并加载数据库失败:`, error);
@@ -1931,450 +1888,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     };
 
-    // UI TreeNode 到自定义 TreeNode 的转换函数
-    const convertUINodeToCustomNode = (uiNode: UITreeNode): TreeNode => {
-        // 尝试从原始树数据中找到对应的节点以获取正确的nodeType
-        const findOriginalNode = (nodes: DataNode[], key: string): DataNode | null => {
-            for (const node of nodes) {
-                if (node.key === key) {
-                    return node;
-                }
-                if (node.children && node.children.length > 0) {
-                    const found = findOriginalNode(node.children, key);
-                    if (found) return found;
-                }
-            }
-            return null;
-        };
 
-        const originalNode = findOriginalNode(treeData, String(uiNode.key));
 
-        // 从key推断节点类型
-        const inferNodeType = (key: string): TreeNodeType => {
-            if (key.startsWith('connection-')) return 'connection';
-            if (key.startsWith('database|')) return 'database';
-            if (key.startsWith('table|')) return 'table';
-            return 'database'; // 默认类型
-        };
 
-        return {
-            id: String(uiNode.key),
-            key: String(uiNode.key),
-            name: String(uiNode.title),
-            title: String(uiNode.title),
-            nodeType: inferNodeType(String(uiNode.key)), // 从key推断节点类型
-            children: [],
-            isLeaf: uiNode.isLeaf || false,
-            isSystem: false, // DataNode没有此属性，使用默认值
-            isExpandable: !uiNode.isLeaf,
-            isExpanded: false,
-            isLoading: false,
-            metadata: {}, // DataNode没有此属性，使用默认值
-            icon: uiNode.icon,
-            disabled: uiNode.disabled,
-            selectable: uiNode.selectable,
-        };
-    };
-
-    // 处理节点双击
-    const handleDoubleClick = async (info: { node: UITreeNode }) => {
-        const node = convertUINodeToCustomNode(info.node);
-        const key = node.key;
-
-        console.log(`🖱️ 双击节点: ${key}`, {nodeTitle: node.title, nodeType: typeof key, keyString: String(key)});
-
-        // 双击时立即关闭右键菜单，避免菜单状态冲突
-        if (contextMenuOpen) {
-            setContextMenuOpen(false);
-        }
-
-        // 防止在执行查询时重复双击
-        if (executingTableQuery) {
-            console.log('⚠️ 查询正在执行中，忽略双击事件');
-            return;
-        }
-
-        if (String(key).startsWith('connection-')) {
-            // 连接节点被双击，统一处理连接和数据加载
-            const connectionId = String(key).replace('connection-', '');
-            const connection = getConnection(connectionId);
-
-            if (!connection) {
-                console.error(`❌ 双击连接失败: 连接配置不存在 ${connectionId}`);
-                showMessage.error(`连接配置不存在: ${connectionId}`);
-                return;
-            }
-
-            const isConnected = isConnectionConnected(connectionId);
-            const connectionKey = `connection-${connectionId}`;
-            const isExpanded = expandedKeys.includes(connectionKey);
-
-            console.log(`🖱️ 双击连接: ${connection.name} (${connectionId})`, {
-                isConnected,
-                isExpanded
-            });
-
-            if (!isConnected) {
-                // 如果连接未建立，建立连接并加载数据库列表
-                await handleConnectionAndLoadDatabases(connectionId);
-            } else {
-                // 如果连接已建立，切换展开/收起状态
-                if (isExpanded) {
-                    // 当前已展开，收起连接节点
-                    const newExpandedKeys = expandedKeys.filter(k => !String(k).startsWith(connectionKey));
-                    setExpandedKeys(newExpandedKeys);
-                    console.log(`📁 收起连接节点: ${connection.name}`);
-                    showMessage.info(`已收起连接 "${connection.name}"`);
-                } else {
-                    // 当前已收起，展开连接节点并确保数据已加载
-                    await handleExpandConnection(connectionId);
-                }
-            }
-        } else if (String(key).startsWith('management|')) {
-            // 管理功能节点被双击
-            const parts = String(key).split('|');
-            if (parts.length >= 4) {
-                const connectionId = parts[1];
-                const nodeType = parts[2];
-                const nodeName = parts[3];
-                const managementKey = `management|${connectionId}|${nodeType}|${nodeName}`;
-
-                console.log(`🖱️ 双击管理节点 "${nodeName}" (${nodeType}):`, {
-                    connectionId,
-                    nodeType,
-                    nodeName,
-                    managementKey
-                });
-
-                // 检查连接状态
-                const isConnected = isConnectionConnected(connectionId);
-                if (!isConnected) {
-                    console.warn(`⚠️ 连接 ${connectionId} 未建立，无法操作管理节点 "${nodeName}"`);
-                    showMessage.warning(`请先建立连接后再操作管理节点 "${nodeName}"`);
-                    return;
-                }
-
-                // 根据节点类型决定双击行为
-                if (['function', 'trigger', 'system_info', 'version_info', 'schema_template'].includes(nodeType)) {
-                    // 管理节点：打开详情弹框
-                    console.log(`🔍 打开管理节点详情弹框: ${nodeName} (${nodeType})`);
-
-                    setManagementNodeDialog({
-                        open: true,
-                        connectionId,
-                        nodeType,
-                        nodeName,
-                        nodeCategory: 'management',
-                    });
-                } else {
-                    // 其他节点：显示详情或执行特定操作
-                    console.log(`🔍 查看管理节点详情: ${nodeName} (${nodeType})`);
-                    showMessage.info(`查看 ${nodeName} 详情`);
-                }
-            }
-        } else if (String(key).startsWith('database|')) {
-            // 数据库节点被双击
-            const parts = String(key).split('|');
-            if (parts.length >= 3) {
-                const connectionId = parts[1];
-                // 处理数据库名称可能包含分隔符的情况
-                const database = parts.slice(2).join('|');
-                const databaseKey = `database|${connectionId}|${database}`;
-
-                // 首先检查连接状态
-                const isConnected = isConnectionConnected(connectionId);
-                if (!isConnected) {
-                    console.warn(`⚠️ 连接 ${connectionId} 未建立，无法打开数据库 "${database}"`);
-                    showMessage.warning(`请先建立连接后再打开数据库 "${database}"`);
-                    return;
-                }
-
-                // 检查数据库是否已经打开
-                const isOpened = isDatabaseOpened(connectionId, database);
-                const isDatabaseExpanded = expandedKeys.includes(databaseKey);
-
-                console.log(`🖱️ 双击数据库 "${database}":`, {
-                    connectionId,
-                    database,
-                    isConnected,
-                    isOpened,
-                    isDatabaseExpanded,
-                    openedDatabasesList
-                });
-
-                if (!isOpened) {
-                    // 如果数据库未打开，则打开数据库并自动展开加载表列表
-
-                    // 清除之前的错误状态
-                    setDatabaseErrors(prev => {
-                        const newMap = new Map(prev);
-                        newMap.delete(databaseKey);
-                        return newMap;
-                    });
-
-                    // 设置 loading 状态
-                    setDatabaseLoadingStates(prev => new Map(prev).set(databaseKey, true));
-
-                    openDatabase(connectionId, database);
-                    showMessage.success(`已打开数据库 "${database}"，正在加载表列表...`);
-
-                    // 自动展开数据库
-                    const newExpandedKeys = [...expandedKeys, databaseKey];
-                    setExpandedKeys(newExpandedKeys);
-
-                    // 加载表数据并更新树形结构
-                    try {
-                        const tables = await loadTables(connectionId, database);
-                        console.log(`✅ 成功加载数据库 "${database}" 的表列表:`, tables);
-
-                        // 更新树形数据，为该数据库添加表节点
-                        setTreeData(prevData => {
-                            return prevData.map(connectionNode => {
-                                if (connectionNode.key === `connection-${connectionId}`) {
-                                    const updatedConnectionNode = {...connectionNode};
-                                    if (updatedConnectionNode.children) {
-                                        updatedConnectionNode.children = updatedConnectionNode.children.map(dbNode => {
-                                            if (dbNode.key === databaseKey) {
-                                                const tableNodes = tables.map(table => {
-                                                    const tablePath = `${connectionId}/${database}/${table}`;
-                                                    const isFav = isFavorite(tablePath);
-
-                                                    // 对于 IoTDB，使用优化的路径显示组件
-                                                    const isIoTDB = isIoTDBConnection(connectionId);
-
-                                                    return {
-                                                        title: (
-                                                            <div className='flex items-center gap-2'>
-                                                                {isIoTDB ? (
-                                                                    <IoTDBPathDisplay
-                                                                        fullPath={table}
-                                                                        nodeType="table"
-                                                                        className='flex-1'
-                                                                    />
-                                                                ) : (
-                                                                    <span className='flex-1' title={table}>{table}</span>
-                                                                )}
-                                                                {isFav && (
-                                                                    <Star
-                                                                        className='w-3 h-3 text-warning fill-current'/>
-                                                                )}
-                                                            </div>
-                                                        ),
-                                                        key: `table|${connectionId}|${database}|${table}`,
-                                                        icon: (
-                                                            <DatabaseIcon
-                                                                nodeType={getTableNodeType(connectionId) as any}
-                                                                size={16}
-                                                                className="text-blue-600"
-                                                            />
-                                                        ),
-                                                        isLeaf: false, // 表应该有展开按钮以显示tags和fields
-                                                        children: [], // 空数组表示有子节点但未加载
-                                                    };
-                                                });
-
-                                                const isOpened = isDatabaseOpened(connectionId, database);
-                                                return {
-                                                    ...dbNode,
-                                                    icon: (
-                                                        <DatabaseIcon
-                                                            nodeType={getDatabaseNodeType(connectionId, database) as any}
-                                                            size={16}
-                                                            isOpen={isOpened}
-                                                            className="text-purple-600"
-                                                        />
-                                                    ),
-                                                    isLeaf: false,
-                                                    children: tableNodes,
-                                                };
-                                            }
-                                            return dbNode;
-                                        });
-                                    }
-                                    return updatedConnectionNode;
-                                }
-                                return connectionNode;
-                            });
-                        });
-
-                        showMessage.success(`已打开数据库 "${database}" 并加载了 ${tables.length} 个表`);
-
-                        // 清除 loading 状态
-                        setDatabaseLoadingStates(prev => {
-                            const newMap = new Map(prev);
-                            newMap.delete(databaseKey);
-                            return newMap;
-                        });
-                    } catch (error) {
-                        console.error('❌ 加载表列表失败:', error);
-                        const errorMessage = String(error);
-                        showMessage.error(`打开数据库 "${database}" 失败: ${errorMessage}`);
-
-                        // 设置错误状态（ErrorTooltip 组件会自动处理 3秒后清除）
-                        setDatabaseErrors(prev => new Map(prev).set(databaseKey, errorMessage));
-
-                        // 清除 loading 状态
-                        setDatabaseLoadingStates(prev => {
-                            const newMap = new Map(prev);
-                            newMap.delete(databaseKey);
-                            return newMap;
-                        });
-
-                        // 如果加载失败，回滚打开状态
-                        closeDatabase(connectionId, database);
-                        setExpandedKeys(expandedKeys);
-                    }
-                } else if (!isDatabaseExpanded) {
-                    // 如果数据库未展开，则展开数据库（加载表列表）
-
-                    // 清除之前的错误状态
-                    setDatabaseErrors(prev => {
-                        const newMap = new Map(prev);
-                        newMap.delete(databaseKey);
-                        return newMap;
-                    });
-
-                    // 设置 loading 状态
-                    setDatabaseLoadingStates(prev => new Map(prev).set(databaseKey, true));
-
-                    const newExpandedKeys = [...expandedKeys, databaseKey];
-                    console.log('🔄 双击展开数据库，更新 expandedKeys:', {
-                        oldKeys: expandedKeys,
-                        newKeys: newExpandedKeys,
-                        databaseKey
-                    });
-
-                    // 立即更新展开状态，提供即时反馈
-                    setExpandedKeys(newExpandedKeys);
-                    showMessage.info(`正在加载数据库 "${database}" 的表列表...`);
-
-                    // 异步加载表数据，不阻塞UI
-                    loadTables(connectionId, database).then(tables => {
-                        console.log(`✅ 成功加载数据库 "${database}" 的表列表:`, tables);
-
-                        // 更新树形数据，为该数据库添加表节点
-                        setTreeData(prevData => {
-                            return prevData.map(connectionNode => {
-                                if (connectionNode.key === `connection-${connectionId}`) {
-                                    const updatedConnectionNode = {...connectionNode};
-                                    if (updatedConnectionNode.children) {
-                                        updatedConnectionNode.children = updatedConnectionNode.children.map(dbNode => {
-                                            if (dbNode.key === databaseKey) {
-                                                const tableNodes = tables.map(table => {
-                                                    const tablePath = `${connectionId}/${database}/${table}`;
-                                                    const isFav = isFavorite(tablePath);
-                                                    return {
-                                                        title: (
-                                                            <div className='flex items-center gap-2'>
-                                                                <span className='flex-1'>{table}</span>
-                                                                {isFav && (
-                                                                    <Star
-                                                                        className='w-3 h-3 text-warning fill-current'/>
-                                                                )}
-                                                            </div>
-                                                        ),
-                                                        key: `table|${connectionId}|${database}|${table}`,
-                                                        icon: (
-                                                            <DatabaseIcon
-                                                                nodeType={getTableNodeType(connectionId) as any}
-                                                                size={16}
-                                                                className="text-blue-600"
-                                                            />
-                                                        ),
-                                                        isLeaf: false, // 修复：表应该有展开按钮以显示tags和fields
-                                                        children: [], // 空数组表示有子节点但未加载
-                                                    };
-                                                });
-
-                                                return {
-                                                    ...dbNode,
-                                                    icon: (
-                                                        <DatabaseIcon
-                                                            nodeType={getDatabaseNodeType(connectionId, database) as any}
-                                                            size={16}
-                                                            isOpen={isDatabaseOpened(connectionId, database)}
-                                                            className="text-purple-600"
-                                                        />
-                                                    ),
-                                                    isLeaf: false,
-                                                    children: tableNodes,
-                                                };
-                                            }
-                                            return dbNode;
-                                        });
-                                    }
-                                    return updatedConnectionNode;
-                                }
-                                return connectionNode;
-                            });
-                        });
-
-                        showMessage.success(`已加载数据库 "${database}" 的 ${tables.length} 个表`);
-
-                        // 清除 loading 状态
-                        setDatabaseLoadingStates(prev => {
-                            const newMap = new Map(prev);
-                            newMap.delete(databaseKey);
-                            return newMap;
-                        });
-                    }).catch(error => {
-                        console.error('❌ 加载表列表失败:', error);
-                        const errorMessage = String(error);
-                        showMessage.error(`加载数据库 "${database}" 的表列表失败`);
-
-                        // 设置错误状态
-                        setDatabaseErrors(prev => new Map(prev).set(databaseKey, errorMessage));
-
-                        // 3秒后自动清除错误提示
-                        setTimeout(() => {
-                            setDatabaseErrors(prev => {
-                                const newMap = new Map(prev);
-                                newMap.delete(databaseKey);
-                                return newMap;
-                            });
-                        }, 3000);
-
-                        // 清除 loading 状态
-                        setDatabaseLoadingStates(prev => {
-                            const newMap = new Map(prev);
-                            newMap.delete(databaseKey);
-                            return newMap;
-                        });
-
-                        // 如果加载失败，回滚展开状态
-                        const rollbackKeys = expandedKeys.filter(k => k !== databaseKey);
-                        setExpandedKeys(rollbackKeys);
-                    });
-                } else {
-                    // 如果数据库已经展开，则收起数据库节点
-                    const newExpandedKeys = expandedKeys.filter(k => k !== databaseKey);
-                    setExpandedKeys(newExpandedKeys);
-                    console.log(`📁 收起数据库节点: ${database}`);
-                    showMessage.info(`已收起数据库 "${database}"`);
-                }
-            }
-        } else if (String(key).startsWith('table|')) {
-            // 表节点被双击，确保在查询面板中处理
-            const parts = String(key).split('|');
-            if (parts.length >= 4) {
-                const connectionId = parts[1];
-                const database = parts[2];
-                const table = parts.slice(3).join('|'); // 处理表名包含分隔符的情况
-
-                // 如果当前不在查询面板，先切换到查询面板
-                if (onViewChange && onGetCurrentView && onGetCurrentView() !== 'query') {
-                    onViewChange('query');
-                    // 延迟执行表查询，确保查询面板已加载
-                    setTimeout(() => {
-                        executeTableQuery(connectionId, database, table);
-                    }, 100);
-                } else {
-                    // 直接执行表查询
-                    executeTableQuery(connectionId, database, table);
-                }
-            }
-        }
-    };
 
     // 防重复执行的状态
     const [executingTableQuery, setExecutingTableQuery] = useState<string | null>(null);
@@ -2431,107 +1947,30 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     };
 
     // 右键菜单状态
-    const [contextMenuTarget, setContextMenuTarget] = useState<any>(null);
+    const [contextMenuTarget, setContextMenuTarget] = useState<TreeNodeData | null>(null);
     const [contextMenuOpen, setContextMenuOpen] = useState(false);
     const [contextMenuPosition, setContextMenuPosition] = useState({x: 0, y: 0});
 
-    // 处理右键菜单
-    const handleRightClick = (info: { node: UITreeNode; event?: React.MouseEvent }) => {
-        const node = convertUINodeToCustomNode(info.node);
-        const {event} = info;
-        event?.preventDefault();
-        event?.stopPropagation();
-
-        // 记录鼠标位置
-        if (event) {
-            setContextMenuPosition({
-                x: event.clientX,
-                y: event.clientY
-            });
-        }
-
-        const key = node.key;
-        let target = null;
-
-        // 根据节点类型创建不同的目标对象
-        if (String(key).startsWith('connection-')) {
-            // 连接节点
-            const connectionId = String(key).replace('connection-', '');
-            target = {
-                type: 'connection',
-                connectionId,
-                title: node.title,
-            };
-        } else if (String(key).startsWith('database|')) {
-            // 数据库节点
-            const parts = String(key).split('|');
-            if (parts.length >= 3) {
-                const connectionId = parts[1];
-                const database = parts[2];
-                target = {
-                    type: 'database',
-                    connectionId,
-                    database,
-                    title: node.title,
-                };
-            }
-        } else if (String(key).startsWith('table|')) {
-            // 表节点
-            const parts = String(key).split('|');
-            if (parts.length >= 4) {
-                const connectionId = parts[1];
-                const database = parts[2];
-                const table = parts.slice(3).join('|');
-                target = {
-                    type: 'table',
-                    connectionId,
-                    database,
-                    table,
-                    title: node.title,
-                };
-            }
-        } else if (String(key).startsWith('field|')) {
-            // 字段节点
-            const parts = String(key).split('|');
-            if (parts.length >= 5) {
-                const connectionId = parts[1];
-                const database = parts[2];
-                const table = parts[3];
-                const field = parts.slice(4).join('|');
-                target = {
-                    type: 'field',
-                    connectionId,
-                    database,
-                    table,
-                    field,
-                    title: node.title,
-                };
-            }
-        }
-
-        if (target) {
-            setContextMenuTarget(target);
-            // 延迟打开菜单，避免与双击事件冲突
-            setTimeout(() => setContextMenuOpen(true), 50);
-        }
-    };
+    // 旧的 handleRightClick 已被 MultiConnectionTreeView 的 onNodeContextMenu 替代
 
     // 处理右键菜单动作
     const handleContextMenuAction = async (action: string) => {
         if (!contextMenuTarget) return;
 
+        const nodeType = contextMenuTarget.nodeType;
+        const metadata = contextMenuTarget.metadata || {};
+        const connectionId = metadata.connectionId || '';
+        const database = metadata.database || metadata.databaseName || contextMenuTarget.name;
+        const table = metadata.table || metadata.tableName || contextMenuTarget.name;
+
         try {
             switch (action) {
                 case 'refresh_connection':
-                    if (contextMenuTarget.type === 'connection') {
-                        // 刷新连接状态
-                        const connectionId = contextMenuTarget.connectionId;
+                    if (nodeType === 'connection') {
                         try {
-                            // 清除该连接的缓存，强制重新加载
                             clearDatabasesCache(connectionId);
-                            // 直接刷新树形数据（内部会重新获取数据，避免重复查询）
                             buildCompleteTreeData(true);
-                            showMessage.success(`连接 ${contextMenuTarget.title} 已刷新`);
+                            showMessage.success(`连接 ${contextMenuTarget.name} 已刷新`);
                         } catch (error) {
                             console.error('刷新连接失败:', error);
                             showMessage.error(`刷新连接失败: ${error}`);
@@ -2540,12 +1979,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     break;
 
                 case 'disconnect':
-                    if (contextMenuTarget.type === 'connection') {
-                        // 断开连接逻辑
-                        const connectionId = contextMenuTarget.connectionId;
+                    if (nodeType === 'connection') {
                         try {
                             await handleConnectionToggle(connectionId);
-                            showMessage.success(`连接 ${contextMenuTarget.title} 已断开`);
+                            showMessage.success(`连接 ${contextMenuTarget.name} 已断开`);
                         } catch (error) {
                             console.error('断开连接失败:', error);
                             showMessage.error(`断开连接失败: ${error}`);
@@ -2554,9 +1991,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     break;
 
                 case 'connection_properties':
-                    if (contextMenuTarget.type === 'connection') {
-                        // 打开连接编辑对话框
-                        const connectionId = contextMenuTarget.connectionId;
+                    if (nodeType === 'connection') {
                         const connection = getConnection(connectionId);
                         if (connection) {
                             console.log(`🔧 编辑连接属性: ${connection.name}`);
@@ -2568,11 +2003,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     break;
 
                 case 'delete_connection':
-                    if (contextMenuTarget.type === 'connection') {
-                        const connectionId = contextMenuTarget.connectionId;
+                    if (nodeType === 'connection') {
                         const connection = getConnection(connectionId);
                         if (connection) {
-                            // 显示确认对话框
                             const confirmed = await dialog.confirm({
                                 title: '删除连接',
                                 content: `确定要删除连接 "${connection.name}" 吗？此操作不可撤销。`,
@@ -2580,26 +2013,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                             if (confirmed) {
                                 try {
-                                    // 先断开连接
                                     if (isConnectionConnected(connectionId)) {
                                         await disconnectFromDatabase(connectionId);
                                     }
 
-                                    // 删除连接
                                     try {
                                         console.log(`🗑️ 开始删除连接: ${connection.name} (${connectionId})`);
-
-                                        // 调用删除连接的API
                                         await safeTauriInvoke('delete_connection', {connectionId});
                                         console.log('✅ 后端删除成功');
 
-                                        // 从前端状态删除
                                         removeConnection(connectionId);
                                         console.log('✅ 前端状态删除成功');
 
                                         showMessage.success(`连接 "${connection.name}" 已删除`);
-
-                                        // 刷新树形数据
                                         buildCompleteTreeData(true);
                                     } catch (deleteError) {
                                         console.error('❌ 删除连接失败:', deleteError);
@@ -2617,57 +2043,19 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     break;
 
                 case 'close_database':
-                    if (contextMenuTarget.type === 'database') {
-                        // 关闭数据库
-                        closeDatabase(contextMenuTarget.connectionId, contextMenuTarget.database);
-                        showMessage.success(`已关闭数据库 "${contextMenuTarget.database}"`);
-
-                        // 立即更新树形数据以反映数据库关闭状态
-                        setTreeData(prevData => {
-                            return prevData.map(connectionNode => {
-                                if (connectionNode.key === `connection-${contextMenuTarget.connectionId}`) {
-                                    const updatedConnectionNode = {...connectionNode};
-                                    if (updatedConnectionNode.children) {
-                                        updatedConnectionNode.children = updatedConnectionNode.children.map(dbNode => {
-                                            if (dbNode.key === `database|${contextMenuTarget.connectionId}|${contextMenuTarget.database}`) {
-                                                return {
-                                                    ...dbNode,
-                                                    icon: (
-                                                        <DatabaseIcon
-                                                            nodeType={getDatabaseNodeType(contextMenuTarget?.connectionId, contextMenuTarget?.database) as any}
-                                                            size={16}
-                                                            isOpen={false}
-                                                            className="text-muted-foreground"
-                                                        />
-                                                    ),
-                                                    isLeaf: true, // 关闭后不能展开
-                                                    children: undefined, // 清除子节点
-                                                };
-                                            }
-                                            return dbNode;
-                                        });
-                                    }
-                                    return updatedConnectionNode;
-                                }
-                                return connectionNode;
-                            });
-                        });
-
-                        // 同时收起该数据库的展开状态
-                        const databaseKey = `database|${contextMenuTarget.connectionId}|${contextMenuTarget.database}`;
-                        setExpandedKeys(prev => prev.filter(key => key !== databaseKey));
+                    if (nodeType.includes('database')) {
+                        closeDatabase(connectionId, database);
+                        showMessage.success(`已关闭数据库 "${database}"`);
+                        buildCompleteTreeData(true);
                     }
                     break;
 
                 case 'refresh_database':
-                    if (contextMenuTarget.type === 'database') {
+                    if (nodeType.includes('database')) {
                         try {
-                            console.log(`🔄 刷新数据库结构: ${contextMenuTarget.database}`);
-
-                            // 重新加载数据库结构
+                            console.log(`🔄 刷新数据库结构: ${database}`);
                             await buildCompleteTreeData(true);
-
-                            showMessage.success(`数据库 ${contextMenuTarget.database} 已刷新`);
+                            showMessage.success(`数据库 ${database} 已刷新`);
                         } catch (error) {
                             console.error('❌ 刷新数据库结构失败:', error);
                             showMessage.error(`刷新数据库结构失败: ${error}`);
@@ -2676,108 +2064,95 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     break;
 
                 case 'create_database':
-                    if (contextMenuTarget.type === 'connection') {
+                    if (nodeType === 'connection') {
                         setCreateDatabaseDialogOpen(true);
                     }
                     break;
 
                 case 'create_measurement':
-                    if (contextMenuTarget.type === 'database') {
-                        showMessage.info(`创建测量值功能开发中: ${contextMenuTarget.database}`);
+                    if (nodeType.includes('database')) {
+                        showMessage.info(`创建测量值功能开发中: ${database}`);
                     }
                     break;
 
                 case 'database_info':
-                    if (contextMenuTarget.type === 'database') {
+                    if (nodeType.includes('database')) {
                         setDatabaseInfoDialog({
                             open: true,
-                            databaseName: contextMenuTarget.database,
+                            databaseName: database,
                         });
                     }
                     break;
 
                 case 'manage_retention_policies':
-                    if (contextMenuTarget.type === 'database') {
+                    if (nodeType.includes('database')) {
                         setRetentionPolicyDialog({
                             open: true,
                             mode: 'create',
-                            database: contextMenuTarget.database,
+                            database: database,
                             policy: null,
                         });
                     }
                     break;
 
+                case 'delete_database':
                 case 'drop_database':
-                    if (contextMenuTarget.type === 'database') {
+                    if (nodeType.includes('database')) {
                         const confirmed = await dialog.confirm({
                             title: '确认删除',
-                            content: `确定要删除数据库 "${contextMenuTarget.database}" 吗？此操作不可撤销。`,
+                            content: `确定要删除数据库 "${database}" 吗？此操作不可撤销。`,
                         });
                         if (confirmed) {
-                            showMessage.info(`删除数据库功能开发中: ${contextMenuTarget.database}`);
+                            showMessage.info(`删除数据库功能开发中: ${database}`);
                         }
                     }
                     break;
 
+                case 'view_table_data':
                 case 'query_table':
-                    if (contextMenuTarget.type === 'table') {
-                        const query = generateQueryWithTimeFilter(contextMenuTarget.table, contextMenuTarget.connectionId);
-                        // 优先使用创建并执行查询的回调
+                    if (nodeType === 'measurement' || nodeType === 'table') {
+                        const query = generateQueryWithTimeFilter(table, connectionId);
                         if (onCreateAndExecuteQuery) {
-                            onCreateAndExecuteQuery(query, contextMenuTarget.database, contextMenuTarget.connectionId);
-                            showMessage.success(`正在查询表 "${contextMenuTarget.table}"`);
+                            onCreateAndExecuteQuery(query, database, connectionId);
+                            showMessage.success(`正在查询表 "${table}"`);
                         } else {
-                            // 回退到原有逻辑
-                            await executeTableQuery(contextMenuTarget.connectionId, contextMenuTarget.database, contextMenuTarget.table);
+                            await executeTableQuery(connectionId, database, table);
                         }
                     }
                     break;
 
-
+                case 'edit_table':
                 case 'table_designer':
-                    if (contextMenuTarget.type === 'table') {
-                        // 打开表设计器弹框
-                        openDialog('designer', contextMenuTarget.connectionId, contextMenuTarget.database, contextMenuTarget.table);
+                    if (nodeType === 'measurement' || nodeType === 'table') {
+                        openDialog('designer', connectionId, database, table);
                     }
                     break;
 
                 case 'table_info':
-                    if (contextMenuTarget.type === 'table') {
-                        // 打开表信息弹框
-                        openDialog('info', contextMenuTarget.connectionId, contextMenuTarget.database, contextMenuTarget.table);
+                    if (nodeType === 'measurement' || nodeType === 'table') {
+                        openDialog('info', connectionId, database, table);
                     }
                     break;
 
+                case 'delete_table':
                 case 'drop_table':
-                    if (contextMenuTarget.type === 'table') {
+                    if (nodeType === 'measurement' || nodeType === 'table') {
                         const confirmed = await dialog.confirm({
                             title: '确认删除表',
-                            content: `确定要删除表 "${contextMenuTarget.table}" 吗？\n\n⚠️ 警告：此操作将永久删除表中的所有数据，无法恢复！`,
+                            content: `确定要删除表 "${table}" 吗？\n\n⚠️ 警告：此操作将永久删除表中的所有数据，无法恢复！`,
                         });
                         if (confirmed) {
                             try {
                                 setLoading(true);
-                                console.log('🗑️ 删除表:', {
-                                    connectionId: contextMenuTarget.connectionId,
-                                    database: contextMenuTarget.database,
-                                    table: contextMenuTarget.table
-                                });
+                                console.log('🗑️ 删除表:', { connectionId, database, table });
 
-                                // 执行删除表的SQL命令
-                                const dropQuery = `DROP MEASUREMENT "${contextMenuTarget.table}"`;
+                                const dropQuery = `DROP MEASUREMENT "${table}"`;
                                 await safeTauriInvoke('execute_query', {
-                                    request: {
-                                        connectionId: contextMenuTarget.connectionId,
-                                        database: contextMenuTarget.database,
-                                        query: dropQuery,
-                                    },
+                                    request: { connectionId, database, query: dropQuery },
                                 });
 
-                                showMessage.success(`表 "${contextMenuTarget.table}" 已成功删除`);
-
-                                // 刷新数据库树以反映删除操作
+                                showMessage.success(`表 "${table}" 已成功删除`);
                                 refreshTree();
-
                                 console.log('✅ 表删除成功');
                             } catch (error) {
                                 console.error('❌ 删除表失败:', error);
@@ -2790,22 +2165,22 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     break;
 
                 case 'copy_field_name':
-                    if (contextMenuTarget.type === 'field') {
-                        await writeToClipboard(contextMenuTarget.field, {
-                            successMessage: `已复制字段名: ${contextMenuTarget.field}`,
+                    if (nodeType === 'field') {
+                        await writeToClipboard(contextMenuTarget.name, {
+                            successMessage: `已复制字段名: ${contextMenuTarget.name}`,
                         });
                     }
                     break;
 
                 case 'field_stats':
-                    if (contextMenuTarget.type === 'field') {
-                        showMessage.info(`字段统计功能开发中: ${contextMenuTarget.field}`);
+                    if (nodeType === 'field') {
+                        showMessage.info(`字段统计功能开发中: ${contextMenuTarget.name}`);
                     }
                     break;
 
                 case 'copy_connection_name':
-                    if (contextMenuTarget.type === 'connection') {
-                        const connection = connections.find(c => c.id === contextMenuTarget.connectionId);
+                    if (nodeType === 'connection') {
+                        const connection = connections.find(c => c.id === connectionId);
                         if (connection) {
                             await writeToClipboard(connection.name, {
                                 successMessage: `已复制连接名: ${connection.name}`,
@@ -2815,32 +2190,52 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     break;
 
                 case 'copy_database_name':
-                    if (contextMenuTarget.type === 'database') {
-                        await writeToClipboard(contextMenuTarget.database, {
-                            successMessage: `已复制数据库名: ${contextMenuTarget.database}`,
+                    if (nodeType.includes('database')) {
+                        await writeToClipboard(database, {
+                            successMessage: `已复制数据库名: ${database}`,
                         });
                     }
                     break;
 
                 case 'copy_table_name':
-                    if (contextMenuTarget.type === 'table') {
-                        await writeToClipboard(contextMenuTarget.table, {
-                            successMessage: `已复制表名: ${contextMenuTarget.table}`,
+                    if (nodeType === 'measurement' || nodeType === 'table') {
+                        await writeToClipboard(table, {
+                            successMessage: `已复制表名: ${table}`,
                         });
                     }
                     break;
 
                 case 'copy_tag_name':
-                    if (contextMenuTarget.type === 'tag') {
-                        await writeToClipboard(contextMenuTarget.tag, {
-                            successMessage: `已复制标签名: ${contextMenuTarget.tag}`,
+                    if (nodeType === 'tag') {
+                        await writeToClipboard(contextMenuTarget.name, {
+                            successMessage: `已复制标签名: ${contextMenuTarget.name}`,
                         });
                     }
                     break;
 
                 case 'tag_values':
-                    if (contextMenuTarget.type === 'tag') {
-                        showMessage.info(`查看标签值功能开发中: ${contextMenuTarget.tag}`);
+                    if (nodeType === 'tag') {
+                        showMessage.info(`查看标签值功能开发中: ${contextMenuTarget.name}`);
+                    }
+                    break;
+
+                case 'add_favorite':
+                case 'remove_favorite':
+                    if (nodeType === 'measurement' || nodeType === 'table') {
+                        const path = `${connectionId}/${database}/${table}`;
+                        if (action === 'add_favorite') {
+                            addFavorite({
+                                path,
+                                type: 'table',
+                                name: table,
+                                connectionId,
+                                database
+                            });
+                            showMessage.success(`已添加到收藏: ${table}`);
+                        } else {
+                            removeFavorite(path);
+                            showMessage.success(`已取消收藏: ${table}`);
+                        }
                     }
                     break;
 
@@ -2918,25 +2313,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     };
 
-    // 处理节点选择
-    const handleSelect = (keys: string[], info: { selected: boolean; node: UITreeNode }) => {
-        setSelectedKeys(keys);
-        const node = convertUINodeToCustomNode(info.node);
-        console.log('选中节点:', node);
-
-        const nodeKey = String(node.key);
-        // 根据选中的节点类型执行相应操作
-        if (nodeKey.startsWith('database|')) {
-            // 数据库节点被选中
-            console.log('选中数据库:', node.title);
-        } else if (nodeKey.startsWith('table|')) {
-            // 表节点被选中
-            console.log('选中表:', node.title);
-        } else if (nodeKey.startsWith('field|') || nodeKey.startsWith('tag|')) {
-            // 字段或标签节点被选中
-            console.log('选中字段/标签:', node.title);
-        }
-    };
+    // 旧的 handleSelect 已被 MultiConnectionTreeView 的 onNodeSelect 替代
 
     // 提取节点文本内容用于搜索
     const extractTextFromNode = (node: DataNode): string => {
@@ -3261,64 +2638,67 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         prevConnectionsRef.current = connections;
     }, [connections, buildCompleteTreeData]);
 
-    // 监听 loading 和 error 状态变化，触发树的重新渲染
-    useEffect(() => {
-        // 当 loading 或 error 状态变化时，重新构建树以显示最新状态
-        if (connectionLoadingStates.size > 0 || connectionErrors.size > 0 ||
-            databaseLoadingStates.size > 0 || databaseErrors.size > 0) {
-            console.log('🔄 检测到 loading/error 状态变化，重新构建树');
-            // 不显示全局 loading，只更新节点状态
-            buildCompleteTreeData(false);
-        }
-    }, [connectionLoadingStates, connectionErrors, databaseLoadingStates, databaseErrors, buildCompleteTreeData]);
+    // 注释掉：不再监听 loading 状态变化来重建树
+    // 现在使用 MultiConnectionTreeView 的懒加载机制，不需要 DatabaseExplorer 来重建树
+    // useEffect(() => {
+    //     // 当 loading 或 error 状态变化时，重新构建树以显示最新状态
+    //     if (connectionLoadingStates.size > 0 || connectionErrors.size > 0 ||
+    //         databaseLoadingStates.size > 0 || databaseErrors.size > 0) {
+    //         console.log('🔄 检测到 loading/error 状态变化，重新构建树');
+    //         // 不显示全局 loading，只更新节点状态
+    //         buildCompleteTreeData(false);
+    //     }
+    // }, [connectionLoadingStates, connectionErrors, databaseLoadingStates, databaseErrors, buildCompleteTreeData]);
 
     // 监听连接状态变化（仅更新相关节点显示，不重建整棵树）
     const prevConnectedIdsRef = useRef<string[]>([]);
     const prevActiveIdRef = useRef<string | null>(null);
 
-    useEffect(() => {
-        const prevConnectedIds = prevConnectedIdsRef.current;
-        const prevActiveId = prevActiveIdRef.current;
+    // 注释掉：不再监听连接状态变化来更新树节点
+    // 现在使用 MultiConnectionTreeView 的懒加载机制，不需要 DatabaseExplorer 来更新树数据
+    // useEffect(() => {
+    //     const prevConnectedIds = prevConnectedIdsRef.current;
+    //     const prevActiveId = prevActiveIdRef.current;
 
-        // 找出状态发生变化的连接
-        const changedConnections = new Set<string>();
+    //     // 找出状态发生变化的连接
+    //     const changedConnections = new Set<string>();
 
-        // 检查已连接列表的变化
-        connectedConnectionIds.forEach(id => {
-            if (!prevConnectedIds.includes(id)) {
-                changedConnections.add(id); // 新连接
-            }
-        });
+    //     // 检查已连接列表的变化
+    //     connectedConnectionIds.forEach(id => {
+    //         if (!prevConnectedIds.includes(id)) {
+    //             changedConnections.add(id); // 新连接
+    //         }
+    //     });
 
-        prevConnectedIds.forEach(id => {
-            if (!connectedConnectionIds.includes(id)) {
-                changedConnections.add(id); // 断开的连接
-            }
-        });
+    //     prevConnectedIds.forEach(id => {
+    //         if (!connectedConnectionIds.includes(id)) {
+    //             changedConnections.add(id); // 断开的连接
+    //         }
+    //     });
 
-        // 检查活跃连接的变化
-        if (activeConnectionId !== prevActiveId) {
-            if (activeConnectionId) changedConnections.add(activeConnectionId);
-            if (prevActiveId) changedConnections.add(prevActiveId);
-        }
+    //     // 检查活跃连接的变化
+    //     if (activeConnectionId !== prevActiveId) {
+    //         if (activeConnectionId) changedConnections.add(activeConnectionId);
+    //         if (prevActiveId) changedConnections.add(prevActiveId);
+    //     }
 
-        // 只更新发生变化的连接节点
-        if (changedConnections.size > 0) {
-            console.log(
-                `🎯 DatabaseExplorer: 检测到连接状态变化:`,
-                Array.from(changedConnections)
-            );
-            changedConnections.forEach(connectionId => {
-                // 清除该连接的数据库缓存，确保下次获取最新数据
-                clearDatabasesCache(connectionId);
-                updateConnectionNodeDisplay(connectionId, false);
-            });
-        }
+    //     // 只更新发生变化的连接节点
+    //     if (changedConnections.size > 0) {
+    //         console.log(
+    //             `🎯 DatabaseExplorer: 检测到连接状态变化:`,
+    //             Array.from(changedConnections)
+    //         );
+    //         changedConnections.forEach(connectionId => {
+    //             // 清除该连接的数据库缓存，确保下次获取最新数据
+    //             clearDatabasesCache(connectionId);
+    //             updateConnectionNodeDisplay(connectionId, false);
+    //         });
+    //     }
 
-        // 更新引用值
-        prevConnectedIdsRef.current = [...connectedConnectionIds];
-        prevActiveIdRef.current = activeConnectionId;
-    }, [connectedConnectionIds, activeConnectionId, updateConnectionNodeDisplay, clearDatabasesCache]);
+    //     // 更新引用值
+    //     prevConnectedIdsRef.current = [...connectedConnectionIds];
+    //     prevActiveIdRef.current = activeConnectionId;
+    // }, [connectedConnectionIds, activeConnectionId, updateConnectionNodeDisplay, clearDatabasesCache]);
 
 
 
@@ -3512,345 +2892,119 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
                 {/* 主要内容：数据源树 */}
                 <CardContent className='flex-1 overflow-hidden p-0'>
-                    <div className='px-2 h-full overflow-auto'>
-                        {/* 统一的树视图 */}
-                                {loading ? (
-                                    <div className='flex items-center justify-center py-8'>
-                                        <Spin tip='加载中...'/>
-                                    </div>
-                                ) : treeData.length > 0 ? (
-                                    <div className="relative w-full">
-                                        <Tree
-                                            showIcon
-                                            showLine
-                                            treeData={filterTreeData(treeData)}
-                                            expandedKeys={expandedKeys.map(String)}
-                                            onExpand={handleExpand}
-                                            onSelect={handleSelect}
-                                            onDoubleClick={handleDoubleClick}
-                                            onRightClick={handleRightClick}
-                                            loadData={loadDataAdapter}
-                                            className='bg-transparent database-explorer-tree'
-                                        />
+                    <div className='px-2 h-full'>
+                        {/* 使用新的 MultiConnectionTreeView */}
+                        <MultiConnectionTreeView
+                            connections={connections.map(conn => ({
+                                id: conn.id || '',
+                                name: conn.name,
+                                dbType: conn.dbType,
+                                host: conn.host,
+                                port: conn.port,
+                                isConnected: isConnectionConnected(conn.id || ''),
+                            }))}
+                            searchValue={searchValue}
+                            useVersionAwareFilter={hideSystemNodes}
+                            connectionStatuses={new Map(
+                                connections.map(conn => {
+                                    const status = connectionStatuses[conn.id || '']?.status || 'disconnected';
+                                    // 过滤掉 'error' 状态，将其映射为 'disconnected'
+                                    return [
+                                        conn.id || '',
+                                        status === 'error' ? 'disconnected' : status
+                                    ] as [string, 'connecting' | 'connected' | 'disconnected'];
+                                })
+                            )}
+                            databaseLoadingStates={databaseLoadingStates}
+                            connectionErrors={connectionErrors}
+                            databaseErrors={databaseErrors}
+                            isFavorite={(path) => isFavorite(path)}
+                            onConnectionToggle={handleConnectionAndLoadDatabases}
+                            onNodeSelect={(node) => {
+                                if (node) {
+                                    console.log('选中节点:', node);
+                                }
+                            }}
+                            onNodeActivate={async (node) => {
+                                console.log('🖱️ 双击节点:', node);
 
-                                        {/* 使用自定义定位的右键菜单 */}
-                                        {contextMenuOpen && contextMenuTarget && (
-                                            <div
-                                                className="fixed inset-0 z-50"
-                                                onClick={() => setContextMenuOpen(false)}
-                                            >
-                                                <div
-                                                    className="absolute z-50 min-w-[12rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
-                                                    style={{
-                                                        left: Math.min(contextMenuPosition.x, window.innerWidth - 200),
-                                                        top: Math.min(contextMenuPosition.y, window.innerHeight - 300),
-                                                    }}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    {contextMenuTarget && (
-                                                        <>
-                                                            {contextMenuTarget.type === 'connection' && (
-                                                                <>
-                                                                    <div
-                                                                        className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">连接操作
-                                                                    </div>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('copy_connection_name');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Copy className="w-4 h-4"/>
-                                                                        复制连接名
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('create_database');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Plus className="w-4 h-4"/>
-                                                                        创建数据库
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('refresh_connection');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <RefreshCw className="w-4 h-4"/>
-                                                                        刷新连接
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('disconnect');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <X className="w-4 h-4"/>
-                                                                        断开连接
-                                                                    </button>
-                                                                    <div className="my-1 h-px bg-border"/>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('connection_properties');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Settings className="w-4 h-4"/>
-                                                                        连接属性
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground text-destructive hover:text-destructive"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('delete_connection');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4"/>
-                                                                        删除连接
-                                                                    </button>
-                                                                </>
-                                                            )}
+                                // 关闭右键菜单
+                                if (contextMenuOpen) {
+                                    setContextMenuOpen(false);
+                                }
 
-                                                            {contextMenuTarget.type === 'database' && (
-                                                                <>
-                                                                    <div
-                                                                        className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">数据库操作
-                                                                    </div>
-                                                                    {/* 只有已打开的数据库才显示关闭选项 */}
-                                                                    {isDatabaseOpened(contextMenuTarget.connectionId, contextMenuTarget.database) && (
-                                                                        <button
-                                                                            className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                            onClick={() => {
-                                                                                handleContextMenuAction('close_database');
-                                                                                setContextMenuOpen(false);
-                                                                            }}
-                                                                        >
-                                                                            <FolderX className="w-4 h-4"/>
-                                                                            关闭数据库
-                                                                        </button>
-                                                                    )}
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('copy_database_name');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Copy className="w-4 h-4"/>
-                                                                        复制数据库名
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('refresh_database');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <RefreshCw className="w-4 h-4"/>
-                                                                        刷新数据库
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('create_measurement');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Plus className="w-4 h-4"/>
-                                                                        创建测量值
-                                                                    </button>
-                                                                    <div className="my-1 h-px bg-border"/>
-                                                                    <div
-                                                                        className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">数据库管理
-                                                                    </div>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('database_info');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Info className="w-4 h-4"/>
-                                                                        数据库信息
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('manage_retention_policies');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Clock className="w-4 h-4"/>
-                                                                        保留策略
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground text-destructive hover:text-destructive"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('drop_database');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4"/>
-                                                                        删除数据库
-                                                                    </button>
-                                                                </>
-                                                            )}
+                                const nodeType = node.nodeType;
+                                const metadata = node.metadata || {};
+                                const connectionId = metadata.connectionId || '';
+                                const database = metadata.database || metadata.databaseName || '';
+                                const table = metadata.table || metadata.tableName || '';
 
-                                                            {contextMenuTarget.type === 'table' && (
-                                                                <>
-                                                                    <div
-                                                                        className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">查询操作
-                                                                    </div>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('query_table');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Search className="w-4 h-4"/>
-                                                                        查询表
-                                                                    </button>
-                                                                    <div className="my-1 h-px bg-border"/>
-                                                                    <div
-                                                                        className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">表操作
-                                                                    </div>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('copy_table_name');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Copy className="w-4 h-4"/>
-                                                                        复制表名
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('table_designer');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Edit className="w-4 h-4"/>
-                                                                        表设计器
-                                                                    </button>
-                                                                    <div className="my-1 h-px bg-border"/>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('table_info');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Info className="w-4 h-4"/>
-                                                                        表信息
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground text-destructive hover:text-destructive"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('drop_table');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4"/>
-                                                                        删除表
-                                                                    </button>
-                                                                </>
-                                                            )}
+                                // 容器节点（connection, database 等）已经由 MultiConnectionTreeView 的 handleToggle 处理
+                                // 这里只处理叶子节点
 
-                                                            {contextMenuTarget.type === 'field' && (
-                                                                <>
-                                                                    <div
-                                                                        className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">字段操作
-                                                                    </div>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('copy_field_name');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Copy className="w-4 h-4"/>
-                                                                        复制字段名
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('field_stats');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <BarChart className="w-4 h-4"/>
-                                                                        字段统计
-                                                                    </button>
-                                                                </>
-                                                            )}
+                                if (nodeType === 'measurement' || nodeType === 'table') {
+                                    // 表节点：创建数据浏览器标签页
+                                    if (onCreateDataBrowserTab) {
+                                        onCreateDataBrowserTab(connectionId, database, table);
+                                        showMessage.success(`正在打开表 "${table}"`);
+                                    }
+                                } else if (nodeType === 'timeseries' || nodeType === 'aligned_timeseries') {
+                                    // IoTDB 时间序列节点：创建数据浏览器标签页
+                                    if (onCreateDataBrowserTab) {
+                                        onCreateDataBrowserTab(connectionId, database, table);
+                                        showMessage.success(`正在打开时间序列 "${table}"`);
+                                    }
+                                } else if (nodeType === 'field' || nodeType === 'tag') {
+                                    // 字段/标签节点：显示详情
+                                    showMessage.info(`字段/标签: ${node.name}`);
+                                } else if (nodeType === 'function' || nodeType === 'trigger' || nodeType === 'system_info' || nodeType === 'version_info' || nodeType === 'schema_template') {
+                                    // 管理节点：打开详情弹框
+                                    setManagementNodeDialog({
+                                        open: true,
+                                        connectionId,
+                                        nodeType: nodeType,
+                                        nodeName: node.name,
+                                        nodeCategory: 'management',
+                                    });
+                                } else {
+                                    console.log(`ℹ️ 节点类型 ${nodeType} 的双击行为由 handleToggle 处理`);
+                                }
+                            }}
+                            onNodeContextMenu={(node, event) => {
+                                event.preventDefault();
+                                setContextMenuPosition({
+                                    x: event.clientX,
+                                    y: event.clientY
+                                });
+                                setContextMenuTarget(node);
+                                setTimeout(() => setContextMenuOpen(true), 50);
+                            }}
+                            onRefresh={() => {
+                                buildCompleteTreeData(true);
+                            }}
+                            className='h-full'
+                        />
 
-                                                            {contextMenuTarget.type === 'tag' && (
-                                                                <>
-                                                                    <div
-                                                                        className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">标签操作
-                                                                    </div>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('copy_tag_name');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Copy className="w-4 h-4"/>
-                                                                        复制标签名
-                                                                    </button>
-                                                                    <button
-                                                                        className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                                                                        onClick={() => {
-                                                                            handleContextMenuAction('tag_values');
-                                                                            setContextMenuOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Tags className="w-4 h-4"/>
-                                                                        查看标签值
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className='p-4 text-center'>
-                                        <div className='flex flex-col items-center justify-center py-8'>
-                                            <Database className='w-8 h-8 text-muted-foreground/40 mb-3'/>
-                                            <Typography.Text className='text-sm text-muted-foreground mb-4 block'>
-                                                暂无数据库连接
-                                            </Typography.Text>
-                                            <Button
-                                                variant='ghost'
-                                                size='sm'
-                                                onClick={() => handleOpenConnectionDialog()}
-                                                className='text-xs h-8 px-3 border border-dashed border-muted-foreground/30 hover:border-muted-foreground/50 hover:bg-muted/50 text-muted-foreground hover:text-foreground'
-                                            >
-                                                <Plus className='w-3 h-3 mr-1'/>
-                                                添加连接
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
+                        {/* 右键菜单 */}
+                        <DatabaseExplorerContextMenu
+                            node={contextMenuTarget}
+                            position={contextMenuPosition}
+                            isOpen={contextMenuOpen}
+                            onClose={() => setContextMenuOpen(false)}
+                            onAction={(action, node) => {
+                                setContextMenuOpen(false);
+                                handleContextMenuAction(action);
+                            }}
+                            isDatabaseOpened={isDatabaseOpened}
+                            isFavorite={(path) => isFavorite(path)}
+                        />
                     </div>
                 </CardContent>
 
 
             </Card>
+
+            {/* 表相关弹框 */}
 
             {/* 表相关弹框 */}
             <TableDesignerDialog

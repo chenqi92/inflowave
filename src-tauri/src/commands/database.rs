@@ -1234,6 +1234,7 @@ pub async fn get_tree_children(
     connection_id: String,
     parent_node_id: String,
     node_type: String,
+    metadata: Option<serde_json::Value>,
 ) -> Result<Vec<crate::models::TreeNode>, String> {
     debug!("处理获取树节点子节点命令: {} - {}", connection_id, parent_node_id);
 
@@ -1245,7 +1246,7 @@ pub async fn get_tree_children(
         })?;
 
     // 根据节点类型获取子节点
-    let children = client.get_tree_children(&parent_node_id, &node_type).await
+    let children = client.get_tree_children(&parent_node_id, &node_type, metadata.as_ref()).await
         .map_err(|e| {
             error!("获取树节点子节点失败: {}", e);
             format!("获取树节点子节点失败: {}", e)

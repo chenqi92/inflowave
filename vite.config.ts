@@ -92,13 +92,6 @@ export default defineConfig({
     // 环境变量配置
     envPrefix: ['VITE_', 'TAURI_'],
 
-    // 测试配置
-    test: {
-        globals: true,
-        environment: 'jsdom',
-        setupFiles: ['./src/test/setup.ts'],
-    },
-
     // 优化配置
     optimizeDeps: {
         include: [
@@ -136,4 +129,23 @@ export default defineConfig({
 
     // Monaco Editor 配置
     assetsInclude: ['**/*.woff', '**/*.woff2', '**/*.ttf'],
+
+    // Vitest 配置
+    test: {
+        globals: true,
+        environment: 'jsdom',
+        setupFiles: ['./src/test/setup.ts'],
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'json', 'html'],
+            exclude: [
+                'node_modules/',
+                'src/test/',
+                '**/*.d.ts',
+                '**/*.config.*',
+                '**/mockData',
+                'dist/',
+            ],
+        },
+    },
 } as any); // 使用类型断言来支持Vitest配置

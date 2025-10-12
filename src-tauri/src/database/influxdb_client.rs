@@ -169,31 +169,46 @@ impl InfluxDBClient {
     }
     
     /// 获取树节点的子节点（懒加载）
-    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str, _metadata: Option<&serde_json::Value>) -> Result<Vec<crate::models::TreeNode>> {
         debug!("获取树节点子节点: {} ({})", parent_node_id, node_type);
-        
+
         match node_type {
-            "database" => {
-                // 获取数据库列表
+            "connection" => {
+                // 连接节点：返回数据库列表
+                info!("为连接节点获取数据库列表");
                 let databases = self.list_databases().await?;
+                info!("获取到 {} 个数据库", databases.len());
+
                 let nodes = databases
                     .into_iter()
                     .map(|db_name| {
+                        let is_system = db_name.starts_with('_');
+                        let node_type = if is_system {
+                            crate::models::TreeNodeType::SystemDatabase
+                        } else {
+                            crate::models::TreeNodeType::Database
+                        };
+
                         crate::models::TreeNode::new(
                             format!("db_{}", db_name),
                             db_name.clone(),
-                            crate::models::TreeNodeType::Database,
+                            node_type,
                         )
                         .with_parent(parent_node_id.to_string())
-                        .with_metadata("database".to_string(), serde_json::Value::String(db_name))
+                        .with_metadata("database".to_string(), serde_json::Value::String(db_name.clone()))
+                        .with_metadata("is_system".to_string(), serde_json::Value::Bool(is_system))
                     })
                     .collect();
                 Ok(nodes)
             }
-            "measurement" => {
+            "database" | "system_database" => {
+                // 数据库节点：返回表列表
                 // 从 parent_node_id 中提取数据库名
                 if let Some(database) = parent_node_id.strip_prefix("db_") {
+                    info!("为数据库 {} 获取表列表", database);
                     let measurements = self.list_measurements(database).await?;
+                    info!("获取到 {} 个表", measurements.len());
+
                     let nodes = measurements
                         .into_iter()
                         .map(|measurement_name| {
@@ -210,8 +225,14 @@ impl InfluxDBClient {
                         .collect();
                     Ok(nodes)
                 } else {
+                    warn!("无法从 parent_node_id 提取数据库名: {}", parent_node_id);
                     Ok(vec![])
                 }
+            }
+            "measurement" => {
+                // 表节点：叶子节点，没有子节点
+                debug!("表节点没有子节点");
+                Ok(vec![])
             }
             _ => {
                 warn!("不支持的节点类型: {}", node_type);

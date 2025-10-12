@@ -109,7 +109,10 @@ impl DatabaseClient {
     /// 获取字段列表
     pub async fn get_fields(&self, database: &str, table: &str) -> Result<Vec<String>> {
         match self {
-            DatabaseClient::InfluxDB1x(client) => client.get_field_keys(database, table).await,
+            DatabaseClient::InfluxDB1x(client) => {
+                let fields = client.get_field_keys(database, table).await?;
+                Ok(fields.into_iter().map(|f| f.name).collect())
+            },
             DatabaseClient::InfluxDB2x(client) => {
                 // InfluxDB 2.x/3.x: 通过 Flux 查询获取字段信息
                 client.get_field_keys_flux(database, table).await
@@ -325,7 +328,10 @@ impl DatabaseClient {
     /// 获取字段键
     pub async fn get_field_keys(&self, database: &str, measurement: &str) -> Result<Vec<String>> {
         match self {
-            DatabaseClient::InfluxDB1x(client) => client.get_field_keys(database, measurement).await,
+            DatabaseClient::InfluxDB1x(client) => {
+                let fields = client.get_field_keys(database, measurement).await?;
+                Ok(fields.into_iter().map(|f| f.name).collect())
+            },
             DatabaseClient::InfluxDB2x(client) => {
                 // InfluxDB 2.x/3.x: 通过 Flux 查询获取字段信息
                 client.get_field_keys_flux(database, measurement).await
@@ -461,24 +467,24 @@ impl DatabaseClient {
     }
 
     /// 获取树节点的子节点（懒加载）
-    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str, metadata: Option<&serde_json::Value>) -> Result<Vec<crate::models::TreeNode>> {
         match self {
             DatabaseClient::InfluxDB1x(client) => {
                 // InfluxDB 1.x 子节点获取逻辑
-                client.get_tree_children(parent_node_id, node_type).await
+                client.get_tree_children(parent_node_id, node_type, metadata).await
             },
             DatabaseClient::InfluxDB2x(client) => {
                 // InfluxDB 2.x/3.x 子节点获取逻辑
-                client.get_tree_children(parent_node_id, node_type).await
+                client.get_tree_children(parent_node_id, node_type, metadata).await
             },
             DatabaseClient::InfluxDBUnified(client) => {
                 // 统一 InfluxDB 客户端子节点获取逻辑
-                client.get_tree_children(parent_node_id, node_type).await
+                client.get_tree_children(parent_node_id, node_type, metadata).await
             },
             DatabaseClient::IoTDB(client) => {
                 let client = client.lock().await;
                 // IoTDB 子节点获取逻辑
-                client.get_tree_children(parent_node_id, node_type).await
+                client.get_tree_children(parent_node_id, node_type, metadata).await
             },
         }
     }
@@ -1385,13 +1391,29 @@ impl InfluxDB2Client {
     }
 
     /// 获取树节点的子节点（懒加载）
-    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str, _metadata: Option<&serde_json::Value>) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::{TreeNodeFactory, TreeNodeType};
 
         let mut children = Vec::new();
 
         // 解析节点类型
         let parsed_type = match node_type {
+            "connection" => {
+                // 连接节点：返回组织列表
+                log::info!("为 InfluxDB 2.x 连接节点获取组织列表");
+                match self.get_organizations().await {
+                    Ok(org_names) => {
+                        for org_name in org_names {
+                            let org_node = TreeNodeFactory::create_organization(org_name);
+                            children.push(org_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取组织列表失败: {}", e);
+                    }
+                }
+                return Ok(children);
+            }
             "Organization" => TreeNodeType::Organization,
             "Bucket" => TreeNodeType::Bucket,
             "SystemBucket" => TreeNodeType::SystemBucket,
@@ -2179,6 +2201,35 @@ impl InfluxClient {
         }
     }
 
+    /// 获取标签键列表
+    pub async fn get_tag_keys(&self, database: &str, measurement: &str) -> Result<Vec<TagInfo>> {
+        debug!("获取数据库 '{}' 测量 '{}' 的标签键", database, measurement);
+
+        let query_str = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, measurement);
+        let query = influxdb::ReadQuery::new(&query_str);
+
+        match self.client.query(query).await {
+            Ok(result) => {
+                // 解析标签键结果
+                let tag_names = self.parse_tag_keys_result(result)?;
+                info!("获取到 {} 个标签键", tag_names.len());
+
+                // 转换为 TagInfo 结构
+                let tags = tag_names.into_iter().map(|name| TagInfo {
+                    name,
+                    values: vec![],
+                    cardinality: 0,
+                }).collect();
+
+                Ok(tags)
+            }
+            Err(e) => {
+                error!("获取标签键失败: {}", e);
+                Err(anyhow::anyhow!("获取标签键失败: {}", e))
+            }
+        }
+    }
+
     /// 解析测量列表结果
     fn parse_measurements_result(&self, result: String) -> Result<Vec<String>> {
         debug!("解析测量列表结果: {}", result);
@@ -2267,7 +2318,9 @@ impl InfluxClient {
     }
 
     /// 获取字段键列表
-    pub async fn get_field_keys(&self, database: &str, measurement: &str) -> Result<Vec<String>> {
+    pub async fn get_field_keys(&self, database: &str, measurement: &str) -> Result<Vec<crate::models::FieldInfo>> {
+        use crate::models::{FieldInfo, FieldType};
+
         debug!("获取字段键列表: 数据库='{}', 测量='{}'", database, measurement);
 
         let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, measurement);
@@ -2276,9 +2329,32 @@ impl InfluxClient {
 
         // 解析字段键
         let fields = self.parse_field_keys_result(field_result)?;
-        let field_names: Vec<String> = fields.into_iter().map(|f| f.name).collect();
 
-        Ok(field_names)
+        // 去重：同一个字段可能有多个类型，只保留第一个
+        let mut seen = std::collections::HashSet::new();
+        let unique_fields: Vec<FieldInfo> = fields.into_iter()
+            .filter_map(|f| {
+                if seen.insert(f.name.clone()) {
+                    // 将 FieldSchema 转换为 FieldInfo
+                    let field_type = match f.field_type.as_str() {
+                        "float" => FieldType::Float,
+                        "integer" => FieldType::Integer,
+                        "string" => FieldType::String,
+                        "boolean" => FieldType::Boolean,
+                        _ => FieldType::String,
+                    };
+                    Some(FieldInfo {
+                        name: f.name,
+                        field_type,
+                        last_value: None,
+                    })
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        Ok(unique_fields)
     }
 
     /// 获取表结构信息 (字段和标签)
@@ -2668,28 +2744,78 @@ impl InfluxClient {
     }
 
     /// 获取树节点的子节点（懒加载）
-    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str, metadata: Option<&serde_json::Value>) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::TreeNodeFactory;
         use crate::models::TreeNodeType;
 
         let mut children = Vec::new();
 
-        // 解析节点类型
-        let parsed_type = match node_type {
-            "Database" => TreeNodeType::Database,
-            "SystemDatabase" => TreeNodeType::SystemDatabase,
-            "RetentionPolicy" => TreeNodeType::RetentionPolicy,
-            "Measurement" => TreeNodeType::Measurement,
-            "Organization" => TreeNodeType::Organization,
-            "Bucket" => TreeNodeType::Bucket,
-            "SystemBucket" => TreeNodeType::SystemBucket,
-            _ => return Ok(children),
+        // 处理连接节点
+        if node_type == "connection" {
+            log::info!("为统一客户端连接节点获取顶层节点");
+
+            // 根据版本返回不同的顶层节点
+            match self.config.version.as_deref() {
+                Some(v) if v.starts_with("1.") || v.starts_with("1.x") => {
+                    // InfluxDB 1.x: 返回数据库列表
+                    match self.get_databases().await {
+                        Ok(databases) => {
+                            for db_name in databases {
+                                let is_system = db_name.starts_with('_');
+                                let db_node = if is_system {
+                                    TreeNodeFactory::create_system_database(db_name)
+                                } else {
+                                    TreeNodeFactory::create_database(db_name)
+                                };
+                                children.push(db_node);
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取数据库列表失败: {}", e);
+                        }
+                    }
+                }
+                _ => {
+                    // InfluxDB 2.x/3.x: 返回组织列表
+                    match self.get_influxdb2_organizations().await {
+                        Ok(org_names) => {
+                            for org_name in org_names {
+                                let org_node = TreeNodeFactory::create_organization(org_name);
+                                children.push(org_node);
+                            }
+                        }
+                        Err(e) => {
+                            log::warn!("获取组织列表失败: {}", e);
+                        }
+                    }
+                }
+            }
+            return Ok(children);
+        }
+
+        // 解析节点类型（支持大小写）
+        let parsed_type = match node_type.to_lowercase().as_str() {
+            "database" => TreeNodeType::Database,
+            "systemdatabase" | "system_database" => TreeNodeType::SystemDatabase,
+            "retentionpolicy" | "retention_policy" => TreeNodeType::RetentionPolicy,
+            "measurement" => TreeNodeType::Measurement,
+            "organization" => TreeNodeType::Organization,
+            "bucket" => TreeNodeType::Bucket,
+            "systembucket" | "system_bucket" => TreeNodeType::SystemBucket,
+            _ => {
+                log::warn!("不支持的节点类型: {}", node_type);
+                return Ok(children);
+            }
         };
 
         match parsed_type {
             TreeNodeType::Database | TreeNodeType::SystemDatabase => {
                 // InfluxDB 1.x: 获取数据库的保留策略和测量值
-                let db_name = parent_node_id.strip_prefix("db1x_").unwrap_or(parent_node_id);
+                // 去除节点 ID 前缀，获取真实的数据库名
+                let db_name = parent_node_id
+                    .strip_prefix("db_")
+                    .or_else(|| parent_node_id.strip_prefix("sysdb_"))
+                    .unwrap_or(parent_node_id);
 
                 // 获取保留策略
                 match self.get_retention_policies(db_name).await {
@@ -2713,9 +2839,10 @@ impl InfluxClient {
                 match self.get_measurements(db_name).await {
                     Ok(measurements) => {
                         for measurement in measurements {
+                            // 修复参数顺序：第一个参数是 parent_id，第二个参数是 name
                             let measurement_node = TreeNodeFactory::create_measurement(
-                                measurement.clone(),
                                 db_name.to_string(),
+                                measurement.clone(),
                             );
                             children.push(measurement_node);
                         }
@@ -2733,9 +2860,10 @@ impl InfluxClient {
                     match self.get_measurements(db_name).await {
                         Ok(measurements) => {
                             for measurement in measurements {
+                                // 修复参数顺序：第一个参数是 parent_id，第二个参数是 name
                                 let measurement_node = TreeNodeFactory::create_measurement(
-                                    measurement.clone(),
                                     db_name.to_string(),
+                                    measurement.clone(),
                                 );
                                 children.push(measurement_node);
                             }
@@ -2776,61 +2904,68 @@ impl InfluxClient {
             }
             TreeNodeType::Measurement => {
                 // 获取字段和标签
-                let parts: Vec<&str> = parent_node_id.split('/').collect();
-                if parts.len() >= 3 {
-                    let database = parts[0];
-                    let measurement = parts[2];
+                // 从 metadata 中获取数据库名和 measurement 名
+                let (db_name, measurement_name) = if let Some(meta) = metadata {
+                    let db = meta.get("database")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let measurement = meta.get("measurement")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    (db.to_string(), measurement.to_string())
+                } else {
+                    // 如果没有 metadata，尝试从节点 ID 解析（向后兼容）
+                    // 节点 ID 格式: measurement_{parent_id}_{name}
+                    let without_prefix = parent_node_id.strip_prefix("measurement_").unwrap_or(parent_node_id);
+                    if let Some(last_underscore_pos) = without_prefix.rfind('_') {
+                        let db = &without_prefix[..last_underscore_pos];
+                        let measurement = &without_prefix[last_underscore_pos + 1..];
+                        (db.to_string(), measurement.to_string())
+                    } else {
+                        log::warn!("无法解析 measurement 节点 ID: {}", parent_node_id);
+                        return Ok(children);
+                    }
+                };
 
-                    // 获取字段
-                    match self.get_field_keys(database, measurement).await {
-                        Ok(fields) => {
-                            for field in fields {
-                                let field_node = TreeNodeFactory::create_field(
-                                    field.clone(),
-                                    parent_node_id.to_string(),
-                                    "unknown".to_string()
-                                );
-                                children.push(field_node);
-                            }
-                        }
-                        Err(e) => {
-                            log::warn!("获取字段失败: {}", e);
+                if db_name.is_empty() || measurement_name.is_empty() {
+                    log::warn!("数据库名或 measurement 名为空: db={}, measurement={}", db_name, measurement_name);
+                    return Ok(children);
+                }
+
+                log::debug!("获取 measurement 子节点: db={}, measurement={}", db_name, measurement_name);
+
+                // 获取字段
+                match self.get_field_keys(&db_name, &measurement_name).await {
+                    Ok(fields) => {
+                        for field in fields {
+                            let field_type = format!("{:?}", field.field_type);
+                            let field_node = TreeNodeFactory::create_field(
+                                field.name.clone(),
+                                parent_node_id.to_string(),
+                                field_type
+                            );
+                            children.push(field_node);
                         }
                     }
+                    Err(e) => {
+                        log::warn!("获取字段失败: {}", e);
+                    }
+                }
 
-                    // 获取标签键 (暂时跳过，因为 get_tag_keys 方法不存在)
-                    // TODO: 实现 get_tag_keys 方法
-                    /*
-                    match self.get_tag_keys(database, measurement).await {
-                        Ok(tag_keys) => {
-                            for tag_key in tag_keys {
-                                children.push(TreeNode {
-                                    id: format!("{}:{}:{}:{}", database, measurement, "tag", tag_key.name),
-                                    name: format!("🏷️ {}", tag_key.name),
-                                    node_type: TreeNodeType::Tag,
-                                    parent_id: Some(parent_node_id.to_string()),
-                                    children: Vec::new(),
-                                    is_leaf: true,
-                                    is_system: false,
-                                    is_expandable: false,
-                                    is_expanded: false,
-                                    is_loading: false,
-                                    metadata: {
-                                        let mut map = std::collections::HashMap::new();
-                                        map.insert("database".to_string(), serde_json::Value::String(database.to_string()));
-                                        map.insert("measurement".to_string(), serde_json::Value::String(measurement.to_string()));
-                                        map.insert("tag_key".to_string(), serde_json::Value::String(tag_key.name.clone()));
-                                        map.insert("data_type".to_string(), serde_json::Value::String("tag".to_string()));
-                                        map
-                                    },
-                                });
-                            }
-                        }
-                        Err(e) => {
-                            log::warn!("获取标签键失败: {}", e);
+                // 获取标签键
+                match self.get_tag_keys(&db_name, &measurement_name).await {
+                    Ok(tag_keys) => {
+                        for tag_key in tag_keys {
+                            let tag_node = TreeNodeFactory::create_tag(
+                                tag_key.name.clone(),
+                                parent_node_id.to_string(),
+                            );
+                            children.push(tag_node);
                         }
                     }
-                    */
+                    Err(e) => {
+                        log::warn!("获取标签键失败: {}", e);
+                    }
                 }
             }
             _ => {

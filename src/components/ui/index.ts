@@ -246,9 +246,6 @@ export type {
   TimelineItemData,
 } from './Timeline';
 
-export { Tree } from './Tree';
-export type { TreeProps, TreeNode } from './Tree';
-
 export { DatePicker } from './DatePicker';
 export type { DatePickerProps } from './DatePicker';
 

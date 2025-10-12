@@ -868,7 +868,7 @@ impl IoTDBOfficialClient {
     }
 
     /// 获取树子节点
-    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str) -> Result<Vec<crate::models::TreeNode>> {
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str, _metadata: Option<&serde_json::Value>) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::{TreeNode, TreeNodeType};
 
         debug!("获取树子节点: {} ({})", parent_node_id, node_type);
