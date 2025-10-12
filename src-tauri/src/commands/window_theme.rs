@@ -13,7 +13,7 @@ pub async fn set_window_background<R: Runtime>(
     app: AppHandle<R>,
     theme: ThemeMode,
 ) -> Result<(), String> {
-    let _window = app
+    let window = app
         .get_webview_window("main")
         .ok_or("Failed to get main window")?;
 
