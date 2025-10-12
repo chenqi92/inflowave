@@ -2657,7 +2657,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         } else {
             console.log(`ℹ️ 节点类型 ${nodeType} 的双击行为由 handleToggle 处理`);
         }
-    }, [onCreateDataBrowserTab, openDatabase, showMessage]);
+    }, [onCreateDataBrowserTab, openDatabase]); // showMessage 是全局对象，不需要在依赖数组中
 
     const handleNodeContextMenu = useCallback((node: any, event: React.MouseEvent) => {
         event.preventDefault();

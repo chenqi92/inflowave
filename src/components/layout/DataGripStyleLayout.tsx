@@ -441,7 +441,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     }, []);
 
     // 处理表格双击事件
-    const handleTableDoubleClick = (
+    const handleTableDoubleClick = useCallback((
         database: string,
         table: string,
         query: string
@@ -452,10 +452,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         if (tabEditorRef.current?.executeQueryWithContent) {
             tabEditorRef.current.executeQueryWithContent(query, database);
         }
-    };
+    }, []);
 
     // 处理创建数据浏览tab事件
-    const handleCreateDataBrowserTab = (
+    const handleCreateDataBrowserTab = useCallback((
         connectionId: string,
         database: string,
         tableName: string
@@ -466,10 +466,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         if (tabEditorRef.current?.createDataBrowserTab) {
             tabEditorRef.current.createDataBrowserTab(connectionId, database, tableName);
         }
-    };
+    }, []);
 
     // 处理创建查询标签页事件
-    const handleCreateQueryTab = (query?: string, database?: string, connectionId?: string) => {
+    const handleCreateQueryTab = useCallback((query?: string, database?: string, connectionId?: string) => {
         // 切换到查询视图
         setCurrentView('query');
 
@@ -487,10 +487,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 tabEditorRef.current.createNewTab('query');
             }
         }
-    };
+    }, []);
 
     // 处理创建查询标签页并自动执行事件
-    const handleCreateAndExecuteQuery = async (query: string, database: string, connectionId?: string) => {
+    const handleCreateAndExecuteQuery = useCallback(async (query: string, database: string, connectionId?: string) => {
         // 切换到查询视图
         setCurrentView('query');
 
@@ -501,10 +501,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             // 回退到创建标签页
             handleCreateQueryTab(query, database, connectionId);
         }
-    };
+    }, [handleCreateQueryTab]);
 
     // 获取当前视图
-    const getCurrentView = (): string => currentView;
+    const getCurrentView = useCallback((): string => currentView, [currentView]);
 
     // 防抖处理视图切换，避免快速切换导致的问题
     const viewChangeTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
