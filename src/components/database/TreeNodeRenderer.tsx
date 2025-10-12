@@ -35,6 +35,12 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
 }) => {
   const data = node.data;
   const isSelected = node.isSelected;
+
+  // 开发环境下添加渲染日志（简化输出）
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🎨 [TreeNodeRenderer] ${data.nodeType}: ${data.name} (id: ${data.id})`);
+  }
+
   const isActivated = data.isActivated ?? false;
   const isLoading = data.isLoading ?? false;
   const isConnected = data.isConnected ?? false;

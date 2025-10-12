@@ -133,41 +133,68 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                                                                onEditConnection,
                                                                currentTimeRange,
                                                            }) => {
+    // 添加渲染计数器
+    const renderCountRef = useRef(0);
+    renderCountRef.current++;
+    console.log(`🎨 [Render] DatabaseExplorer 重新渲染 (第 ${renderCountRef.current} 次)`);
+    console.trace('🎨 [Render] DatabaseExplorer 渲染调用栈');
+
     // 用于检测容器宽度的 ref
     const headerRef = useRef<HTMLDivElement>(null);
     const [isNarrow, setIsNarrow] = useState(false);
     const navigate = useNavigate();
-    const {
-        connections,
-        activeConnectionId,
-        connectedConnectionIds,
-        connectionStatuses,
-        getConnection,
-        addConnection,
-        removeConnection,
-        connectToDatabase,
-        disconnectFromDatabase,
-        getConnectionStatus,
-        isConnectionConnected,
-    } = useConnectionStore();
-    const {
-        favorites,
-        addFavorite,
-        removeFavorite,
-        isFavorite,
-        getFavorite,
-        getFavoritesByType,
-        markAsAccessed,
-    } = useFavoritesStore();
+
+    // 只订阅数据，不订阅函数，避免不必要的重新渲染
+    const connections = useConnectionStore(state => state.connections);
+    const activeConnectionId = useConnectionStore(state => state.activeConnectionId);
+    const connectedConnectionIds = useConnectionStore(state => state.connectedConnectionIds);
+    const connectionStatuses = useConnectionStore(state => state.connectionStatuses);
+
+    // 从 store 获取函数（这些函数在 store 创建时就固定了，引用不会变化）
+    const getConnection = useConnectionStore.getState().getConnection;
+    const addConnection = useConnectionStore.getState().addConnection;
+    const removeConnection = useConnectionStore.getState().removeConnection;
+    const connectToDatabase = useConnectionStore.getState().connectToDatabase;
+    const disconnectFromDatabase = useConnectionStore.getState().disconnectFromDatabase;
+    const getConnectionStatus = useConnectionStore.getState().getConnectionStatus;
+    const isConnectionConnected = useConnectionStore.getState().isConnectionConnected;
+
+    // 只订阅数据，不订阅函数
+    const favorites = useFavoritesStore(state => state.favorites);
+
+    // 从 store 获取函数（这些函数在 store 创建时就固定了，引用不会变化）
+    const addFavorite = useFavoritesStore.getState().addFavorite;
+    const removeFavorite = useFavoritesStore.getState().removeFavorite;
+    const getFavorite = useFavoritesStore.getState().getFavorite;
+    const getFavoritesByType = useFavoritesStore.getState().getFavoritesByType;
+    const markAsAccessed = useFavoritesStore.getState().markAsAccessed;
+
+    // 创建稳定的 isFavorite 函数
+    const isFavorite = useCallback((path: string) => {
+        return favorites.some(fav => fav.path === path);
+    }, [favorites]);
 
     // 使用全局 store 管理已打开的数据库
-    const {
-        openedDatabasesList,
-        openDatabase,
-        closeDatabase,
-        closeAllDatabasesForConnection,
-        isDatabaseOpened
-    } = useOpenedDatabasesStore();
+    // 只订阅数据，不订阅函数，避免不必要的重新渲染
+    const openedDatabasesList = useOpenedDatabasesStore(state => state.openedDatabasesList);
+    const openedDatabasesSet = useOpenedDatabasesStore(state => state.openedDatabases);
+
+    // 使用 ref 跟踪 openedDatabasesSet，避免回调函数依赖它
+    const openedDatabasesSetRef = useRef(openedDatabasesSet);
+    useEffect(() => {
+        openedDatabasesSetRef.current = openedDatabasesSet;
+    }, [openedDatabasesSet]);
+
+    // 从 store 获取函数（这些函数在 store 创建时就固定了，引用不会变化）
+    const openDatabase = useOpenedDatabasesStore.getState().openDatabase;
+    const closeDatabase = useOpenedDatabasesStore.getState().closeDatabase;
+    const closeAllDatabasesForConnection = useOpenedDatabasesStore.getState().closeAllDatabasesForConnection;
+
+    // 创建稳定的 isDatabaseOpened 函数
+    const isDatabaseOpened = useCallback((connectionId: string, database: string) => {
+        const key = `${connectionId}/${database}`;
+        return openedDatabasesSet.has(key);
+    }, [openedDatabasesSet]);
 
     const [treeData, setTreeData] = useState<DataNode[]>([]);
     const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
@@ -1951,6 +1978,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const [contextMenuOpen, setContextMenuOpen] = useState(false);
     const [contextMenuPosition, setContextMenuPosition] = useState({x: 0, y: 0});
 
+    // 使用 ref 跟踪 contextMenuOpen，避免回调函数依赖它
+    const contextMenuOpenRef = useRef(false);
+    useEffect(() => {
+        contextMenuOpenRef.current = contextMenuOpen;
+    }, [contextMenuOpen]);
+
     // 旧的 handleRightClick 已被 MultiConnectionTreeView 的 onNodeContextMenu 替代
 
     // 处理右键菜单动作
@@ -2568,8 +2601,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const handleNodeActivate = useCallback(async (node: any) => {
         console.log('🖱️ 双击节点:', node);
 
-        // 关闭右键菜单
-        if (contextMenuOpen) {
+        // 关闭右键菜单（使用 ref 避免依赖 contextMenuOpen）
+        if (contextMenuOpenRef.current) {
             setContextMenuOpen(false);
         }
 
@@ -2582,7 +2615,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         // 数据库节点：双击打开数据库
         if (nodeType === 'database' || nodeType === 'system_database') {
             console.log(`📂 [DatabaseExplorer] 双击数据库节点，打开数据库: ${database}`);
-            if (!isDatabaseOpened(connectionId, database)) {
+            // 使用 ref 访问 openedDatabasesSet，避免依赖它
+            const key = `${connectionId}/${database}`;
+            if (!openedDatabasesSetRef.current.has(key)) {
                 openDatabase(connectionId, database);
                 showMessage.success(`已打开数据库 "${database}"`);
             } else {
@@ -2596,6 +2631,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         if (nodeType === 'measurement' || nodeType === 'table') {
             // 表节点：创建数据浏览器标签页
+            console.log(`📊 [DatabaseExplorer] 双击表节点，打开数据浏览器: ${table}`);
             if (onCreateDataBrowserTab) {
                 onCreateDataBrowserTab(connectionId, database, table);
                 showMessage.success(`正在打开表 "${table}"`);
@@ -2621,7 +2657,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         } else {
             console.log(`ℹ️ 节点类型 ${nodeType} 的双击行为由 handleToggle 处理`);
         }
-    }, [contextMenuOpen, onCreateDataBrowserTab]);
+    }, [onCreateDataBrowserTab, openDatabase, showMessage]);
 
     const handleNodeContextMenu = useCallback((node: any, event: React.MouseEvent) => {
         event.preventDefault();

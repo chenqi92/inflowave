@@ -530,13 +530,16 @@ const App: React.FC = () => {
           await safeTauriInvoke<void>('initialize_connections');
           console.log('连接服务初始化成功');
 
-          // 启动连接配置同步机制（会自动处理连接状态）
-          const { startConnectionSync } = useConnectionStore.getState();
-          console.log('前端连接状态初始化完成');
-          
-          // 启动连接配置同步机制
-          startConnectionSync();
-          console.log('连接配置同步机制已启动');
+          // 初始化时同步一次连接配置
+          const { syncConnectionsFromBackend } = useConnectionStore.getState();
+          await syncConnectionsFromBackend();
+          console.log('连接配置初始化同步完成');
+
+          // 不再启动定时同步，因为：
+          // 1. 每次操作（展开节点、双击表等）都会向后端发送请求，本身就是状态检测
+          // 2. 用户可以通过刷新按钮主动同步
+          // 3. 定时同步会导致不必要的组件重新渲染，造成树闪烁
+          console.log('连接配置初始化完成（已禁用定时同步）');
         } catch (connError) {
           console.warn('连接服务初始化失败:', connError);
         }
