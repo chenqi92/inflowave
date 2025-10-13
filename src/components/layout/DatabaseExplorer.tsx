@@ -175,15 +175,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     }, [favorites]);
 
     // 使用全局 store 管理已打开的数据库
-    // 只订阅数据，不订阅函数，避免不必要的重新渲染
+    // 只订阅 openedDatabasesList，用于通知父组件
+    // 不订阅 openedDatabasesSet，避免打开/关闭数据库时触发重新渲染
     const openedDatabasesList = useOpenedDatabasesStore(state => state.openedDatabasesList);
-    const openedDatabasesSet = useOpenedDatabasesStore(state => state.openedDatabases);
-
-    // 使用 ref 跟踪 openedDatabasesSet，避免回调函数依赖它
-    const openedDatabasesSetRef = useRef(openedDatabasesSet);
-    useEffect(() => {
-        openedDatabasesSetRef.current = openedDatabasesSet;
-    }, [openedDatabasesSet]);
 
     // 从 store 获取函数（这些函数在 store 创建时就固定了，引用不会变化）
     const openDatabase = useOpenedDatabasesStore.getState().openDatabase;
@@ -191,10 +185,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     const closeAllDatabasesForConnection = useOpenedDatabasesStore.getState().closeAllDatabasesForConnection;
 
     // 创建稳定的 isDatabaseOpened 函数
+    // 使用 getState() 访问最新数据，避免依赖 openedDatabasesSet
     const isDatabaseOpened = useCallback((connectionId: string, database: string) => {
         const key = `${connectionId}/${database}`;
-        return openedDatabasesSet.has(key);
-    }, [openedDatabasesSet]);
+        const openedDatabases = useOpenedDatabasesStore.getState().openedDatabases;
+        return openedDatabases.has(key);
+    }, []); // 空依赖数组，函数引用永远不变
 
     const [treeData, setTreeData] = useState<DataNode[]>([]);
     const [expandedKeys, setExpandedKeys] = useState<React.Key[]>([]);
@@ -2615,9 +2611,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         // 数据库节点：双击打开数据库
         if (nodeType === 'database' || nodeType === 'system_database') {
             console.log(`📂 [DatabaseExplorer] 双击数据库节点，打开数据库: ${database}`);
-            // 使用 ref 访问 openedDatabasesSet，避免依赖它
+            // 使用 getState() 访问最新数据，避免依赖 openedDatabasesSet
             const key = `${connectionId}/${database}`;
-            if (!openedDatabasesSetRef.current.has(key)) {
+            const openedDatabases = useOpenedDatabasesStore.getState().openedDatabases;
+            if (!openedDatabases.has(key)) {
                 openDatabase(connectionId, database);
                 showMessage.success(`已打开数据库 "${database}"`);
             } else {
@@ -2946,15 +2943,30 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         }
     }, [refreshTrigger, buildCompleteTreeData, clearDatabasesCache]);
 
+    // 使用 ref 跟踪上一次的 openedDatabasesList，避免内容相同但引用不同时触发更新
+    const prevOpenedDatabasesListRef = useRef<string[]>([]);
+
     // 监听已打开数据库变化，通知父组件
     useEffect(() => {
         if (onExpandedDatabasesChange) {
-            console.log('🔄 DatabaseExplorer 已打开数据库列表变化:', {
-                openedDatabasesList,
-                timestamp: new Date().toISOString()
-            });
-            console.log('📤 DatabaseExplorer 通知父组件:', openedDatabasesList);
-            onExpandedDatabasesChange(openedDatabasesList);
+            // 检查内容是否真正变化（深度比较）
+            const prevList = prevOpenedDatabasesListRef.current;
+            const hasChanged =
+                prevList.length !== openedDatabasesList.length ||
+                prevList.some((item, index) => item !== openedDatabasesList[index]);
+
+            if (hasChanged) {
+                console.log('🔄 DatabaseExplorer 已打开数据库列表变化:', {
+                    prev: prevList,
+                    current: openedDatabasesList,
+                    timestamp: new Date().toISOString()
+                });
+                console.log('📤 DatabaseExplorer 通知父组件:', openedDatabasesList);
+                onExpandedDatabasesChange(openedDatabasesList);
+                prevOpenedDatabasesListRef.current = openedDatabasesList;
+            } else {
+                console.log('👀 DatabaseExplorer 已打开数据库列表内容无变化，跳过通知父组件');
+            }
         }
     }, [openedDatabasesList, onExpandedDatabasesChange]);
 

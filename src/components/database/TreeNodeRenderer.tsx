@@ -4,6 +4,7 @@ import { ChevronRight, ChevronDown, Loader2, AlertCircle, Star } from 'lucide-re
 import { DatabaseIcon } from '@/components/common/DatabaseIcon';
 import { TreeNodeType, normalizeNodeType, getIoTDBNodeBehavior } from '@/types/tree';
 import { cn } from '@/lib/utils';
+import { useConnectionStore } from '@/store/connection';
 
 export interface TreeNodeData {
   id: string;
@@ -25,6 +26,7 @@ export interface TreeNodeData {
 
 interface TreeNodeRendererProps extends NodeRendererProps<TreeNodeData> {
   onNodeDoubleClick?: (nodeData: TreeNodeData, node: any) => void;
+  isDatabaseOpened?: (connectionId: string, database: string) => boolean;
 }
 
 export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
@@ -32,6 +34,7 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
   style,
   dragHandle,
   onNodeDoubleClick,
+  isDatabaseOpened,
 }) => {
   const data = node.data;
   const isSelected = node.isSelected;
@@ -41,9 +44,25 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
     console.log(`🎨 [TreeNodeRenderer] ${data.nodeType}: ${data.name} (id: ${data.id})`);
   }
 
-  const isActivated = data.isActivated ?? false;
+  // 动态计算 isActivated 状态，避免 openedDatabasesList 变化时触发整个树重新渲染
+  let isActivated = data.isActivated ?? false;
+  if ((data.nodeType === 'database' || data.nodeType === 'system_database') && isDatabaseOpened) {
+    const connectionId = data.metadata?.connectionId || '';
+    const database = data.name;
+    isActivated = isDatabaseOpened(connectionId, database);
+  }
+
+  // 动态计算 isConnected 状态，避免 connectionStatuses 变化时触发整个树重新渲染
+  // 使用 getState() 访问最新数据，避免订阅 connectionStatuses
+  let isConnected = data.isConnected ?? false;
+  if (data.nodeType === 'connection') {
+    const connectionId = data.metadata?.connectionId || '';
+    const connectionStatuses = useConnectionStore.getState().connectionStatuses;
+    const status = connectionStatuses[connectionId];
+    isConnected = status?.status === 'connected';
+  }
+
   const isLoading = data.isLoading ?? false;
-  const isConnected = data.isConnected ?? false;
   const isFavorite = data.isFavorite ?? false;
   const isSystem = data.isSystem ?? false;
 
