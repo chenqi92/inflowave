@@ -142,24 +142,6 @@ export const DatabaseExplorerContextMenu: React.FC<DatabaseExplorerContextMenuPr
               创建测量值
             </button>
             <div className="my-1 h-px bg-border" />
-            {isOpened ? (
-              <button
-                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                onClick={() => onAction('close_database', node)}
-              >
-                <FolderX className="w-4 h-4" />
-                断开连接
-              </button>
-            ) : (
-              <button
-                className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
-                onClick={() => onAction('open_database', node)}
-              >
-                <Plus className="w-4 h-4" />
-                打开连接
-              </button>
-            )}
-            <div className="my-1 h-px bg-border" />
             <div className="px-2 py-1.5 text-sm font-semibold text-muted-foreground">
               数据库管理
             </div>
