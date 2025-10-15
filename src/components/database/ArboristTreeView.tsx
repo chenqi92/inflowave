@@ -4,11 +4,11 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { Loader2, RefreshCw, Database } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { TreeNodeRenderer, TreeNodeData } from './TreeNodeRenderer';
 import { TreeNodeType } from '@/types/tree';
-import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/ContextMenu';
 import useResizeObserver from 'use-resize-observer';
 
 interface ArboristTreeViewProps {

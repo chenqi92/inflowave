@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Separator } from '@/components/ui/Separator';
 import { cn } from '@/lib/utils';
 import {

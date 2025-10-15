@@ -21,7 +21,7 @@ export {
   CardFooter,
   CardHeader,
   CardTitle,
-} from './card';
+} from './Card';
 
 // Context Menu
 export {
@@ -40,7 +40,7 @@ export {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuRadioGroup,
-} from './context-menu';
+} from './ContextMenu';
 
 export {
   Dialog,
@@ -87,6 +87,44 @@ export type {
 
 export { Skeleton } from './Skeleton';
 
+// 骨架屏布局组件
+export {
+  TableSkeleton,
+  CardSkeleton,
+  ListSkeleton,
+  TreeSkeleton,
+  FormSkeleton,
+  ChartSkeleton,
+  DetailSkeleton,
+  ContentSkeleton,
+} from './SkeletonLayouts';
+export type {
+  TableSkeletonProps,
+  CardSkeletonProps,
+  ListSkeletonProps,
+  TreeSkeletonProps,
+  FormSkeletonProps,
+  ChartSkeletonProps,
+  DetailSkeletonProps,
+  ContentSkeletonProps,
+} from './SkeletonLayouts';
+
+// 加载状态组件
+export {
+  LoadingState,
+  InlineLoading,
+  PageLoading,
+  CardLoading,
+  EmptyLoading,
+} from './LoadingState';
+export type {
+  LoadingStateProps,
+  InlineLoadingProps,
+  PageLoadingProps,
+  CardLoadingProps,
+  EmptyLoadingProps,
+} from './LoadingState';
+
 // Sonner Toast 系统 (shadcn/ui 推荐)
 export { Toaster } from './sonner';
 export { toast } from 'sonner';
@@ -99,7 +137,12 @@ export {
   toastControl,
   systemMessage,
   smartMessage,
+  enhancedError,
 } from '@/utils/message';
+
+// 错误提示组件
+export { ErrorAlert, SimpleErrorAlert } from './ErrorAlert';
+export type { ErrorAlertProps } from './ErrorAlert';
 
 export { Avatar, AvatarFallback, AvatarImage } from './Avatar';
 
@@ -249,7 +292,7 @@ export type {
 export { DatePicker } from './DatePicker';
 export type { DatePickerProps } from './DatePicker';
 
-export { Popover, PopoverContent, PopoverTrigger } from './popover';
+export { Popover, PopoverContent, PopoverTrigger } from './Popover';
 
 export { Separator } from './Separator';
 
@@ -258,7 +301,7 @@ export {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from './accordion';
+} from './Accordion';
 
 export {
   Sheet,
@@ -267,13 +310,13 @@ export {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from './sheet';
+} from './Sheet';
 
 export {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from './collapsible';
+} from './Collapsible';
 
 export { Layout, Header, Sider, Content, Footer } from './Layout';
 export type {
@@ -296,9 +339,9 @@ export {
   ResizablePanelGroup,
   ResizablePanel,
   ResizableHandle,
-} from './resizable';
+} from './Resizable';
 
-export { ScrollArea, ScrollBar } from './scroll-area';
+export { ScrollArea, ScrollBar } from './ScrollArea';
 
 export {
   ChartContainer,
@@ -307,7 +350,7 @@ export {
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
-} from './chart';
-export type { ChartConfig } from './chart';
+} from './Chart';
+export type { ChartConfig } from './Chart';
 
 export { default as CustomDialog } from './CustomDialog';

@@ -80,14 +80,13 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
     // ============================================================================
     // Context Menu Action Handler
     // ============================================================================
-    const handleContextMenuAction = useCallback(async (action: string) => {
-        if (!contextMenuTarget) return;
-
-        const nodeType = contextMenuTarget.nodeType;
-        const metadata = contextMenuTarget.metadata || {};
+    const handleContextMenuAction = useCallback(async (action: string, node: TreeNodeData) => {
+        // Use the node parameter instead of contextMenuTarget state
+        const nodeType = node.nodeType;
+        const metadata = node.metadata || {};
         const connectionId = metadata.connectionId || '';
-        const database = metadata.database || metadata.databaseName || contextMenuTarget.name;
-        const table = metadata.table || metadata.tableName || contextMenuTarget.name;
+        const database = metadata.database || metadata.databaseName || node.name;
+        const table = metadata.table || metadata.tableName || node.name;
 
         try {
             switch (action) {
@@ -97,7 +96,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                         try {
                             clearDatabasesCache(connectionId);
                             buildCompleteTreeData(true);
-                            showMessage.success(`连接 ${contextMenuTarget.name} 已刷新`);
+                            showMessage.success(`连接 ${node.name} 已刷新`);
                         } catch (error) {
                             console.error('刷新连接失败:', error);
                             showMessage.error(`刷新连接失败: ${error}`);
@@ -109,7 +108,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                     if (nodeType === 'connection') {
                         try {
                             await handleConnectionToggle(connectionId);
-                            showMessage.success(`连接 ${contextMenuTarget.name} 已断开`);
+                            showMessage.success(`连接 ${node.name} 已断开`);
                         } catch (error) {
                             console.error('断开连接失败:', error);
                             showMessage.error(`断开连接失败: ${error}`);

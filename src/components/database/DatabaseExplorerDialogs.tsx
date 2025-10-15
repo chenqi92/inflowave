@@ -3,17 +3,31 @@ import TableDesignerDialog from '@/components/database/TableDesignerDialog';
 import TableInfoDialog from '@/components/database/TableInfoDialog';
 import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
 import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
+import ConnectionDetailDialog from '@/components/database/ConnectionDetailDialog';
+import FieldDetailDialog from '@/components/database/FieldDetailDialog';
+import TagDetailDialog from '@/components/database/TagDetailDialog';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
 import { ManagementNodeDialog } from '@/components/database/ManagementNodeDialog';
-import type { DialogStates, DatabaseInfoDialogState, RetentionPolicyDialogState, ManagementNodeDialogState } from '@/types/databaseExplorer';
+import IoTDBTemplateDialog from '@/components/database/IoTDBTemplateDialog';
+import QueryBuilder from '@/components/query/QueryBuilder';
+import type {
+    DialogStates,
+    DatabaseInfoDialogState,
+    RetentionPolicyDialogState,
+    ManagementNodeDialogState,
+    ConnectionDetailDialogState,
+    FieldDetailDialogState,
+    TagDetailDialogState
+} from '@/types/databaseExplorer';
 import type { ConnectionConfig } from '@/types';
 
 interface DatabaseExplorerDialogsProps {
     // Table dialogs
     dialogStates: DialogStates;
     closeDialog: (type: 'designer' | 'info') => void;
-    
+    setDialogStates: React.Dispatch<React.SetStateAction<DialogStates>>;
+
     // Database dialogs
     createDatabaseDialogOpen: boolean;
     setCreateDatabaseDialogOpen: (open: boolean) => void;
@@ -23,21 +37,30 @@ interface DatabaseExplorerDialogsProps {
     setRetentionPolicyDialog: (state: RetentionPolicyDialogState) => void;
     activeConnectionId: string | null;
     buildCompleteTreeData: (forceRefresh?: boolean) => Promise<void>;
-    
+
     // Connection dialog
     isConnectionDialogVisible: boolean;
     editingConnection: ConnectionConfig | null;
     handleCloseConnectionDialog: () => void;
     handleConnectionSuccess: (connection: ConnectionConfig) => Promise<void>;
-    
+
     // Management node dialog
     managementNodeDialog: ManagementNodeDialogState;
     setManagementNodeDialog: (state: ManagementNodeDialogState) => void;
+
+    // Detail dialogs
+    connectionDetailDialog: ConnectionDetailDialogState;
+    setConnectionDetailDialog: (state: ConnectionDetailDialogState) => void;
+    fieldDetailDialog: FieldDetailDialogState;
+    setFieldDetailDialog: (state: FieldDetailDialogState) => void;
+    tagDetailDialog: TagDetailDialogState;
+    setTagDetailDialog: (state: TagDetailDialogState) => void;
 }
 
 export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = ({
     dialogStates,
     closeDialog,
+    setDialogStates,
     createDatabaseDialogOpen,
     setCreateDatabaseDialogOpen,
     databaseInfoDialog,
@@ -52,6 +75,12 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
     handleConnectionSuccess,
     managementNodeDialog,
     setManagementNodeDialog,
+    connectionDetailDialog,
+    setConnectionDetailDialog,
+    fieldDetailDialog,
+    setFieldDetailDialog,
+    tagDetailDialog,
+    setTagDetailDialog,
 }) => {
     return (
         <>
@@ -131,6 +160,94 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                 nodeName={managementNodeDialog.nodeName}
                 nodeCategory={managementNodeDialog.nodeCategory}
             />
+
+            {/* 连接详情对话框 */}
+            <ConnectionDetailDialog
+                open={connectionDetailDialog.open}
+                onClose={() => setConnectionDetailDialog({
+                    open: false,
+                    connectionId: '',
+                })}
+                connectionId={connectionDetailDialog.connectionId}
+            />
+
+            {/* 字段详情对话框 */}
+            <FieldDetailDialog
+                open={fieldDetailDialog.open}
+                onClose={() => setFieldDetailDialog({
+                    open: false,
+                    connectionId: '',
+                    database: '',
+                    table: '',
+                    field: '',
+                })}
+                connectionId={fieldDetailDialog.connectionId}
+                database={fieldDetailDialog.database}
+                table={fieldDetailDialog.table}
+                field={fieldDetailDialog.field}
+            />
+
+            {/* 标签详情对话框 */}
+            <TagDetailDialog
+                open={tagDetailDialog.open}
+                onClose={() => setTagDetailDialog({
+                    open: false,
+                    connectionId: '',
+                    database: '',
+                    table: '',
+                    tag: '',
+                })}
+                connectionId={tagDetailDialog.connectionId}
+                database={tagDetailDialog.database}
+                table={tagDetailDialog.table}
+                tag={tagDetailDialog.tag}
+            />
+
+            {/* IoTDB 模板管理对话框 */}
+            {dialogStates.iotdbTemplate && (
+                <IoTDBTemplateDialog
+                    open={dialogStates.iotdbTemplate.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            iotdbTemplate: {
+                                open: false,
+                                connectionId: '',
+                                mode: 'list' as const,
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.iotdbTemplate.connectionId}
+                    mode={dialogStates.iotdbTemplate.mode}
+                    devicePath={dialogStates.iotdbTemplate.devicePath}
+                />
+            )}
+
+            {/* 查询构建器对话框 */}
+            {dialogStates.queryBuilder && (
+                <QueryBuilder
+                    open={dialogStates.queryBuilder.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            queryBuilder: {
+                                open: false,
+                                connectionId: '',
+                                database: '',
+                                table: '',
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.queryBuilder.connectionId}
+                    database={dialogStates.queryBuilder.database}
+                    table={dialogStates.queryBuilder.table}
+                    onExecute={(query) => {
+                        // 执行查询的回调
+                        // 可以通过 props 传递一个执行查询的函数
+                        console.log('执行查询:', query);
+                    }}
+                />
+            )}
         </>
     );
 };

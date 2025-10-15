@@ -246,7 +246,12 @@ export const dialog = {
   success: showSuccessDialog,
   error: showErrorDialog,
   warning: showWarningDialog,
-  confirm: showConfirmDialog,
+  confirm: (config: Omit<DialogConfig, 'type'> | string): Promise<boolean> => {
+    if (typeof config === 'string') {
+      return showConfirmDialog({ content: config });
+    }
+    return showConfirmDialog(config);
+  },
 };
 
 // 导出对话框管理器组件供App.tsx使用

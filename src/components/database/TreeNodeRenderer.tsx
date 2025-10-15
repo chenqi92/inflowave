@@ -1,10 +1,23 @@
 import React from 'react';
 import { NodeRendererProps } from 'react-arborist';
-import { ChevronRight, ChevronDown, Loader2, AlertCircle, Star } from 'lucide-react';
+import { ChevronRight, ChevronDown, Loader2, Shield } from 'lucide-react';
 import { DatabaseIcon } from '@/components/common/DatabaseIcon';
 import { TreeNodeType, normalizeNodeType, getIoTDBNodeBehavior } from '@/types/tree';
 import { cn } from '@/lib/utils';
 import { useConnectionStore } from '@/store/connection';
+import {
+  getNodeTextColor,
+  getNodeIconColor,
+  getNodeFontStyle,
+  isSystemManagementNode,
+  getNodeOpacity,
+  getNodeBackgroundStyle,
+} from '@/utils/treeNodeStyles';
+import {
+  SystemNodeIndicator,
+  FavoriteIndicator,
+  ErrorIndicator,
+} from './NodeStatusIndicator';
 
 export interface TreeNodeData {
   id: string;
@@ -98,18 +111,33 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
     hasChildren = data.children === undefined || !!(data.children && data.children.length > 0);
   }
 
+  // 计算节点层级深度（用于视觉层级优化）
+  const nodeDepth = node.level;
+
+  // 判断是否为系统管理节点
+  const isSystemNode = isSystemManagementNode(normalizedNodeType, isSystem);
+
+  // 获取节点样式
+  const nodeOpacity = getNodeOpacity(nodeDepth, isSystem);
+  const nodeFontStyle = getNodeFontStyle(normalizedNodeType, isSystem);
+  const nodeTextColor = getNodeTextColor(normalizedNodeType, isConnected, isActivated);
+  const nodeIconColor = getNodeIconColor(normalizedNodeType, isSystem, isConnected, isActivated);
+  const nodeBackground = getNodeBackgroundStyle(
+    normalizedNodeType,
+    isSystem,
+    isSelected,
+    !!data.error
+  );
+
   return (
     <div
       ref={dragHandle}
       style={style}
       className={cn(
-        'flex items-center py-1 px-2 cursor-pointer rounded transition-colors select-none',
+        'flex items-center py-1.5 px-2 cursor-pointer rounded transition-colors select-none',
         'hover:bg-accent hover:text-accent-foreground',
-        isSelected && 'bg-accent text-accent-foreground',
-        // 移除绿色选中效果，已打开的数据库节点通过图标颜色区分
-        // isActivated && 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700',
-        isSystem && 'opacity-75',
-        data.error && 'border-l-2 border-destructive'
+        nodeOpacity,
+        nodeBackground
       )}
       onDoubleClick={(e) => {
         // 双击时调用回调
@@ -119,21 +147,21 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
       }}
     >
       {/* 展开/折叠图标 */}
-      <div className="w-4 h-4 flex items-center justify-center mr-1">
+      <div className="w-5 h-5 flex items-center justify-center mr-0.5">
         {hasChildren && (
           <div
-            className="w-3 h-3 hover:bg-muted rounded cursor-pointer flex items-center justify-center"
+            className="w-4 h-4 hover:bg-muted rounded cursor-pointer flex items-center justify-center transition-colors"
             onClick={(e) => {
               e.stopPropagation();
               node.toggle();
             }}
           >
             {isLoading ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
             ) : node.isOpen ? (
-              <ChevronDown className="w-3 h-3" />
+              <ChevronDown className="w-3.5 h-3.5 text-foreground" />
             ) : (
-              <ChevronRight className="w-3 h-3" />
+              <ChevronRight className="w-3.5 h-3.5 text-foreground" />
             )}
           </div>
         )}
@@ -141,12 +169,8 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
 
       {/* 节点图标 */}
       <div className={cn(
-        "mr-2 flex items-center justify-center w-4 h-4",
-        // 为不同类型的节点设置不同的颜色
-        normalizedNodeType === 'field' && "text-blue-600 dark:text-blue-400",
-        normalizedNodeType === 'tag' && "text-amber-600 dark:text-amber-400",
-        normalizedNodeType === 'field_group' && "text-blue-500 dark:text-blue-300",
-        normalizedNodeType === 'tag_group' && "text-amber-500 dark:text-amber-300"
+        "mr-2.5 flex items-center justify-center w-5 h-5 relative",
+        nodeIconColor
       )}>
         <DatabaseIcon
           nodeType={normalizedNodeType}
@@ -159,38 +183,35 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
           }
           isConnected={isConnected}
           dbType={data.dbType}
-          size={16}
+          size={18}
           className="flex-shrink-0"
           title={`${data.name} (${normalizedNodeType})`}
         />
+        {/* 系统节点添加盾牌图标叠加 */}
+        {isSystemNode && (
+          <Shield className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 text-orange-500 dark:text-orange-400 bg-background rounded-full p-0.5 shadow-sm" />
+        )}
       </div>
 
       {/* 节点名称 */}
       <span className={cn(
         "text-sm truncate flex-1",
-        data.error && "text-destructive"
+        nodeFontStyle,
+        nodeTextColor,
+        data.error && "text-destructive",
+        isSystemNode && "text-muted-foreground"
       )}>
         {data.name}
       </span>
 
       {/* 收藏图标 */}
-      {isFavorite && (
-        <Star className="w-3 h-3 ml-1 text-yellow-500 fill-yellow-500 flex-shrink-0" />
-      )}
+      {isFavorite && <FavoriteIndicator />}
 
       {/* 错误图标 */}
-      {data.error && (
-        <div title={data.error}>
-          <AlertCircle
-            className="w-3 h-3 ml-1 text-destructive flex-shrink-0"
-          />
-        </div>
-      )}
+      {data.error && <ErrorIndicator message={data.error} />}
 
       {/* 系统节点标识 */}
-      {isSystem && (
-        <span className="ml-2 text-xs text-muted-foreground italic">system</span>
-      )}
+      {isSystemNode && <SystemNodeIndicator />}
     </div>
   );
 };

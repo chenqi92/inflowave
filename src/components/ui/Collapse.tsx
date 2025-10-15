@@ -5,12 +5,12 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from './accordion';
+} from './Accordion';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from './collapsible';
+} from './Collapsible';
 
 export interface PanelProps {
   header: ReactNode;
@@ -32,7 +32,7 @@ export interface CollapseProps {
 }
 
 // 定义 Collapse 组件的类型，包含 Panel 属性
-export interface CollapseComponent extends React.FC<CollapseProps> {
+export interface CollapseComponentType extends React.FC<CollapseProps> {
   Panel: React.FC<PanelProps>;
 }
 
@@ -223,5 +223,5 @@ const CollapseComponent: React.FC<CollapseProps> = ({
 
 // 创建带有 Panel 属性的 Collapse 组件
 // 这是为了向后兼容 Ant Design API 的设计模式
-export const Collapse = CollapseComponent as CollapseComponent;
+export const Collapse = CollapseComponent as CollapseComponentType;
 Collapse.Panel = Panel;

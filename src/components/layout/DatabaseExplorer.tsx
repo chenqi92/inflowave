@@ -19,7 +19,6 @@ import {
   CardContent,
 } from '@/components/ui';
 import { MultiConnectionTreeView } from '@/components/database/MultiConnectionTreeView';
-import { DatabaseExplorerContextMenu } from '@/components/database/DatabaseExplorerContextMenu';
 import { DatabaseExplorerHeader } from '@/components/database/DatabaseExplorerHeader';
 import { DatabaseExplorerDialogs } from '@/components/database/DatabaseExplorerDialogs';
 import { DatabaseExplorerErrorTooltips } from '@/components/database/DatabaseExplorerErrorTooltips';
@@ -203,6 +202,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     setRetentionPolicyDialog,
     managementNodeDialog,
     setManagementNodeDialog,
+    connectionDetailDialog,
+    setConnectionDetailDialog,
+    fieldDetailDialog,
+    setFieldDetailDialog,
+    tagDetailDialog,
+    setTagDetailDialog,
     contextMenuTarget,
     setContextMenuTarget,
     contextMenuOpen,
@@ -1530,6 +1535,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     onCreateDataBrowserTab,
     openDatabase,
     setManagementNodeDialog,
+    setFieldDetailDialog,
+    setTagDetailDialog,
+    setConnectionDetailDialog,
     setContextMenuOpen,
     contextMenuOpenRef,
   });
@@ -1757,23 +1765,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               onConnectionToggle={handleConnectionAndLoadDatabases}
               onNodeSelect={handleNodeSelect}
               onNodeActivate={handleNodeActivate}
-              onNodeContextMenu={handleNodeContextMenu}
+              onContextMenuAction={handleContextMenuAction}
               onRefresh={handleTreeRefresh}
               className='h-full'
-            />
-
-            {/* 右键菜单 */}
-            <DatabaseExplorerContextMenu
-              node={contextMenuTarget}
-              position={contextMenuPosition}
-              isOpen={contextMenuOpen}
-              onClose={() => setContextMenuOpen(false)}
-              onAction={(action, node) => {
-                setContextMenuOpen(false);
-                handleContextMenuAction(action);
-              }}
-              isDatabaseOpened={isDatabaseOpened}
-              isFavorite={path => isFavorite(path)}
             />
           </div>
         </CardContent>
@@ -1783,6 +1777,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       <DatabaseExplorerDialogs
         dialogStates={dialogStates}
         closeDialog={closeDialog}
+        setDialogStates={setDialogStates}
         createDatabaseDialogOpen={createDatabaseDialogOpen}
         setCreateDatabaseDialogOpen={setCreateDatabaseDialogOpen}
         databaseInfoDialog={databaseInfoDialog}
@@ -1797,6 +1792,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         handleConnectionSuccess={handleConnectionSuccess}
         managementNodeDialog={managementNodeDialog}
         setManagementNodeDialog={setManagementNodeDialog}
+        connectionDetailDialog={connectionDetailDialog}
+        setConnectionDetailDialog={setConnectionDetailDialog}
+        fieldDetailDialog={fieldDetailDialog}
+        setFieldDetailDialog={setFieldDetailDialog}
+        tagDetailDialog={tagDetailDialog}
+        setTagDetailDialog={setTagDetailDialog}
       />
 
       {/* 错误提示 - 使用 Portal 渲染，避免被容器遮挡 */}

@@ -6,6 +6,9 @@ import type {
     DatabaseInfoDialogState,
     RetentionPolicyDialogState,
     ManagementNodeDialogState,
+    ConnectionDetailDialogState,
+    FieldDetailDialogState,
+    TagDetailDialogState,
     ContextMenuPosition,
 } from '@/types/databaseExplorer';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
@@ -77,6 +80,24 @@ export const useDatabaseExplorerState = () => {
         nodeType: '',
         nodeName: '',
         nodeCategory: '',
+    });
+    const [connectionDetailDialog, setConnectionDetailDialog] = useState<ConnectionDetailDialogState>({
+        open: false,
+        connectionId: '',
+    });
+    const [fieldDetailDialog, setFieldDetailDialog] = useState<FieldDetailDialogState>({
+        open: false,
+        connectionId: '',
+        database: '',
+        table: '',
+        field: '',
+    });
+    const [tagDetailDialog, setTagDetailDialog] = useState<TagDetailDialogState>({
+        open: false,
+        connectionId: '',
+        database: '',
+        table: '',
+        tag: '',
     });
 
     // ============================================================================
@@ -153,6 +174,12 @@ export const useDatabaseExplorerState = () => {
         setRetentionPolicyDialog,
         managementNodeDialog,
         setManagementNodeDialog,
+        connectionDetailDialog,
+        setConnectionDetailDialog,
+        fieldDetailDialog,
+        setFieldDetailDialog,
+        tagDetailDialog,
+        setTagDetailDialog,
 
         // Context Menu State
         contextMenuTarget,

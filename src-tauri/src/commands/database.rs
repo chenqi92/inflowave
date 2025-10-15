@@ -459,6 +459,583 @@ pub async fn generate_insert_template(
     Ok(template)
 }
 
+/// 导出数据库元数据
+#[tauri::command(rename_all = "camelCase")]
+pub async fn export_database_metadata(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+) -> Result<serde_json::Value, String> {
+    debug!("处理导出数据库元数据命令: {} - {}", connection_id, database);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取数据库类型
+    let db_type = client.get_database_type();
+
+    // 根据数据库类型导出不同的元数据
+    let metadata = match db_type {
+        crate::models::DatabaseType::InfluxDB => {
+            // 获取所有测量值
+            let measurements_query = format!("SHOW MEASUREMENTS ON \"{}\"", database);
+            let measurements_result = client.execute_query(&measurements_query, Some(&database)).await
+                .map_err(|e| format!("获取测量值失败: {}", e))?;
+
+            let mut measurements = Vec::new();
+            for row in measurements_result.rows() {
+                if let Some(name) = row.get(0).and_then(|v| v.as_str()) {
+                    // 获取每个测量值的字段和标签
+                    let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, name);
+                    let tag_query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, name);
+
+                    let fields_result = client.execute_query(&field_query, Some(&database)).await.ok();
+                    let tags_result = client.execute_query(&tag_query, Some(&database)).await.ok();
+
+                    let mut fields = Vec::new();
+                    if let Some(result) = fields_result {
+                        for row in result.rows() {
+                            if let Some(field_name) = row.get(0).and_then(|v| v.as_str()) {
+                                let field_type = row.get(1).and_then(|v| v.as_str()).unwrap_or("unknown");
+                                fields.push(serde_json::json!({
+                                    "name": field_name,
+                                    "type": field_type
+                                }));
+                            }
+                        }
+                    }
+
+                    let mut tags = Vec::new();
+                    if let Some(result) = tags_result {
+                        for row in result.rows() {
+                            if let Some(tag_name) = row.get(0).and_then(|v| v.as_str()) {
+                                tags.push(tag_name.to_string());
+                            }
+                        }
+                    }
+
+                    measurements.push(serde_json::json!({
+                        "name": name,
+                        "fields": fields,
+                        "tags": tags
+                    }));
+                }
+            }
+
+            // 获取保留策略
+            let rp_query = format!("SHOW RETENTION POLICIES ON \"{}\"", database);
+            let rp_result = client.execute_query(&rp_query, Some(&database)).await.ok();
+
+            let mut retention_policies = Vec::new();
+            if let Some(result) = rp_result {
+                for row in result.rows() {
+                    if let Some(name) = row.get(0).and_then(|v| v.as_str()) {
+                        retention_policies.push(serde_json::json!({
+                            "name": name,
+                            "duration": row.get(1).and_then(|v| v.as_str()).unwrap_or(""),
+                            "shardGroupDuration": row.get(2).and_then(|v| v.as_str()).unwrap_or(""),
+                            "replicaN": row.get(3).and_then(|v| v.as_i64()).unwrap_or(0),
+                            "default": row.get(4).and_then(|v| v.as_bool()).unwrap_or(false)
+                        }));
+                    }
+                }
+            }
+
+            serde_json::json!({
+                "database": database,
+                "type": format!("{:?}", db_type),
+                "measurements": measurements,
+                "retentionPolicies": retention_policies,
+                "exportedAt": chrono::Utc::now().to_rfc3339()
+            })
+        },
+        crate::models::DatabaseType::IoTDB => {
+            // IoTDB: 导出存储组和时间序列信息
+            let timeseries_query = format!("SHOW TIMESERIES {}", database);
+            let timeseries_result = client.execute_query(&timeseries_query, None).await
+                .map_err(|e| format!("获取时间序列失败: {}", e))?;
+
+            let mut timeseries = Vec::new();
+            for row in timeseries_result.rows() {
+                if let Some(name) = row.get(0).and_then(|v| v.as_str()) {
+                    timeseries.push(serde_json::json!({
+                        "name": name,
+                        "alias": row.get(1).and_then(|v| v.as_str()).unwrap_or(""),
+                        "database": row.get(2).and_then(|v| v.as_str()).unwrap_or(""),
+                        "dataType": row.get(3).and_then(|v| v.as_str()).unwrap_or(""),
+                        "encoding": row.get(4).and_then(|v| v.as_str()).unwrap_or("")
+                    }));
+                }
+            }
+
+            serde_json::json!({
+                "storageGroup": database,
+                "type": "IoTDB",
+                "timeseries": timeseries,
+                "exportedAt": chrono::Utc::now().to_rfc3339()
+            })
+        },
+        crate::models::DatabaseType::Prometheus => {
+            // Prometheus: 暂不支持元数据导出
+            serde_json::json!({
+                "database": database,
+                "type": "Prometheus",
+                "message": "Prometheus metadata export not yet implemented",
+                "exportedAt": chrono::Utc::now().to_rfc3339()
+            })
+        },
+        crate::models::DatabaseType::Elasticsearch => {
+            // Elasticsearch: 暂不支持元数据导出
+            serde_json::json!({
+                "database": database,
+                "type": "Elasticsearch",
+                "message": "Elasticsearch metadata export not yet implemented",
+                "exportedAt": chrono::Utc::now().to_rfc3339()
+            })
+        }
+    };
+
+    Ok(metadata)
+}
+
+/// 获取表统计信息
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_table_statistics(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+) -> Result<serde_json::Value, String> {
+    debug!("处理获取表统计信息命令: {} - {} - {}", connection_id, database, table);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    let db_type = client.get_database_type();
+
+    let statistics = match db_type {
+        crate::models::DatabaseType::InfluxDB => {
+            // 获取记录数
+            let count_query = format!("SELECT COUNT(*) FROM \"{}\"", table);
+            let count_result = client.execute_query(&count_query, Some(&database)).await.ok();
+
+            let total_count = if let Some(result) = count_result {
+                result.rows().first()
+                    .and_then(|row| row.get(1))
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+            } else {
+                0
+            };
+
+            // 获取时间范围
+            let time_range_query = format!(
+                "SELECT FIRST(*), LAST(*) FROM \"{}\"",
+                table
+            );
+            let time_result = client.execute_query(&time_range_query, Some(&database)).await.ok();
+
+            let (first_time, last_time) = if let Some(result) = time_result {
+                let rows = result.rows();
+                let row = rows.first();
+                let first = row.and_then(|r| r.get(0)).and_then(|v| v.as_str()).map(|s| s.to_string());
+                let last = row.and_then(|r| r.get(1)).and_then(|v| v.as_str()).map(|s| s.to_string());
+                (first, last)
+            } else {
+                (None, None)
+            };
+
+            // 获取字段数量
+            let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, table);
+            let field_result = client.execute_query(&field_query, Some(&database)).await.ok();
+            let field_count = field_result.map(|r| r.rows().len()).unwrap_or(0);
+
+            // 获取标签数量
+            let tag_query = format!("SHOW TAG KEYS ON \"{}\" FROM \"{}\"", database, table);
+            let tag_result = client.execute_query(&tag_query, Some(&database)).await.ok();
+            let tag_count = tag_result.map(|r| r.rows().len()).unwrap_or(0);
+
+            serde_json::json!({
+                "measurement": table,
+                "database": database,
+                "totalRecords": total_count,
+                "fieldCount": field_count,
+                "tagCount": tag_count,
+                "firstTimestamp": first_time,
+                "lastTimestamp": last_time,
+                "type": "InfluxDB"
+            })
+        },
+        crate::models::DatabaseType::IoTDB => {
+            // IoTDB: 获取时间序列统计
+            let count_query = format!("SELECT COUNT(*) FROM {}", table);
+            let count_result = client.execute_query(&count_query, None).await.ok();
+
+            let total_count = if let Some(result) = count_result {
+                result.rows().first()
+                    .and_then(|row| row.get(1))
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+            } else {
+                0
+            };
+
+            serde_json::json!({
+                "timeseries": table,
+                "totalRecords": total_count,
+                "type": "IoTDB"
+            })
+        },
+        crate::models::DatabaseType::Prometheus => {
+            serde_json::json!({
+                "table": table,
+                "type": "Prometheus",
+                "message": "Statistics not yet implemented"
+            })
+        },
+        crate::models::DatabaseType::Elasticsearch => {
+            serde_json::json!({
+                "table": table,
+                "type": "Elasticsearch",
+                "message": "Statistics not yet implemented"
+            })
+        }
+    };
+
+    Ok(statistics)
+}
+
+/// 预览表数据
+#[tauri::command(rename_all = "camelCase")]
+pub async fn preview_table_data(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+    limit: Option<i64>,
+) -> Result<QueryResult, String> {
+    debug!("处理预览表数据命令: {} - {} - {}", connection_id, database, table);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    let limit_value = limit.unwrap_or(100);
+    let db_type = client.get_database_type();
+
+    let query = match db_type {
+        crate::models::DatabaseType::InfluxDB => {
+            format!("SELECT * FROM \"{}\" LIMIT {}", table, limit_value)
+        },
+        crate::models::DatabaseType::IoTDB => {
+            format!("SELECT * FROM {} LIMIT {}", table, limit_value)
+        },
+        _ => {
+            format!("SELECT * FROM \"{}\" LIMIT {}", table, limit_value)
+        }
+    };
+
+    client.execute_query(&query, Some(&database)).await
+        .map_err(|e| {
+            error!("预览表数据失败: {}", e);
+            format!("预览表数据失败: {}", e)
+        })
+}
+
+/// 获取字段详细信息
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_field_details(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+    field: String,
+) -> Result<serde_json::Value, String> {
+    debug!("处理获取字段详细信息命令: {} - {} - {} - {}", connection_id, database, table, field);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取字段类型
+    let field_query = format!("SHOW FIELD KEYS ON \"{}\" FROM \"{}\"", database, table);
+    let field_result = client.execute_query(&field_query, Some(&database)).await
+        .map_err(|e| format!("获取字段信息失败: {}", e))?;
+
+    let field_type = field_result.rows()
+        .iter()
+        .find(|row| row.get(0).and_then(|v| v.as_str()) == Some(&field))
+        .and_then(|row| row.get(1))
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown")
+        .to_string();
+
+    // 获取示例数据
+    let sample_query = format!("SELECT \"{}\" FROM \"{}\" LIMIT 10", field, table);
+    let sample_result = client.execute_query(&sample_query, Some(&database)).await.ok();
+
+    let samples: Vec<serde_json::Value> = if let Some(result) = sample_result {
+        result.rows()
+            .iter()
+            .filter_map(|row| row.get(1))
+            .map(|v| v.clone())
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    Ok(serde_json::json!({
+        "field": field,
+        "table": table,
+        "database": database,
+        "type": field_type,
+        "samples": samples
+    }))
+}
+
+/// 获取字段统计信息
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_field_statistics(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+    field: String,
+) -> Result<serde_json::Value, String> {
+    debug!("处理获取字段统计信息命令: {} - {} - {} - {}", connection_id, database, table, field);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 执行聚合查询
+    let stats_query = format!(
+        "SELECT MAX(\"{}\"), MIN(\"{}\"), MEAN(\"{}\"), COUNT(\"{}\") FROM \"{}\"",
+        field, field, field, field, table
+    );
+    let stats_result = client.execute_query(&stats_query, Some(&database)).await
+        .map_err(|e| format!("获取字段统计失败: {}", e))?;
+
+    let rows = stats_result.rows();
+    let row = rows.first();
+    let max_value = row.and_then(|r| r.get(1)).cloned();
+    let min_value = row.and_then(|r| r.get(2)).cloned();
+    let mean_value = row.and_then(|r| r.get(3)).cloned();
+    let count_value = row.and_then(|r| r.get(4)).and_then(|v| v.as_i64()).unwrap_or(0);
+
+    Ok(serde_json::json!({
+        "field": field,
+        "table": table,
+        "database": database,
+        "max": max_value,
+        "min": min_value,
+        "mean": mean_value,
+        "count": count_value
+    }))
+}
+
+/// 获取字段数值分布
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_field_distribution(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+    field: String,
+    buckets: Option<i64>,
+) -> Result<serde_json::Value, String> {
+    debug!("处理获取字段分布命令: {} - {} - {} - {}", connection_id, database, table, field);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    let bucket_count = buckets.unwrap_or(10);
+
+    // 先获取最大最小值
+    let range_query = format!("SELECT MAX(\"{}\"), MIN(\"{}\") FROM \"{}\"", field, field, table);
+    let range_result = client.execute_query(&range_query, Some(&database)).await
+        .map_err(|e| format!("获取字段范围失败: {}", e))?;
+
+    let rows = range_result.rows();
+    let row = rows.first();
+    let max_val = row.and_then(|r| r.get(1)).and_then(|v| v.as_f64()).unwrap_or(0.0);
+    let min_val = row.and_then(|r| r.get(2)).and_then(|v| v.as_f64()).unwrap_or(0.0);
+
+    // 计算分布（简化版本，实际应该使用直方图）
+    let bucket_size = (max_val - min_val) / bucket_count as f64;
+    let mut distribution = Vec::new();
+
+    for i in 0..bucket_count {
+        let bucket_min = min_val + (i as f64 * bucket_size);
+        let bucket_max = bucket_min + bucket_size;
+
+        distribution.push(serde_json::json!({
+            "min": bucket_min,
+            "max": bucket_max,
+            "count": 0  // 简化版本，实际需要查询每个区间的数量
+        }));
+    }
+
+    Ok(serde_json::json!({
+        "field": field,
+        "table": table,
+        "database": database,
+        "min": min_val,
+        "max": max_val,
+        "buckets": distribution
+    }))
+}
+
+/// 获取标签详细信息
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_tag_details(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+    tag: String,
+) -> Result<serde_json::Value, String> {
+    debug!("处理获取标签详细信息命令: {} - {} - {} - {}", connection_id, database, table, tag);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取标签值列表
+    let values_query = format!("SHOW TAG VALUES ON \"{}\" FROM \"{}\" WITH KEY = \"{}\"", database, table, tag);
+    let values_result = client.execute_query(&values_query, Some(&database)).await
+        .map_err(|e| format!("获取标签值失败: {}", e))?;
+
+    let values: Vec<String> = values_result.rows()
+        .iter()
+        .filter_map(|row| row.get(1))
+        .filter_map(|v| v.as_str())
+        .map(|s| s.to_string())
+        .collect();
+
+    Ok(serde_json::json!({
+        "tag": tag,
+        "table": table,
+        "database": database,
+        "values": values,
+        "cardinality": values.len()
+    }))
+}
+
+/// 获取标签基数统计
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_tag_cardinality(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+    tag: String,
+) -> Result<serde_json::Value, String> {
+    debug!("处理获取标签基数命令: {} - {} - {} - {}", connection_id, database, table, tag);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取标签值数量
+    let values_query = format!("SHOW TAG VALUES ON \"{}\" FROM \"{}\" WITH KEY = \"{}\"", database, table, tag);
+    let values_result = client.execute_query(&values_query, Some(&database)).await
+        .map_err(|e| format!("获取标签值失败: {}", e))?;
+
+    let cardinality = values_result.rows().len();
+
+    Ok(serde_json::json!({
+        "tag": tag,
+        "table": table,
+        "database": database,
+        "cardinality": cardinality
+    }))
+}
+
+/// 获取标签值分布
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_tag_distribution(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    table: String,
+    tag: String,
+) -> Result<serde_json::Value, String> {
+    debug!("处理获取标签分布命令: {} - {} - {} - {}", connection_id, database, table, tag);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取标签值列表
+    let values_query = format!("SHOW TAG VALUES ON \"{}\" FROM \"{}\" WITH KEY = \"{}\"", database, table, tag);
+    let values_result = client.execute_query(&values_query, Some(&database)).await
+        .map_err(|e| format!("获取标签值失败: {}", e))?;
+
+    let mut distribution = Vec::new();
+    for row in values_result.rows() {
+        if let Some(value) = row.get(1).and_then(|v| v.as_str()) {
+            // 统计每个标签值的记录数
+            let count_query = format!(
+                "SELECT COUNT(*) FROM \"{}\" WHERE \"{}\" = '{}'",
+                table, tag, value
+            );
+            let count_result = client.execute_query(&count_query, Some(&database)).await.ok();
+
+            let count = if let Some(result) = count_result {
+                result.rows().first()
+                    .and_then(|r| r.get(1))
+                    .and_then(|v| v.as_i64())
+                    .unwrap_or(0)
+            } else {
+                0
+            };
+
+            distribution.push(serde_json::json!({
+                "value": value,
+                "count": count
+            }));
+        }
+    }
+
+    Ok(serde_json::json!({
+        "tag": tag,
+        "table": table,
+        "database": database,
+        "distribution": distribution
+    }))
+}
+
 /// 导出表数据
 #[tauri::command]
 pub async fn export_table_data(

@@ -1,12 +1,20 @@
 import { useCallback } from 'react';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { showMessage } from '@/utils/message';
-import type { ManagementNodeDialogState } from '@/types/databaseExplorer';
+import type {
+    ManagementNodeDialogState,
+    FieldDetailDialogState,
+    TagDetailDialogState,
+    ConnectionDetailDialogState
+} from '@/types/databaseExplorer';
 
 interface UseNodeActivateHandlerProps {
     onCreateDataBrowserTab?: (connectionId: string, database: string, table: string) => void;
     openDatabase: (connectionId: string, database: string) => void;
     setManagementNodeDialog: React.Dispatch<React.SetStateAction<ManagementNodeDialogState>>;
+    setFieldDetailDialog: React.Dispatch<React.SetStateAction<FieldDetailDialogState>>;
+    setTagDetailDialog: React.Dispatch<React.SetStateAction<TagDetailDialogState>>;
+    setConnectionDetailDialog: React.Dispatch<React.SetStateAction<ConnectionDetailDialogState>>;
     setContextMenuOpen: (open: boolean) => void;
     contextMenuOpenRef: React.MutableRefObject<boolean>;
 }
@@ -18,6 +26,9 @@ export const useNodeActivateHandler = ({
     onCreateDataBrowserTab,
     openDatabase,
     setManagementNodeDialog,
+    setFieldDetailDialog,
+    setTagDetailDialog,
+    setConnectionDetailDialog,
     setContextMenuOpen,
     contextMenuOpenRef,
 }: UseNodeActivateHandlerProps) => {
@@ -69,9 +80,33 @@ export const useNodeActivateHandler = ({
                 onCreateDataBrowserTab(connectionId, database, table);
                 showMessage.success(`正在打开时间序列 "${table}"`);
             }
-        } else if (nodeType === 'field' || nodeType === 'tag') {
-            // 字段/标签节点：显示详情
-            showMessage.info(`字段/标签: ${node.name}`);
+        } else if (nodeType === 'field') {
+            // 字段节点：打开字段详情对话框
+            console.log(`📊 [DatabaseExplorer] 双击字段节点，打开详情: ${node.name}`);
+            setFieldDetailDialog({
+                open: true,
+                connectionId,
+                database,
+                table,
+                field: node.name,
+            });
+        } else if (nodeType === 'tag') {
+            // 标签节点：打开标签详情对话框
+            console.log(`🏷️ [DatabaseExplorer] 双击标签节点，打开详情: ${node.name}`);
+            setTagDetailDialog({
+                open: true,
+                connectionId,
+                database,
+                table,
+                tag: node.name,
+            });
+        } else if (nodeType === 'connection') {
+            // 连接节点：打开连接详情对话框
+            console.log(`🔌 [DatabaseExplorer] 双击连接节点，打开详情: ${node.name}`);
+            setConnectionDetailDialog({
+                open: true,
+                connectionId,
+            });
         } else if (
             nodeType === 'function' ||
             nodeType === 'trigger' ||
@@ -94,6 +129,9 @@ export const useNodeActivateHandler = ({
         onCreateDataBrowserTab,
         openDatabase,
         setManagementNodeDialog,
+        setFieldDetailDialog,
+        setTagDetailDialog,
+        setConnectionDetailDialog,
         setContextMenuOpen,
         contextMenuOpenRef,
     ]);

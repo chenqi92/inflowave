@@ -1,6 +1,8 @@
 import React, {useState, useCallback, startTransition, useEffect, useRef} from 'react';
 import { GlideDataTable, type ColumnConfig, type DataRow } from '@/components/ui/GlideDataTable';
 import { TableToolbar } from '@/components/ui/TableToolbar';
+import { ExportConfigDialog } from './ExportConfigDialog';
+import { exportQueryResult, ExportConfig } from '@/utils/dataExport';
 import {
     Tabs,
     TabsContent,
@@ -144,7 +146,48 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         'line'
     );
 
+    // 导出配置对话框状态
+    const [exportDialogOpen, setExportDialogOpen] = useState(false);
 
+    // 处理导出
+    const handleExport = useCallback(async (config: ExportConfig) => {
+        if (!result) {
+            showMessage.warning('没有数据可导出');
+            return;
+        }
+
+        try {
+            const success = await exportQueryResult(
+                result,
+                config,
+                {
+                    database: undefined, // 可以从上下文获取
+                    tableName: 'query_result',
+                    query: executedQuery,
+                }
+            );
+
+            if (success) {
+                showMessage.success('数据导出成功');
+            }
+        } catch (error) {
+            console.error('导出失败:', error);
+            showMessage.error(`导出失败: ${error}`);
+        }
+    }, [result, executedQuery]);
+
+    // 快速导出 CSV
+    const handleQuickExportCSV = useCallback(async () => {
+        if (!result) {
+            showMessage.warning('没有数据可导出');
+            return;
+        }
+
+        await handleExport({
+            format: 'csv',
+            filename: `query_result_${Date.now()}`,
+        });
+    }, [result, handleExport]);
 
     // 初始化右键菜单
     const {
@@ -288,24 +331,8 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         };
     };
 
-    // 导出数据
-    const handleExport = async () => {
-        if (!result) return;
-
-        try {
-            const exportData = {
-                format: exportFormat,
-                data: result,
-                filename: `query_result_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}`,
-            };
-
-            await safeTauriInvoke('export_query_data', exportData);
-            showMessage.success(`数据已导出为 ${exportFormat.toUpperCase()} 格式`);
-            setExportModalVisible(false);
-        } catch (error) {
-            showMessage.error(`导出失败: ${error}`);
-        }
-    };
+    // 旧的导出函数已被新的 handleExport (line 153) 替代
+    // 已删除重复的 handleExport 函数
 
     // 检查数据是否适合图表显示
     const isChartable = (queryResult: QueryResult) => {
@@ -459,14 +486,8 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                         rowCount={advancedDataSource.length}
                         loading={false}
                         showRefresh={false}
-                        onQuickExportCSV={() => {
-                            console.log('快速导出CSV');
-                            // 这里可以添加快速导出逻辑
-                        }}
-                        onAdvancedExport={() => {
-                            console.log('高级导出选项');
-                            // 这里可以添加高级导出逻辑
-                        }}
+                        onQuickExportCSV={handleQuickExportCSV}
+                        onAdvancedExport={() => setExportDialogOpen(true)}
                         showColumnSelector={false}
                     />
 
@@ -985,50 +1006,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                 )}
             </CardContent>
 
-            {/* 导出对话框 */}
-            <Dialog open={exportModalVisible} onOpenChange={setExportModalVisible}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>导出查询结果</DialogTitle>
-                        <DialogDescription>
-                            选择导出格式并确认导出数据
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="space-y-4">
-                        <div>
-                            <Text className="font-medium">导出格式:</Text>
-                            <Select value={exportFormat}
-                                    onValueChange={(value) => setExportFormat(value as 'csv' | 'json' | 'excel')}>
-                                <SelectTrigger className="w-full mt-2">
-                                    <SelectValue placeholder='选择导出格式'/>
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value='csv'>CSV - 逗号分隔值</SelectItem>
-                                    <SelectItem value='json'>JSON - JavaScript 对象表示法</SelectItem>
-                                    <SelectItem value='excel'>Excel - Microsoft Excel 格式</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        {stats && (
-                            <div>
-                                <Text className="text-muted-foreground">
-                                    将导出 {stats.totalRows} 行 × {stats.columns} 列数据
-                                </Text>
-                            </div>
-                        )}
-                    </div>
-
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setExportModalVisible(false)}>
-                            取消
-                        </Button>
-                        <Button onClick={handleExport}>
-                            导出
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* 旧的导出对话框已被 ExportConfigDialog 替代 */}
 
             {/* 右键菜单 */}
             <ContextMenu
@@ -1044,6 +1022,16 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                         showMessage.success(`SQL 已生成: ${description}`);
                     }
                 }}
+            />
+
+            {/* 导出配置对话框 */}
+            <ExportConfigDialog
+                open={exportDialogOpen}
+                onClose={() => setExportDialogOpen(false)}
+                onExport={handleExport}
+                defaultFilename={`query_result_${Date.now()}`}
+                totalRows={result?.rowCount || 0}
+                totalColumns={result?.columns?.length || 0}
             />
         </Card>
     );

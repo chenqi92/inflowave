@@ -505,3 +505,302 @@ pub async fn get_iotdb_triggers(
 
     Ok(triggers)
 }
+
+// IoTDB 模板信息
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TemplateInfo {
+    pub name: String,
+    pub measurements: Vec<String>,
+    pub data_types: Vec<String>,
+    pub encodings: Vec<String>,
+    pub compressions: Vec<String>,
+}
+
+/// 获取 IoTDB 模板列表
+#[tauri::command]
+pub async fn get_iotdb_templates(
+    connection_id: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<Vec<String>, String> {
+    debug!("获取 IoTDB 模板列表: {}", connection_id);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let result = client
+        .execute_query("SHOW SCHEMA TEMPLATES", None)
+        .await
+        .map_err(|e| format!("获取模板列表失败: {}", e))?;
+
+    let mut templates = Vec::new();
+    for row in result.rows() {
+        if let Some(name) = row.get(0).and_then(|v| v.as_str()) {
+            templates.push(name.to_string());
+        }
+    }
+
+    Ok(templates)
+}
+
+/// 获取 IoTDB 模板详细信息
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_iotdb_template_info(
+    connection_id: String,
+    template_name: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<TemplateInfo, String> {
+    debug!("获取 IoTDB 模板详细信息: {} - {}", connection_id, template_name);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let query = format!("SHOW NODES IN SCHEMA TEMPLATE {}", template_name);
+    let result = client
+        .execute_query(&query, None)
+        .await
+        .map_err(|e| format!("获取模板信息失败: {}", e))?;
+
+    let mut measurements = Vec::new();
+    let mut data_types = Vec::new();
+    let mut encodings = Vec::new();
+    let mut compressions = Vec::new();
+
+    for row in result.rows() {
+        if let Some(measurement) = row.get(0).and_then(|v| v.as_str()) {
+            measurements.push(measurement.to_string());
+        }
+        if let Some(data_type) = row.get(1).and_then(|v| v.as_str()) {
+            data_types.push(data_type.to_string());
+        }
+        if let Some(encoding) = row.get(2).and_then(|v| v.as_str()) {
+            encodings.push(encoding.to_string());
+        }
+        if let Some(compression) = row.get(3).and_then(|v| v.as_str()) {
+            compressions.push(compression.to_string());
+        }
+    }
+
+    Ok(TemplateInfo {
+        name: template_name,
+        measurements,
+        data_types,
+        encodings,
+        compressions,
+    })
+}
+
+/// 创建 IoTDB 模板
+#[tauri::command(rename_all = "camelCase")]
+pub async fn create_iotdb_template(
+    connection_id: String,
+    template_info: TemplateInfo,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<(), String> {
+    debug!("创建 IoTDB 模板: {} - {}", connection_id, template_info.name);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    // 构建创建模板的查询
+    let mut query = format!("CREATE SCHEMA TEMPLATE {}", template_info.name);
+
+    for (i, measurement) in template_info.measurements.iter().enumerate() {
+        let data_type = template_info.data_types.get(i).map(|s| s.as_str()).unwrap_or("FLOAT");
+        let encoding = template_info.encodings.get(i).map(|s| s.as_str()).unwrap_or("PLAIN");
+        let compression = template_info.compressions.get(i).map(|s| s.as_str()).unwrap_or("SNAPPY");
+
+        query.push_str(&format!(
+            " ({} {} encoding {} compression {})",
+            measurement, data_type, encoding, compression
+        ));
+    }
+
+    client
+        .execute_query(&query, None)
+        .await
+        .map_err(|e| format!("创建模板失败: {}", e))?;
+
+    Ok(())
+}
+
+/// 挂载 IoTDB 模板
+#[tauri::command(rename_all = "camelCase")]
+pub async fn mount_iotdb_template(
+    connection_id: String,
+    template_name: String,
+    path: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<(), String> {
+    debug!("挂载 IoTDB 模板: {} - {} 到 {}", connection_id, template_name, path);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let query = format!("SET SCHEMA TEMPLATE {} TO {}", template_name, path);
+    client
+        .execute_query(&query, None)
+        .await
+        .map_err(|e| format!("挂载模板失败: {}", e))?;
+
+    Ok(())
+}
+
+/// 卸载 IoTDB 模板
+#[tauri::command(rename_all = "camelCase")]
+pub async fn unmount_iotdb_template(
+    connection_id: String,
+    template_name: String,
+    path: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<(), String> {
+    debug!("卸载 IoTDB 模板: {} - {} 从 {}", connection_id, template_name, path);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let query = format!("UNSET SCHEMA TEMPLATE {} FROM {}", template_name, path);
+    client
+        .execute_query(&query, None)
+        .await
+        .map_err(|e| format!("卸载模板失败: {}", e))?;
+
+    Ok(())
+}
+
+/// 删除 IoTDB 模板
+#[tauri::command(rename_all = "camelCase")]
+pub async fn drop_iotdb_template(
+    connection_id: String,
+    template_name: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<(), String> {
+    debug!("删除 IoTDB 模板: {} - {}", connection_id, template_name);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let query = format!("DROP SCHEMA TEMPLATE {}", template_name);
+    client
+        .execute_query(&query, None)
+        .await
+        .map_err(|e| format!("删除模板失败: {}", e))?;
+
+    Ok(())
+}
+
+/// 获取 IoTDB 设备信息
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_iotdb_device_info(
+    connection_id: String,
+    device_path: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<serde_json::Value, String> {
+    debug!("获取 IoTDB 设备信息: {} - {}", connection_id, device_path);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    // 获取设备下的时间序列数量
+    let query = format!("SHOW TIMESERIES {}.* ", device_path);
+    let result = client
+        .execute_query(&query, None)
+        .await
+        .map_err(|e| format!("获取设备信息失败: {}", e))?;
+
+    let timeseries_count = result.rows().len();
+
+    Ok(serde_json::json!({
+        "device": device_path,
+        "timeseriesCount": timeseries_count
+    }))
+}
+
+/// 获取 IoTDB 时间序列信息
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_iotdb_timeseries_info(
+    connection_id: String,
+    timeseries_path: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<TimeseriesInfo, String> {
+    debug!("获取 IoTDB 时间序列信息: {} - {}", connection_id, timeseries_path);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    let query = format!("SHOW TIMESERIES {}", timeseries_path);
+    let result = client
+        .execute_query(&query, None)
+        .await
+        .map_err(|e| format!("获取时间序列信息失败: {}", e))?;
+
+    let rows = result.rows();
+    let row = rows.first()
+        .ok_or_else(|| "时间序列不存在".to_string())?;
+
+    Ok(TimeseriesInfo {
+        name: row.get(0).and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        alias: row.get(1).and_then(|v| v.as_str()).map(|s| s.to_string()),
+        storage_group: row.get(2).and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        data_type: row.get(3).and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        encoding: row.get(4).and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        compression: row.get(5).and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        tags: None,
+        attributes: None,
+    })
+}
+
+/// 获取 IoTDB 时间序列统计信息
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_iotdb_timeseries_statistics(
+    connection_id: String,
+    timeseries_path: String,
+    connection_manager: State<'_, Arc<ConnectionManager>>,
+) -> Result<serde_json::Value, String> {
+    debug!("获取 IoTDB 时间序列统计信息: {} - {}", connection_id, timeseries_path);
+
+    let client = connection_manager
+        .get_connection(&connection_id)
+        .await
+        .map_err(|e| format!("获取连接失败: {}", e))?;
+
+    // 获取统计信息
+    let query = format!(
+        "SELECT COUNT({}), MAX_VALUE({}), MIN_VALUE({}), AVG({}) FROM {}",
+        timeseries_path, timeseries_path, timeseries_path, timeseries_path, timeseries_path
+    );
+    let result = client
+        .execute_query(&query, None)
+        .await
+        .map_err(|e| format!("获取统计信息失败: {}", e))?;
+
+    let rows = result.rows();
+    let row = rows.first();
+    let count = row.and_then(|r| r.get(1)).and_then(|v| v.as_i64()).unwrap_or(0);
+    let max_value = row.and_then(|r| r.get(2)).cloned();
+    let min_value = row.and_then(|r| r.get(3)).cloned();
+    let avg_value = row.and_then(|r| r.get(4)).cloned();
+
+    Ok(serde_json::json!({
+        "timeseries": timeseries_path,
+        "count": count,
+        "max": max_value,
+        "min": min_value,
+        "avg": avg_value
+    }))
+}

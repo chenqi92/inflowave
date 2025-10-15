@@ -23,6 +23,7 @@ import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { TreeNodeRenderer, TreeNodeData } from './TreeNodeRenderer';
+import { UnifiedContextMenu } from './UnifiedContextMenu';
 import { TreeNodeType } from '@/types/tree';
 import useResizeObserver from 'use-resize-observer';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
@@ -44,6 +45,7 @@ interface MultiConnectionTreeViewProps {
   onNodeSelect?: (node: TreeNodeData | null) => void;
   onNodeActivate?: (node: TreeNodeData) => void;
   onNodeContextMenu?: (node: TreeNodeData, event: React.MouseEvent) => void;
+  onContextMenuAction?: (action: string, node: TreeNodeData) => void;
   onRefresh?: () => void;
   // 连接处理
   onConnectionToggle?: (connectionId: string) => Promise<void>;
@@ -67,6 +69,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   onNodeSelect,
   onNodeActivate,
   onNodeContextMenu,
+  onContextMenuAction,
   onRefresh,
   onConnectionToggle,
   connectionStatuses,
@@ -939,15 +942,39 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
   // 创建稳定的 children 渲染函数
   // 传递 isDatabaseOpened，让 TreeNodeRenderer 动态计算状态
-  const renderNode = useCallback((props: any) => (
-    <div onContextMenu={(e) => handleContextMenu(props.node, e)}>
-      <TreeNodeRenderer
-        {...props}
-        onNodeDoubleClick={handleNodeDoubleClick}
-        isDatabaseOpened={isDatabaseOpened}
-      />
-    </div>
-  ), [handleContextMenu, handleNodeDoubleClick, isDatabaseOpened]);
+  // 使用 UnifiedContextMenu 包装节点以提供右键菜单
+  const renderNode = useCallback((props: any) => {
+    const nodeData = props.node.data;
+
+    // 如果提供了 onContextMenuAction，使用 UnifiedContextMenu
+    if (onContextMenuAction) {
+      return (
+        <UnifiedContextMenu
+          node={nodeData}
+          onAction={onContextMenuAction}
+          isDatabaseOpened={isDatabaseOpened}
+          isFavorite={isFavorite}
+        >
+          <TreeNodeRenderer
+            {...props}
+            onNodeDoubleClick={handleNodeDoubleClick}
+            isDatabaseOpened={isDatabaseOpened}
+          />
+        </UnifiedContextMenu>
+      );
+    }
+
+    // 否则使用旧的 onContextMenu 方式（向后兼容）
+    return (
+      <div onContextMenu={(e) => handleContextMenu(props.node, e)}>
+        <TreeNodeRenderer
+          {...props}
+          onNodeDoubleClick={handleNodeDoubleClick}
+          isDatabaseOpened={isDatabaseOpened}
+        />
+      </div>
+    );
+  }, [onContextMenuAction, handleContextMenu, handleNodeDoubleClick, isDatabaseOpened, isFavorite]);
 
   // 优化：只在初始加载且没有数据时显示全局 loading
   // 避免在后续操作时整个树闪烁
@@ -983,8 +1010,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         data={filteredData}
         width={width}
         height={height}
-        indent={24}
-        rowHeight={32}
+        indent={20}
+        rowHeight={36}
         overscanCount={10}
         onSelect={handleSelect}
         onToggle={handleTreeToggle}
@@ -1092,6 +1119,7 @@ const arePropsEqual = (
     prevProps.onNodeSelect !== nextProps.onNodeSelect ||
     prevProps.onNodeActivate !== nextProps.onNodeActivate ||
     prevProps.onNodeContextMenu !== nextProps.onNodeContextMenu ||
+    prevProps.onContextMenuAction !== nextProps.onContextMenuAction ||
     prevProps.onRefresh !== nextProps.onRefresh ||
     prevProps.onConnectionToggle !== nextProps.onConnectionToggle ||
     prevProps.isFavorite !== nextProps.isFavorite ||

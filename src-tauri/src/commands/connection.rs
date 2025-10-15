@@ -280,6 +280,88 @@ pub async fn get_connection_pool_stats(
         })
 }
 
+/// 获取连接详细信息（包括版本、服务器信息等）
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_connection_info(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+) -> Result<serde_json::Value, String> {
+    debug!("处理获取连接详细信息命令: {}", connection_id);
+
+    // 获取连接配置
+    let config = connection_service.get_connection(&connection_id).await
+        .ok_or_else(|| format!("连接不存在: {}", connection_id))?;
+
+    // 获取连接状态
+    let status = connection_service.get_connection_status(&connection_id).await;
+
+    // 尝试获取服务器信息
+    let server_info = if let Some(status) = &status {
+        if matches!(status.status, crate::models::ConnectionState::Connected) {
+            // 获取数据库客户端
+            let manager = connection_service.get_manager();
+            match manager.get_connection(&connection_id).await {
+                Ok(client) => {
+                    // 根据数据库类型获取不同的服务器信息
+                    let db_type = client.get_database_type();
+                    match db_type {
+                        crate::models::DatabaseType::InfluxDB => {
+                            // InfluxDB: 执行 SHOW DIAGNOSTICS 获取信息
+                            match client.execute_query("SHOW DIAGNOSTICS", None).await {
+                                Ok(result) => Some(serde_json::json!({
+                                    "type": "influxdb",
+                                    "diagnostics": result
+                                })),
+                                Err(_) => None
+                            }
+                        },
+                        crate::models::DatabaseType::IoTDB => {
+                            // IoTDB: 获取服务器信息
+                            Some(serde_json::json!({
+                                "type": "iotdb",
+                                "version": "1.x"
+                            }))
+                        },
+                        crate::models::DatabaseType::Prometheus => {
+                            // Prometheus: 获取服务器信息
+                            Some(serde_json::json!({
+                                "type": "prometheus"
+                            }))
+                        },
+                        crate::models::DatabaseType::Elasticsearch => {
+                            // Elasticsearch: 获取服务器信息
+                            Some(serde_json::json!({
+                                "type": "elasticsearch"
+                            }))
+                        }
+                    }
+                },
+                Err(_) => None
+            }
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
+    // 构建详细信息
+    let info = serde_json::json!({
+        "id": config.id,
+        "name": config.name,
+        "dbType": config.db_type,
+        "host": config.host,
+        "port": config.port,
+        "username": config.username,
+        "status": status,
+        "serverInfo": server_info,
+        "createdAt": config.created_at,
+        "updatedAt": config.updated_at,
+    });
+
+    Ok(info)
+}
+
 /// 调试：获取连接管理器状态
 #[tauri::command]
 pub async fn debug_connection_manager(

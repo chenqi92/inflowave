@@ -9,6 +9,8 @@ import type {ExternalToast} from 'sonner';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { getDatabaseConnectionError } from '@/utils/userFriendlyErrors';
 import { addNotification } from '@/store/notifications';
+import { errorHandler, formatErrorForDisplay } from '@/utils/errorHandler';
+import type { ErrorDetails, RecoverySuggestion } from '@/types/error';
 
 // 消息类型定义
 export type MessageType = 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -784,6 +786,132 @@ export const setMessageInstance = () => {
 };
 export const setNotificationInstance = () => {
 };
+
+/**
+ * 增强的错误提示系统
+ * 集成错误分析和恢复建议
+ */
+export const enhancedError = {
+    /**
+     * 显示增强的错误提示
+     */
+    show: async (error: Error | unknown, context?: Record<string, any>) => {
+        // 分析错误
+        const details = errorHandler.analyzeError(error, context);
+        const formatted = formatErrorForDisplay(details);
+
+        // 构建 toast 选项
+        const options = await createToastOptions();
+        if (options === null) return; // 通知被禁用
+
+        // 显示错误 toast
+        const toastId = toast.error(formatted.message, {
+            ...options,
+            description: formatted.description,
+            duration: 8000, // 错误提示显示更长时间
+            action: formatted.suggestions.length > 0 ? {
+                label: '查看建议',
+                onClick: () => {
+                    // 显示详细的恢复建议
+                    showRecoverySuggestions(formatted.suggestions);
+                },
+            } : undefined,
+        });
+
+        // 添加到通知中心
+        addNotification.error(
+            formatted.title,
+            formatted.message,
+            'error-handler'
+        );
+
+        // 记录日志
+        await errorHandler.handleError(error, {
+            context,
+            shouldDisplay: false, // 已经显示了
+            shouldLog: true,
+        });
+
+        return toastId;
+    },
+
+    /**
+     * 显示带有自定义建议的错误
+     */
+    showWithSuggestions: async (
+        error: Error | unknown,
+        customSuggestions: RecoverySuggestion[],
+        context?: Record<string, any>
+    ) => {
+        const details = errorHandler.analyzeError(error, context);
+        const formatted = formatErrorForDisplay(details);
+
+        // 合并自定义建议
+        const allSuggestions = [
+            ...customSuggestions,
+            ...formatted.suggestions,
+        ];
+
+        const options = await createToastOptions();
+        if (options === null) return;
+
+        const toastId = toast.error(formatted.message, {
+            ...options,
+            description: formatted.description,
+            duration: 8000,
+            action: {
+                label: '查看建议',
+                onClick: () => {
+                    showRecoverySuggestions(allSuggestions);
+                },
+            },
+        });
+
+        addNotification.error(
+            formatted.title,
+            formatted.message,
+            'error-handler'
+        );
+
+        await errorHandler.handleError(error, {
+            context,
+            customSuggestions,
+            shouldDisplay: false,
+            shouldLog: true,
+        });
+
+        return toastId;
+    },
+
+    /**
+     * 快速显示错误（不分析）
+     */
+    quick: async (message: string, duration?: number) => {
+        const options = await createToastOptions(duration);
+        if (options === null) return;
+
+        return toast.error(message, options);
+    },
+};
+
+/**
+ * 显示恢复建议对话框
+ */
+function showRecoverySuggestions(suggestions: RecoverySuggestion[]) {
+    // 使用 toast 显示建议列表
+    suggestions.forEach((suggestion, index) => {
+        setTimeout(() => {
+            toast.info(suggestion.title, {
+                description: suggestion.description,
+                duration: 6000,
+                action: suggestion.action && suggestion.actionLabel ? {
+                    label: suggestion.actionLabel,
+                    onClick: suggestion.action,
+                } : undefined,
+            });
+        }, index * 300); // 错开显示时间
+    });
+}
 
 // 便捷的全局访问
 export {

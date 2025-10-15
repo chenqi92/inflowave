@@ -28,7 +28,7 @@ import type { EditorTab } from './TabManager';
 import { useSmartSuggestion } from '@/hooks/useSmartSuggestion';
 import { SmartSuggestionPopup } from './SmartSuggestionPopup';
 import type { DataSourceType } from '@/utils/suggestionTypes';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/Card';
 import { Separator } from '@/components/ui/Separator';
 import {
   Scissors,

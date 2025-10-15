@@ -9,7 +9,7 @@ import {
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Separator } from '@/components/ui/Separator';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import {
   Info,
   Database,
@@ -19,7 +19,11 @@ import {
   Clock,
   BarChart3,
   HardDrive,
-  TrendingUp
+  TrendingUp,
+  Code,
+  Eye,
+  FileText,
+  Tag
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
@@ -27,6 +31,7 @@ import { writeToClipboard } from '@/utils/clipboard';
 import { useConnectionStore } from '@/store/connection';
 import type { QueryResult } from '@/types';
 import type { InfluxDBVersion } from '@/types/database';
+import TimeSeriesLineChart from '@/components/charts/TimeSeriesLineChart';
 
 interface TableInfoDialogProps {
   open: boolean;
@@ -64,6 +69,12 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
   const [loading, setLoading] = useState(false);
   const [info, setInfo] = useState<TableInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [fields, setFields] = useState<Array<{ name: string; type: string }>>([]);
+  const [tags, setTags] = useState<string[]>([]);
+  const [previewData, setPreviewData] = useState<QueryResult | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const [timeSeriesData, setTimeSeriesData] = useState<QueryResult | null>(null);
+  const [loadingTimeSeries, setLoadingTimeSeries] = useState(false);
 
   // 获取连接信息以确定数据源类型
   const { getConnection } = useConnectionStore();
@@ -177,6 +188,31 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
 
       const fieldCount = fieldsResult?.data?.length || 0;
       const tagCount = tagsResult?.data?.length || 0;
+
+      // 解析字段信息
+      const parsedFields: Array<{ name: string; type: string }> = [];
+      if (fieldsResult?.data) {
+        fieldsResult.data.forEach((row) => {
+          if (row.length >= 2) {
+            parsedFields.push({
+              name: row[0] as string,
+              type: row[1] as string,
+            });
+          }
+        });
+      }
+      setFields(parsedFields);
+
+      // 解析标签信息
+      const parsedTags: string[] = [];
+      if (tagsResult?.data) {
+        tagsResult.data.forEach((row) => {
+          if (row.length >= 1) {
+            parsedTags.push(row[0] as string);
+          }
+        });
+      }
+      setTags(parsedTags);
 
       let firstRecord = '未知';
       let lastRecord = '未知';
@@ -306,6 +342,86 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('zh-CN').format(num);
+  };
+
+  const loadPreviewData = async () => {
+    if (!connectionId || !database || !tableName) return;
+
+    setLoadingPreview(true);
+    try {
+      const query = `SELECT * FROM "${tableName}" LIMIT 10`;
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
+        request: {
+          connectionId,
+          database,
+          query,
+        },
+      });
+      setPreviewData(result);
+    } catch (error: any) {
+      showMessage.error(`加载预览数据失败: ${error.message || error}`);
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  const loadTimeSeriesData = async () => {
+    if (!connectionId || !database || !tableName) return;
+
+    setLoadingTimeSeries(true);
+    try {
+      // 查询最近1小时的数据，限制50个点
+      const query = `SELECT * FROM "${tableName}" WHERE time > now() - 1h ORDER BY time DESC LIMIT 50`;
+      const result = await safeTauriInvoke<QueryResult>('execute_query', {
+        request: {
+          connectionId,
+          database,
+          query,
+        },
+      });
+      setTimeSeriesData(result);
+    } catch (error: any) {
+      console.error('加载时间序列数据失败:', error);
+      showMessage.error(`加载时间序列数据失败: ${error.message || error}`);
+    } finally {
+      setLoadingTimeSeries(false);
+    }
+  };
+
+  const generateQueryTemplate = async (type: 'select' | 'count' | 'aggregate' | 'groupby') => {
+    let query = '';
+    switch (type) {
+      case 'select':
+        query = `SELECT * FROM "${tableName}" WHERE time > now() - 1h LIMIT 100`;
+        break;
+      case 'count':
+        query = `SELECT COUNT(*) FROM "${tableName}" WHERE time > now() - 1h`;
+        break;
+      case 'aggregate':
+        if (fields.length > 0) {
+          const firstField = fields[0].name;
+          query = `SELECT MEAN("${firstField}"), MAX("${firstField}"), MIN("${firstField}") FROM "${tableName}" WHERE time > now() - 1h`;
+        } else {
+          query = `SELECT * FROM "${tableName}" WHERE time > now() - 1h`;
+        }
+        break;
+      case 'groupby':
+        if (tags.length > 0 && fields.length > 0) {
+          const firstTag = tags[0];
+          const firstField = fields[0].name;
+          query = `SELECT MEAN("${firstField}") FROM "${tableName}" WHERE time > now() - 1h GROUP BY "${firstTag}"`;
+        } else {
+          query = `SELECT * FROM "${tableName}" WHERE time > now() - 1h`;
+        }
+        break;
+    }
+
+    try {
+      await writeToClipboard(query);
+      showMessage.success('查询模板已复制到剪贴板');
+    } catch (error) {
+      showMessage.error('复制失败');
+    }
   };
 
   return (
@@ -486,6 +602,188 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
                     </div>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* 字段结构 */}
+              {fields.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-cyan-500" />
+                      字段结构 ({fields.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {fields.map((field, index) => (
+                        <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                          <code className="text-xs font-mono">{field.name}</code>
+                          <Badge variant="outline" className="text-xs">{field.type}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* 标签列表 */}
+              {tags.length > 0 && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-amber-500" />
+                      标签列表 ({tags.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* 查询模板 */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <Code className="w-4 h-4 text-indigo-500" />
+                    查询模板
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      onClick={() => generateQueryTemplate('select')}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      SELECT 查询
+                    </Button>
+                    <Button
+                      onClick={() => generateQueryTemplate('count')}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      COUNT 查询
+                    </Button>
+                    <Button
+                      onClick={() => generateQueryTemplate('aggregate')}
+                      variant="outline"
+                      size="sm"
+                      disabled={fields.length === 0}
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      聚合查询
+                    </Button>
+                    <Button
+                      onClick={() => generateQueryTemplate('groupby')}
+                      variant="outline"
+                      size="sm"
+                      disabled={tags.length === 0 || fields.length === 0}
+                    >
+                      <Copy className="w-3 h-3 mr-1" />
+                      分组查询
+                    </Button>
+                    <Button
+                      onClick={loadPreviewData}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingPreview}
+                    >
+                      {loadingPreview ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <Eye className="w-3 h-3 mr-1" />
+                      )}
+                      数据预览
+                    </Button>
+                    <Button
+                      onClick={loadTimeSeriesData}
+                      variant="outline"
+                      size="sm"
+                      disabled={loadingTimeSeries}
+                    >
+                      {loadingTimeSeries ? (
+                        <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                      ) : (
+                        <TrendingUp className="w-3 h-3 mr-1" />
+                      )}
+                      时间序列图
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* 数据预览 */}
+              {previewData && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-green-500" />
+                      数据预览
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b">
+                            {previewData.columns?.map((col, index) => (
+                              <th key={index} className="text-left p-2 font-medium">
+                                {col}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {previewData.data?.slice(0, 10).map((row, rowIndex) => (
+                            <tr key={rowIndex} className="border-b hover:bg-muted/50">
+                              {row.map((cell, cellIndex) => (
+                                <td key={cellIndex} className="p-2">
+                                  {cell !== null && cell !== undefined ? String(cell) : '-'}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      显示前 {Math.min(10, previewData.data?.length || 0)} 条记录
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* 时间序列图表 */}
+              {timeSeriesData && timeSeriesData.data && timeSeriesData.data.length > 0 && (
+                <TimeSeriesLineChart
+                  data={timeSeriesData.data.map((row) => {
+                    const dataPoint: any = {
+                      time: row[0], // 第一列是时间
+                    };
+                    // 添加所有字段值
+                    timeSeriesData.columns?.slice(1).forEach((col, index) => {
+                      const value = row[index + 1];
+                      // 只添加数值类型的字段
+                      if (typeof value === 'number') {
+                        dataPoint[col] = value;
+                      }
+                    });
+                    return dataPoint;
+                  }).reverse()} // 反转数据使时间从早到晚
+                  title="时间序列数据趋势 (最近1小时)"
+                  height={300}
+                  showLegend={true}
+                  showGrid={true}
+                />
               )}
 
               <Separator />

@@ -71,6 +71,18 @@ export interface DialogStates {
         database: string;
         tableName: string;
     };
+    iotdbTemplate?: {
+        open: boolean;
+        connectionId: string;
+        mode: 'list' | 'create' | 'mount';
+        devicePath?: string;
+    };
+    queryBuilder?: {
+        open: boolean;
+        connectionId: string;
+        database: string;
+        table: string;
+    };
 }
 
 /**
@@ -100,6 +112,36 @@ export interface ManagementNodeDialogState {
     nodeType: string;
     nodeName: string;
     nodeCategory: string;
+}
+
+/**
+ * Connection detail dialog state
+ */
+export interface ConnectionDetailDialogState {
+    open: boolean;
+    connectionId: string;
+}
+
+/**
+ * Field detail dialog state
+ */
+export interface FieldDetailDialogState {
+    open: boolean;
+    connectionId: string;
+    database: string;
+    table: string;
+    field: string;
+}
+
+/**
+ * Tag detail dialog state
+ */
+export interface TagDetailDialogState {
+    open: boolean;
+    connectionId: string;
+    database: string;
+    table: string;
+    tag: string;
 }
 
 /**

@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import { ChevronLeft, ChevronRight, CalendarIcon } from 'lucide-react';
 import { Button } from './Button';
 import { Input } from './Input';
-import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import { Popover, PopoverContent, PopoverTrigger } from './Popover';
 
 interface DatePickerProps {
   className?: string;
