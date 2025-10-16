@@ -22,13 +22,9 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
       const newOpenedDatabases = new Set(state.openedDatabases);
       newOpenedDatabases.add(key);
 
-      // 提取数据库名称列表
-      const newOpenedDatabasesList = Array.from(newOpenedDatabases)
-        .map(k => {
-          const parts = k.split('/');
-          return parts.length >= 2 ? parts.slice(1).join('/') : '';
-        })
-        .filter(db => db !== '');
+      // 🔧 修复：openedDatabasesList 应该保存完整的 "connectionId/database" 格式
+      // 而不是只保存数据库名称，这样才能在 MultiConnectionTreeView 中正确解析
+      const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
       // 始终打印日志，方便调试
       console.log(`📂 [Store] 打开数据库: ${key}`, {
@@ -50,13 +46,8 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
       const newOpenedDatabases = new Set(state.openedDatabases);
       const wasDeleted = newOpenedDatabases.delete(key);
 
-      // 提取数据库名称列表
-      const newOpenedDatabasesList = Array.from(newOpenedDatabases)
-        .map(k => {
-          const parts = k.split('/');
-          return parts.length >= 2 ? parts.slice(1).join('/') : '';
-        })
-        .filter(db => db !== '');
+      // 🔧 修复：openedDatabasesList 应该保存完整的 "connectionId/database" 格式
+      const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
       // 始终打印日志，方便调试
       console.log(`📁 [Store] 关闭数据库: ${key}`, {
@@ -77,21 +68,16 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
     set((state) => {
       const newOpenedDatabases = new Set(state.openedDatabases);
       const closedDatabases: string[] = [];
-      
+
       for (const key of newOpenedDatabases) {
         if (key.startsWith(`${connectionId}/`)) {
           newOpenedDatabases.delete(key);
           closedDatabases.push(key);
         }
       }
-      
-      // 提取数据库名称列表
-      const newOpenedDatabasesList = Array.from(newOpenedDatabases)
-        .map(k => {
-          const parts = k.split('/');
-          return parts.length >= 2 ? parts.slice(1).join('/') : '';
-        })
-        .filter(db => db !== '');
+
+      // 🔧 修复：openedDatabasesList 应该保存完整的 "connectionId/database" 格式
+      const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
       if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
         console.log(`📁 [Store] 关闭连接 ${connectionId} 的所有数据库:`, {

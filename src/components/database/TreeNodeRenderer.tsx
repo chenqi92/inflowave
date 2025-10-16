@@ -42,7 +42,9 @@ interface TreeNodeRendererProps extends NodeRendererProps<TreeNodeData> {
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
 }
 
-export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
+// 🔧 优化：使用 React.memo 避免不必要的重新渲染
+// 只有当 node.data、node.isSelected、node.isOpen 发生变化时才重新渲染
+export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = React.memo(({
   node,
   style,
   dragHandle,
@@ -214,7 +216,53 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = ({
       {isSystemNode && <SystemNodeIndicator />}
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // 🔧 优化：自定义比较函数，只有关键属性变化时才重新渲染
+  // 这样可以避免父组件重新渲染时，所有子节点都重新渲染
+  const prevData = prevProps.node.data;
+  const nextData = nextProps.node.data;
+
+  // 检查节点数据是否变化
+  if (
+    prevData.id !== nextData.id ||
+    prevData.name !== nextData.name ||
+    prevData.nodeType !== nextData.nodeType ||
+    prevData.isLoading !== nextData.isLoading ||
+    prevData.error !== nextData.error ||
+    prevData.isFavorite !== nextData.isFavorite ||
+    prevData.isConnected !== nextData.isConnected ||
+    prevData.children !== nextData.children // 检查 children 引用是否变化
+  ) {
+    return false; // 需要重新渲染
+  }
+
+  // 检查节点状态是否变化
+  if (
+    prevProps.node.isSelected !== nextProps.node.isSelected ||
+    prevProps.node.isOpen !== nextProps.node.isOpen
+  ) {
+    return false; // 需要重新渲染
+  }
+
+  // 🔧 修复4：检查 isDatabaseOpened 函数引用是否变化
+  // 注意：我们不比较函数的返回值，因为那会导致每次都重新渲染
+  // 我们只比较函数引用本身
+  if (prevProps.isDatabaseOpened !== nextProps.isDatabaseOpened) {
+    return false; // 需要重新渲染
+  }
+
+  // 检查其他 props 是否变化
+  if (
+    prevProps.style !== nextProps.style ||
+    prevProps.dragHandle !== nextProps.dragHandle ||
+    prevProps.onNodeDoubleClick !== nextProps.onNodeDoubleClick
+  ) {
+    return false; // 需要重新渲染
+  }
+
+  // 其他情况不需要重新渲染
+  return true;
+});
 
 export default TreeNodeRenderer;
 

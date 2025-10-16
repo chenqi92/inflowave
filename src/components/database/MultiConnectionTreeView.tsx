@@ -634,17 +634,48 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     disconnectedNodesRef.current.clear();
   }, [treeData, clearNodeAndChildrenCache]);
 
-  // 使用 ref 跟踪 handleToggle 和 loadedNodes，避免循环依赖
+  // 使用 ref 跟踪 handleToggle、loadedNodes 和 treeData，避免循环依赖
   const handleToggleRef = useRef(handleToggle);
   const loadedNodesRef = useRef(loadedNodes);
+  const treeDataRef = useRef(treeData);
 
   useEffect(() => {
     handleToggleRef.current = handleToggle;
     loadedNodesRef.current = loadedNodes;
+    treeDataRef.current = treeData;
   });
 
   // 使用 ref 跟踪上一次的 openedDatabasesList，用于检测数据库关闭
   const prevOpenedDatabasesListRef = useRef<string[]>([]);
+
+  // 辅助函数：在树中查找数据库节点（通过 connectionId 和 database 名称）
+  const findDatabaseNodeInTree = useCallback((
+    nodes: TreeNodeData[],
+    connectionId: string,
+    databaseName: string
+  ): TreeNodeData | null => {
+    for (const node of nodes) {
+      // 检查是否为目标数据库节点
+      // 数据库节点的 nodeType 可能是: database, system_database, database3x, storage_group
+      if (
+        (node.nodeType === 'database' ||
+         node.nodeType === 'system_database' ||
+         node.nodeType === 'database3x' ||
+         node.nodeType === 'storage_group') &&
+        node.metadata?.connectionId === connectionId &&
+        node.name === databaseName
+      ) {
+        return node;
+      }
+
+      // 递归查找子节点
+      if (node.children && Array.isArray(node.children)) {
+        const found = findDatabaseNodeInTree(node.children, connectionId, databaseName);
+        if (found) return found;
+      }
+    }
+    return null;
+  }, []);
 
   // 监听 openedDatabasesList 的变化
   useEffect(() => {
@@ -654,103 +685,190 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // 检查是否有数据库被关闭
     const closedDatabases = prevList.filter(db => !currentList.includes(db));
 
+    // 检查是否有数据库被打开（新增的数据库）
+    const openedDatabases = currentList.filter(db => !prevList.includes(db));
+
+    // 处理关闭的数据库
     if (closedDatabases.length > 0) {
       console.log('🔒 [关闭数据库] 检测到数据库关闭:', closedDatabases);
 
-      // 关闭数据库时，收起节点并清除子节点
+      // 🔧 修复2：先收起节点，然后清除子节点和缓存
+      // 收起节点是同步操作，不需要等待状态更新
       closedDatabases.forEach(dbKey => {
+        const parts = dbKey.split('/');
+        if (parts.length >= 2) {
+          const connectionId = parts[0];
+          const database = parts.slice(1).join('/');
+
+          console.log(`🔒 [关闭数据库] 处理数据库: ${database}, connectionId: ${connectionId}`);
+          console.log(`🔒 [关闭数据库] 当前 treeData 长度: ${treeDataRef.current.length}`);
+
+          // 在树中查找数据库节点
+          const dbNode = findDatabaseNodeInTree(treeDataRef.current, connectionId, database);
+          if (dbNode) {
+            console.log(`🔒 [关闭数据库] 找到数据库节点: ${dbNode.id}, nodeType: ${dbNode.nodeType}`);
+            const node = treeRef.current?.get(dbNode.id);
+            if (node) {
+              console.log(`🔒 [关闭数据库] 获取到 arborist 节点, isOpen: ${node.isOpen}`);
+              if (node.isOpen) {
+                console.log(`🔒 [关闭数据库] 收起节点: ${dbNode.id}`);
+                node.close();
+              } else {
+                console.log(`🔒 [关闭数据库] 节点已经是收起状态: ${dbNode.id}`);
+              }
+            } else {
+              console.warn(`🔒 [关闭数据库] 无法从 treeRef 获取节点: ${dbNode.id}`);
+            }
+          } else {
+            console.warn(`🔒 [关闭数据库] 未找到数据库节点: ${database}, connectionId: ${connectionId}`);
+          }
+        }
+      });
+
+      // 然后更新 treeData 清除子节点
+      setTreeData(prevData => {
+        let dataChanged = false;
+
+        const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
+          return nodes.map(n => {
+            // 检查是否是需要关闭的数据库节点
+            for (const dbKey of closedDatabases) {
+              const parts = dbKey.split('/');
+              if (parts.length >= 2) {
+                const connectionId = parts[0];
+                const database = parts.slice(1).join('/');
+
+                // 检查是否为目标数据库节点
+                if (
+                  (n.nodeType === 'database' ||
+                   n.nodeType === 'system_database' ||
+                   n.nodeType === 'database3x' ||
+                   n.nodeType === 'storage_group') &&
+                  n.metadata?.connectionId === connectionId &&
+                  n.name === database
+                ) {
+                  console.log(`🔒 [关闭数据库] 找到节点: ${n.id}, 清除子节点`);
+
+                  // 清除缓存
+                  if (n.children) {
+                    setLoadedNodes(prev => {
+                      const newSet = new Set(prev);
+                      clearNodeAndChildrenCache(n, newSet);
+                      console.log(`🔒 [关闭数据库] 已清除节点缓存: ${n.id}`);
+                      return newSet;
+                    });
+                  }
+
+                  dataChanged = true;
+                  // 返回清除了子节点的新节点
+                  return { ...n, children: undefined };
+                }
+              }
+            }
+
+            // 递归处理子节点
+            if (n.children && Array.isArray(n.children)) {
+              const updatedChildren = updateNode(n.children);
+              if (updatedChildren !== n.children) {
+                dataChanged = true;
+                return { ...n, children: updatedChildren };
+              }
+            }
+
+            return n;
+          });
+        };
+
+        const newData = updateNode(prevData);
+        return dataChanged ? newData : prevData;
+      });
+    }
+
+    // 处理打开的数据库（右键菜单打开数据库时）
+    if (openedDatabases.length > 0) {
+      console.log('🔓 [打开数据库] 检测到数据库打开:', openedDatabases);
+
+      openedDatabases.forEach(dbKey => {
         // dbKey 格式: "connectionId/database"
         const parts = dbKey.split('/');
         if (parts.length >= 2) {
+          const connectionId = parts[0];
           const database = parts.slice(1).join('/');
-          const nodeId = `db_${database}`;
 
-          console.log(`🔒 [关闭数据库] 收起节点并清除子节点: ${nodeId}`);
+          console.log(`🔓 [打开数据库] 处理数据库: ${database}, connectionId: ${connectionId}`);
 
-          // 清除子节点和缓存
-          setTreeData(prevData => {
-            const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
-              for (let i = 0; i < nodes.length; i++) {
-                const n = nodes[i];
+          // 在树中查找数据库节点（使用 ref 获取最新的 treeData）
+          const dbNode = findDatabaseNodeInTree(treeDataRef.current, connectionId, database);
+          if (!dbNode) {
+            console.warn(`🔓 [打开数据库] 未找到数据库节点: ${database}`);
+            return;
+          }
 
-                if (n.id === nodeId) {
-                  // 找到目标节点，清除子节点
-                  const newNodes = [...nodes];
-                  newNodes[i] = { ...n, children: undefined };
+          const nodeId = dbNode.id;
+          console.log(`🔓 [打开数据库] 找到节点: ${nodeId}, 节点类型: ${dbNode.nodeType}`);
 
-                  // 清除缓存
-                  setLoadedNodes(prev => {
-                    const newSet = new Set(prev);
-                    clearNodeAndChildrenCache(n, newSet);
-                    return newSet;
-                  });
+          // 🔧 修复3：标记节点需要自动展开（与双击打开数据库保持一致）
+          nodesToAutoExpandRef.current.add(nodeId);
+          console.log(`🔓 [打开数据库] 标记节点 ${nodeId} 需要自动展开`);
 
-                  return newNodes;
-                }
+          const node = treeRef.current?.get(nodeId);
+          if (node) {
+            const nodeData = node.data as TreeNodeData;
 
-                if (n.children) {
-                  const updatedChildren = updateNode(n.children);
-                  if (updatedChildren !== n.children) {
-                    const newNodes = [...nodes];
-                    newNodes[i] = { ...n, children: updatedChildren };
-                    return newNodes;
-                  }
-                }
+            // 先加载子节点，然后再展开节点
+            // 这样可以确保展开时子节点已经加载，箭头会正确显示
+            if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
+              console.log(`🔓 [打开数据库] 触发子节点加载: ${nodeId}`);
+              // 加载子节点后会自动展开（在 handleToggle 的回调中）
+              handleToggleRef.current(nodeId);
+            } else {
+              // 如果子节点已加载，直接展开
+              if (!node.isOpen) {
+                console.log(`🔓 [打开数据库] 展开节点: ${nodeId}`);
+                node.open();
+              } else {
+                console.log(`🔓 [打开数据库] 节点已经是展开状态: ${nodeId}`);
               }
-              return nodes;
-            };
-            return updateNode(prevData);
-          });
-
-          // 在清除子节点后收起节点
-          setTimeout(() => {
-            const node = treeRef.current?.get(nodeId);
-            if (node && node.isOpen) {
-              console.log(`🔒 [关闭数据库] 收起节点: ${nodeId}`);
-              node.close();
             }
-          }, 50);
+          }
         }
       });
     }
 
-    // 检查是否有需要自动展开的节点（数据库打开时）
+    // 检查是否有需要自动展开的节点（双击打开数据库时）
     if (nodesToAutoExpandRef.current.size > 0) {
       console.log('🔓 [打开数据库] 检查需要自动展开的节点:', Array.from(nodesToAutoExpandRef.current));
 
-      // 使用 setTimeout 确保状态更新完成后再展开节点
-      setTimeout(() => {
-        nodesToAutoExpandRef.current.forEach(nodeId => {
-          const node = treeRef.current?.get(nodeId);
-          if (node) {
-            const nodeData = node.data as TreeNodeData;
-            const connectionId = nodeData.metadata?.connectionId || '';
-            const database = nodeData.name;
+      nodesToAutoExpandRef.current.forEach(nodeId => {
+        const node = treeRef.current?.get(nodeId);
+        if (node) {
+          const nodeData = node.data as TreeNodeData;
+          const connectionId = nodeData.metadata?.connectionId || '';
+          const database = nodeData.name;
 
-            // 检查数据库是否已打开
-            const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, database) : false;
+          // 检查数据库是否已打开
+          const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, database) : false;
 
-            // 只展开已打开的数据库节点
-            if (isActivated && !node.isOpen) {
-              console.log(`🔓 [打开数据库] 自动展开节点: ${nodeId}`);
-              // 先展开节点，然后加载子节点
-              node.open();
-              // 如果子节点未加载，触发加载（使用 ref 避免依赖）
-              if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
-                console.log(`🔓 [打开数据库] 触发子节点加载: ${nodeId}`);
-                handleToggleRef.current(nodeId);
-              }
+          // 只展开已打开的数据库节点
+          if (isActivated && !node.isOpen) {
+            console.log(`🔓 [打开数据库] 自动展开节点: ${nodeId}`);
+            // 1. 展开节点（立即执行）
+            node.open();
+            // 2. 如果子节点未加载，触发加载
+            if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
+              console.log(`🔓 [打开数据库] 触发子节点加载: ${nodeId}`);
+              handleToggleRef.current(nodeId);
             }
           }
-        });
-        // 清空待展开列表
-        nodesToAutoExpandRef.current.clear();
-      }, 100);
+        }
+      });
+      // 清空待展开列表
+      nodesToAutoExpandRef.current.clear();
     }
 
     // 更新 ref
     prevOpenedDatabasesListRef.current = currentList;
-  }, [openedDatabasesList, isDatabaseOpened, clearNodeAndChildrenCache]);
+  }, [openedDatabasesList, isDatabaseOpened, clearNodeAndChildrenCache, findDatabaseNodeInTree]);
 
   // 搜索过滤
   // 优化：使用 ref 缓存上次的 treeData，避免因引用变化导致不必要的重新计算
@@ -860,6 +978,14 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         nodeType === 'storage_group' ||
         nodeType === 'device') {
 
+      // 🔧 修复1：先检查是否已加载子节点，再检查是否需要建立连接
+      // 这样可以确保已加载的节点能够正确切换展开/收起状态
+      if (nodeData.children !== undefined || loadedNodesStateRef.current.has(nodeId)) {
+        console.log(`📂 双击已加载的容器节点，切换展开/收起: ${nodeType}`);
+        node.toggle();
+        return;
+      }
+
       // 特殊处理：连接节点未连接时，先建立连接
       if (nodeType === 'connection' && !nodeData.isConnected) {
         console.log(`📂 双击未连接的连接节点，建立连接: ${nodeType}`);
@@ -891,14 +1017,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         return;
       }
 
-      // 其他容器节点：如果已加载子节点，直接切换展开/收起状态
-      if (nodeData.children !== undefined) {
-        console.log(`📂 双击已加载的容器节点，切换展开/收起: ${nodeType}`);
-        node.toggle();
-        return;
-      }
-
-      // 如果节点未加载子节点（children === undefined），调用 handleToggle 加载数据
+      // 如果节点未加载子节点（children === undefined 且不在缓存中），调用 handleToggle 加载数据
       console.log(`📂 双击容器节点，加载子节点: ${nodeType}`);
       await handleToggle(node.id);
       return;
