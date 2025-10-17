@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   Button,
   Dialog,
@@ -41,6 +41,7 @@ import {
 import { showMessage } from '@/utils/message';
 // import { VersionDetectionDialog } from './VersionDetectionDialog'; // 不再使用
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -206,6 +207,13 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   // const [versionDetectionResult, setVersionDetectionResult] = useState<VersionDetectionResult | null>(null);
   // const [isDetectingVersion, setIsDetectingVersion] = useState(false);
 
+  // 添加保留策略相关状态
+  const [availableRetentionPolicies, setAvailableRetentionPolicies] = useState<string[]>([]);
+  const [loadingRetentionPolicies, setLoadingRetentionPolicies] = useState(false);
+
+  // 跟踪对话框是否真正打开（用于防止测试连接时重置表单）
+  const prevVisibleRef = useRef(visible);
+
   const [formData, setFormData] = useState<FormData>(() => {
     const defaults = createDefaultConnectionConfig();
     return {
@@ -247,8 +255,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
   const isEditing = !!connection?.id;
 
+  // 修复：只在对话框真正打开时重置表单，避免测试连接失败时重置
   useEffect(() => {
-    if (visible) {
+    const isDialogOpening = visible && !prevVisibleRef.current;
+    prevVisibleRef.current = visible;
+
+    if (isDialogOpening) {
       if (connection) {
         const filled = getFilledConnectionConfig(connection);
         setFormData({
@@ -329,8 +341,42 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       }
       setTestResult(null);
       setErrors({});
+      setAvailableRetentionPolicies([]);
     }
   }, [visible, connection]);
+
+  // 获取保留策略列表
+  const fetchRetentionPolicies = useCallback(async (connectionId: string, database: string) => {
+    if (!database || formData.dbType !== 'influxdb' || formData.version !== '1.x') {
+      return;
+    }
+
+    try {
+      setLoadingRetentionPolicies(true);
+      const policies = await safeTauriInvoke<Array<{ name: string }>>('get_retention_policies', {
+        connectionId,
+        database,
+      });
+
+      if (policies && Array.isArray(policies)) {
+        const policyNames = policies.map(p => p.name);
+        setAvailableRetentionPolicies(policyNames);
+      }
+    } catch (error) {
+      console.warn('获取保留策略失败:', error);
+      // 失败时不显示错误，只是不提供建议
+      setAvailableRetentionPolicies([]);
+    } finally {
+      setLoadingRetentionPolicies(false);
+    }
+  }, [formData.dbType, formData.version]);
+
+  // 当数据库字段变化时，尝试获取保留策略
+  useEffect(() => {
+    if (isEditing && connection?.id && formData.database) {
+      fetchRetentionPolicies(connection.id, formData.database);
+    }
+  }, [isEditing, connection?.id, formData.database, fetchRetentionPolicies]);
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -772,10 +818,6 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     <div className='space-y-6'>
       {/* 基本信息 - 始终显示 */}
       <div className='space-y-4'>
-        <h3 className='text-lg font-medium text-foreground border-b pb-2'>
-          基本信息
-        </h3>
-
         {/* 连接名称 */}
         <div className='flex items-start gap-4'>
           <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
@@ -1171,18 +1213,44 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       保留策略:
                     </Label>
                     <div className='flex-1'>
-                      <Input
-                        placeholder='如: autogen'
-                        value={formData.retentionPolicy}
-                        onChange={e =>
-                          handleInputChange('retentionPolicy', e.target.value)
-                        }
-                        autoCapitalize='off'
-                        autoCorrect='off'
-                        className='h-9'
-                      />
+                      <div className='relative'>
+                        <Input
+                          placeholder='如: autogen'
+                          value={formData.retentionPolicy}
+                          onChange={e =>
+                            handleInputChange('retentionPolicy', e.target.value)
+                          }
+                          autoCapitalize='off'
+                          autoCorrect='off'
+                          className='h-9'
+                          list='retention-policy-suggestions'
+                        />
+                        <datalist id='retention-policy-suggestions'>
+                          {/* 常用预设选项 */}
+                          <option value='autogen'>autogen (默认)</option>
+                          <option value='default'>default</option>
+                          <option value='1h'>1h (1小时)</option>
+                          <option value='24h'>24h (1天)</option>
+                          <option value='7d'>7d (7天)</option>
+                          <option value='30d'>30d (30天)</option>
+                          <option value='90d'>90d (90天)</option>
+                          <option value='365d'>365d (1年)</option>
+                          <option value='INF'>INF (永久)</option>
+                          {/* 从数据库获取的保留策略 */}
+                          {availableRetentionPolicies.map(policy => (
+                            <option key={policy} value={policy}>
+                              {policy}
+                            </option>
+                          ))}
+                        </datalist>
+                        {loadingRetentionPolicies && (
+                          <div className='absolute right-2 top-2'>
+                            <Loader2 className='w-4 h-4 animate-spin text-muted-foreground' />
+                          </div>
+                        )}
+                      </div>
                       <p className='text-xs text-muted-foreground mt-1'>
-                        可选，默认保留策略名称
+                        可选，默认保留策略名称。支持自定义输入或从下拉列表选择
                       </p>
                     </div>
                   </div>
@@ -1571,22 +1639,24 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   </SelectContent>
                 </Select>
               </div>
-              <div className='flex-1'>
-                <Label className='text-sm font-medium text-foreground mb-2 block'>
+              <div className='flex-1 flex items-start gap-2'>
+                <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
                   启用SSL:
                 </Label>
-                <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                  <Switch
-                    id='ssl-switch'
-                    checked={formData.ssl}
-                    onCheckedChange={checked => handleInputChange('ssl', checked)}
-                  />
-                  <Label
-                    htmlFor='ssl-switch'
-                    className='text-sm font-medium cursor-pointer'
-                  >
-                    {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
-                  </Label>
+                <div className='flex-1'>
+                  <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                    <Switch
+                      id='ssl-switch'
+                      checked={formData.ssl}
+                      onCheckedChange={checked => handleInputChange('ssl', checked)}
+                    />
+                    <Label
+                      htmlFor='ssl-switch'
+                      className='text-sm font-medium cursor-pointer'
+                    >
+                      {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
+                    </Label>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1742,8 +1812,8 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             </DialogTitle>
           </DialogHeader>
 
-          {/* 可滚动内容区域 */}
-          <div className='flex-1 overflow-y-auto px-6 py-4' style={{ scrollbarGutter: 'stable' }}>
+          {/* 可滚动内容区域 - 减小顶部间距 */}
+          <div className='flex-1 overflow-y-auto px-6 pt-4 pb-4' style={{ scrollbarGutter: 'stable' }}>
             <div className='space-y-6'>
               {/* 连接配置表单 */}
               {renderConnectionForm()}
