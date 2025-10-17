@@ -122,19 +122,11 @@ impl ConnectionService {
             error!("保存连接配置到文件失败: {}", e);
         }
 
-        // 解密密码用于连接
-        let mut runtime_config = config.clone();
-        if let Some(encrypted_password) = &config.password {
-            let decrypted_password = self.encryption.decrypt_password(encrypted_password)
-                .context("密码解密失败")?;
-            runtime_config.password = Some(decrypted_password);
-        }
+        // 🔧 性能优化：不再立即添加到连接管理器，避免版本探测延迟
+        // 连接将在第一次使用时（如测试连接、执行查询）才创建客户端
+        // 这样保存连接时不会有延迟
 
-        // 添加到连接管理器
-        self.manager.add_connection(runtime_config).await
-            .context("添加连接失败")?;
-
-        info!("连接 '{}' 创建成功", config.name);
+        info!("连接 '{}' 创建成功（延迟初始化）", config.name);
         Ok(connection_id)
     }
 

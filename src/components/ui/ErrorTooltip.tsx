@@ -32,19 +32,34 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
 
   // 计算提示框位置
   const updatePosition = () => {
-    if (!targetRef.current || !tooltipRef.current) return;
+    if (!targetRef.current) {
+      console.warn('[ErrorTooltip] targetRef.current 不存在');
+      return;
+    }
 
     const targetRect = targetRef.current.getBoundingClientRect();
-    const tooltipRect = tooltipRef.current.getBoundingClientRect();
     const padding = 12; // 增加间距，让提示框更贴近节点
+
+    // 🔧 修复：使用估算的 tooltip 宽度，避免首次渲染时宽度为 0
+    // 如果 tooltipRef 还没有渲染，使用默认宽度
+    let tooltipWidth = 300; // 默认宽度
+    let tooltipHeight = 60; // 默认高度
+
+    if (tooltipRef.current) {
+      const tooltipRect = tooltipRef.current.getBoundingClientRect();
+      if (tooltipRect.width > 0) {
+        tooltipWidth = tooltipRect.width;
+        tooltipHeight = tooltipRect.height;
+      }
+    }
 
     // 默认显示在目标元素的右侧，与节点顶部对齐
     let top = targetRect.top;
     let left = targetRect.right + padding;
 
     // 如果右侧空间不足，显示在左侧
-    if (left + tooltipRect.width > window.innerWidth - padding) {
-      left = targetRect.left - tooltipRect.width - padding;
+    if (left + tooltipWidth > window.innerWidth - padding) {
+      left = targetRect.left - tooltipWidth - padding;
     }
 
     // 如果左侧也不够，显示在下方
@@ -54,8 +69,8 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
     }
 
     // 如果下方空间不足，显示在上方
-    if (top + tooltipRect.height > window.innerHeight - padding) {
-      top = targetRect.top - tooltipRect.height - padding;
+    if (top + tooltipHeight > window.innerHeight - padding) {
+      top = targetRect.top - tooltipHeight - padding;
     }
 
     // 确保不超出上边界
@@ -68,6 +83,12 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
       left = padding;
     }
 
+    console.log('[ErrorTooltip] 更新位置:', {
+      targetRect: { top: targetRect.top, left: targetRect.left, right: targetRect.right, bottom: targetRect.bottom },
+      tooltipSize: { width: tooltipWidth, height: tooltipHeight },
+      finalPosition: { top, left }
+    });
+
     setPosition({ top, left });
   };
 
@@ -76,10 +97,19 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
     setIsVisible(visible);
 
     if (visible) {
-      // 延迟一帧更新位置，确保 DOM 已渲染
+      // 🔧 修复：多次尝试更新位置，确保 tooltip 渲染后位置正确
+      // 第一次：立即更新（使用估算尺寸）
+      updatePosition();
+
+      // 第二次：延迟一帧更新（DOM 已渲染）
       requestAnimationFrame(() => {
         updatePosition();
       });
+
+      // 第三次：延迟 50ms 更新（确保所有样式已应用）
+      const timeoutId = setTimeout(() => {
+        updatePosition();
+      }, 50);
 
       // 设置自动隐藏
       if (autoHideDuration > 0) {
@@ -91,6 +121,10 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
           onHide?.();
         }, autoHideDuration);
       }
+
+      return () => {
+        clearTimeout(timeoutId);
+      };
     }
 
     return () => {

@@ -539,16 +539,37 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     return true; // 暂时返回 true，保留所有节点
   };
 
-  // 初始加载 - 只在组件挂载时加载一次
-  // 不再监听 connections 变化，因为：
-  // 1. connections 的引用可能频繁变化（即使内容相同）
-  // 2. 连接状态变化时，TreeNodeRenderer 会动态计算 isConnected，不需要重新加载树
-  // 3. 新增/删除连接时，DatabaseExplorer 会调用 onRefresh 来刷新树
+  // 🔧 性能优化：监听 connections 变化，自动更新树
+  // 使用 ref 跟踪上一次的 connections，避免不必要的重新加载
+  const prevConnectionsRef = useRef<ConnectionInfo[]>([]);
+
   useEffect(() => {
-    console.log('🔄 [MultiConnectionTreeView] 组件挂载，初始加载树');
-    loadAllTreeNodes();
+    const prevConnections = prevConnectionsRef.current;
+
+    // 检查连接列表是否真的发生了变化
+    const connectionsChanged =
+      connections.length !== prevConnections.length ||
+      connections.some((conn, index) => {
+        const prevConn = prevConnections[index];
+        return !prevConn || conn.id !== prevConn.id || conn.name !== prevConn.name;
+      });
+
+    if (connectionsChanged) {
+      console.log('🔄 [MultiConnectionTreeView] connections 变化，重新加载树');
+      console.log('  - 之前:', prevConnections.map(c => c.name));
+      console.log('  - 现在:', connections.map(c => c.name));
+
+      // 不清除缓存，只更新节点列表
+      loadAllTreeNodes(false);
+      prevConnectionsRef.current = connections;
+    } else if (prevConnections.length === 0 && connections.length > 0) {
+      // 初始加载
+      console.log('🔄 [MultiConnectionTreeView] 组件挂载，初始加载树');
+      loadAllTreeNodes();
+      prevConnectionsRef.current = connections;
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // 空依赖数组，只在挂载时执行一次
+  }, [connections]); // 依赖 connections，当连接列表变化时重新加载
 
   // 使用 ref 来跟踪需要清除缓存的节点
   const disconnectedNodesRef = useRef<Map<string, TreeNodeData>>(new Map());
@@ -589,8 +610,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     prevConnectionStatusesRef.current = new Map(connectionStatuses);
 
     setTreeData(prevData => {
-      let hasChanges = false;
-      const newData = prevData.map(node => {
+      // 🔧 性能优化：使用 Map 记录需要更新的节点索引和新数据
+      const nodesToUpdate = new Map<number, TreeNodeData>();
+
+      prevData.forEach((node, index) => {
         if (node.nodeType === 'connection') {
           const connectionId = node.metadata?.connectionId;
           const status = connectionStatuses.get(connectionId);
@@ -614,8 +637,6 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
             ((status === 'disconnected' || !isConnected) && node.children);
 
           if (needsUpdate) {
-            hasChanges = true;
-
             // 如果 loading 状态变化，记录日志
             if (node.isLoading !== isLoading) {
               console.log(`🔄 [MultiConnectionTreeView] 连接 ${connectionId} loading 状态变化: ${node.isLoading} -> ${isLoading}`);
@@ -629,34 +650,42 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
               const nodeId = `connection-${connectionId}`;
               disconnectedNodesRef.current.set(nodeId, node);
 
-              return {
+              // 记录需要更新的节点
+              nodesToUpdate.set(index, {
                 ...node,
                 isLoading,
                 error,
                 isConnected,
                 children: undefined,
-              };
+              });
+            } else {
+              // 记录需要更新的节点
+              nodesToUpdate.set(index, {
+                ...node,
+                isLoading,
+                error,
+                isConnected,
+              });
             }
-
-            // 更新节点状态（保留 children）
-            return {
-              ...node,
-              isLoading,
-              error,
-              isConnected,
-            };
           }
         }
-        return node;
       });
 
-      if (hasChanges) {
-        console.log('✅ [MultiConnectionTreeView] 树数据已更新（节点状态变化）');
-      } else {
+      // 🔧 关键优化：只有真正有变化时才创建新数组
+      if (nodesToUpdate.size === 0) {
         console.log('⏭️ [MultiConnectionTreeView] 树数据无变化，跳过更新');
+        return prevData; // 返回原数组引用
       }
 
-      return hasChanges ? newData : prevData;
+      console.log(`✅ [MultiConnectionTreeView] 树数据已更新（${nodesToUpdate.size} 个节点状态变化）`);
+
+      // 🔧 只复制需要更新的节点，其他节点保持原引用
+      const newData = prevData.map((node, index) => {
+        const updatedNode = nodesToUpdate.get(index);
+        return updatedNode || node; // 如果有更新则使用新节点，否则使用原节点
+      });
+
+      return newData;
     });
   }, [connectionStatuses]);
 
@@ -1201,6 +1230,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       <Tree
         ref={treeRef}
         data={filteredData}
+        idAccessor={(node) => node.id}
         width={width}
         height={height}
         indent={20}
