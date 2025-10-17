@@ -119,38 +119,33 @@ export const useConnectionHandlers = ({
 
         const connectionKey = `connection-${connectionId}`;
 
-        // 检查是否已有数据库子节点
-        const currentNode = treeData.find(node => node.key === connectionKey);
-        const hasChildren = currentNode?.children && currentNode.children.length > 0;
+        // 🔧 优化：不依赖 treeData，避免每次 treeData 变化时重新创建回调
+        // 直接加载数据库列表，buildCompleteTreeData 会处理是否需要重新加载
+        setConnectionLoadingStates(prev => new Map(prev).set(connectionId, true));
+        updateConnectionNodeDisplay(connectionId, true);
 
-        if (!hasChildren) {
-            // 如果没有子节点，需要加载数据库列表
-            setConnectionLoadingStates(prev => new Map(prev).set(connectionId, true));
-            updateConnectionNodeDisplay(connectionId, true);
-
-            try {
-                console.log(`📊 加载数据库列表: ${connection.name}`);
-                await buildCompleteTreeData(true);
-                showMessage.success(`已加载数据库列表: ${connection.name}`);
-            } catch (error) {
-                console.error(`❌ 加载数据库列表失败:`, error);
-                showMessage.error(`加载数据库列表失败: ${error}`);
-                return;
-            } finally {
-                setConnectionLoadingStates(prev => {
-                    const newMap = new Map(prev);
-                    newMap.delete(connectionId);
-                    return newMap;
-                });
-                updateConnectionNodeDisplay(connectionId, false);
-            }
+        try {
+            console.log(`📊 加载数据库列表: ${connection.name}`);
+            await buildCompleteTreeData(false); // 不强制刷新，让缓存机制决定
+            showMessage.success(`已加载数据库列表: ${connection.name}`);
+        } catch (error) {
+            console.error(`❌ 加载数据库列表失败:`, error);
+            showMessage.error(`加载数据库列表失败: ${error}`);
+            return;
+        } finally {
+            setConnectionLoadingStates(prev => {
+                const newMap = new Map(prev);
+                newMap.delete(connectionId);
+                return newMap;
+            });
+            updateConnectionNodeDisplay(connectionId, false);
         }
 
         // 展开连接节点
         setExpandedKeys(prev => [...prev, connectionKey]);
         showMessage.info(`已展开连接 "${connection.name}"`);
 
-    }, [getConnection, treeData, setConnectionLoadingStates, updateConnectionNodeDisplay, buildCompleteTreeData, setExpandedKeys]);
+    }, [getConnection, setConnectionLoadingStates, updateConnectionNodeDisplay, buildCompleteTreeData, setExpandedKeys]);
 
     // ============================================================================
     // Toggle Connection

@@ -121,12 +121,15 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const stores = useDatabaseExplorerStores();
   const navigate = useNavigate();
 
-  // 添加渲染计数器
-  state.renderCountRef.current++;
-  console.log(
-    `🎨 [Render] DatabaseExplorer 重新渲染 (第 ${state.renderCountRef.current} 次)`
-  );
-  console.trace('🎨 [Render] DatabaseExplorer 渲染调用栈');
+  // 添加渲染计数器（仅在开发环境）
+  if (process.env.NODE_ENV === 'development') {
+    state.renderCountRef.current++;
+    console.log(
+      `🎨 [Render] DatabaseExplorer 重新渲染 (第 ${state.renderCountRef.current} 次)`
+    );
+    // 只在需要调试时启用 trace
+    // console.trace('🎨 [Render] DatabaseExplorer 渲染调用栈');
+  }
 
   // Initialize cache hook with state and store functions
   const cache = useDatabaseExplorerCache({
@@ -1399,9 +1402,13 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       .join('|');
   }, [connections, connectionStatuses]);
 
-  // 缓存 connections 数组，避免每次渲染都创建新数组
+  // 🔧 性能优化：使用 ref 缓存 connections 和 connectionStatuses，避免引用变化
+  const memoizedConnectionsRef = useRef<typeof connections>([]);
+  const memoizedConnectionStatusesRef = useRef<Map<string, 'connecting' | 'connected' | 'disconnected'>>(new Map());
+
+  // 只有当实际内容变化时才更新缓存
   const memoizedConnections = useMemo(() => {
-    return connections.map(conn => ({
+    const newConnections = connections.map(conn => ({
       id: conn.id || '',
       name: conn.name,
       dbType: conn.dbType,
@@ -1409,11 +1416,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       port: conn.port,
       isConnected: isConnectionConnected(conn.id || ''),
     }));
-  }, [connectionsKey]); // 使用序列化的 key 作为依赖
+
+    // 检查是否真的有变化
+    const hasChanges = connectionsKey !== JSON.stringify(memoizedConnectionsRef.current.map(c => `${c.id}:${c.name}:${c.isConnected}`));
+
+    if (hasChanges) {
+      memoizedConnectionsRef.current = newConnections;
+    }
+
+    return memoizedConnectionsRef.current;
+  }, [connectionsKey, isConnectionConnected]); // 使用序列化的 key 作为依赖
 
   // 缓存 connectionStatuses Map，避免每次渲染都创建新 Map
   const memoizedConnectionStatuses = useMemo(() => {
-    return new Map(
+    const newStatuses = new Map(
       connections.map(conn => {
         const status =
           connectionStatuses[conn.id || '']?.status || 'disconnected';
@@ -1424,80 +1440,37 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         ] as [string, 'connecting' | 'connected' | 'disconnected'];
       })
     );
-  }, [connectionStatusesKey]); // 使用序列化的 key 作为依赖
 
-  // 更新特定连接节点的显示状态（不影响其他节点）
+    // 检查是否真的有变化
+    let hasChanges = false;
+    if (newStatuses.size !== memoizedConnectionStatusesRef.current.size) {
+      hasChanges = true;
+    } else {
+      newStatuses.forEach((status, id) => {
+        if (memoizedConnectionStatusesRef.current.get(id) !== status) {
+          hasChanges = true;
+        }
+      });
+    }
+
+    if (hasChanges) {
+      memoizedConnectionStatusesRef.current = newStatuses;
+    }
+
+    return memoizedConnectionStatusesRef.current;
+  }, [connectionStatusesKey, connections, connectionStatuses]); // 使用序列化的 key 作为依赖
+
+  // 🔧 性能优化：移除 updateConnectionNodeDisplay 的 setTreeData 调用
+  // MultiConnectionTreeView 会根据 connectionStatuses 自动更新节点显示
   const updateConnectionNodeDisplay = useCallback(
     (connection_id: string, forceLoading?: boolean) => {
-      console.log(`🎨 更新连接节点显示: ${connection_id}`);
-
-      setTreeData(prevData => {
-        return prevData.map(node => {
-          // 只更新目标连接节点
-          if (node.key === `connection-${connection_id}`) {
-            const connection = getConnection(connection_id);
-            const connectionStatus = getConnectionStatus(connection_id);
-
-            if (!connection) return node;
-
-            const isFav = isFavorite(connection_id);
-            const isConnecting = connectionStatus?.status === 'connecting';
-            const showLoading = forceLoading || isConnecting;
-
-            console.log(`🎨 节点 ${connection.name} 显示状态更新:`, {
-              forceLoading,
-              isConnecting,
-              showLoading,
-              connectionStatus: connectionStatus?.status,
-            });
-
-            const isConnected = isConnectionConnected(connection_id);
-
-            // 构建更新后的节点，确保收缩按钮的正确显示
-            const updatedNode = {
-              ...node,
-              title: (
-                <div className='flex items-center gap-2'>
-                  <span className='flex-1'>{connection.name}</span>
-                  {showLoading && (
-                    <RefreshCw className='w-3 h-3 text-muted-foreground animate-spin' />
-                  )}
-                  {isFav && (
-                    <Star className='w-3 h-3 text-warning fill-current' />
-                  )}
-                </div>
-              ),
-              icon: (
-                <DatabaseIcon
-                  nodeType='connection'
-                  dbType={connection.dbType || 'influxdb'}
-                  isConnected={isConnected}
-                  size={16}
-                  className={
-                    isConnected ? 'text-success' : 'text-muted-foreground'
-                  }
-                />
-              ),
-              // 根据连接状态决定是否显示收缩按钮
-              ...(isConnected
-                ? { children: node.children || [] }
-                : { isLeaf: true }),
-            };
-
-            // 如果从连接状态变为未连接状态，移除 children 属性
-            if (!isConnected && updatedNode.children) {
-              const { children, ...nodeWithoutChildren } = updatedNode;
-              return nodeWithoutChildren;
-            }
-
-            return updatedNode;
-          }
-          // 其他节点保持不变
-          return node;
-        });
-      });
+      // 空实现，保持接口兼容性
+      // MultiConnectionTreeView 会通过监听 connectionStatuses 自动处理节点显示更新
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🎨 更新连接节点显示: ${connection_id} (由 MultiConnectionTreeView 自动处理)`);
+      }
     },
-    [getConnection, getConnectionStatus, isFavorite, isConnectionConnected]
+    []
   );
 
   // ============================================================================
@@ -1574,7 +1547,63 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     openDialog,
   });
 
-  // Destructure handlers for easier access
+  // 🔧 性能优化：使用 ref 存储 handler 函数，避免引用变化导致子组件重新渲染
+  const handlersRef = useRef({
+    handleConnectionAndLoadDatabases: connectionHandlers.handleConnectionAndLoadDatabases,
+    handleNodeSelect: nodeHandlers.handleNodeSelect,
+    handleNodeActivate,
+    handleContextMenuAction,
+    handleTreeRefresh: nodeHandlers.handleTreeRefresh,
+  });
+
+  // 更新 ref 中的函数引用
+  useEffect(() => {
+    handlersRef.current = {
+      handleConnectionAndLoadDatabases: connectionHandlers.handleConnectionAndLoadDatabases,
+      handleNodeSelect: nodeHandlers.handleNodeSelect,
+      handleNodeActivate,
+      handleContextMenuAction,
+      handleTreeRefresh: nodeHandlers.handleTreeRefresh,
+    };
+  });
+
+  // 创建稳定的 handler 包装函数
+  const stableHandleConnectionAndLoadDatabases = useCallback(
+    (...args: Parameters<typeof connectionHandlers.handleConnectionAndLoadDatabases>) => {
+      return handlersRef.current.handleConnectionAndLoadDatabases(...args);
+    },
+    []
+  );
+
+  const stableHandleNodeSelect = useCallback(
+    (...args: Parameters<typeof nodeHandlers.handleNodeSelect>) => {
+      return handlersRef.current.handleNodeSelect(...args);
+    },
+    []
+  );
+
+  const stableHandleNodeActivate = useCallback(
+    (...args: Parameters<typeof handleNodeActivate>) => {
+      return handlersRef.current.handleNodeActivate(...args);
+    },
+    []
+  );
+
+  const stableHandleContextMenuAction = useCallback(
+    (...args: Parameters<typeof handleContextMenuAction>) => {
+      return handlersRef.current.handleContextMenuAction(...args);
+    },
+    []
+  );
+
+  const stableHandleTreeRefresh = useCallback(
+    (...args: Parameters<typeof nodeHandlers.handleTreeRefresh>) => {
+      return handlersRef.current.handleTreeRefresh(...args);
+    },
+    []
+  );
+
+  // Destructure handlers for easier access (保留原有的，用于内部使用)
   const {
     handleConnectionAndLoadDatabases,
     handleExpandConnection,
@@ -1762,11 +1791,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               databaseErrors={databaseErrors}
               isFavorite={isFavorite}
               isDatabaseOpened={isDatabaseOpened}
-              onConnectionToggle={handleConnectionAndLoadDatabases}
-              onNodeSelect={handleNodeSelect}
-              onNodeActivate={handleNodeActivate}
-              onContextMenuAction={handleContextMenuAction}
-              onRefresh={handleTreeRefresh}
+              onConnectionToggle={stableHandleConnectionAndLoadDatabases}
+              onNodeSelect={stableHandleNodeSelect}
+              onNodeActivate={stableHandleNodeActivate}
+              onContextMenuAction={stableHandleContextMenuAction}
+              onRefresh={stableHandleTreeRefresh}
               nodeRefsMap={nodeRefsMap}
               className='h-full'
             />
@@ -1813,4 +1842,51 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   );
 };
 
-export default DatabaseExplorer;
+// 🔧 性能优化：使用 React.memo 避免不必要的重新渲染
+// 自定义比较函数，只有当关键 props 变化时才重新渲染
+const MemoizedDatabaseExplorer = React.memo(DatabaseExplorer, (prevProps, nextProps) => {
+  // 比较基本 props
+  if (
+    prevProps.collapsed !== nextProps.collapsed ||
+    prevProps.refreshTrigger !== nextProps.refreshTrigger
+  ) {
+    return false; // props 变化，需要重新渲染
+  }
+
+  // 比较回调函数引用（如果父组件正确使用了 useCallback，这些引用应该是稳定的）
+  if (
+    prevProps.onTableDoubleClick !== nextProps.onTableDoubleClick ||
+    prevProps.onCreateDataBrowserTab !== nextProps.onCreateDataBrowserTab ||
+    prevProps.onCreateQueryTab !== nextProps.onCreateQueryTab ||
+    prevProps.onCreateAndExecuteQuery !== nextProps.onCreateAndExecuteQuery ||
+    prevProps.onViewChange !== nextProps.onViewChange ||
+    prevProps.onGetCurrentView !== nextProps.onGetCurrentView ||
+    prevProps.onExpandedDatabasesChange !== nextProps.onExpandedDatabasesChange ||
+    prevProps.onEditConnection !== nextProps.onEditConnection
+  ) {
+    return false; // 回调函数引用变化，需要重新渲染
+  }
+
+  // 比较 currentTimeRange（深度比较）
+  const prevTimeRange = prevProps.currentTimeRange;
+  const nextTimeRange = nextProps.currentTimeRange;
+  if (prevTimeRange !== nextTimeRange) {
+    if (!prevTimeRange || !nextTimeRange) {
+      return false; // 一个为 null，需要重新渲染
+    }
+    if (
+      prevTimeRange.label !== nextTimeRange.label ||
+      prevTimeRange.start !== nextTimeRange.start ||
+      prevTimeRange.end !== nextTimeRange.end
+    ) {
+      return false; // 时间范围变化，需要重新渲染
+    }
+  }
+
+  // 所有 props 都没有变化，跳过重新渲染
+  return true;
+});
+
+MemoizedDatabaseExplorer.displayName = 'DatabaseExplorer';
+
+export default MemoizedDatabaseExplorer;

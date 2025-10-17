@@ -39,10 +39,12 @@ export const useDatabaseExplorerStores = () => {
     const getFavoritesByType = useFavoritesStore.getState().getFavoritesByType;
     const markAsAccessed = useFavoritesStore.getState().markAsAccessed;
 
-    // Create stable isFavorite function
+    // 🔧 性能优化：Create stable isFavorite function using getState()
+    // CRITICAL: Use getState() to access latest data without subscribing
     const isFavorite = useCallback((path: string) => {
-        return favorites.some(fav => fav.path === path);
-    }, [favorites]);
+        const currentFavorites = useFavoritesStore.getState().favorites;
+        return currentFavorites.some(fav => fav.path === path);
+    }, []); // Empty deps - function reference never changes
 
     // ============================================================================
     // Opened Databases Store

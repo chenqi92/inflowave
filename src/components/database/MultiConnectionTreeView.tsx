@@ -82,10 +82,12 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   isDatabaseOpened,
   nodeRefsMap,
 }) => {
-  // 添加渲染计数器
+  // 添加渲染计数器（仅在开发环境）
   const renderCountRef = useRef(0);
-  renderCountRef.current++;
-  console.log(`🎨 [Render] MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
+  if (process.env.NODE_ENV === 'development') {
+    renderCountRef.current++;
+    console.log(`🎨 [Render] MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
+  }
 
   // 调试：打印 connectionStatuses
   useEffect(() => {
