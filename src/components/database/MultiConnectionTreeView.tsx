@@ -59,6 +59,8 @@ interface MultiConnectionTreeViewProps {
   isFavorite?: (path: string) => boolean;
   // 数据库打开状态
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
+  // 节点元素引用映射（用于错误提示定位）
+  nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
 }
 
 export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = ({
@@ -78,11 +80,21 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   databaseErrors,
   isFavorite,
   isDatabaseOpened,
+  nodeRefsMap,
 }) => {
   // 添加渲染计数器
   const renderCountRef = useRef(0);
   renderCountRef.current++;
   console.log(`🎨 [Render] MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
+
+  // 调试：打印 connectionStatuses
+  useEffect(() => {
+    if (connectionStatuses) {
+      console.log('🔍 [MultiConnectionTreeView] connectionStatuses 更新:',
+        Array.from(connectionStatuses.entries()).map(([id, status]) => `${id}: ${status}`)
+      );
+    }
+  }, [connectionStatuses]);
 
   const [treeData, setTreeData] = useState<TreeNodeData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -195,6 +207,16 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           const error = connectionErrors?.get(connectionId);
           const isConnected = connection.isConnected;
           const isLoading = status === 'connecting';
+
+          // 调试日志
+          if (isLoading || existingNode.isLoading !== isLoading) {
+            console.log(`🔄 [loadAllTreeNodes] 连接 ${connectionId} loading 状态:`, {
+              status,
+              isLoading,
+              prevIsLoading: existingNode.isLoading,
+              changed: existingNode.isLoading !== isLoading
+            });
+          }
 
           // 检查是否有变化
           if (
@@ -559,7 +581,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       return;
     }
 
-    console.log('🔄 [MultiConnectionTreeView] 连接状态发生变化，检查是否需要清除子节点');
+    console.log('🔄 [MultiConnectionTreeView] 连接状态发生变化，更新节点状态');
 
     // 更新 ref
     prevConnectionStatusesRef.current = new Map(connectionStatuses);
@@ -570,26 +592,56 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         if (node.nodeType === 'connection') {
           const connectionId = node.metadata?.connectionId;
           const status = connectionStatuses.get(connectionId);
+          const error = connectionErrors?.get(connectionId);
           const isConnected = status === 'connected';
+          const isLoading = status === 'connecting';
 
           console.log(`🔍 [MultiConnectionTreeView] 检查连接 ${connectionId}:`, {
             status,
             isConnected,
+            isLoading,
+            prevIsLoading: node.isLoading,
             hasChildren: !!node.children
           });
 
-          // 如果连接断开且有子节点，需要清除子节点
-          if ((status === 'disconnected' || !isConnected) && node.children) {
+          // 检查是否需要更新节点状态
+          const needsUpdate =
+            node.isLoading !== isLoading ||
+            node.error !== error ||
+            node.isConnected !== isConnected ||
+            ((status === 'disconnected' || !isConnected) && node.children);
+
+          if (needsUpdate) {
             hasChanges = true;
-            console.log(`🗑️ 连接断开，清除子节点: ${connectionId}`);
 
-            // 保存节点数据到 ref，用于后续清除缓存
-            const nodeId = `connection-${connectionId}`;
-            disconnectedNodesRef.current.set(nodeId, node);
+            // 如果 loading 状态变化，记录日志
+            if (node.isLoading !== isLoading) {
+              console.log(`🔄 [MultiConnectionTreeView] 连接 ${connectionId} loading 状态变化: ${node.isLoading} -> ${isLoading}`);
+            }
 
+            // 如果连接断开且有子节点，需要清除子节点
+            if ((status === 'disconnected' || !isConnected) && node.children) {
+              console.log(`🗑️ 连接断开，清除子节点: ${connectionId}`);
+
+              // 保存节点数据到 ref，用于后续清除缓存
+              const nodeId = `connection-${connectionId}`;
+              disconnectedNodesRef.current.set(nodeId, node);
+
+              return {
+                ...node,
+                isLoading,
+                error,
+                isConnected,
+                children: undefined,
+              };
+            }
+
+            // 更新节点状态（保留 children）
             return {
               ...node,
-              children: undefined,
+              isLoading,
+              error,
+              isConnected,
             };
           }
         }
@@ -597,7 +649,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       });
 
       if (hasChanges) {
-        console.log('✅ [MultiConnectionTreeView] 树数据已更新（清除断开连接的子节点）');
+        console.log('✅ [MultiConnectionTreeView] 树数据已更新（节点状态变化）');
       } else {
         console.log('⏭️ [MultiConnectionTreeView] 树数据无变化，跳过更新');
       }
@@ -951,7 +1003,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     console.log(`🖱️🖱️ 双击节点: ${nodeId}, 节点类型: ${nodeData.nodeType}`);
 
     // 防止双击重复触发（300ms 内的重复双击会被忽略）
-    if (lastActivateNodeRef.current === nodeId && now - lastActivateTimeRef.current < 300) {
+    // 但如果节点有错误状态，允许立即重试
+    const hasError = nodeData.error;
+    if (!hasError && lastActivateNodeRef.current === nodeId && now - lastActivateTimeRef.current < 300) {
       console.log('⚠️ 忽略重复的双击事件:', nodeId);
       return;
     }
@@ -978,18 +1032,34 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         nodeType === 'storage_group' ||
         nodeType === 'device') {
 
-      // 🔧 修复1：先检查是否已加载子节点，再检查是否需要建立连接
-      // 这样可以确保已加载的节点能够正确切换展开/收起状态
+      // 特殊处理：连接节点
+      if (nodeType === 'connection') {
+        // 如果有错误状态，允许重新尝试连接
+        if (hasError) {
+          console.log(`🔄 双击有错误的连接节点，重新尝试连接: ${nodeType}`);
+          await handleToggle(node.id);
+          return;
+        }
+
+        // 如果未连接，先建立连接
+        if (!nodeData.isConnected) {
+          console.log(`📂 双击未连接的连接节点，建立连接: ${nodeType}`);
+          await handleToggle(node.id);
+          return;
+        }
+
+        // 如果已连接且已加载子节点，切换展开/收起
+        if (nodeData.children !== undefined || loadedNodesStateRef.current.has(nodeId)) {
+          console.log(`📂 双击已连接且已加载的连接节点，切换展开/收起: ${nodeType}`);
+          node.toggle();
+          return;
+        }
+      }
+
+      // 其他容器节点：先检查是否已加载子节点
       if (nodeData.children !== undefined || loadedNodesStateRef.current.has(nodeId)) {
         console.log(`📂 双击已加载的容器节点，切换展开/收起: ${nodeType}`);
         node.toggle();
-        return;
-      }
-
-      // 特殊处理：连接节点未连接时，先建立连接
-      if (nodeType === 'connection' && !nodeData.isConnected) {
-        console.log(`📂 双击未连接的连接节点，建立连接: ${nodeType}`);
-        await handleToggle(node.id);
         return;
       }
 
@@ -1078,6 +1148,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
             {...props}
             onNodeDoubleClick={handleNodeDoubleClick}
             isDatabaseOpened={isDatabaseOpened}
+            nodeRefsMap={nodeRefsMap}
           />
         </UnifiedContextMenu>
       );
@@ -1090,10 +1161,11 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           {...props}
           onNodeDoubleClick={handleNodeDoubleClick}
           isDatabaseOpened={isDatabaseOpened}
+          nodeRefsMap={nodeRefsMap}
         />
       </div>
     );
-  }, [onContextMenuAction, handleContextMenu, handleNodeDoubleClick, isDatabaseOpened, isFavorite]);
+  }, [onContextMenuAction, handleContextMenu, handleNodeDoubleClick, isDatabaseOpened, isFavorite, nodeRefsMap]);
 
   // 优化：只在初始加载且没有数据时显示全局 loading
   // 避免在后续操作时整个树闪烁

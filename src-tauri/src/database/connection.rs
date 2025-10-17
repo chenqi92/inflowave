@@ -105,21 +105,42 @@ impl ConnectionManager {
                 self.update_status(connection_id, |status| {
                     status.connected(latency)
                 }).await;
-                
+
                 info!("连接测试成功: {} ({}ms)", connection_id, latency);
                 Ok(ConnectionTestResult::success(latency, None))
             }
             Err(e) => {
-                // 只显示简洁的错误信息，不显示堆栈跟踪
-                let _error_msg = e.to_string().lines().next().unwrap_or("连接失败").to_string();
+                // 提取详细的错误信息
+                let error_msg = e.to_string();
+                let detailed_error = if error_msg.contains('\n') {
+                    // 如果有多行错误，只取第一行作为简短描述
+                    error_msg.lines().next().unwrap_or("连接失败").to_string()
+                } else {
+                    error_msg.clone()
+                };
 
-                // 更新状态为错误
+                // 根据错误类型提供更友好的错误信息
+                let user_friendly_error = if detailed_error.contains("503") || detailed_error.contains("Service Unavailable") {
+                    "服务不可用 (503)，请检查数据库服务是否正常运行".to_string()
+                } else if detailed_error.contains("401") || detailed_error.contains("Unauthorized") {
+                    "认证失败，请检查用户名和密码".to_string()
+                } else if detailed_error.contains("timeout") || detailed_error.contains("超时") {
+                    "连接超时，请检查网络连接或增加超时时间".to_string()
+                } else if detailed_error.contains("refused") || detailed_error.contains("拒绝") {
+                    "连接被拒绝，请检查服务器地址和端口".to_string()
+                } else if detailed_error.contains("unreachable") || detailed_error.contains("不可达") {
+                    "服务器不可达，请检查网络连接".to_string()
+                } else {
+                    detailed_error
+                };
+
+                // 更新状态为错误，包含详细错误信息
                 self.update_status(connection_id, |status| {
-                    status.error("连接测试失败".to_string())
+                    status.error(user_friendly_error.clone())
                 }).await;
 
-                error!("连接测试失败: {}", connection_id);
-                Ok(ConnectionTestResult::error("连接测试失败".to_string()))
+                error!("连接测试失败: {} - {}", connection_id, error_msg);
+                Ok(ConnectionTestResult::error(user_friendly_error))
             }
         }
     }

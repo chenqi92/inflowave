@@ -36,24 +36,36 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
 
     const targetRect = targetRef.current.getBoundingClientRect();
     const tooltipRect = tooltipRef.current.getBoundingClientRect();
+    const padding = 12; // 增加间距，让提示框更贴近节点
 
-    // 默认显示在目标元素的右上方
-    let top = targetRect.top - tooltipRect.height - 8;
-    let left = targetRect.left;
+    // 默认显示在目标元素的右侧，与节点顶部对齐
+    let top = targetRect.top;
+    let left = targetRect.right + padding;
 
-    // 如果上方空间不足，显示在下方
-    if (top < 8) {
-      top = targetRect.bottom + 8;
+    // 如果右侧空间不足，显示在左侧
+    if (left + tooltipRect.width > window.innerWidth - padding) {
+      left = targetRect.left - tooltipRect.width - padding;
     }
 
-    // 如果右侧空间不足，调整到左侧
-    if (left + tooltipRect.width > window.innerWidth - 8) {
-      left = window.innerWidth - tooltipRect.width - 8;
+    // 如果左侧也不够，显示在下方
+    if (left < padding) {
+      left = targetRect.left;
+      top = targetRect.bottom + padding;
+    }
+
+    // 如果下方空间不足，显示在上方
+    if (top + tooltipRect.height > window.innerHeight - padding) {
+      top = targetRect.top - tooltipRect.height - padding;
+    }
+
+    // 确保不超出上边界
+    if (top < padding) {
+      top = padding;
     }
 
     // 确保不超出左边界
-    if (left < 8) {
-      left = 8;
+    if (left < padding) {
+      left = padding;
     }
 
     setPosition({ top, left });
@@ -110,15 +122,15 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
   const tooltip = (
     <div
       ref={tooltipRef}
-      className="fixed z-[99999] px-3 py-2 bg-destructive text-destructive-foreground text-xs rounded-md shadow-lg whitespace-nowrap border border-destructive/20 animate-fade-out pointer-events-none"
+      className="fixed z-[99999] px-3 py-2 bg-destructive text-destructive-foreground text-xs rounded-md shadow-lg border border-destructive/20 animate-fade-out pointer-events-none max-w-xs"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
       }}
     >
-      <div className="flex items-center gap-2">
-        <XCircle className="w-3 h-3 flex-shrink-0" />
-        <span>{message}</span>
+      <div className="flex items-start gap-2">
+        <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+        <span className="break-words leading-relaxed">{message}</span>
       </div>
     </div>
   );

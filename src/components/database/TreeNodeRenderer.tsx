@@ -40,6 +40,7 @@ export interface TreeNodeData {
 interface TreeNodeRendererProps extends NodeRendererProps<TreeNodeData> {
   onNodeDoubleClick?: (nodeData: TreeNodeData, node: any) => void;
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
+  nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
 }
 
 // 🔧 优化：使用 React.memo 避免不必要的重新渲染
@@ -50,9 +51,28 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = React.memo(({
   dragHandle,
   onNodeDoubleClick,
   isDatabaseOpened,
+  nodeRefsMap,
 }) => {
   const data = node.data;
   const isSelected = node.isSelected;
+
+  // 注册节点元素到 nodeRefsMap（用于错误提示定位）
+  const registerNodeRef = React.useCallback((el: HTMLDivElement | null) => {
+    if (!nodeRefsMap || !el) return;
+
+    const nodeType = data.nodeType;
+    const connectionId = data.metadata?.connectionId;
+
+    // 为连接节点注册
+    if (nodeType === 'connection' && connectionId) {
+      nodeRefsMap.current.set(`connection-${connectionId}`, el);
+    }
+    // 为数据库节点注册
+    else if ((nodeType === 'database' || nodeType === 'system_database') && connectionId) {
+      const dbKey = `database|${connectionId}|${data.name}`;
+      nodeRefsMap.current.set(dbKey, el);
+    }
+  }, [nodeRefsMap, data.nodeType, data.metadata?.connectionId, data.name]);
 
   // 开发环境下添加渲染日志（简化输出）
   if (process.env.NODE_ENV === 'development') {
@@ -80,6 +100,15 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = React.memo(({
   const isLoading = data.isLoading ?? false;
   const isFavorite = data.isFavorite ?? false;
   const isSystem = data.isSystem ?? false;
+
+  // 调试日志：打印 loading 状态
+  if (data.nodeType === 'connection' && isLoading) {
+    console.log(`🔄 [TreeNodeRenderer] 连接节点 ${data.name} 显示 loading:`, {
+      isLoading,
+      dataIsLoading: data.isLoading,
+      nodeId: node.id
+    });
+  }
 
   // 获取节点元数据
   const isContainer = data.metadata?.is_container === true;
@@ -133,7 +162,15 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = React.memo(({
 
   return (
     <div
-      ref={dragHandle}
+      ref={(el) => {
+        // 同时设置 dragHandle 和 nodeRefsMap
+        if (typeof dragHandle === 'function') {
+          dragHandle(el);
+        } else if (dragHandle && 'current' in dragHandle) {
+          (dragHandle as React.MutableRefObject<HTMLDivElement | null>).current = el;
+        }
+        registerNodeRef(el);
+      }}
       style={style}
       className={cn(
         'flex items-center py-1.5 px-2 cursor-pointer rounded transition-colors select-none',

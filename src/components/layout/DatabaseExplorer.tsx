@@ -1767,6 +1767,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               onNodeActivate={handleNodeActivate}
               onContextMenuAction={handleContextMenuAction}
               onRefresh={handleTreeRefresh}
+              nodeRefsMap={nodeRefsMap}
               className='h-full'
             />
           </div>

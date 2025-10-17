@@ -1779,14 +1779,34 @@ impl InfluxClient {
         // 先进行HTTP健康检查
         match self.http_client.get(&format!("{}/ping", url)).send().await {
             Ok(response) => {
-                debug!("HTTP ping响应状态: {}", response.status());
-                if !response.status().is_success() {
-                    return Err(anyhow::anyhow!("服务器响应错误: {}", response.status()));
+                let status = response.status();
+                debug!("HTTP ping响应状态: {}", status);
+                if !status.is_success() {
+                    // 根据HTTP状态码提供更友好的错误信息
+                    let error_msg = match status.as_u16() {
+                        503 => "服务不可用 (503)，数据库服务可能未启动或正在维护",
+                        401 => "认证失败 (401)，请检查用户名和密码",
+                        403 => "访问被拒绝 (403)，请检查用户权限",
+                        404 => "服务未找到 (404)，请检查数据库地址和端口",
+                        500 => "服务器内部错误 (500)，请检查数据库日志",
+                        _ => &format!("服务器响应错误 ({})", status),
+                    };
+                    return Err(anyhow::anyhow!("{}", error_msg));
                 }
             }
             Err(e) => {
                 error!("HTTP ping失败: {}", e);
-                return Err(anyhow::anyhow!("无法连接到服务器: {}", e));
+                let error_str = e.to_string();
+                let error_msg = if error_str.contains("timeout") {
+                    "连接超时，请检查网络连接或增加超时时间"
+                } else if error_str.contains("refused") {
+                    "连接被拒绝，请检查服务器地址和端口是否正确"
+                } else if error_str.contains("unreachable") {
+                    "服务器不可达，请检查网络连接"
+                } else {
+                    "无法连接到服务器"
+                };
+                return Err(anyhow::anyhow!("{}: {}", error_msg, e));
             }
         }
 

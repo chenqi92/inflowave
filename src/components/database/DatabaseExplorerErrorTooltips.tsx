@@ -28,9 +28,9 @@ export const DatabaseExplorerErrorTooltips: React.FC<DatabaseExplorerErrorToolti
                     <ErrorTooltip
                         key={nodeKey}
                         targetRef={{ current: nodeElement }}
-                        message="连接失败"
+                        message={errorMessage || "连接失败"}
                         visible={true}
-                        autoHideDuration={3000}
+                        autoHideDuration={8000}
                         onHide={() => {
                             setConnectionErrors(prev => {
                                 const newMap = new Map(prev);
@@ -51,9 +51,9 @@ export const DatabaseExplorerErrorTooltips: React.FC<DatabaseExplorerErrorToolti
                     <ErrorTooltip
                         key={databaseKey}
                         targetRef={{ current: nodeElement }}
-                        message="无法打开"
+                        message={errorMessage || "无法打开"}
                         visible={true}
-                        autoHideDuration={3000}
+                        autoHideDuration={8000}
                         onHide={() => {
                             setDatabaseErrors(prev => {
                                 const newMap = new Map(prev);
