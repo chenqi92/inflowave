@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { UserPreferences, KeyboardShortcut } from '@/types';
+import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
 
 // 获取所有系统快捷键的函数
 const getAllSystemShortcuts = (): KeyboardShortcut[] => {
@@ -284,7 +285,13 @@ interface UserPreferencesComponentProps {
 const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   onSave,
 }) => {
-  const [preferences, setPreferences] = useState<UserPreferences | null>(null);
+  // 🔧 使用 userPreferencesStore 替代本地状态
+  const {
+    preferences: storePreferences,
+    loading: storeLoading,
+    updatePreferences
+  } = useUserPreferencesStore();
+
   const [loading, setLoading] = useState(false);
   const [editingShortcutId, setEditingShortcutId] = useState<string | null>(
     null
@@ -328,154 +335,30 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     },
   });
 
-  // 加载用户偏好
-  const loadPreferences = async () => {
-    console.log('开始加载用户偏好');
-    setLoading(true);
-    try {
-      let result = null;
-      
-      // 首先尝试从后端加载
-      try {
-        result = await safeTauriInvoke('get_user_preferences');
-        console.log('从后端加载的数据:', result);
-      } catch (tauriError) {
-        console.warn('从后端加载失败，尝试从本地存储加载:', tauriError);
-      }
-      
-      // 如果后端没有数据，尝试从本地存储加载
-      if (!result && typeof window !== 'undefined') {
-        const stored = localStorage.getItem('user-preferences');
-        console.log('从localStorage读取的原始数据:', stored);
-        if (stored) {
-          try {
-            result = JSON.parse(stored);
-            console.log('从localStorage解析的数据:', result);
-          } catch (parseError) {
-            console.warn('解析本地存储的用户偏好失败:', parseError);
-          }
-        }
-      }
-      
-      if (result) {
-        // 确保快捷键数据完整，如果没有快捷键数据，使用系统默认的
-        // 确保布局模式有默认值
-        const preferences = {
-          ...result,
-          shortcuts:
-            result.shortcuts && result.shortcuts.length > 0
-              ? result.shortcuts
-              : getAllSystemShortcuts(),
-          workspace: {
-            ...result.workspace,
-            layout: result.workspace?.layout || 'comfortable',
-          },
-        };
-        console.log('最终设置的偏好数据:', preferences);
-        console.log('通知设置enabled状态:', preferences.notifications?.enabled);
-        console.log('工作区布局值:', preferences.workspace?.layout);
-        setPreferences(preferences);
-        form.reset(preferences);
-        
-        // 确保布局字段被正确设置
-        setTimeout(() => {
-          form.setValue('workspace.layout', preferences.workspace?.layout || 'comfortable');
-          console.log('form.reset完成，当前表单值:', form.getValues());
-          console.log('布局字段值:', form.getValues('workspace.layout'));
-        }, 100);
-      } else {
-        // 如果没有用户偏好，使用默认值
-        const defaultPreferences = {
-          shortcuts: getAllSystemShortcuts(),
-          notifications: {
-            enabled: true,
-            query_completion: true,
-            connection_status: true,
-            system_alerts: true,
-            export_completion: true,
-            sound: false,
-            desktop: true,
-            position: 'topRight',
-          },
-          accessibility: {
-            high_contrast: false,
-            font_size: 'medium',
-            font_family: 'system',
-            reduced_motion: false,
-            screen_reader: false,
-            keyboard_navigation: true,
-          },
-          workspace: {
-            layout: 'comfortable',
-            panel_sizes: {},
-            panel_positions: {
-              'left-panel': 25,
-              'bottom-panel': 40,
-            },
-            open_tabs: [],
-            pinned_queries: [],
-            recent_files: [],
-            restore_tabs_on_startup: true,
-          },
-        };
-        console.log('使用默认偏好设置, 布局值:', defaultPreferences.workspace.layout);
-        setPreferences(defaultPreferences);
-        form.reset(defaultPreferences);
-        // 确保布局字段被正确设置
-        setTimeout(() => {
-          form.setValue('workspace.layout', 'comfortable');
-          console.log('默认设置完成，布局字段值:', form.getValues('workspace.layout'));
-        }, 100);
-      }
-    } catch (error) {
-      console.error('加载用户偏好失败:', error);
-      showMessage.error('加载用户偏好失败');
-      // 即使加载失败，也使用默认快捷键
-      const defaultPreferences = {
-        shortcuts: getAllSystemShortcuts(),
-        notifications: {
-          enabled: true,
-          query_completion: true,
-          connection_status: true,
-          system_alerts: true,
-          export_completion: true,
-          sound: false,
-          desktop: true,
-          position: 'topRight',
-        },
-        accessibility: {
-          high_contrast: false,
-          font_size: 'medium',
-          font_family: 'system',
-          reduced_motion: false,
-          screen_reader: false,
-          keyboard_navigation: true,
-        },
-        workspace: {
-          layout: 'comfortable',
-          panel_sizes: {},
-          panel_positions: {
-            'left-panel': 25,
-            'bottom-panel': 40,
-          },
-          open_tabs: [],
-          pinned_queries: [],
-          recent_files: [],
-          restore_tabs_on_startup: true,
-        },
+  // 🔧 加载用户偏好（从 store 读取）
+  const loadPreferences = useCallback(() => {
+    console.log('从 store 加载用户偏好');
+
+    if (storePreferences) {
+      // 确保快捷键数据完整
+      const preferences = {
+        ...storePreferences,
+        shortcuts:
+          storePreferences.shortcuts && storePreferences.shortcuts.length > 0
+            ? storePreferences.shortcuts
+            : getAllSystemShortcuts(),
       };
-      console.log('错误处理：使用默认偏好设置, 布局值:', defaultPreferences.workspace.layout);
-      setPreferences(defaultPreferences);
-      form.reset(defaultPreferences);
+
+      console.log('从 store 加载的偏好数据:', preferences);
+      form.reset(preferences);
+
       // 确保布局字段被正确设置
       setTimeout(() => {
-        form.setValue('workspace.layout', 'comfortable');
-        console.log('错误处理：默认设置完成，布局字段值:', form.getValues('workspace.layout'));
+        form.setValue('workspace.layout', preferences.workspace?.layout || 'comfortable');
+        console.log('form.reset完成，当前表单值:', form.getValues());
       }, 100);
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [storePreferences, form]);
 
   // 防抖的字体保存函数
   const debouncedFontSave = useCallback((values: UserPreferences) => {
@@ -493,43 +376,20 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     setFontSaveTimeout(timeout);
   }, [fontSaveTimeout]);
 
-  // 保存用户偏好
+  // 🔧 保存用户偏好（使用 store 的乐观更新）
   const savePreferences = async (values: UserPreferences) => {
     console.log('保存用户偏好被调用，数据:', values);
     console.log('通知设置:', values.notifications);
-    
+
     setLoading(true);
     try {
-      // 保存到后端（Tauri环境）
-      try {
-        await safeTauriInvoke('update_user_preferences', { preferences: values });
-        console.log('后端保存成功');
-      } catch (tauriError) {
-        console.warn('保存到后端失败，尝试保存到本地存储:', tauriError);
-      }
-      
-      // 保存到本地存储（浏览器环境或作为后备）
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('user-preferences', JSON.stringify(values));
-        console.log('localStorage保存成功:', values);
-        
-        // 验证保存
-        const saved = localStorage.getItem('user-preferences');
-        console.log('验证localStorage保存的数据:', JSON.parse(saved || '{}'));
-      }
-      
-      setPreferences(values);
-
-      // 触发全局状态更新 - 发送自定义事件
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('userPreferencesUpdated', {
-          detail: values
-        }));
-      }
+      // 🔧 使用 store 的乐观更新，立即生效
+      await updatePreferences(values);
 
       showMessage.success('偏好设置已保存');
       onSave?.(values);
     } catch (error) {
+      // 🔧 store 会自动回滚，只需显示错误
       console.error('保存用户偏好失败:', error);
       showMessage.error('保存用户偏好失败');
     } finally {
@@ -616,9 +476,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     setEditingKeys(keys);
   };
 
+  // 🔧 从 store 加载偏好设置
   useEffect(() => {
     loadPreferences();
-  }, []);
+  }, [loadPreferences]);
 
   // 清理超时
   useEffect(() => {
@@ -635,7 +496,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     console.log('布局字段值变化:', watchedLayout);
   }, [watchedLayout]);
 
-  if (!preferences) {
+  // 🔧 使用 store 的 loading 状态
+  if (storeLoading || !storePreferences) {
     return (
       <div className='flex items-center justify-center p-8'>加载中...</div>
     );

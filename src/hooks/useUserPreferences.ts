@@ -1,3 +1,28 @@
+/**
+ * @deprecated 此 hook 已废弃，请使用 `useUserPreferencesStore` 替代
+ *
+ * 迁移指南：
+ *
+ * 旧代码：
+ * ```typescript
+ * import { useUserPreferences } from '@/hooks/useUserPreferences';
+ * const { preferences, updateNotifications } = useUserPreferences();
+ * ```
+ *
+ * 新代码：
+ * ```typescript
+ * import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
+ * const { preferences, updateNotifications } = useUserPreferencesStore();
+ * ```
+ *
+ * 优势：
+ * - 统一的全局状态管理
+ * - 减少后端调用次数（从多次减少到启动时1次）
+ * - 同步读取，无延迟
+ * - 乐观更新，设置修改立即生效
+ * - 自动错误回滚
+ */
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { getUserPreferencesError, formatErrorMessage } from '@/utils/userFriendlyErrors';
@@ -227,21 +252,7 @@ export const useUserPreferences = () => {
     loadPreferences();
   }, [loadPreferences]);
 
-  // 监听用户偏好设置更新事件
-  useEffect(() => {
-    const handlePreferencesUpdate = (event: CustomEvent) => {
-      console.log('收到用户偏好设置更新事件:', event.detail);
-      setPreferences(event.detail);
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('userPreferencesUpdated', handlePreferencesUpdate as EventListener);
-
-      return () => {
-        window.removeEventListener('userPreferencesUpdated', handlePreferencesUpdate as EventListener);
-      };
-    }
-  }, []);
+  // 🔧 已移除 userPreferencesUpdated 事件监听，现在使用 userPreferencesStore 统一管理
 
   return {
     preferences,

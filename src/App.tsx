@@ -16,6 +16,7 @@ import UserGuideModal from './components/common/UserGuideModal';
 import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
 import { useUserPreferences } from './hooks/useUserPreferences';
+import { useUserPreferencesStore } from './stores/userPreferencesStore';
 import { useAppNotifications } from './hooks/useAppNotifications';
 import { initializeHealthCheck } from './utils/healthCheck';
 import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
@@ -225,6 +226,7 @@ const App: React.FC = () => {
   const [showUnsavedTabsDialog, setShowUnsavedTabsDialog] = useState(false);
   const [unsavedTabs, setUnsavedTabs] = useState<EditorTab[]>([]);
   const { preferences } = useUserPreferences();
+  const { loadUserPreferences } = useUserPreferencesStore();
 
   // 应用无障碍设置到 DOM
   useEffect(() => {
@@ -517,6 +519,14 @@ const App: React.FC = () => {
         // 初始化上下文菜单禁用器（生产环境）
         initializeContextMenuDisabler();
 
+        // 🔧 加载用户偏好设置（优先级高，影响UI显示）
+        try {
+          await loadUserPreferences();
+          console.log('✅ 用户偏好设置加载成功');
+        } catch (prefError) {
+          console.warn('⚠️ 用户偏好设置加载失败，使用默认值:', prefError);
+        }
+
         // 尝试获取应用配置信息
         try {
           await safeTauriInvoke<any>('get_app_config');
@@ -609,12 +619,12 @@ const App: React.FC = () => {
     return () => {
       // 应用卸载时清理错误日志器
       errorLogger.cleanup();
-      
+
       // 停止连接配置同步机制
       const { stopConnectionSync } = useConnectionStore.getState();
       stopConnectionSync();
     };
-  }, []);
+  }, [loadUserPreferences]);
 
   if (loading) {
     return (

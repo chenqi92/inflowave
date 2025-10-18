@@ -176,9 +176,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
 
           // 触发全局刷新事件
           window.dispatchEvent(new CustomEvent('refresh-connections'));
-          window.dispatchEvent(new CustomEvent('userPreferencesUpdated', {
-            detail: null // 表示重置
-          }));
+          // 🔧 已移除 userPreferencesUpdated 事件派发，现在使用 userPreferencesStore 统一管理
 
           showMessage.success('所有配置已重置为默认值');
         }

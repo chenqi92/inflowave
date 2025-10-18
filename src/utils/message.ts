@@ -11,6 +11,11 @@ import { getDatabaseConnectionError } from '@/utils/userFriendlyErrors';
 import { addNotification } from '@/store/notifications';
 import { errorHandler, formatErrorForDisplay } from '@/utils/errorHandler';
 import type { ErrorDetails, RecoverySuggestion } from '@/types/error';
+import {
+  getNotificationSettings,
+  isNotificationEnabled,
+  isNotificationTypeEnabled
+} from '@/stores/userPreferencesStore';
 
 // 消息类型定义
 export type MessageType = 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -43,48 +48,15 @@ export interface NotificationConfig {
         | 'bottom-right';
 }
 
-// 获取用户通知偏好设置
-const getUserNotificationPreferences = async () => {
-    console.log('获取用户通知偏好设置');
-    try {
-        // 桌面应用专用：从Tauri后端获取设置
-        const prefs = await safeTauriInvoke('get_user_preferences');
-        console.log('从后端获取的偏好数据:', prefs);
-        const notifications = prefs?.notifications || {
-            enabled: true,
-            desktop: true,
-            sound: false,
-            query_completion: true,
-            connection_status: true,
-            system_alerts: true,
-            position: 'topRight',
-        };
-        console.log('返回的通知设置:', notifications);
-        return notifications;
-    } catch (error) {
-        console.warn('获取用户通知偏好失败，使用默认设置:', error);
-    }
-    
-    // 默认设置
-    const defaultNotifications = {
-        enabled: true,
-        desktop: true,
-        sound: false,
-        query_completion: true,
-        connection_status: true,
-        system_alerts: true,
-        position: 'topRight',
-    };
-    console.log('使用默认通知设置:', defaultNotifications);
-    return defaultNotifications;
-};
+// 🔧 已移除旧的缓存机制，现在直接从 userPreferencesStore 同步读取
 
 // 发送桌面通知
 const sendDesktopNotification = async (title: string, message: string, _icon?: string) => {
     try {
-        const prefs = await getUserNotificationPreferences();
+        // 🔧 从 store 同步读取通知设置
+        const settings = getNotificationSettings();
 
-        if (!prefs.enabled || !prefs.desktop) {
+        if (!settings.enabled || !settings.desktop) {
             return;
         }
 
@@ -103,14 +75,15 @@ const sendDesktopNotification = async (title: string, message: string, _icon?: s
 // 智能消息系统 - 根据用户设置自动选择系统通知或shadcn通知
 export const smartMessage = {
     success: async (content: string, title?: string) => {
-        const prefs = await getUserNotificationPreferences();
+        // 🔧 从 store 同步读取通知设置
+        const settings = getNotificationSettings();
 
-        if (!prefs.enabled) {
+        if (!settings.enabled) {
             return; // 如果通知被禁用，不显示任何消息
         }
 
         // 如果启用了桌面通知和系统警报，使用系统通知
-        if (prefs.desktop && prefs.system_alerts && title) {
+        if (settings.desktop && settings.system_alerts && title) {
             await sendDesktopNotification(title, content);
         } else {
             // 否则使用shadcn通知
@@ -120,13 +93,14 @@ export const smartMessage = {
         }
     },
     error: async (content: string, title?: string) => {
-        const prefs = await getUserNotificationPreferences();
+        // 🔧 从 store 同步读取通知设置
+        const settings = getNotificationSettings();
 
-        if (!prefs.enabled) {
+        if (!settings.enabled) {
             return;
         }
 
-        if (prefs.desktop && prefs.system_alerts && title) {
+        if (settings.desktop && settings.system_alerts && title) {
             await sendDesktopNotification(title, content);
         } else {
             const options = await createToastOptions();
@@ -135,13 +109,14 @@ export const smartMessage = {
         }
     },
     warning: async (content: string, title?: string) => {
-        const prefs = await getUserNotificationPreferences();
+        // 🔧 从 store 同步读取通知设置
+        const settings = getNotificationSettings();
 
-        if (!prefs.enabled) {
+        if (!settings.enabled) {
             return;
         }
 
-        if (prefs.desktop && prefs.system_alerts && title) {
+        if (settings.desktop && settings.system_alerts && title) {
             await sendDesktopNotification(title, content);
         } else {
             const options = await createToastOptions();
@@ -150,13 +125,14 @@ export const smartMessage = {
         }
     },
     info: async (content: string, title?: string) => {
-        const prefs = await getUserNotificationPreferences();
+        // 🔧 从 store 同步读取通知设置
+        const settings = getNotificationSettings();
 
-        if (!prefs.enabled) {
+        if (!settings.enabled) {
             return;
         }
 
-        if (prefs.desktop && prefs.system_alerts && title) {
+        if (settings.desktop && settings.system_alerts && title) {
             await sendDesktopNotification(title, content);
         } else {
             const options = await createToastOptions();
@@ -169,26 +145,30 @@ export const smartMessage = {
 // 系统级别消息 - 强制使用原生系统通知
 export const systemMessage = {
     success: async (title: string, message: string) => {
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.desktop && prefs.system_alerts) {
+        // 🔧 从 store 同步读取通知设置
+        const settings = getNotificationSettings();
+        if (settings.enabled && settings.desktop && settings.system_alerts) {
             await sendDesktopNotification(title, message);
         }
     },
     error: async (title: string, message: string) => {
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.desktop && prefs.system_alerts) {
+        // 🔧 从 store 同步读取通知设置
+        const settings = getNotificationSettings();
+        if (settings.enabled && settings.desktop && settings.system_alerts) {
             await sendDesktopNotification(title, message);
         }
     },
     warning: async (title: string, message: string) => {
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.desktop && prefs.system_alerts) {
+        // 🔧 从 store 同步读取通知设置
+        const settings = getNotificationSettings();
+        if (settings.enabled && settings.desktop && settings.system_alerts) {
             await sendDesktopNotification(title, message);
         }
     },
     info: async (title: string, message: string) => {
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.desktop && prefs.system_alerts) {
+        // 🔧 从 store 同步读取通知设置
+        const settings = getNotificationSettings();
+        if (settings.enabled && settings.desktop && settings.system_alerts) {
             await sendDesktopNotification(title, message);
         }
     },
@@ -199,35 +179,25 @@ const createToastOptions = async (
     duration?: number,
     options?: Partial<ExternalToast>
 ): Promise<ExternalToast | null> => {
-    // 动态获取用户偏好设置
-    let position: string = 'bottom-right';
-    let enabled = true;
-
-    try {
-        const prefs = await getUserNotificationPreferences();
-        enabled = prefs.enabled;
-
-        // 转换位置格式
-        const positionMap: Record<string, string> = {
-            'topLeft': 'top-left',
-            'topCenter': 'top-center',
-            'topRight': 'top-right',
-            'bottomLeft': 'bottom-left',
-            'bottomCenter': 'bottom-center',
-            'bottomRight': 'bottom-right',
-        };
-
-        if (prefs.position) {
-            position = positionMap[prefs.position] || 'bottom-right';
-        }
-    } catch (error) {
-        console.warn('获取通知偏好失败，使用默认设置:', error);
-    }
+    // 🔧 从 store 同步读取通知设置
+    const settings = getNotificationSettings();
 
     // 如果通知被禁用，返回null让调用者决定
-    if (!enabled) {
+    if (!settings.enabled) {
         return null;
     }
+
+    // 转换位置格式
+    const positionMap: Record<string, string> = {
+        'topLeft': 'top-left',
+        'topCenter': 'top-center',
+        'topRight': 'top-right',
+        'bottomLeft': 'bottom-left',
+        'bottomCenter': 'bottom-center',
+        'bottomRight': 'bottom-right',
+    };
+
+    const position = positionMap[settings.position] || 'bottom-right';
 
     return {
         duration: duration ? duration * 1000 : undefined,
@@ -570,13 +540,12 @@ export const specialMessage = {
                 onClick: () => console.log(`查看连接: ${name}`),
             },
         });
-        
-        // 发送桌面通知
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.connection_status) {
+
+        // 🔧 使用便捷选择器检查特定类型的通知是否启用
+        if (isNotificationTypeEnabled('connection_status')) {
             await sendDesktopNotification('连接成功', `已成功连接到 ${name}`);
         }
-        
+
         return result;
     },
 
@@ -591,13 +560,12 @@ export const specialMessage = {
                 onClick: () => console.log(`重试连接: ${name}`),
             },
         });
-        
-        // 发送桌面通知
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.connection_status) {
+
+        // 🔧 使用便捷选择器检查特定类型的通知是否启用
+        if (isNotificationTypeEnabled('connection_status')) {
             await sendDesktopNotification(friendlyError.title, `连接 ${name} 失败: ${friendlyError.message}`);
         }
-        
+
         return result;
     },
 
@@ -611,13 +579,12 @@ export const specialMessage = {
                 onClick: () => console.log(`重连: ${name}`),
             },
         });
-        
-        // 发送桌面通知
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.connection_status) {
+
+        // 🔧 使用便捷选择器检查特定类型的通知是否启用
+        if (isNotificationTypeEnabled('connection_status')) {
             await sendDesktopNotification('连接中断', `与 ${name} 的连接已中断`);
         }
-        
+
         return result;
     },
 
@@ -627,13 +594,12 @@ export const specialMessage = {
             message: '查询完成',
             description: `返回 ${rowCount} 行数据，耗时 ${duration}ms`,
         });
-        
-        // 发送桌面通知
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.query_completion) {
+
+        // 🔧 使用便捷选择器检查特定类型的通知是否启用
+        if (isNotificationTypeEnabled('query_completion')) {
             await sendDesktopNotification('查询完成', `返回 ${rowCount} 行数据，耗时 ${duration}ms`);
         }
-        
+
         return result;
     },
 
@@ -643,13 +609,12 @@ export const specialMessage = {
             description: error,
             duration: 5,
         });
-        
-        // 发送桌面通知
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.query_completion) {
+
+        // 🔧 使用便捷选择器检查特定类型的通知是否启用
+        if (isNotificationTypeEnabled('query_completion')) {
             await sendDesktopNotification('查询失败', error);
         }
-        
+
         return result;
     },
 
@@ -662,13 +627,12 @@ export const specialMessage = {
                 onClick: () => console.log('打开查询优化建议'),
             },
         });
-        
-        // 发送桌面通知
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.query_completion) {
+
+        // 🔧 使用便捷选择器检查特定类型的通知是否启用
+        if (isNotificationTypeEnabled('query_completion')) {
             await sendDesktopNotification('查询超时', `查询执行超过 ${timeout}s，已自动取消`);
         }
-        
+
         return result;
     },
 
@@ -733,13 +697,12 @@ export const specialMessage = {
                 label: '稍后提醒',
             },
         });
-        
-        // 发送桌面通知
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.system_alerts) {
+
+        // 🔧 使用便捷选择器检查特定类型的通知是否启用
+        if (isNotificationTypeEnabled('system_alerts')) {
             await sendDesktopNotification('发现新版本', `版本 ${version} 已发布`);
         }
-        
+
         return result;
     },
 
@@ -753,13 +716,12 @@ export const specialMessage = {
                 onClick: () => console.log('打开问题报告'),
             },
         });
-        
-        // 发送桌面通知
-        const prefs = await getUserNotificationPreferences();
-        if (prefs.enabled && prefs.system_alerts) {
+
+        // 🔧 使用便捷选择器检查特定类型的通知是否启用
+        if (isNotificationTypeEnabled('system_alerts')) {
             await sendDesktopNotification('系统错误', error);
         }
-        
+
         return result;
     },
 
