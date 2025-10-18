@@ -310,6 +310,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           // 连接建立后，继续加载子节点（不要 return）
         } catch (err) {
           console.error(`❌ 连接失败:`, err);
+          // 🔧 连接失败后，取消节点选中状态，避免保持选中效果
+          if (treeRef.current?.deselectAll) {
+            treeRef.current.deselectAll();
+          }
           return;
         }
       }

@@ -284,25 +284,23 @@ export function getNodeBackgroundStyle(
   hasError: boolean
 ): string {
   const classes: string[] = [];
-  
+
   // 基础样式
   classes.push('transition-colors');
-  
+
   // 选中状态
   if (isSelected) {
     classes.push('bg-accent text-accent-foreground');
   }
-  
+
   // 系统节点背景
   if (isSystemManagementNode(nodeType, isSystem) && !isSelected) {
     classes.push('bg-muted/30');
   }
-  
-  // 错误状态
-  if (hasError) {
-    classes.push('border-l-2 border-destructive');
-  }
-  
+
+  // 🔧 移除错误状态的红色边框，错误提示通过 ErrorIndicator 组件显示
+  // 不再使用 border-l-2 border-destructive，避免视觉上过于突兀
+
   return classes.join(' ');
 }
 

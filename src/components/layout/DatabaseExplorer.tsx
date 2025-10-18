@@ -1460,6 +1460,72 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     return memoizedConnectionStatusesRef.current;
   }, [connectionStatusesKey, connections, connectionStatuses]); // 使用序列化的 key 作为依赖
 
+  // 🔧 性能优化：缓存 databaseLoadingStates、connectionErrors、databaseErrors Map
+  // 避免每次渲染都创建新 Map 导致 MultiConnectionTreeView 重新渲染
+  const memoizedDatabaseLoadingStatesRef = useRef<Map<string, boolean>>(new Map());
+  const memoizedConnectionErrorsRef = useRef<Map<string, string>>(new Map());
+  const memoizedDatabaseErrorsRef = useRef<Map<string, string>>(new Map());
+
+  const memoizedDatabaseLoadingStates = useMemo(() => {
+    // 检查是否真的有变化
+    let hasChanges = false;
+    if (databaseLoadingStates.size !== memoizedDatabaseLoadingStatesRef.current.size) {
+      hasChanges = true;
+    } else {
+      databaseLoadingStates.forEach((value, key) => {
+        if (memoizedDatabaseLoadingStatesRef.current.get(key) !== value) {
+          hasChanges = true;
+        }
+      });
+    }
+
+    if (hasChanges) {
+      memoizedDatabaseLoadingStatesRef.current = new Map(databaseLoadingStates);
+    }
+
+    return memoizedDatabaseLoadingStatesRef.current;
+  }, [databaseLoadingStates]);
+
+  const memoizedConnectionErrors = useMemo(() => {
+    // 检查是否真的有变化
+    let hasChanges = false;
+    if (connectionErrors.size !== memoizedConnectionErrorsRef.current.size) {
+      hasChanges = true;
+    } else {
+      connectionErrors.forEach((value, key) => {
+        if (memoizedConnectionErrorsRef.current.get(key) !== value) {
+          hasChanges = true;
+        }
+      });
+    }
+
+    if (hasChanges) {
+      memoizedConnectionErrorsRef.current = new Map(connectionErrors);
+    }
+
+    return memoizedConnectionErrorsRef.current;
+  }, [connectionErrors]);
+
+  const memoizedDatabaseErrors = useMemo(() => {
+    // 检查是否真的有变化
+    let hasChanges = false;
+    if (databaseErrors.size !== memoizedDatabaseErrorsRef.current.size) {
+      hasChanges = true;
+    } else {
+      databaseErrors.forEach((value, key) => {
+        if (memoizedDatabaseErrorsRef.current.get(key) !== value) {
+          hasChanges = true;
+        }
+      });
+    }
+
+    if (hasChanges) {
+      memoizedDatabaseErrorsRef.current = new Map(databaseErrors);
+    }
+
+    return memoizedDatabaseErrorsRef.current;
+  }, [databaseErrors]);
+
   // 🔧 性能优化：移除 updateConnectionNodeDisplay 的 setTreeData 调用
   // MultiConnectionTreeView 会根据 connectionStatuses 自动更新节点显示
   const updateConnectionNodeDisplay = useCallback(
@@ -1786,9 +1852,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               searchValue={searchValue}
               useVersionAwareFilter={hideSystemNodes}
               connectionStatuses={memoizedConnectionStatuses}
-              databaseLoadingStates={databaseLoadingStates}
-              connectionErrors={connectionErrors}
-              databaseErrors={databaseErrors}
+              databaseLoadingStates={memoizedDatabaseLoadingStates}
+              connectionErrors={memoizedConnectionErrors}
+              databaseErrors={memoizedDatabaseErrors}
               isFavorite={isFavorite}
               isDatabaseOpened={isDatabaseOpened}
               onConnectionToggle={stableHandleConnectionAndLoadDatabases}
