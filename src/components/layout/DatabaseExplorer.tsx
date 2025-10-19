@@ -54,6 +54,7 @@ import {
 import { useConnectionStore } from '@/store/connection';
 import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
+import { useTreeStatusStore } from '@/stores/treeStatusStore';
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
 import type { ConnectionConfig } from '@/types';
 import type { TreeNodeType, TreeNode } from '@/types/tree';
@@ -235,6 +236,35 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     setDatabasesCache,
   });
   const { loadDatabases, loadTables, loadFieldsAndTags } = dataLoading;
+
+  // ✅ 同步状态到 TreeStatusStore
+  // 将 connectionStatuses 同步到 store
+  useEffect(() => {
+    const statusMap = new Map<string, 'connecting' | 'connected' | 'disconnected' | 'error'>();
+    connections.forEach(conn => {
+      if (conn.id) {
+        const status = connectionStatuses[conn.id];
+        // 将所有状态同步到store，包括error状态
+        statusMap.set(conn.id, status?.status || 'disconnected');
+      }
+    });
+    useTreeStatusStore.getState().setConnectionStatuses(statusMap);
+  }, [connections, connectionStatuses]);
+
+  // 将 databaseLoadingStates 同步到 store
+  useEffect(() => {
+    useTreeStatusStore.getState().setDatabaseLoadingStates(databaseLoadingStates);
+  }, [databaseLoadingStates]);
+
+  // 将 connectionErrors 同步到 store
+  useEffect(() => {
+    useTreeStatusStore.getState().setConnectionErrors(connectionErrors);
+  }, [connectionErrors]);
+
+  // 将 databaseErrors 同步到 store
+  useEffect(() => {
+    useTreeStatusStore.getState().setDatabaseErrors(databaseErrors);
+  }, [databaseErrors]);
 
   // 数据库状态管理函数现在来自 store，无需本地定义
 

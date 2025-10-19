@@ -6,6 +6,13 @@ import { TreeNodeType, normalizeNodeType, getIoTDBNodeBehavior } from '@/types/t
 import { cn } from '@/lib/utils';
 import { useConnectionStore } from '@/store/connection';
 import {
+  useTreeStatusStore,
+  selectConnectionStatus,
+  selectConnectionError,
+  selectDatabaseLoadingState,
+  selectDatabaseError,
+} from '@/stores/treeStatusStore';
+import {
   getNodeTextColor,
   getNodeIconColor,
   getNodeFontStyle,
@@ -44,10 +51,11 @@ interface TreeNodeRendererProps extends NodeRendererProps<TreeNodeData> {
   nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
 }
 
-// 🔧 优化：使用 React.memo 和 forwardRef 避免不必要的重新渲染
-// 只有当 node.data、node.isSelected、node.isOpen 发生变化时才重新渲染
+// ⚠️ 注意：不使用 React.memo，因为 react-arborist 使用 render prop 模式
+// React.memo 的比较函数在 render prop 模式下不会被调用
+// 性能优化通过 Zustand 的细粒度订阅实现
 // forwardRef 用于支持 ContextMenuTrigger 的 asChild 属性
-export const TreeNodeRenderer = React.memo(React.forwardRef<HTMLDivElement, TreeNodeRendererProps>(({
+export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendererProps>(({
   node,
   style,
   dragHandle,
@@ -58,6 +66,45 @@ export const TreeNodeRenderer = React.memo(React.forwardRef<HTMLDivElement, Tree
 }, forwardedRef) => {
   const data = node.data;
   const isSelected = node.isSelected;
+
+  // ✅ 细粒度订阅：只订阅当前节点的状态
+  const connectionId = data.metadata?.connectionId || '';
+  const database = data.metadata?.database || data.metadata?.databaseName || data.name || '';
+
+  // 连接节点：订阅连接状态和错误
+  // 使用 useMemo 稳定选择器函数引用
+  const connectionStatusSelector = React.useMemo(
+    () => data.nodeType === 'connection' && connectionId
+      ? selectConnectionStatus(connectionId)
+      : () => undefined,
+    [data.nodeType, connectionId]
+  );
+  const connectionStatus = useTreeStatusStore(connectionStatusSelector);
+
+  const connectionErrorSelector = React.useMemo(
+    () => data.nodeType === 'connection' && connectionId
+      ? selectConnectionError(connectionId)
+      : () => undefined,
+    [data.nodeType, connectionId]
+  );
+  const connectionError = useTreeStatusStore(connectionErrorSelector);
+
+  // 数据库节点：订阅数据库加载状态和错误
+  const databaseLoadingSelector = React.useMemo(
+    () => (data.nodeType === 'database' || data.nodeType === 'system_database') && connectionId && database
+      ? selectDatabaseLoadingState(connectionId, database)
+      : () => undefined,
+    [data.nodeType, connectionId, database]
+  );
+  const databaseLoading = useTreeStatusStore(databaseLoadingSelector);
+
+  const databaseErrorSelector = React.useMemo(
+    () => (data.nodeType === 'database' || data.nodeType === 'system_database') && connectionId && database
+      ? selectDatabaseError(connectionId, database)
+      : () => undefined,
+    [data.nodeType, connectionId, database]
+  );
+  const databaseError = useTreeStatusStore(databaseErrorSelector);
 
   // 注册节点元素到 nodeRefsMap（用于错误提示定位）
   const registerNodeRef = React.useCallback((el: HTMLDivElement | null) => {
@@ -77,9 +124,20 @@ export const TreeNodeRenderer = React.memo(React.forwardRef<HTMLDivElement, Tree
     }
   }, [nodeRefsMap, data.nodeType, data.metadata?.connectionId, data.name]);
 
-  // 开发环境下添加渲染日志（仅 DEBUG 级别）
+  // 开发环境下添加渲染日志（INFO 级别，用于诊断）
   if (process.env.NODE_ENV === 'development') {
-    log.render(`[TreeNodeRenderer] ${data.nodeType}: ${data.name} (id: ${data.id})`);
+    const renderInfo = {
+      nodeType: data.nodeType,
+      name: data.name,
+      id: data.id,
+      isSelected,
+      isOpen: node.isOpen,
+      connectionStatus,
+      connectionError,
+      databaseLoading,
+      databaseError,
+    };
+    log.info(`[TreeNodeRenderer] [RENDER] ${data.nodeType}: ${data.name}`, renderInfo);
   }
 
   // 动态计算 isActivated 状态，避免 openedDatabasesList 变化时触发整个树重新渲染
@@ -90,28 +148,26 @@ export const TreeNodeRenderer = React.memo(React.forwardRef<HTMLDivElement, Tree
     isActivated = isDatabaseOpened(connectionId, database);
   }
 
-  // 动态计算 isConnected 状态，避免 connectionStatuses 变化时触发整个树重新渲染
-  // 使用 getState() 访问最新数据，避免订阅 connectionStatuses
+  // ✅ 使用订阅的状态计算 isConnected
   let isConnected = data.isConnected ?? false;
   if (data.nodeType === 'connection') {
-    const connectionId = data.metadata?.connectionId || '';
-    const connectionStatuses = useConnectionStore.getState().connectionStatuses;
-    const status = connectionStatuses[connectionId];
-    isConnected = status?.status === 'connected';
+    isConnected = connectionStatus === 'connected';
   }
 
-  const isLoading = data.isLoading ?? false;
+  // ✅ 使用订阅的状态计算 isLoading 和 error
+  let isLoading = data.isLoading ?? false;
+  let error = data.error;
+
+  if (data.nodeType === 'connection') {
+    isLoading = connectionStatus === 'connecting';
+    error = connectionError;
+  } else if (data.nodeType === 'database' || data.nodeType === 'system_database') {
+    isLoading = databaseLoading ?? false;
+    error = databaseError;
+  }
+
   const isFavorite = data.isFavorite ?? false;
   const isSystem = data.isSystem ?? false;
-
-  // 调试日志：打印 loading 状态
-  if (data.nodeType === 'connection' && isLoading) {
-    console.log(`🔄 [TreeNodeRenderer] 连接节点 ${data.name} 显示 loading:`, {
-      isLoading,
-      dataIsLoading: data.isLoading,
-      nodeId: node.id
-    });
-  }
 
   // 获取节点元数据
   const isContainer = data.metadata?.is_container === true;
@@ -160,7 +216,7 @@ export const TreeNodeRenderer = React.memo(React.forwardRef<HTMLDivElement, Tree
     normalizedNodeType,
     isSystem,
     isSelected,
-    !!data.error
+    !!error  // ✅ 使用订阅的 error 状态
   );
 
   return (
@@ -245,7 +301,7 @@ export const TreeNodeRenderer = React.memo(React.forwardRef<HTMLDivElement, Tree
         "text-sm truncate flex-1",
         nodeFontStyle,
         nodeTextColor,
-        data.error && "text-destructive",
+        error && "text-destructive",  // ✅ 使用订阅的 error 状态
         isSystemNode && "text-muted-foreground"
       )}>
         {data.name}
@@ -255,59 +311,13 @@ export const TreeNodeRenderer = React.memo(React.forwardRef<HTMLDivElement, Tree
       {isFavorite && <FavoriteIndicator />}
 
       {/* 错误图标 */}
-      {data.error && <ErrorIndicator message={data.error} />}
+      {error && <ErrorIndicator message={error} />}  {/* ✅ 使用订阅的 error 状态 */}
 
       {/* 系统节点标识 */}
       {isSystemNode && <SystemNodeIndicator />}
     </div>
   );
-}, (prevProps, nextProps) => {
-  // 🔧 优化：自定义比较函数，只有关键属性变化时才重新渲染
-  // 这样可以避免父组件重新渲染时，所有子节点都重新渲染
-  const prevData = prevProps.node.data;
-  const nextData = nextProps.node.data;
-
-  // 检查节点数据是否变化
-  if (
-    prevData.id !== nextData.id ||
-    prevData.name !== nextData.name ||
-    prevData.nodeType !== nextData.nodeType ||
-    prevData.isLoading !== nextData.isLoading ||
-    prevData.error !== nextData.error ||
-    prevData.isFavorite !== nextData.isFavorite ||
-    prevData.isConnected !== nextData.isConnected ||
-    prevData.children !== nextData.children // 检查 children 引用是否变化
-  ) {
-    return false; // 需要重新渲染
-  }
-
-  // 检查节点状态是否变化
-  if (
-    prevProps.node.isSelected !== nextProps.node.isSelected ||
-    prevProps.node.isOpen !== nextProps.node.isOpen
-  ) {
-    return false; // 需要重新渲染
-  }
-
-  // 🔧 修复4：检查 isDatabaseOpened 函数引用是否变化
-  // 注意：我们不比较函数的返回值，因为那会导致每次都重新渲染
-  // 我们只比较函数引用本身
-  if (prevProps.isDatabaseOpened !== nextProps.isDatabaseOpened) {
-    return false; // 需要重新渲染
-  }
-
-  // 检查其他 props 是否变化
-  if (
-    prevProps.style !== nextProps.style ||
-    prevProps.dragHandle !== nextProps.dragHandle ||
-    prevProps.onNodeDoubleClick !== nextProps.onNodeDoubleClick
-  ) {
-    return false; // 需要重新渲染
-  }
-
-  // 其他情况不需要重新渲染
-  return true;
-}));
+});
 
 TreeNodeRenderer.displayName = 'TreeNodeRenderer';
 

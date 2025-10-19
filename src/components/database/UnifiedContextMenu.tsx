@@ -68,8 +68,9 @@ export interface UnifiedContextMenuProps {
 
 /**
  * 统一的上下文菜单组件
+ * 🔧 使用 React.memo 优化，避免不必要的重新渲染
  */
-export const UnifiedContextMenu: React.FC<UnifiedContextMenuProps> = ({
+export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   children,
   node,
   onAction,
@@ -868,6 +869,41 @@ export const UnifiedContextMenu: React.FC<UnifiedContextMenuProps> = ({
       </ContextMenuContent>
     </ContextMenu>
   );
-};
+}, (prevProps, nextProps) => {
+  // 🔧 自定义比较函数：只有当关键属性变化时才重新渲染
+  // 这样可以避免父组件重新渲染时，所有菜单都重新渲染
+
+  // 检查节点数据是否变化
+  if (prevProps.node.id !== nextProps.node.id) {
+    return false; // 需要重新渲染
+  }
+  if (prevProps.node.name !== nextProps.node.name) {
+    return false;
+  }
+  if (prevProps.node.nodeType !== nextProps.node.nodeType) {
+    return false;
+  }
+
+  // 检查函数引用是否变化
+  if (prevProps.onAction !== nextProps.onAction) {
+    return false;
+  }
+  if (prevProps.isDatabaseOpened !== nextProps.isDatabaseOpened) {
+    return false;
+  }
+  if (prevProps.isFavorite !== nextProps.isFavorite) {
+    return false;
+  }
+
+  // 检查disabled状态
+  if (prevProps.disabled !== nextProps.disabled) {
+    return false;
+  }
+
+  // 没有变化，跳过重新渲染
+  return true; // 返回true表示props相等，跳过渲染
+});
+
+UnifiedContextMenu.displayName = 'UnifiedContextMenu';
 
 export default UnifiedContextMenu;
