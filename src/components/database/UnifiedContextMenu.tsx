@@ -151,11 +151,11 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     return (
       <>
         <ContextMenuLabel>连接操作</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('test_connection')}>
+        <ContextMenuItem onSelect={() => handleAction('test_connection')}>
           <Activity className="w-4 h-4 mr-2" />
           测试连接
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('refresh_connection')}>
+        <ContextMenuItem onSelect={() => handleAction('refresh_connection')}>
           <RefreshCw className="w-4 h-4 mr-2" />
           刷新连接
           <ContextMenuShortcut>⌘R</ContextMenuShortcut>
@@ -163,12 +163,12 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         <ContextMenuSeparator />
 
         <ContextMenuLabel>数据库管理</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('create_database')}>
+        <ContextMenuItem onSelect={() => handleAction('create_database')}>
           <Plus className="w-4 h-4 mr-2" />
           创建数据库
         </ContextMenuItem>
         {isIoTDB && (
-          <ContextMenuItem onClick={() => handleAction('manage_templates')}>
+          <ContextMenuItem onSelect={() => handleAction('manage_templates')}>
             <FileStack className="w-4 h-4 mr-2" />
             模板管理
           </ContextMenuItem>
@@ -176,26 +176,26 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         <ContextMenuSeparator />
 
         <ContextMenuLabel>连接管理</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('connection_info')}>
+        <ContextMenuItem onSelect={() => handleAction('connection_info')}>
           <Info className="w-4 h-4 mr-2" />
           连接信息
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('connection_properties')}>
+        <ContextMenuItem onSelect={() => handleAction('connection_properties')}>
           <Settings className="w-4 h-4 mr-2" />
           连接属性
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('copy_connection_name')}>
+        <ContextMenuItem onSelect={() => handleAction('copy_connection_name')}>
           <Copy className="w-4 h-4 mr-2" />
           复制连接名
         </ContextMenuItem>
         <ContextMenuSeparator />
 
-        <ContextMenuItem onClick={() => handleAction('disconnect')}>
+        <ContextMenuItem onSelect={() => handleAction('disconnect')}>
           <Unlink className="w-4 h-4 mr-2" />
           断开连接
         </ContextMenuItem>
         <ContextMenuItem
-          onClick={() => handleAction('delete_connection')}
+          onSelect={() => handleAction('delete_connection')}
           className="text-destructive focus:text-destructive"
         >
           <Trash2 className="w-4 h-4 mr-2" />
@@ -217,75 +217,75 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
       <>
         <ContextMenuLabel>数据库操作</ContextMenuLabel>
         {!isOpened && (
-          <ContextMenuItem onClick={() => handleAction('open_database')}>
+          <ContextMenuItem onSelect={() => handleAction('open_database')}>
             <FolderOpen className="w-4 h-4 mr-2" />
             打开数据库
           </ContextMenuItem>
         )}
         {isOpened && (
-          <ContextMenuItem onClick={() => handleAction('close_database')}>
+          <ContextMenuItem onSelect={() => handleAction('close_database')}>
             <FolderX className="w-4 h-4 mr-2" />
             关闭数据库
           </ContextMenuItem>
         )}
-        <ContextMenuItem onClick={() => handleAction('refresh_database')}>
+        <ContextMenuItem onSelect={() => handleAction('refresh_database')}>
           <RefreshCw className="w-4 h-4 mr-2" />
           刷新数据库
           <ContextMenuShortcut>⌘R</ContextMenuShortcut>
         </ContextMenuItem>
         <ContextMenuSeparator />
-        
+
         <ContextMenuLabel>结构操作</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('create_table')}>
+        <ContextMenuItem onSelect={() => handleAction('create_table')}>
           <Plus className="w-4 h-4 mr-2" />
           创建表
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('create_measurement')}>
+        <ContextMenuItem onSelect={() => handleAction('create_measurement')}>
           <Plus className="w-4 h-4 mr-2" />
           创建测量值
         </ContextMenuItem>
         <ContextMenuSeparator />
-        
+
         <ContextMenuLabel>查询操作</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('show_tables')}>
+        <ContextMenuItem onSelect={() => handleAction('show_tables')}>
           <Table className="w-4 h-4 mr-2" />
           显示所有表
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('query_management')}>
+        <ContextMenuItem onSelect={() => handleAction('query_management')}>
           <Search className="w-4 h-4 mr-2" />
           查询管理
         </ContextMenuItem>
         <ContextMenuSeparator />
-        
+
         <ContextMenuLabel>数据管理</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('database_info')}>
+        <ContextMenuItem onSelect={() => handleAction('database_info')}>
           <Info className="w-4 h-4 mr-2" />
           数据库信息
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('manage_retention_policies')}>
+        <ContextMenuItem onSelect={() => handleAction('manage_retention_policies')}>
           <Clock className="w-4 h-4 mr-2" />
           保留策略
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('export_metadata')}>
+        <ContextMenuItem onSelect={() => handleAction('export_metadata')}>
           <Download className="w-4 h-4 mr-2" />
           导出元数据
         </ContextMenuItem>
         <ContextMenuSeparator />
-        
+
         <ContextMenuLabel>复制操作</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('copy_database_name')}>
+        <ContextMenuItem onSelect={() => handleAction('copy_database_name')}>
           <Copy className="w-4 h-4 mr-2" />
           复制数据库名
           <ContextMenuShortcut>⌘C</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('copy_use_statement')}>
+        <ContextMenuItem onSelect={() => handleAction('copy_use_statement')}>
           <FileText className="w-4 h-4 mr-2" />
           复制 USE 语句
         </ContextMenuItem>
         <ContextMenuSeparator />
-        
-        <ContextMenuItem 
-          onClick={() => handleAction('delete_database')}
+
+        <ContextMenuItem
+          onSelect={() => handleAction('delete_database')}
           className="text-destructive focus:text-destructive"
         >
           <Trash2 className="w-4 h-4 mr-2" />
@@ -307,35 +307,35 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
       <>
         <ContextMenuLabel>Bucket 操作</ContextMenuLabel>
         {!isOpened && (
-          <ContextMenuItem onClick={() => handleAction('open_database')}>
+          <ContextMenuItem onSelect={() => handleAction('open_database')}>
             <FolderOpen className="w-4 h-4 mr-2" />
             打开 Bucket
           </ContextMenuItem>
         )}
         {isOpened && (
-          <ContextMenuItem onClick={() => handleAction('close_database')}>
+          <ContextMenuItem onSelect={() => handleAction('close_database')}>
             <FolderX className="w-4 h-4 mr-2" />
             关闭 Bucket
           </ContextMenuItem>
         )}
-        <ContextMenuItem onClick={() => handleAction('refresh_database')}>
+        <ContextMenuItem onSelect={() => handleAction('refresh_database')}>
           <RefreshCw className="w-4 h-4 mr-2" />
           刷新 Bucket
         </ContextMenuItem>
         <ContextMenuSeparator />
         
         <ContextMenuLabel>数据管理</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('database_info')}>
+        <ContextMenuItem onSelect={() => handleAction('database_info')}>
           <Info className="w-4 h-4 mr-2" />
           Bucket 信息
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('export_metadata')}>
+        <ContextMenuItem onSelect={() => handleAction('export_metadata')}>
           <Download className="w-4 h-4 mr-2" />
           导出元数据
         </ContextMenuItem>
         <ContextMenuSeparator />
         
-        <ContextMenuItem onClick={() => handleAction('copy_database_name')}>
+        <ContextMenuItem onSelect={() => handleAction('copy_database_name')}>
           <Copy className="w-4 h-4 mr-2" />
           复制 Bucket 名
         </ContextMenuItem>
@@ -349,35 +349,35 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderStorageGroupMenu = (metadata: Record<string, any>) => (
     <>
       <ContextMenuLabel>存储组操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('refresh_database')}>
+      <ContextMenuItem onSelect={() => handleAction('refresh_database')}>
         <RefreshCw className="w-4 h-4 mr-2" />
         刷新存储组
       </ContextMenuItem>
       <ContextMenuSeparator />
       
       <ContextMenuLabel>设备管理</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('create_device')}>
+      <ContextMenuItem onSelect={() => handleAction('create_device')}>
         <Plus className="w-4 h-4 mr-2" />
         创建设备
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('show_devices')}>
+      <ContextMenuItem onSelect={() => handleAction('show_devices')}>
         <Table className="w-4 h-4 mr-2" />
         显示所有设备
       </ContextMenuItem>
       <ContextMenuSeparator />
       
       <ContextMenuLabel>数据管理</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('database_info')}>
+      <ContextMenuItem onSelect={() => handleAction('database_info')}>
         <Info className="w-4 h-4 mr-2" />
         存储组信息
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('export_metadata')}>
+      <ContextMenuItem onSelect={() => handleAction('export_metadata')}>
         <Download className="w-4 h-4 mr-2" />
         导出元数据
       </ContextMenuItem>
       <ContextMenuSeparator />
       
-      <ContextMenuItem onClick={() => handleAction('copy_database_name')}>
+      <ContextMenuItem onSelect={() => handleAction('copy_database_name')}>
         <Copy className="w-4 h-4 mr-2" />
         复制存储组名
       </ContextMenuItem>
@@ -394,19 +394,19 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     return (
       <>
         <ContextMenuLabel>表操作</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('view_table_data')}>
+        <ContextMenuItem onSelect={() => handleAction('view_table_data')}>
           <Eye className="w-4 h-4 mr-2" />
           查看数据
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('query_table')}>
+        <ContextMenuItem onSelect={() => handleAction('query_table')}>
           <Search className="w-4 h-4 mr-2" />
           查询数据
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('query_builder')}>
+        <ContextMenuItem onSelect={() => handleAction('query_builder')}>
           <Code className="w-4 h-4 mr-2" />
           查询构建器
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('refresh_table')}>
+        <ContextMenuItem onSelect={() => handleAction('refresh_table')}>
           <RefreshCw className="w-4 h-4 mr-2" />
           刷新表
         </ContextMenuItem>
@@ -419,16 +419,16 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
             示例查询
           </ContextMenuSubTrigger>
           <ContextMenuSubContent>
-            <ContextMenuItem onClick={() => handleAction('generate_select_query')}>
+            <ContextMenuItem onSelect={() => handleAction('generate_select_query')}>
               查询所有数据
             </ContextMenuItem>
-            <ContextMenuItem onClick={() => handleAction('generate_count_query')}>
+            <ContextMenuItem onSelect={() => handleAction('generate_count_query')}>
               统计记录数
             </ContextMenuItem>
-            <ContextMenuItem onClick={() => handleAction('generate_recent_query')}>
+            <ContextMenuItem onSelect={() => handleAction('generate_recent_query')}>
               查询最近数据
             </ContextMenuItem>
-            <ContextMenuItem onClick={() => handleAction('generate_aggregate_query')}>
+            <ContextMenuItem onSelect={() => handleAction('generate_aggregate_query')}>
               聚合查询
             </ContextMenuItem>
           </ContextMenuSubContent>
@@ -436,63 +436,63 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         <ContextMenuSeparator />
 
         <ContextMenuLabel>数据分析</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('table_statistics')}>
+        <ContextMenuItem onSelect={() => handleAction('table_statistics')}>
           <BarChart className="w-4 h-4 mr-2" />
           统计分析
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('data_preview')}>
+        <ContextMenuItem onSelect={() => handleAction('data_preview')}>
           <FileText className="w-4 h-4 mr-2" />
           数据预览
         </ContextMenuItem>
         <ContextMenuSeparator />
 
         <ContextMenuLabel>表管理</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('table_info')}>
+        <ContextMenuItem onSelect={() => handleAction('table_info')}>
           <Info className="w-4 h-4 mr-2" />
           表信息
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('edit_table')}>
+        <ContextMenuItem onSelect={() => handleAction('edit_table')}>
           <Edit className="w-4 h-4 mr-2" />
           编辑表结构
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('table_designer')}>
+        <ContextMenuItem onSelect={() => handleAction('table_designer')}>
           <Settings className="w-4 h-4 mr-2" />
           表设计器
         </ContextMenuItem>
         <ContextMenuSeparator />
 
         <ContextMenuLabel>数据操作</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('export_table_data')}>
+        <ContextMenuItem onSelect={() => handleAction('export_table_data')}>
           <Download className="w-4 h-4 mr-2" />
           导出数据
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('import_table_data')}>
+        <ContextMenuItem onSelect={() => handleAction('import_table_data')}>
           <Upload className="w-4 h-4 mr-2" />
           导入数据
         </ContextMenuItem>
         <ContextMenuSeparator />
 
         <ContextMenuLabel>收藏操作</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction(isFav ? 'remove_favorite' : 'add_favorite')}>
+        <ContextMenuItem onSelect={() => handleAction(isFav ? 'remove_favorite' : 'add_favorite')}>
           {isFav ? <StarOff className="w-4 h-4 mr-2" /> : <Star className="w-4 h-4 mr-2" />}
           {isFav ? '取消收藏' : '添加收藏'}
         </ContextMenuItem>
         <ContextMenuSeparator />
 
         <ContextMenuLabel>复制操作</ContextMenuLabel>
-        <ContextMenuItem onClick={() => handleAction('copy_table_name')}>
+        <ContextMenuItem onSelect={() => handleAction('copy_table_name')}>
           <Copy className="w-4 h-4 mr-2" />
           复制表名
           <ContextMenuShortcut>⌘C</ContextMenuShortcut>
         </ContextMenuItem>
-        <ContextMenuItem onClick={() => handleAction('copy_select_statement')}>
+        <ContextMenuItem onSelect={() => handleAction('copy_select_statement')}>
           <FileText className="w-4 h-4 mr-2" />
           复制 SELECT 语句
         </ContextMenuItem>
         <ContextMenuSeparator />
 
         <ContextMenuItem
-          onClick={() => handleAction('delete_table')}
+          onSelect={() => handleAction('delete_table')}
           className="text-destructive focus:text-destructive"
         >
           <Trash2 className="w-4 h-4 mr-2" />
@@ -508,11 +508,11 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderFieldMenu = () => (
     <>
       <ContextMenuLabel>字段操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('query_field')}>
+      <ContextMenuItem onSelect={() => handleAction('query_field')}>
         <Search className="w-4 h-4 mr-2" />
         查询此字段
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('field_details')}>
+      <ContextMenuItem onSelect={() => handleAction('field_details')}>
         <Info className="w-4 h-4 mr-2" />
         字段详情
       </ContextMenuItem>
@@ -525,35 +525,35 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
           聚合函数
         </ContextMenuSubTrigger>
         <ContextMenuSubContent>
-          <ContextMenuItem onClick={() => handleAction('field_max')}>
+          <ContextMenuItem onSelect={() => handleAction('field_max')}>
             最大值 (MAX)
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => handleAction('field_min')}>
+          <ContextMenuItem onSelect={() => handleAction('field_min')}>
             最小值 (MIN)
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => handleAction('field_avg')}>
+          <ContextMenuItem onSelect={() => handleAction('field_avg')}>
             平均值 (MEAN)
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => handleAction('field_sum')}>
+          <ContextMenuItem onSelect={() => handleAction('field_sum')}>
             求和 (SUM)
           </ContextMenuItem>
-          <ContextMenuItem onClick={() => handleAction('field_count')}>
+          <ContextMenuItem onSelect={() => handleAction('field_count')}>
             计数 (COUNT)
           </ContextMenuItem>
         </ContextMenuSubContent>
       </ContextMenuSub>
-      <ContextMenuItem onClick={() => handleAction('field_stats')}>
+      <ContextMenuItem onSelect={() => handleAction('field_stats')}>
         <TrendingUp className="w-4 h-4 mr-2" />
         字段统计
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('field_distribution')}>
+      <ContextMenuItem onSelect={() => handleAction('field_distribution')}>
         <BarChart className="w-4 h-4 mr-2" />
         数值分布
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuLabel>复制操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('copy_field_name')}>
+      <ContextMenuItem onSelect={() => handleAction('copy_field_name')}>
         <Copy className="w-4 h-4 mr-2" />
         复制字段名
         <ContextMenuShortcut>⌘C</ContextMenuShortcut>
@@ -567,40 +567,40 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderTagMenu = () => (
     <>
       <ContextMenuLabel>标签操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('query_tag')}>
+      <ContextMenuItem onSelect={() => handleAction('query_tag')}>
         <Search className="w-4 h-4 mr-2" />
         查询此标签
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('tag_details')}>
+      <ContextMenuItem onSelect={() => handleAction('tag_details')}>
         <Info className="w-4 h-4 mr-2" />
         标签详情
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuLabel>标签分析</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('tag_values')}>
+      <ContextMenuItem onSelect={() => handleAction('tag_values')}>
         <Tags className="w-4 h-4 mr-2" />
         查看所有值
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('tag_cardinality')}>
+      <ContextMenuItem onSelect={() => handleAction('tag_cardinality')}>
         <BarChart className="w-4 h-4 mr-2" />
         基数统计
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('tag_distribution')}>
+      <ContextMenuItem onSelect={() => handleAction('tag_distribution')}>
         <TrendingUp className="w-4 h-4 mr-2" />
         值分布
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuLabel>查询生成</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('generate_filter_query')}>
+      <ContextMenuItem onSelect={() => handleAction('generate_filter_query')}>
         <Filter className="w-4 h-4 mr-2" />
         生成筛选查询
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuLabel>复制操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('copy_tag_name')}>
+      <ContextMenuItem onSelect={() => handleAction('copy_tag_name')}>
         <Copy className="w-4 h-4 mr-2" />
         复制标签名
         <ContextMenuShortcut>⌘C</ContextMenuShortcut>
@@ -614,11 +614,11 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderFieldGroupMenu = () => (
     <>
       <ContextMenuLabel>字段组操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('refresh_fields')}>
+      <ContextMenuItem onSelect={() => handleAction('refresh_fields')}>
         <RefreshCw className="w-4 h-4 mr-2" />
         刷新字段列表
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('show_all_fields')}>
+      <ContextMenuItem onSelect={() => handleAction('show_all_fields')}>
         <Table className="w-4 h-4 mr-2" />
         显示所有字段
       </ContextMenuItem>
@@ -631,11 +631,11 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderTagGroupMenu = () => (
     <>
       <ContextMenuLabel>标签组操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('refresh_tags')}>
+      <ContextMenuItem onSelect={() => handleAction('refresh_tags')}>
         <RefreshCw className="w-4 h-4 mr-2" />
         刷新标签列表
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('show_all_tags')}>
+      <ContextMenuItem onSelect={() => handleAction('show_all_tags')}>
         <Tags className="w-4 h-4 mr-2" />
         显示所有标签
       </ContextMenuItem>
@@ -648,44 +648,44 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderDeviceMenu = (metadata: Record<string, any>) => (
     <>
       <ContextMenuLabel>设备操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('view_device_data')}>
+      <ContextMenuItem onSelect={() => handleAction('view_device_data')}>
         <Eye className="w-4 h-4 mr-2" />
         查看设备数据
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('refresh_device')}>
+      <ContextMenuItem onSelect={() => handleAction('refresh_device')}>
         <RefreshCw className="w-4 h-4 mr-2" />
         刷新设备
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuLabel>时间序列管理</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('create_timeseries')}>
+      <ContextMenuItem onSelect={() => handleAction('create_timeseries')}>
         <Plus className="w-4 h-4 mr-2" />
         创建时间序列
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('show_timeseries')}>
+      <ContextMenuItem onSelect={() => handleAction('show_timeseries')}>
         <Table className="w-4 h-4 mr-2" />
         显示所有时间序列
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuLabel>设备管理</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('device_info')}>
+      <ContextMenuItem onSelect={() => handleAction('device_info')}>
         <Info className="w-4 h-4 mr-2" />
         设备信息
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('mount_template_to_device')}>
+      <ContextMenuItem onSelect={() => handleAction('mount_template_to_device')}>
         <Upload className="w-4 h-4 mr-2" />
         挂载模板
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('copy_device_name')}>
+      <ContextMenuItem onSelect={() => handleAction('copy_device_name')}>
         <Copy className="w-4 h-4 mr-2" />
         复制设备名
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuItem
-        onClick={() => handleAction('delete_device')}
+        onSelect={() => handleAction('delete_device')}
         className="text-destructive focus:text-destructive"
       >
         <Trash2 className="w-4 h-4 mr-2" />
@@ -700,31 +700,31 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderTimeseriesMenu = (metadata: Record<string, any>) => (
     <>
       <ContextMenuLabel>时间序列操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('query_timeseries')}>
+      <ContextMenuItem onSelect={() => handleAction('query_timeseries')}>
         <Search className="w-4 h-4 mr-2" />
         查询数据
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('timeseries_info')}>
+      <ContextMenuItem onSelect={() => handleAction('timeseries_info')}>
         <Info className="w-4 h-4 mr-2" />
         序列信息
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuLabel>数据分析</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('timeseries_stats')}>
+      <ContextMenuItem onSelect={() => handleAction('timeseries_stats')}>
         <BarChart className="w-4 h-4 mr-2" />
         统计分析
       </ContextMenuItem>
       <ContextMenuSeparator />
 
-      <ContextMenuItem onClick={() => handleAction('copy_timeseries_name')}>
+      <ContextMenuItem onSelect={() => handleAction('copy_timeseries_name')}>
         <Copy className="w-4 h-4 mr-2" />
         复制序列名
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuItem
-        onClick={() => handleAction('delete_timeseries')}
+        onSelect={() => handleAction('delete_timeseries')}
         className="text-destructive focus:text-destructive"
       >
         <Trash2 className="w-4 h-4 mr-2" />
@@ -739,39 +739,39 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderTemplateMenu = (metadata: Record<string, any>) => (
     <>
       <ContextMenuLabel>模板操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('view_template')}>
+      <ContextMenuItem onSelect={() => handleAction('view_template')}>
         <Eye className="w-4 h-4 mr-2" />
         查看模板
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('edit_template')}>
+      <ContextMenuItem onSelect={() => handleAction('edit_template')}>
         <Edit className="w-4 h-4 mr-2" />
         编辑模板
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('refresh_template')}>
+      <ContextMenuItem onSelect={() => handleAction('refresh_template')}>
         <RefreshCw className="w-4 h-4 mr-2" />
         刷新模板
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuLabel>模板管理</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('mount_template')}>
+      <ContextMenuItem onSelect={() => handleAction('mount_template')}>
         <Link className="w-4 h-4 mr-2" />
         挂载模板
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('unmount_template')}>
+      <ContextMenuItem onSelect={() => handleAction('unmount_template')}>
         <Unlink className="w-4 h-4 mr-2" />
         卸载模板
       </ContextMenuItem>
       <ContextMenuSeparator />
 
-      <ContextMenuItem onClick={() => handleAction('copy_template_name')}>
+      <ContextMenuItem onSelect={() => handleAction('copy_template_name')}>
         <Copy className="w-4 h-4 mr-2" />
         复制模板名
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuItem
-        onClick={() => handleAction('delete_template')}
+        onSelect={() => handleAction('delete_template')}
         className="text-destructive focus:text-destructive"
       >
         <Trash2 className="w-4 h-4 mr-2" />
@@ -786,24 +786,24 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderRetentionPolicyMenu = (metadata: Record<string, any>) => (
     <>
       <ContextMenuLabel>保留策略操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('view_retention_policy')}>
+      <ContextMenuItem onSelect={() => handleAction('view_retention_policy')}>
         <Eye className="w-4 h-4 mr-2" />
         查看策略
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('edit_retention_policy')}>
+      <ContextMenuItem onSelect={() => handleAction('edit_retention_policy')}>
         <Edit className="w-4 h-4 mr-2" />
         编辑策略
       </ContextMenuItem>
       <ContextMenuSeparator />
 
-      <ContextMenuItem onClick={() => handleAction('copy_policy_name')}>
+      <ContextMenuItem onSelect={() => handleAction('copy_policy_name')}>
         <Copy className="w-4 h-4 mr-2" />
         复制策略名
       </ContextMenuItem>
       <ContextMenuSeparator />
 
       <ContextMenuItem
-        onClick={() => handleAction('delete_retention_policy')}
+        onSelect={() => handleAction('delete_retention_policy')}
         className="text-destructive focus:text-destructive"
       >
         <Trash2 className="w-4 h-4 mr-2" />
@@ -818,17 +818,17 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderOrganizationMenu = (metadata: Record<string, any>) => (
     <>
       <ContextMenuLabel>组织操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('refresh_organization')}>
+      <ContextMenuItem onSelect={() => handleAction('refresh_organization')}>
         <RefreshCw className="w-4 h-4 mr-2" />
         刷新组织
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('organization_info')}>
+      <ContextMenuItem onSelect={() => handleAction('organization_info')}>
         <Info className="w-4 h-4 mr-2" />
         组织信息
       </ContextMenuItem>
       <ContextMenuSeparator />
 
-      <ContextMenuItem onClick={() => handleAction('copy_organization_name')}>
+      <ContextMenuItem onSelect={() => handleAction('copy_organization_name')}>
         <Copy className="w-4 h-4 mr-2" />
         复制组织名
       </ContextMenuItem>
@@ -841,11 +841,11 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   const renderDefaultMenu = () => (
     <>
       <ContextMenuLabel>通用操作</ContextMenuLabel>
-      <ContextMenuItem onClick={() => handleAction('refresh')}>
+      <ContextMenuItem onSelect={() => handleAction('refresh')}>
         <RefreshCw className="w-4 h-4 mr-2" />
         刷新
       </ContextMenuItem>
-      <ContextMenuItem onClick={() => handleAction('copy_name')}>
+      <ContextMenuItem onSelect={() => handleAction('copy_name')}>
         <Copy className="w-4 h-4 mr-2" />
         复制名称
       </ContextMenuItem>
@@ -860,11 +860,17 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   }
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
+    <ContextMenu modal={false}>
+      <ContextMenuTrigger asChild={false} className="block w-full">
         {children}
       </ContextMenuTrigger>
-      <ContextMenuContent className="w-56">
+      <ContextMenuContent
+        className="w-56"
+        onCloseAutoFocus={(e) => {
+          // 阻止自动焦点恢复，避免与对话框的焦点管理冲突
+          e.preventDefault();
+        }}
+      >
         {renderMenuItems()}
       </ContextMenuContent>
     </ContextMenu>

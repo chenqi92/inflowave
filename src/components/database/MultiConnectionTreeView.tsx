@@ -1,8 +1,8 @@
 /**
  * MultiConnectionTreeView - 多连接数据源树组件
- * 
- * 基于 React Arborist 实现的多连接树视图，用于 DatabaseExplorer
- * 
+ *
+ * 基于 Headless Tree 实现的多连接树视图，用于 DatabaseExplorer
+ *
  * 功能特性:
  * - ✅ 支持多个数据库连接
  * - ✅ 虚拟化渲染 (支持大数据量)
@@ -16,13 +16,21 @@
  */
 
 import React, { useState, useEffect, useRef, useMemo, useCallback, startTransition } from 'react';
-import { Tree, NodeApi } from 'react-arborist';
+import { useTree } from '@headless-tree/react';
+import {
+  syncDataLoaderFeature,
+  hotkeysCoreFeature,
+  selectionFeature,
+} from '@headless-tree/core';
+import type { ItemInstance } from '@headless-tree/core';
+import { Virtuoso } from 'react-virtuoso';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { TreeNodeRenderer, TreeNodeData } from './TreeNodeRenderer';
+import { TreeDataLoader } from './TreeDataLoader';
 import { UnifiedContextMenu } from './UnifiedContextMenu';
 import { TreeNodeType } from '@/types/tree';
 import useResizeObserver from 'use-resize-observer';
@@ -107,12 +115,100 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   const openedDatabasesList = useOpenedDatabasesStore(state => state.openedDatabasesList);
   // 🔧 优化：使用 ref 存储 loadedNodes，避免触发不必要的渲染
   const loadedNodesRef = useRef<Set<string>>(new Set());
-  const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
+  // 🔧 确保 root 节点始终展开，这样才能显示顶层连接节点
+  const [expandedNodeIds, setExpandedNodeIds] = useState<string[]>(['root']);
   // 🔧 添加 selection 状态来控制选中节点
-  const [selection, setSelection] = useState<string | null>(null);
-  const treeRef = useRef<any>(null);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [focusedItem, setFocusedItem] = useState<string | null>(null);
   // 🔧 添加更新定时器ref，用于批量更新
   const updateTimeoutRef = useRef<number | null>(null);
+
+  // TreeDataLoader 实例
+  const dataLoaderRef = useRef<TreeDataLoader | null>(null);
+
+  // 初始化 Headless Tree
+  const tree = useTree<TreeNodeData>({
+    rootItemId: 'root',
+
+    getItemName: (item) => {
+      const data = item.getItemData();
+      return data.name;
+    },
+
+    isItemFolder: (item) => {
+      const data = item.getItemData();
+      // 连接节点、数据库节点、容器节点都是文件夹
+      return data.nodeType === 'connection'
+        || data.nodeType === 'database'
+        || data.nodeType === 'system_database'
+        || data.nodeType === 'bucket'
+        || data.nodeType === 'system_bucket'
+        || data.nodeType === 'database3x'
+        || data.nodeType === 'storage_group'
+        || data.nodeType === 'device'
+        || data.metadata?.is_container === true;
+    },
+
+    dataLoader: {
+      getItem: (itemId) => {
+        // root 节点不存在于 dataMap 中，抛出错误
+        if (itemId === 'root') {
+          throw new Error('Root item should not be requested');
+        }
+        const item = dataLoaderRef.current?.getItem(itemId);
+        if (!item) {
+          throw new Error(`Item not found: ${itemId}`);
+        }
+        return item;
+      },
+      getChildren: (itemId) => dataLoaderRef.current?.getChildren(itemId) || [],
+    },
+
+    state: {
+      expandedItems: expandedNodeIds,
+      selectedItems,
+      focusedItem,
+    },
+
+    setExpandedItems: (updater) => {
+      setExpandedNodeIds((prevItems) => {
+        // 如果 updater 是函数，先调用它获取新值
+        const newItems = typeof updater === 'function' ? updater(prevItems) : updater;
+        // 确保 root 节点始终展开
+        const itemsWithRoot = newItems.includes('root') ? newItems : ['root', ...newItems];
+        return itemsWithRoot;
+      });
+    },
+
+    setSelectedItems: (items) => {
+      setSelectedItems(items);
+    },
+
+    setFocusedItem: (item) => {
+      setFocusedItem(item);
+    },
+
+    features: [
+      syncDataLoaderFeature,
+      selectionFeature,
+      hotkeysCoreFeature,
+    ],
+  });
+
+  // 更新 TreeDataLoader 当 treeData 变化时，并通知 tree 重新构建
+  useEffect(() => {
+    if (!dataLoaderRef.current) {
+      dataLoaderRef.current = new TreeDataLoader(treeData);
+      logger.debug('[MultiConnectionTreeView] TreeDataLoader 初始化完成');
+    } else {
+      dataLoaderRef.current.updateData(treeData);
+      logger.debug('[MultiConnectionTreeView] TreeDataLoader 已更新，调用 tree.rebuildTree()');
+      logger.debug('[MultiConnectionTreeView] 当前 expandedNodeIds:', expandedNodeIds);
+      logger.debug('[MultiConnectionTreeView] tree.getState().expandedItems:', tree.getState?.()?.expandedItems);
+      tree.rebuildTree();
+      logger.debug('[MultiConnectionTreeView] rebuildTree 后 tree.getItems().length:', tree.getItems().length);
+    }
+  }, [treeData, tree, expandedNodeIds]);
 
   // 跟踪需要自动展开的数据库节点
   const nodesToAutoExpandRef = useRef<Set<string>>(new Set());
@@ -286,10 +382,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
   // 懒加载子节点
   const handleToggle = useCallback(async (nodeId: string) => {
-    const node = treeRef.current?.get(nodeId);
-    if (!node) return;
+    const item = tree.getItemInstance(nodeId);
+    if (!item) return;
 
-    const nodeData = node.data as TreeNodeData;
+    const nodeData = item.getItemData();
 
     // 如果是连接节点且未连接，先建立连接
     if (nodeData.nodeType === 'connection') {
@@ -308,15 +404,13 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         } catch (err) {
           logger.error('连接失败:', err);
           // 🔧 连接失败后，取消节点选中状态，避免保持选中效果
-          if (treeRef.current?.deselectAll) {
-            treeRef.current.deselectAll();
-          }
+          tree.setSelectedItems([]);
           return;
         }
       }
     }
 
-    // 如果节点已经加载过（在缓存中），直接返回，让 react-arborist 处理展开/收起
+    // 如果节点已经加载过（在缓存中），直接返回，让 Headless Tree 处理展开/收起
     if (loadedNodesRef.current.has(nodeId)) {
       logger.debug(`使用缓存: ${nodeId}`);
       return;
@@ -422,10 +516,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       loadedNodesRef.current.add(nodeId);
 
       // 加载完成后自动展开节点
-      const treeNode = treeRef.current?.get(nodeId);
-      if (treeNode && !treeNode.isOpen) {
+      const treeItem = tree.getItemInstance(nodeId);
+      if (treeItem && !treeItem.isExpanded()) {
         logger.debug(`自动展开已加载的节点: ${nodeId}`);
-        treeNode.open();
+        treeItem.expand();
       }
     } catch (err) {
       logger.error('加载子节点失败:', err);
@@ -650,17 +744,17 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           const dbNode = findDatabaseNodeInTree(treeDataRef.current, connectionId, database);
           if (dbNode) {
             logger.debug(`[关闭数据库] 找到数据库节点: ${dbNode.id}, nodeType: ${dbNode.nodeType}`);
-            const node = treeRef.current?.get(dbNode.id);
-            if (node) {
-              logger.debug(`[关闭数据库] 获取到 arborist 节点, isOpen: ${node.isOpen}`);
-              if (node.isOpen) {
+            const item = tree.getItemInstance(dbNode.id);
+            if (item) {
+              logger.debug(`[关闭数据库] 获取到 tree item, isExpanded: ${item.isExpanded()}`);
+              if (item.isExpanded()) {
                 logger.debug(`[关闭数据库] 收起节点: ${dbNode.id}`);
-                node.close();
+                item.collapse();
               } else {
                 logger.debug(`[关闭数据库] 节点已经是收起状态: ${dbNode.id}`);
               }
             } else {
-              logger.warn(`[关闭数据库] 无法从 treeRef 获取节点: ${dbNode.id}`);
+              logger.warn(`[关闭数据库] 无法从 tree 获取节点: ${dbNode.id}`);
             }
           } else {
             logger.warn(`[关闭数据库] 未找到数据库节点: ${database}, connectionId: ${connectionId}`);
@@ -750,9 +844,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           nodesToAutoExpandRef.current.add(nodeId);
           logger.debug(`[打开数据库] 标记节点 ${nodeId} 需要自动展开`);
 
-          const node = treeRef.current?.get(nodeId);
-          if (node) {
-            const nodeData = node.data as TreeNodeData;
+          const item = tree.getItemInstance(nodeId);
+          if (item) {
+            const nodeData = item.getItemData();
 
             // 先加载子节点，然后再展开节点
             // 这样可以确保展开时子节点已经加载，箭头会正确显示
@@ -762,9 +856,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
               handleToggleRef.current(nodeId);
             } else {
               // 如果子节点已加载，直接展开
-              if (!node.isOpen) {
+              if (!item.isExpanded()) {
                 logger.debug(`[打开数据库] 展开节点: ${nodeId}`);
-                node.open();
+                item.expand();
               } else {
                 logger.debug(`[打开数据库] 节点已经是展开状态: ${nodeId}`);
               }
@@ -779,9 +873,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       logger.debug('[打开数据库] 检查需要自动展开的节点:', Array.from(nodesToAutoExpandRef.current));
 
       nodesToAutoExpandRef.current.forEach(nodeId => {
-        const node = treeRef.current?.get(nodeId);
-        if (node) {
-          const nodeData = node.data as TreeNodeData;
+        const item = tree.getItemInstance(nodeId);
+        if (item) {
+          const nodeData = item.getItemData();
           const connectionId = nodeData.metadata?.connectionId || '';
           const database = nodeData.name;
 
@@ -789,10 +883,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, database) : false;
 
           // 只展开已打开的数据库节点
-          if (isActivated && !node.isOpen) {
+          if (isActivated && !item.isExpanded()) {
             logger.debug(`[打开数据库] 自动展开节点: ${nodeId}`);
             // 1. 展开节点（立即执行）
-            node.open();
+            item.expand();
             // 2. 如果子节点未加载，触发加载
             if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
               logger.debug(`[打开数据库] 触发子节点加载: ${nodeId}`);
@@ -872,23 +966,40 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   }, [treeData, searchValue]);
 
   // 处理节点选择
-  const handleSelect = useCallback((nodes: NodeApi<TreeNodeData>[]) => {
-    const selected = nodes.length > 0 ? nodes[0].data : null;
-
-    // 更新 selection 状态
-    setSelection(selected?.id || null);
+  const handleSelect = useCallback((itemIds: string[]) => {
+    const selected = itemIds.length > 0 ? tree.getItemInstance(itemIds[0])?.getItemData() : null;
 
     // 调用回调
     logger.info('[MultiConnectionTreeView] 选中节点:', selected?.id);
-    onNodeSelect?.(selected);
-  }, [onNodeSelect]);
+    onNodeSelect?.(selected || null);
+  }, [onNodeSelect, tree]);
+
+  // 递归收起节点及其所有子孙节点
+  const collapseNodeRecursively = useCallback((itemId: string) => {
+    const item = tree.getItemInstance(itemId);
+    if (!item) return;
+
+    // 收起当前节点
+    if (item.isExpanded()) {
+      item.collapse();
+    }
+
+    // 获取子节点并递归收起
+    const children = dataLoaderRef.current?.getChildren(itemId) || [];
+    children.forEach(childId => {
+      collapseNodeRecursively(childId);
+    });
+  }, [tree]);
 
   // 处理节点双击
-  const handleNodeDoubleClick = useCallback(async (nodeData: TreeNodeData, node: any) => {
+  const handleNodeDoubleClick = useCallback(async (nodeData: TreeNodeData, item: ItemInstance<TreeNodeData>) => {
     const now = Date.now();
     const nodeId = nodeData.id;
 
     logger.debug(`🖱️ 双击节点: ${nodeId}, 节点类型: ${nodeData.nodeType}`);
+
+    // 双击时选中当前节点
+    item.select();
 
     // 防止双击重复触发（300ms 内的重复双击会被忽略）
     // 但如果节点有错误状态，允许立即重试
@@ -922,24 +1033,38 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
       // 特殊处理：连接节点
       if (nodeType === 'connection') {
+        const connectionId = nodeData.metadata?.connectionId || '';
+        // ✅ 不使用闭包中的 connectionStatuses，而是从 nodeData 中获取连接状态
+        // 因为 nodeData 是从 tree.getItemData() 获取的，包含最新的状态
+        const isConnected = nodeData.isConnected ?? false;
+
+        // 添加调试日志
+        logger.debug(`[双击连接节点] connectionId: ${connectionId}, isConnected: ${isConnected}, nodeData.isConnected: ${nodeData.isConnected}`);
+
         // 如果有错误状态，允许重新尝试连接
         if (hasError) {
           logger.debug(`双击有错误的连接节点，重新尝试连接: ${nodeType}`);
-          await handleToggle(node.id);
+          await handleToggle(item.getId());
           return;
         }
 
         // 如果未连接，先建立连接
-        if (!nodeData.isConnected) {
+        if (!isConnected) {
           logger.debug(`双击未连接的连接节点，建立连接: ${nodeType}`);
-          await handleToggle(node.id);
+          await handleToggle(item.getId());
           return;
         }
 
-        // 如果已连接且已加载子节点，切换展开/收起
+        // 如果已连接且已加载子节点，只切换自己的展开/收起状态
+        // 不递归收起子节点，保持子节点的展开状态
         if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
           logger.debug(`双击已连接且已加载的连接节点，切换展开/收起: ${nodeType}`);
-          node.toggle();
+          if (item.isExpanded()) {
+            logger.debug(`收起连接节点（不影响子节点状态）: ${nodeId}`);
+            item.collapse();
+          } else {
+            item.expand();
+          }
           return;
         }
       }
@@ -947,7 +1072,13 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       // 其他容器节点：先检查是否已加载子节点
       if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
         logger.debug(`双击已加载的容器节点，切换展开/收起: ${nodeType}`);
-        node.toggle();
+        if (item.isExpanded()) {
+          // 收起时递归收起所有子孙节点
+          logger.debug(`递归收起容器节点及其所有子孙节点: ${nodeId}`);
+          collapseNodeRecursively(nodeId);
+        } else {
+          item.expand();
+        }
         return;
       }
 
@@ -971,26 +1102,32 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
         // 如果数据库已打开，双击只切换展开/收起
         logger.debug(`双击已打开的数据库节点，切换展开/收起: ${nodeType}`);
-        node.toggle();
+        if (item.isExpanded()) {
+          // 收起时递归收起所有子孙节点
+          logger.debug(`递归收起数据库节点及其所有子孙节点: ${nodeId}`);
+          collapseNodeRecursively(nodeId);
+        } else {
+          item.expand();
+        }
         return;
       }
 
       // 如果节点未加载子节点（children === undefined 且不在缓存中），调用 handleToggle 加载数据
       logger.debug(`双击容器节点，加载子节点: ${nodeType}`);
-      await handleToggle(node.id);
+      await handleToggle(item.getId());
       return;
     }
 
     // 其他叶子节点：通知父组件
     logger.debug(`双击叶子节点，通知父组件: ${nodeType}`);
     onNodeActivate?.(nodeData);
-  }, [onNodeActivate, handleToggle, isDatabaseOpened]);
+  }, [onNodeActivate, handleToggle, isDatabaseOpened, collapseNodeRecursively]);
 
   // 处理右键菜单
-  const handleContextMenu = useCallback((node: NodeApi<TreeNodeData>, event: React.MouseEvent) => {
+  const handleContextMenu = useCallback((item: ItemInstance<TreeNodeData>, event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation(); // 阻止事件冒泡，避免触发其他节点的事件
-    onNodeContextMenu?.(node.data, event);
+    onNodeContextMenu?.(item.getItemData(), event);
   }, [onNodeContextMenu]);
 
   // 刷新
@@ -998,61 +1135,6 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     loadAllTreeNodes(true);
     onRefresh?.();
   }, [loadAllTreeNodes, onRefresh]);
-
-  // 创建稳定的 onToggle 回调
-  const handleTreeToggle = useCallback(async (nodeId: string) => {
-    const node = treeRef.current?.get(nodeId);
-    if (!node) return;
-
-    const nodeData = node.data as TreeNodeData;
-
-    // 只在需要加载数据时调用 handleToggle
-    // 如果节点已有 children（不是 undefined），让 react-arborist 自己处理展开/收起
-    if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
-      logger.debug('Tree onToggle - 需要加载数据:', nodeId);
-      await handleToggle(nodeId);
-    } else {
-      logger.debug('Tree onToggle - 切换展开状态:', nodeId);
-      // 让 react-arborist 自己处理展开/收起，不做任何操作
-    }
-  }, [handleToggle]);
-
-  // 创建稳定的 children 渲染函数
-  // 传递 isDatabaseOpened，让 TreeNodeRenderer 动态计算状态
-  // 使用 UnifiedContextMenu 包装节点以提供右键菜单
-  const renderNode = useCallback((props: any) => {
-    const nodeData = props.node.data;
-
-    const nodeRenderer = (
-      <TreeNodeRenderer
-        {...props}
-        onNodeDoubleClick={handleNodeDoubleClick}
-        isDatabaseOpened={isDatabaseOpened}
-        nodeRefsMap={nodeRefsMap}
-      />
-    );
-
-    // 如果提供了 onContextMenuAction，使用 UnifiedContextMenu
-    if (onContextMenuAction) {
-      return (
-        <UnifiedContextMenu
-          node={nodeData}
-          onAction={onContextMenuAction}
-          isDatabaseOpened={isDatabaseOpened}
-          isFavorite={isFavorite}
-        >
-          {nodeRenderer}
-        </UnifiedContextMenu>
-      );
-    }
-
-    // 否则使用旧的 onContextMenu 方式（向后兼容）
-    return (
-      <div onContextMenu={(e) => handleContextMenu(props.node, e)}>
-        {nodeRenderer}
-      </div>
-    );
-  }, [onContextMenuAction, handleContextMenu, handleNodeDoubleClick, isDatabaseOpened, isFavorite, nodeRefsMap]);
 
   // 优化：只在初始加载且没有数据时显示全局 loading
   // 避免在后续操作时整个树闪烁
@@ -1081,25 +1163,63 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   // 移除渲染日志，避免性能影响
   // logger.render('[MultiConnectionTreeView] 渲染，treeData 节点数:', treeData.length);
 
+  // 获取所有可见的树节点项
+  // 直接调用 tree.getItems()，不使用 useMemo
+  // 因为 tree.rebuildTree() 在 useEffect 中调用，useMemo 会在 useEffect 之前计算，导致拿到旧值
+  const items = tree.getItems();
+  logger.debug(`[MultiConnectionTreeView] tree.getItems() 返回 ${items.length} 个节点, expandedNodeIds:`, expandedNodeIds, 'treeData.length:', treeData.length);
+
+  // 渲染单个节点的函数
+  const renderItem = useCallback((index: number) => {
+    const item = items[index];
+    if (!item) {
+      logger.warn(`[MultiConnectionTreeView] 无法获取索引 ${index} 的节点`);
+      return null;
+    }
+
+    const nodeData = item.getItemData();
+
+    const nodeRenderer = (
+      <TreeNodeRenderer
+        item={item}
+        onNodeDoubleClick={handleNodeDoubleClick}
+        isDatabaseOpened={isDatabaseOpened}
+        nodeRefsMap={nodeRefsMap}
+      />
+    );
+
+    // 如果提供了 onContextMenuAction，使用 UnifiedContextMenu
+    if (onContextMenuAction) {
+      return (
+        <UnifiedContextMenu
+          node={nodeData}
+          onAction={onContextMenuAction}
+          isDatabaseOpened={isDatabaseOpened}
+          isFavorite={isFavorite}
+        >
+          {nodeRenderer}
+        </UnifiedContextMenu>
+      );
+    }
+
+    // 否则使用旧的 onContextMenu 方式（向后兼容）
+    return (
+      <div onContextMenu={(e) => handleContextMenu(item, e)}>
+        {nodeRenderer}
+      </div>
+    );
+  }, [items, handleNodeDoubleClick, isDatabaseOpened, nodeRefsMap, onContextMenuAction, isFavorite, handleContextMenu]);
+
+  logger.debug(`[MultiConnectionTreeView] 渲染树，节点数: ${items.length}, treeData: ${treeData.length}`);
+
   return (
-    <div ref={containerRef} className={`h-full w-full ${className}`}>
-      <Tree
-        ref={treeRef}
-        data={filteredData}
-        idAccessor={(node) => node.id}
-        width={width}
-        height={height}
-        indent={20}
-        rowHeight={36}
-        overscanCount={10}
-        selection={selection}
-        onSelect={handleSelect}
-        onToggle={handleTreeToggle}
-        disableMultiSelection={true}
-        disableEdit={true}
-      >
-        {renderNode}
-      </Tree>
+    <div ref={containerRef} className={`h-full w-full ${className}`} {...tree.getContainerProps()}>
+      <Virtuoso
+        style={{ height: '100%', width: '100%' }}
+        totalCount={items.length}
+        itemContent={renderItem}
+        overscan={10}
+      />
     </div>
   );
 };

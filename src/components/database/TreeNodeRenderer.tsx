@@ -1,5 +1,5 @@
 import React from 'react';
-import { NodeRendererProps } from 'react-arborist';
+import type { ItemInstance } from '@headless-tree/core';
 import { ChevronRight, ChevronDown, Loader2, Shield } from 'lucide-react';
 import { DatabaseIcon } from '@/components/common/DatabaseIcon';
 import { TreeNodeType, normalizeNodeType, getIoTDBNodeBehavior } from '@/types/tree';
@@ -25,7 +25,7 @@ import {
   FavoriteIndicator,
   ErrorIndicator,
 } from './NodeStatusIndicator';
-import { log } from '@/utils/logger';
+import { log, logger } from '@/utils/logger';
 
 export interface TreeNodeData {
   id: string;
@@ -45,27 +45,25 @@ export interface TreeNodeData {
   isFavorite?: boolean;
 }
 
-interface TreeNodeRendererProps extends NodeRendererProps<TreeNodeData> {
-  onNodeDoubleClick?: (nodeData: TreeNodeData, node: any) => void;
+interface TreeNodeRendererProps {
+  item: ItemInstance<TreeNodeData>;
+  onNodeDoubleClick?: (nodeData: TreeNodeData, item: ItemInstance<TreeNodeData>) => void;
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
   nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
 }
 
-// ⚠️ 注意：不使用 React.memo，因为 react-arborist 使用 render prop 模式
-// React.memo 的比较函数在 render prop 模式下不会被调用
+// ✅ 使用 React.memo 优化性能，Headless Tree 支持 memo
 // 性能优化通过 Zustand 的细粒度订阅实现
 // forwardRef 用于支持 ContextMenuTrigger 的 asChild 属性
 export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendererProps>(({
-  node,
-  style,
-  dragHandle,
+  item,
   onNodeDoubleClick,
   isDatabaseOpened,
   nodeRefsMap,
-  ...restProps
 }, forwardedRef) => {
-  const data = node.data;
-  const isSelected = node.isSelected;
+  const data = item.getItemData();
+  const isSelected = item.isSelected();
+  const level = item.getItemMeta().level;
 
   // ✅ 细粒度订阅：只订阅当前节点的状态
   const connectionId = data.metadata?.connectionId || '';
@@ -131,7 +129,7 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
       name: data.name,
       id: data.id,
       isSelected,
-      isOpen: node.isOpen,
+      isOpen: item.isExpanded(),
       connectionStatus,
       connectionError,
       databaseLoading,
@@ -180,8 +178,8 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
   //   console.log(`🎨 [TreeNodeRenderer] 渲染数据库节点: ${data.name}`, {
   //     nodeType: normalizedNodeType,
   //     isActivated,
-  //     isOpen: node.isOpen,
-  //     willPassToIcon: normalizedNodeType.includes('database') ? isActivated : (isActivated || node.isOpen)
+  //     isOpen: item.isExpanded(),
+  //     willPassToIcon: normalizedNodeType.includes('database') ? isActivated : (isActivated || item.isExpanded())
   //   });
   // }
 
@@ -202,7 +200,7 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
   }
 
   // 计算节点层级深度（用于视觉层级优化）
-  const nodeDepth = node.level;
+  const nodeDepth = level;
 
   // 判断是否为系统管理节点
   const isSystemNode = isSystemManagementNode(normalizedNodeType, isSystem);
@@ -219,35 +217,49 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
     !!error  // ✅ 使用订阅的 error 状态
   );
 
+  // 计算缩进样式
+  const indentStyle = { paddingLeft: `${level * 20}px` };
+
+  // 获取 Headless Tree 的 props
+  const treeProps = item.getProps();
+
   return (
     <div
+      {...treeProps}
       ref={(el) => {
-        // 合并所有 ref：forwardedRef、dragHandle、nodeRefsMap
+        // 合并所有 ref：forwardedRef、nodeRefsMap、treeProps.ref
         if (typeof forwardedRef === 'function') {
           forwardedRef(el);
         } else if (forwardedRef && 'current' in forwardedRef) {
           (forwardedRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
         }
-
-        if (typeof dragHandle === 'function') {
-          dragHandle(el);
-        } else if (dragHandle && 'current' in dragHandle) {
-          (dragHandle as React.MutableRefObject<HTMLDivElement | null>).current = el;
-        }
         registerNodeRef(el);
+        // 调用 treeProps 的 ref
+        if (treeProps.ref) {
+          if (typeof treeProps.ref === 'function') {
+            treeProps.ref(el);
+          } else if ('current' in treeProps.ref) {
+            (treeProps.ref as React.MutableRefObject<HTMLDivElement | null>).current = el;
+          }
+        }
       }}
-      style={style}
+      style={indentStyle}
       className={cn(
         'flex items-center py-1.5 px-2 cursor-pointer rounded transition-colors select-none',
         'hover:bg-accent hover:text-accent-foreground',
         nodeOpacity,
         nodeBackground
       )}
-      onDoubleClick={(e) => {
-        // 双击时调用回调
-        onNodeDoubleClick?.(data, node);
+      onClick={(e) => {
+        // 先调用 treeProps 的 onClick（处理选中状态）
+        treeProps.onClick?.(e);
       }}
-      {...restProps}
+      onDoubleClick={(e) => {
+        // 先调用 treeProps 的 onDoubleClick
+        treeProps.onDoubleClick?.(e);
+        // 然后调用自定义回调
+        onNodeDoubleClick?.(data, item);
+      }}
     >
       {/* 展开/折叠图标 */}
       <div className="w-5 h-5 flex items-center justify-center mr-0.5">
@@ -256,12 +268,16 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
             className="w-4 h-4 hover:bg-muted rounded cursor-pointer flex items-center justify-center transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              node.toggle();
+              if (item.isExpanded()) {
+                item.collapse();
+              } else {
+                item.expand();
+              }
             }}
           >
             {isLoading ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-            ) : node.isOpen ? (
+            ) : item.isExpanded() ? (
               <ChevronDown className="w-3.5 h-3.5 text-foreground" />
             ) : (
               <ChevronRight className="w-3.5 h-3.5 text-foreground" />
@@ -279,10 +295,10 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
           nodeType={normalizedNodeType}
           isOpen={
             // 对于数据库节点，只使用 isActivated（数据库是否被打开）
-            // 对于其他容器节点，使用 node.isOpen（节点是否展开）
+            // 对于其他容器节点，使用 item.isExpanded()（节点是否展开）
             normalizedNodeType.includes('database')
               ? isActivated
-              : (isActivated || node.isOpen)
+              : (isActivated || item.isExpanded())
           }
           isConnected={isConnected}
           dbType={data.dbType}
