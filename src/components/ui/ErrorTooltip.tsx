@@ -28,10 +28,14 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
 }) => {
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [isVisible, setIsVisible] = useState(visible);
+  const [isPositioned, setIsPositioned] = useState(false); // 标记是否已成功定位
+  const [opacity, setOpacity] = useState(1); // 透明度，用于淡出效果
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastPositionRef = useRef({ top: 0, left: 0 }); // 🔧 记录上次位置，避免重复更新
   const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null); // 🔧 防抖定时器
+  const retryCountRef = useRef(0); // 重试计数器
+  const fadeOutTimeoutRef = useRef<NodeJS.Timeout | null>(null); // 淡出定时器
 
   // 计算提示框位置
   const updatePosition = useCallback(() => {
@@ -41,6 +45,44 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
     }
 
     const targetRect = targetRef.current.getBoundingClientRect();
+
+    // 检查目标元素是否可见
+    // 如果 getBoundingClientRect 返回全0，说明元素不可见或未渲染
+    if (targetRect.top === 0 && targetRect.left === 0 && targetRect.right === 0 && targetRect.bottom === 0) {
+      log.warn('[ErrorTooltip] 目标元素不可见，尝试重试', { retryCount: retryCountRef.current });
+
+      // 重试机制：最多重试10次，每次延迟300ms（总共3秒）
+      if (retryCountRef.current < 10) {
+        retryCountRef.current++;
+        setTimeout(() => {
+          updatePosition();
+        }, 300);
+      } else {
+        log.error('[ErrorTooltip] 重试10次后仍无法定位，放弃显示');
+        setIsVisible(false);
+        onHide?.();
+      }
+      return;
+    }
+
+    // 成功定位，重置重试计数器
+    retryCountRef.current = 0;
+    setIsPositioned(true);
+    setOpacity(1); // 重置透明度
+
+    // 启动淡出效果（2秒后开始淡出，1秒淡出时间）
+    if (fadeOutTimeoutRef.current) {
+      clearTimeout(fadeOutTimeoutRef.current);
+    }
+    fadeOutTimeoutRef.current = setTimeout(() => {
+      setOpacity(0);
+      // 淡出完成后隐藏
+      setTimeout(() => {
+        setIsVisible(false);
+        onHide?.();
+      }, 1000); // 1秒淡出时间
+    }, 2000); // 2秒后开始淡出
+
     const padding = 12; // 增加间距，让提示框更贴近节点
 
     // 🔧 修复：使用估算的 tooltip 宽度，避免首次渲染时宽度为 0
@@ -110,6 +152,8 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
   // 监听 visible 变化
   useEffect(() => {
     setIsVisible(visible);
+    setIsPositioned(false); // 重置定位状态
+    retryCountRef.current = 0; // 重置重试计数器
 
     if (visible) {
       // 🔧 优化：只在 DOM 渲染后更新一次位置
@@ -167,15 +211,18 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
     };
   }, [isVisible, updatePosition]);
 
-  if (!isVisible) return null;
+  // 只有在可见且已成功定位后才渲染
+  if (!isVisible || !isPositioned) return null;
 
   const tooltip = (
     <div
       ref={tooltipRef}
-      className="fixed z-[99999] px-3 py-2 bg-destructive text-destructive-foreground text-xs rounded-md shadow-lg border border-destructive/20 animate-fade-out pointer-events-none max-w-xs"
+      className="fixed z-[99999] px-3 py-2 bg-destructive text-destructive-foreground text-xs rounded-md shadow-lg border border-destructive/20 pointer-events-none max-w-xs"
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
+        opacity,
+        transition: 'opacity 1s ease-out',
       }}
     >
       <div className="flex items-start gap-2">

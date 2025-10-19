@@ -44,16 +44,18 @@ interface TreeNodeRendererProps extends NodeRendererProps<TreeNodeData> {
   nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
 }
 
-// 🔧 优化：使用 React.memo 避免不必要的重新渲染
+// 🔧 优化：使用 React.memo 和 forwardRef 避免不必要的重新渲染
 // 只有当 node.data、node.isSelected、node.isOpen 发生变化时才重新渲染
-export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = React.memo(({
+// forwardRef 用于支持 ContextMenuTrigger 的 asChild 属性
+export const TreeNodeRenderer = React.memo(React.forwardRef<HTMLDivElement, TreeNodeRendererProps>(({
   node,
   style,
   dragHandle,
   onNodeDoubleClick,
   isDatabaseOpened,
   nodeRefsMap,
-}) => {
+  ...restProps
+}, forwardedRef) => {
   const data = node.data;
   const isSelected = node.isSelected;
 
@@ -164,7 +166,13 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = React.memo(({
   return (
     <div
       ref={(el) => {
-        // 同时设置 dragHandle 和 nodeRefsMap
+        // 合并所有 ref：forwardedRef、dragHandle、nodeRefsMap
+        if (typeof forwardedRef === 'function') {
+          forwardedRef(el);
+        } else if (forwardedRef && 'current' in forwardedRef) {
+          (forwardedRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+        }
+
         if (typeof dragHandle === 'function') {
           dragHandle(el);
         } else if (dragHandle && 'current' in dragHandle) {
@@ -181,10 +189,9 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = React.memo(({
       )}
       onDoubleClick={(e) => {
         // 双击时调用回调
-        e.stopPropagation();
-        console.log('🖱️🖱️ TreeNodeRenderer 双击事件:', node.id);
         onNodeDoubleClick?.(data, node);
       }}
+      {...restProps}
     >
       {/* 展开/折叠图标 */}
       <div className="w-5 h-5 flex items-center justify-center mr-0.5">
@@ -300,7 +307,9 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = React.memo(({
 
   // 其他情况不需要重新渲染
   return true;
-});
+}));
+
+TreeNodeRenderer.displayName = 'TreeNodeRenderer';
 
 export default TreeNodeRenderer;
 

@@ -100,7 +100,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                             showMessage.success(`连接 ${node.name} 已刷新`);
                         } catch (error) {
                             logger.error('刷新连接失败:', error);
-                            showMessage.error(`刷新连接失败: ${error}`);
+                            // 🔧 不再显示全局toast - 错误会通过ErrorTooltip显示
                         }
                     }
                     break;
@@ -112,7 +112,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                             showMessage.success(`连接 ${node.name} 已断开`);
                         } catch (error) {
                             logger.error('断开连接失败:', error);
-                            showMessage.error(`断开连接失败: ${error}`);
+                            // 🔧 不再显示全局toast - 错误会通过ErrorTooltip显示
                         }
                     }
                     break;
@@ -124,7 +124,8 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                             logger.debug(`🔧 编辑连接属性: ${connection.name}`);
                             handleOpenConnectionDialog(connection);
                         } else {
-                            showMessage.error('连接不存在');
+                            logger.error('连接不存在');
+                            // 🔧 不再显示全局toast - 这种情况很少见
                         }
                     }
                     break;
@@ -156,15 +157,16 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                                         buildCompleteTreeData(true);
                                     } catch (deleteError) {
                                         logger.error('删除连接失败:', deleteError);
-                                        showMessage.error(`删除连接失败: ${deleteError}`);
+                                        // 🔧 不再显示全局toast - 错误会通过ErrorTooltip显示
                                     }
                                 } catch (error) {
                                     logger.error('删除连接失败:', error);
-                                    showMessage.error(`删除连接失败: ${error}`);
+                                    // 🔧 不再显示全局toast - 错误会通过ErrorTooltip显示
                                 }
                             }
                         } else {
-                            showMessage.error('连接不存在');
+                            logger.error('连接不存在');
+                            // 🔧 不再显示全局toast - 这种情况很少见
                         }
                     }
                     break;

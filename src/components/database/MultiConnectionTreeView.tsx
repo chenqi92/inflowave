@@ -108,9 +108,11 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   // 🔧 优化：使用 ref 存储 loadedNodes，避免触发不必要的渲染
   const loadedNodesRef = useRef<Set<string>>(new Set());
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
-  // 移除 selectedNode 状态，避免不必要的重新渲染
-  // const [selectedNode, setSelectedNode] = useState<TreeNodeData | null>(null);
+  // 🔧 添加 selection 状态来控制选中节点
+  const [selection, setSelection] = useState<string | null>(null);
   const treeRef = useRef<any>(null);
+  // 🔧 添加更新定时器ref，用于批量更新
+  const updateTimeoutRef = useRef<number | null>(null);
 
   // 跟踪需要自动展开的数据库节点
   const nodesToAutoExpandRef = useRef<Set<string>>(new Set());
@@ -608,9 +610,15 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // 更新 ref
     prevConnectionStatusesRef.current = new Map(connectionStatuses);
 
-    // 🔧 使用 startTransition 降低树更新的优先级，避免阻塞用户交互
-    startTransition(() => {
-      setTreeData(prevData => {
+    // 🔧 使用 requestAnimationFrame 批量更新，避免多次重新渲染
+    if (updateTimeoutRef.current) {
+      cancelAnimationFrame(updateTimeoutRef.current);
+    }
+
+    updateTimeoutRef.current = requestAnimationFrame(() => {
+      // 🔧 使用 startTransition 降低树更新的优先级，避免阻塞用户交互
+      startTransition(() => {
+        setTreeData(prevData => {
       // 🔧 性能优化：使用 Map 记录需要更新的节点索引和新数据
       const nodesToUpdate = new Map<number, TreeNodeData>();
 
@@ -687,6 +695,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       });
 
       return newData;
+        });
       });
     });
   }, [connectionStatuses]);
@@ -1011,7 +1020,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   const handleSelect = useCallback((nodes: NodeApi<TreeNodeData>[]) => {
     const selected = nodes.length > 0 ? nodes[0].data : null;
 
-    // 直接调用回调，不更新内部状态，避免不必要的重新渲染
+    // 更新 selection 状态
+    setSelection(selected?.id || null);
+
+    // 调用回调
     logger.info('[MultiConnectionTreeView] 选中节点:', selected?.id);
     onNodeSelect?.(selected);
   }, [onNodeSelect]);
@@ -1156,6 +1168,15 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   const renderNode = useCallback((props: any) => {
     const nodeData = props.node.data;
 
+    const nodeRenderer = (
+      <TreeNodeRenderer
+        {...props}
+        onNodeDoubleClick={handleNodeDoubleClick}
+        isDatabaseOpened={isDatabaseOpened}
+        nodeRefsMap={nodeRefsMap}
+      />
+    );
+
     // 如果提供了 onContextMenuAction，使用 UnifiedContextMenu
     if (onContextMenuAction) {
       return (
@@ -1165,12 +1186,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           isDatabaseOpened={isDatabaseOpened}
           isFavorite={isFavorite}
         >
-          <TreeNodeRenderer
-            {...props}
-            onNodeDoubleClick={handleNodeDoubleClick}
-            isDatabaseOpened={isDatabaseOpened}
-            nodeRefsMap={nodeRefsMap}
-          />
+          {nodeRenderer}
         </UnifiedContextMenu>
       );
     }
@@ -1178,12 +1194,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // 否则使用旧的 onContextMenu 方式（向后兼容）
     return (
       <div onContextMenu={(e) => handleContextMenu(props.node, e)}>
-        <TreeNodeRenderer
-          {...props}
-          onNodeDoubleClick={handleNodeDoubleClick}
-          isDatabaseOpened={isDatabaseOpened}
-          nodeRefsMap={nodeRefsMap}
-        />
+        {nodeRenderer}
       </div>
     );
   }, [onContextMenuAction, handleContextMenu, handleNodeDoubleClick, isDatabaseOpened, isFavorite, nodeRefsMap]);
@@ -1226,6 +1237,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         indent={20}
         rowHeight={36}
         overscanCount={10}
+        selection={selection}
         onSelect={handleSelect}
         onToggle={handleTreeToggle}
         disableMultiSelection={true}

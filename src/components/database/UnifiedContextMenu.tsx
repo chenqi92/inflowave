@@ -861,9 +861,7 @@ export const UnifiedContextMenu: React.FC<UnifiedContextMenuProps> = ({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div className="w-full">
-          {children}
-        </div>
+        {children}
       </ContextMenuTrigger>
       <ContextMenuContent className="w-56">
         {renderMenuItems()}
