@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { XCircle } from 'lucide-react';
+import { log } from '@/utils/logger';
 
 interface ErrorTooltipProps {
   /** 触发元素的 ref */
@@ -29,11 +30,13 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
   const [isVisible, setIsVisible] = useState(visible);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastPositionRef = useRef({ top: 0, left: 0 }); // 🔧 记录上次位置，避免重复更新
+  const updateTimeoutRef = useRef<NodeJS.Timeout | null>(null); // 🔧 防抖定时器
 
   // 计算提示框位置
-  const updatePosition = () => {
+  const updatePosition = useCallback(() => {
     if (!targetRef.current) {
-      console.warn('[ErrorTooltip] targetRef.current 不存在');
+      log.warn('[ErrorTooltip] targetRef.current 不存在');
       return;
     }
 
@@ -83,33 +86,37 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
       left = padding;
     }
 
-    console.log('[ErrorTooltip] 更新位置:', {
+    // 🔧 位置变化检测：只在位置实际改变时更新（容差 2px）
+    const tolerance = 2;
+    const hasChanged =
+      Math.abs(top - lastPositionRef.current.top) > tolerance ||
+      Math.abs(left - lastPositionRef.current.left) > tolerance;
+
+    if (!hasChanged) {
+      log.debug('[ErrorTooltip] 位置无变化，跳过更新');
+      return;
+    }
+
+    log.debug('[ErrorTooltip] 更新位置:', {
       targetRect: { top: targetRect.top, left: targetRect.left, right: targetRect.right, bottom: targetRect.bottom },
       tooltipSize: { width: tooltipWidth, height: tooltipHeight },
       finalPosition: { top, left }
     });
 
+    lastPositionRef.current = { top, left };
     setPosition({ top, left });
-  };
+  }, [targetRef]);
 
   // 监听 visible 变化
   useEffect(() => {
     setIsVisible(visible);
 
     if (visible) {
-      // 🔧 修复：多次尝试更新位置，确保 tooltip 渲染后位置正确
-      // 第一次：立即更新（使用估算尺寸）
-      updatePosition();
-
-      // 第二次：延迟一帧更新（DOM 已渲染）
-      requestAnimationFrame(() => {
+      // 🔧 优化：只在 DOM 渲染后更新一次位置
+      // 使用 requestAnimationFrame 确保 DOM 已渲染
+      const rafId = requestAnimationFrame(() => {
         updatePosition();
       });
-
-      // 第三次：延迟 50ms 更新（确保所有样式已应用）
-      const timeoutId = setTimeout(() => {
-        updatePosition();
-      }, 50);
 
       // 设置自动隐藏
       if (autoHideDuration > 0) {
@@ -123,7 +130,7 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
       }
 
       return () => {
-        clearTimeout(timeoutId);
+        cancelAnimationFrame(rafId);
       };
     }
 
@@ -132,14 +139,20 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [visible, autoHideDuration, onHide]);
+  }, [visible, autoHideDuration, onHide, updatePosition]);
 
-  // 监听窗口大小变化和滚动，更新位置
+  // 监听窗口大小变化和滚动，更新位置（添加防抖）
   useEffect(() => {
     if (!isVisible) return;
 
+    // 🔧 防抖处理：避免频繁更新位置
     const handleUpdate = () => {
-      updatePosition();
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
+      updateTimeoutRef.current = setTimeout(() => {
+        updatePosition();
+      }, 100); // 100ms 防抖
     };
 
     window.addEventListener('resize', handleUpdate);
@@ -148,8 +161,11 @@ export const ErrorTooltip: React.FC<ErrorTooltipProps> = ({
     return () => {
       window.removeEventListener('resize', handleUpdate);
       window.removeEventListener('scroll', handleUpdate, true);
+      if (updateTimeoutRef.current) {
+        clearTimeout(updateTimeoutRef.current);
+      }
     };
-  }, [isVisible]);
+  }, [isVisible, updatePosition]);
 
   if (!isVisible) return null;
 

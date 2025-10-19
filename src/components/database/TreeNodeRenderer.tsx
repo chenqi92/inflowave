@@ -18,6 +18,7 @@ import {
   FavoriteIndicator,
   ErrorIndicator,
 } from './NodeStatusIndicator';
+import { log } from '@/utils/logger';
 
 export interface TreeNodeData {
   id: string;
@@ -74,9 +75,9 @@ export const TreeNodeRenderer: React.FC<TreeNodeRendererProps> = React.memo(({
     }
   }, [nodeRefsMap, data.nodeType, data.metadata?.connectionId, data.name]);
 
-  // 开发环境下添加渲染日志（简化输出）
+  // 开发环境下添加渲染日志（仅 DEBUG 级别）
   if (process.env.NODE_ENV === 'development') {
-    console.log(`🎨 [TreeNodeRenderer] ${data.nodeType}: ${data.name} (id: ${data.id})`);
+    log.render(`[TreeNodeRenderer] ${data.nodeType}: ${data.name} (id: ${data.id})`);
   }
 
   // 动态计算 isActivated 状态，避免 openedDatabasesList 变化时触发整个树重新渲染

@@ -88,6 +88,7 @@ import {
   getNodeIcon,
 } from '@/utils/databaseExplorer/nodeUtils';
 import { generateQueryWithTimeFilter } from '@/utils/databaseExplorer/queryUtils';
+import { log } from '@/utils/logger';
 
 // 导入自定义 Hooks
 import {
@@ -121,14 +122,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const stores = useDatabaseExplorerStores();
   const navigate = useNavigate();
 
-  // 添加渲染计数器（仅在开发环境）
+  // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
   if (process.env.NODE_ENV === 'development') {
     state.renderCountRef.current++;
-    console.log(
-      `🎨 [Render] DatabaseExplorer 重新渲染 (第 ${state.renderCountRef.current} 次)`
+    log.render(
+      `DatabaseExplorer 重新渲染 (第 ${state.renderCountRef.current} 次)`
     );
-    // 只在需要调试时启用 trace
-    // console.trace('🎨 [Render] DatabaseExplorer 渲染调用栈');
   }
 
   // Initialize cache hook with state and store functions

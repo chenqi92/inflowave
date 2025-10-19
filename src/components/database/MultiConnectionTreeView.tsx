@@ -15,7 +15,7 @@
  * - ✅ 主题切换
  */
 
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, startTransition } from 'react';
 import { Tree, NodeApi } from 'react-arborist';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { Loader2, RefreshCw } from 'lucide-react';
@@ -27,6 +27,7 @@ import { UnifiedContextMenu } from './UnifiedContextMenu';
 import { TreeNodeType } from '@/types/tree';
 import useResizeObserver from 'use-resize-observer';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
+import { log } from '@/utils/logger';
 
 interface ConnectionInfo {
   id: string;
@@ -82,17 +83,17 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   isDatabaseOpened,
   nodeRefsMap,
 }) => {
-  // 添加渲染计数器（仅在开发环境）
+  // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
   const renderCountRef = useRef(0);
   if (process.env.NODE_ENV === 'development') {
     renderCountRef.current++;
-    console.log(`🎨 [Render] MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
+    log.render(`MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
   }
 
-  // 调试：打印 connectionStatuses
+  // 调试：打印 connectionStatuses（仅 DEBUG 级别）
   useEffect(() => {
     if (connectionStatuses) {
-      console.log('🔍 [MultiConnectionTreeView] connectionStatuses 更新:',
+      log.debug('[MultiConnectionTreeView] connectionStatuses 更新:',
         Array.from(connectionStatuses.entries()).map(([id, status]) => `${id}: ${status}`)
       );
     }
@@ -104,7 +105,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
   // 直接订阅 openedDatabasesList 以监听数据库打开/关闭状态变化
   const openedDatabasesList = useOpenedDatabasesStore(state => state.openedDatabasesList);
-  const [loadedNodes, setLoadedNodes] = useState<Set<string>>(new Set());
+  // 🔧 优化：使用 ref 存储 loadedNodes，避免触发不必要的渲染
+  const loadedNodesRef = useRef<Set<string>>(new Set());
   const [expandedNodeIds, setExpandedNodeIds] = useState<Set<string>>(new Set());
   // 移除 selectedNode 状态，避免不必要的重新渲染
   // const [selectedNode, setSelectedNode] = useState<TreeNodeData | null>(null);
@@ -151,10 +153,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
     // 清除缓存
     if (clearCache) {
-      console.log('🗑️ [树刷新] 清除节点缓存，重新加载整个树');
-      setLoadedNodes(new Set());
+      log.debug('[树刷新] 清除节点缓存，重新加载整个树');
+      loadedNodesRef.current = new Set();
     } else {
-      console.log('⏭️ [树刷新] 不清除缓存，只更新节点状态');
+      log.debug('[树刷新] 不清除缓存，只更新节点状态');
     }
 
     try {
@@ -281,12 +283,6 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     }
   }, [connections, connectionStatuses, connectionErrors]);
 
-  // 使用 ref 跟踪 loadedNodes，避免 handleToggle 依赖它
-  const loadedNodesStateRef = useRef(loadedNodes);
-  useEffect(() => {
-    loadedNodesStateRef.current = loadedNodes;
-  }, [loadedNodes]);
-
   // 懒加载子节点
   const handleToggle = useCallback(async (nodeId: string) => {
     const node = treeRef.current?.get(nodeId);
@@ -320,8 +316,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     }
 
     // 如果节点已经加载过（在缓存中），直接返回，让 react-arborist 处理展开/收起
-    if (loadedNodesStateRef.current.has(nodeId)) {
-      console.log(`📦 使用缓存: ${nodeId}`);
+    if (loadedNodesRef.current.has(nodeId)) {
+      log.debug(`使用缓存: ${nodeId}`);
       return;
     }
 
@@ -333,8 +329,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       return;
     }
 
-    console.log(`🔄 懒加载节点: ${nodeId}`, nodeData);
-    console.log(`📊 [性能] 当前树节点总数: ${treeData.length}, 已加载节点数: ${loadedNodes.size}`);
+    log.debug(`懒加载节点: ${nodeId}`, nodeData);
+    log.debug(`[性能] 当前树节点总数: ${treeData.length}, 已加载节点数: ${loadedNodesRef.current.size}`);
 
     // 不再设置 loading 状态，避免触发额外的重新渲染
     // 直接加载数据，在加载完成后一次性更新节点
@@ -421,8 +417,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         return result;
       });
 
-      // 标记节点已加载
-      setLoadedNodes(prev => new Set([...prev, nodeId]));
+      // 🔧 标记节点已加载（使用 ref，避免触发渲染）
+      loadedNodesRef.current.add(nodeId);
 
       // 加载完成后自动展开节点
       const treeNode = treeRef.current?.get(nodeId);
@@ -604,16 +600,18 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     });
 
     if (!statusChanged) {
-      console.log('👀 [MultiConnectionTreeView] 连接状态无实际变化，跳过更新');
+      log.debug('[MultiConnectionTreeView] 连接状态无实际变化，跳过更新');
       return;
     }
 
-    console.log('🔄 [MultiConnectionTreeView] 连接状态发生变化，更新节点状态');
+    log.debug('[MultiConnectionTreeView] 连接状态发生变化，更新节点状态');
 
     // 更新 ref
     prevConnectionStatusesRef.current = new Map(connectionStatuses);
 
-    setTreeData(prevData => {
+    // 🔧 使用 startTransition 降低树更新的优先级，避免阻塞用户交互
+    startTransition(() => {
+      setTreeData(prevData => {
       // 🔧 性能优化：使用 Map 记录需要更新的节点索引和新数据
       const nodesToUpdate = new Map<number, TreeNodeData>();
 
@@ -690,6 +688,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       });
 
       return newData;
+      });
     });
   }, [connectionStatuses]);
 
@@ -700,35 +699,29 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     console.log(`🧹 处理 ${disconnectedNodesRef.current.size} 个断开连接的节点`);
 
     disconnectedNodesRef.current.forEach((nodeData, nodeId) => {
-      // 清除该连接节点的所有子节点缓存
+      // 🔧 清除该连接节点的所有子节点缓存（使用 ref，避免触发渲染）
       const connectionId = nodeId.replace('connection-', '');
-      console.log(`🗑️ 清除连接 ${connectionId} 的所有子节点缓存`);
+      log.debug(`清除连接 ${connectionId} 的所有子节点缓存`);
 
-      setLoadedNodes(prev => {
-        const newSet = new Set(prev);
-        const sizeBefore = newSet.size;
-        // 递归清除该连接节点及其所有子节点的缓存
-        clearNodeAndChildrenCache(nodeData, newSet);
-        const clearedCount = sizeBefore - newSet.size;
-        if (clearedCount > 0) {
-          console.log(`  ✅ 已清除 ${clearedCount} 个节点的缓存`);
-        }
-        return newSet;
-      });
+      const sizeBefore = loadedNodesRef.current.size;
+      // 递归清除该连接节点及其所有子节点的缓存
+      clearNodeAndChildrenCache(nodeData, loadedNodesRef.current);
+      const clearedCount = sizeBefore - loadedNodesRef.current.size;
+      if (clearedCount > 0) {
+        log.debug(`已清除 ${clearedCount} 个节点的缓存`);
+      }
     });
 
     // 清空 ref
     disconnectedNodesRef.current.clear();
   }, [treeData, clearNodeAndChildrenCache]);
 
-  // 使用 ref 跟踪 handleToggle、loadedNodes 和 treeData，避免循环依赖
+  // 使用 ref 跟踪 handleToggle 和 treeData，避免循环依赖
   const handleToggleRef = useRef(handleToggle);
-  const loadedNodesRef = useRef(loadedNodes);
   const treeDataRef = useRef(treeData);
 
   useEffect(() => {
     handleToggleRef.current = handleToggle;
-    loadedNodesRef.current = loadedNodes;
     treeDataRef.current = treeData;
   });
 
@@ -836,14 +829,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
                 ) {
                   console.log(`🔒 [关闭数据库] 找到节点: ${n.id}, 清除子节点`);
 
-                  // 清除缓存
+                  // 🔧 清除缓存（使用 ref，避免触发渲染）
                   if (n.children) {
-                    setLoadedNodes(prev => {
-                      const newSet = new Set(prev);
-                      clearNodeAndChildrenCache(n, newSet);
-                      console.log(`🔒 [关闭数据库] 已清除节点缓存: ${n.id}`);
-                      return newSet;
-                    });
+                    clearNodeAndChildrenCache(n, loadedNodesRef.current);
+                    log.debug(`[关闭数据库] 已清除节点缓存: ${n.id}`);
                   }
 
                   dataChanged = true;
@@ -969,25 +958,23 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     const searchValueChanged = prevSearchValueRef.current !== searchValue;
 
     if (!treeDataChanged && !searchValueChanged) {
-      console.log('✅ [filteredData] 使用缓存，避免重新计算');
+      log.debug('[filteredData] 使用缓存，避免重新计算');
       return prevFilteredDataRef.current;
     }
 
-    console.log('🎨 [filteredData] 重新计算:', {
+    log.debug('[filteredData] 重新计算:', {
       treeDataChanged,
       searchValueChanged,
       treeDataLength: treeData.length,
       searchValue,
-      prevTreeDataReference: prevTreeDataRef.current,
-      currentTreeDataReference: treeData,
-      referenceChanged: prevTreeDataRef.current !== treeData
     });
 
     prevTreeDataRef.current = treeData;
     prevSearchValueRef.current = searchValue;
 
+    // 🔧 早期返回：无搜索值时直接返回 treeData
     if (!searchValue.trim()) {
-      console.log('✅ [filteredData] 无搜索值，直接返回 treeData');
+      log.debug('[filteredData] 无搜索值，直接返回 treeData');
       prevFilteredDataRef.current = treeData;
       return treeData;
     }
@@ -1084,16 +1071,16 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         }
 
         // 如果已连接且已加载子节点，切换展开/收起
-        if (nodeData.children !== undefined || loadedNodesStateRef.current.has(nodeId)) {
-          console.log(`📂 双击已连接且已加载的连接节点，切换展开/收起: ${nodeType}`);
+        if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
+          log.debug(`双击已连接且已加载的连接节点，切换展开/收起: ${nodeType}`);
           node.toggle();
           return;
         }
       }
 
       // 其他容器节点：先检查是否已加载子节点
-      if (nodeData.children !== undefined || loadedNodesStateRef.current.has(nodeId)) {
-        console.log(`📂 双击已加载的容器节点，切换展开/收起: ${nodeType}`);
+      if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
+        log.debug(`双击已加载的容器节点，切换展开/收起: ${nodeType}`);
         node.toggle();
         return;
       }
@@ -1155,8 +1142,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
     // 只在需要加载数据时调用 handleToggle
     // 如果节点已有 children（不是 undefined），让 react-arborist 自己处理展开/收起
-    if (nodeData.children === undefined && !loadedNodesStateRef.current.has(nodeId)) {
-      console.log('Tree onToggle - 需要加载数据:', nodeId);
+    if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
+      log.debug('Tree onToggle - 需要加载数据:', nodeId);
       await handleToggle(nodeId);
     } else {
       console.log('Tree onToggle - 切换展开状态:', nodeId);
@@ -1204,7 +1191,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
   // 优化：只在初始加载且没有数据时显示全局 loading
   // 避免在后续操作时整个树闪烁
-  if (loading && treeData.length === 0 && !loadedNodes.size) {
+  if (loading && treeData.length === 0 && !loadedNodesRef.current.size) {
     return (
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />

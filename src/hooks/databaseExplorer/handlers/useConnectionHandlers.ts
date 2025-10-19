@@ -1,7 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, startTransition } from 'react';
 import type { ConnectionConfig } from '@/types';
 import type { DataNode } from '@/types/databaseExplorer';
 import { showMessage } from '@/utils/message';
+import { log } from '@/utils/logger';
 
 interface UseConnectionHandlersProps {
     getConnection: (id: string) => ConnectionConfig | undefined;
@@ -167,14 +168,16 @@ export const useConnectionHandlers = ({
             return;
         }
 
-        console.log(
-            `🔄 开始连接操作: ${connection.name}, 当前状态: ${isCurrentlyConnected ? '已连接' : '未连接'}`,
+        log.debug(
+            `开始连接操作: ${connection.name}, 当前状态: ${isCurrentlyConnected ? '已连接' : '未连接'}`,
             { connectionId: connection_id, currentStatus: currentStatus?.status }
         );
 
-        // 设置loading状态
-        setConnectionLoadingStates(prev => new Map(prev).set(connection_id, true));
-        updateConnectionNodeDisplay(connection_id, true);
+        // 🔧 使用 startTransition 批量更新 loading 状态，降低优先级
+        startTransition(() => {
+            setConnectionLoadingStates(prev => new Map(prev).set(connection_id, true));
+            updateConnectionNodeDisplay(connection_id, true);
+        });
 
         // 添加超时控制
         const timeoutMs = (connection.connectionTimeout || 30) * 1000;
@@ -189,21 +192,21 @@ export const useConnectionHandlers = ({
         try {
             if (isCurrentlyConnected) {
                 // 断开连接
-                console.log(`🔌 断开连接: ${connection.name}`);
+                log.info(`断开连接: ${connection.name}`);
                 await disconnectFromDatabase(connection_id);
                 showMessage.success(`已断开连接: ${connection.name}`);
             } else {
                 // 建立连接
-                console.log(`🔗 建立连接: ${connection.name}`);
+                log.info(`建立连接: ${connection.name}`);
                 await connectToDatabase(connection_id);
                 showMessage.success(`已连接: ${connection.name}`);
             }
 
             clearTimeout(timeoutId);
-            console.log(`✅ 连接操作完成: ${connection.name}`);
+            log.info(`连接操作完成: ${connection.name}`);
         } catch (error) {
             clearTimeout(timeoutId);
-            console.error(`❌ 连接操作失败:`, error);
+            log.error(`连接操作失败:`, error);
 
             let errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -217,13 +220,15 @@ export const useConnectionHandlers = ({
 
             showMessage.error(`连接失败: ${errorMessage}`);
         } finally {
-            // 清除loading状态
-            setConnectionLoadingStates(prev => {
-                const newMap = new Map(prev);
-                newMap.delete(connection_id);
-                return newMap;
+            // 🔧 使用 startTransition 批量清除 loading 状态
+            startTransition(() => {
+                setConnectionLoadingStates(prev => {
+                    const newMap = new Map(prev);
+                    newMap.delete(connection_id);
+                    return newMap;
+                });
+                updateConnectionNodeDisplay(connection_id, false);
             });
-            updateConnectionNodeDisplay(connection_id, false);
         }
     }, [
         isConnectionConnected,
