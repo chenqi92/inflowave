@@ -28,8 +28,8 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
-import type { UserPreferences, KeyboardShortcut } from '@/types';
-import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
+import type { KeyboardShortcut } from '@/types';
+import { useUserPreferencesStore, type UserPreferences } from '@/stores/userPreferencesStore';
 
 // 获取所有系统快捷键的函数
 const getAllSystemShortcuts = (): KeyboardShortcut[] => {
@@ -297,6 +297,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     null
   );
   const [editingKeys, setEditingKeys] = useState<string[]>([]);
+  // eslint-disable-next-line no-undef
   const [fontSaveTimeout, setFontSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const form = useForm<UserPreferences>({
@@ -384,7 +385,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     setLoading(true);
     try {
       // 🔧 使用 store 的乐观更新，立即生效
-      await updatePreferences(values);
+      await updatePreferences(values as Partial<UserPreferences>);
 
       showMessage.success('偏好设置已保存');
       onSave?.(values);

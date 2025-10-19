@@ -25,6 +25,7 @@ import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import ContextMenu from '@/components/common/ContextMenu';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
+import { logger } from '@/utils/logger';
 import './ConnectionManager.css';
 
 interface ConnectionManagerProps {
@@ -98,12 +99,12 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     if (!monitoringActive) return;
 
     const interval = setInterval(() => {
-      console.log('🔄 执行定时状态刷新...');
+      logger.debug('执行定时状态刷新...');
       refreshAllStatuses();
     }, monitoringInterval * 1000);
 
     return () => {
-      console.log('🚫 清理定时刷新间隔');
+      logger.debug('🚫 清理定时刷新间隔');
       clearInterval(interval);
     };
   }, [monitoringActive, monitoringInterval]); // 移除refreshAllStatuses依赖
@@ -127,7 +128,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
           return;
         }
 
-        console.log(`🧪 测试连接: ${connection.name}`);
+        logger.debug(`🧪 测试连接: ${connection.name}`);
         const result = await testConnection(connectionId);
         
         if (result) {
@@ -136,7 +137,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
           showMessage.error(`连接测试失败: ${connection.name}`);
         }
       } catch (error) {
-        console.error('测试连接失败:', error);
+        logger.error('测试连接失败:', error);
         const errorMessage = String(error).replace('Error: ', '');
         showMessage.error(`测试连接失败: ${errorMessage}`);
       } finally {
@@ -173,17 +174,17 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   // 处理刷新所有连接状态 - 强制刷新连接列表
   const handleRefreshAllConnectionStatuses = useCallback(async () => {
     setIsRefreshingAll(true);
-    console.log('🔄 开始强制刷新连接列表...');
+    logger.debug('开始强制刷新连接列表...');
 
     try {
       // 使用强制刷新方法重新加载所有连接
       await forceRefreshConnections();
 
       showMessage.success('连接列表已刷新');
-      console.log('✅ 连接列表强制刷新完成');
+      logger.info('连接列表强制刷新完成');
 
     } catch (error) {
-      console.error('❌ 刷新连接列表失败:', error);
+      logger.error('刷新连接列表失败:', error);
       showMessage.error(`刷新连接列表失败: ${error}`);
     } finally {
       setIsRefreshingAll(false);
@@ -348,15 +349,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
           );
           if (confirmed) {
             try {
-              console.log('🗑️ 开始删除连接:', connection.id);
+              logger.debug('开始删除连接:', connection.id);
 
               // 先从后端删除
               await safeTauriInvoke('delete_connection', { connectionId: connection.id });
-              console.log('✅ 后端删除成功');
+              logger.info('后端删除成功');
 
               // 再从前端状态删除
               removeConnection(connection.id);
-              console.log('✅ 前端状态删除成功');
+              logger.info('前端状态删除成功');
 
               showMessage.success(`连接 ${connection.name} 已删除`);
 
@@ -366,7 +367,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               }, 100);
 
             } catch (error) {
-              console.error('❌ 删除连接失败:', error);
+              logger.error('删除连接失败:', error);
               showMessage.error(`删除连接失败: ${error}`);
             }
           }
@@ -374,11 +375,11 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         }
 
         default:
-          console.warn('未处理的右键菜单动作:', action);
+          logger.warn('未处理的右键菜单动作:', action);
           break;
       }
     } catch (error) {
-      console.error('执行右键菜单动作失败:', error);
+      logger.error('执行右键菜单动作失败:', error);
       showMessage.error(`操作失败: ${error}`);
     }
 
@@ -751,7 +752,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                   size='sm'
                   disabled={isLoading}
                   onClick={() => {
-                    console.log('编辑连接:', record);
+                    logger.debug('编辑连接:', record);
                     // 将 DataRow 转换为 ConnectionConfig
                     const connection = record as any as ConnectionConfig;
                     onEditConnection?.(connection);
@@ -778,15 +779,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                     );
                     if (confirmed) {
                       try {
-                        console.log('🗑️ 开始删除连接:', record.id);
+                        logger.debug('开始删除连接:', record.id);
 
                         // 先从后端删除
                         await safeTauriInvoke('delete_connection', { connectionId: record.id });
-                        console.log('✅ 后端删除成功');
+                        logger.info('后端删除成功');
 
                         // 再从前端状态删除
                         removeConnection(record.id!);
-                        console.log('✅ 前端状态删除成功');
+                        logger.info('前端状态删除成功');
 
                         showMessage.success(`连接 ${record.name} 已删除`);
 
@@ -796,7 +797,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                         }, 100);
 
                       } catch (error) {
-                        console.error('❌ 删除连接失败:', error);
+                        logger.error('删除连接失败:', error);
                         showMessage.error(`删除连接失败: ${error}`);
                       }
                     }

@@ -1042,6 +1042,9 @@ async fn main() {
             commands::logs::read_backend_logs,
             commands::logs::clear_backend_logs,
             commands::logs::get_backend_log_path,
+            commands::logs::list_log_files,
+            commands::logs::delete_log_file,
+            commands::logs::cleanup_old_log_files,
         ])
         .setup(|app| {
             info!("Application setup started");

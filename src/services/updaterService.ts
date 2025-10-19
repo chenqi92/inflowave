@@ -6,6 +6,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { UpdateInfo, UpdaterSettings, DEFAULT_UPDATER_SETTINGS, PlatformInfo, UpdateStatus } from '@/types/updater';
 import { getAppVersion } from '@/utils/version';
 
+import { logger } from '@/utils/logger';
 class UpdaterService {
   private checkInterval: ReturnType<typeof setInterval> | null = null;
   private settings: UpdaterSettings = { ...DEFAULT_UPDATER_SETTINGS };
@@ -23,9 +24,9 @@ class UpdaterService {
         this.startAutoCheck();
       }
       
-      console.log('Updater service initialized');
+      logger.debug('Updater service initialized');
     } catch (error) {
-      console.error('Failed to initialize updater service:', error);
+      logger.error('Failed to initialize updater service:', error);
     }
   }
 
@@ -42,7 +43,7 @@ class UpdaterService {
       
       return updateInfo;
     } catch (error) {
-      console.error('Failed to check for updates:', error);
+      logger.error('Failed to check for updates:', error);
       throw error;
     }
   }
@@ -60,7 +61,7 @@ class UpdaterService {
         await this.saveSettings();
       }
     } catch (error) {
-      console.error('Failed to skip version:', error);
+      logger.error('Failed to skip version:', error);
       throw error;
     }
   }
@@ -87,7 +88,7 @@ class UpdaterService {
         this.startAutoCheck();
       }
     } catch (error) {
-      console.error('Failed to update settings:', error);
+      logger.error('Failed to update settings:', error);
       throw error;
     }
   }
@@ -113,11 +114,11 @@ class UpdaterService {
           this.notifyUpdate(updateInfo);
         }
       } catch (error) {
-        console.error('Auto update check failed:', error);
+        logger.error('Auto update check failed:', error);
       }
     }, intervalMs);
     
-    console.log(`Auto update check started, interval: ${this.settings.check_interval} hours`);
+    logger.debug(`Auto update check started, interval: ${this.settings.check_interval} hours`);
   }
 
   /**
@@ -166,7 +167,7 @@ class UpdaterService {
         };
       }
     } catch (error) {
-      console.warn('Failed to load updater settings, using defaults:', error);
+      logger.warn('Failed to load updater settings, using defaults:', error);
       this.settings = { ...DEFAULT_UPDATER_SETTINGS };
     }
   }
@@ -178,7 +179,7 @@ class UpdaterService {
     try {
       await safeTauriInvoke('update_updater_settings', { settings: this.settings });
     } catch (error) {
-      console.error('Failed to save updater settings:', error);
+      logger.error('Failed to save updater settings:', error);
       throw error;
     }
   }
@@ -204,7 +205,7 @@ class UpdaterService {
       
       return updateInfo;
     } catch (error) {
-      console.error('Manual update check failed:', error);
+      logger.error('Manual update check failed:', error);
       throw error;
     }
   }
@@ -217,7 +218,7 @@ class UpdaterService {
     try {
       return getAppVersion();
     } catch (error) {
-      console.warn('无法获取应用版本，使用默认值:', error);
+      logger.warn('无法获取应用版本，使用默认值:', error);
       return '0.1.3'; // 默认版本，与package.json保持一致
     }
   }
@@ -227,7 +228,7 @@ class UpdaterService {
    */
   async openDownloadPage(url: string): Promise<void> {
     if (!url) {
-      console.warn('URL is empty, cannot open download page');
+      logger.warn('URL is empty, cannot open download page');
       return;
     }
     
@@ -239,7 +240,7 @@ class UpdaterService {
           const { open } = await import('@tauri-apps/plugin-shell');
           await open(url);
         } catch (error: unknown) {
-          console.error('Failed to open URL with Tauri shell:', error);
+          logger.error('Failed to open URL with Tauri shell:', error);
           // 降级到浏览器打开
           this.fallbackOpenUrl(url);
         }
@@ -248,7 +249,7 @@ class UpdaterService {
         this.fallbackOpenUrl(url);
       }
     } catch (error: unknown) {
-      console.error('Failed to open download page:', error);
+      logger.error('Failed to open download page:', error);
       // 最后的降级方案
       this.fallbackOpenUrl(url);
     }
@@ -262,10 +263,10 @@ class UpdaterService {
       if (typeof window !== 'undefined' && window.open) {
         window.open(url, '_blank', 'noopener,noreferrer');
       } else {
-        console.error('Cannot open URL: window.open is not available');
+        logger.error('Cannot open URL: window.open is not available');
       }
     } catch (error) {
-      console.error('Fallback URL opening failed:', error);
+      logger.error('Fallback URL opening failed:', error);
     }
   }
 
@@ -303,7 +304,7 @@ class UpdaterService {
     try {
       return await safeTauriInvoke<boolean>('is_builtin_update_supported');
     } catch (error) {
-      console.error('检查内置更新支持失败:', error);
+      logger.error('检查内置更新支持失败:', error);
       return false;
     }
   }
@@ -315,7 +316,7 @@ class UpdaterService {
     try {
       return await safeTauriInvoke<PlatformInfo>('get_platform_info');
     } catch (error) {
-      console.error('获取平台信息失败:', error);
+      logger.error('获取平台信息失败:', error);
       return { os: 'unknown', arch: 'unknown', family: 'unknown' };
     }
   }
@@ -330,7 +331,7 @@ class UpdaterService {
         version
       });
     } catch (error) {
-      console.error('下载更新失败:', error);
+      logger.error('下载更新失败:', error);
       throw error;
     }
   }
@@ -345,7 +346,7 @@ class UpdaterService {
         silent
       });
     } catch (error) {
-      console.error('安装更新失败:', error);
+      logger.error('安装更新失败:', error);
       throw error;
     }
   }
@@ -365,7 +366,7 @@ class UpdaterService {
         silent
       });
     } catch (error) {
-      console.error('下载并安装更新失败:', error);
+      logger.error('下载并安装更新失败:', error);
       throw error;
     }
   }
@@ -423,10 +424,10 @@ class UpdaterService {
             }).then(unlisten => removeListeners.push(unlisten));
           }
         }).catch(error => {
-          console.error('设置更新事件监听器失败:', error);
+          logger.error('设置更新事件监听器失败:', error);
         });
       } catch (error) {
-        console.error('导入Tauri事件API失败:', error);
+        logger.error('导入Tauri事件API失败:', error);
       }
     }
 
@@ -436,7 +437,7 @@ class UpdaterService {
         try {
           unlisten();
         } catch (error) {
-          console.error('移除事件监听器失败:', error);
+          logger.error('移除事件监听器失败:', error);
         }
       });
     };

@@ -44,6 +44,7 @@ import { versionToLanguageType, type DatabaseLanguageType } from '@/types/databa
 
 
 
+import { logger } from '@/utils/logger';
 interface EditorManagerProps {
   currentTab: EditorTab | null;
   selectedDatabase: string;
@@ -130,22 +131,22 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
       try {
         // 检查 monaco 是否可用
         if (!monaco || !monaco.languages) {
-          console.warn('⚠️ Monaco编辑器尚未加载，跳过语言注册');
+          logger.warn('Monaco编辑器尚未加载，跳过语言注册');
           return;
         }
 
         const languages = monaco.languages.getLanguages();
-        console.log('🔍 检查已注册的语言:', languages.map(l => l.id));
+        logger.debug('检查已注册的语言:', languages.map(l => l.id));
 
         // 语言注册已移到 handleEditorDidMount 中
-        console.log('⚠️ 语言注册已移到编辑器挂载后执行');
+        logger.debug('⚠️ 语言注册已移到编辑器挂载后执行');
 
 
 
 
 
       } catch (error) {
-        console.warn('⚠️ 注册语言支持失败:', error);
+        logger.warn('注册语言支持失败:', error);
       }
     };
 
@@ -156,7 +157,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
   useEffect(() => {
     return () => {
       if (keyboardCleanupRef.current) {
-        console.log('🧹 清理键盘事件监听器');
+        logger.debug('清理键盘事件监听器');
         keyboardCleanupRef.current();
         keyboardCleanupRef.current = null;
       }
@@ -170,18 +171,18 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
     // 如果没有活动连接，默认使用SQL
     if (!effectiveConnectionId) {
-      console.log('没有活动连接，使用SQL语言');
+      logger.debug('没有活动连接，使用SQL语言');
       return 'sql';
     }
 
     const connection = connections.find(c => c.id === effectiveConnectionId);
     if (!connection) {
-      console.log('找不到连接，使用SQL语言, connectionId:', effectiveConnectionId);
+      logger.debug('找不到连接，使用SQL语言, connectionId:', effectiveConnectionId);
       return 'sql';
     }
 
     const languageType = versionToLanguageType(connection.version || 'unknown', connection.dbType);
-    console.log('数据库版本:', connection.version, '语言类型:', languageType, '连接ID:', effectiveConnectionId);
+    logger.debug('数据库版本:', connection.version, '语言类型:', languageType, '连接ID:', effectiveConnectionId);
 
     return languageType;
   }, [connections, activeConnectionId, currentTab?.connectionId]);
@@ -213,17 +214,17 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
     const languageType = getDatabaseLanguageType();
     const databaseType = getDatabaseType();
 
-    console.log('🔍 获取编辑器语言:', { languageType, databaseType });
+    logger.debug('获取编辑器语言:', { languageType, databaseType });
 
     // 根据数据库类型获取特定的语言
     if (databaseType && databaseType !== 'unknown') {
       const enhancedLanguage = unifiedSyntaxManager.getLanguageForDatabase(databaseType);
-      console.log('🎯 使用增强语言:', enhancedLanguage, '数据库类型:', databaseType);
+      logger.debug('🎯 使用增强语言:', enhancedLanguage, '数据库类型:', databaseType);
       return enhancedLanguage;
     }
 
     // 回退到原生SQL
-    console.log('⚠️ 数据库类型未知，回退到SQL');
+    logger.debug('⚠️ 数据库类型未知，回退到SQL');
     return 'sql';
   }, [getDatabaseLanguageType, getDatabaseType]);
 
@@ -232,12 +233,12 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
     const databaseType = getDatabaseType();
     const isDark = resolvedTheme === 'dark';
 
-    console.log('🎨 获取编辑器主题:', { databaseType, isDark });
+    logger.render('获取编辑器主题:', { databaseType, isDark });
 
     // 根据数据库类型获取特定的主题
     if (databaseType && databaseType !== 'unknown') {
       const enhancedTheme = unifiedSyntaxManager.getThemeForDatabase(databaseType, isDark);
-      console.log('🎯 使用增强主题:', enhancedTheme);
+      logger.debug('🎯 使用增强主题:', enhancedTheme);
       return enhancedTheme;
     }
 
@@ -330,13 +331,13 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
                   });
                 }
               } catch (error) {
-                console.warn('获取动态建议失败:', error);
+                logger.warn('获取动态建议失败:', error);
               }
             }
 
             return { suggestions: completions };
           } catch (error) {
-            console.error('智能提示提供失败:', error);
+            logger.error('智能提示提供失败:', error);
             return { suggestions: [] };
           }
         },
@@ -352,7 +353,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
     const editor = editorRef.current;
     if (!editor) return;
 
-    console.log('🎯 执行右键菜单操作:', action);
+    logger.debug('🎯 执行右键菜单操作:', action);
 
     try {
       switch (action) {
@@ -431,7 +432,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
           break;
       }
     } catch (error) {
-      console.error('❌ 右键菜单操作失败:', error);
+      logger.error('右键菜单操作失败:', error);
     }
 
     // 隐藏菜单
@@ -440,7 +441,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
   // 编辑器挂载处理
   const handleEditorDidMount = useCallback((editor: monaco.editor.IStandaloneCodeEditor, _monacoInstance: typeof monaco) => {
-    console.log('🚀🚀🚀 编辑器挂载开始 🚀🚀🚀');
+    logger.debug('🚀🚀🚀 编辑器挂载开始 🚀🚀🚀');
     try {
       editorRef.current = editor;
 
@@ -468,17 +469,17 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
       // 注意：不在这里设置编辑器语言，因为Editor组件已经通过language属性设置了
       // 语言设置由Editor组件的language属性和key属性的变化来控制
       const currentLanguage = getEditorLanguage();
-      console.log('📝 编辑器挂载，当前数据库类型:', databaseType, '目标语言:', currentLanguage);
+      logger.debug('📝 编辑器挂载，当前数据库类型:', databaseType, '目标语言:', currentLanguage);
 
       // 验证编辑器模型的语言设置
       const model = editor.getModel();
       if (model) {
         const actualLanguage = model.getLanguageId();
-        console.log('📋 编辑器模型语言:', actualLanguage, '期望语言:', currentLanguage);
+        logger.debug('📋 编辑器模型语言:', actualLanguage, '期望语言:', currentLanguage);
 
         // 如果语言不匹配，强制设置
         if (actualLanguage !== currentLanguage) {
-          console.warn('⚠️ 语言不匹配，强制设置为:', currentLanguage);
+          logger.warn('语言不匹配，强制设置为:', currentLanguage);
           monaco.editor.setModelLanguage(model, currentLanguage);
         }
       }
@@ -498,9 +499,9 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
         },
       });
 
-      console.log('🎨 Monaco编辑器已挂载，使用原生主题:', resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light');
+      logger.render('Monaco编辑器已挂载，使用原生主题:', resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light');
 
-      console.log('🎯 编辑器挂载完成，当前语言:', getEditorLanguage());
+      logger.debug('🎯 编辑器挂载完成，当前语言:', getEditorLanguage());
 
       // 清理函数中添加格式化提供者的清理
       const originalCleanup = keyboardCleanupRef.current;
@@ -510,7 +511,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
       };
 
       // 阻止浏览器默认的键盘行为（桌面应用专用）
-      console.log('🔒 设置桌面应用键盘行为...');
+      logger.debug('设置桌面应用键盘行为...');
 
       // 阻止 Backspace 键导致页面后退
       const preventBrowserNavigation = (e: KeyboardEvent) => {
@@ -534,7 +535,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
         // 阻止 Backspace 键在非输入元素上导致页面后退
         if (e.key === 'Backspace') {
-          console.log('🚫 阻止 Backspace 键导致页面后退');
+          logger.debug('🚫 阻止 Backspace 键导致页面后退');
           e.preventDefault();
           e.stopPropagation();
           return;
@@ -542,7 +543,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
         // 阻止 F5 刷新页面
         if (e.key === 'F5') {
-          console.log('🚫 阻止 F5 键刷新页面');
+          logger.debug('🚫 阻止 F5 键刷新页面');
           e.preventDefault();
           e.stopPropagation();
           return;
@@ -550,7 +551,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
         // 阻止 Ctrl+R 刷新页面
         if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
-          console.log('🚫 阻止 Ctrl+R 刷新页面');
+          logger.debug('🚫 阻止 Ctrl+R 刷新页面');
           e.preventDefault();
           e.stopPropagation();
           return;
@@ -558,7 +559,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
         // 阻止 Alt+Left/Right 导致浏览器前进后退
         if (e.altKey && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
-          console.log('🚫 阻止 Alt+方向键导致浏览器导航');
+          logger.debug('🚫 阻止 Alt+方向键导致浏览器导航');
           e.preventDefault();
           e.stopPropagation();
           return;
@@ -577,10 +578,10 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
       // 设置数据库特定的语法高亮
       try {
-        console.log('🔧 设置数据库特定的语法高亮...');
+        logger.debug('🔧 设置数据库特定的语法高亮...');
 
         const databaseType = getDatabaseType();
-        console.log('📊 当前数据库类型:', databaseType);
+        logger.debug('当前数据库类型:', databaseType);
 
         const model = editor.getModel();
         if (model) {
@@ -588,27 +589,27 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
           const language = getEditorLanguage();
           const theme = getEditorTheme();
 
-          console.log('🎯 应用语言和主题:', { language, theme });
+          logger.debug('🎯 应用语言和主题:', { language, theme });
 
           // 应用语言和主题
           monaco.editor.setModelLanguage(model, language);
           monaco.editor.setTheme(theme);
 
-          console.log('✅ 数据库特定语法高亮设置完成');
+          logger.info('数据库特定语法高亮设置完成');
         }
       } catch (langError) {
-        console.error('❌ 数据库特定语法高亮设置失败:', langError);
+        logger.error('数据库特定语法高亮设置失败:', langError);
       }
 
       // 桌面应用：完全启用Monaco的原生剪贴板功能
       // 不需要拦截或重写剪贴板API，让Monaco使用原生功能
-      console.log('✅ Monaco Editor 使用原生剪贴板功能（桌面应用模式）');
+      logger.info('Monaco Editor 使用原生剪贴板功能（桌面应用模式）');
 
       // 检查语法高亮状态（语言已通过Editor组件的language属性设置）
       const editorModel = editor.getModel();
       if (editorModel) {
         const currentLanguage = getEditorLanguage();
-        console.log('🔍 开始检查编辑器语言设置:', currentLanguage);
+        logger.debug('开始检查编辑器语言设置:', currentLanguage);
 
         // 检查当前模型状态
         const modelInfo = {
@@ -617,7 +618,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
           lineCount: editorModel.getLineCount(),
           value: `${editorModel.getValue().substring(0, 50)  }...`
         };
-        console.log('📋 当前模型信息:', modelInfo);
+        logger.debug('📋 当前模型信息:', modelInfo);
 
         // 验证语言是否正确设置（由Editor组件处理）
         const actualLanguage = editorModel.getLanguageId();
@@ -626,60 +627,60 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
           actual: actualLanguage,
           isCorrect: actualLanguage === currentLanguage
         };
-        console.log('✅ 语言设置状态:', languageStatus);
+        logger.info('语言设置状态:', languageStatus);
 
         // 如果语言不匹配，尝试修复
         if (!languageStatus.isCorrect) {
-          console.warn('⚠️ 语言设置不匹配，尝试修复...');
+          logger.warn('语言设置不匹配，尝试修复...');
           try {
             // 强制设置语言
-            console.log('🔧 强制设置模型语言为:', currentLanguage);
+            logger.debug('🔧 强制设置模型语言为:', currentLanguage);
             monaco.editor.setModelLanguage(editorModel, currentLanguage);
 
             // 验证设置结果
             const newLanguage = editorModel.getLanguageId();
-            console.log('🔍 语言设置结果验证:', {
+            logger.debug('语言设置结果验证:', {
               target: currentLanguage,
               actual: newLanguage,
               success: newLanguage === currentLanguage
             });
 
             if (newLanguage !== currentLanguage) {
-              console.error('❌ 语言设置失败，尝试备用方案...');
+              logger.error('语言设置失败，尝试备用方案...');
               // 备用方案：重新创建模型
               const content = editorModel.getValue();
               const newModel = monaco.editor.createModel(content, currentLanguage);
               editor.setModel(newModel);
-              console.log('🔄 使用新模型，语言:', newModel.getLanguageId());
+              logger.debug('使用新模型，语言:', newModel.getLanguageId());
             }
           } catch (langError) {
-            console.error('❌ 语言设置失败:', langError);
+            logger.error('语言设置失败:', langError);
           }
         }
 
         // 检查tokenization provider是否存在
-        console.log('🔍 检查tokenization provider...');
+        logger.debug('检查tokenization provider...');
         try {
           // 检查语言是否已注册
           const registeredLanguages = monaco.languages.getLanguages();
           const isLanguageRegistered = registeredLanguages.some(lang => lang.id === actualLanguage);
-          console.log('📝 语言注册状态:', {
+          logger.debug('📝 语言注册状态:', {
             language: actualLanguage,
             isRegistered: isLanguageRegistered,
             totalLanguages: registeredLanguages.length
           });
 
           // 检查tokenization provider是否正确设置
-          console.log('🔍 跳过tokenization支持检查（API不可用）');
+          logger.debug('跳过tokenization支持检查（API不可用）');
 
           // 直接测试语法高亮是否工作
           try {
             const testText = 'SELECT COUNT(*) FROM measurement';
-            console.log('🧪 测试语法高亮:', testText);
+            logger.debug('🧪 测试语法高亮:', testText);
 
             // 创建一个临时模型来测试tokenization
             const tempModel = monaco.editor.createModel(testText, actualLanguage);
-            console.log('🔍 临时模型创建成功:', {
+            logger.debug('临时模型创建成功:', {
               language: tempModel.getLanguageId(),
               lineCount: tempModel.getLineCount(),
               value: tempModel.getValue()
@@ -687,38 +688,38 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
             // 清理临时模型
             tempModel.dispose();
-            console.log('✅ 语法高亮测试完成');
+            logger.info('语法高亮测试完成');
           } catch (tokenError) {
-            console.warn('⚠️ 语法高亮测试失败:', tokenError);
+            logger.warn('语法高亮测试失败:', tokenError);
           }
 
           // 如果语言未注册，强制重新注册
           if (!isLanguageRegistered && (actualLanguage === 'influxql' || actualLanguage === 'sql')) {
-            console.warn('⚠️ 语言未注册，强制重新注册...');
+            logger.warn('语言未注册，强制重新注册...');
             // 重新注册语言和语法高亮
             setTimeout(() => {
-              console.log('🔄 重新注册语言和语法高亮...');
+              logger.debug('重新注册语言和语法高亮...');
               // 这里会触发语言重新注册
               window.location.reload(); // 临时解决方案：重新加载页面
             }, 1000);
           }
         } catch (tokenError) {
-          console.error('❌ 检查tokenization支持失败:', tokenError);
+          logger.error('检查tokenization支持失败:', tokenError);
         }
 
         // 检查语言注册状态
-        console.log('🎨 检查语言注册状态...');
+        logger.render('检查语言注册状态...');
         try {
           // 获取所有已注册的语言
           const languages = monaco.languages.getLanguages();
-          console.log('📝 已注册的语言数量:', languages.length);
+          logger.debug('📝 已注册的语言数量:', languages.length);
 
           // 检查我们的自定义语言是否在列表中
           const hasInfluxQL = languages.some(l => l.id === 'influxql');
           const hasFlux = languages.some(l => l.id === 'flux');
-          console.log('🔍 自定义语言检查:', { hasInfluxQL, hasFlux });
+          logger.debug('自定义语言检查:', { hasInfluxQL, hasFlux });
         } catch (error) {
-          console.error('❌ 检查语言时出错:', error);
+          logger.error('检查语言时出错:', error);
         }
 
         // 应用自定义主题
@@ -726,18 +727,18 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
         const languageType = getDatabaseLanguageType();
         const themeName = unifiedSyntaxManager.getThemeName(languageType, isDark);
 
-        console.log('🔍 统一主题选择参数:', {
+        logger.debug('统一主题选择参数:', {
           currentLanguage,
           resolvedTheme,
           isDark,
           themeName
         });
 
-        console.log('🎨 应用统一编辑器主题:', themeName, '(当前主题模式:', resolvedTheme, ')');
+        logger.render('应用统一编辑器主题:', themeName, '(当前主题模式:', resolvedTheme, ')');
 
         try {
           monaco.editor.setTheme(themeName);
-          console.log('✅ 主题设置成功');
+          logger.info('主题设置成功');
 
           // 验证主题是否正确应用
           setTimeout(() => {
@@ -745,28 +746,28 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
               const editorDom = editor.getDomNode();
               if (editorDom) {
                 const computedStyle = window.getComputedStyle(editorDom);
-                console.log('🔍 编辑器DOM样式检查:', {
+                logger.debug('编辑器DOM样式检查:', {
                   backgroundColor: computedStyle.backgroundColor,
                   color: computedStyle.color,
                   className: editorDom.className
                 });
               }
             } catch (styleError) {
-              console.warn('⚠️ 样式检查失败:', styleError);
+              logger.warn('样式检查失败:', styleError);
             }
           }, 100);
         } catch (themeError) {
-          console.error('❌ 主题设置失败:', themeError);
+          logger.error('主题设置失败:', themeError);
           // 回退到默认主题
           const fallbackTheme = isDark ? 'vs-dark' : 'vs';
-          console.log('🔄 回退到默认主题:', fallbackTheme);
+          logger.debug('回退到默认主题:', fallbackTheme);
           monaco.editor.setTheme(fallbackTheme);
         }
 
         // 检查编辑器当前状态
         const model = editor.getModel();
         if (model) {
-          console.log('📊 编辑器当前状态:', {
+          logger.debug('编辑器当前状态:', {
             language: model.getLanguageId(),
             theme: 'unknown', // Monaco没有直接获取当前主题的API
             hasContent: model.getValue().length > 0,
@@ -776,20 +777,20 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
         // 触发重新渲染以应用语法高亮
         setTimeout(() => {
-          console.log('🔄 触发编辑器重新渲染...');
+          logger.debug('触发编辑器重新渲染...');
           try {
             editor.trigger('editor', 'editor.action.formatDocument', {});
-            console.log('✅ 重新渲染触发成功');
+            logger.info('重新渲染触发成功');
           } catch (formatError) {
-            console.warn('⚠️ 格式化触发失败:', formatError);
+            logger.warn('格式化触发失败:', formatError);
           }
 
           // 强制重新计算语法高亮（保留有效的刷新逻辑，但避免内容清除）
           setTimeout(() => {
-            console.log('🎨 强制重新计算语法高亮...');
+            logger.render('强制重新计算语法高亮...');
             const model = editor.getModel();
             if (!model) {
-              console.warn('⚠️ 无法获取编辑器模型，跳过语法高亮刷新');
+              logger.warn('无法获取编辑器模型，跳过语法高亮刷新');
               return;
             }
 
@@ -799,35 +800,35 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
               // 方法1: 强制重新tokenize
               try {
-                console.log('🔄 方法1: 强制重新tokenize...');
+                logger.debug('方法1: 强制重新tokenize...');
                 // 触发模型的重新tokenization
                 (model as any)._tokenization?.forceTokenization?.(model.getLineCount());
-                console.log('✅ 强制tokenization完成');
+                logger.info('强制tokenization完成');
               } catch (tokenError) {
-                console.warn('⚠️ 强制tokenization失败:', tokenError);
+                logger.warn('强制tokenization失败:', tokenError);
               }
 
               // 方法2: 重新应用语言和主题（不清除内容）
               setTimeout(() => {
-                console.log('🔄 方法2: 重新应用语言和主题...');
+                logger.debug('方法2: 重新应用语言和主题...');
                 try {
                   const currentLanguage = getEditorLanguage();
                   const currentTheme = getEditorTheme();
 
                   // 重新设置语言
                   monaco.editor.setModelLanguage(model, currentLanguage);
-                  console.log('✅ 语言重新设置完成:', currentLanguage);
+                  logger.info('语言重新设置完成:', currentLanguage);
 
                   // 重新应用主题
                   monaco.editor.setTheme(currentTheme);
-                  console.log('✅ 主题重新应用完成:', currentTheme);
+                  logger.info('主题重新应用完成:', currentTheme);
 
                   // 方法3: 触发编辑器重新渲染
                   setTimeout(() => {
-                    console.log('🔄 方法3: 触发编辑器重新渲染...');
+                    logger.debug('方法3: 触发编辑器重新渲染...');
                     try {
                       editor.render(true);
-                      console.log('✅ 编辑器重新渲染完成');
+                      logger.info('编辑器重新渲染完成');
 
                       // 使用自定义语法高亮验证
                       setTimeout(() => {
@@ -835,10 +836,10 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
                         // 验证原生SQL语法高亮
                         setTimeout(() => {
-                          console.log('🔍 编辑器挂载后验证原生SQL语法高亮...');
+                          logger.debug('编辑器挂载后验证原生SQL语法高亮...');
                           const model = editor.getModel();
                           if (model) {
-                            console.log('📋 最终编辑器状态:', {
+                            logger.debug('📋 最终编辑器状态:', {
                               language: model.getLanguageId(),
                               hasContent: model.getValue().length > 0
                             });
@@ -846,92 +847,92 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
                         }, 200);
                       }, 500);
                     } catch (renderError) {
-                      console.warn('⚠️ 编辑器重新渲染失败:', renderError);
+                      logger.warn('编辑器重新渲染失败:', renderError);
                     }
                   }, 100);
                 } catch (langThemeError) {
-                  console.warn('⚠️ 语言和主题重新应用失败:', langThemeError);
+                  logger.warn('语言和主题重新应用失败:', langThemeError);
                 }
               }, 50);
 
-              console.log('✅ 语法高亮强制刷新流程启动');
+              logger.info('语法高亮强制刷新流程启动');
             } catch (refreshError) {
-              console.warn('⚠️ 强制刷新失败:', refreshError);
+              logger.warn('强制刷新失败:', refreshError);
             }
           }, 100);
         }, 100);
       } else {
-        console.error('❌ 无法获取编辑器模型');
+        logger.error('无法获取编辑器模型');
       }
 
       // 编辑器选项已通过Editor组件的options属性设置，无需重复配置
 
       // 添加快捷键
-      console.log('🎯 注册Monaco编辑器快捷键...');
+      logger.debug('🎯 注册Monaco编辑器快捷键...');
 
       // 执行查询快捷键 (Ctrl+Enter)
       const executeCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-        console.log('🚀 快捷键触发：执行查询 (Ctrl+Enter)');
+        logger.debug('🚀 快捷键触发：执行查询 (Ctrl+Enter)');
         onExecuteQuery?.();
       });
-      console.log('✅ 执行查询快捷键注册成功，ID:', executeCommandId);
+      logger.info('执行查询快捷键注册成功，ID:', executeCommandId);
 
       // 格式化代码快捷键 (Shift+Alt+F)
       const formatCommandId = editor.addCommand(monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF, () => {
-        console.log('🎨 快捷键触发：格式化代码 (Shift+Alt+F)');
+        logger.render('快捷键触发：格式化代码 (Shift+Alt+F)');
         editor.trigger('keyboard', 'editor.action.formatDocument', {});
       });
-      console.log('✅ 格式化代码快捷键注册成功，ID:', formatCommandId);
+      logger.info('格式化代码快捷键注册成功，ID:', formatCommandId);
 
       // 注释/取消注释快捷键 (Ctrl+/)
       const commentCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Slash, () => {
-        console.log('💬 快捷键触发：切换注释 (Ctrl+/)');
+        logger.debug('💬 快捷键触发：切换注释 (Ctrl+/)');
         editor.trigger('keyboard', 'editor.action.commentLine', {});
       });
-      console.log('✅ 注释切换快捷键注册成功，ID:', commentCommandId);
+      logger.info('注释切换快捷键注册成功，ID:', commentCommandId);
 
       // 安全的剪贴板快捷键
       const copyCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC, () => {
-        console.log('📋 快捷键触发：复制 (Ctrl+C)');
+        logger.debug('📋 快捷键触发：复制 (Ctrl+C)');
         handleContextMenuAction('copy');
       });
-      console.log('✅ 复制快捷键注册成功，ID:', copyCommandId);
+      logger.info('复制快捷键注册成功，ID:', copyCommandId);
 
       const cutCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX, () => {
-        console.log('✂️ 快捷键触发：剪切 (Ctrl+X)');
+        logger.debug('✂️ 快捷键触发：剪切 (Ctrl+X)');
         handleContextMenuAction('cut');
       });
-      console.log('✅ 剪切快捷键注册成功，ID:', cutCommandId);
+      logger.info('剪切快捷键注册成功，ID:', cutCommandId);
 
       const pasteCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
-        console.log('📄 快捷键触发：粘贴 (Ctrl+V)');
+        logger.debug('快捷键触发：粘贴 (Ctrl+V)');
         handleContextMenuAction('paste');
       });
-      console.log('✅ 粘贴快捷键注册成功，ID:', pasteCommandId);
+      logger.info('粘贴快捷键注册成功，ID:', pasteCommandId);
 
       // 撤销/重做快捷键
       const undoCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ, () => {
-        console.log('↶ 快捷键触发：撤销 (Ctrl+Z)');
+        logger.debug('↶ 快捷键触发：撤销 (Ctrl+Z)');
         editor.trigger('keyboard', 'undo', {});
       });
-      console.log('✅ 撤销快捷键注册成功，ID:', undoCommandId);
+      logger.info('撤销快捷键注册成功，ID:', undoCommandId);
 
       const redoCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY, () => {
-        console.log('↷ 快捷键触发：重做 (Ctrl+Y)');
+        logger.debug('↷ 快捷键触发：重做 (Ctrl+Y)');
         editor.trigger('keyboard', 'redo', {});
       });
-      console.log('✅ 重做快捷键注册成功，ID:', redoCommandId);
+      logger.info('重做快捷键注册成功，ID:', redoCommandId);
 
       // 全选快捷键
       const selectAllCommandId = editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA, () => {
-        console.log('🔘 快捷键触发：全选 (Ctrl+A)');
+        logger.debug('🔘 快捷键触发：全选 (Ctrl+A)');
         editor.trigger('keyboard', 'editor.action.selectAll', {});
       });
-      console.log('✅ 全选快捷键注册成功，ID:', selectAllCommandId);
+      logger.info('全选快捷键注册成功，ID:', selectAllCommandId);
 
       // 添加自定义右键菜单
       editor.onContextMenu((e) => {
-        console.log('🖱️ Monaco编辑器右键菜单事件:', e);
+        logger.debug('Monaco编辑器右键菜单事件:', e);
 
         // 阻止默认菜单
         e.event.preventDefault();
@@ -945,7 +946,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
         const position = editor.getPosition();
         const lineContent = position ? editor.getModel()?.getLineContent(position.lineNumber) : '';
 
-        console.log('📝 编辑器上下文信息:', {
+        logger.debug('📝 编辑器上下文信息:', {
           selectedText,
           position,
           lineContent,
@@ -1016,13 +1017,13 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
         ];
 
         // 显示自定义右键菜单
-        console.log('🎯 应该显示自定义右键菜单，菜单项:', menuItems);
+        logger.debug('🎯 应该显示自定义右键菜单，菜单项:', menuItems);
 
         // 获取鼠标位置 - 使用全局坐标
         const x = e.event.browserEvent.clientX;
         const y = e.event.browserEvent.clientY;
 
-        console.log('🖱️ 鼠标位置:', { x, y });
+        logger.debug('鼠标位置:', { x, y });
 
         setContextMenu({
           visible: true,
@@ -1082,7 +1083,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
       }
 
     } catch (error) {
-      console.error('⚠️ Monaco编辑器挂载失败:', error);
+      logger.error('Monaco编辑器挂载失败:', error);
     }
   }, [connections, activeConnectionId, currentTab?.connectionId, selectedDatabase, setupEnhancedAutoComplete, resolvedTheme, onExecuteQuery, showSuggestions, hideSuggestions, suggestionVisible]);
 
@@ -1106,7 +1107,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
   useEffect(() => {
     if (!editorRef.current) return;
 
-    console.log('🔄 连接状态变化，检查语法高亮...');
+    logger.debug('连接状态变化，检查语法高亮...');
     const editor = editorRef.current;
     const model = editor.getModel();
 
@@ -1120,7 +1121,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
           const currentTheme = getEditorTheme();
 
           const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
-          console.log('🔧 连接状态变化后重新应用语言和主题:', {
+          logger.debug('🔧 连接状态变化后重新应用语言和主题:', {
             databaseType,
             language: currentLanguage,
             theme: currentTheme,
@@ -1142,10 +1143,10 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
             // 验证原生SQL语法高亮
             setTimeout(() => {
-              console.log('🔍 验证原生SQL语法高亮效果...');
+              logger.debug('验证原生SQL语法高亮效果...');
               const model = editor.getModel();
               if (model) {
-                console.log('📋 编辑器信息:', {
+                logger.debug('📋 编辑器信息:', {
                   language: model.getLanguageId(),
                   content: `${model.getValue().substring(0, 50)  }...`
                 });
@@ -1153,9 +1154,9 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
             }, 500);
           }, 300);
 
-          console.log('✅ 连接状态变化后语法高亮刷新完成');
+          logger.info('连接状态变化后语法高亮刷新完成');
         } catch (error) {
-          console.warn('⚠️ 连接状态变化后语法高亮刷新失败:', error);
+          logger.warn('连接状态变化后语法高亮刷新失败:', error);
         }
       }, 300);
 
@@ -1169,7 +1170,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
       const languageType = getDatabaseLanguageType();
       const languageId = unifiedSyntaxManager.getLanguageId(languageType);
 
-      console.log('🔄 数据源变化，当前语言类型:', languageType, '统一语言ID:', languageId);
+      logger.debug('数据源变化，当前语言类型:', languageType, '统一语言ID:', languageId);
       // 语言更新由Editor组件的key属性变化自动处理
     }
   }, [activeConnectionId, currentTab?.connectionId, connections, currentTab?.type, getDatabaseLanguageType]);
@@ -1206,7 +1207,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
       // 重置标记
       isInternalChangeRef.current = false;
 
-      console.log('📝 同步tab内容到编辑器，保持光标位置');
+      logger.debug('📝 同步tab内容到编辑器，保持光标位置');
     }
   }, [currentTab?.content, currentTab?.id]);
 

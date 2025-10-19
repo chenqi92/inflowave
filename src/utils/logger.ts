@@ -1,7 +1,9 @@
 /**
  * 日志工具类
- * 提供分级日志功能，支持环境变量控制
+ * 提供分级日志功能，支持文件持久化
  */
+
+import { FileOperations } from './fileOperations';
 
 export enum LogLevel {
   ERROR = 0,
@@ -15,12 +17,52 @@ interface LoggerConfig {
   enableEmoji: boolean;
   enableTimestamp: boolean;
   enableStackTrace: boolean;
+  enableFileLogging: boolean;
+}
+
+export interface LogEntry {
+  id: string;
+  timestamp: Date;
+  level: 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
+  message: string;
+  args: any[];
+  stack?: string;
+  source?: string;
 }
 
 class Logger {
   private config: LoggerConfig;
+  private logs: LogEntry[] = [];
+  private logBuffer: LogEntry[] = [];
+  private flushTimer: NodeJS.Timeout | null = null;
+  private flushInterval = 2000; // 2秒批量写入
+  private maxLogs = 1000;
+  private logFilePath = 'logs/frontend.log';
+  private sessionId: string;
+  private maxFileSizeMB = 10; // 默认10MB
+  private maxFiles = 5; // 默认保留5个文件
+  private currentFileSize = 0; // 当前文件大小（字节）
+  private originalConsole: {
+    log: typeof console.log;
+    info: typeof console.info;
+    warn: typeof console.warn;
+    error: typeof console.error;
+    debug: typeof console.debug;
+  };
 
   constructor() {
+    // 保存原始 console 方法
+    this.originalConsole = {
+      log: console.log.bind(console),
+      info: console.info.bind(console),
+      warn: console.warn.bind(console),
+      error: console.error.bind(console),
+      debug: console.debug.bind(console),
+    };
+
+    // 生成会话ID
+    this.sessionId = this.generateSessionId();
+
     // 🔧 初始化默认配置
     const isDev = import.meta.env.DEV;
 
@@ -29,10 +71,20 @@ class Logger {
       enableEmoji: isDev,
       enableTimestamp: false,
       enableStackTrace: false,
+      enableFileLogging: false, // 默认关闭，等待用户设置
     };
 
     // 🔧 从 localStorage 同步加载用户设置
     this.loadConfigFromStorage();
+
+    // 初始化文件日志
+    if (this.config.enableFileLogging) {
+      this.initializeFileLogging();
+    }
+  }
+
+  private generateSessionId(): string {
+    return `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
   /**
@@ -46,10 +98,62 @@ class Logger {
         if (prefs?.state?.preferences?.logging) {
           const logging = prefs.state.preferences.logging;
           this.setLevel(this.stringToLogLevel(logging.level));
+          this.config.enableFileLogging = logging.enable_file_logging ?? false;
+          this.maxFileSizeMB = logging.max_file_size_mb ?? 10;
+          this.maxFiles = logging.max_files ?? 5;
         }
       }
     } catch (error) {
       // 静默失败，使用默认配置
+    }
+  }
+
+  /**
+   * 初始化文件日志
+   */
+  private async initializeFileLogging(): Promise<void> {
+    try {
+      await this.clearOldLogs();
+      await this.writeSessionStart();
+      this.originalConsole.log(`📝 前端日志系统已启动 - Session: ${this.sessionId}`);
+    } catch (error) {
+      this.originalConsole.error('前端日志系统初始化失败:', error);
+    }
+  }
+
+  /**
+   * 清除旧日志
+   */
+  private async clearOldLogs(): Promise<void> {
+    try {
+      await FileOperations.createDir('logs');
+      const exists = await FileOperations.fileExists(this.logFilePath);
+      if (exists) {
+        await FileOperations.deleteFile(this.logFilePath);
+      }
+    } catch (error) {
+      this.originalConsole.warn('清除旧日志失败:', error);
+    }
+  }
+
+  /**
+   * 写入会话开始标记
+   */
+  private async writeSessionStart(): Promise<void> {
+    const sessionInfo = `
+${'='.repeat(80)}
+=== 前端日志会话开始 ===
+Session ID: ${this.sessionId}
+时间: ${new Date().toISOString()}
+User Agent: ${navigator.userAgent}
+URL: ${window.location.href}
+${'='.repeat(80)}
+`;
+
+    try {
+      await FileOperations.writeFile(this.logFilePath, sessionInfo);
+    } catch (error) {
+      this.originalConsole.error('写入会话开始标记失败:', error);
     }
   }
 
@@ -104,11 +208,184 @@ class Logger {
   }
 
   /**
+   * 记录日志到文件
+   */
+  private recordLog(level: 'ERROR' | 'WARN' | 'INFO' | 'DEBUG', message: string, args: any[]): void {
+    if (!this.config.enableFileLogging) {
+      return;
+    }
+
+    const logEntry: LogEntry = {
+      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date(),
+      level,
+      message,
+      args,
+    };
+
+    // 添加到日志数组
+    this.logs.unshift(logEntry);
+    if (this.logs.length > this.maxLogs) {
+      this.logs = this.logs.slice(0, this.maxLogs);
+    }
+
+    // 添加到缓冲区
+    this.logBuffer.push(logEntry);
+    this.scheduleFlush();
+  }
+
+  /**
+   * 调度日志刷新
+   */
+  private scheduleFlush(): void {
+    if (this.flushTimer !== null) {
+      return;
+    }
+
+    this.flushTimer = setTimeout(() => {
+      this.flushLogs();
+      this.flushTimer = null;
+    }, this.flushInterval);
+  }
+
+  /**
+   * 刷新日志到文件
+   */
+  private async flushLogs(): Promise<void> {
+    if (this.logBuffer.length === 0) {
+      return;
+    }
+
+    const logsToWrite = [...this.logBuffer];
+    this.logBuffer = [];
+
+    try {
+      await this.writeLogEntries(logsToWrite);
+    } catch (error) {
+      this.originalConsole.error('写入日志失败:', error);
+    }
+  }
+
+  /**
+   * 写入日志条目
+   */
+  private async writeLogEntries(entries: LogEntry[]): Promise<void> {
+    const logContent = `${entries.map(entry => this.formatLogEntry(entry)).join('\n')  }\n`;
+    const contentSize = new Blob([logContent]).size;
+
+    // 检查是否需要轮转
+    await this.checkAndRotateLog(contentSize);
+
+    try {
+      await FileOperations.appendToFile(this.logFilePath, logContent);
+      this.currentFileSize += contentSize;
+    } catch (error) {
+      try {
+        await FileOperations.writeFile(this.logFilePath, logContent);
+        this.currentFileSize = contentSize;
+      } catch (writeError) {
+        this.originalConsole.error('无法写入日志文件:', writeError);
+      }
+    }
+  }
+
+  /**
+   * 检查并轮转日志文件
+   */
+  private async checkAndRotateLog(newContentSize: number): Promise<void> {
+    try {
+      // 获取当前文件大小
+      const exists = await FileOperations.fileExists(this.logFilePath);
+      if (!exists) {
+        this.currentFileSize = 0;
+        return;
+      }
+
+      const fileInfo = await FileOperations.getFileInfo(this.logFilePath);
+      this.currentFileSize = fileInfo.size;
+
+      // 检查是否超过大小限制
+      const maxSizeBytes = this.maxFileSizeMB * 1024 * 1024;
+      if (this.currentFileSize + newContentSize > maxSizeBytes) {
+        await this.rotateLogFile();
+      }
+    } catch (error) {
+      this.originalConsole.warn('检查日志文件大小失败:', error);
+    }
+  }
+
+  /**
+   * 轮转日志文件
+   */
+  private async rotateLogFile(): Promise<void> {
+    try {
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const rotatedPath = `logs/frontend-${timestamp}.log`;
+
+      // 读取当前日志内容
+      const content = await FileOperations.readFile(this.logFilePath);
+
+      // 写入到新的归档文件
+      await FileOperations.writeFile(rotatedPath, content);
+
+      // 清空当前日志文件
+      await FileOperations.deleteFile(this.logFilePath);
+      this.currentFileSize = 0;
+
+      this.originalConsole.log(`📝 日志文件已轮转: ${rotatedPath}`);
+
+      // 清理旧日志文件
+      await this.cleanupOldLogs();
+    } catch (error) {
+      this.originalConsole.error('轮转日志文件失败:', error);
+    }
+  }
+
+  /**
+   * 清理旧日志文件
+   */
+  private async cleanupOldLogs(): Promise<void> {
+    try {
+      // 注意：这里需要后端支持列出目录文件的功能
+      // 由于当前 FileOperations 没有 listFiles 方法，我们暂时跳过
+      // TODO: 实现文件列表功能后完善此方法
+      this.originalConsole.log('📝 日志清理功能待实现（需要后端支持）');
+    } catch (error) {
+      this.originalConsole.warn('清理旧日志失败:', error);
+    }
+  }
+
+  /**
+   * 格式化日志条目
+   */
+  private formatLogEntry(entry: LogEntry): string {
+    const timestamp = entry.timestamp.toISOString();
+    const levelStr = entry.level.padEnd(5);
+
+    let formatted = `[${timestamp}] [${levelStr}] ${entry.message}`;
+
+    if (entry.args.length > 0) {
+      const argsStr = entry.args.map(arg => {
+        if (typeof arg === 'string') return arg;
+        try {
+          return JSON.stringify(arg);
+        } catch {
+          return String(arg);
+        }
+      }).join(' ');
+      formatted += ` ${argsStr}`;
+    }
+
+    return formatted;
+  }
+
+  /**
    * 错误日志（总是显示）
    */
   error(message: string, ...args: any[]) {
+    this.recordLog('ERROR', message, args);
     if (this.config.level >= LogLevel.ERROR) {
-      console.error(...this.format('ERROR', '❌', message, ...args));
+      this.originalConsole.error(...this.format('ERROR', '❌', message, ...args));
     }
   }
 
@@ -116,8 +393,9 @@ class Logger {
    * 警告日志
    */
   warn(message: string, ...args: any[]) {
+    this.recordLog('WARN', message, args);
     if (this.config.level >= LogLevel.WARN) {
-      console.warn(...this.format('WARN', '⚠️', message, ...args));
+      this.originalConsole.warn(...this.format('WARN', '⚠️', message, ...args));
     }
   }
 
@@ -125,8 +403,9 @@ class Logger {
    * 信息日志
    */
   info(message: string, ...args: any[]) {
+    this.recordLog('INFO', message, args);
     if (this.config.level >= LogLevel.INFO) {
-      console.log(...this.format('INFO', 'ℹ️', message, ...args));
+      this.originalConsole.log(...this.format('INFO', 'ℹ️', message, ...args));
     }
   }
 
@@ -134,8 +413,9 @@ class Logger {
    * 调试日志（仅开发环境）
    */
   debug(message: string, ...args: any[]) {
+    this.recordLog('DEBUG', message, args);
     if (this.config.level >= LogLevel.DEBUG) {
-      console.log(...this.format('DEBUG', '🔍', message, ...args));
+      this.originalConsole.log(...this.format('DEBUG', '🔍', message, ...args));
     }
   }
 
@@ -227,6 +507,90 @@ class Logger {
     if (this.config.level >= LogLevel.DEBUG) {
       console.table(data);
     }
+  }
+
+  /**
+   * 启用文件日志
+   */
+  async enableFileLogging(): Promise<void> {
+    if (this.config.enableFileLogging) {
+      return;
+    }
+    this.config.enableFileLogging = true;
+    await this.initializeFileLogging();
+  }
+
+  /**
+   * 禁用文件日志
+   */
+  disableFileLogging(): void {
+    this.config.enableFileLogging = false;
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+  }
+
+  /**
+   * 获取所有日志
+   */
+  getLogs(): LogEntry[] {
+    return [...this.logs];
+  }
+
+  /**
+   * 获取特定级别的日志
+   */
+  getLogsByLevel(level: 'ERROR' | 'WARN' | 'INFO' | 'DEBUG'): LogEntry[] {
+    return this.logs.filter(log => log.level === level);
+  }
+
+  /**
+   * 清空日志
+   */
+  clearLogs(): void {
+    this.logs = [];
+  }
+
+  /**
+   * 立即刷新日志到文件
+   */
+  async flush(): Promise<void> {
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+    await this.flushLogs();
+  }
+
+  /**
+   * 获取过滤后的日志
+   */
+  getFilteredLogs(level?: LogLevel, search?: string): LogEntry[] {
+    let filtered = [...this.logs];
+
+    // 按级别过滤
+    if (level !== undefined) {
+      const levelMap: Record<LogLevel, string[]> = {
+        [LogLevel.ERROR]: ['ERROR'],
+        [LogLevel.WARN]: ['ERROR', 'WARN'],
+        [LogLevel.INFO]: ['ERROR', 'WARN', 'INFO'],
+        [LogLevel.DEBUG]: ['ERROR', 'WARN', 'INFO', 'DEBUG'],
+      };
+      const allowedLevels = levelMap[level];
+      filtered = filtered.filter(log => allowedLevels.includes(log.level));
+    }
+
+    // 按关键词搜索
+    if (search && search.trim()) {
+      const searchLower = search.toLowerCase();
+      filtered = filtered.filter(log =>
+        log.message.toLowerCase().includes(searchLower) ||
+        JSON.stringify(log.args).toLowerCase().includes(searchLower)
+      );
+    }
+
+    return filtered;
   }
 }
 

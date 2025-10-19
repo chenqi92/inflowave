@@ -12,6 +12,7 @@ import AboutDialog from '@/components/common/AboutDialog';
 import SettingsModal from '@/components/common/SettingsModal';
 import SampleQueriesModal from '@/components/common/SampleQueriesModal';
 
+import { logger } from '@/utils/logger';
 interface NativeMenuHandlerProps {
   onToggleSidebar?: () => void;
   onToggleStatusbar?: () => void;
@@ -46,18 +47,18 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
     const setupListeners = async () => {
       if (setupRef.current) {
-        console.log('⚠️ 菜单监听器已设置，跳过重复设置 (React StrictMode)');
+        logger.debug('⚠️ 菜单监听器已设置，跳过重复设置 (React StrictMode)');
         return;
       }
       setupRef.current = true;
       
-      console.log('🎛️ 设置原生菜单监听器...');
+      logger.debug('🎛️ 设置原生菜单监听器...');
 
       try {
         // 监听菜单动作事件
         unlistenMenuFn = await safeTauriListen<string>('menu-action', event => {
-          console.log('📋 收到菜单动作事件:', event);
-          console.log('📋 菜单动作详情:', {
+          logger.debug('📋 收到菜单动作事件:', event);
+          logger.debug('📋 菜单动作详情:', {
             payload: event.payload,
             // windowLabel 和 id 可能不存在于简化的事件类型中
             ...(event as any).windowLabel && { windowLabel: (event as any).windowLabel },
@@ -69,14 +70,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
         // 监听主题切换事件
         unlistenThemeFn = await safeTauriListen<string>('theme-change', event => {
-          console.log('🎨 收到主题切换事件:', event);
+          logger.render('收到主题切换事件:', event);
           const themeName = event.payload;
           handleThemeChange(themeName);
         });
 
-        console.log('✅ 原生菜单监听器设置完成');
+        logger.info('原生菜单监听器设置完成');
       } catch (error) {
-        console.error('❌ 设置菜单监听器失败:', error);
+        logger.error('设置菜单监听器失败:', error);
         setupRef.current = false; // 设置失败时重置，允许重试
       }
     };
@@ -93,7 +94,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     document.addEventListener('open-settings-modal', handleOpenSettings);
 
     return () => {
-      console.log('🧹 清理菜单监听器...');
+      logger.debug('清理菜单监听器...');
       if (unlistenMenuFn) {
         unlistenMenuFn();
       }
@@ -107,7 +108,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
   // 风格切换处理函数
   const handleThemeChange = (themeName: string) => {
-    console.log('🎨 切换风格:', themeName);
+    logger.render('切换风格:', themeName);
 
     // 风格名称映射
     const themeLabels: Record<string, string> = {
@@ -137,7 +138,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
   // 模式切换处理函数
   const handleModeChange = (mode: 'system' | 'light' | 'dark') => {
-    console.log('🌓 切换模式:', mode);
+    logger.debug('🌓 切换模式:', mode);
 
     // 模式名称映射
     const modeLabels: Record<string, string> = {
@@ -156,7 +157,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
   // 语言切换处理函数
   const handleLanguageChange = (locale: string, label: string) => {
-    console.log('🌐 切换语言:', locale, label);
+    logger.debug('🌐 切换语言:', locale, label);
 
     // 保存语言设置到localStorage
     localStorage.setItem('app-language', locale);
@@ -178,7 +179,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   // 文件操作处理函数
   const handleOpenFile = async () => {
     try {
-      console.log('🔍 尝试打开文件对话框...');
+      logger.debug('尝试打开文件对话框...');
       const result = await safeTauriInvoke('open_file_dialog', {
         title: '打开查询文件',
         filters: [
@@ -189,10 +190,10 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         multiple: false
       });
 
-      console.log('📁 文件对话框结果:', result);
+      logger.debug('📁 文件对话框结果:', result);
 
       if (result && result.path) {
-        console.log('📖 读取文件内容:', result.path);
+        logger.debug('📖 读取文件内容:', result.path);
         const content = await safeTauriInvoke('read_file', { path: result.path });
         // 通过自定义事件传递文件内容到查询编辑器
         document.dispatchEvent(new CustomEvent('open-file-content', {
@@ -201,10 +202,10 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         showMessage.success('文件已打开');
       } else {
         // 用户取消选择，静默处理，不显示错误信息
-        console.log('用户取消了文件选择');
+        logger.debug('用户取消了文件选择');
       }
     } catch (error) {
-      console.error('❌ 打开文件失败:', error);
+      logger.error('打开文件失败:', error);
       const friendlyError = getFileOperationError(String(error), 'read');
       showMessage.error(formatErrorMessage(friendlyError));
     }
@@ -223,7 +224,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   // 数据导入导出处理函数
   const handleImportData = async () => {
     try {
-      console.log('📥 尝试打开数据导入对话框...');
+      logger.debug('📥 尝试打开数据导入对话框...');
       const result = await safeTauriInvoke('open_file_dialog', {
         title: '导入数据文件',
         filters: [
@@ -234,7 +235,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         multiple: false
       });
 
-      console.log('📥 数据导入对话框结果:', result);
+      logger.debug('📥 数据导入对话框结果:', result);
 
       if (result && result.path) {
         // 导航到数据导入页面或显示导入对话框
@@ -244,10 +245,10 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         showMessage.success('准备导入数据...');
       } else {
         // 用户取消导入，静默处理
-        console.log('用户取消了数据导入');
+        logger.debug('用户取消了数据导入');
       }
     } catch (error) {
-      console.error('❌ 导入数据失败:', error);
+      logger.error('导入数据失败:', error);
       const friendlyError = getFileOperationError(String(error), 'select');
       showMessage.error(formatErrorMessage(friendlyError));
     }
@@ -328,19 +329,19 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     try {
       await open('https://github.com/chenqi92/inflowave/issues');
     } catch (error) {
-      console.error('Failed to open issue page:', error);
+      logger.error('Failed to open issue page:', error);
       showMessage.error('无法打开反馈页面');
     }
   };
 
   const handleMenuAction = async (action: string) => {
-    console.log('🎯 处理菜单动作:', action);
+    logger.debug('🎯 处理菜单动作:', action);
     
     // 获取详细的连接状态信息
     const activeConnectionStatus = activeConnectionId ? getConnectionStatus(activeConnectionId) : null;
     const isConnected = activeConnectionId ? isConnectionConnected(activeConnectionId) : false;
     
-    console.log('🔗 当前连接状态:', { 
+    logger.debug('当前连接状态:', { 
       activeConnectionId, 
       isConnected,
       connectionStatus: activeConnectionStatus?.status,
@@ -387,7 +388,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     // 导航动作
     if (action.startsWith('navigate:')) {
       const path = action.replace('navigate:', '');
-      console.log('🧭 导航到:', path);
+      logger.debug('🧭 导航到:', path);
       navigate(path);
       handled = true;
       return;
@@ -448,7 +449,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       // 编辑菜单
       case 'undo':
         // 安全的撤销操作 - 避免使用execCommand
-        console.log('🎯 原生菜单触发撤销操作');
+        logger.debug('🎯 原生菜单触发撤销操作');
         try {
           // 检查当前焦点元素是否是Monaco编辑器
           const activeElement = document.activeElement;
@@ -469,14 +470,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
             }));
           }
         } catch (error) {
-          console.warn('⚠️ 撤销操作失败:', error);
+          logger.warn('撤销操作失败:', error);
         }
         handled = true;
         break;
 
       case 'redo':
         // 安全的重做操作 - 避免使用execCommand
-        console.log('🎯 原生菜单触发重做操作');
+        logger.debug('🎯 原生菜单触发重做操作');
         try {
           // 检查当前焦点元素是否是Monaco编辑器
           const activeElement = document.activeElement;
@@ -497,14 +498,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
             }));
           }
         } catch (error) {
-          console.warn('⚠️ 重做操作失败:', error);
+          logger.warn('重做操作失败:', error);
         }
         handled = true;
         break;
 
       case 'cut':
         // 安全的剪切操作 - 只处理菜单触发的剪切，不干扰键盘快捷键
-        console.log('🎯 原生菜单触发剪切操作');
+        logger.debug('🎯 原生菜单触发剪切操作');
         try {
           // 检查当前焦点元素
           const activeElement = document.activeElement;
@@ -548,14 +549,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
             }
           }
         } catch (error) {
-          console.warn('⚠️ 剪切操作失败:', error);
+          logger.warn('剪切操作失败:', error);
         }
         handled = true;
         break;
 
       case 'copy':
         // 安全的复制操作 - 只处理菜单触发的复制，不干扰键盘快捷键
-        console.log('🎯 原生菜单触发复制操作');
+        logger.debug('🎯 原生菜单触发复制操作');
         try {
           // 检查当前焦点元素
           const activeElement = document.activeElement;
@@ -591,14 +592,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
             }
           }
         } catch (error) {
-          console.warn('⚠️ 复制操作失败:', error);
+          logger.warn('复制操作失败:', error);
         }
         handled = true;
         break;
 
       case 'paste':
         // 安全的粘贴操作 - 只处理菜单触发的粘贴，不干扰键盘快捷键
-        console.log('🎯 原生菜单触发粘贴操作');
+        logger.debug('🎯 原生菜单触发粘贴操作');
         try {
           // 检查当前焦点元素
           const activeElement = document.activeElement;
@@ -608,10 +609,10 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
             // 如果是Monaco编辑器，触发自定义粘贴事件
             const pasteEvent = new CustomEvent('monaco-paste', { bubbles: true });
             activeElement.dispatchEvent(pasteEvent);
-            console.log('Monaco编辑器粘贴事件已触发');
+            logger.debug('Monaco编辑器粘贴事件已触发');
           } else {
             // 对于其他输入元素，不在这里处理，让 inputClipboardHandler 处理
-            console.log('非Monaco编辑器元素，由 inputClipboardHandler 处理粘贴');
+            logger.debug('非Monaco编辑器元素，由 inputClipboardHandler 处理粘贴');
             // 触发键盘事件让 inputClipboardHandler 处理
             if (activeElement && (
               activeElement.tagName === 'INPUT' ||
@@ -628,7 +629,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
             }
           }
         } catch (error) {
-          console.warn('⚠️ 粘贴操作失败:', error);
+          logger.warn('粘贴操作失败:', error);
         }
         handled = true;
         break;
@@ -1006,7 +1007,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         try {
           await open('https://docs.influxdata.com/influxdb/v1.8/tools/api/');
         } catch (error) {
-          console.error('Failed to open API docs:', error);
+          logger.error('Failed to open API docs:', error);
           showMessage.error('无法打开API文档');
         }
         handled = true;
@@ -1016,7 +1017,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         try {
           await open('https://docs.influxdata.com/');
         } catch (error) {
-          console.error('Failed to open InfluxDB docs:', error);
+          logger.error('Failed to open InfluxDB docs:', error);
           showMessage.error('无法打开InfluxDB文档');
         }
         handled = true;
@@ -1107,10 +1108,10 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     
     // 记录未处理的动作
     if (!handled) {
-      console.warn('⚠️ 未处理的菜单动作:', action);
+      logger.warn('未处理的菜单动作:', action);
       showMessage.warning(`菜单功能 "${action}" 暂未实现`);
     } else {
-      console.log('✅ 菜单动作处理完成:', action);
+      logger.info('菜单动作处理完成:', action);
     }
   };
 

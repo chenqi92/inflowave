@@ -14,6 +14,7 @@ import {
 } from '@/utils/suggestionTypes';
 import { safeTauriInvoke } from '@/utils/tauri';
 
+import { logger } from '@/utils/logger';
 // 导入关键字和函数列表
 const INFLUXQL_KEYWORDS = [
   'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET',
@@ -83,33 +84,33 @@ export class SmartSuggestionService {
   ): Promise<SuggestionItem[]> {
     const suggestions: SuggestionItem[] = [];
 
-    console.log('=== 智能提示调试开始 ===');
-    console.log('参数:', { connectionId, database, dataSourceType });
-    console.log('上下文:', context);
-    console.log('当前行文本:', `"${context.lineText}"`);
-    console.log('光标前单词:', `"${context.wordBeforeCursor}"`);
+    logger.debug('=== 智能提示调试开始 ===');
+    logger.debug('参数:', { connectionId, database, dataSourceType });
+    logger.debug('上下文:', context);
+    logger.debug('当前行文本:', `"${context.lineText}"`);
+    logger.debug('光标前单词:', `"${context.wordBeforeCursor}"`);
 
     // 降低最小字符数要求，允许空字符串触发
     if (context.wordBeforeCursor.length < 0) {
-      console.log('输入字符数不足，不显示提示');
+      logger.debug('输入字符数不足，不显示提示');
       return [];
     }
 
     try {
       // 添加关键字
       this.addKeywords(suggestions, dataSourceType);
-      console.log('添加关键字后，提示数量:', suggestions.length);
+      logger.debug('添加关键字后，提示数量:', suggestions.length);
 
       // 添加函数
       this.addFunctions(suggestions, dataSourceType);
-      console.log('添加函数后，提示数量:', suggestions.length);
+      logger.debug('添加函数后，提示数量:', suggestions.length);
 
       // 添加表名（在FROM子句后或者独立使用时）
       const shouldSuggestTables = this.shouldSuggestTables(context);
-      console.log('是否应该提示表名:', shouldSuggestTables, '原因:', this.getTableSuggestionReason(context));
+      logger.debug('是否应该提示表名:', shouldSuggestTables, '原因:', this.getTableSuggestionReason(context));
       if (shouldSuggestTables) {
         await this.addTables(suggestions, connectionId, database);
-        console.log('添加表名后，提示数量:', suggestions.length);
+        logger.debug('添加表名后，提示数量:', suggestions.length);
       }
 
       // 添加字段和标签（在SELECT子句或WHERE子句中）
@@ -122,14 +123,14 @@ export class SmartSuggestionService {
 
       // 过滤和排序
       const filteredSuggestions = this.filterAndSort(suggestions, context.wordBeforeCursor);
-      console.log('过滤排序前提示项:', suggestions.map(s => `${s.type}:${s.label}`));
-      console.log('过滤关键字:', `"${context.wordBeforeCursor}"`);
-      console.log('过滤排序后，最终提示数量:', filteredSuggestions.length);
-      console.log('最终提示项:', filteredSuggestions.map(s => `${s.type}:${s.label}`));
-      console.log('=== 智能提示调试结束 ===');
+      logger.debug('过滤排序前提示项:', suggestions.map(s => `${s.type}:${s.label}`));
+      logger.debug('过滤关键字:', `"${context.wordBeforeCursor}"`);
+      logger.debug('过滤排序后，最终提示数量:', filteredSuggestions.length);
+      logger.debug('最终提示项:', filteredSuggestions.map(s => `${s.type}:${s.label}`));
+      logger.debug('=== 智能提示调试结束 ===');
       return filteredSuggestions;
     } catch (error) {
-      console.warn('获取智能提示失败:', error);
+      logger.warn('获取智能提示失败:', error);
       return [];
     }
   }
@@ -206,15 +207,15 @@ export class SmartSuggestionService {
    */
   private async addTables(suggestions: SuggestionItem[], connectionId: string, database: string) {
     try {
-      console.log('=== 开始获取表名 ===');
-      console.log('连接ID:', connectionId);
-      console.log('数据库:', database);
+      logger.debug('=== 开始获取表名 ===');
+      logger.debug('连接ID:', connectionId);
+      logger.debug('数据库:', database);
 
       const cacheKey = `tables_${connectionId}_${database}`;
       let tables = this.cache.get(cacheKey);
 
       if (!tables) {
-        console.log('缓存中没有表名，开始从API获取');
+        logger.debug('缓存中没有表名，开始从API获取');
 
         // 尝试多种方法获取表名
         const methods = [
@@ -225,41 +226,41 @@ export class SmartSuggestionService {
 
         for (const method of methods) {
           try {
-            console.log(`尝试方法: ${method.name}`, method.params);
+            logger.debug(`尝试方法: ${method.name}`, method.params);
             tables = await safeTauriInvoke<string[]>(method.name, method.params);
-            console.log(`${method.name} 返回结果:`, tables);
+            logger.debug(`${method.name} 返回结果:`, tables);
 
             if (tables && tables.length > 0) {
-              console.log(`${method.name} 成功获取到 ${tables.length} 个表名`);
+              logger.debug(`${method.name} 成功获取到 ${tables.length} 个表名`);
               break;
             }
           } catch (apiError) {
-            console.warn(`${method.name} 失败:`, apiError);
+            logger.warn(`${method.name} 失败:`, apiError);
           }
         }
 
         // 如果所有API都失败，尝试直接查询
         if (!tables || tables.length === 0) {
-          console.log('所有API方法都失败，尝试直接查询');
+          logger.debug('所有API方法都失败，尝试直接查询');
           tables = await this.getTablesAlternative(connectionId, database);
         }
 
         if (tables && tables.length > 0) {
-          console.log('缓存表名数据');
+          logger.debug('缓存表名数据');
           this.cache.set(cacheKey, tables);
           // 设置缓存过期时间（5分钟）
           setTimeout(() => this.cache.delete(cacheKey), 5 * 60 * 1000);
         }
       } else {
-        console.log('从缓存获取表名:', tables);
+        logger.debug('从缓存获取表名:', tables);
       }
 
       if (tables && tables.length > 0) {
-        console.log('开始添加表名提示，原始表名:', tables);
+        logger.debug('开始添加表名提示，原始表名:', tables);
         let addedCount = 0;
 
         tables.forEach((table: string) => {
-          console.log(`检查表名: "${table}", 是否有效:`, this.isValidTableName(table));
+          logger.debug(`检查表名: "${table}", 是否有效:`, this.isValidTableName(table));
           // 过滤掉关键字，只保留真实的表名
           if (this.isValidTableName(table)) {
             suggestions.push({
@@ -272,16 +273,16 @@ export class SmartSuggestionService {
               sortText: `2_${table}`,
             });
             addedCount++;
-            console.log(`添加表名提示: ${table}`);
+            logger.debug(`添加表名提示: ${table}`);
           }
         });
 
-        console.log(`成功添加 ${addedCount} 个表名提示`);
+        logger.debug(`成功添加 ${addedCount} 个表名提示`);
       } else {
-        console.log('没有获取到任何表名数据');
+        logger.debug('没有获取到任何表名数据');
 
         // 添加一些测试数据以验证功能
-        console.log('添加测试表名数据');
+        logger.debug('添加测试表名数据');
         const testTables = ['app_performance', 'system_metrics', 'user_events'];
         testTables.forEach(table => {
           suggestions.push({
@@ -296,9 +297,9 @@ export class SmartSuggestionService {
         });
       }
 
-      console.log('=== 表名获取完成 ===');
+      logger.debug('=== 表名获取完成 ===');
     } catch (error) {
-      console.error('获取表名失败:', error);
+      logger.error('获取表名失败:', error);
     }
   }
 
@@ -307,7 +308,7 @@ export class SmartSuggestionService {
    */
   private async getTablesAlternative(connectionId: string, database: string): Promise<string[]> {
     try {
-      console.log('使用备用方法获取表名');
+      logger.debug('使用备用方法获取表名');
       // 尝试使用show_measurements命令
       const result = await safeTauriInvoke<string[]>('show_measurements', {
         connectionId,
@@ -315,11 +316,11 @@ export class SmartSuggestionService {
       });
 
       if (result && Array.isArray(result)) {
-        console.log('备用方法获取到表名:', result);
+        logger.debug('备用方法获取到表名:', result);
         return result;
       }
     } catch (error) {
-      console.warn('show_measurements备用方法失败，尝试执行查询:', error);
+      logger.warn('show_measurements备用方法失败，尝试执行查询:', error);
 
       // 最后的备用方案：直接执行查询
       try {
@@ -336,11 +337,11 @@ export class SmartSuggestionService {
             // 尝试不同的字段名
             return row.name || row.measurement || row._measurement || row[0];
           }).filter(Boolean);
-          console.log('查询方法获取到表名:', measurements);
+          logger.debug('查询方法获取到表名:', measurements);
           return measurements;
         }
       } catch (queryError) {
-        console.warn('查询备用方法也失败:', queryError);
+        logger.warn('查询备用方法也失败:', queryError);
       }
     }
     return [];
@@ -372,14 +373,14 @@ export class SmartSuggestionService {
     tableName: string
   ) {
     try {
-      console.log('=== 开始获取字段和标签 ===');
-      console.log('表名:', tableName);
+      logger.debug('=== 开始获取字段和标签 ===');
+      logger.debug('表名:', tableName);
 
       const cacheKey = `fields_${connectionId}_${database}_${tableName}`;
       let fieldsAndTags = this.cache.get(cacheKey) as { fields: string[], tags: string[] } | undefined;
 
       if (!fieldsAndTags) {
-        console.log('缓存中没有字段数据，开始从API获取');
+        logger.debug('缓存中没有字段数据，开始从API获取');
 
         // 使用正确的Tauri命令获取字段和标签
         const methods = [
@@ -392,9 +393,9 @@ export class SmartSuggestionService {
 
         for (const method of methods) {
           try {
-            console.log(`尝试方法: ${method.name}`, method.params);
+            logger.debug(`尝试方法: ${method.name}`, method.params);
             const result = await safeTauriInvoke<string[]>(method.name, method.params);
-            console.log(`${method.name} 返回结果:`, result);
+            logger.debug(`${method.name} 返回结果:`, result);
 
             if (result && Array.isArray(result) && result.length > 0) {
               if (method.name.includes('field')) {
@@ -404,13 +405,13 @@ export class SmartSuggestionService {
               }
             }
           } catch (apiError) {
-            console.warn(`${method.name} 失败:`, apiError);
+            logger.warn(`${method.name} 失败:`, apiError);
           }
         }
 
         // 如果API方法都失败，尝试直接查询
         if (fields.length === 0 && tags.length === 0) {
-          console.log('所有API方法都失败，尝试直接查询');
+          logger.debug('所有API方法都失败，尝试直接查询');
           const queryResults = await this.getFieldsAndTagsAlternative(connectionId, database, tableName);
           fields.push(...queryResults.fields);
           tags.push(...queryResults.tags);
@@ -419,18 +420,18 @@ export class SmartSuggestionService {
         fieldsAndTags = { fields: [...new Set(fields)], tags: [...new Set(tags)] };
 
         if (fieldsAndTags.fields.length > 0 || fieldsAndTags.tags.length > 0) {
-          console.log('缓存字段和标签数据');
+          logger.debug('缓存字段和标签数据');
           this.cache.set(cacheKey, fieldsAndTags);
           // 设置缓存过期时间（5分钟）
           setTimeout(() => this.cache.delete(cacheKey), 5 * 60 * 1000);
         }
       } else {
-        console.log('从缓存获取字段和标签:', fieldsAndTags);
+        logger.debug('从缓存获取字段和标签:', fieldsAndTags);
       }
 
       // 添加字段提示
       if (fieldsAndTags && fieldsAndTags.fields && fieldsAndTags.fields.length > 0) {
-        console.log('添加字段提示，字段数量:', fieldsAndTags.fields.length);
+        logger.debug('添加字段提示，字段数量:', fieldsAndTags.fields.length);
         fieldsAndTags.fields.forEach((field: string) => {
           suggestions.push({
             label: field,
@@ -446,7 +447,7 @@ export class SmartSuggestionService {
 
       // 添加标签提示
       if (fieldsAndTags && fieldsAndTags.tags && fieldsAndTags.tags.length > 0) {
-        console.log('添加标签提示，标签数量:', fieldsAndTags.tags.length);
+        logger.debug('添加标签提示，标签数量:', fieldsAndTags.tags.length);
         fieldsAndTags.tags.forEach((tag: string) => {
           suggestions.push({
             label: tag,
@@ -464,7 +465,7 @@ export class SmartSuggestionService {
       if (!fieldsAndTags ||
           (!fieldsAndTags.fields || fieldsAndTags.fields.length === 0) &&
           (!fieldsAndTags.tags || fieldsAndTags.tags.length === 0)) {
-        console.log('没有获取到字段和标签，添加通用字段');
+        logger.debug('没有获取到字段和标签，添加通用字段');
         const commonFields = ['time', 'value', '_time', '_value', '_field', '_measurement'];
         const commonTags = ['host', 'region', 'datacenter', 'environment'];
 
@@ -493,9 +494,9 @@ export class SmartSuggestionService {
         });
       }
 
-      console.log('=== 字段和标签获取完成 ===');
+      logger.debug('=== 字段和标签获取完成 ===');
     } catch (error) {
-      console.error('获取字段和标签失败:', error);
+      logger.error('获取字段和标签失败:', error);
     }
   }
 
@@ -511,7 +512,7 @@ export class SmartSuggestionService {
     const tags: string[] = [];
 
     try {
-      console.log('使用备用方法获取字段和标签');
+      logger.debug('使用备用方法获取字段和标签');
 
       // 尝试执行字段查询 - 智能检测数据库类型
       try {
@@ -533,10 +534,10 @@ export class SmartSuggestionService {
             row.fieldKey || row.field_key || row.name || row[0]
           ).filter(Boolean);
           fields.push(...fieldNames);
-          console.log('查询方法获取到字段:', fieldNames);
+          logger.debug('查询方法获取到字段:', fieldNames);
         }
       } catch (error) {
-        console.warn('SHOW FIELD KEYS查询失败:', error);
+        logger.warn('SHOW FIELD KEYS查询失败:', error);
       }
 
       // 尝试执行SHOW TAG KEYS查询
@@ -554,13 +555,13 @@ export class SmartSuggestionService {
             row.tagKey || row.tag_key || row.name || row[0]
           ).filter(Boolean);
           tags.push(...tagNames);
-          console.log('查询方法获取到标签:', tagNames);
+          logger.debug('查询方法获取到标签:', tagNames);
         }
       } catch (error) {
-        console.warn('SHOW TAG KEYS查询失败:', error);
+        logger.warn('SHOW TAG KEYS查询失败:', error);
       }
     } catch (error) {
-      console.warn('备用方法获取字段和标签失败:', error);
+      logger.warn('备用方法获取字段和标签失败:', error);
     }
 
     return { fields, tags };
@@ -629,8 +630,8 @@ export class SmartSuggestionService {
     const lineText = context.lineText.toUpperCase();
     const text = context.text.toUpperCase();
 
-    console.log('检查是否应该提示字段或标签');
-    console.log('当前行:', lineText);
+    logger.debug('检查是否应该提示字段或标签');
+    logger.debug('当前行:', lineText);
 
     // 检查是否在SELECT和FROM之间
     const hasSelect = text.includes('SELECT');
@@ -643,8 +644,8 @@ export class SmartSuggestionService {
       const fromPos = text.indexOf('FROM');
       const cursorPos = context.position;
       isInSelectClause = cursorPos > selectPos && cursorPos < fromPos;
-      console.log('光标位置:', cursorPos, 'SELECT位置:', selectPos, 'FROM位置:', fromPos);
-      console.log('是否在SELECT子句中:', isInSelectClause);
+      logger.debug('光标位置:', cursorPos, 'SELECT位置:', selectPos, 'FROM位置:', fromPos);
+      logger.debug('是否在SELECT子句中:', isInSelectClause);
     }
 
     // 检查是否在WHERE子句中
@@ -666,7 +667,7 @@ export class SmartSuggestionService {
     const shouldSuggest = isInSelectClause || isInWhereClause || isInGroupByClause ||
                          isInHavingClause || isInOrderByClause;
 
-    console.log('是否应该提示字段或标签:', shouldSuggest);
+    logger.debug('是否应该提示字段或标签:', shouldSuggest);
     return shouldSuggest;
   }
 
@@ -675,7 +676,7 @@ export class SmartSuggestionService {
    */
   private extractTableName(context: SuggestionContext): string | null {
     const text = context.text;
-    console.log('提取表名，完整文本:', text);
+    logger.debug('提取表名，完整文本:', text);
 
     // 尝试多种正则表达式匹配表名
     const patterns = [
@@ -693,12 +694,12 @@ export class SmartSuggestionService {
       const match = text.match(pattern);
       if (match) {
         const tableName = match[1];
-        console.log('找到表名:', tableName);
+        logger.debug('找到表名:', tableName);
         return tableName;
       }
     }
 
-    console.log('未找到表名');
+    logger.debug('未找到表名');
     return null;
   }
 
@@ -745,12 +746,12 @@ export class SmartSuggestionService {
    * 过滤和排序提示项
    */
   private filterAndSort(suggestions: SuggestionItem[], query: string): SuggestionItem[] {
-    console.log('过滤前提示项数量:', suggestions.length);
-    console.log('查询字符串:', `"${query}"`);
+    logger.debug('过滤前提示项数量:', suggestions.length);
+    logger.debug('查询字符串:', `"${query}"`);
 
     // 如果没有查询字符串，返回所有建议（按优先级排序）
     if (!query || query.trim() === '') {
-      console.log('无查询字符串，返回所有提示项');
+      logger.debug('无查询字符串，返回所有提示项');
       const sorted = suggestions.sort((a, b) => {
         const priorityDiff = (a.priority || 999) - (b.priority || 999);
         if (priorityDiff !== 0) return priorityDiff;
@@ -766,12 +767,12 @@ export class SmartSuggestionService {
         : item.label.toLowerCase().includes(query.toLowerCase());
 
       if (matches) {
-        console.log(`匹配项: ${item.type}:${item.label}`);
+        logger.debug(`匹配项: ${item.type}:${item.label}`);
       }
       return matches;
     });
 
-    console.log('过滤后匹配项数量:', filtered.length);
+    logger.debug('过滤后匹配项数量:', filtered.length);
 
     // 按优先级和匹配度排序
     filtered.sort((a, b) => {

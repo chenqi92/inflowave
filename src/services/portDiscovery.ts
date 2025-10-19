@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 
+import { logger } from '@/utils/logger';
 export interface PortInfo {
   port: number;
   is_available: boolean;
@@ -51,9 +52,9 @@ export class PortDiscoveryService {
       const port = await this.ensureFrontendPortAvailable();
       this.currentPort = port;
       
-      console.log(`Port discovery service initialized. Current port: ${this.currentPort}`);
+      logger.debug(`Port discovery service initialized. Current port: ${this.currentPort}`);
     } catch (error) {
-      console.error('Failed to initialize port discovery service:', error);
+      logger.error('Failed to initialize port discovery service:', error);
       throw error;
     }
   }
@@ -64,10 +65,10 @@ export class PortDiscoveryService {
   async allocatePort(serviceName: string): Promise<number> {
     try {
       const port = await invoke<number>('allocate_port', { serviceName });
-      console.log(`Port ${port} allocated for service: ${serviceName}`);
+      logger.debug(`Port ${port} allocated for service: ${serviceName}`);
       return port;
     } catch (error) {
-      console.error(`Failed to allocate port for service ${serviceName}:`, error);
+      logger.error(`Failed to allocate port for service ${serviceName}:`, error);
       throw error;
     }
   }
@@ -78,11 +79,11 @@ export class PortDiscoveryService {
   async ensureFrontendPortAvailable(): Promise<number> {
     try {
       const port = await invoke<number>('ensure_frontend_port_available');
-      console.log(`Frontend port ensured: ${port}`);
+      logger.debug(`Frontend port ensured: ${port}`);
       this.currentPort = port;
       return port;
     } catch (error) {
-      console.error('Failed to ensure frontend port availability:', error);
+      logger.error('Failed to ensure frontend port availability:', error);
       throw error;
     }
   }
@@ -95,7 +96,7 @@ export class PortDiscoveryService {
       const port = await invoke<number | null>('get_frontend_port');
       return port;
     } catch (error) {
-      console.error('Failed to get frontend port:', error);
+      logger.error('Failed to get frontend port:', error);
       return null;
     }
   }
@@ -106,9 +107,9 @@ export class PortDiscoveryService {
   async releasePort(serviceName: string): Promise<void> {
     try {
       await invoke('release_port', { serviceName });
-      console.log(`Port released for service: ${serviceName}`);
+      logger.debug(`Port released for service: ${serviceName}`);
     } catch (error) {
-      console.error(`Failed to release port for service ${serviceName}:`, error);
+      logger.error(`Failed to release port for service ${serviceName}:`, error);
       throw error;
     }
   }
@@ -128,7 +129,7 @@ export class PortDiscoveryService {
       const port = await invoke<number | null>('get_service_port', { serviceName });
       return port;
     } catch (error) {
-      console.error(`Failed to get port for service ${serviceName}:`, error);
+      logger.error(`Failed to get port for service ${serviceName}:`, error);
       return null;
     }
   }
@@ -141,7 +142,7 @@ export class PortDiscoveryService {
       const available = await invoke<boolean>('is_port_available', { port });
       return available;
     } catch (error) {
-      console.error(`Failed to check port availability for ${port}:`, error);
+      logger.error(`Failed to check port availability for ${port}:`, error);
       return false;
     }
   }
@@ -154,7 +155,7 @@ export class PortDiscoveryService {
       const healthy = await invoke<boolean>('port_health_check', { serviceName });
       return healthy;
     } catch (error) {
-      console.error(`Health check failed for service ${serviceName}:`, error);
+      logger.error(`Health check failed for service ${serviceName}:`, error);
       return false;
     }
   }
@@ -165,9 +166,9 @@ export class PortDiscoveryService {
   async startHealthCheckLoop(serviceName: string): Promise<void> {
     try {
       await invoke('start_health_check_loop', { serviceName });
-      console.log(`Health check loop started for service: ${serviceName}`);
+      logger.debug(`Health check loop started for service: ${serviceName}`);
     } catch (error) {
-      console.error(`Failed to start health check loop for service ${serviceName}:`, error);
+      logger.error(`Failed to start health check loop for service ${serviceName}:`, error);
       throw error;
     }
   }
@@ -181,10 +182,10 @@ export class PortDiscoveryService {
       if (serviceName === 'frontend-dev-server') {
         this.currentPort = port;
       }
-      console.log(`Port reallocated for service ${serviceName}: ${port}`);
+      logger.debug(`Port reallocated for service ${serviceName}: ${port}`);
       return port;
     } catch (error) {
-      console.error(`Failed to reallocate port for service ${serviceName}:`, error);
+      logger.error(`Failed to reallocate port for service ${serviceName}:`, error);
       throw error;
     }
   }
@@ -197,7 +198,7 @@ export class PortDiscoveryService {
       const conflicts = await invoke<string[]>('check_port_conflicts');
       return conflicts;
     } catch (error) {
-      console.error('Failed to check port conflicts:', error);
+      logger.error('Failed to check port conflicts:', error);
       return [];
     }
   }
@@ -210,7 +211,7 @@ export class PortDiscoveryService {
       const stats = await invoke<Record<string, PortInfo>>('get_port_stats');
       return stats;
     } catch (error) {
-      console.error('Failed to get port stats:', error);
+      logger.error('Failed to get port stats:', error);
       return {};
     }
   }
@@ -242,7 +243,7 @@ export class PortDiscoveryService {
    * 处理端口事件
    */
   private handlePortEvent(event: PortEvent): void {
-    console.log('Port event received:', event);
+    logger.debug('Port event received:', event);
     
     // 更新当前端口
     if (event.type === 'PortChanged' && event.new_port) {
@@ -266,7 +267,7 @@ export class PortDiscoveryService {
    * 自动处理端口冲突
    */
   async handlePortConflict(serviceName: string): Promise<number> {
-    console.warn(`Port conflict detected for service: ${serviceName}`);
+    logger.warn(`Port conflict detected for service: ${serviceName}`);
     
     try {
       // 尝试重新分配端口
@@ -279,7 +280,7 @@ export class PortDiscoveryService {
       
       return newPort;
     } catch (error) {
-      console.error(`Failed to handle port conflict for service ${serviceName}:`, error);
+      logger.error(`Failed to handle port conflict for service ${serviceName}:`, error);
       throw error;
     }
   }
@@ -288,7 +289,7 @@ export class PortDiscoveryService {
    * 通知端口变更
    */
   private notifyPortChange(newPort: number): void {
-    console.log(`Frontend port changed to: ${newPort}`);
+    logger.debug(`Frontend port changed to: ${newPort}`);
     
     // 这里可以添加 UI 通知或其他处理逻辑
     // 比如显示 toast 通知用户端口已更改
@@ -316,9 +317,9 @@ export class PortDiscoveryService {
       // 释放前端服务端口
       await this.releasePort('frontend-dev-server');
       
-      console.log('Port discovery service cleaned up');
+      logger.debug('Port discovery service cleaned up');
     } catch (error) {
-      console.error('Failed to cleanup port discovery service:', error);
+      logger.error('Failed to cleanup port discovery service:', error);
     }
   }
 }

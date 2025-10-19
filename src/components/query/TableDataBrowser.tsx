@@ -319,7 +319,7 @@ const copyToClipboard = async (text: string): Promise<boolean> => {
       return result;
     }
   } catch (error) {
-    console.error('复制失败:', error);
+    logger.error('复制失败:', error);
     return false;
   }
 };
@@ -400,6 +400,7 @@ const formatMultipleRows = (
 };
 import ExportOptionsDialog, { type ExportOptions } from './ExportOptionsDialog';
 
+import { logger } from '@/utils/logger';
 // 生成带时间戳的文件名
 const generateTimestampedFilename = (
   tableName: string,
@@ -551,7 +552,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           lazy_loading_batch_size: number;
         }>('get_query_settings');
 
-        console.log('✅ [TableDataBrowser] 加载查询设置成功:', {
+        logger.info('[TableDataBrowser] 加载查询设置成功:', {
           enable_lazy_loading: settings.enable_lazy_loading,
           lazy_loading_batch_size: settings.lazy_loading_batch_size,
           完整设置: settings,
@@ -562,7 +563,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           lazy_loading_batch_size: settings.lazy_loading_batch_size,
         });
       } catch (error) {
-        console.error('❌ [TableDataBrowser] 加载查询设置失败:', error);
+        logger.error('[TableDataBrowser] 加载查询设置失败:', error);
         // 使用默认值
       }
     };
@@ -572,7 +573,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 监听 querySettings 变化
   useEffect(() => {
-    console.log('🔄 [TableDataBrowser] 查询设置已更新:', querySettings);
+    logger.debug('[TableDataBrowser] 查询设置已更新:', querySettings);
   }, [querySettings]);
 
   // 拖动选择状态
@@ -842,8 +843,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     if (isIoTDB) {
       // 对于IoTDB，使用SELECT *查询但需要特殊处理返回的数据
-      console.log('🔧 [IoTDB] 使用SELECT *查询，连接类型:', dbType, '检测类型:', detectedType);
-      console.log('🔧 [IoTDB] 字段路径:', fullFieldPaths);
+      logger.debug('🔧 [IoTDB] 使用SELECT *查询，连接类型:', dbType, '检测类型:', detectedType);
+      logger.debug('🔧 [IoTDB] 字段路径:', fullFieldPaths);
 
       query = `SELECT *
                FROM ${tableRef}`;
@@ -853,12 +854,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       if (fieldColumns.length > 0) {
         // 使用明确的字段名
         const fieldList = fieldColumns.map(field => `"${field}"`).join(', ');
-        console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', dbType);
+        logger.debug('🔧 [InfluxDB] 使用字段明确查询，连接类型:', dbType);
         query = `SELECT time, ${fieldList}
                  FROM ${tableRef}`;
       } else {
         // 如果没有字段信息，使用SELECT *
-        console.log('🔧 [InfluxDB] 使用SELECT *查询，连接类型:', dbType);
+        logger.debug('🔧 [InfluxDB] 使用SELECT *查询，连接类型:', dbType);
         query = `SELECT *
                  FROM ${tableRef}`;
       }
@@ -903,14 +904,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     if (pageSize > 0) {
       const offset = (currentPage - 1) * pageSize;
       query += ` LIMIT ${pageSize} OFFSET ${offset}`;
-      console.log('🔧 [TableDataBrowser] 添加分页参数:', {
+      logger.debug('🔧 [TableDataBrowser] 添加分页参数:', {
         pageSize,
         currentPage,
         offset,
         limitClause: `LIMIT ${pageSize} OFFSET ${offset}`
       });
     } else {
-      console.log('🔧 [TableDataBrowser] 显示全部数据，不添加分页参数');
+      logger.debug('🔧 [TableDataBrowser] 显示全部数据，不添加分页参数');
     }
 
     return query;
@@ -938,7 +939,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     if (isIoTDB) {
       // IoTDB查询
-      console.log('🔧 [IoTDB] 使用IoTDB查询语法，连接类型:', dbType);
+      logger.debug('🔧 [IoTDB] 使用IoTDB查询语法，连接类型:', dbType);
 
       // 构建字段列表
       const fieldList = fullFieldPaths.length > 0 ? fullFieldPaths.join(', ') : '*';
@@ -969,7 +970,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       }
     } else {
       // InfluxDB查询
-      console.log('🔧 [InfluxDB] 使用字段明确查询，连接类型:', dbType);
+      logger.debug('🔧 [InfluxDB] 使用字段明确查询，连接类型:', dbType);
 
       // 构建字段列表，去重并确保包含time字段
       const fieldColumns = columns.filter(col => col !== '#' && col !== 'time');
@@ -1023,14 +1024,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     if (targetPageSize > 0) {
       const offset = (targetPage - 1) * targetPageSize;
       query += ` LIMIT ${targetPageSize} OFFSET ${offset}`;
-      console.log('🔧 [TableDataBrowser] 添加分页参数:', {
+      logger.debug('🔧 [TableDataBrowser] 添加分页参数:', {
         pageSize: targetPageSize,
         currentPage: targetPage,
         offset,
         limitClause: `LIMIT ${targetPageSize} OFFSET ${offset}`
       });
     } else {
-      console.log('🔧 [TableDataBrowser] 显示全部数据，不添加 LIMIT 子句');
+      logger.debug('🔧 [TableDataBrowser] 显示全部数据，不添加 LIMIT 子句');
     }
 
     return query;
@@ -1059,8 +1060,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         ? `SHOW TIMESERIES ${tableName}.**`
         : `SHOW FIELD KEYS FROM "${tableName}"`;
 
-      console.log(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 执行字段查询:`, fieldKeysQuery);
-      console.log(`🔧 连接信息:`, {
+      logger.debug(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 执行字段查询:`, fieldKeysQuery);
+      logger.debug(`🔧 连接信息:`, {
         connectionId,
         dbType,
         detectedType,
@@ -1076,7 +1077,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         },
       });
 
-      console.log(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 字段查询结果:`, fieldResult);
+      logger.debug(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 字段查询结果:`, fieldResult);
 
       // 获取标签键
       const tagKeysQuery = isIoTDB
@@ -1119,7 +1120,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             .filter(path => path && path !== '' && path !== tableName)
             .filter(path => path.startsWith(`${tableName  }.`));
 
-          console.log(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 字段路径提取:`, {
+          logger.debug(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 字段路径提取:`, {
             原始路径: timeseriesPaths,
             提取的字段名: extractedFieldKeys,
             完整路径: fullPaths,
@@ -1141,7 +1142,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             }
           });
 
-          console.log('🔧 [IoTDB] 字段映射关系:', Array.from(fieldMapping.entries()));
+          logger.debug('🔧 [IoTDB] 字段映射关系:', Array.from(fieldMapping.entries()));
         } else {
           fieldKeys.push(...timeseriesPaths);
         }
@@ -1160,7 +1161,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       // 合并所有列：序号、时间、标签键、字段键，并去重
       const allColumns = ['#', 'time', ...new Set([...tagKeys, ...fieldKeys])];
 
-      console.log('🔧 [TableDataBrowser] 设置列状态:', {
+      logger.debug('🔧 [TableDataBrowser] 设置列状态:', {
         设置前columns长度: columns.length,
         设置后columns长度: allColumns.length,
         新列: allColumns,
@@ -1169,7 +1170,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       setColumns(allColumns);
 
-      console.log('📊 获取表结构完成:', {
+      logger.debug('获取表结构完成:', {
         tableName,
         fieldKeys: fieldKeys.length,
         tagKeys: tagKeys.length,
@@ -1178,7 +1179,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         isInitializedRef当前值: isInitializedRef.current
       });
     } catch (error) {
-      console.error('获取表结构失败:', error);
+      logger.error('获取表结构失败:', error);
       showMessage.error('获取表结构失败');
     }
   }, [connectionId, database, tableName, dbType, detectedType]);
@@ -1204,7 +1205,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         setTotalCount(result.results[0].series[0].values[0][1] as number);
       }
     } catch (error) {
-      console.error('获取总数失败:', error);
+      logger.error('获取总数失败:', error);
     }
   }, [connectionId, database, tableName]);
 
@@ -1243,7 +1244,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 加载数据（带分页参数）
   const loadDataWithPagination = useCallback(async (targetPage: number, targetPageSize: number) => {
-    console.log('🔧 [TableDataBrowser] loadDataWithPagination被调用:', {
+    logger.debug('🔧 [TableDataBrowser] loadDataWithPagination被调用:', {
       columns长度: columns.length,
       tableName,
       targetPage,
@@ -1252,14 +1253,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     });
 
     if (columns.length === 0) {
-      console.log('🔧 [TableDataBrowser] loadDataWithPagination跳过：columns长度为0');
+      logger.debug('🔧 [TableDataBrowser] loadDataWithPagination跳过：columns长度为0');
       return;
     }
 
     setLoading(true);
     try {
       const query = generateBaseQueryWithPagination(targetPage, targetPageSize);
-      console.log('🔧 [TableDataBrowser] 执行数据查询:', query);
+      logger.debug('🔧 [TableDataBrowser] 执行数据查询:', query);
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
@@ -1288,8 +1289,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
           // 对于IoTDB，需要特殊处理列名
           if (isIoTDB) {
-            console.log('🔧 [IoTDB] 原始查询返回的列名:', validColumns);
-            console.log('🔧 [IoTDB] 字段路径:', fullFieldPaths);
+            logger.debug('🔧 [IoTDB] 原始查询返回的列名:', validColumns);
+            logger.debug('🔧 [IoTDB] 字段路径:', fullFieldPaths);
 
             // IoTDB的SELECT *查询返回的列结构：
             // 第1列：表名（需要过滤掉）
@@ -1304,9 +1305,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               }
             });
 
-            console.log('🔧 [IoTDB] 构建的显示列名:', iotdbColumns);
-            console.log('🔧 [IoTDB] 后端返回的列名:', validColumns);
-            console.log('🔧 [IoTDB] 列数分析:', {
+            logger.debug('🔧 [IoTDB] 构建的显示列名:', iotdbColumns);
+            logger.debug('🔧 [IoTDB] 后端返回的列名:', validColumns);
+            logger.debug('🔧 [IoTDB] 列数分析:', {
               后端返回列数: validColumns.length,
               字段路径数量: fullFieldPaths.length,
               构建的显示列数: iotdbColumns.length,
@@ -1317,7 +1318,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             validColumns = iotdbColumns;
           }
 
-          console.log('🔧 [TableDataBrowser] 列名过滤:', {
+          logger.debug('🔧 [TableDataBrowser] 列名过滤:', {
             数据库类型: isIoTDB ? 'IoTDB' : 'InfluxDB',
             原始列数: resultColumns.length,
             有效列数: validColumns.length,
@@ -1325,7 +1326,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             有效列名: validColumns
           });
 
-          console.log('🔧 [TableDataBrowser] 开始数据格式化，数据行数:', values.length);
+          logger.debug('🔧 [TableDataBrowser] 开始数据格式化，数据行数:', values.length);
 
           let formattedData: DataRow[] = [];
           try {
@@ -1354,7 +1355,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     }
                   });
 
-                  console.log('🔧 [IoTDB] 数据映射:', {
+                  logger.debug('🔧 [IoTDB] 数据映射:', {
                     行索引: index,
                     原始数据: row,
                     原始数据长度: row.length,
@@ -1373,7 +1374,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                       }
                     });
                   } catch (colError) {
-                    console.error('🔧 [TableDataBrowser] 列映射失败:', {
+                    logger.error('🔧 [TableDataBrowser] 列映射失败:', {
                       error: colError,
                       validColumns,
                       resultColumns,
@@ -1386,7 +1387,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               }
               return record;
                 } catch (rowError) {
-                  console.error('🔧 [TableDataBrowser] 行处理失败:', {
+                  logger.error('🔧 [TableDataBrowser] 行处理失败:', {
                     error: rowError,
                     rowIndex: index,
                     row,
@@ -1399,7 +1400,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               }
             );
 
-          console.log('🔧 [TableDataBrowser] 数据格式化完成:', {
+          logger.debug('🔧 [TableDataBrowser] 数据格式化完成:', {
             格式化数据长度: formattedData.length,
             格式化数据样本: formattedData.slice(0, 2)
           });
@@ -1409,10 +1410,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           // 直接设置数据，排序将通过 useMemo 处理
           setData(formattedData);
 
-          console.log('🔧 [TableDataBrowser] 数据设置完成');
+          logger.debug('🔧 [TableDataBrowser] 数据设置完成');
         } catch (formatError) {
-          console.error('🔧 [TableDataBrowser] 数据格式化失败:', formatError);
-          console.error('🔧 [TableDataBrowser] 格式化错误详情:', {
+          logger.error('🔧 [TableDataBrowser] 数据格式化失败:', formatError);
+          logger.error('🔧 [TableDataBrowser] 格式化错误详情:', {
             error: formatError,
             values: values?.slice(0, 2),
             validColumns,
@@ -1431,7 +1432,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       // 注意：这里不能直接调用 prefetchNextBatch，因为它在后面定义
       // 使用 setTimeout 和事件循环来延迟调用
       if (targetPageSize > 0 && targetPageSize !== -1 && querySettings.enable_lazy_loading && pageSize === -1) {
-        console.log('🚀 [TableDataBrowser] 首次加载完成，将触发预加载');
+        logger.debug('🚀 [TableDataBrowser] 首次加载完成，将触发预加载');
         const dataLength = targetPageSize;
         // 延迟执行预加载，确保所有函数都已定义
         setTimeout(() => {
@@ -1440,7 +1441,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }, 100);
       }
     } catch (error) {
-      console.error('加载数据失败:', error);
+      logger.error('加载数据失败:', error);
       showMessage.error('加载数据失败');
       setData([]);
     } finally {
@@ -1462,7 +1463,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const loadData = useCallback(async () => {
     // 直接使用当前的分页状态加载数据
     // pageSize === -1 表示加载全部数据
-    console.log('🔧 [TableDataBrowser] 刷新数据:', {
+    logger.debug('🔧 [TableDataBrowser] 刷新数据:', {
       currentPage,
       pageSize,
       模式: pageSize === -1 ? '全部数据' : '分页模式'
@@ -1478,7 +1479,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     setLoading(true);
     try {
       const query = generateQuery(); // 使用包含过滤器的查询
-      console.log('应用过滤器查询:', query);
+      logger.debug('应用过滤器查询:', query);
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
@@ -1506,7 +1507,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         setRawData([]);
       }
     } catch (error) {
-      console.error('应用过滤器失败:', error);
+      logger.error('应用过滤器失败:', error);
       showMessage.error('应用过滤器失败');
       setData([]);
     } finally {
@@ -1518,7 +1519,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const isInitializedRef = useRef(false);
 
   useEffect(() => {
-    console.log('🔄 [TableDataBrowser] fetchTableSchema useEffect触发:', {
+    logger.debug('[TableDataBrowser] fetchTableSchema useEffect触发:', {
       isInitialized: isInitializedRef.current,
       connectionId,
       database,
@@ -1528,7 +1529,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     // 每次表名变化时都重新获取表结构
     isInitializedRef.current = true;
 
-    console.log('🔄 [TableDataBrowser] 开始获取表结构:', {
+    logger.debug('[TableDataBrowser] 开始获取表结构:', {
       connectionId,
       database,
       tableName
@@ -1539,7 +1540,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 监听表名变化，清理状态但不重置初始化标志
   useEffect(() => {
-    console.log('🔄 [TableDataBrowser] 表名变化，清理状态:', {
+    logger.debug('[TableDataBrowser] 表名变化，清理状态:', {
       connectionId,
       database,
       tableName
@@ -1559,7 +1560,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   }, [connectionId, database, tableName]);
 
   useEffect(() => {
-    console.log('🔧 [TableDataBrowser] columns变化useEffect触发:', {
+    logger.debug('🔧 [TableDataBrowser] columns变化useEffect触发:', {
       columns长度: columns.length,
       是否初始化: isInitializedRef.current,
       会执行数据加载: columns.length > 0 && isInitializedRef.current,
@@ -1567,7 +1568,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     });
 
     if (columns.length > 0 && isInitializedRef.current) {
-      console.log('🔧 [TableDataBrowser] 开始并行执行数据加载:', {
+      logger.debug('🔧 [TableDataBrowser] 开始并行执行数据加载:', {
         columns,
         tableName
       });
@@ -1577,7 +1578,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         fetchTotalCount(),
         loadData()
       ]).catch(error => {
-        console.error('初始化数据加载失败:', error);
+        logger.error('初始化数据加载失败:', error);
       });
     }
   }, [columns.length]); // 只依赖columns.length，避免函数引用变化导致的重复调用
@@ -1662,7 +1663,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 处理页面变化 - 直接传递新页码参数
   const handlePageChange = useCallback((page: number) => {
-    console.log('🔧 [TableDataBrowser] 分页变化:', {
+    logger.debug('🔧 [TableDataBrowser] 分页变化:', {
       oldPage: currentPage,
       newPage: page,
       pageSize,
@@ -1678,7 +1679,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 处理页面大小变化 - "全部"模式使用懒加载
   const handlePageSizeChange = useCallback((size: string) => {
-    console.log('🔧 [TableDataBrowser] 页面大小变化:', {
+    logger.debug('🔧 [TableDataBrowser] 页面大小变化:', {
       oldSize: pageSize,
       newSize: size,
       currentPage,
@@ -1697,7 +1698,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 对于"全部"选项，根据设置决定是否使用懒加载模式
     if (newSize === -1) {
-      console.log('🔧 [TableDataBrowser] 检查懒加载设置:', {
+      logger.debug('🔧 [TableDataBrowser] 检查懒加载设置:', {
         enable_lazy_loading: querySettings.enable_lazy_loading,
         lazy_loading_batch_size: querySettings.lazy_loading_batch_size,
         将使用模式: querySettings.enable_lazy_loading ? '懒加载' : '一次性加载'
@@ -1706,7 +1707,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       if (querySettings.enable_lazy_loading) {
         // 懒加载模式：初始加载一批数据，滚动时自动加载更多
         const INITIAL_BATCH_SIZE = querySettings.lazy_loading_batch_size;
-        console.log(`🔧 [TableDataBrowser] 启用懒加载模式，初始加载 ${INITIAL_BATCH_SIZE} 行，总数: ${totalCount}`);
+        logger.debug(`🔧 [TableDataBrowser] 启用懒加载模式，初始加载 ${INITIAL_BATCH_SIZE} 行，总数: ${totalCount}`);
 
         // 加载第一批数据
         loadDataWithPagination(1, INITIAL_BATCH_SIZE);
@@ -1719,7 +1720,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
       } else {
         // 一次性加载所有数据（不推荐，可能导致性能问题）
-        console.log(`🔧 [TableDataBrowser] 一次性加载所有数据，总数: ${totalCount}`);
+        logger.debug(`🔧 [TableDataBrowser] 一次性加载所有数据，总数: ${totalCount}`);
         loadDataWithPagination(1, -1);
 
         if (totalCount > 10000) {
@@ -1755,11 +1756,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 如果已经到达或超过总数，不需要预加载
     if (nextOffset >= totalCount) {
-      console.log('🚀 [TableDataBrowser] 无需预加载：已接近数据末尾');
+      logger.debug('🚀 [TableDataBrowser] 无需预加载：已接近数据末尾');
       return;
     }
 
-    console.log('🚀 [TableDataBrowser] 开始预加载下一批数据:', {
+    logger.debug('🚀 [TableDataBrowser] 开始预加载下一批数据:', {
       当前数据量: currentDataLength,
       批次大小: batchSize,
       预加载偏移: nextOffset,
@@ -1773,7 +1774,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       const targetPage = Math.floor(nextOffset / batchSize) + 1;
       const query = generateBaseQueryWithPagination(targetPage, batchSize);
 
-      console.log('🚀 [TableDataBrowser] 预加载查询:', query);
+      logger.debug('🚀 [TableDataBrowser] 预加载查询:', query);
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
@@ -1816,7 +1817,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         });
 
         setPrefetchedData(processedData);
-        console.log('✅ [TableDataBrowser] 预加载成功:', {
+        logger.info('[TableDataBrowser] 预加载成功:', {
           预加载数据量: processedData.length,
           预加载范围: `${nextOffset + 1} - ${nextOffset + processedData.length}`,
           数据样本: processedData[0],
@@ -1825,7 +1826,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         });
       }
     } catch (error) {
-      console.error('❌ [TableDataBrowser] 预加载失败:', error);
+      logger.error('[TableDataBrowser] 预加载失败:', error);
     } finally {
       setIsPrefetching(false);
     }
@@ -1837,7 +1838,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   }, [prefetchNextBatch]);
 
   const loadMoreData = useCallback(async () => {
-    console.log('🔧 [TableDataBrowser] loadMoreData 被调用:', {
+    logger.debug('🔧 [TableDataBrowser] loadMoreData 被调用:', {
       pageSize,
       enable_lazy_loading: querySettings.enable_lazy_loading,
       loading,
@@ -1848,7 +1849,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 只在"全部"模式下、启用懒加载、且不在加载中时才加载更多
     if (pageSize !== -1 || !querySettings.enable_lazy_loading || loading || isLoadingMore) {
-      console.log('🔧 [TableDataBrowser] loadMoreData 跳过执行');
+      logger.debug('🔧 [TableDataBrowser] loadMoreData 跳过执行');
       return;
     }
 
@@ -1859,7 +1860,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     }
     setLastLoadTime(now);
 
-    console.log('🔧 [TableDataBrowser] 静默加载更多数据，当前数据量:', data.length);
+    logger.debug('🔧 [TableDataBrowser] 静默加载更多数据，当前数据量:', data.length);
 
     try {
       setIsLoadingMore(true);
@@ -1871,7 +1872,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       // 🚀 优化：优先使用预加载的数据
       if (prefetchedData.length > 0) {
-        console.log('⚡ [TableDataBrowser] 使用预加载数据，无需等待查询!', {
+        logger.debug('⚡ [TableDataBrowser] 使用预加载数据，无需等待查询!', {
           预加载数据量: prefetchedData.length,
           当前数据量: data.length,
         });
@@ -1886,7 +1887,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         // 立即触发下一批数据的预加载
         const newDataLength = data.length + usedPrefetchedData.length;
-        console.log('🚀 [TableDataBrowser] 触发下一批预加载，当前数据量:', newDataLength);
+        logger.debug('🚀 [TableDataBrowser] 触发下一批预加载，当前数据量:', newDataLength);
         triggerPrefetch(newDataLength);
 
         setIsLoadingMore(false);
@@ -1898,7 +1899,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       const targetPage = Math.floor(offset / batchSize) + 1;
       const query = generateBaseQueryWithPagination(targetPage, batchSize);
 
-      console.log('🔧 [TableDataBrowser] 加载更多数据查询:', query);
+      logger.debug('🔧 [TableDataBrowser] 加载更多数据查询:', query);
 
       const result = await safeTauriInvoke<QueryResult>('execute_query', {
         request: {
@@ -1922,7 +1923,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             // 只处理有数据的列，避免创建空列
             const actualColumns = backendColumns.slice(0, record.length);
 
-            console.log('🔧 [TableDataBrowser] 数据格式转换调试:', {
+            logger.debug('🔧 [TableDataBrowser] 数据格式转换调试:', {
               原始数据长度: record.length,
               后端列定义长度: backendColumns.length,
               实际处理列长度: actualColumns.length,
@@ -1951,7 +1952,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           return record;
         });
 
-        console.log('🔧 [TableDataBrowser] 处理后的新数据样本:', {
+        logger.debug('🔧 [TableDataBrowser] 处理后的新数据样本:', {
           原始第一条数据: result.data[0],
           处理后第一条数据: processedData[0],
           数据字段: Object.keys(processedData[0] || {}),
@@ -1962,20 +1963,20 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         setData(prevData => [...prevData, ...processedData]);
         setRawData(prevData => [...prevData, ...processedData]);
 
-        console.log('🔧 [TableDataBrowser] 成功加载更多数据:', {
+        logger.debug('🔧 [TableDataBrowser] 成功加载更多数据:', {
           新增数据量: result.data.length,
           总数据量: data.length + result.data.length
         });
 
         // 🚀 加载完成后，立即预加载下一批数据
         const newDataLength = data.length + processedData.length;
-        console.log('🚀 [TableDataBrowser] 触发预加载，当前数据量:', newDataLength);
+        logger.debug('🚀 [TableDataBrowser] 触发预加载，当前数据量:', newDataLength);
         triggerPrefetch(newDataLength);
       } else {
-        console.log('🔧 [TableDataBrowser] 没有更多数据了');
+        logger.debug('🔧 [TableDataBrowser] 没有更多数据了');
       }
     } catch (error) {
-      console.error('🔧 [TableDataBrowser] 加载更多数据失败:', error);
+      logger.error('🔧 [TableDataBrowser] 加载更多数据失败:', error);
     } finally {
       setIsLoadingMore(false);
     }
@@ -1984,7 +1985,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 行点击处理函数
   const handleRowClick = useCallback(
     (index: number, event: React.MouseEvent) => {
-      console.log('handleRowClick called with index:', index, 'event:', event);
+      logger.debug('handleRowClick called with index:', index, 'event:', event);
 
       // 如果正在拖动，不处理点击
       if (isDragging) {
@@ -2023,7 +2024,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 鼠标按下处理函数（开始拖动选择）
   const handleRowMouseDown = useCallback(
     (index: number, event: React.MouseEvent) => {
-      console.log('handleRowMouseDown called with index:', index);
+      logger.debug('handleRowMouseDown called with index:', index);
 
       // 只有左键才开始拖动选择
       if (event.button !== 0) {
@@ -2069,7 +2070,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 鼠标抬起处理函数（结束拖动选择）
   const handleRowMouseUp = useCallback(
     (index: number, event: React.MouseEvent) => {
-      console.log('handleRowMouseUp called with index:', index);
+      logger.debug('handleRowMouseUp called with index:', index);
       setIsDragging(false);
       setDragStartIndex(-1);
     },
@@ -2079,7 +2080,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 右键菜单处理函数
   const handleRowContextMenu = useCallback(
     (index: number, event: React.MouseEvent) => {
-      console.log('handleRowContextMenu called with index:', index);
+      logger.debug('handleRowContextMenu called with index:', index);
 
       // 如果右键的行没有被选中，则选中它
       const newSelectedRows = new Set(selectedRows);
@@ -2107,17 +2108,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 全选/取消全选
   const handleSelectAll = useCallback(() => {
-    console.log(
+    logger.debug(
       'handleSelectAll called, current selected:',
       selectedRows.size,
       'total:',
       data.length
     );
     if (selectedRows.size === data.length) {
-      console.log('Deselecting all rows');
+      logger.debug('Deselecting all rows');
       setSelectedRows(new Set());
     } else {
-      console.log('Selecting all rows');
+      logger.debug('Selecting all rows');
       setSelectedRows(new Set(data.map((_, index) => index)));
     }
   }, [selectedRows.size, data.length]);
@@ -2340,7 +2341,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           description: `已复制 ${data.length} 行数据`
         });
       } catch (error) {
-        console.error('复制数据失败:', error);
+        logger.error('复制数据失败:', error);
         toast.error('复制数据失败');
       }
     },
@@ -2402,7 +2403,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 处理列选择
   const handleColumnToggle = (column: string) => {
-    console.log('🔧 [TableDataBrowser] 列切换:', {
+    logger.debug('🔧 [TableDataBrowser] 列切换:', {
       column,
       currentSelected: selectedColumns,
     });
@@ -2411,19 +2412,19 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         // 如果已选中，则取消选中（但至少保留一列）
         if (prev.length > 1) {
           const newSelected = prev.filter(col => col !== column);
-          console.log('🔧 [TableDataBrowser] 取消选中列:', {
+          logger.debug('🔧 [TableDataBrowser] 取消选中列:', {
             column,
             before: prev,
             after: newSelected,
           });
           return newSelected;
         }
-        console.log('🔧 [TableDataBrowser] 保留最后一列:', { column });
+        logger.debug('🔧 [TableDataBrowser] 保留最后一列:', { column });
         return prev; // 至少保留一列
       } else {
         // 如果未选中，则添加到选中列表
         const newSelected = [...prev, column];
-        console.log('🔧 [TableDataBrowser] 选中列:', {
+        logger.debug('🔧 [TableDataBrowser] 选中列:', {
           column,
           before: prev,
           after: newSelected,
@@ -2495,7 +2496,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         setShowExportDialog(false);
       }
     } catch (error) {
-      console.error('导出数据失败:', error);
+      logger.error('导出数据失败:', error);
       showMessage.error('导出数据失败');
     }
   };
@@ -2685,7 +2686,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             }
           }}
           onPageChange={(page, size) => {
-            console.log('🔧 [TableDataBrowser] UnifiedDataTable分页回调:', {
+            logger.debug('🔧 [TableDataBrowser] UnifiedDataTable分页回调:', {
               page,
               size,
               currentPage,
@@ -2705,7 +2706,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             setSelectedRows(selectedRowsSet);
           }}
           onColumnChange={(visibleColumns, newColumnOrder) => {
-            console.log('🔧 [TableDataBrowser] GlideDataTable列变化回调:', {
+            logger.debug('🔧 [TableDataBrowser] GlideDataTable列变化回调:', {
               visibleColumns,
               newColumnOrder
             });
@@ -2715,7 +2716,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           onLoadMore={loadMoreData}
           hasNextPage={(() => {
             const hasNext = pageSize === -1 && querySettings.enable_lazy_loading && data.length < totalCount;
-            console.log('🔧 [TableDataBrowser] hasNextPage 计算:', {
+            logger.debug('🔧 [TableDataBrowser] hasNextPage 计算:', {
               pageSize,
               enable_lazy_loading: querySettings.enable_lazy_loading,
               dataLength: data.length,

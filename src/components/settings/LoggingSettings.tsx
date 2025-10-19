@@ -43,10 +43,22 @@ import {
 import { useUserPreferencesStore, type LoggingSettings } from '@/stores/userPreferencesStore';
 import { open } from '@tauri-apps/plugin-shell';
 import { logger, LogLevel } from '@/utils/logger';
+import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
+
+interface LogFileInfo {
+  name: string;
+  path: string;
+  size: number;
+  modified: string;
+  created: string;
+}
 
 const LoggingSettingsComponent: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const { preferences, updateLogging } = useUserPreferencesStore();
+  const [logFiles, setLogFiles] = useState<LogFileInfo[]>([]);
+  const [totalSize, setTotalSize] = useState(0);
 
   const form = useForm<LoggingSettings>({
     defaultValues: preferences.logging,
@@ -58,6 +70,23 @@ const LoggingSettingsComponent: React.FC = () => {
       form.reset(preferences.logging);
     }
   }, [preferences.logging, form]);
+
+  // 加载日志文件列表
+  const loadLogFiles = async () => {
+    try {
+      const files = await invoke<LogFileInfo[]>('list_log_files');
+      setLogFiles(files);
+      const total = files.reduce((sum, file) => sum + file.size, 0);
+      setTotalSize(total);
+    } catch (error) {
+      console.error('加载日志文件列表失败:', error);
+    }
+  };
+
+  // 初始加载
+  useEffect(() => {
+    loadLogFiles();
+  }, []);
 
   // 保存日志设置
   const saveSettings = async (values: LoggingSettings) => {
@@ -103,6 +132,46 @@ const LoggingSettingsComponent: React.FC = () => {
       max_files: 5,
     });
     showMessage.success('已重置为默认值');
+  };
+
+  // 清理旧日志文件
+  const handleCleanupOldLogs = async () => {
+    try {
+      const maxFiles = form.getValues('max_files');
+      const deletedCount = await invoke<number>('cleanup_old_log_files', { keepCount: maxFiles });
+      toast.success(`已清理 ${deletedCount} 个旧日志文件`);
+      await loadLogFiles();
+    } catch (error) {
+      console.error('清理日志文件失败:', error);
+      toast.error('清理日志文件失败');
+    }
+  };
+
+  // 删除所有日志文件
+  const handleDeleteAllLogs = async () => {
+    if (!confirm('确定要删除所有日志文件吗？此操作不可恢复。')) {
+      return;
+    }
+
+    try {
+      for (const file of logFiles) {
+        await invoke('delete_log_file', { path: file.path });
+      }
+      toast.success('已删除所有日志文件');
+      await loadLogFiles();
+    } catch (error) {
+      console.error('删除日志文件失败:', error);
+      toast.error('删除日志文件失败');
+    }
+  };
+
+  // 格式化文件大小
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
   };
 
   // 打开日志文件夹
@@ -297,6 +366,97 @@ const LoggingSettingsComponent: React.FC = () => {
               <FolderOpen className="w-4 h-4 mr-2" />
               打开日志文件夹
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* 日志文件管理 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              日志文件管理
+            </CardTitle>
+            <CardDescription>
+              查看和管理日志文件
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* 统计信息 */}
+            <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div>
+                <div className="text-sm text-muted-foreground">日志文件数量</div>
+                <div className="text-2xl font-bold">{logFiles.length}</div>
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">总大小</div>
+                <div className="text-2xl font-bold">{formatFileSize(totalSize)}</div>
+              </div>
+            </div>
+
+            {/* 操作按钮 */}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={loadLogFiles}
+                className="flex-1"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                刷新列表
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCleanupOldLogs}
+                className="flex-1"
+              >
+                清理旧文件
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={handleDeleteAllLogs}
+                className="flex-1"
+              >
+                删除全部
+              </Button>
+            </div>
+
+            {/* 文件列表 */}
+            {logFiles.length > 0 && (
+              <div className="space-y-2 max-h-60 overflow-y-auto">
+                {logFiles.map((file) => (
+                  <div
+                    key={file.path}
+                    className="flex items-center justify-between p-2 border rounded hover:bg-accent/50"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium truncate">{file.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatFileSize(file.size)} • {new Date(file.modified).toLocaleString()}
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          await invoke('delete_log_file', { path: file.path });
+                          toast.success('文件已删除');
+                          await loadLogFiles();
+                        } catch (error) {
+                          console.error('删除文件失败:', error);
+                          toast.error('删除文件失败');
+                        }
+                      }}
+                    >
+                      删除
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 

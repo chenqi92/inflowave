@@ -88,7 +88,7 @@ import {
   getNodeIcon,
 } from '@/utils/databaseExplorer/nodeUtils';
 import { generateQueryWithTimeFilter } from '@/utils/databaseExplorer/queryUtils';
-import { log } from '@/utils/logger';
+import { logger } from '@/utils/logger';
 
 // 导入自定义 Hooks
 import {
@@ -123,9 +123,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const navigate = useNavigate();
 
   // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
+  // eslint-disable-next-line no-undef
   if (process.env.NODE_ENV === 'development') {
     state.renderCountRef.current++;
-    log.render(
+    logger.render(
       `DatabaseExplorer 重新渲染 (第 ${state.renderCountRef.current} 次)`
     );
   }
@@ -273,7 +274,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     database: string,
     tableName: string
   ) => {
-    console.log(`🔍 打开${type}弹框:`, { connectionId, database, tableName });
+    logger.debug(`打开${type}弹框:`, { connectionId, database, tableName });
     setDialogStates(prev => ({
       ...prev,
       [type]: { open: true, connectionId, database, tableName },
@@ -300,7 +301,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   const handleConnectionSuccess = async (connection: ConnectionConfig) => {
     try {
-      console.log('💾 连接保存成功:', connection.name);
+      logger.debug('💾 连接保存成功:', connection.name);
 
       // 如果是编辑现有连接，更新连接
       if (editingConnection) {
@@ -314,9 +315,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
       // 注意：SimpleConnectionDialog 内部的 useConnection hook 已经调用了 addConnection
       // 这里不需要手动刷新，因为 useEffect 会监听 connections 变化自动重建树
-      console.log('✅ 连接保存完成，等待自动刷新数据源树');
+      logger.info('连接保存完成，等待自动刷新数据源树');
     } catch (error) {
-      console.error('连接保存失败:', error);
+      logger.error('连接保存失败:', error);
       showMessage.error(`连接保存失败: ${error}`);
     }
   };
@@ -368,14 +369,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       showGlobalLoading: boolean = true,
       overrideHideSystemNodes?: boolean
     ) => {
-      console.log(
+      logger.debug(
         `🏗️ 开始构建树形数据，已连接: [${connectedConnectionIds.join(', ')}]`
       );
       const currentHideSystemNodes =
         overrideHideSystemNodes !== undefined
           ? overrideHideSystemNodes
           : hideSystemNodes;
-      console.log(`🔧 系统节点过滤状态: ${currentHideSystemNodes}`);
+      logger.debug(`🔧 系统节点过滤状态: ${currentHideSystemNodes}`);
 
       // 只在明确需要时才显示全局 loading
       if (showGlobalLoading) {
@@ -435,12 +436,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         // 为已连接的连接加载数据库列表
         if (isConnected && connection.id) {
-          console.log(`🔗 处理已连接: ${connection.name} (${connection.id})`);
+          logger.debug(`处理已连接: ${connection.name} (${connection.id})`);
           try {
             // 使用统一的缓存方法获取树节点信息，避免重复查询
             const treeNodes = await getTreeNodesWithCache(connection.id, false);
-            console.log(`🎯 获取树节点信息，节点数量: ${treeNodes.length}`);
-            console.log(
+            logger.debug(`🎯 获取树节点信息，节点数量: ${treeNodes.length}`);
+            logger.debug(
               `🎯 树节点详情:`,
               treeNodes.map(n => `${n.name}(${n.node_type || n.nodeType})`)
             );
@@ -471,7 +472,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
               // 系统节点过滤：如果启用系统节点过滤，过滤掉系统相关的数据库节点
               // 注意：这里只过滤数据库级别的节点，不过滤连接级别的节点
-              console.log(
+              logger.debug(
                 `🔍 系统节点过滤检查: ${nodeName}, 连接类型: ${connection.dbType}, 节点类型: ${nodeType}, 过滤状态: ${currentHideSystemNodes}`
               );
 
@@ -479,7 +480,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                 // InfluxDB: 过滤掉 _internal 等系统数据库
                 if (connection.dbType === 'influxdb') {
                   if (nodeName.startsWith('_')) {
-                    console.log(`🚫 过滤InfluxDB系统数据库: ${nodeName}`);
+                    logger.debug(`🚫 过滤InfluxDB系统数据库: ${nodeName}`);
                     return false; // 过滤掉以下划线开头的系统数据库
                   }
                 }
@@ -496,7 +497,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                       'schema_template',
                     ].includes(nodeType)
                   ) {
-                    console.log(
+                    logger.debug(
                       `🚫 过滤IoTDB管理节点: ${nodeName} (${nodeType})`
                     );
                     return false;
@@ -507,14 +508,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     nodeName.toLowerCase().includes('information') ||
                     nodeName.toLowerCase().includes('schema')
                   ) {
-                    console.log(`🚫 过滤IoTDB系统存储组: ${nodeName}`);
+                    logger.debug(`🚫 过滤IoTDB系统存储组: ${nodeName}`);
                     return false;
                   }
                 }
 
-                console.log(`✅ 系统节点过滤通过: ${nodeName}`);
+                logger.info(`系统节点过滤通过: ${nodeName}`);
               } else {
-                console.log(`✅ 显示所有节点（过滤已关闭）: ${nodeName}`);
+                logger.info(`显示所有节点（过滤已关闭）: ${nodeName}`);
               }
 
               return true;
@@ -543,22 +544,22 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
               // 系统节点过滤模式下不显示管理功能节点
               if (currentHideSystemNodes) {
-                console.log(`🚫 过滤管理节点: ${nodeName} (${nodeType})`);
+                logger.debug(`🚫 过滤管理节点: ${nodeName} (${nodeType})`);
                 return false;
               }
 
-              console.log(`✅ 显示管理节点: ${nodeName} (${nodeType})`);
+              logger.info(`显示管理节点: ${nodeName} (${nodeType})`);
               return true;
             });
 
-            console.log(
+            logger.debug(
               `📁 为连接 ${connection.name} 创建 ${databaseNodes.length} 个数据库节点，${managementNodes.length} 个管理节点`
             );
-            console.log(
+            logger.debug(
               `🗂️ 数据库节点:`,
               databaseNodes.map(n => `${n.name}(${n.node_type || n.nodeType})`)
             );
-            console.log(
+            logger.debug(
               `⚙️ 管理节点:`,
               managementNodes.map(
                 n => `${n.name}(${n.node_type || n.nodeType})`
@@ -646,7 +647,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               const nodeCategory = mgmtNode.metadata?.node_category;
               const managementKey = `management|${connection.id}|${nodeType}|${nodeName}`;
 
-              console.log(
+              logger.debug(
                 `⚙️ 创建管理节点: ${nodeName} (${nodeType}), 容器: ${isContainer}, 分类: ${nodeCategory}`
               );
 
@@ -692,16 +693,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               ...managementChildren,
             ];
           } catch (error) {
-            console.error('❌ 加载数据库失败:', error);
+            logger.error('加载数据库失败:', error);
           }
         } else {
-          console.log(`⏭️ 跳过未连接: ${connection.name}`);
+          logger.debug(`跳过未连接: ${connection.name}`);
         }
 
         treeNodes.push(connectionNode);
       }
 
-      console.log(`🌳 树形数据构建完成，共 ${treeNodes.length} 个根节点`);
+      logger.debug(`🌳 树形数据构建完成，共 ${treeNodes.length} 个根节点`);
       setTreeData(treeNodes);
 
       // 只在之前显示了全局 loading 时才清除
@@ -730,10 +731,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const loadData = useCallback(
     async (node: DataNode): Promise<void> => {
       const { key } = node;
-      console.log(`🔄 开始动态加载节点: ${key}`);
+      logger.debug(`开始动态加载节点: ${key}`);
 
       if (loadingNodes.has(String(key))) {
-        console.log(`⏳ 节点 ${key} 正在加载中，跳过`);
+        logger.debug(`⏳ 节点 ${key} 正在加载中，跳过`);
         return;
       }
 
@@ -741,7 +742,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
       // 添加超时保护
       const timeoutId = setTimeout(() => {
-        console.warn(`⏰ 节点 ${key} 加载超时，强制清除loading状态`);
+        logger.warn(`⏰ 节点 ${key} 加载超时，强制清除loading状态`);
         setLoadingNodes(prev => {
           const newSet = new Set(prev);
           newSet.delete(String(key));
@@ -754,7 +755,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         if (String(key).startsWith('database|')) {
           // 加载表列表
           const [, connectionId, database] = String(key).split('|', 3);
-          console.log(
+          logger.debug(
             `📋 加载数据库表列表: connectionId=${connectionId}, database=${database}`
           );
           const tables = await loadTables(connectionId, database);
@@ -782,9 +783,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           });
 
           // 更新树数据
-          setTreeData(prevData => {
+          setTreeData((prevData: DataNode[]) => {
             const updateNode = (nodes: DataNode[]): DataNode[] => {
-              return nodes.map(node => {
+              return nodes.map((node: DataNode) => {
                 if (node.key === key) {
                   return { ...node, children: tableNodes };
                 }
@@ -902,9 +903,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           });
 
           // 更新树数据，同时更新表节点显示列数
-          setTreeData(prevData => {
+          setTreeData((prevData: DataNode[]) => {
             const updateNode = (nodes: DataNode[]): DataNode[] => {
-              return nodes.map(node => {
+              return nodes.map((node: DataNode) => {
                 if (node.key === key) {
                   const totalColumns = tags.length + fields.length;
                   const updatedTitle = (
@@ -931,7 +932,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
           });
         }
       } catch (error) {
-        console.error(`❌ 加载节点数据失败: ${key}`, error);
+        logger.error(`加载节点数据失败: ${key}`, error);
         showMessage.error(`加载数据失败: ${error}`);
       } finally {
         clearTimeout(timeoutId);
@@ -1158,7 +1159,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
     // 防止重复执行同一个查询
     if (executingTableQuery === queryKey) {
-      console.log('⚠️ 查询正在执行中，跳过重复请求:', queryKey);
+      logger.debug('⚠️ 查询正在执行中，跳过重复请求:', queryKey);
       return;
     }
 
@@ -1220,37 +1221,37 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
       if (!connection) return;
 
-      console.log(
+      logger.debug(
         `🔄 更新单个连接节点（含数据加载）: ${connection.name}, 连接状态: ${isConnected}`
       );
 
       // 如果连接成功，检查是否需要加载子节点数据
       if (isConnected) {
-        setTreeData(prevData => {
-          return prevData.map(node => {
+        setTreeData((prevData: DataNode[]) => {
+          return prevData.map((node: DataNode) => {
             if (node.key === `connection-${connection_id}`) {
               // 检查是否需要重新加载子节点
               const shouldLoadChildren =
                 !node.children || node.children.length === 0;
 
               if (shouldLoadChildren) {
-                console.log(`📁 开始为连接 ${connection.name} 加载数据库数据`);
+                logger.debug(`📁 开始为连接 ${connection.name} 加载数据库数据`);
 
                 // 异步加载数据库数据
                 loadDatabases(connection_id)
                   .then(databases => {
-                    console.log(
+                    logger.debug(
                       `📁 连接 ${connection.name} 数据库加载完成: ${databases.length} 个数据库`
                     );
-                    setTreeData(currentData => {
-                      return currentData.map(currentNode => {
+                    setTreeData((currentData: DataNode[]) => {
+                      return currentData.map((currentNode: DataNode) => {
                         if (currentNode.key === `connection-${connection_id}`) {
                           // 再次检查是否已经有子节点，避免重复加载
                           if (
                             currentNode.children &&
                             currentNode.children.length > 0
                           ) {
-                            console.log(
+                            logger.debug(
                               `📁 节点已有子节点，跳过加载: ${connection.name}`
                             );
                             return currentNode;
@@ -1317,7 +1318,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
                     });
                   })
                   .catch(error => {
-                    console.error('加载数据库失败:', error);
+                    logger.error('加载数据库失败:', error);
                   });
               }
 
@@ -1329,8 +1330,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       } else {
         // 如果断开连接，清空子节点并关闭所有相关数据库
         closeAllDatabasesForConnection(connection_id);
-        setTreeData(prevData => {
-          return prevData.map(node => {
+        setTreeData((prevData: DataNode[]) => {
+          return prevData.map((node: DataNode) => {
             if (node.key === `connection-${connection_id}`) {
               return {
                 ...node,
@@ -1360,7 +1361,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     // 测试所有连接的连通性
     for (const connection of connections) {
       try {
-        console.log(`🔍 测试连接: ${connection.name} (${connection.id})`);
+        logger.debug(`测试连接: ${connection.name} (${connection.id})`);
 
         // 调用连接测试的API
         const testResult = await safeTauriInvoke('test_connection', {
@@ -1368,14 +1369,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         });
 
         if (testResult.success) {
-          console.log(`✅ 连接测试成功: ${connection.name}`);
+          logger.info(`连接测试成功: ${connection.name}`);
         } else {
-          console.warn(
+          logger.warn(
             `⚠️ 连接测试失败: ${connection.name} - ${testResult.error}`
           );
         }
       } catch (error) {
-        console.error(`❌ 连接测试失败: ${connection.name}`, error);
+        logger.error(`连接测试失败: ${connection.name}`, error);
       }
     }
   }, [buildCompleteTreeData, connections]);
@@ -1402,7 +1403,14 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   }, [connections, connectionStatuses]);
 
   // 🔧 性能优化：使用 ref 缓存 connections 和 connectionStatuses，避免引用变化
-  const memoizedConnectionsRef = useRef<typeof connections>([]);
+  const memoizedConnectionsRef = useRef<Array<{
+    id: string;
+    name: string;
+    dbType: string;
+    host: string;
+    port: number;
+    isConnected: boolean;
+  }>>([]);
   const memoizedConnectionStatusesRef = useRef<Map<string, 'connecting' | 'connected' | 'disconnected'>>(new Map());
 
   // 只有当实际内容变化时才更新缓存
@@ -1430,7 +1438,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const memoizedConnectionStatuses = useMemo(() => {
     // 🔧 安全检查：确保 connections 是数组
     if (!Array.isArray(connections)) {
-      console.error('❌ connections 不是数组:', connections);
+      logger.error('connections 不是数组:', connections);
       return memoizedConnectionStatusesRef.current;
     }
 
@@ -1474,7 +1482,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const memoizedDatabaseLoadingStates = useMemo(() => {
     // 🔧 安全检查：确保 databaseLoadingStates 是 Map 类型
     if (!(databaseLoadingStates instanceof Map)) {
-      console.error('❌ databaseLoadingStates 不是 Map 类型:', databaseLoadingStates);
+      logger.error('databaseLoadingStates 不是 Map 类型:', databaseLoadingStates);
       return memoizedDatabaseLoadingStatesRef.current;
     }
 
@@ -1500,7 +1508,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const memoizedConnectionErrors = useMemo(() => {
     // 🔧 安全检查：确保 connectionErrors 是 Map 类型
     if (!(connectionErrors instanceof Map)) {
-      console.error('❌ connectionErrors 不是 Map 类型:', connectionErrors);
+      logger.error('connectionErrors 不是 Map 类型:', connectionErrors);
       return memoizedConnectionErrorsRef.current;
     }
 
@@ -1526,7 +1534,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const memoizedDatabaseErrors = useMemo(() => {
     // 🔧 安全检查：确保 databaseErrors 是 Map 类型
     if (!(databaseErrors instanceof Map)) {
-      console.error('❌ databaseErrors 不是 Map 类型:', databaseErrors);
+      logger.error('databaseErrors 不是 Map 类型:', databaseErrors);
       return memoizedDatabaseErrorsRef.current;
     }
 
@@ -1555,8 +1563,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     (connection_id: string, forceLoading?: boolean) => {
       // 空实现，保持接口兼容性
       // MultiConnectionTreeView 会通过监听 connectionStatuses 自动处理节点显示更新
+      // eslint-disable-next-line no-undef
       if (process.env.NODE_ENV === 'development') {
-        console.log(`🎨 更新连接节点显示: ${connection_id} (由 MultiConnectionTreeView 自动处理)`);
+        logger.render(`更新连接节点显示: ${connection_id} (由 MultiConnectionTreeView 自动处理)`);
       }
     },
     []
@@ -1716,9 +1725,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       });
 
     if (isConfigChange) {
-      console.log(`🔄 DatabaseExplorer: 连接配置发生变化，需要重建树`);
-      console.log(
-        `🔗 所有连接 (${connections.length}):`,
+      logger.debug('DatabaseExplorer: 连接配置发生变化，需要重建树');
+      logger.debug(
+        `所有连接 (${connections.length}):`,
         connections.map(c => `${c.name} (${c.id})`)
       );
 
@@ -1727,11 +1736,11 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       const delay = hasNewConnection ? 200 : 0;
 
       setTimeout(() => {
-        console.log(`🔄 开始重建树形数据 (延迟${delay}ms)`);
+        logger.debug(`开始重建树形数据 (延迟${delay}ms)`);
         buildCompleteTreeData(false); // 配置变化时不显示全局 loading
       }, delay);
     } else {
-      console.log(`👀 DatabaseExplorer: 连接配置无变化，跳过重建`);
+      logger.debug(`👀 DatabaseExplorer: 连接配置无变化，跳过重建`);
     }
 
     prevConnectionsRef.current = connections;
@@ -1740,10 +1749,10 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   // 清理特定连接的数据库子节点
   const clearDatabaseNodesForConnection = useCallback(
     (connection_id: string) => {
-      console.log(`🧹 清理连接 ${connection_id} 的数据库子节点`);
+      logger.debug(`清理连接 ${connection_id} 的数据库子节点`);
 
-      setTreeData(prevData => {
-        return prevData.map(node => {
+      setTreeData((prevData: DataNode[]) => {
+        return prevData.map((node: DataNode) => {
           if (node.key === `connection-${connection_id}`) {
             const { children, isLeaf, ...nodeWithoutChildren } = node;
             return {
@@ -1786,7 +1795,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   // 监听刷新触发器
   useEffect(() => {
     if (refreshTrigger) {
-      console.log(`🔄 收到刷新触发器，重新加载数据...`);
+      logger.debug('收到刷新触发器，重新加载数据...');
       // 清除所有缓存，确保获取最新数据
       clearDatabasesCache();
       buildCompleteTreeData(true); // 外部触发器刷新时显示全局 loading
@@ -1806,16 +1815,16 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         prevList.some((item, index) => item !== openedDatabasesList[index]);
 
       if (hasChanged) {
-        console.log('🔄 DatabaseExplorer 已打开数据库列表变化:', {
+        logger.debug('DatabaseExplorer 已打开数据库列表变化:', {
           prev: prevList,
           current: openedDatabasesList,
           timestamp: new Date().toISOString(),
         });
-        console.log('📤 DatabaseExplorer 通知父组件:', openedDatabasesList);
+        logger.debug('📤 DatabaseExplorer 通知父组件:', openedDatabasesList);
         onExpandedDatabasesChange(openedDatabasesList);
         prevOpenedDatabasesListRef.current = openedDatabasesList;
       } else {
-        console.log(
+        logger.debug(
           '👀 DatabaseExplorer 已打开数据库列表内容无变化，跳过通知父组件'
         );
       }

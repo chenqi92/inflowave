@@ -33,6 +33,7 @@ import type { QueryResult } from '@/types';
 import type { InfluxDBVersion } from '@/types/database';
 import TimeSeriesLineChart from '@/components/charts/TimeSeriesLineChart';
 
+import { logger } from '@/utils/logger';
 interface TableInfoDialogProps {
   open: boolean;
   onClose: () => void;
@@ -87,7 +88,7 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
     setError(null);
 
     try {
-      console.log('🔍 获取表信息:', { connectionId, database, tableName });
+      logger.debug('获取表信息:', { connectionId, database, tableName });
 
       // 获取数据源类型 - 修复检测逻辑
       let dbVersion: InfluxDBVersion | undefined;
@@ -106,11 +107,11 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
 
       // 如果版本检测失败，根据dbType推断
       if (!dbVersion && connection?.dbType === 'influxdb') {
-        console.warn('⚠️ 版本检测失败，使用默认InfluxDB 1.x');
+        logger.warn('版本检测失败，使用默认InfluxDB 1.x');
         dbVersion = '1.x';
       }
 
-      console.log('🔍 检测到数据源类型:', dbVersion, '连接信息:', connection);
+      logger.debug('检测到数据源类型:', dbVersion, '连接信息:', connection);
 
       // 根据数据源类型生成查询
       let queries: string[];
@@ -142,7 +143,7 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
 
         default:
           // 未知类型，使用InfluxQL作为默认
-          console.warn('⚠️ 未知数据源类型，使用InfluxQL作为默认');
+          logger.warn('未知数据源类型，使用InfluxQL作为默认');
           queries = [
             `SELECT COUNT(*) FROM "${tableName}"`,
             `SHOW FIELD KEYS FROM "${tableName}"`,
@@ -154,14 +155,14 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
           ];
       }
 
-      console.log('🔍 执行查询:', { dbVersion, queries });
+      logger.debug('执行查询:', { dbVersion, queries });
 
       const results = await Promise.all(
         queries.map((query, index) =>
           safeTauriInvoke<QueryResult>('execute_query', {
             request: { connectionId, database, query },
           }).catch(err => {
-            console.warn(`查询失败 [${index}]: ${query}`, err);
+            logger.warn(`查询失败 [${index}]: ${query}`, err);
             return null;
           })
         )
@@ -171,18 +172,18 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
 
       // 解析数据
       let recordCount = 0;
-      console.log('📊 TableInfo COUNT查询结果:', countResult);
+      logger.debug('TableInfo COUNT查询结果:', countResult);
       if (countResult?.data && countResult.data.length > 0) {
         const row = countResult.data[0];
         if (row.length > 1) {
           // COUNT查询返回的数据格式：[时间戳, count值, ...]
           recordCount = parseInt(row[1] as string) || 0;
-          console.log('📊 TableInfo 解析的记录数 (从索引1):', recordCount);
-          console.log('📊 TableInfo 完整行数据:', row);
+          logger.debug('TableInfo 解析的记录数 (从索引1):', recordCount);
+          logger.debug('TableInfo 完整行数据:', row);
         } else {
           // 如果只有一列，可能是纯COUNT查询
           recordCount = parseInt(row[0] as string) || 0;
-          console.log('📊 TableInfo 解析的记录数 (从索引0):', recordCount);
+          logger.debug('TableInfo 解析的记录数 (从索引0):', recordCount);
         }
       }
 
@@ -219,20 +220,20 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
       let dataSpan = '未知';
       let avgRecordsPerDay = 0;
 
-      console.log('⏰ 时间查询结果:', { firstTimeResult, lastTimeResult });
+      logger.debug('时间查询结果:', { firstTimeResult, lastTimeResult });
 
       // 从第一条记录获取最早时间
       let firstTime: string | undefined;
       if (firstTimeResult?.data && firstTimeResult.data.length > 0) {
         firstTime = firstTimeResult.data[0][0] as string;
-        console.log('⏰ 最早时间:', firstTime);
+        logger.debug('最早时间:', firstTime);
       }
 
       // 从最后一条记录获取最晚时间
       let lastTime: string | undefined;
       if (lastTimeResult?.data && lastTimeResult.data.length > 0) {
         lastTime = lastTimeResult.data[0][0] as string;
-        console.log('⏰ 最晚时间:', lastTime);
+        logger.debug('最晚时间:', lastTime);
       }
 
       if (firstTime && lastTime) {
@@ -251,7 +252,7 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
           avgRecordsPerDay = Math.round(recordCount / spanDays);
         }
       } else {
-        console.warn('⚠️ 无法获取时间范围信息');
+        logger.warn('无法获取时间范围信息');
       }
 
       // 获取默认保留策略
@@ -285,10 +286,10 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
       };
 
       setInfo(tableInfo);
-      console.log('✅ 表信息获取成功:', tableInfo);
+      logger.info('表信息获取成功:', tableInfo);
 
     } catch (err) {
-      console.error('❌ 获取表信息失败:', err);
+      logger.error('获取表信息失败:', err);
       setError(`获取表信息失败: ${err}`);
       showMessage.error(`获取表信息失败: ${err}`);
     } finally {
@@ -381,7 +382,7 @@ const TableInfoDialog: React.FC<TableInfoDialogProps> = ({
       });
       setTimeSeriesData(result);
     } catch (error: any) {
-      console.error('加载时间序列数据失败:', error);
+      logger.error('加载时间序列数据失败:', error);
       showMessage.error(`加载时间序列数据失败: ${error.message || error}`);
     } finally {
       setLoadingTimeSeries(false);

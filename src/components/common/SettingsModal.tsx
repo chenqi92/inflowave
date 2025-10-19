@@ -49,6 +49,7 @@ import { ThemeColorSelectorWithPreview } from '@/components/ui/theme-color-selec
 import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ControllerSettings from '@/components/settings/ControllerSettings';
 import LoggingSettings from '@/components/settings/LoggingSettings';
+import LogViewer from '@/components/settings/LogViewer';
 import UserGuideModal from '@/components/common/UserGuideModal';
 import { useNoticeStore } from '@/store/notice';
 import { UpdateSettings } from '@/components/updater/UpdateSettings';
@@ -687,6 +688,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
       icon: <FileText className='w-4 h-4' />,
       label: '日志设置',
       children: <LoggingSettings />,
+    },
+    {
+      key: 'log-viewer',
+      icon: <FileText className='w-4 h-4' />,
+      label: '日志查看器',
+      children: <LogViewer />,
     },
     {
       key: 'updates',

@@ -34,6 +34,7 @@ import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataPoint, BatchWriteRequest, WriteResult } from '@/types';
 
+import { logger } from '@/utils/logger';
 interface DataGeneratorProps {
   database?: string;
 }
@@ -772,7 +773,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         showMessage.info('未找到数据库，请先创建数据库', undefined, 'data');
       }
     } catch (error) {
-      console.error('加载数据库列表失败:', error);
+      logger.error('加载数据库列表失败:', error);
       showMessage.error(`加载数据库列表失败: ${error}`, undefined, 'data');
       setDatabases([]);
       setSelectedDatabase('');
@@ -807,7 +808,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         setTableInfo(null);
       }
     } catch (error) {
-      console.error('加载表列表失败:', error);
+      logger.error('加载表列表失败:', error);
       showMessage.error(`加载表列表失败: ${error}`);
       setTables([]);
     }
@@ -816,15 +817,15 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   // 获取表结构信息
   const loadTableInfo = async (tableName: string) => {
     if (!activeConnectionId || !selectedDatabase || !tableName) {
-      console.log('❌ loadTableInfo: 参数检查失败', { activeConnectionId, selectedDatabase, tableName });
+      logger.debug('❌ loadTableInfo: 参数检查失败', { activeConnectionId, selectedDatabase, tableName });
       setTableInfo(null);
       return;
     }
 
-    console.log('🔄 开始加载表结构...', { tableName, database: selectedDatabase, connection: activeConnectionId });
+    logger.debug('开始加载表结构...', { tableName, database: selectedDatabase, connection: activeConnectionId });
 
     try {
-      console.log(`开始分析表 "${tableName}" 的结构...`, { activeConnectionId, selectedDatabase });
+      logger.debug(`开始分析表 "${tableName}" 的结构...`, { activeConnectionId, selectedDatabase });
       
       // 方法1：尝试使用SHOW FIELD KEYS和SHOW TAG KEYS
       const fields: FieldInfo[] = [];
@@ -834,15 +835,15 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         // 获取字段信息 - 使用后端API而不是直接SQL查询
         let fieldResult;
         try {
-          console.log('🔍 尝试获取字段信息:', { selectedDatabase, tableName });
+          logger.debug('尝试获取字段信息:', { selectedDatabase, tableName });
           fieldResult = await safeTauriInvoke<any>('get_field_keys', {
             connection_id: activeConnectionId,
             database: selectedDatabase,
             measurement: tableName,
           });
-          console.log('📦 字段信息响应:', fieldResult);
+          logger.debug('📦 字段信息响应:', fieldResult);
         } catch (error) {
-          console.log('❌ 获取字段信息失败:', error);
+          logger.debug('❌ 获取字段信息失败:', error);
           fieldResult = [];
         }
 
@@ -855,7 +856,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
         for (const query of fieldQueries) {
           try {
-            console.log('\ud83d\udd0e 尝试字段查询:', query);
+            logger.debug('\ud83d\udd0e 尝试字段查询:', query);
             fieldResult = await safeTauriInvoke<any>('execute_query', {
               request: {
                 connectionId: activeConnectionId,
@@ -863,7 +864,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 query,
               },
             });
-            console.log('\ud83d\udce6 字段查询响应:', { 
+            logger.debug('\ud83d\udce6 字段查询响应:', { 
               success: fieldResult.success, 
               dataLength: fieldResult.data?.length,
               hasError: fieldResult.error,
@@ -874,11 +875,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             const hasError = fieldResult.error || fieldResult.hasError;
 
             if (hasData && !hasError) {
-              console.log('\u2705 字段查询成功，使用查询:', query);
+              logger.debug('\u2705 字段查询成功，使用查询:', query);
               break;
             }
           } catch (queryError) {
-            console.log(`\u274c 字段查询失败 \"${query}\":`, queryError);
+            logger.debug(`\u274c 字段查询失败 \"${query}\":`, queryError);
             continue;
           }
         }
@@ -888,8 +889,8 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         const hasFieldError = fieldResult && (fieldResult.error || fieldResult.hasError);
 
         if (hasFieldData && !hasFieldError) {
-          console.log('\ud83d\udcc8 字段查询结果:', fieldResult.data);
-          console.log('\ud83d\udd0d 字段查询第一行数据:', fieldResult.data[0]);
+          logger.debug('\ud83d\udcc8 字段查询结果:', fieldResult.data);
+          logger.debug('\ud83d\udd0d 字段查询第一行数据:', fieldResult.data[0]);
           fieldResult.data.forEach((row: any) => {
             let fieldName: string;
             let fieldType: string;
@@ -898,12 +899,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             if (Array.isArray(row) && row.length >= 2) {
               fieldName = row[0];
               fieldType = row[1];
-              console.log('🔍 解析数组格式字段:', { fieldName, fieldType, rawRow: row });
+              logger.debug('解析数组格式字段:', { fieldName, fieldType, rawRow: row });
             } else {
               // 处理对象格式的响应
               fieldName = row.fieldKey || row.key || row.field || Object.values(row)[0];
               fieldType = row.fieldType || row.type;
-              console.log('🔍 解析对象格式字段:', { fieldName, fieldType, rawRow: row });
+              logger.debug('解析对象格式字段:', { fieldName, fieldType, rawRow: row });
             }
 
             if (fieldName && typeof fieldName === 'string') {
@@ -928,11 +929,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 }
               }
               fields.push({ name: fieldName, type });
-              console.log('✅ 添加字段:', { name: fieldName, type, originalType: fieldType });
+              logger.info('添加字段:', { name: fieldName, type, originalType: fieldType });
             }
           });
         } else {
-          console.log('\u26a0\ufe0f 字段查询失败或无数据:', {
+          logger.debug('\u26a0\ufe0f 字段查询失败或无数据:', {
             hasResult: !!fieldResult,
             success: fieldResult?.success,
             dataLength: fieldResult?.data?.length,
@@ -964,7 +965,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         
         for (const query of tagQueries) {
           try {
-            console.log('\ud83c\udff7\ufe0f 尝试标签查询:', query);
+            logger.debug('\ud83c\udff7\ufe0f 尝试标签查询:', query);
             tagResult = await safeTauriInvoke<any>('execute_query', {
               request: {
                 connectionId: activeConnectionId,
@@ -972,7 +973,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 query,
               },
             });
-            console.log('\ud83d\udce6 标签查询响应:', { 
+            logger.debug('\ud83d\udce6 标签查询响应:', { 
               success: tagResult.success, 
               dataLength: tagResult.data?.length,
               hasError: tagResult.error,
@@ -983,11 +984,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             const hasError = tagResult.error || tagResult.hasError;
 
             if (hasData && !hasError) {
-              console.log('\u2705 标签查询成功，使用查询:', query);
+              logger.debug('\u2705 标签查询成功，使用查询:', query);
               break;
             }
           } catch (queryError) {
-            console.log(`\u274c 标签查询失败 \"${query}\":`, queryError);
+            logger.debug(`\u274c 标签查询失败 \"${query}\":`, queryError);
             continue;
           }
         }
@@ -997,18 +998,18 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         const hasTagError = tagResult && (tagResult.error || tagResult.hasError);
 
         if (hasTagData && !hasTagError) {
-          console.log('\ud83c\udff7\ufe0f 标签查询结果:', tagResult.data);
-          console.log('\ud83d\udd0d 标签查询第一行数据:', tagResult.data[0]);
+          logger.debug('\ud83c\udff7\ufe0f 标签查询结果:', tagResult.data);
+          logger.debug('\ud83d\udd0d 标签查询第一行数据:', tagResult.data[0]);
           tagResult.data.forEach((row: any) => {
             // 兼容不同版本的InfluxDB字段名称
             const tagName = row.tagKey || row.key || row.tag || Object.values(row)[0];
             if (tagName && typeof tagName === 'string') {
               tags.push({ name: tagName, type: 'string' });
-              console.log('添加标签:', { name: tagName, type: 'string' });
+              logger.debug('添加标签:', { name: tagName, type: 'string' });
             }
           });
         } else {
-          console.log('\u26a0\ufe0f 标签查询失败或无数据:', {
+          logger.debug('\u26a0\ufe0f 标签查询失败或无数据:', {
             hasResult: !!tagResult,
             success: tagResult?.success,
             dataLength: tagResult?.data?.length,
@@ -1018,12 +1019,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           });
         }
       } catch (schemaError) {
-        console.log('使用SHOW语句查询失败，尝试采样数据方法:', schemaError);
+        logger.debug('使用SHOW语句查询失败，尝试采样数据方法:', schemaError);
       }
 
       // 方法2：如果SHOW语句失败，尝试获取retention policy信息
       if (fields.length === 0 && tags.length === 0) {
-        console.log('尝试获取retention policy信息...');
+        logger.debug('尝试获取retention policy信息...');
 
         // 首先尝试获取retention policy列表
         let retentionPolicies: string[] = [];
@@ -1037,18 +1038,18 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           });
 
           if (rpResult.success && rpResult.data && rpResult.data.length > 0) {
-            console.log('获取到retention policies:', rpResult.data);
+            logger.debug('获取到retention policies:', rpResult.data);
             retentionPolicies = rpResult.data.map((rp: any) => rp.name || rp.policyName || Object.values(rp)[0]).filter(Boolean);
-            console.log('解析出的retention policy名称:', retentionPolicies);
+            logger.debug('解析出的retention policy名称:', retentionPolicies);
           }
         } catch (rpError) {
-          console.log('获取retention policy失败:', rpError);
+          logger.debug('获取retention policy失败:', rpError);
         }
 
         // 如果获取到了retention policy，尝试使用完整格式查询
         if (retentionPolicies.length > 0) {
           for (const rp of retentionPolicies) {
-            console.log(`尝试使用retention policy "${rp}" 查询字段和标签...`);
+            logger.debug(`尝试使用retention policy "${rp}" 查询字段和标签...`);
 
             // 尝试字段查询
             if (fields.length === 0) {
@@ -1068,7 +1069,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 });
 
                 if (rpFieldResult.success && rpFieldResult.data && rpFieldResult.data.length > 0) {
-                  console.log(`使用retention policy "${rp}" 获取到字段:`, rpFieldResult.data);
+                  logger.debug(`使用retention policy "${rp}" 获取到字段:`, rpFieldResult.data);
                   rpFieldResult.data.forEach((row: any) => {
                     const fieldName = row.fieldKey || row.key || row.field || Object.values(row)[0];
                     if (fieldName && typeof fieldName === 'string') {
@@ -1098,7 +1099,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                   });
                 }
               } catch (rpFieldError) {
-                console.log(`使用retention policy "${rp}" 查询字段失败:`, rpFieldError);
+                logger.debug(`使用retention policy "${rp}" 查询字段失败:`, rpFieldError);
               }
             }
 
@@ -1120,7 +1121,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 });
 
                 if (rpTagResult.success && rpTagResult.data && rpTagResult.data.length > 0) {
-                  console.log(`使用retention policy "${rp}" 获取到标签:`, rpTagResult.data);
+                  logger.debug(`使用retention policy "${rp}" 获取到标签:`, rpTagResult.data);
                   rpTagResult.data.forEach((row: any) => {
                     const tagName = row.tagKey || row.key || row.tag || Object.values(row)[0];
                     if (tagName && typeof tagName === 'string') {
@@ -1129,7 +1130,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                   });
                 }
               } catch (rpTagError) {
-                console.log(`使用retention policy "${rp}" 查询标签失败:`, rpTagError);
+                logger.debug(`使用retention policy "${rp}" 查询标签失败:`, rpTagError);
               }
             }
 
@@ -1140,7 +1141,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           }
         }
 
-        console.log('尝试使用采样数据方法分析表结构...');
+        logger.debug('尝试使用采样数据方法分析表结构...');
         
         // 首先尝试使用SHOW SERIES获取tag信息
         try {
@@ -1158,7 +1159,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
           for (const query of seriesQueries) {
             try {
-              console.log('尝试SHOW SERIES查询:', query);
+              logger.debug('尝试SHOW SERIES查询:', query);
               seriesResult = await safeTauriInvoke<any>('execute_query', {
                 request: {
                   connectionId: activeConnectionId,
@@ -1172,11 +1173,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               const hasError = seriesResult.error || seriesResult.hasError;
 
               if (hasData && !hasError) {
-                console.log('SHOW SERIES查询成功，使用查询:', query);
+                logger.debug('SHOW SERIES查询成功，使用查询:', query);
                 break;
               }
             } catch (error) {
-              console.log(`SHOW SERIES查询失败 "${query}":`, error);
+              logger.debug(`SHOW SERIES查询失败 "${query}":`, error);
               continue;
             }
           }
@@ -1186,7 +1187,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           const hasSeriesError = seriesResult && (seriesResult.error || seriesResult.hasError);
 
           if (hasSeriesData && !hasSeriesError) {
-            console.log('SHOW SERIES结果:', seriesResult.data[0]);
+            logger.debug('SHOW SERIES结果:', seriesResult.data[0]);
             // 从series信息中解析tag结构
             const seriesInfo = seriesResult.data[0];
             const seriesKey = seriesInfo.key || seriesInfo.series || Object.values(seriesInfo)[0];
@@ -1204,7 +1205,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             }
           }
         } catch (seriesError) {
-          console.log('SHOW SERIES查询失败:', seriesError);
+          logger.debug('SHOW SERIES查询失败:', seriesError);
         }
         
         // 然后采样数据来获取字段信息
@@ -1222,7 +1223,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         
         for (const sampleQuery of sampleQueries) {
           try {
-            console.log('尝试采样查询:', sampleQuery);
+            logger.debug('尝试采样查询:', sampleQuery);
             const sampleResult = await safeTauriInvoke<any>('execute_query', {
               request: {
                 connectionId: activeConnectionId,
@@ -1236,8 +1237,8 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             const hasSampleError = sampleResult.error || sampleResult.hasError;
 
             if (hasSampleData && !hasSampleError) {
-              console.log('采样数据成功，使用查询:', sampleQuery);
-              console.log('采样数据结果:', sampleResult.data[0]);
+              logger.debug('采样数据成功，使用查询:', sampleQuery);
+              logger.debug('采样数据结果:', sampleResult.data[0]);
               const sample = sampleResult.data[0];
 
               Object.entries(sample).forEach(([key, value]) => {
@@ -1270,21 +1271,21 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
                   if (isLikelyTag) {
                     tags.push({ name: key, type: 'string' });
-                    console.log('推测为标签:', { name: key, type: 'string', value });
+                    logger.debug('推测为标签:', { name: key, type: 'string', value });
                   } else {
                     fields.push({ name: key, type });
-                    console.log('推测为字段:', { name: key, type, value });
+                    logger.debug('推测为字段:', { name: key, type, value });
                   }
                 } else {
                   // 如果已经有了一些字段或标签信息，默认添加为字段
                   fields.push({ name: key, type });
-                  console.log('添加字段:', { name: key, type, value });
+                  logger.debug('添加字段:', { name: key, type, value });
                 }
               });
               break; // 成功处理了采样数据，退出循环
             }
           } catch (sampleError) {
-            console.log(`采样查询失败 "${sampleQuery}":`, sampleError);
+            logger.debug(`采样查询失败 "${sampleQuery}":`, sampleError);
             continue;
           }
         }
@@ -1297,8 +1298,8 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
       };
 
       setTableInfo(info);
-      console.log('表结构分析完成:', info);
-      console.log('最终字段数量:', fields.length, '最终标签数量:', tags.length);
+      logger.debug('表结构分析完成:', info);
+      logger.debug('最终字段数量:', fields.length, '最终标签数量:', tags.length);
       
       // 强制触发重新渲染
       setTimeout(() => {
@@ -1309,7 +1310,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         }
       }, 100);
     } catch (error) {
-      console.error('获取表结构失败:', error);
+      logger.error('获取表结构失败:', error);
       showMessage.error(`获取表结构失败: ${error}`);
       // 即使失败也要设置一个空的tableInfo，这样UI能正确显示
       setTableInfo({
@@ -1516,7 +1517,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             // 异步生成当前批次数据
             const batchData = await generateCustomDataPointsBatch(batchIndex, currentBatchSize);
 
-            console.log(`🔧 生成批次 ${batchIndex + 1} 数据:`, {
+            logger.debug(`🔧 生成批次 ${batchIndex + 1} 数据:`, {
               expectedSize: currentBatchSize,
               actualSize: batchData.length,
               tableInfo: {
@@ -1530,7 +1531,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             // 详细检查生成的数据点
             if (batchData.length > 0) {
               const samplePoint = batchData[0];
-              console.log(`🔍 数据点详细信息:`, {
+              logger.debug('数据点详细信息:', {
                 measurement: samplePoint.measurement,
                 tagsCount: Object.keys(samplePoint.tags || {}).length,
                 fieldsCount: Object.keys(samplePoint.fields || {}).length,
@@ -1542,7 +1543,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             }
 
             if (batchData.length === 0) {
-              console.warn(`⚠️ 批次 ${batchIndex + 1} 生成的数据为空`);
+              logger.warn(`批次 ${batchIndex + 1} 生成的数据为空`);
               continue;
             }
 
@@ -1554,7 +1555,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               precision: 'ms',
             };
 
-            console.log(`📝 准备写入批次 ${batchIndex + 1}/${totalBatches}:`, {
+            logger.debug(`📝 准备写入批次 ${batchIndex + 1}/${totalBatches}:`, {
               connectionId: activeConnectionId,
               database: selectedDatabase,
               pointsCount: batchData.length,
@@ -1562,7 +1563,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             });
 
             // 详细比较自定义数据和预定义数据的格式差异
-            console.log(`🔍 自定义数据格式分析:`, {
+            logger.debug('自定义数据格式分析:', {
               measurement: batchData[0]?.measurement,
               tagsType: typeof batchData[0]?.tags,
               fieldsType: typeof batchData[0]?.fields,
@@ -1579,7 +1580,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               { request }
             );
 
-            console.log(`📊 写入结果:`, {
+            logger.debug('写入结果:', {
               success: result.success,
               pointsWritten: result.pointsWritten,
               errors: result.errors,
@@ -1593,20 +1594,20 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
               // 使用实际的写入数量，如果未定义则使用预期数量
               const actualWritten = result.pointsWritten || currentBatchSize;
-              console.log(
+              logger.debug(
                 `✅ 成功写入批次 ${batchIndex + 1}/${totalBatches} 到表 "${selectedTable}", 预期数据点: ${currentBatchSize}, 实际写入: ${actualWritten}`
               );
 
               // 检查是否有数据实际写入
               if (result.pointsWritten === undefined || result.pointsWritten === 0) {
-                console.warn(`⚠️ 警告：批次 ${batchIndex + 1} 写入成功但 pointsWritten 为 ${result.pointsWritten}，这可能表示数据没有实际写入`);
+                logger.warn(`警告：批次 ${batchIndex + 1} 写入成功但 pointsWritten 为 ${result.pointsWritten}，这可能表示数据没有实际写入`);
               }
             } else {
-              console.error(`❌ 批次 ${batchIndex + 1} 写入失败:`, result.errors);
+              logger.error(`批次 ${batchIndex + 1} 写入失败:`, result.errors);
               showMessage.error(`批次 ${batchIndex + 1} 写入失败: ${result.errors?.map(e => e.error).join(', ')}`, undefined, 'data');
             }
           } catch (error) {
-            console.error(`批次 ${batchIndex + 1} 处理失败:`, error);
+            logger.error(`批次 ${batchIndex + 1} 处理失败:`, error);
             showMessage.error(`批次 ${batchIndex + 1} 处理失败: ${error}`, undefined, 'data');
             // 继续处理下一批次，不中断整个过程
           }
@@ -1628,7 +1629,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           const elapsed = (Date.now() - startTimeStamp) / 1000;
 
           // 验证数据是否真的写入了
-          console.log('🔍 验证数据写入情况...');
+          logger.debug('验证数据写入情况...');
           try {
             // 尝试多种验证查询
             const verifyQueries = [
@@ -1642,7 +1643,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
             for (const query of verifyQueries) {
               try {
-                console.log(`🔍 尝试验证查询: ${query}`);
+                logger.debug(`尝试验证查询: ${query}`);
                 const verifyResult = await safeTauriInvoke<any>('execute_query', {
                   request: {
                     connectionId: activeConnectionId,
@@ -1651,7 +1652,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                   },
                 });
 
-                console.log(`📊 验证查询结果:`, {
+                logger.debug('验证查询结果:', {
                   success: verifyResult.success,
                   dataLength: verifyResult.data?.length,
                   rowCount: verifyResult.rowCount,
@@ -1662,17 +1663,17 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                   if (query.includes('COUNT(*)')) {
                     // COUNT查询的结果
                     dataCount = verifyResult.data[0][1] || verifyResult.data[0][0] || 0;
-                    console.log(`✅ COUNT查询成功：表 "${selectedTable}" 中有 ${dataCount} 条数据`);
+                    logger.info(`COUNT查询成功：表 "${selectedTable}" 中有 ${dataCount} 条数据`);
                   } else {
                     // SELECT查询的结果
                     dataCount = verifyResult.rowCount || verifyResult.data.length;
-                    console.log(`✅ SELECT查询成功：表 "${selectedTable}" 中有数据，返回了 ${dataCount} 行`);
+                    logger.info(`SELECT查询成功：表 "${selectedTable}" 中有数据，返回了 ${dataCount} 行`);
                   }
                   verificationSuccess = true;
                   break;
                 }
               } catch (queryError) {
-                console.log(`❌ 验证查询失败 "${query}":`, queryError);
+                logger.debug(`❌ 验证查询失败 "${query}":`, queryError);
                 continue;
               }
             }
@@ -1684,7 +1685,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 'data'
               );
             } else {
-              console.warn('⚠️ 所有验证查询都失败了');
+              logger.warn('所有验证查询都失败了');
               showMessage.success(
                 `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒（无法验证写入情况）`,
                 undefined,
@@ -1692,7 +1693,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               );
             }
           } catch (verifyError) {
-            console.error('❌ 验证数据写入时出错:', verifyError);
+            logger.error('验证数据写入时出错:', verifyError);
             showMessage.success(
               `成功为表 "${selectedTable}" 生成 ${processedCount} 条数据！用时: ${elapsed.toFixed(1)}秒（验证时出错）`
             );
@@ -1740,7 +1741,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               precision: 'ms',
             };
 
-            console.log(`📝 预定义任务写入批次 ${j + 1}/${batches}:`, {
+            logger.debug(`📝 预定义任务写入批次 ${j + 1}/${batches}:`, {
               task: task.name,
               measurement: task.measurement,
               database: selectedDatabase,
@@ -1749,7 +1750,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             });
 
             // 详细分析预定义数据格式
-            console.log(`🔍 预定义数据格式分析:`, {
+            logger.debug('预定义数据格式分析:', {
               measurement: batch[0]?.measurement,
               tagsType: typeof batch[0]?.tags,
               fieldsType: typeof batch[0]?.fields,
@@ -1767,7 +1768,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 { request }
               );
 
-              console.log(`📊 预定义任务写入结果:`, {
+              logger.debug('预定义任务写入结果:', {
                 success: result.success,
                 pointsWritten: result.pointsWritten,
                 errors: result.errors,
@@ -1775,11 +1776,11 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               });
 
               if (result.success) {
-                console.log(
+                logger.debug(
                   `✅ 成功写入批次 ${j + 1}/${batches} 到数据库 "${selectedDatabase}", 表: "${task.measurement}", 数据点: ${batch.length}, 实际写入: ${result.pointsWritten}`
                 );
               } else {
-                console.error(`❌ 写入批次 ${j + 1} 失败:`, result.errors);
+                logger.error(`写入批次 ${j + 1} 失败:`, result.errors);
                 showMessage.error(`批次 ${j + 1} 写入失败: ${result.errors?.map(e => e.error).join(', ')}`);
                 // 如果有错误但不是全部失败，继续处理
                 if (result.errors && result.errors.length < batch.length) {
@@ -1789,7 +1790,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 }
               }
             } catch (error) {
-              console.error(`❌ 写入批次 ${j + 1} 失败:`, error);
+              logger.error(`写入批次 ${j + 1} 失败:`, error);
               showMessage.error(`写入批次 ${j + 1} 失败: ${error}`);
               // 继续处理下一批次
             }
@@ -1806,7 +1807,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
 
           if (!shouldStop) {
             setCompletedTasks(prev => [...prev, task.name]);
-            console.log(
+            logger.debug(
               `表 "${task.measurement}" 在数据库 "${selectedDatabase}" 中生成完成`
             );
             showMessage.success(
@@ -1833,7 +1834,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
       }
 
     } catch (error) {
-      console.error('数据生成失败:', error);
+      logger.error('数据生成失败:', error);
       showMessage.error(`数据生成失败: ${error}`);
     } finally {
       setLoading(false);
@@ -1859,10 +1860,10 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   // 当选择的表改变时加载表结构
   React.useEffect(() => {
     if (selectedTable && mode === 'custom' && activeConnectionId && selectedDatabase) {
-      console.log('useEffect 触发 loadTableInfo:', { selectedTable, mode, activeConnectionId, selectedDatabase });
+      logger.debug('useEffect 触发 loadTableInfo:', { selectedTable, mode, activeConnectionId, selectedDatabase });
       loadTableInfo(selectedTable);
     } else {
-      console.log('useEffect 未触发 loadTableInfo，条件不满足:', { selectedTable, mode, activeConnectionId, selectedDatabase });
+      logger.debug('useEffect 未触发 loadTableInfo，条件不满足:', { selectedTable, mode, activeConnectionId, selectedDatabase });
       if (!selectedTable && tableInfo) {
         setTableInfo(null);
       }
@@ -1932,7 +1933,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         showMessage.success(`已清空 ${selectedTasksToDelete.length} 个选中数据表的数据`);
       }
     } catch (error) {
-      console.error('清空数据失败:', error);
+      logger.error('清空数据失败:', error);
       showMessage.error(`清空数据失败: ${error}`);
     } finally {
       setLoading(false);

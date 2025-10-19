@@ -194,6 +194,10 @@ export const useUserPreferencesStore = create<UserPreferencesState>((set, get) =
           ...defaultWorkspaceSettings,
           ...(result?.workspace || {}),
         },
+        logging: {
+          ...defaultLoggingSettings,
+          ...(result?.logging || {}),
+        },
       };
       
       set({

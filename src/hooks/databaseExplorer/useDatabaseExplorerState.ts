@@ -246,8 +246,13 @@ export const useDatabaseExplorerState = () => {
         dispatch({ type: 'SET_IS_NARROW', payload: value });
     }, []);
 
-    const setTreeData = useCallback((value: DataNode[]) => {
-        dispatch({ type: 'SET_TREE_DATA', payload: value });
+    const setTreeData = useCallback((value: DataNode[] | ((prev: DataNode[]) => DataNode[])) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.treeData);
+            dispatch({ type: 'SET_TREE_DATA', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_TREE_DATA', payload: value });
+        }
     }, []);
 
     const setExpandedKeys = useCallback((value: React.Key[] | ((prev: React.Key[]) => React.Key[])) => {
@@ -276,12 +281,22 @@ export const useDatabaseExplorerState = () => {
         dispatch({ type: 'SET_HIDE_SYSTEM_NODES', payload: value });
     }, []);
 
-    const setTreeNodeCache = useCallback((value: Record<string, any[]>) => {
-        dispatch({ type: 'SET_TREE_NODE_CACHE', payload: value });
+    const setTreeNodeCache = useCallback((value: Record<string, any[]> | ((prev: Record<string, any[]>) => Record<string, any[]>)) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.treeNodeCache);
+            dispatch({ type: 'SET_TREE_NODE_CACHE', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_TREE_NODE_CACHE', payload: value });
+        }
     }, []);
 
-    const setDatabasesCache = useCallback((value: Map<string, string[]>) => {
-        dispatch({ type: 'SET_DATABASES_CACHE', payload: value });
+    const setDatabasesCache = useCallback((value: Map<string, string[]> | ((prev: Map<string, string[]>) => Map<string, string[]>)) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.databasesCache);
+            dispatch({ type: 'SET_DATABASES_CACHE', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_DATABASES_CACHE', payload: value });
+        }
     }, []);
 
     const setLoading = useCallback((value: boolean) => {
@@ -339,8 +354,13 @@ export const useDatabaseExplorerState = () => {
         }
     }, []);
 
-    const setDialogStates = useCallback((value: DialogStates) => {
-        dispatch({ type: 'SET_DIALOG_STATES', payload: value });
+    const setDialogStates = useCallback((value: DialogStates | ((prev: DialogStates) => DialogStates)) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.dialogStates);
+            dispatch({ type: 'SET_DIALOG_STATES', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_DIALOG_STATES', payload: value });
+        }
     }, []);
 
     const setIsConnectionDialogVisible = useCallback((value: boolean) => {
@@ -355,28 +375,58 @@ export const useDatabaseExplorerState = () => {
         dispatch({ type: 'SET_CREATE_DATABASE_DIALOG_OPEN', payload: value });
     }, []);
 
-    const setDatabaseInfoDialog = useCallback((value: DatabaseInfoDialogState) => {
-        dispatch({ type: 'SET_DATABASE_INFO_DIALOG', payload: value });
+    const setDatabaseInfoDialog = useCallback((value: DatabaseInfoDialogState | ((prev: DatabaseInfoDialogState) => DatabaseInfoDialogState)) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.databaseInfoDialog);
+            dispatch({ type: 'SET_DATABASE_INFO_DIALOG', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_DATABASE_INFO_DIALOG', payload: value });
+        }
     }, []);
 
-    const setRetentionPolicyDialog = useCallback((value: RetentionPolicyDialogState) => {
-        dispatch({ type: 'SET_RETENTION_POLICY_DIALOG', payload: value });
+    const setRetentionPolicyDialog = useCallback((value: RetentionPolicyDialogState | ((prev: RetentionPolicyDialogState) => RetentionPolicyDialogState)) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.retentionPolicyDialog);
+            dispatch({ type: 'SET_RETENTION_POLICY_DIALOG', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_RETENTION_POLICY_DIALOG', payload: value });
+        }
     }, []);
 
-    const setManagementNodeDialog = useCallback((value: ManagementNodeDialogState) => {
-        dispatch({ type: 'SET_MANAGEMENT_NODE_DIALOG', payload: value });
+    const setManagementNodeDialog = useCallback((value: ManagementNodeDialogState | ((prev: ManagementNodeDialogState) => ManagementNodeDialogState)) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.managementNodeDialog);
+            dispatch({ type: 'SET_MANAGEMENT_NODE_DIALOG', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_MANAGEMENT_NODE_DIALOG', payload: value });
+        }
     }, []);
 
-    const setConnectionDetailDialog = useCallback((value: ConnectionDetailDialogState) => {
-        dispatch({ type: 'SET_CONNECTION_DETAIL_DIALOG', payload: value });
+    const setConnectionDetailDialog = useCallback((value: ConnectionDetailDialogState | ((prev: ConnectionDetailDialogState) => ConnectionDetailDialogState)) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.connectionDetailDialog);
+            dispatch({ type: 'SET_CONNECTION_DETAIL_DIALOG', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_CONNECTION_DETAIL_DIALOG', payload: value });
+        }
     }, []);
 
-    const setFieldDetailDialog = useCallback((value: FieldDetailDialogState) => {
-        dispatch({ type: 'SET_FIELD_DETAIL_DIALOG', payload: value });
+    const setFieldDetailDialog = useCallback((value: FieldDetailDialogState | ((prev: FieldDetailDialogState) => FieldDetailDialogState)) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.fieldDetailDialog);
+            dispatch({ type: 'SET_FIELD_DETAIL_DIALOG', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_FIELD_DETAIL_DIALOG', payload: value });
+        }
     }, []);
 
-    const setTagDetailDialog = useCallback((value: TagDetailDialogState) => {
-        dispatch({ type: 'SET_TAG_DETAIL_DIALOG', payload: value });
+    const setTagDetailDialog = useCallback((value: TagDetailDialogState | ((prev: TagDetailDialogState) => TagDetailDialogState)) => {
+        if (typeof value === 'function') {
+            const newValue = value(stateRef.current.tagDetailDialog);
+            dispatch({ type: 'SET_TAG_DETAIL_DIALOG', payload: newValue });
+        } else {
+            dispatch({ type: 'SET_TAG_DETAIL_DIALOG', payload: value });
+        }
     }, []);
 
     const setContextMenuTarget = useCallback((value: TreeNodeData | null) => {

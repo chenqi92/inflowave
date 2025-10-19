@@ -80,6 +80,7 @@ import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
 import dayjs from 'dayjs';
 
+import { logger } from '@/utils/logger';
 interface PerformanceBottleneckDiagnosticsProps {
   className?: string;
 }
@@ -373,7 +374,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
   // 清理数据状态的函数
   const clearAllData = useCallback(() => {
-    console.log('🧹 开始清理所有性能监控数据...');
+    logger.debug('开始清理所有性能监控数据...');
     setBottlenecks([]);
     setSystemMetrics(null);
     setSlowQueries(null);
@@ -391,12 +392,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     setPerformanceReport(null);
     setBasicMetrics(null);
     setLoading(false);
-    console.log('✅ 所有性能监控数据已清理完成');
+    logger.info('所有性能监控数据已清理完成');
   }, []);
 
   // 监控模式变化时清理数据
   useEffect(() => {
-    console.log(`🔄 监控模式已变更为: ${monitoringMode}`);
+    logger.debug(`监控模式已变更为: ${monitoringMode}`);
     // 不在这里清理数据，由切换函数负责
   }, [monitoringMode]);
 
@@ -413,7 +414,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         }>('get_monitoring_settings');
         setMonitoringMode(settings.default_mode as 'local' | 'remote');
       } catch (error) {
-        console.warn('Failed to load monitoring settings, using default:', error);
+        logger.warn('Failed to load monitoring settings, using default:', error);
       }
     };
     loadMonitoringSettings();
@@ -424,7 +425,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     if (!activeConnectionId) return;
 
     try {
-      console.log(`📊 开始获取${monitoringMode}监控模式的性能指标...`, { activeConnectionId, monitoringMode });
+      logger.debug(`开始获取${monitoringMode}监控模式的性能指标...`, { activeConnectionId, monitoringMode });
       
       const [metricsResult, _slowQueryResult] = await Promise.all([
         safeTauriInvoke<PerformanceMetricsResult>('get_performance_metrics_result', {
@@ -436,7 +437,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         }),
       ]);
 
-      console.log('获取到的指标结果:', {
+      logger.debug('获取到的指标结果:', {
         hasQueryTime: !!metricsResult.queryExecutionTime && metricsResult.queryExecutionTime.length > 0,
         hasMemoryUsage: !!metricsResult.memoryUsage && metricsResult.memoryUsage.length > 0,
         hasCpuUsage: !!metricsResult.cpuUsage && metricsResult.cpuUsage.length > 0,
@@ -493,7 +494,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         },
       });
     } catch (error) {
-      console.error('获取基础性能指标失败:', error);
+      logger.error('获取基础性能指标失败:', error);
       showMessage.error('获取基础性能指标失败，请检查连接状态');
       // 清空指标数据以避免显示过期信息
       setBasicMetrics(null);
@@ -508,7 +509,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
     setLoading(true);
     try {
-      console.log(`🔍 开始获取${monitoringMode}监控模式的性能瓶颈数据...`, { activeConnectionId, monitoringMode });
+      logger.debug(`开始获取${monitoringMode}监控模式的性能瓶颈数据...`, { activeConnectionId, monitoringMode });
       const range = normalizeTimeRange(timeRange);
 
       const [
@@ -578,7 +579,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       setConnectionPoolStats(_connectionPoolData);
       setPerformanceReport(performanceReportData);
     } catch (error) {
-      console.error(`❌ 获取${monitoringMode}监控模式的性能瓶颈数据失败:`, error);
+      logger.error(`获取${monitoringMode}监控模式的性能瓶颈数据失败:`, error);
       showMessage.error(`获取${monitoringMode === 'local' ? '本地' : '远程'}监控数据失败`);
       // 清理可能的脏数据
       clearAllData();
@@ -629,7 +630,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       const status = await safeTauriInvoke<boolean>('get_system_monitoring_status');
       setIsMonitoringActive(status);
     } catch (error) {
-      console.error('获取监控状态失败:', error);
+      logger.error('获取监控状态失败:', error);
     }
   }, []);
 
@@ -638,9 +639,9 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     try {
       await safeTauriInvoke<void>('start_system_monitoring', {});
       await syncMonitoringStatus(); // 同步状态
-      console.log('系统监控已启动');
+      logger.debug('系统监控已启动');
     } catch (error) {
-      console.error('启动系统监控失败:', error);
+      logger.error('启动系统监控失败:', error);
       showMessage.error('启动系统监控失败');
     }
   }, [syncMonitoringStatus]);
@@ -650,9 +651,9 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     try {
       await safeTauriInvoke<void>('stop_system_monitoring', {});
       await syncMonitoringStatus(); // 同步状态
-      console.log('系统监控已停止');
+      logger.debug('系统监控已停止');
     } catch (error) {
-      console.error('停止系统监控失败:', error);
+      logger.error('停止系统监控失败:', error);
     }
   }, [syncMonitoringStatus]);
 
@@ -848,7 +849,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       await getBottlenecks(); // 重新加载数据
       showMessage.success('健康检查完成');
     } catch (error) {
-      console.error('健康检查失败:', error);
+      logger.error('健康检查失败:', error);
       showMessage.error('健康检查失败');
     }
   };
@@ -876,7 +877,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       showMessage.success('瓶颈已标记为已解决');
       getBottlenecks();
     } catch (error) {
-      console.error('标记瓶颈失败:', error);
+      logger.error('标记瓶颈失败:', error);
       showMessage.error('标记瓶颈失败');
     }
   };
@@ -888,7 +889,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       showMessage.success('瓶颈已忽略');
       getBottlenecks();
     } catch (error) {
-      console.error('忽略瓶颈失败:', error);
+      logger.error('忽略瓶颈失败:', error);
       showMessage.error('忽略瓶颈失败');
     }
   };
@@ -1856,7 +1857,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <Select
                 value={monitoringMode}
                 onValueChange={async (value: 'local' | 'remote') => {
-                  console.log(`🔄 切换监控模式: ${monitoringMode} -> ${value}`);
+                  logger.debug(`切换监控模式: ${monitoringMode} -> ${value}`);
 
                   // 先停止当前监控
                   if (isMonitoringActive) {
@@ -1891,13 +1892,13 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
                     showMessage.success(`已切换到${value === 'local' ? '本地' : '远程'}监控模式`);
                   } catch (error) {
-                    console.warn('Failed to save monitoring mode:', error);
+                    logger.warn('Failed to save monitoring mode:', error);
                     showMessage.error('保存监控设置失败');
                   }
 
                   // 延迟加载新模式的数据，确保状态切换完成
                   setTimeout(() => {
-                    console.log(`📊 开始加载${value === 'local' ? '本地' : '远程'}监控数据`);
+                    logger.debug(`开始加载${value === 'local' ? '本地' : '远程'}监控数据`);
                     getBottlenecks();
                     getBasicMetrics();
                   }, 500); // 增加延迟确保状态更新完成

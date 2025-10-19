@@ -38,7 +38,6 @@ import NativeMenuHandler from './components/layout/NativeMenuHandler';
 import { Text, Spin, Layout, Content, Toaster } from '@/components/ui';
 import { DialogManager } from '@/utils/dialog';
 import ConnectionErrorHandler from '@/components/common/ConnectionErrorHandler';
-
 // 主布局组件
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -128,7 +127,7 @@ const MainLayout: React.FC = () => {
             if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
               const currentValue = target.value;
               if (currentValue === '' || currentValue.trim() === '') {
-                console.warn('检测到可能的空白粘贴，尝试从剪贴板重新获取内容');
+                logger.warn('检测到可能的空白粘贴，尝试从剪贴板重新获取内容');
                 // 这里可以添加重新获取剪贴板内容的逻辑
               }
             }
@@ -226,14 +225,13 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showUnsavedTabsDialog, setShowUnsavedTabsDialog] = useState(false);
   const [unsavedTabs, setUnsavedTabs] = useState<EditorTab[]>([]);
-  const { preferences } = useUserPreferences();
-  const { loadUserPreferences } = useUserPreferencesStore();
+  const { preferences, loadUserPreferences } = useUserPreferencesStore();
 
   // 🔧 监听日志设置变化，动态更新 logger 配置
   useEffect(() => {
     if (!preferences?.logging) return;
 
-    const { level } = preferences.logging;
+    const { level, enable_file_logging } = preferences.logging;
 
     // 将字符串转换为 LogLevel 枚举
     let logLevel = LogLevel.INFO;
@@ -253,7 +251,15 @@ const App: React.FC = () => {
     }
 
     logger.setLevel(logLevel);
-    console.log(`📝 日志级别已更新为: ${level}`);
+
+    // 启用或禁用文件日志
+    if (enable_file_logging) {
+      logger.enableFileLogging();
+    } else {
+      logger.disableFileLogging();
+    }
+
+    logger.debug(`📝 日志级别已更新为: ${level}, 文件日志: ${enable_file_logging ? '启用' : '禁用'}`);
   }, [preferences?.logging]);
 
   // 应用无障碍设置到 DOM
@@ -404,7 +410,7 @@ const App: React.FC = () => {
       body.classList.remove('reduced-motion');
     }
 
-    console.log('已应用无障碍设置:', { high_contrast, font_size, font_family, reduced_motion });
+    logger.debug('已应用无障碍设置:', { high_contrast, font_size, font_family, reduced_motion });
   }, [preferences?.accessibility]);
 
   // 应用工作区设置到 DOM
@@ -434,7 +440,7 @@ const App: React.FC = () => {
         break;
     }
 
-    console.log('已应用工作区设置:', { layout });
+    logger.debug('已应用工作区设置:', { layout });
   }, [preferences?.workspace]);
 
   // 处理未保存标签页对话框事件
@@ -489,7 +495,7 @@ const App: React.FC = () => {
           event.returnValue = ''; // 标准做法
         }
       } catch (error) {
-        console.error('处理应用关闭失败:', error);
+        logger.error('处理应用关闭失败:', error);
       }
     };
 
@@ -509,18 +515,18 @@ const App: React.FC = () => {
                 import('@tauri-apps/api/webviewWindow').then(({ getCurrentWebviewWindow }) => {
                   getCurrentWebviewWindow().close();
                 }).catch(err => {
-                  console.warn('无法关闭Tauri窗口:', err);
+                  logger.warn('无法关闭Tauri窗口:', err);
                 });
               }
             } catch (error) {
-              console.error('处理Tauri关闭事件失败:', error);
+              logger.error('处理Tauri关闭事件失败:', error);
             }
           });
         }).catch(err => {
-          console.warn('无法监听Tauri关闭事件:', err);
+          logger.warn('无法监听Tauri关闭事件:', err);
         });
       } catch (error) {
-        console.warn('Tauri API 不可用:', error);
+        logger.warn('Tauri API 不可用:', error);
       }
     }
 
@@ -533,13 +539,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        console.log('InfloWave 启动中...');
+        logger.debug('InfloWave 启动中...');
 
         // 初始化控制台日志拦截器
-        console.log('初始化控制台日志拦截器...');
+        logger.debug('初始化控制台日志拦截器...');
 
         // 初始化错误日志系统
-        console.log('初始化错误日志系统...');
+        logger.debug('初始化错误日志系统...');
 
         // 初始化环境检测
         initializeEnvironment();
@@ -550,56 +556,56 @@ const App: React.FC = () => {
         // 🔧 加载用户偏好设置（优先级高，影响UI显示）
         try {
           await loadUserPreferences();
-          console.log('✅ 用户偏好设置加载成功');
+          logger.info('用户偏好设置加载成功');
         } catch (prefError) {
-          console.warn('⚠️ 用户偏好设置加载失败，使用默认值:', prefError);
+          logger.warn('用户偏好设置加载失败，使用默认值:', prefError);
         }
 
         // 尝试获取应用配置信息
         try {
           await safeTauriInvoke<any>('get_app_config');
-          console.log('应用配置加载成功');
+          logger.debug('应用配置加载成功');
         } catch (configError) {
-          console.warn('应用配置加载失败，使用默认配置:', configError);
+          logger.warn('应用配置加载失败，使用默认配置:', configError);
         }
 
         // 尝试初始化连接服务
         try {
           await safeTauriInvoke<void>('initialize_connections');
-          console.log('连接服务初始化成功');
+          logger.debug('连接服务初始化成功');
 
           // 初始化时同步一次连接配置
           const { syncConnectionsFromBackend } = useConnectionStore.getState();
           await syncConnectionsFromBackend();
-          console.log('连接配置初始化同步完成');
+          logger.debug('连接配置初始化同步完成');
 
           // 不再启动定时同步，因为：
           // 1. 每次操作（展开节点、双击表等）都会向后端发送请求，本身就是状态检测
           // 2. 用户可以通过刷新按钮主动同步
           // 3. 定时同步会导致不必要的组件重新渲染，造成树闪烁
-          console.log('连接配置初始化完成（已禁用定时同步）');
+          logger.debug('连接配置初始化完成（已禁用定时同步）');
         } catch (connError) {
-          console.warn('连接服务初始化失败:', connError);
+          logger.warn('连接服务初始化失败:', connError);
         }
 
         // 初始化性能监控健康检查
         try {
           initializeHealthCheck();
-          console.log('性能监控健康检查初始化成功');
+          logger.debug('性能监控健康检查初始化成功');
         } catch (healthError) {
-          console.warn('性能监控健康检查初始化失败:', healthError);
+          logger.warn('性能监控健康检查初始化失败:', healthError);
         }
 
         showMessage.success('应用启动成功');
       } catch (error) {
-        console.error('应用初始化失败:', error);
+        logger.error('应用初始化失败:', error);
         // 记录到错误日志系统
         await errorLogger.logCustomError('应用初始化失败', {
           error: error?.toString(),
           stack: (error as Error)?.stack,
         });
         // 不显示错误消息，允许应用继续运行
-        console.warn('应用将以降级模式运行');
+        logger.warn('应用将以降级模式运行');
       } finally {
         setLoading(false);
 
@@ -611,15 +617,15 @@ const App: React.FC = () => {
         if ((window as any).__TAURI__) {
           import('@tauri-apps/api/webviewWindow').then(({ getCurrentWebviewWindow }) => {
             getCurrentWebviewWindow().setTitle('InfloWave').catch(err => {
-              console.warn('无法通过Tauri API设置窗口标题:', err);
+              logger.warn('无法通过Tauri API设置窗口标题:', err);
             });
           }).catch(err => {
-            console.warn('无法导入Tauri webviewWindow模块:', err);
+            logger.warn('无法导入Tauri webviewWindow模块:', err);
           });
         }
         
         window.dispatchEvent(new CustomEvent('app-ready'));
-        console.log('✅ 应用启动完成，窗口标题已设置，已发送ready信号');
+        logger.info('应用启动完成，窗口标题已设置，已发送ready信号');
 
         // 在开发模式下加载测试工具
         if ((import.meta as any).env?.DEV) {
@@ -627,16 +633,16 @@ const App: React.FC = () => {
             // 加载主测试工具
             import('./utils/masterTestRunner').then(
               ({ masterTestRunner: _testRunner }) => {
-                console.log('🧪 测试工具已加载');
-                console.log('使用以下命令运行测试:');
-                console.log('- runCompleteTests() // 运行完整测试套件');
-                console.log('- quickHealthCheck() // 快速健康检查');
-                console.log('- runUITests() // 运行UI测试');
-                console.log('- runFeatureTests() // 运行功能测试');
+                logger.debug('🧪 测试工具已加载');
+                logger.debug('使用以下命令运行测试:');
+                logger.debug('- runCompleteTests() // 运行完整测试套件');
+                logger.debug('- quickHealthCheck() // 快速健康检查');
+                logger.debug('- runUITests() // 运行UI测试');
+                logger.debug('- runFeatureTests() // 运行功能测试');
               }
             );
           } catch (error) {
-            console.warn('测试工具加载失败:', error);
+            logger.warn('测试工具加载失败:', error);
           }
         }
       }
@@ -669,9 +675,9 @@ const App: React.FC = () => {
 
   // 获取通知位置设置，如果没有设置则使用默认值
   const getToasterPosition = () => {
-    console.log('获取Toaster位置，当前preferences:', preferences);
+    logger.debug('获取Toaster位置，当前preferences:', preferences);
     if (!preferences?.notifications?.position) {
-      console.log('使用默认位置: bottom-right');
+      logger.debug('使用默认位置: bottom-right');
       return 'bottom-right'; // 默认位置
     }
 
@@ -686,7 +692,7 @@ const App: React.FC = () => {
     };
 
     const position = positionMap[preferences.notifications.position] || 'bottom-right';
-    console.log('计算出的位置:', position, '原始值:', preferences.notifications.position);
+    logger.debug('计算出的位置:', position, '原始值:', preferences.notifications.position);
     return position;
   };
 

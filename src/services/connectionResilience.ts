@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { portDiscoveryService } from './portDiscovery';
 
+import { logger } from '@/utils/logger';
 export interface ConnectionAttempt {
   timestamp: number;
   success: boolean;
@@ -77,7 +78,7 @@ export class ConnectionResilienceService {
    * 开始连接监控
    */
   async startMonitoring(): Promise<void> {
-    console.log('Starting connection monitoring...');
+    logger.debug('Starting connection monitoring...');
     
     // 立即进行一次连接检查
     await this.checkConnection();
@@ -90,7 +91,7 @@ export class ConnectionResilienceService {
    * 停止连接监控
    */
   stopMonitoring(): void {
-    console.log('Stopping connection monitoring...');
+    logger.debug('Stopping connection monitoring...');
     
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
@@ -150,7 +151,7 @@ export class ConnectionResilienceService {
       const currentPort = await portDiscoveryService.getServicePort('frontend-dev-server');
       return currentPort !== null;
     } catch (error) {
-      console.error('Port manager check failed:', error);
+      logger.error('Port manager check failed:', error);
       return false;
     }
   }
@@ -163,7 +164,7 @@ export class ConnectionResilienceService {
       const result = await invoke<boolean>('health_check');
       return result === true;
     } catch (error) {
-      console.error('Tauri connection check failed:', error);
+      logger.error('Tauri connection check failed:', error);
       return false;
     }
   }
@@ -180,7 +181,7 @@ export class ConnectionResilienceService {
       });
       return response.ok;
     } catch (error) {
-      console.error('Frontend server check failed:', error);
+      logger.error('Frontend server check failed:', error);
       return false;
     }
   }
@@ -217,7 +218,7 @@ export class ConnectionResilienceService {
     this.connectionState.consecutiveFailures = 0;
     
     if (wasReconnecting) {
-      console.log('Connection restored successfully');
+      logger.debug('Connection restored successfully');
     }
     
     this.notifyListeners();
@@ -232,7 +233,7 @@ export class ConnectionResilienceService {
     this.connectionState.consecutiveFailures++;
     
     if (!this.connectionState.isReconnecting) {
-      console.log(`Connection failed: ${error}. Starting reconnection...`);
+      logger.debug(`Connection failed: ${error}. Starting reconnection...`);
       this.startReconnection();
     }
     
@@ -258,14 +259,14 @@ export class ConnectionResilienceService {
    */
   private async attemptReconnection(attemptNumber: number): Promise<void> {
     if (attemptNumber >= this.reconnectionConfig.maxRetries) {
-      console.error('Maximum reconnection attempts reached');
+      logger.error('Maximum reconnection attempts reached');
       this.connectionState.isReconnecting = false;
       this.notifyListeners();
       return;
     }
     
     const delay = this.calculateDelay(attemptNumber);
-    console.log(`Reconnection attempt ${attemptNumber + 1}/${this.reconnectionConfig.maxRetries} in ${delay}ms`);
+    logger.debug(`Reconnection attempt ${attemptNumber + 1}/${this.reconnectionConfig.maxRetries} in ${delay}ms`);
     
     this.reconnectionTimeout = setTimeout(async () => {
       try {
@@ -276,14 +277,14 @@ export class ConnectionResilienceService {
         const isConnected = await this.checkConnection();
         
         if (isConnected) {
-          console.log('Reconnection successful');
+          logger.debug('Reconnection successful');
           return;
         }
         
         // 如果连接失败，继续重试
         this.attemptReconnection(attemptNumber + 1);
       } catch (error) {
-        console.error('Reconnection attempt failed:', error);
+        logger.error('Reconnection attempt failed:', error);
         this.attemptReconnection(attemptNumber + 1);
       }
     }, delay);
@@ -317,15 +318,15 @@ export class ConnectionResilienceService {
       // 检查端口冲突并解决
       const conflicts = await portDiscoveryService.checkPortConflicts();
       if (conflicts.length > 0) {
-        console.log('Resolving port conflicts:', conflicts);
+        logger.debug('Resolving port conflicts:', conflicts);
         for (const service of conflicts) {
           await portDiscoveryService.reallocatePort(service);
         }
       }
       
-      console.log('Services reinitialized successfully');
+      logger.debug('Services reinitialized successfully');
     } catch (error) {
-      console.error('Failed to reinitialize services:', error);
+      logger.error('Failed to reinitialize services:', error);
       throw error;
     }
   }
@@ -349,19 +350,19 @@ export class ConnectionResilienceService {
   private setupNetworkEventListeners(): void {
     // 监听网络状态变化
     window.addEventListener('online', () => {
-      console.log('Network came back online');
+      logger.debug('Network came back online');
       this.checkConnection();
     });
     
     window.addEventListener('offline', () => {
-      console.log('Network went offline');
+      logger.debug('Network went offline');
       this.handleFailedConnection('Network offline');
     });
     
     // 监听页面可见性变化
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible') {
-        console.log('Page became visible, checking connection');
+        logger.debug('Page became visible, checking connection');
         this.checkConnection();
       }
     });
@@ -393,7 +394,7 @@ export class ConnectionResilienceService {
       try {
         listener(state);
       } catch (error) {
-        console.error('Connection state listener error:', error);
+        logger.error('Connection state listener error:', error);
       }
     });
   }
@@ -432,7 +433,7 @@ export class ConnectionResilienceService {
    * 强制重连
    */
   async forceReconnect(): Promise<void> {
-    console.log('Forcing reconnection...');
+    logger.debug('Forcing reconnection...');
     
     // 停止当前重连过程
     if (this.reconnectionTimeout) {

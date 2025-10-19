@@ -1,10 +1,11 @@
-import { useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { dialog } from '@/utils/dialog';
 import { writeToClipboard } from '@/utils/clipboard';
 import type { ConnectionConfig } from '@/types';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
+import { logger } from '@/utils/logger';
 import type {
     DatabaseInfoDialogState,
     RetentionPolicyDialogState,
@@ -98,7 +99,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                             buildCompleteTreeData(true);
                             showMessage.success(`连接 ${node.name} 已刷新`);
                         } catch (error) {
-                            console.error('刷新连接失败:', error);
+                            logger.error('刷新连接失败:', error);
                             showMessage.error(`刷新连接失败: ${error}`);
                         }
                     }
@@ -110,7 +111,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                             await handleConnectionToggle(connectionId);
                             showMessage.success(`连接 ${node.name} 已断开`);
                         } catch (error) {
-                            console.error('断开连接失败:', error);
+                            logger.error('断开连接失败:', error);
                             showMessage.error(`断开连接失败: ${error}`);
                         }
                     }
@@ -120,7 +121,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                     if (nodeType === 'connection') {
                         const connection = getConnection(connectionId);
                         if (connection) {
-                            console.log(`🔧 编辑连接属性: ${connection.name}`);
+                            logger.debug(`🔧 编辑连接属性: ${connection.name}`);
                             handleOpenConnectionDialog(connection);
                         } else {
                             showMessage.error('连接不存在');
@@ -144,21 +145,21 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                                     }
 
                                     try {
-                                        console.log(`🗑️ 开始删除连接: ${connection.name} (${connectionId})`);
+                                        logger.debug(`开始删除连接: ${connection.name} (${connectionId})`);
                                         await safeTauriInvoke('delete_connection', { connectionId });
-                                        console.log('✅ 后端删除成功');
+                                        logger.info('后端删除成功');
 
                                         removeConnection(connectionId);
-                                        console.log('✅ 前端状态删除成功');
+                                        logger.info('前端状态删除成功');
 
                                         showMessage.success(`连接 "${connection.name}" 已删除`);
                                         buildCompleteTreeData(true);
                                     } catch (deleteError) {
-                                        console.error('❌ 删除连接失败:', deleteError);
+                                        logger.error('删除连接失败:', deleteError);
                                         showMessage.error(`删除连接失败: ${deleteError}`);
                                     }
                                 } catch (error) {
-                                    console.error('删除连接失败:', error);
+                                    logger.error('删除连接失败:', error);
                                     showMessage.error(`删除连接失败: ${error}`);
                                 }
                             }
@@ -172,17 +173,17 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                 case 'open_database':
                     if (nodeType.includes('database')) {
                         try {
-                            console.log(`📂 [DatabaseExplorer] 打开数据库连接: ${database}, connectionId: ${connectionId}`);
-                            console.log(`📂 [DatabaseExplorer] 打开前状态: ${isDatabaseOpened(connectionId, database)}`);
+                            logger.debug(`[DatabaseExplorer] 打开数据库连接: ${database}, connectionId: ${connectionId}`);
+                            logger.debug(`[DatabaseExplorer] 打开前状态: ${isDatabaseOpened(connectionId, database)}`);
 
                             openDatabase(connectionId, database);
 
-                            console.log(`📂 [DatabaseExplorer] 打开后状态: ${isDatabaseOpened(connectionId, database)}`);
-                            console.log(`📂 [DatabaseExplorer] 不触发树重建，只更新节点状态`);
+                            logger.debug(`[DatabaseExplorer] 打开后状态: ${isDatabaseOpened(connectionId, database)}`);
+                            logger.debug('[DatabaseExplorer] 不触发树重建，只更新节点状态');
 
                             showMessage.success(`已打开数据库 "${database}"`);
                         } catch (error) {
-                            console.error('❌ 打开数据库失败:', error);
+                            logger.error('打开数据库失败:', error);
                             showMessage.error(`打开数据库失败: ${error}`);
                         }
                     }
@@ -191,17 +192,17 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                 case 'close_database':
                     if (nodeType.includes('database')) {
                         try {
-                            console.log(`📂 [DatabaseExplorer] 关闭数据库连接: ${database}, connectionId: ${connectionId}`);
-                            console.log(`📂 [DatabaseExplorer] 关闭前状态: ${isDatabaseOpened(connectionId, database)}`);
+                            logger.debug(`[DatabaseExplorer] 关闭数据库连接: ${database}, connectionId: ${connectionId}`);
+                            logger.debug(`[DatabaseExplorer] 关闭前状态: ${isDatabaseOpened(connectionId, database)}`);
 
                             closeDatabase(connectionId, database);
 
-                            console.log(`📂 [DatabaseExplorer] 关闭后状态: ${isDatabaseOpened(connectionId, database)}`);
-                            console.log(`📂 [DatabaseExplorer] 不触发树重建，只更新节点状态`);
+                            logger.debug(`[DatabaseExplorer] 关闭后状态: ${isDatabaseOpened(connectionId, database)}`);
+                            logger.debug('[DatabaseExplorer] 不触发树重建，只更新节点状态');
 
                             showMessage.success(`已关闭数据库 "${database}"`);
                         } catch (error) {
-                            console.error('❌ 关闭数据库失败:', error);
+                            logger.error('关闭数据库失败:', error);
                             showMessage.error(`关闭数据库失败: ${error}`);
                         }
                     }
@@ -210,11 +211,11 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                 case 'refresh_database':
                     if (nodeType.includes('database')) {
                         try {
-                            console.log(`🔄 刷新数据库结构: ${database}`);
+                            logger.debug(`刷新数据库结构: ${database}`);
                             await buildCompleteTreeData(true);
                             showMessage.success(`数据库 ${database} 已刷新`);
                         } catch (error) {
-                            console.error('❌ 刷新数据库结构失败:', error);
+                            logger.error('刷新数据库结构失败:', error);
                             showMessage.error(`刷新数据库结构失败: ${error}`);
                         }
                     }
@@ -272,7 +273,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                     break;
             }
         } catch (error) {
-            console.error('执行右键菜单动作失败:', error);
+            logger.error('执行右键菜单动作失败:', error);
             showMessage.error(`操作失败: ${error}`);
         }
 
@@ -345,7 +346,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                     if (confirmed) {
                         try {
                             setLoading(true);
-                            console.log('🗑️ 删除表:', { connectionId, database, table });
+                            logger.debug('删除表:', { connectionId, database, table });
 
                             const dropQuery = `DROP MEASUREMENT "${table}"`;
                             await safeTauriInvoke('execute_query', {
@@ -354,9 +355,9 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
 
                             showMessage.success(`表 "${table}" 已成功删除`);
                             refreshTree();
-                            console.log('✅ 表删除成功');
+                            logger.info('表删除成功');
                         } catch (error) {
-                            console.error('❌ 删除表失败:', error);
+                            logger.error('删除表失败:', error);
                             showMessage.error(`删除表失败: ${error}`);
                         } finally {
                             setLoading(false);
@@ -445,7 +446,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                 break;
 
             default:
-                console.warn('未处理的右键菜单动作:', action);
+                logger.warn('未处理的右键菜单动作:', action);
                 break;
         }
     };
