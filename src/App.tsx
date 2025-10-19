@@ -24,6 +24,7 @@ import { initializeInputClipboardHandler } from './utils/inputClipboardHandler';
 import { useTabStore } from './stores/tabStore';
 import UnsavedTabsDialog from './components/common/UnsavedTabsDialog';
 import type { EditorTab } from '@components/editor';
+import { logger, LogLevel } from './utils/logger';
 
 // 更新组件
 import { UpdateNotification } from '@components/updater';
@@ -228,11 +229,38 @@ const App: React.FC = () => {
   const { preferences } = useUserPreferences();
   const { loadUserPreferences } = useUserPreferencesStore();
 
+  // 🔧 监听日志设置变化，动态更新 logger 配置
+  useEffect(() => {
+    if (!preferences?.logging) return;
+
+    const { level } = preferences.logging;
+
+    // 将字符串转换为 LogLevel 枚举
+    let logLevel = LogLevel.INFO;
+    switch (level.toUpperCase()) {
+      case 'ERROR':
+        logLevel = LogLevel.ERROR;
+        break;
+      case 'WARN':
+        logLevel = LogLevel.WARN;
+        break;
+      case 'INFO':
+        logLevel = LogLevel.INFO;
+        break;
+      case 'DEBUG':
+        logLevel = LogLevel.DEBUG;
+        break;
+    }
+
+    logger.setLevel(logLevel);
+    console.log(`📝 日志级别已更新为: ${level}`);
+  }, [preferences?.logging]);
+
   // 应用无障碍设置到 DOM
   useEffect(() => {
     if (!preferences?.accessibility) return;
 
-    const { high_contrast, font_size, font_family, reduced_motion } = preferences.accessibility;
+    const { high_contrast, font_size, font_family, reduced_motion} = preferences.accessibility;
     const body = document.body;
     
     // 高对比度设置

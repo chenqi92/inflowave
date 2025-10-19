@@ -46,6 +46,13 @@ export interface WorkspaceSettings {
   restore_tabs_on_startup: boolean;
 }
 
+export interface LoggingSettings {
+  level: 'ERROR' | 'WARN' | 'INFO' | 'DEBUG';
+  enable_file_logging: boolean;
+  max_file_size_mb: number;
+  max_files: number;
+}
+
 export interface KeyboardShortcut {
   id: string;
   name: string;
@@ -60,6 +67,7 @@ export interface UserPreferences {
   notifications: NotificationSettings;
   accessibility: AccessibilitySettings;
   workspace: WorkspaceSettings;
+  logging: LoggingSettings;
 }
 
 // ============================================================================
@@ -99,11 +107,19 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
   restore_tabs_on_startup: true,
 };
 
+export const defaultLoggingSettings: LoggingSettings = {
+  level: 'INFO', // 默认 INFO 级别
+  enable_file_logging: true, // 默认启用文件日志
+  max_file_size_mb: 10, // 默认最大 10MB
+  max_files: 5, // 默认保留 5 个日志文件
+};
+
 export const defaultUserPreferences: UserPreferences = {
   shortcuts: [],
   notifications: defaultNotificationSettings,
   accessibility: defaultAccessibilitySettings,
   workspace: defaultWorkspaceSettings,
+  logging: defaultLoggingSettings,
 };
 
 // ============================================================================
@@ -125,8 +141,9 @@ interface UserPreferencesState {
   updateNotifications: (updates: Partial<NotificationSettings>) => Promise<void>;
   updateAccessibility: (updates: Partial<AccessibilitySettings>) => Promise<void>;
   updateWorkspace: (updates: Partial<WorkspaceSettings>) => Promise<void>;
+  updateLogging: (updates: Partial<LoggingSettings>) => Promise<void>;
   resetToDefaults: () => Promise<void>;
-  
+
   // 内部方法
   _setPreferences: (preferences: UserPreferences) => void;
   _setLoading: (loading: boolean) => void;
@@ -273,17 +290,33 @@ export const useUserPreferencesStore = create<UserPreferencesState>((set, get) =
   // ============================================================================
   updateWorkspace: async (updates: Partial<WorkspaceSettings>) => {
     const { preferences, updatePreferences } = get();
-    
+
     const newWorkspace = {
       ...preferences.workspace,
       ...updates,
     };
-    
+
     await updatePreferences({
       workspace: newWorkspace,
     });
   },
-  
+
+  // ============================================================================
+  // 更新日志设置
+  // ============================================================================
+  updateLogging: async (updates: Partial<LoggingSettings>) => {
+    const { preferences, updatePreferences } = get();
+
+    const newLogging = {
+      ...preferences.logging,
+      ...updates,
+    };
+
+    await updatePreferences({
+      logging: newLogging,
+    });
+  },
+
   // ============================================================================
   // 重置为默认值
   // ============================================================================

@@ -38,6 +38,7 @@ import {
   Info,
   Download,
   ExternalLink,
+  FileText,
 } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { saveJsonFile } from '@/utils/nativeDownload';
@@ -47,6 +48,7 @@ import { useTheme } from '@/components/providers/ThemeProvider';
 import { ThemeColorSelectorWithPreview } from '@/components/ui/theme-color-selector';
 import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ControllerSettings from '@/components/settings/ControllerSettings';
+import LoggingSettings from '@/components/settings/LoggingSettings';
 import UserGuideModal from '@/components/common/UserGuideModal';
 import { useNoticeStore } from '@/store/notice';
 import { UpdateSettings } from '@/components/updater/UpdateSettings';
@@ -679,6 +681,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           </div>
         </div>
       ),
+    },
+    {
+      key: 'logging',
+      icon: <FileText className='w-4 h-4' />,
+      label: '日志设置',
+      children: <LoggingSettings />,
     },
     {
       key: 'updates',

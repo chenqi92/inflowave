@@ -21,41 +21,54 @@ class Logger {
   private config: LoggerConfig;
 
   constructor() {
-    // 🔧 根据环境变量设置日志级别
+    // 🔧 初始化默认配置
     const isDev = import.meta.env.DEV;
-    const logLevelEnv = import.meta.env.VITE_LOG_LEVEL;
-
-    let level = LogLevel.ERROR; // 生产环境默认只显示错误
-
-    if (isDev) {
-      // 开发环境默认显示 INFO 级别
-      level = LogLevel.INFO;
-    }
-
-    // 允许通过环境变量覆盖
-    if (logLevelEnv) {
-      switch (logLevelEnv.toUpperCase()) {
-        case 'ERROR':
-          level = LogLevel.ERROR;
-          break;
-        case 'WARN':
-          level = LogLevel.WARN;
-          break;
-        case 'INFO':
-          level = LogLevel.INFO;
-          break;
-        case 'DEBUG':
-          level = LogLevel.DEBUG;
-          break;
-      }
-    }
 
     this.config = {
-      level,
+      level: isDev ? LogLevel.INFO : LogLevel.ERROR,
       enableEmoji: isDev,
-      enableTimestamp: false, // 浏览器控制台已有时间戳
+      enableTimestamp: false,
       enableStackTrace: false,
     };
+
+    // 🔧 从 localStorage 同步加载用户设置
+    this.loadConfigFromStorage();
+  }
+
+  /**
+   * 从 localStorage 同步加载日志配置
+   */
+  private loadConfigFromStorage(): void {
+    try {
+      const prefsStr = localStorage.getItem('user-preferences');
+      if (prefsStr) {
+        const prefs = JSON.parse(prefsStr);
+        if (prefs?.state?.preferences?.logging) {
+          const logging = prefs.state.preferences.logging;
+          this.setLevel(this.stringToLogLevel(logging.level));
+        }
+      }
+    } catch (error) {
+      // 静默失败，使用默认配置
+    }
+  }
+
+  /**
+   * 字符串转 LogLevel
+   */
+  private stringToLogLevel(level: string): LogLevel {
+    switch (level?.toUpperCase()) {
+      case 'ERROR':
+        return LogLevel.ERROR;
+      case 'WARN':
+        return LogLevel.WARN;
+      case 'INFO':
+        return LogLevel.INFO;
+      case 'DEBUG':
+        return LogLevel.DEBUG;
+      default:
+        return LogLevel.INFO;
+    }
   }
 
   /**
