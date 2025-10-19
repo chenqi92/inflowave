@@ -1429,6 +1429,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   // 缓存 connectionStatuses Map，避免每次渲染都创建新 Map
   const memoizedConnectionStatuses = useMemo(() => {
+    // 🔧 安全检查：确保 connections 是数组
+    if (!Array.isArray(connections)) {
+      console.error('❌ connections 不是数组:', connections);
+      return memoizedConnectionStatusesRef.current;
+    }
+
     const newStatuses = new Map(
       connections.map(conn => {
         const status =
@@ -1467,6 +1473,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const memoizedDatabaseErrorsRef = useRef<Map<string, string>>(new Map());
 
   const memoizedDatabaseLoadingStates = useMemo(() => {
+    // 🔧 安全检查：确保 databaseLoadingStates 是 Map 类型
+    if (!(databaseLoadingStates instanceof Map)) {
+      console.error('❌ databaseLoadingStates 不是 Map 类型:', databaseLoadingStates);
+      return memoizedDatabaseLoadingStatesRef.current;
+    }
+
     // 检查是否真的有变化
     let hasChanges = false;
     if (databaseLoadingStates.size !== memoizedDatabaseLoadingStatesRef.current.size) {
@@ -1487,6 +1499,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   }, [databaseLoadingStates]);
 
   const memoizedConnectionErrors = useMemo(() => {
+    // 🔧 安全检查：确保 connectionErrors 是 Map 类型
+    if (!(connectionErrors instanceof Map)) {
+      console.error('❌ connectionErrors 不是 Map 类型:', connectionErrors);
+      return memoizedConnectionErrorsRef.current;
+    }
+
     // 检查是否真的有变化
     let hasChanges = false;
     if (connectionErrors.size !== memoizedConnectionErrorsRef.current.size) {
@@ -1507,6 +1525,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   }, [connectionErrors]);
 
   const memoizedDatabaseErrors = useMemo(() => {
+    // 🔧 安全检查：确保 databaseErrors 是 Map 类型
+    if (!(databaseErrors instanceof Map)) {
+      console.error('❌ databaseErrors 不是 Map 类型:', databaseErrors);
+      return memoizedDatabaseErrorsRef.current;
+    }
+
     // 检查是否真的有变化
     let hasChanges = false;
     if (databaseErrors.size !== memoizedDatabaseErrorsRef.current.size) {

@@ -22,8 +22,9 @@ import RightFunctionBar, {type FunctionType} from './RightFunctionBar';
 import RightFunctionPanel from './RightFunctionPanel';
 
 import {dataExplorerRefresh} from '@/utils/refreshEvents';
-import {useUserPreferences} from '@/hooks/useUserPreferences';
+import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
 import type {QueryResult} from '@/types';
+import { debounce } from 'lodash-es';
 
 
 
@@ -39,9 +40,41 @@ export interface DataGripLayoutRef {
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                                                                      children,
                                                                  }) => {
-    const {preferences, debouncedUpdateWorkspaceSettings} = useUserPreferences();
+    // 🔧 使用 userPreferencesStore 替代废弃的 useUserPreferences hook
+    const { preferences, updateWorkspace } = useUserPreferencesStore();
     const location = useLocation();
     const navigate = useNavigate();
+
+    // 🔧 标记是否已完成初始化，避免启动时立即保存
+    const isInitializedRef = useRef(false);
+
+    // 🔧 创建防抖的工作区设置更新函数（1000ms 防抖）
+    const debouncedUpdateWorkspaceSettings = useRef(
+        debounce(async (workspace: any) => {
+            // 跳过初始化阶段的保存
+            if (!isInitializedRef.current) {
+                console.log('⏭️ 跳过初始化阶段的工作区设置保存');
+                return;
+            }
+
+            try {
+                await updateWorkspace(workspace);
+                console.log('✅ 工作区设置已保存');
+            } catch (error) {
+                console.error('❌ 保存工作区设置失败:', error);
+            }
+        }, 1000) // 1秒防抖，避免频繁保存
+    ).current;
+
+    // 🔧 组件挂载后标记为已初始化
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            isInitializedRef.current = true;
+            console.log('✅ DataGripStyleLayout 初始化完成，启用工作区设置自动保存');
+        }, 2000); // 2秒后启用自动保存
+
+        return () => clearTimeout(timer);
+    }, []);
 
     // 有效的布局类型
     const validLayouts = ['datasource', 'query', 'visualization', 'query-history'] as const;
@@ -157,7 +190,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
         if (hasChanges) {
             console.log('工作区设置有变化，保存到用户偏好');
-            await debouncedUpdateWorkspaceSettings(updatedWorkspace);
+            debouncedUpdateWorkspaceSettings(updatedWorkspace);
         } else {
             console.log('工作区设置无变化，跳过保存');
         }
@@ -170,7 +203,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         leftPanelSize,
         bottomPanelSize,
         rightPanelSize,
-        debouncedUpdateWorkspaceSettings,
+        // debouncedUpdateWorkspaceSettings 是 ref.current，不需要在依赖数组中
     ]);
 
     // 使用 ref 来存储 saveWorkspaceSettings 函数，避免依赖问题
@@ -549,7 +582,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             // 🔧 修复：移除立即更新偏好设置的逻辑，避免与路径导航冲突
             // 偏好设置的更新由自动保存机制处理，避免在导航过程中产生状态冲突
         },
-        [currentView, navigate, location.pathname, preferences?.workspace, debouncedUpdateWorkspaceSettings]
+        [currentView, navigate, location.pathname, preferences?.workspace]
+        // debouncedUpdateWorkspaceSettings 是 ref.current，不需要在依赖数组中
     );
 
     // 中间栏根据当前视图显示不同内容

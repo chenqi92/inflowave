@@ -22,6 +22,7 @@ import {
   FormMessage,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   Button,
@@ -190,6 +191,11 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
             <Info className='w-4 h-4' />
             {mode === 'create' ? '创建保留策略' : '编辑保留策略'}
           </DialogTitle>
+          <DialogDescription>
+            {mode === 'create'
+              ? '为数据库创建新的数据保留策略，控制数据存储时长'
+              : '修改现有保留策略的配置'}
+          </DialogDescription>
         </DialogHeader>
         <div className='space-y-6'>
           {/* 说明信息 */}

@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   Button,
@@ -790,6 +791,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               <Settings className='w-5 h-5' />
               偏好设置
             </DialogTitle>
+            <DialogDescription className='sr-only'>
+              配置应用程序的各项设置，包括查询、通知、主题等
+            </DialogDescription>
           </DialogHeader>
           <div className='flex flex-1 min-h-0'>
             <Tabs

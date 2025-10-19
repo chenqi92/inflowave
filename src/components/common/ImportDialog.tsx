@@ -34,6 +34,7 @@ import { Upload as UploadIcon, Database, CheckCircle, Info } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui';
@@ -389,6 +390,9 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       <DialogContent className='max-w-5xl max-h-[90vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>数据导入</DialogTitle>
+          <DialogDescription>
+            从 CSV 或 JSON 文件导入数据到 InfluxDB 数据库
+          </DialogDescription>
         </DialogHeader>
         <div className='space-y-6'>
           {/* 步骤指示器 */}

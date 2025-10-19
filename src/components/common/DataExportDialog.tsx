@@ -22,6 +22,7 @@ import { getFileOperationError, formatErrorMessage } from '@/utils/userFriendlyE
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui';
@@ -424,6 +425,9 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           <DialogTitle>
             {hasQueryResult ? '导出查询结果' : '数据导出'}
           </DialogTitle>
+          <DialogDescription>
+            {hasQueryResult ? '将查询结果导出为 CSV、JSON 或 Excel 格式' : '选择数据源和导出格式'}
+          </DialogDescription>
         </DialogHeader>
 
         <div className='space-y-6'>

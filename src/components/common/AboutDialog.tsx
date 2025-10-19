@@ -4,6 +4,7 @@ import {
   Tag,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   Separator,
@@ -66,6 +67,9 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
             <Database className='w-5 h-5 text-primary' />
             <span>关于 {appInfo.name}</span>
           </DialogTitle>
+          <DialogDescription>
+            查看应用程序信息、版本详情和系统配置
+          </DialogDescription>
         </DialogHeader>
         <div style={{ padding: '16px 0' }}>
           {/* 应用信息 */}

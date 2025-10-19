@@ -1356,7 +1356,14 @@ const arePropsEqual = (
     return false;
   }
 
+  // 比较 nodeRefsMap（ref 对象，引用比较即可）
+  if (prevProps.nodeRefsMap !== nextProps.nodeRefsMap) {
+    console.log('🔍 [Props比较] nodeRefsMap 引用变化');
+    return false;
+  }
+
   // Props 无变化，跳过重新渲染
+  console.log('✅ [Props比较] Props 无变化，跳过重新渲染');
   return true;
 };
 

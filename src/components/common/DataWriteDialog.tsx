@@ -26,6 +26,7 @@ import {
   Text,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -298,6 +299,9 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
           <DialogHeader>
             <DialogTitle>数据写入</DialogTitle>
+            <DialogDescription>
+              将数据写入到 InfluxDB 数据库，支持 CSV、JSON 和 Line Protocol 格式
+            </DialogDescription>
           </DialogHeader>
 
           <Form {...form}>
@@ -642,6 +646,9 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
         <DialogContent className='max-w-3xl'>
           <DialogHeader>
             <DialogTitle>转换预览</DialogTitle>
+            <DialogDescription>
+              预览转换后的 Line Protocol 格式数据（前10行）
+            </DialogDescription>
           </DialogHeader>
 
           <div className='space-y-4'>

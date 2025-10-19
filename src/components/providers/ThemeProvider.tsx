@@ -146,8 +146,10 @@ export function ThemeProvider({
     }
   }, [config?.theme, theme]);
 
+  // 🔧 分离主题模式（light/dark）和配色方案（zinc/slate等）的处理
+  // 主题模式变化时需要同步到 Tauri，配色方案变化只需要更新 CSS 变量
   useEffect(() => {
-    console.log(`🔄 [ThemeProvider] 主题effect触发，theme: ${theme}, colorScheme: ${colorScheme}`);
+    console.log(`🔄 [ThemeProvider] 主题模式effect触发，theme: ${theme}`);
 
     const root = window.document.documentElement;
 
@@ -167,9 +169,8 @@ export function ThemeProvider({
       root.classList.add(systemTheme);
       currentTheme = systemTheme;
       setResolvedTheme(systemTheme);
-      applyThemeColors(colorScheme, systemTheme === 'dark');
 
-      // 同步Tauri应用主题
+      // 🔧 只在主题模式变化时同步Tauri应用主题
       console.log(`📤 [ThemeProvider] 同步系统主题到Tauri: ${systemTheme}`);
       syncTauriAppTheme(systemTheme);
 
@@ -181,9 +182,8 @@ export function ThemeProvider({
           root.classList.remove('light', 'dark');
           root.classList.add(newSystemTheme);
           setResolvedTheme(newSystemTheme);
-          applyThemeColors(colorScheme, newSystemTheme === 'dark');
 
-          // 同步Tauri应用主题
+          // 🔧 只在主题模式变化时同步Tauri应用主题
           syncTauriAppTheme(newSystemTheme);
 
           // 强制触发重新渲染，确保所有组件都能响应主题变化
@@ -212,14 +212,17 @@ export function ThemeProvider({
         setResolvedTheme('light');
       }
 
-      // 同步Tauri应用主题
+      // 🔧 只在主题模式变化时同步Tauri应用主题
       console.log(`📤 [ThemeProvider] 同步指定主题到Tauri: ${currentTheme}`);
       syncTauriAppTheme(currentTheme);
     }
+  }, [theme, syncTauriAppTheme]); // 🔧 移除 colorScheme 依赖，避免配色方案变化时触发 Tauri 同步
 
-    // 应用颜色主题
-    applyThemeColors(colorScheme, currentTheme === 'dark');
-  }, [theme, colorScheme, syncTauriAppTheme]);
+  // 🔧 单独处理配色方案变化，只更新 CSS 变量
+  useEffect(() => {
+    console.log(`🎨 [ThemeProvider] 配色方案effect触发，colorScheme: ${colorScheme}, resolvedTheme: ${resolvedTheme}`);
+    applyThemeColors(colorScheme, resolvedTheme === 'dark');
+  }, [colorScheme, resolvedTheme]); // 🔧 配色方案变化时只更新 CSS 变量，不触发 Tauri 同步
 
   const value = {
     theme,
