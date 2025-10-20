@@ -1175,12 +1175,13 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       // 特殊处理：连接节点
       if (nodeType === 'connection') {
         const connectionId = nodeData.metadata?.connectionId || '';
-        // ✅ 不使用闭包中的 connectionStatuses，而是从 nodeData 中获取连接状态
-        // 因为 nodeData 是从 tree.getItemData() 获取的，包含最新的状态
-        const isConnected = nodeData.isConnected ?? false;
+        // 🔧 使用 connectionStatuses 获取最新的连接状态，而不是 nodeData.isConnected
+        // 因为 nodeData.isConnected 可能没有及时更新
+        const status = connectionStatuses?.get(connectionId);
+        const isConnected = status === 'connected';
 
         // 添加调试日志
-        logger.debug(`[双击连接节点] connectionId: ${connectionId}, isConnected: ${isConnected}, nodeData.isConnected: ${nodeData.isConnected}`);
+        logger.debug(`[双击连接节点] connectionId: ${connectionId}, status: ${status}, isConnected: ${isConnected}, nodeData.isConnected: ${nodeData.isConnected}`);
 
         // 如果有错误状态，允许重新尝试连接
         if (hasError) {
@@ -1199,12 +1200,21 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         // 如果已连接且已加载子节点，只切换自己的展开/收起状态
         // 不递归收起子节点，保持子节点的展开状态
         if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
-          logger.debug(`双击已连接且已加载的连接节点，切换展开/收起: ${nodeType}`);
+          logger.debug(`双击已连接且已加载的连接节点，切换展开/收起: ${nodeType}, isExpanded: ${item.isExpanded()}, expandedNodeIds:`, expandedNodeIds);
           if (item.isExpanded()) {
             logger.debug(`收起连接节点（不影响子节点状态）: ${nodeId}`);
             item.collapse();
+            // 🔧 添加日志验证 collapse 是否生效
+            setTimeout(() => {
+              logger.debug(`[验证] collapse 后 isExpanded: ${item.isExpanded()}, expandedNodeIds:`, expandedNodeIds);
+            }, 100);
           } else {
+            logger.debug(`展开连接节点: ${nodeId}`);
             item.expand();
+            // 🔧 添加日志验证 expand 是否生效
+            setTimeout(() => {
+              logger.debug(`[验证] expand 后 isExpanded: ${item.isExpanded()}, expandedNodeIds:`, expandedNodeIds);
+            }, 100);
           }
           return;
         }
