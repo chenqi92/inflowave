@@ -50,20 +50,24 @@ interface TreeNodeRendererProps {
   onNodeDoubleClick?: (nodeData: TreeNodeData, item: ItemInstance<TreeNodeData>) => void;
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
   nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
+  selectedItems: string[];
 }
 
 // ✅ 使用 React.memo 优化性能，Headless Tree 支持 memo
 // 性能优化通过 Zustand 的细粒度订阅实现
 // forwardRef 用于支持 ContextMenuTrigger 的 asChild 属性
-export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendererProps>(({
+const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererProps>(({
   item,
   onNodeDoubleClick,
   isDatabaseOpened,
   nodeRefsMap,
+  selectedItems,
 }, forwardedRef) => {
   const data = item.getItemData();
-  const isSelected = item.isSelected();
   const level = item.getItemMeta().level;
+
+  // 🔧 修复：从 props 读取选中状态，确保 React 重新渲染
+  const isSelected = selectedItems.includes(data.id);
 
   // ✅ 细粒度订阅：只订阅当前节点的状态
   const connectionId = data.metadata?.connectionId || '';
@@ -122,28 +126,35 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
     }
   }, [nodeRefsMap, data.nodeType, data.metadata?.connectionId, data.name]);
 
-  // 开发环境下添加渲染日志（INFO 级别，用于诊断）
-  if (process.env.NODE_ENV === 'development') {
-    const renderInfo = {
-      nodeType: data.nodeType,
-      name: data.name,
-      id: data.id,
-      isSelected,
-      isOpen: item.isExpanded(),
-      connectionStatus,
-      connectionError,
-      databaseLoading,
-      databaseError,
-    };
-    log.info(`[TreeNodeRenderer] [RENDER] ${data.nodeType}: ${data.name}`, renderInfo);
-  }
-
   // 动态计算 isActivated 状态，避免 openedDatabasesList 变化时触发整个树重新渲染
   let isActivated = data.isActivated ?? false;
   if ((data.nodeType === 'database' || data.nodeType === 'system_database') && isDatabaseOpened) {
     const connectionId = data.metadata?.connectionId || '';
     const database = data.name;
     isActivated = isDatabaseOpened(connectionId, database);
+    log.debug(`[TreeNodeRenderer] 数据库节点 ${database} isActivated: ${isActivated}, connectionId: ${connectionId}`);
+  }
+
+  // 开发环境下添加渲染日志（INFO 级别，用于诊断）
+  if (process.env.NODE_ENV === 'development') {
+    // 🔧 对于数据库节点，isOpen 应该使用 isActivated（数据库是否被打开）
+    // 对于其他节点，isOpen 使用 item.isExpanded()（节点是否展开）
+    const isOpen = (data.nodeType === 'database' || data.nodeType === 'system_database')
+      ? isActivated
+      : item.isExpanded();
+
+    const renderInfo = {
+      nodeType: data.nodeType,
+      name: data.name,
+      id: data.id,
+      isSelected,
+      isOpen,
+      connectionStatus,
+      connectionError,
+      databaseLoading,
+      databaseError,
+    };
+    log.info(`[TreeNodeRenderer] [RENDER] ${data.nodeType}: ${data.name}`, renderInfo);
   }
 
   // ✅ 使用订阅的状态计算 isConnected
@@ -223,9 +234,12 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
   // 获取 Headless Tree 的 props
   const treeProps = item.getProps();
 
+  // 从 treeProps 中提取 onClick，单独处理
+  const { onClick: treeOnClick, ...restTreeProps } = treeProps;
+
   return (
     <div
-      {...treeProps}
+      {...restTreeProps}
       ref={(el) => {
         // 合并所有 ref：forwardedRef、nodeRefsMap、treeProps.ref
         if (typeof forwardedRef === 'function') {
@@ -251,8 +265,16 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
         nodeBackground
       )}
       onClick={(e) => {
-        // 先调用 treeProps 的 onClick（处理选中状态）
-        treeProps.onClick?.(e);
+        // 只选中节点，不展开/收起
+        log.debug(`[TreeNodeRenderer] 单击节点: ${data.name}, id: ${data.id}`);
+
+        // 🔧 强制单选：先取消所有选中，再选中当前节点
+        // 使用 item.getTree().setSelectedItems() 而不是 item.select()
+        // 这样可以确保只有一个节点被选中
+        const tree = item.getTree();
+        tree.setSelectedItems([data.id]);
+
+        log.debug(`[TreeNodeRenderer] 选中后 isSelected: ${item.isSelected()}`);
       }}
       onDoubleClick={(e) => {
         // 先调用 treeProps 的 onDoubleClick
@@ -333,6 +355,32 @@ export const TreeNodeRenderer = React.forwardRef<HTMLDivElement, TreeNodeRendere
       {isSystemNode && <SystemNodeIndicator />}
     </div>
   );
+});
+
+TreeNodeRendererInner.displayName = 'TreeNodeRendererInner';
+
+// 🔧 使用 React.memo 包装，自定义比较函数
+export const TreeNodeRenderer = React.memo(TreeNodeRendererInner, (prevProps, nextProps) => {
+  // 比较 selectedItems 数组
+  const prevSelected = prevProps.selectedItems.includes(prevProps.item.getItemData().id);
+  const nextSelected = nextProps.selectedItems.includes(nextProps.item.getItemData().id);
+
+  // 如果选中状态改变，需要重新渲染
+  if (prevSelected !== nextSelected) {
+    return false;
+  }
+
+  // 比较 item 的数据
+  const prevData = prevProps.item.getItemData();
+  const nextData = nextProps.item.getItemData();
+
+  // 如果节点 ID 不同，需要重新渲染
+  if (prevData.id !== nextData.id) {
+    return false;
+  }
+
+  // 其他情况不重新渲染
+  return true;
 });
 
 TreeNodeRenderer.displayName = 'TreeNodeRenderer';

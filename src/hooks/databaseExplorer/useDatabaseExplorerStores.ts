@@ -63,7 +63,8 @@ export const useDatabaseExplorerStores = () => {
     const isDatabaseOpened = useCallback((connectionId: string, database: string) => {
         const key = `${connectionId}/${database}`;
         const openedDatabases = useOpenedDatabasesStore.getState().openedDatabases;
-        return openedDatabases.has(key);
+        const result = openedDatabases.has(key);
+        return result;
     }, []); // Empty deps - function reference never changes
 
     // ============================================================================

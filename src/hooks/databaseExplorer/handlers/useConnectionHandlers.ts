@@ -70,8 +70,9 @@ export const useConnectionHandlers = ({
         console.log(`🔗 建立连接: ${connection.name}`);
         await connectToDatabase(connectionId);
 
-        // 2. 清理之前的数据库状态
-        closeAllDatabasesForConnection(connectionId);
+        // 2. 清理缓存（但不关闭已打开的数据库）
+        // 🔧 修复：重新连接时不应该关闭已打开的数据库
+        // closeAllDatabasesForConnection 应该只在断开连接时调用
         clearDatabasesCache(connectionId);
 
         // 3. 连接成功，显示成功消息

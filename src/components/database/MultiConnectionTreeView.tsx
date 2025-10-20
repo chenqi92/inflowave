@@ -93,7 +93,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 }) => {
   // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
   const renderCountRef = useRef(0);
-  if (process.env.NODE_ENV === 'development') {
+  // eslint-disable-next-line no-undef
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
     renderCountRef.current++;
     logger.render(`MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
   }
@@ -181,7 +182,20 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     },
 
     setSelectedItems: (items) => {
-      setSelectedItems(items);
+      // 🔧 强制单选：只保留最后一个选中的节点
+      // items 可以是 string[] 或 (old: string[]) => string[]
+      if (typeof items === 'function') {
+        setSelectedItems((old) => {
+          const newItems = items(old);
+          const singleItem = newItems.length > 0 ? [newItems[newItems.length - 1]] : [];
+          logger.debug(`[MultiConnectionTreeView] setSelectedItems (function): ${newItems.join(', ')} -> ${singleItem.join(', ')}`);
+          return singleItem;
+        });
+      } else {
+        const singleItem = items.length > 0 ? [items[items.length - 1]] : [];
+        logger.debug(`[MultiConnectionTreeView] setSelectedItems: ${items.join(', ')} -> ${singleItem.join(', ')}`);
+        setSelectedItems(singleItem);
+      }
     },
 
     setFocusedItem: (item) => {
@@ -222,8 +236,11 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
   // 递归清除节点及其所有子节点的缓存
   const clearNodeAndChildrenCache = useCallback((node: TreeNodeData, cacheSet: Set<string>) => {
+    logger.debug(`[clearNodeAndChildrenCache] 清除节点缓存: ${node.id}, 当前缓存大小: ${cacheSet.size}`);
     cacheSet.delete(node.id);
+    logger.debug(`[clearNodeAndChildrenCache] 清除后缓存大小: ${cacheSet.size}`);
     if (node.children && Array.isArray(node.children)) {
+      logger.debug(`[clearNodeAndChildrenCache] 递归清除 ${node.children.length} 个子节点`);
       node.children.forEach(child => clearNodeAndChildrenCache(child, cacheSet));
     }
   }, []);
@@ -685,6 +702,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   // 使用 ref 跟踪上一次的 openedDatabasesList，用于检测数据库关闭
   const prevOpenedDatabasesListRef = useRef<string[]>([]);
 
+  // 使用 ref 跟踪上一次的 connectionStatuses，用于检测连接断开
+  const prevConnectionStatusesRef = useRef<Map<string, 'connecting' | 'connected' | 'disconnected'>>(new Map());
+
   // 辅助函数：在树中查找数据库节点（通过 connectionId 和 database 名称）
   const findDatabaseNodeInTree = useCallback((
     nodes: TreeNodeData[],
@@ -787,10 +807,28 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
                   logger.debug(`[关闭数据库] 找到节点: ${n.id}, 清除子节点`);
 
                   // 🔧 清除缓存（使用 ref，避免触发渲染）
-                  if (n.children) {
-                    clearNodeAndChildrenCache(n, loadedNodesRef.current);
-                    logger.debug(`[关闭数据库] 已清除节点缓存: ${n.id}`);
-                  }
+                  // 清除节点本身和所有子节点的缓存
+                  clearNodeAndChildrenCache(n, loadedNodesRef.current);
+                  logger.debug(`[关闭数据库] 已清除节点缓存: ${n.id}`);
+
+                  // 🔧 移除该节点及其所有子节点的展开状态
+                  setExpandedNodeIds(prev => {
+                    const nodesToRemove = new Set<string>();
+
+                    // 收集该节点及其所有子节点的 ID
+                    const collectNodeIds = (node: TreeNodeData) => {
+                      nodesToRemove.add(node.id);
+                      if (node.children && Array.isArray(node.children)) {
+                        node.children.forEach(child => collectNodeIds(child));
+                      }
+                    };
+                    collectNodeIds(n);
+
+                    logger.debug(`[关闭数据库] 移除 ${nodesToRemove.size} 个节点的展开状态:`, Array.from(nodesToRemove));
+
+                    // 过滤掉这些节点
+                    return prev.filter(nodeId => !nodesToRemove.has(nodeId));
+                  });
 
                   dataChanged = true;
                   // 返回清除了子节点的新节点
@@ -885,12 +923,15 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           // 只展开已打开的数据库节点
           if (isActivated && !item.isExpanded()) {
             logger.debug(`[打开数据库] 自动展开节点: ${nodeId}`);
-            // 1. 展开节点（立即执行）
-            item.expand();
-            // 2. 如果子节点未加载，触发加载
+            // 🔧 修复：先加载子节点，然后再展开
+            // 如果子节点未加载，先触发加载（加载完成后会自动展开）
             if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
               logger.debug(`[打开数据库] 触发子节点加载: ${nodeId}`);
               handleToggleRef.current(nodeId);
+            } else {
+              // 如果子节点已加载，直接展开
+              logger.debug(`[打开数据库] 子节点已加载，直接展开: ${nodeId}`);
+              item.expand();
             }
           }
         }
@@ -902,6 +943,106 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // 更新 ref
     prevOpenedDatabasesListRef.current = currentList;
   }, [openedDatabasesList, isDatabaseOpened, clearNodeAndChildrenCache, findDatabaseNodeInTree]);
+
+  // 监听连接状态变化，当连接断开时收起节点
+  useEffect(() => {
+    if (!connectionStatuses) return;
+
+    const prevStatuses = prevConnectionStatusesRef.current;
+
+    // 检查是否有连接从 connected 变为 disconnected
+    connectionStatuses.forEach((status, connectionId) => {
+      const prevStatus = prevStatuses.get(connectionId);
+
+      // 如果连接从 connected 变为 disconnected，收起节点并清除子节点
+      if (prevStatus === 'connected' && status === 'disconnected') {
+        logger.debug(`[连接断开] 检测到连接断开: ${connectionId}`);
+
+        // 🔧 修复：断开连接时关闭该连接的所有数据库
+        useOpenedDatabasesStore.getState().closeAllDatabasesForConnection(connectionId);
+
+        const connectionNodeId = `connection-${connectionId}`;
+        const item = tree.getItemInstance(connectionNodeId);
+
+        if (item) {
+          // 1. 收起连接节点
+          if (item.isExpanded()) {
+            logger.debug(`[连接断开] 收起连接节点: ${connectionNodeId}`);
+            item.collapse();
+          }
+
+          // 2. 清除所有子节点的展开状态
+          setExpandedNodeIds(prev => {
+            const filtered = prev.filter(nodeId => {
+              // 保留 root 节点
+              if (nodeId === 'root') return true;
+              // 保留连接节点本身
+              if (nodeId === connectionNodeId) return false;
+
+              // 检查是否是该连接的子节点
+              const nodeItem = tree.getItemInstance(nodeId);
+              if (!nodeItem) return true;
+
+              const nodeData = nodeItem.getItemData();
+              // 如果是该连接的子节点，移除展开状态
+              if (nodeData.metadata?.connectionId === connectionId) {
+                return false;
+              }
+
+              return true;
+            });
+
+            logger.debug(`[连接断开] 清除展开状态，从 ${prev.length} 个节点减少到 ${filtered.length} 个节点`);
+            return filtered;
+          });
+
+          // 3. 清除该连接的所有子节点缓存
+          const nodesToClear: string[] = [];
+          loadedNodesRef.current.forEach(nodeId => {
+            const nodeItem = tree.getItemInstance(nodeId);
+            if (nodeItem) {
+              const nodeData = nodeItem.getItemData();
+              if (nodeData.metadata?.connectionId === connectionId) {
+                nodesToClear.push(nodeId);
+              }
+            }
+          });
+
+          nodesToClear.forEach(nodeId => {
+            loadedNodesRef.current.delete(nodeId);
+          });
+
+          logger.debug(`[连接断开] 清除 ${nodesToClear.length} 个节点的缓存`);
+
+          // 4. 清除该连接节点的子节点数据
+          setTreeData(prevData => {
+            const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
+              return nodes.map(n => {
+                if (n.id === connectionNodeId) {
+                  logger.debug(`[连接断开] 清除连接节点的子节点: ${connectionNodeId}`);
+                  return { ...n, children: undefined };
+                }
+
+                if (n.children) {
+                  const updatedChildren = updateNode(n.children);
+                  if (updatedChildren !== n.children) {
+                    return { ...n, children: updatedChildren };
+                  }
+                }
+
+                return n;
+              });
+            };
+
+            return updateNode(prevData);
+          });
+        }
+      }
+    });
+
+    // 更新 ref
+    prevConnectionStatusesRef.current = new Map(connectionStatuses);
+  }, [connectionStatuses, setExpandedNodeIds]);
 
   // 搜索过滤
   // 优化：使用 ref 缓存上次的 treeData，避免因引用变化导致不必要的重新计算
@@ -1069,25 +1210,14 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         }
       }
 
-      // 其他容器节点：先检查是否已加载子节点
-      if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
-        logger.debug(`双击已加载的容器节点，切换展开/收起: ${nodeType}`);
-        if (item.isExpanded()) {
-          // 收起时递归收起所有子孙节点
-          logger.debug(`递归收起容器节点及其所有子孙节点: ${nodeId}`);
-          collapseNodeRecursively(nodeId);
-        } else {
-          item.expand();
-        }
-        return;
-      }
-
-      // 特殊处理：数据库节点
+      // 🔧 特殊处理：数据库节点（优先处理，避免被通用逻辑拦截）
       if (nodeType === 'database' || nodeType === 'system_database') {
         // 使用 isDatabaseOpened 函数检查数据库是否已打开
         const connectionId = nodeData.metadata?.connectionId || '';
         const database = nodeData.name;
         const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, database) : false;
+
+        logger.debug(`[双击数据库] nodeId: ${nodeId}, isActivated: ${isActivated}`);
 
         // 如果数据库未打开，双击应该打开数据库
         if (!isActivated) {
@@ -1103,9 +1233,35 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         // 如果数据库已打开，双击只切换展开/收起
         logger.debug(`双击已打开的数据库节点，切换展开/收起: ${nodeType}`);
         if (item.isExpanded()) {
-          // 收起时递归收起所有子孙节点
-          logger.debug(`递归收起数据库节点及其所有子孙节点: ${nodeId}`);
-          collapseNodeRecursively(nodeId);
+          // 只收起当前节点，不影响子节点的展开状态
+          logger.debug(`收起数据库节点（不影响子节点状态）: ${nodeId}`);
+          // 🔧 手动更新 expandedNodeIds，因为 item.collapse() 可能不会触发状态更新
+          setExpandedNodeIds(prev => prev.filter(id => id !== nodeId));
+        } else {
+          // 如果子节点未加载，先加载再展开
+          if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
+            logger.debug(`[打开数据库] 子节点未加载，触发加载: ${nodeId}`);
+            await handleToggle(item.getId());
+          } else {
+            logger.debug(`[打开数据库] 子节点已加载，直接展开: ${nodeId}`);
+            // 🔧 手动更新 expandedNodeIds，确保节点展开
+            setExpandedNodeIds(prev => prev.includes(nodeId) ? prev : [...prev, nodeId]);
+          }
+        }
+        return;
+      }
+
+      // 其他容器节点：先检查是否已加载子节点
+      const hasChildren = nodeData.children !== undefined;
+      const inCache = loadedNodesRef.current.has(nodeId);
+      logger.debug(`[双击检查] nodeId: ${nodeId}, hasChildren: ${hasChildren}, inCache: ${inCache}, children:`, nodeData.children);
+
+      if (hasChildren || inCache) {
+        logger.debug(`双击已加载的容器节点，切换展开/收起: ${nodeType}`);
+        if (item.isExpanded()) {
+          // 只收起当前节点，不影响子节点的展开状态
+          logger.debug(`收起容器节点（不影响子节点状态）: ${nodeId}`);
+          item.collapse();
         } else {
           item.expand();
         }
@@ -1168,16 +1324,40 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   // 因为 tree.rebuildTree() 在 useEffect 中调用，useMemo 会在 useEffect 之前计算，导致拿到旧值
   const items = tree.getItems();
   logger.debug(`[MultiConnectionTreeView] tree.getItems() 返回 ${items.length} 个节点, expandedNodeIds:`, expandedNodeIds, 'treeData.length:', treeData.length);
+  logger.debug(`[MultiConnectionTreeView] tree.getState().selectedItems:`, tree.getState().selectedItems);
 
   // 渲染单个节点的函数
-  const renderItem = useCallback((index: number) => {
+  // 🔧 修复 ESLint 错误：不使用 useCallback，因为 items 在每次渲染时都会变化
+  // Virtuoso 会自动优化渲染，不需要手动 memoization
+  const renderItem = (index: number) => {
     const item = items[index];
     if (!item) {
       logger.warn(`[MultiConnectionTreeView] 无法获取索引 ${index} 的节点`);
       return null;
     }
 
-    const nodeData = item.getItemData();
+    let nodeData;
+    try {
+      nodeData = item.getItemData();
+    } catch (error) {
+      logger.error(`[renderItem] 无法获取节点数据，索引: ${index}`, error);
+      return null;
+    }
+    const isSelected = selectedItems.includes(nodeData.id);
+
+    // 🔧 对于数据库节点，还需要包含打开状态
+    let isActivated = false;
+    if ((nodeData.nodeType === 'database' || nodeData.nodeType === 'system_database') && isDatabaseOpened) {
+      const connectionId = nodeData.metadata?.connectionId || '';
+      const database = nodeData.name;
+      isActivated = isDatabaseOpened(connectionId, database);
+    }
+
+    // 🔧 检查节点是否有子节点（用于展开/收起按钮显示）
+    const hasChildren = nodeData.children !== undefined && nodeData.children.length > 0;
+
+    // 🔧 使用节点 ID + 选中状态 + 激活状态 + 子节点状态作为 key，确保状态改变时重新渲染
+    const itemKey = `${nodeData.id}-${isSelected}-${isActivated}-${hasChildren}`;
 
     const nodeRenderer = (
       <TreeNodeRenderer
@@ -1185,6 +1365,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         onNodeDoubleClick={handleNodeDoubleClick}
         isDatabaseOpened={isDatabaseOpened}
         nodeRefsMap={nodeRefsMap}
+        selectedItems={selectedItems}
       />
     );
 
@@ -1192,6 +1373,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     if (onContextMenuAction) {
       return (
         <UnifiedContextMenu
+          key={itemKey}
           node={nodeData}
           onAction={onContextMenuAction}
           isDatabaseOpened={isDatabaseOpened}
@@ -1204,11 +1386,11 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
     // 否则使用旧的 onContextMenu 方式（向后兼容）
     return (
-      <div onContextMenu={(e) => handleContextMenu(item, e)}>
+      <div key={itemKey} onContextMenu={(e) => handleContextMenu(item, e)}>
         {nodeRenderer}
       </div>
     );
-  }, [items, handleNodeDoubleClick, isDatabaseOpened, nodeRefsMap, onContextMenuAction, isFavorite, handleContextMenu]);
+  };
 
   logger.debug(`[MultiConnectionTreeView] 渲染树，节点数: ${items.length}, treeData: ${treeData.length}`);
 
@@ -1219,6 +1401,20 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         totalCount={items.length}
         itemContent={renderItem}
         overscan={10}
+        computeItemKey={(index) => {
+          const item = items[index];
+          if (!item) return `item-${index}`;
+          try {
+            const data = item.getItemData();
+            // 🔧 使用节点 ID 作为 key，不包含选中状态
+            // React.memo 会处理选中状态的变化，避免不必要的重新创建
+            return data.id;
+          } catch (error) {
+            // 如果节点不存在（例如已被删除），使用索引作为 key
+            logger.warn(`[computeItemKey] 无法获取节点数据，使用索引作为 key: ${index}`, error);
+            return `item-${index}`;
+          }
+        }}
       />
     </div>
   );
