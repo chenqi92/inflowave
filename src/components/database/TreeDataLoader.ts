@@ -12,10 +12,12 @@ export class TreeDataLoader {
   private dataMap: Map<string, TreeNodeData>;
   private childrenMap: Map<string, string[]>;
   private rootChildrenIds: string[] = []; // 存储顶层节点 ID
+  private filterFn?: (node: TreeNodeData) => boolean; // 过滤函数
 
-  constructor(treeData: TreeNodeData[]) {
+  constructor(treeData: TreeNodeData[], filterFn?: (node: TreeNodeData) => boolean) {
     this.dataMap = new Map();
     this.childrenMap = new Map();
+    this.filterFn = filterFn;
     this.buildDataMaps(treeData);
   }
 
@@ -84,15 +86,29 @@ export class TreeDataLoader {
       return [];
     }
 
+    // 如果有过滤函数，应用过滤
+    if (this.filterFn) {
+      const filteredChildren = children.filter(childId => {
+        const childNode = this.dataMap.get(childId);
+        if (!childNode) return true; // 如果节点不存在，保留（避免错误）
+        return this.filterFn!(childNode);
+      });
+      return filteredChildren;
+    }
+
     return children;
   };
 
   /**
    * 更新树数据
    * @param treeData 新的树数据
+   * @param filterFn 可选的过滤函数
    */
-  updateData(treeData: TreeNodeData[]) {
+  updateData(treeData: TreeNodeData[], filterFn?: (node: TreeNodeData) => boolean) {
     logger.debug(`[TreeDataLoader] 更新树数据，节点数: ${treeData.length}`);
+    if (filterFn !== undefined) {
+      this.filterFn = filterFn;
+    }
     this.dataMap.clear();
     this.childrenMap.clear();
     this.buildDataMaps(treeData);

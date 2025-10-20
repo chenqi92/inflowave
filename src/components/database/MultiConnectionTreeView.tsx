@@ -209,20 +209,21 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     ],
   });
 
-  // 更新 TreeDataLoader 当 treeData 变化时，并通知 tree 重新构建
+  // 更新 TreeDataLoader 当 treeData 或 useVersionAwareFilter 变化时，并通知 tree 重新构建
   useEffect(() => {
     if (!dataLoaderRef.current) {
-      dataLoaderRef.current = new TreeDataLoader(treeData);
+      dataLoaderRef.current = new TreeDataLoader(treeData, filterSystemNodes);
       logger.debug('[MultiConnectionTreeView] TreeDataLoader 初始化完成');
     } else {
-      dataLoaderRef.current.updateData(treeData);
+      dataLoaderRef.current.updateData(treeData, filterSystemNodes);
       logger.debug('[MultiConnectionTreeView] TreeDataLoader 已更新，调用 tree.rebuildTree()');
       logger.debug('[MultiConnectionTreeView] 当前 expandedNodeIds:', expandedNodeIds);
       logger.debug('[MultiConnectionTreeView] tree.getState().expandedItems:', tree.getState?.()?.expandedItems);
       tree.rebuildTree();
       logger.debug('[MultiConnectionTreeView] rebuildTree 后 tree.getItems().length:', tree.getItems().length);
     }
-  }, [treeData, tree, expandedNodeIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [treeData, tree, expandedNodeIds, useVersionAwareFilter]); // 添加 useVersionAwareFilter 依赖
 
   // 跟踪需要自动展开的数据库节点
   const nodesToAutoExpandRef = useRef<Set<string>>(new Set());
@@ -473,9 +474,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       }
 
       // 转换子节点格式
-      const convertedChildren = children.map(child =>
-        convertToArboristFormat(child, connection, connectionId, isDatabaseOpened)
-      );
+      // 注意：不在这里过滤，过滤在 TreeDataLoader.getChildren 中进行
+      const convertedChildren = children
+        .map(child => convertToArboristFormat(child, connection, connectionId, isDatabaseOpened));
 
       // 一次性更新节点数据，避免多次 setTreeData 调用
       // 优化：只为真正变化的节点创建新对象，其他节点保持原引用
@@ -646,9 +647,44 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   };
 
   // 过滤系统节点
-  const filterSystemNodes = (node: TreeNodeData, connection: any): boolean => {
-    // 实现系统节点过滤逻辑
-    return true; // 暂时返回 true，保留所有节点
+  const filterSystemNodes = (node: TreeNodeData): boolean => {
+    // 如果不启用过滤，保留所有节点
+    if (!useVersionAwareFilter) {
+      return true;
+    }
+
+    // 检查节点类型是否为系统节点
+    if (node.nodeType === 'system_database' ||
+        node.nodeType === 'system_bucket' ||
+        node.nodeType === 'system_info' ||
+        node.nodeType === 'version_info' ||
+        node.nodeType === 'schema_template') {
+      return false; // 过滤掉系统节点
+    }
+
+    // 检查节点名称是否以 _ 开头（系统节点命名规则）
+    // InfluxDB 1.x: _internal 数据库
+    // InfluxDB 2.x/3.x: _monitoring, _tasks 等系统 bucket
+    if (node.name.startsWith('_')) {
+      return false; // 过滤掉系统节点
+    }
+
+    // InfluxDB 1.x: autogen 是默认的保留策略，视为系统节点
+    if (node.nodeType === 'retention_policy' && node.name === 'autogen') {
+      return false; // 过滤掉 autogen 保留策略
+    }
+
+    // IoTDB: 过滤系统相关的节点
+    if (node.nodeType === 'function' ||
+        node.nodeType === 'trigger' ||
+        node.name === 'System Information' ||
+        node.name === 'Version Information' ||
+        node.name === 'Schema Templates') {
+      return false; // 过滤掉 IoTDB 系统节点
+    }
+
+    // 保留其他节点
+    return true;
   };
 
   // 🔧 性能优化：监听 connections 变化，自动更新树
