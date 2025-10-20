@@ -45,29 +45,29 @@
 ### 🔍 如何选择适合的版本
 
 #### Windows 用户
-- **MSI 安装包 (推荐)**: 📥 **[InfloWave-0.7.6-x86_64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/InfloWave-0.7.6-x86_64.msi)**
+- **MSI 安装包 (推荐)**: 📥 **[InfloWave-0.7.3-x86_64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/InfloWave-0.7.3-x86_64.msi)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 企业级安装包，支持 GPO 部署
   - ✅ MSI 格式，系统信任度高
 
-- **EXE 安装包**: 📥 **[InfloWave_0.7.6_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/InfloWave_0.7.6_x64-setup.exe)**
+- **EXE 安装包**: 📥 **[InfloWave_0.7.3_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/InfloWave_0.7.3_x64-setup.exe)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 用户友好的安装向导
   - ✅ 支持中英文界面
 
-- **32位版本**: 📥 **[InfloWave-0.7.6-i686.msi](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/InfloWave-0.7.6-i686.msi)**
+- **32位版本**: 📥 **[InfloWave-0.7.3-i686.msi](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/InfloWave-0.7.3-i686.msi)**
   - ✅ 适用于较老的32位 Windows 系统
   - ⚠️ 仅在无法运行64位版本时使用
 
 **便携版 (免安装)**
 
-- **64位便携版**: 📥 **[InfloWave-x64-portable-0.7.6.exe](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/InfloWave-x64-portable-0.7.6.exe)**
+- **64位便携版**: 📥 **[InfloWave-x64-portable-0.7.3.exe](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/InfloWave-x64-portable-0.7.3.exe)**
   - ✅ 绿色软件，无需安装
   - ✅ 不写入注册表，不留痕迹
   - ✅ 便于携带，可放在U盘中
   - ✅ 适用于 Windows 10/11 (64位)
 
-- **32位便携版**: 📥 **[InfloWave-x86-portable-0.7.6.exe](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/InfloWave-x86-portable-0.7.6.exe)**
+- **32位便携版**: 📥 **[InfloWave-x86-portable-0.7.3.exe](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/InfloWave-x86-portable-0.7.3.exe)**
   - ✅ 绿色软件，无需安装
   - ✅ 兼容性更好，支持老旧系统
   - ✅ 适用于 Windows 7/8/10/11 (32位/64位)
@@ -79,14 +79,14 @@
 - 💻 查看「处理器」或「芯片」信息
 
 **Apple Silicon Mac (M1/M2/M3/M4 芯片)**
-- 📥 **[InfloWave_0.7.6_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/InfloWave_0.7.6_aarch64.dmg)**
+- 📥 **[InfloWave_0.7.3_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/InfloWave_0.7.3_aarch64.dmg)**
   - ✅ 2020年11月后发布的 Mac
   - ✅ 性能最优，原生支持
   - ✅ 更低的电量消耗
   - ⚠️ **无法在 Intel Mac 上运行**
 
 **Intel Mac (Intel 处理器)**
-- 📥 **[InfloWave_0.7.6_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/InfloWave_0.7.6_x64.dmg)**
+- 📥 **[InfloWave_0.7.3_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/InfloWave_0.7.3_x64.dmg)**
   - ✅ 2020年前发布的 Mac
   - ✅ 兼容 macOS 10.15 或更高版本
   - ⚠️ 不支持 Apple Silicon 芯片
@@ -97,24 +97,24 @@
 - 运行命令: `cat /etc/os-release` 或 `lsb_release -a`
 
 **Debian/Ubuntu 系列 (推荐)**
-- 📥 **[inflowave_0.7.6_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/inflowave_0.7.6_amd64.deb)**
+- 📥 **[inflowave_0.7.3_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/inflowave_0.7.3_amd64.deb)**
   - ✅ Ubuntu 18.04+, Debian 10+
   - ✅ 系统集成度高，支持自动更新
-  - 📋 安装命令: `sudo dpkg -i inflowave_0.7.6_amd64.deb`
+  - 📋 安装命令: `sudo dpkg -i inflowave_0.7.3_amd64.deb`
   - 🔧 依赖修复: `sudo apt-get install -f`
 
 **通用 Linux (万能选择)**
-- 📥 **[inflowave_0.7.6_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/inflowave_0.7.6_amd64.AppImage)**
+- 📥 **[inflowave_0.7.3_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/inflowave_0.7.3_amd64.AppImage)**
   - ✅ 适用于大部分 x64 Linux 发行版
   - ✅ 免安装，下载后直接运行
   - ✅ 便携版，不影响系统
-  - 📋 使用方法: `chmod +x inflowave_0.7.6_amd64.AppImage && ./inflowave_0.7.6_amd64.AppImage`
+  - 📋 使用方法: `chmod +x inflowave_0.7.3_amd64.AppImage && ./inflowave_0.7.3_amd64.AppImage`
 
 **RPM 系列 (CentOS/RHEL/Fedora)**
-- 📥 **[inflowave-0.7.6-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.7.6/inflowave-0.7.6-1.x86_64.rpm)**
+- 📥 **[inflowave-0.7.3-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.7.3/inflowave-0.7.3-1.x86_64.rpm)**
   - ✅ CentOS 7+, RHEL 7+, Fedora 30+
-  - 📋 安装命令: `sudo rpm -i inflowave-0.7.6-1.x86_64.rpm`
-  - 📋 或使用: `sudo dnf install inflowave-0.7.6-1.x86_64.rpm`
+  - 📋 安装命令: `sudo rpm -i inflowave-0.7.3-1.x86_64.rpm`
+  - 📋 或使用: `sudo dnf install inflowave-0.7.3-1.x86_64.rpm`
 
 ### 📝 详细安装步骤
 

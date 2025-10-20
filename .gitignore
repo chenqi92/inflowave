@@ -123,4 +123,3 @@ pnpm-lock.yaml
 
 # Database testing tools (not for version control)
 /database-tools/
-/docs/
