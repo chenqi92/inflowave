@@ -13,8 +13,11 @@ incremental = true
 
 [target.x86_64-pc-windows-msvc]
 # Windows x64 优化
+# 使用 x86-64-v2 而不是 native 以确保更好的兼容性
+# x86-64-v2 支持 2009 年后的大多数 CPU (包含 SSE4.2, POPCNT 等指令)
+# 避免使用 native 导致在不支持高级指令集的 CPU 上出现 EXCEPTION_ILLEGAL_INSTRUCTION
 rustflags = [
-    "-C", "target-cpu=native",
+    "-C", "target-cpu=x86-64-v2",
     "-C", "opt-level=3",
     "-C", "codegen-units=1",
     "-C", "panic=abort"
