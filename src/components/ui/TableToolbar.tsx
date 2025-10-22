@@ -15,6 +15,8 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
     DropdownMenuSeparator,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
     Tooltip,
     TooltipContent,
     TooltipTrigger,
@@ -45,7 +47,8 @@ export interface TableToolbarProps {
     onAdvancedExport?: () => void;
     // 复制功能相关
     showCopy?: boolean;
-    onCopy?: (format: CopyFormat) => void;
+    selectedCopyFormat?: CopyFormat;
+    onCopyFormatChange?: (format: CopyFormat) => void;
     className?: string;
     children?: React.ReactNode; // 用于添加额外的工具栏内容
     // 列选择相关属性
@@ -66,7 +69,8 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     onQuickExportCSV,
     onAdvancedExport,
     showCopy = false,
-    onCopy,
+    selectedCopyFormat = 'text',
+    onCopyFormatChange,
     className,
     children,
     showColumnSelector = false,
@@ -75,6 +79,14 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     onColumnSelectorClick,
     columnSelectorContent
 }) => {
+    // 复制格式名称映射
+    const formatNames: Record<CopyFormat, string> = {
+        text: '文本',
+        insert: 'INSERT',
+        markdown: 'Markdown',
+        json: 'JSON',
+        csv: 'CSV'
+    };
     return (
         <Card className={`flex-shrink-0 border-0 border-b rounded-none bg-background ${className || ''}`}>
             <CardHeader className="py-2 pb-2">
@@ -105,42 +117,47 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                             </Tooltip>
                         )}
 
-                        {/* 复制按钮 */}
-                        {showCopy && onCopy && (
+                        {/* 复制格式选择器 */}
+                        {showCopy && onCopyFormatChange && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        disabled={rowCount === 0}
-                                        className="h-8 px-2"
+                                        className="h-8 px-3"
                                     >
-                                        <Copy className="w-3 h-3 mr-1" />
-                                        <ChevronDown className="w-3 h-3" />
+                                        <Copy className="w-3 h-3 mr-1.5" />
+                                        <span className="text-xs">{formatNames[selectedCopyFormat]}</span>
+                                        <ChevronDown className="w-3 h-3 ml-1.5" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => onCopy('text')}>
-                                        <FileText className="w-4 h-4 mr-2" />
-                                        复制为文本
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onCopy('insert')}>
-                                        <Database className="w-4 h-4 mr-2" />
-                                        复制为 INSERT 语句
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onCopy('markdown')}>
-                                        <FileText className="w-4 h-4 mr-2" />
-                                        复制为 Markdown
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => onCopy('json')}>
-                                        <Code className="w-4 h-4 mr-2" />
-                                        复制为 JSON
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => onCopy('csv')}>
-                                        <FileSpreadsheet className="w-4 h-4 mr-2" />
-                                        复制为 CSV
-                                    </DropdownMenuItem>
+                                    <DropdownMenuRadioGroup
+                                        value={selectedCopyFormat}
+                                        onValueChange={(value) => onCopyFormatChange(value as CopyFormat)}
+                                    >
+                                        <DropdownMenuRadioItem value="text">
+                                            <FileText className="w-4 h-4 mr-2" />
+                                            文本
+                                        </DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="insert">
+                                            <Database className="w-4 h-4 mr-2" />
+                                            INSERT 语句
+                                        </DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="markdown">
+                                            <FileText className="w-4 h-4 mr-2" />
+                                            Markdown
+                                        </DropdownMenuRadioItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuRadioItem value="json">
+                                            <Code className="w-4 h-4 mr-2" />
+                                            JSON
+                                        </DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="csv">
+                                            <FileSpreadsheet className="w-4 h-4 mr-2" />
+                                            CSV
+                                        </DropdownMenuRadioItem>
+                                    </DropdownMenuRadioGroup>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         )}

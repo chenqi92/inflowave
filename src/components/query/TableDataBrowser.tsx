@@ -479,6 +479,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [fullFieldPaths, setFullFieldPaths] = useState<string[]>([]);
   const [connectionConfig, setConnectionConfig] = useState<any>(null);
+  const [copyFormat, setCopyFormat] = useState<CopyFormat>('text'); // 复制格式状态
 
   // 获取连接配置
   const { connections } = useConnectionStore();
@@ -2246,11 +2247,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     [data]
   );
 
-  // 复制所有数据（用于TableToolbar）
-  const handleCopyAllData = useCallback(
-    async (format: CopyFormat) => {
-      if (data.length === 0) {
-        toast.error('没有可复制的数据');
+  // 根据选中的行和格式复制数据（用于键盘快捷键）
+  const handleCopyWithFormat = useCallback(
+    async (format: CopyFormat, rowsToCopy: DataRow[]) => {
+      if (rowsToCopy.length === 0) {
         return;
       }
 
@@ -2263,16 +2263,16 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       try {
         switch (format) {
           case 'text':
-            // 文本格式：列之间用空格分隔
-            textToCopy = visibleColumns.join(' ') + '\n';
-            textToCopy += data.map(row =>
-              visibleColumns.map(col => row[col] || '').join(' ')
+            // 文本格式：列之间用制表符分隔
+            textToCopy = visibleColumns.join('\t') + '\n';
+            textToCopy += rowsToCopy.map(row =>
+              visibleColumns.map(col => row[col] || '').join('\t')
             ).join('\n');
             break;
 
           case 'insert':
             // INSERT语句格式
-            const insertStatements = data.map(row => {
+            const insertStatements = rowsToCopy.map(row => {
               const values = visibleColumns.map(col => {
                 const val = row[col];
                 if (val === null || val === undefined) return 'NULL';
@@ -2288,14 +2288,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             // Markdown表格格式
             textToCopy = '| ' + visibleColumns.join(' | ') + ' |\n';
             textToCopy += '| ' + visibleColumns.map(() => '---').join(' | ') + ' |\n';
-            textToCopy += data.map(row =>
+            textToCopy += rowsToCopy.map(row =>
               '| ' + visibleColumns.map(col => row[col] || '').join(' | ') + ' |'
             ).join('\n');
             break;
 
           case 'json':
             // JSON格式
-            const jsonData = data.map(row => {
+            const jsonData = rowsToCopy.map(row => {
               const obj: Record<string, any> = {};
               visibleColumns.forEach(col => {
                 obj[col] = row[col];
@@ -2316,7 +2316,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               return str;
             };
             textToCopy = visibleColumns.map(escapeCsvValue).join(',') + '\n';
-            textToCopy += data.map(row =>
+            textToCopy += rowsToCopy.map(row =>
               visibleColumns.map(col => escapeCsvValue(row[col])).join(',')
             ).join('\n');
             break;
@@ -2338,15 +2338,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         };
 
         toast.success(`已复制为 ${formatNames[format]}`, {
-          description: `已复制 ${data.length} 行数据`
+          description: `已复制 ${rowsToCopy.length} 行数据`
         });
       } catch (error) {
         logger.error('复制数据失败:', error);
         toast.error('复制数据失败');
       }
     },
-    [data, columnOrder, selectedColumns, tableName]
+    [columnOrder, selectedColumns, tableName]
   );
+
+
 
   // 处理排序
   const handleSort = (column: string) => {
@@ -2521,7 +2523,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         showRefresh={true}
         onRefresh={loadData}
         showCopy={true}
-        onCopy={handleCopyAllData}
+        selectedCopyFormat={copyFormat}
+        onCopyFormatChange={setCopyFormat}
         onQuickExportCSV={quickExportCSV}
         onAdvancedExport={() => setShowExportDialog(true)}
         showColumnSelector={true}
@@ -2673,6 +2676,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           tableName={tableName}
           dataSourceType={dataSourceType}
           database={database}
+          copyFormat={copyFormat}
           // 传递外部列管理状态
           selectedColumns={selectedColumns}
           columnOrder={columnOrder}

@@ -109,6 +109,9 @@ export interface PaginationConfig {
 // 数据源类型
 export type DataSourceType = 'influxdb1' | 'influxdb2' | 'influxdb3' | 'iotdb' | 'mysql' | 'postgresql' | 'generic';
 
+// 复制格式类型
+export type CopyFormat = 'text' | 'insert' | 'markdown' | 'json' | 'csv';
+
 // 组件属性
 export interface GlideDataTableProps {
   data: DataRow[];
@@ -147,6 +150,8 @@ export interface GlideDataTableProps {
   dataSourceType?: DataSourceType;
   // 数据库名称（某些数据源需要）
   database?: string;
+  // 复制格式（用于快捷键复制）
+  copyFormat?: CopyFormat;
 }
 
 
@@ -183,6 +188,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   tableName,
   dataSourceType = 'generic',
   database,
+  copyFormat = 'insert',
 }) => {
   // 状态管理
   const [searchText, setSearchText] = useState('');
@@ -543,11 +549,12 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     return `'${escapedValue}'`;
   }, []);
 
-  // 将选中的数据转换为 INSERT SQL 语句
-  const convertToInsertSQL = useCallback((selectedData: { col: number; row: number }[]): string => {
+  // 根据格式转换选中的数据
+  const convertSelectedData = useCallback((
+    selectedData: { col: number; row: number }[],
+    format: CopyFormat
+  ): string => {
     if (selectedData.length === 0) return '';
-
-    console.log('🔧 [convertToInsertSQL] 数据源类型:', dataSourceType, '表名:', tableName);
 
     // 按行分组选中的单元格
     const rowMap = new Map<number, Set<number>>();
@@ -568,48 +575,71 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
     if (columnNames.length === 0) return '';
 
-    const table = tableName || 'table_name';
-    const sqlStatements: string[] = [];
-
-    // 遍历每一行
+    // 获取行数据
+    const rows: any[][] = [];
     Array.from(rowMap.keys()).sort((a, b) => a - b).forEach(rowIndex => {
       const rowData = processedData[rowIndex];
       if (!rowData) return;
-
-      const values = columnNames.map(colName => formatValueForSQL(rowData[colName], dataSourceType));
-
-      // 根据数据源类型生成不同的 SQL
-      // 注意：所有数据源都生成标准 SQL INSERT 语句，便于跨数据库使用
-      let insertSQL = '';
-
-      switch (dataSourceType) {
-        case 'iotdb':
-          // IoTDB: INSERT INTO root.db.table(timestamp, field1, field2) VALUES (time, value1, value2)
-          insertSQL = `INSERT INTO ${table}(${columnNames.join(', ')}) VALUES (${values.join(', ')});`;
-          break;
-
-        case 'influxdb1':
-        case 'influxdb2':
-        case 'influxdb3':
-          // InfluxDB: 统一生成标准 SQL INSERT 语句
-          // 注意：InfluxDB 1.x/2.x 实际使用 Line Protocol，但这里生成 SQL 便于理解和跨数据库使用
-          insertSQL = `INSERT INTO ${table} (${columnNames.join(', ')}) VALUES (${values.join(', ')});`;
-          break;
-
-        case 'mysql':
-        case 'postgresql':
-        case 'generic':
-        default:
-          // 标准 SQL INSERT 语句
-          insertSQL = `INSERT INTO ${table} (${columnNames.join(', ')}) VALUES (${values.join(', ')});`;
-          break;
-      }
-
-      sqlStatements.push(insertSQL);
+      const values = columnNames.map(colName => rowData[colName]);
+      rows.push(values);
     });
 
-    return sqlStatements.join('\n');
-  }, [gridColumns, processedData, tableName, dataSourceType, formatValueForSQL]);
+    // 根据格式转换
+    switch (format) {
+      case 'text':
+        // 文本格式：制表符分隔
+        return columnNames.join('\t') + '\n' +
+               rows.map(row => row.map(v => v ?? '').join('\t')).join('\n');
+
+      case 'csv':
+        // CSV格式
+        const escapeCsv = (val: any) => {
+          if (val === null || val === undefined) return '';
+          const str = String(val);
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        };
+        return columnNames.map(escapeCsv).join(',') + '\n' +
+               rows.map(row => row.map(escapeCsv).join(',')).join('\n');
+
+      case 'json':
+        // JSON格式
+        const jsonData = rows.map(row => {
+          const obj: Record<string, any> = {};
+          columnNames.forEach((col, idx) => {
+            obj[col] = row[idx];
+          });
+          return obj;
+        });
+        return JSON.stringify(jsonData, null, 2);
+
+      case 'markdown':
+        // Markdown表格格式
+        return '| ' + columnNames.join(' | ') + ' |\n' +
+               '| ' + columnNames.map(() => '---').join(' | ') + ' |\n' +
+               rows.map(row => '| ' + row.map(v => v ?? '').join(' | ') + ' |').join('\n');
+
+      case 'insert':
+        // INSERT SQL格式
+        const table = tableName || 'table_name';
+        const sqlStatements: string[] = [];
+        rows.forEach(row => {
+          const values = row.map(val => formatValueForSQL(val, dataSourceType));
+          sqlStatements.push(generateInsertSQL(table, columnNames, values, dataSourceType, database));
+        });
+        return sqlStatements.join('\n');
+
+      default:
+        return '';
+    }
+  }, [gridColumns, processedData, tableName, dataSourceType, database, formatValueForSQL]);
+
+  // 将选中的数据转换为 INSERT SQL 语句（保留用于向后兼容）
+  const convertToInsertSQL = useCallback((selectedData: { col: number; row: number }[]): string => {
+    return convertSelectedData(selectedData, 'insert');
+  }, [convertSelectedData]);
 
   // 跟踪当前选中的单元格
   const [gridSelection, setGridSelection] = useState<GridSelection>({
@@ -671,21 +701,30 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         return;
       }
 
-      console.log('✅ [GlideDataTable] 选中了', selectedCells.length, '个单元格', '数据源类型:', dataSourceType);
+      console.log('✅ [GlideDataTable] 选中了', selectedCells.length, '个单元格', '复制格式:', copyFormat);
 
-      // 生成 INSERT SQL
-      const insertSQL = convertToInsertSQL(selectedCells);
+      // 根据格式转换数据
+      const convertedData = convertSelectedData(selectedCells, copyFormat);
 
-      if (insertSQL) {
-        console.log('📋 [GlideDataTable] 生成的 SQL:', insertSQL.substring(0, 200));
+      if (convertedData) {
+        console.log('📋 [GlideDataTable] 生成的数据:', convertedData.substring(0, 200));
 
         // 阻止默认复制行为
         e.preventDefault();
         e.stopPropagation();
 
+        // 格式名称映射
+        const formatNames: Record<CopyFormat, string> = {
+          text: '文本',
+          insert: 'INSERT SQL',
+          markdown: 'Markdown',
+          json: 'JSON',
+          csv: 'CSV'
+        };
+
         // 复制到剪贴板
-        navigator.clipboard.writeText(insertSQL).then(() => {
-          toast.success('已复制为 INSERT SQL', {
+        navigator.clipboard.writeText(convertedData).then(() => {
+          toast.success(`已复制为 ${formatNames[copyFormat]}`, {
             description: `已复制 ${selectedCells.length} 个单元格的数据`,
           });
         }).catch(err => {
@@ -701,7 +740,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [gridSelection, gridColumns, processedData, convertToInsertSQL, dataSourceType]);
+  }, [gridSelection, gridColumns, processedData, convertSelectedData, copyFormat]);
 
 
 

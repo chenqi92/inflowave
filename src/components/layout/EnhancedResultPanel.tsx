@@ -215,6 +215,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   const [showStatisticsExportDialog, setShowStatisticsExportDialog] =
     useState(false);
 
+  // 复制格式状态 - 为每个查询结果维护一个复制格式
+  const [copyFormats, setCopyFormats] = useState<Record<number, CopyFormat>>({});
+
   // 分页状态管理
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(500);
@@ -649,39 +652,30 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     }
   };
 
-  // 复制数据函数
-  const handleCopyData = useCallback(async (
+  // 复制数据函数 - 根据格式和数据进行复制
+  const handleCopyWithFormat = useCallback(async (
     format: CopyFormat,
-    resultIndex: number
+    columns: string[],
+    rows: any[][],
+    tableName: string
   ) => {
     try {
-      const result = allResults[resultIndex];
-      if (!result) {
+      if (rows.length === 0) {
         toast.error('没有可复制的数据');
         return;
       }
 
-      // 获取第一个series的数据
-      const series = result.results?.[0]?.series?.[0];
-      if (!series || !series.columns || !series.values) {
-        toast.error('没有可复制的数据');
-        return;
-      }
-
-      const columns = series.columns;
-      const rows = series.values;
       let textToCopy = '';
 
       switch (format) {
         case 'text':
-          // 文本格式：列之间用空格分隔
-          textToCopy = columns.join(' ') + '\n';
-          textToCopy += rows.map(row => row.join(' ')).join('\n');
+          // 文本格式：列之间用制表符分隔
+          textToCopy = columns.join('\t') + '\n';
+          textToCopy += rows.map(row => row.join('\t')).join('\n');
           break;
 
         case 'insert':
           // INSERT语句格式
-          const tableName = series.name || 'table_name';
           const insertStatements = rows.map(row => {
             const values = row.map(val => {
               if (val === null || val === undefined) return 'NULL';
@@ -749,7 +743,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       console.error('复制数据失败:', error);
       toast.error('复制数据失败');
     }
-  }, [allResults]);
+  }, []);
+
+
 
   // 导出字段统计 - 支持多个查询的统计信息
   const handleExportStatistics = async (options: ExportOptions) => {
@@ -2355,7 +2351,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     loading={false}
                     showRefresh={false}
                     showCopy={true}
-                    onCopy={(format) => handleCopyData(format, index)}
+                    selectedCopyFormat={copyFormats[index] || 'text'}
+                    onCopyFormatChange={(format) => {
+                      setCopyFormats(prev => ({ ...prev, [index]: format }));
+                    }}
                     onQuickExportCSV={() => setShowExportDialog(true)}
                     onAdvancedExport={() => setShowExportDialog(true)}
                     showColumnSelector={false}
@@ -2423,6 +2422,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       tableName={tableName || 'query_result'}
                       dataSourceType={dataSourceType}
                       database={currentConnection?.database}
+                      copyFormat={copyFormats[index] || 'text'}
                       onPageChange={(page: number, size: number) => {
                         handlePageChange(page);
                         if (size !== pageSize) {
