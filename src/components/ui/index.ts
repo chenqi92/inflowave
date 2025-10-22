@@ -350,7 +350,7 @@ export {
   ChartLegend,
   ChartLegendContent,
   ChartStyle,
-} from './chart';
-export type { ChartConfig } from './chart';
+} from './Chart';
+export type { ChartConfig } from './Chart';
 
 export { default as CustomDialog } from './CustomDialog';

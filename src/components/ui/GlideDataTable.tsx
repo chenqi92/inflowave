@@ -13,7 +13,6 @@ import {
   Item,
   GridSelection,
   CompactSelection,
-  Rectangle,
 } from '@glideapps/glide-data-grid';
 import { cn } from '@/lib/utils';
 import {
@@ -34,7 +33,6 @@ import {
 } from '@/components/ui';
 import { toast } from 'sonner';
 import {
-  Search,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
@@ -549,6 +547,47 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     return `'${escapedValue}'`;
   }, []);
 
+  // 生成 INSERT SQL 语句
+  const generateInsertSQL = useCallback((
+    table: string,
+    columnNames: string[],
+    values: string[],
+    dataSourceType: DataSourceType,
+    database?: string
+  ): string => {
+    // 根据数据源类型生成不同格式的 INSERT 语句
+    switch (dataSourceType) {
+      case 'influxdb1':
+      case 'influxdb2':
+      case 'influxdb3':
+        // InfluxDB 使用 Line Protocol 格式，这里生成标准 SQL 作为参考
+        // 实际使用时需要转换为 Line Protocol
+        { const columnList = columnNames.map(col => `"${col}"`).join(', ');
+        const valueList = values.join(', ');
+        return `-- InfluxDB Line Protocol format required\nINSERT INTO "${table}" (${columnList}) VALUES (${valueList});`; }
+
+      case 'iotdb':
+        // IoTDB 使用特殊的插入语法
+        { const iotdbColumns = columnNames.map(col => `${table}.${col}`).join(', ');
+        const iotdbValues = values.join(', ');
+        return `INSERT INTO ${table} (${iotdbColumns}) VALUES (${iotdbValues});`; }
+
+      case 'mysql':
+      case 'postgresql':
+        // MySQL 和 PostgreSQL 使用标准 SQL
+        { const stdColumnList = columnNames.map(col => `\`${col}\``).join(', ');
+        const stdValueList = values.join(', ');
+        return `INSERT INTO \`${table}\` (${stdColumnList}) VALUES (${stdValueList});`; }
+
+      case 'generic':
+      default:
+        // 通用 SQL 格式
+        { const genericColumnList = columnNames.map(col => `"${col}"`).join(', ');
+        const genericValueList = values.join(', ');
+        return `INSERT INTO "${table}" (${genericColumnList}) VALUES (${genericValueList});`; }
+    }
+  }, []);
+
   // 根据格式转换选中的数据
   const convertSelectedData = useCallback((
     selectedData: { col: number; row: number }[],
@@ -588,12 +627,12 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     switch (format) {
       case 'text':
         // 文本格式：制表符分隔
-        return columnNames.join('\t') + '\n' +
-               rows.map(row => row.map(v => v ?? '').join('\t')).join('\n');
+        return `${columnNames.join('\t')  }\n${ 
+               rows.map(row => row.map(v => v ?? '').join('\t')).join('\n')}`;
 
       case 'csv':
         // CSV格式
-        const escapeCsv = (val: any) => {
+        { const escapeCsv = (val: any) => {
           if (val === null || val === undefined) return '';
           const str = String(val);
           if (str.includes(',') || str.includes('"') || str.includes('\n')) {
@@ -601,35 +640,35 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           }
           return str;
         };
-        return columnNames.map(escapeCsv).join(',') + '\n' +
-               rows.map(row => row.map(escapeCsv).join(',')).join('\n');
+        return `${columnNames.map(escapeCsv).join(',')  }\n${ 
+               rows.map(row => row.map(escapeCsv).join(',')).join('\n')}`; }
 
       case 'json':
         // JSON格式
-        const jsonData = rows.map(row => {
+        { const jsonData = rows.map(row => {
           const obj: Record<string, any> = {};
           columnNames.forEach((col, idx) => {
             obj[col] = row[idx];
           });
           return obj;
         });
-        return JSON.stringify(jsonData, null, 2);
+        return JSON.stringify(jsonData, null, 2); }
 
       case 'markdown':
         // Markdown表格格式
-        return '| ' + columnNames.join(' | ') + ' |\n' +
-               '| ' + columnNames.map(() => '---').join(' | ') + ' |\n' +
-               rows.map(row => '| ' + row.map(v => v ?? '').join(' | ') + ' |').join('\n');
+        return `| ${  columnNames.join(' | ')  } |\n` +
+               `| ${  columnNames.map(() => '---').join(' | ')  } |\n${ 
+               rows.map(row => `| ${  row.map(v => v ?? '').join(' | ')  } |`).join('\n')}`;
 
       case 'insert':
         // INSERT SQL格式
-        const table = tableName || 'table_name';
+        { const table = tableName || 'table_name';
         const sqlStatements: string[] = [];
         rows.forEach(row => {
           const values = row.map(val => formatValueForSQL(val, dataSourceType));
           sqlStatements.push(generateInsertSQL(table, columnNames, values, dataSourceType, database));
         });
-        return sqlStatements.join('\n');
+        return sqlStatements.join('\n'); }
 
       default:
         return '';
