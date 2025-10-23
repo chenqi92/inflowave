@@ -68,7 +68,7 @@ const defaultOptions: PresetOptions = {
   highlightActiveLineGutter: true,
   highlightSpecialChars: true,
   history: true,
-  foldGutter: true,
+  foldGutter: false, // Disabled to avoid duplicate fold gutters (language extensions may provide their own)
   drawSelection: true,
   dropCursor: true,
   allowMultipleSelections: true,

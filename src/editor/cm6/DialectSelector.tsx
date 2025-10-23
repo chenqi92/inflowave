@@ -198,7 +198,7 @@ export const DialectSelector: React.FC<DialectSelectorProps> = ({
 
   return (
     <div className={cn('flex items-center gap-3', className)}>
-      {/* Connection Info */}
+      {/* Connection Info - Only show in non-compact mode */}
       {showConnectionInfo && !compact && connection && (
         <div className="flex items-center gap-2">
           <Database className="w-4 h-4 text-muted-foreground" />
@@ -209,16 +209,6 @@ export const DialectSelector: React.FC<DialectSelectorProps> = ({
               {connection.version && ` ${connection.version}`}
             </span>
           </div>
-        </div>
-      )}
-
-      {/* Compact Connection Info */}
-      {showConnectionInfo && compact && connection && (
-        <div className="flex items-center gap-2">
-          <Database className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm font-medium truncate max-w-[150px]">
-            {connection.name}
-          </span>
         </div>
       )}
 

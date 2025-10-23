@@ -100,11 +100,26 @@ export class SchemaCompletionProvider {
     if (!this.connectionId) return [];
 
     try {
-      const tables = await safeTauriInvoke<string[]>('get_tables', {
-        connectionId: this.connectionId,
-        database,
-      });
-      return tables || [];
+      // Try multiple methods to get tables/measurements
+      const methods = [
+        { name: 'get_measurements', params: { connectionId: this.connectionId, database } },
+        { name: 'get_tables', params: { connectionId: this.connectionId, database } },
+        { name: 'get_query_suggestions', params: { connectionId: this.connectionId, database, partialQuery: '' } },
+      ];
+
+      for (const method of methods) {
+        try {
+          const tables = await safeTauriInvoke<string[]>(method.name, method.params);
+          if (tables && tables.length > 0) {
+            logger.debug(`${method.name} returned ${tables.length} tables/measurements`);
+            return tables;
+          }
+        } catch (error) {
+          logger.debug(`${method.name} failed, trying next method`);
+        }
+      }
+
+      return [];
     } catch (error) {
       logger.error(`Failed to fetch tables for ${database}:`, error);
       return [];
@@ -118,14 +133,25 @@ export class SchemaCompletionProvider {
     if (!this.connectionId) return [];
 
     try {
-      const fields = await safeTauriInvoke<string[]>('get_field_keys', {
+      const result = await safeTauriInvoke<any>('get_field_keys', {
         connectionId: this.connectionId,
         database,
         measurement: table,
       });
-      return fields || [];
+
+      // Handle different response formats
+      if (Array.isArray(result)) {
+        // If it's an array of objects with 'name' or 'fieldKey' property
+        if (result.length > 0 && typeof result[0] === 'object') {
+          return result.map((item: any) => item.name || item.fieldKey || item.field_key || String(item)).filter(Boolean);
+        }
+        // If it's an array of strings
+        return result.filter(Boolean);
+      }
+
+      return [];
     } catch (error) {
-      logger.error(`Failed to fetch fields for ${database}.${table}:`, error);
+      logger.debug(`Failed to fetch fields for ${database}.${table}:`, error);
       return [];
     }
   }
@@ -137,14 +163,25 @@ export class SchemaCompletionProvider {
     if (!this.connectionId) return [];
 
     try {
-      const tags = await safeTauriInvoke<string[]>('get_tag_keys', {
+      const result = await safeTauriInvoke<any>('get_tag_keys', {
         connectionId: this.connectionId,
         database,
         measurement: table,
       });
-      return tags || [];
+
+      // Handle different response formats
+      if (Array.isArray(result)) {
+        // If it's an array of objects with 'name' or 'tagKey' property
+        if (result.length > 0 && typeof result[0] === 'object') {
+          return result.map((item: any) => item.name || item.tagKey || item.tag_key || String(item)).filter(Boolean);
+        }
+        // If it's an array of strings
+        return result.filter(Boolean);
+      }
+
+      return [];
     } catch (error) {
-      logger.error(`Failed to fetch tags for ${database}.${table}:`, error);
+      logger.debug(`Failed to fetch tags for ${database}.${table}:`, error);
       return [];
     }
   }
