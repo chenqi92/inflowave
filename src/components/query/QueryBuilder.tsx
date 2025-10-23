@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
-import Editor from '@monaco-editor/react';
+import { SimpleCodeEditor } from '@/components/common/SimpleCodeEditor';
 import { useTheme } from '@/components/providers/ThemeProvider';
 
 interface QueryBuilderProps {
@@ -647,19 +647,11 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
                 </div>
               </CardHeader>
               <CardContent className="flex-1 p-0 min-h-0">
-                <Editor
+                <SimpleCodeEditor
+                  value={generatedQuery}
                   height="100%"
                   language="sql"
-                  theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
-                  value={generatedQuery}
-                  options={{
-                    readOnly: true,
-                    minimap: { enabled: false },
-                    scrollBeyondLastLine: false,
-                    fontSize: 13,
-                    lineNumbers: 'on',
-                    wordWrap: 'on',
-                  }}
+                  readOnly={true}
                 />
               </CardContent>
             </Card>

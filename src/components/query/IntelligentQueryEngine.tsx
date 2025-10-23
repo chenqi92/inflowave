@@ -71,10 +71,9 @@ import {
   type QueryContext,
 } from '@/services/intelligentQuery';
 import { showMessage } from '@/utils/message';
-import Editor from '@monaco-editor/react';
+import { SimpleCodeEditor } from '@/components/common/SimpleCodeEditor';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { dialog } from '@/utils/dialog';
-import * as monaco from 'monaco-editor';
 import { readFromClipboard, writeToClipboard } from '@/utils/clipboard';
 
 const { Text, Paragraph } = Typography;
@@ -113,116 +112,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
 
 
 
-  // 自定义复制处理函数
-  const handleCustomCopy = async (editor: monaco.editor.IStandaloneCodeEditor) => {
-    try {
-      const selection = editor.getSelection();
-      if (selection && !selection.isEmpty()) {
-        const selectedText = editor.getModel()?.getValueInRange(selection);
-        if (selectedText) {
-          await writeToClipboard(selectedText, {
-            successMessage: '已复制到剪贴板',
-            showSuccess: false
-          });
-          return;
-        }
-      }
 
-      // 如果没有选中内容，复制当前行
-      const position = editor.getPosition();
-      if (position) {
-        const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
-        if (lineContent) {
-          await writeToClipboard(lineContent, {
-            successMessage: '已复制当前行',
-            showSuccess: false
-          });
-        }
-      }
-    } catch (error) {
-      console.error('复制操作失败:', error);
-      showMessage.error('复制失败');
-    }
-  };
-
-  // 自定义剪切处理函数
-  const handleCustomCut = async (editor: monaco.editor.IStandaloneCodeEditor) => {
-    try {
-      const selection = editor.getSelection();
-      if (selection && !selection.isEmpty()) {
-        const selectedText = editor.getModel()?.getValueInRange(selection);
-        if (selectedText) {
-          await writeToClipboard(selectedText, {
-            successMessage: '已剪切到剪贴板',
-            showSuccess: false
-          });
-
-          editor.executeEdits('cut', [{
-            range: selection,
-            text: '',
-            forceMoveMarkers: true
-          }]);
-          editor.focus();
-          return;
-        }
-      }
-
-      // 如果没有选中内容，剪切当前行
-      const position = editor.getPosition();
-      if (position) {
-        const lineContent = editor.getModel()?.getLineContent(position.lineNumber);
-        if (lineContent) {
-          await writeToClipboard(lineContent, {
-            successMessage: '已剪切当前行',
-            showSuccess: false
-          });
-
-          const lineRange = {
-            startLineNumber: position.lineNumber,
-            startColumn: 1,
-            endLineNumber: position.lineNumber + 1,
-            endColumn: 1
-          };
-          editor.executeEdits('cut', [{
-            range: lineRange,
-            text: '',
-            forceMoveMarkers: true
-          }]);
-          editor.focus();
-        }
-      }
-    } catch (error) {
-      console.error('剪切操作失败:', error);
-      showMessage.error('剪切失败');
-    }
-  };
-
-  // 自定义粘贴处理函数
-  const handleCustomPaste = async (editor: monaco.editor.IStandaloneCodeEditor) => {
-    try {
-      // 桌面应用：使用Tauri剪贴板服务
-      const clipboardText = await readFromClipboard({ showError: false });
-      if (clipboardText) {
-        const selection = editor.getSelection();
-        if (selection) {
-          editor.executeEdits('paste', [{
-            range: selection,
-            text: clipboardText,
-            forceMoveMarkers: true
-          }]);
-          editor.focus();
-          return;
-        }
-      }
-
-      // 如果Tauri剪贴板失败，显示提示而不是使用浏览器剪贴板
-      showMessage.warning('剪贴板读取失败，请手动输入内容');
-    } catch (error) {
-      console.error('粘贴操作失败:', error);
-      // 不再降级到Monaco原生粘贴，避免触发浏览器剪贴板权限
-      showMessage.error('粘贴操作失败，请手动输入内容');
-    }
-  };
 
   // 获取查询统计
   const getQueryStats = useCallback(async () => {
@@ -431,117 +321,11 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
           <div className="space-y-2">
             <Text className="font-medium">原始查询</Text>
             <div className="border rounded-md overflow-hidden">
-              <Editor
+              <SimpleCodeEditor
+                value={query}
+                onChange={(value) => setQuery(value)}
                 height="200px"
                 language="sql"
-                theme={resolvedTheme === 'dark' ? 'vs-dark' : 'vs-light'}
-                value={query}
-                onChange={(value) => setQuery(value || '')}
-                onMount={(editor, monaco) => {
-                  // 添加快捷键支持
-                  editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => {
-                    // 将当前查询内容设置到主编辑器并执行
-                    const currentQuery = editor.getValue();
-                    if (currentQuery.trim()) {
-                      // 触发执行查询事件，让主编辑器处理
-                      const executeEvent = new CustomEvent('execute-query', {
-                        detail: {
-                          source: 'intelligent-query-engine',
-                          query: currentQuery
-                        }
-                      });
-                      document.dispatchEvent(executeEvent);
-                    }
-                  });
-
-                  // 分隔符
-                  editor.addAction({
-                    id: 'separator-1-iqe',
-                    label: '',
-                    contextMenuGroupId: 'separator1',
-                    contextMenuOrder: 1,
-                    run: () => {}
-                  });
-
-                  editor.addAction({
-                    id: 'copy-chinese-iqe',
-                    label: '复制',
-                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC],
-                    contextMenuGroupId: 'navigation',
-                    contextMenuOrder: 1,
-                    run: (editor) => {
-                      handleCustomCopy(editor as monaco.editor.IStandaloneCodeEditor);
-                    }
-                  });
-
-                  editor.addAction({
-                    id: 'cut-chinese-iqe',
-                    label: '剪切',
-                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyX],
-                    contextMenuGroupId: 'navigation',
-                    contextMenuOrder: 2,
-                    run: (editor) => {
-                      handleCustomCut(editor as monaco.editor.IStandaloneCodeEditor);
-                    }
-                  });
-
-                  editor.addAction({
-                    id: 'paste-chinese-iqe',
-                    label: '粘贴',
-                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV],
-                    contextMenuGroupId: 'navigation',
-                    contextMenuOrder: 3,
-                    run: (editor) => {
-                      handleCustomPaste(editor as monaco.editor.IStandaloneCodeEditor);
-                    }
-                  });
-
-                  editor.addAction({
-                    id: 'select-all-chinese-iqe',
-                    label: '全选',
-                    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyA],
-                    contextMenuGroupId: 'navigation',
-                    contextMenuOrder: 4,
-                    run: (editor) => {
-                      editor.trigger('keyboard', 'editor.action.selectAll', null);
-                    }
-                  });
-
-                  console.log('✅ IntelligentQueryEngine 中文右键菜单已添加（包含执行查询）');
-                }}
-                options={{
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  fontSize: 14,
-                  lineNumbers: 'on',
-                  wordWrap: 'on',
-                  automaticLayout: true,
-                  // 桌面应用：禁用默认右键菜单，使用自定义中文菜单
-                  contextmenu: false,
-                  copyWithSyntaxHighlighting: false, // 禁用语法高亮复制，避免剪贴板权限问题
-                  // 禁用所有可能触发剪贴板权限的功能
-                  links: false, // 禁用链接检测，避免触发剪贴板权限
-                  dragAndDrop: false, // 禁用拖拽，避免剪贴板操作
-                  selectionClipboard: false, // 禁用选择自动复制到剪贴板
-                  // 禁用代码折叠
-                  folding: false,
-                  showFoldingControls: 'never',
-                  // 禁用空格和tab的可视化显示
-                  renderWhitespace: 'none',
-                  renderControlCharacters: false,
-                  // 禁用缩进参考线（纵向分割线）
-                  guides: {
-                    indentation: false,
-                    bracketPairs: false,
-                    highlightActiveIndentation: false,
-                  },
-                  find: {
-                    addExtraSpaceOnTop: false,
-                    autoFindInSelection: 'never',
-                    seedSearchStringFromSelection: 'never', // 避免自动从选择复制到搜索
-                  },
-                }}
-                key={resolvedTheme} // 强制重新渲染以应用主题
               />
             </div>
           </div>

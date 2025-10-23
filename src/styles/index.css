@@ -9,8 +9,6 @@
 @import './modal-optimization.css';
 /* macOS 优化样式 */
 @import './macos-optimizations.css';
-/* Monaco编辑器主题样式 */
-@import './monaco-theme.css';
 /* 字体偏好设置样式 */
 @import './font-preferences.css';
 /* 鼠标指针修复样式 */
@@ -352,7 +350,7 @@ body {
 /* 代码字体 */
 code,
 pre,
-.monaco-editor {
+.cm-editor {
   font-family:
     'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important;
 }
@@ -634,7 +632,7 @@ pre,
   overflow: hidden;
 }
 
-.query-editor .monaco-editor {
+.query-editor .cm-editor {
   min-height: 200px;
 }
 
