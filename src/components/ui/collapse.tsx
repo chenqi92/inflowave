@@ -5,12 +5,12 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from './Accordion';
+} from './accordion';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from './Collapsible';
+} from './collapsible';
 
 export interface PanelProps {
   header: ReactNode;

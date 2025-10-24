@@ -7,14 +7,10 @@
 } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  SearchInput,
-  Button,
   Tooltip,
   TooltipTrigger,
   TooltipContent,
   Badge,
-  Spin,
-  Typography,
   Card,
   CardContent,
 } from '@/components/ui';
@@ -23,9 +19,7 @@ import { DatabaseExplorerHeader } from '@/components/database/DatabaseExplorerHe
 import { DatabaseExplorerDialogs } from '@/components/database/DatabaseExplorerDialogs';
 import { DatabaseExplorerErrorTooltips } from '@/components/database/DatabaseExplorerErrorTooltips';
 import { DatabaseExplorerCollapsedView } from '@/components/database/DatabaseExplorerCollapsedView';
-import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import {
-  Database,
   Table,
   RefreshCw,
   Settings,
@@ -34,45 +28,23 @@ import {
   Hash,
   Tags,
   Clock,
-  Filter,
   Star,
   StarOff,
-  Plus,
   TrendingUp,
-  Trash2,
-  X,
-  XCircle,
-  Info,
-  Search,
-  Edit,
-  Copy,
-  BarChart,
-  FolderX,
   GitBranch,
   Loader2,
 } from 'lucide-react';
-import { useConnectionStore } from '@/store/connection';
-import { useFavoritesStore, favoritesUtils } from '@/store/favorites';
-import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
+import { favoritesUtils } from '@/store/favorites';
 import { useTreeStatusStore } from '@/stores/treeStatusStore';
-import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
 import type { ConnectionConfig } from '@/types';
-import type { TreeNodeType, TreeNode } from '@/types/tree';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 
-import { DatabaseIcon, isOpenableNode } from '@/components/common/DatabaseIcon';
-import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
-import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
-import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
-import { dialog } from '@/utils/dialog';
+import { DatabaseIcon } from '@/components/common/DatabaseIcon';
 // DropdownMenu相关组件已移除，使用自定义右键菜单
 
 // 导入弹框组件
-import TableDesignerDialog from '@/components/database/TableDesignerDialog';
-import TableInfoDialog from '@/components/database/TableInfoDialog';
-import { ManagementNodeDialog } from '@/components/database/ManagementNodeDialog';
 
 // 导入类型定义
 import type {
@@ -124,7 +96,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const navigate = useNavigate();
 
   // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
-  // eslint-disable-next-line no-undef
+   
   if (process.env.NODE_ENV === 'development') {
     state.renderCountRef.current++;
     logger.render(
@@ -1593,7 +1565,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     (connection_id: string, forceLoading?: boolean) => {
       // 空实现，保持接口兼容性
       // MultiConnectionTreeView 会通过监听 connectionStatuses 自动处理节点显示更新
-      // eslint-disable-next-line no-undef
+       
       if (process.env.NODE_ENV === 'development') {
         logger.render(`更新连接节点显示: ${connection_id} (由 MultiConnectionTreeView 自动处理)`);
       }

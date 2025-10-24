@@ -36,6 +36,8 @@ export default [
       globals: {
         ...globals.browser,
         ...globals.es2020,
+        React: 'readonly',
+        JSX: 'readonly',
       },
     },
     plugins: {
@@ -76,6 +78,7 @@ export default [
       'no-var': 'error',
       'object-shorthand': 'error',
       'prefer-template': 'error',
+      'no-undef': 'off', // TypeScript handles this better
     },
   },
 

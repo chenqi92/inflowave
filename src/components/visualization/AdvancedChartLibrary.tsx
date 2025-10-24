@@ -74,7 +74,7 @@ export interface AdvancedChartConfig {
   tooltip?: {
     show?: boolean;
     trigger?: 'item' | 'axis';
-    formatter?: string | Function;
+    formatter?: string | ((...args: any[]) => any);
   };
   [key: string]: any;
 }

@@ -118,7 +118,7 @@ export const useNodeActivateHandler = ({
             setManagementNodeDialog({
                 open: true,
                 connectionId,
-                nodeType: nodeType,
+                nodeType,
                 nodeName: node.name,
                 nodeCategory: 'management',
             });

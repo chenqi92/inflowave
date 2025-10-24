@@ -307,34 +307,22 @@ export const useSettingsStore = create<SettingsState>()(
       },
 
       resetSettings: async () => {
-        try {
-          await SettingsAPI.resetSettings();
-          set({
-            settings: defaultSettings,
-            hasUnsavedChanges: false,
-            lastSaved: new Date(),
-          });
-        } catch (error) {
-          throw error;
-        }
+        await SettingsAPI.resetSettings();
+        set({
+          settings: defaultSettings,
+          hasUnsavedChanges: false,
+          lastSaved: new Date(),
+        });
       },
 
       exportSettings: async filePath => {
-        try {
-          await SettingsAPI.exportSettings(filePath);
-        } catch (error) {
-          throw error;
-        }
+        await SettingsAPI.exportSettings(filePath);
       },
 
       importSettings: async filePath => {
-        try {
-          await SettingsAPI.importSettings(filePath);
-          // 重新加载设置
-          await get().loadSettings();
-        } catch (error) {
-          throw error;
-        }
+        await SettingsAPI.importSettings(filePath);
+        // 重新加载设置
+        await get().loadSettings();
       },
 
       // 快速设置

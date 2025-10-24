@@ -20,9 +20,6 @@ import {
     ArrowUp,
     ArrowDown,
     FileDown,
-    Download,
-    SortAsc,
-    SortDesc,
 } from 'lucide-react';
 
 interface QueryResultContextMenuProps {

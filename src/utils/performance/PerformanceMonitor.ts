@@ -56,7 +56,7 @@ class PerformanceMonitor {
     this.notifyObservers(metric);
 
     // 记录到控制台（开发模式）
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.DEV) {
       console.log(`[Performance] ${name}: ${value}ms`, metadata);
     }
   }

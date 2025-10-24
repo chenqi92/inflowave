@@ -27,7 +27,6 @@ import {
   Eye,
   RefreshCw,
 } from 'lucide-react';
-import { safeTauriInvoke } from '@/utils/tauri';
 import type { KeyboardShortcut } from '@/types';
 import { useUserPreferencesStore, type UserPreferences } from '@/stores/userPreferencesStore';
 
@@ -297,7 +296,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     null
   );
   const [editingKeys, setEditingKeys] = useState<string[]>([]);
-  // eslint-disable-next-line no-undef
+   
   const [fontSaveTimeout, setFontSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const form = useForm<UserPreferences>({

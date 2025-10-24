@@ -5,7 +5,7 @@
  */
 
 import { EditorView } from '@codemirror/view';
-import { EditorState, Transaction } from '@codemirror/state';
+import { Transaction } from '@codemirror/state';
 import { formatSQL, type DatabaseType as SQLFormatterDatabaseType } from '@/utils/sqlFormatter';
 import type { QueryDialect } from './DialectSelector';
 import { logger } from '@/utils/logger';

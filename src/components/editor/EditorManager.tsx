@@ -1,4 +1,4 @@
-/**
+﻿/**
  * EditorManager - CodeMirror 6 Version
  * 
  * Manages the code editor with CM6, replacing Monaco Editor
@@ -7,13 +7,12 @@
 import React, { useRef, useCallback, useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useConnectionStore } from '@/store/connection';
-import { formatSQL, type DatabaseType as SQLFormatterDatabaseType } from '@/utils/sqlFormatter';
 import type { EditorTab } from './TabManager';
 import { useSmartSuggestion } from '@/hooks/useSmartSuggestion';
 import { SmartSuggestionPopup } from './SmartSuggestionPopup';
 import type { DataSourceType } from '@/utils/suggestionTypes';
-import { Card, CardContent } from '@/components/ui/Card';
-import { Separator } from '@/components/ui/Separator';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 import {
   Scissors,
   Copy,
@@ -29,7 +28,6 @@ import {
   type CodeMirrorEditorRef,
   DialectSelector,
   type QueryDialect,
-  editorEvents,
   basicPreset,
   createEditorTheme,
   formatDocument,

@@ -1,9 +1,9 @@
-/**
+﻿/**
  * 数据导入向导
  * 支持 CSV 和 JSON 文件导入，包含数据预览和验证
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -28,9 +28,8 @@ import {
   Label,
   Switch,
   ScrollArea,
-  TableSkeleton,
 } from '@/components/ui';
-import { Upload } from '@/components/ui/Upload';
+import { Upload } from '@/components/ui/upload';
 import {
   FileUp,
   FileJson,
@@ -47,7 +46,7 @@ import {
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
-import type { UploadFile } from '@/components/ui/Upload';
+import type { UploadFile } from '@/components/ui/upload';
 
 /**
  * 导入步骤

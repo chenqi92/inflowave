@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 统一错误提示组件
  * 基于 shadcn/ui Alert 组件，提供友好的错误提示和恢复建议
  */
@@ -8,14 +8,14 @@ import {
   Alert,
   AlertTitle,
   AlertDescription,
-} from '@/components/ui/Alert';
-import { Button } from '@/components/ui/Button';
-import { ScrollArea } from '@/components/ui/ScrollArea';
+} from '@/components/ui/alert';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from '@/components/ui/Collapsible';
+} from '@/components/ui/collapsible';
 import {
   AlertCircle,
   AlertTriangle,

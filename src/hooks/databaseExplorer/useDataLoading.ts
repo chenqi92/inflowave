@@ -59,14 +59,17 @@ export const useDataLoading = ({
     const loadTables = useCallback(
         async (connection_id: string, database: string): Promise<string[]> => {
             console.log(`📊 加载表列表: ${connection_id}/${database}`);
-            try {
-                // 这里应该调用后端API获取表列表
-                // 暂时返回空数组
-                return [];
-            } catch (error) {
-                console.error(`❌ 加载表列表失败:`, error);
-                throw error;
-            }
+            // 这里应该调用后端API获取表列表
+            // 暂时返回空数组
+            return [];
+            // TODO: 实现实际的API调用
+            // try {
+            //     const result = await invoke('get_tables', { connection_id, database });
+            //     return result;
+            // } catch (error) {
+            //     console.error(`❌ 加载表列表失败:`, error);
+            //     throw error;
+            // }
         },
         []
     );
@@ -84,17 +87,20 @@ export const useDataLoading = ({
             fields: Array<{ name: string; type: string }>;
         }> => {
             console.log(`🏷️ 加载字段和标签: ${connection_id}/${database}/${table}`);
-            try {
-                // 这里应该调用后端API获取字段和标签信息
-                // 暂时返回空对象
-                return {
-                    tags: [],
-                    fields: [],
-                };
-            } catch (error) {
-                console.error(`❌ 加载字段和标签失败:`, error);
-                throw error;
-            }
+            // 这里应该调用后端API获取字段和标签信息
+            // 暂时返回空对象
+            return {
+                tags: [],
+                fields: [],
+            };
+            // TODO: 实现实际的API调用
+            // try {
+            //     const result = await invoke('get_table_schema', { connection_id, database, table });
+            //     return result;
+            // } catch (error) {
+            //     console.error(`❌ 加载字段和标签失败:`, error);
+            //     throw error;
+            // }
         },
         []
     );

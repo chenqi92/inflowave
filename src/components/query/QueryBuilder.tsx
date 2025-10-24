@@ -1,38 +1,36 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/Dialog';
+} from '@/components/ui/dialog';
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
-} from '@/components/ui/Card';
+} from '@/components/ui/card';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/Select';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Label } from '@/components/ui/Label';
-import { Badge } from '@/components/ui/Badge';
-import { ScrollArea } from '@/components/ui/ScrollArea';
-import { Separator } from '@/components/ui/Separator';
-import { Checkbox } from '@/components/ui/Checkbox';
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Plus,
   Trash2,
   Copy,
   Play,
   Code,
-  X,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
@@ -215,7 +213,7 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
     });
 
     if (whereClauses.length > 0) {
-      query += ' WHERE ' + whereClauses.join('');
+      query += ` WHERE ${  whereClauses.join('')}`;
     }
 
     // GROUP BY 子句
@@ -228,7 +226,7 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
     });
 
     if (groupByClauses.length > 0) {
-      query += ' GROUP BY ' + groupByClauses.join(', ');
+      query += ` GROUP BY ${  groupByClauses.join(', ')}`;
     }
 
     // ORDER BY 子句

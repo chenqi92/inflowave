@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { Skeleton } from './Skeleton';
+import { Skeleton } from './skeleton';
 import { cn } from '@/lib/utils';
 
 /**

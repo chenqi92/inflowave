@@ -879,7 +879,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               break;
             }
           } catch (queryError) {
-            logger.debug(`\u274c 字段查询失败 \"${query}\":`, queryError);
+            logger.debug(`\u274c 字段查询失败 "${query}":`, queryError);
             continue;
           }
         }
@@ -988,7 +988,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
               break;
             }
           } catch (queryError) {
-            logger.debug(`\u274c 标签查询失败 \"${query}\":`, queryError);
+            logger.debug(`\u274c 标签查询失败 "${query}":`, queryError);
             continue;
           }
         }

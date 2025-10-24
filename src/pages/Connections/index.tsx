@@ -7,7 +7,7 @@ import ConnectionManager from '@/components/ConnectionManager';
 import { ConnectionRecovery } from '@/components/ConnectionRecovery';
 
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
-import type { ConnectionConfig, ConnectionStatus } from '@/types';
+import type { ConnectionConfig } from '@/types';
 
 const Connections: React.FC = () => {
   const navigate = useNavigate();

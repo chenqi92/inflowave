@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { Typography } from '@/components/ui';
 import { cn } from '@/lib/utils';
-import { Button } from './Button';
+import { Button } from './button';
 import { X, Upload as UploadIcon } from 'lucide-react';
 
 export interface UploadFile {

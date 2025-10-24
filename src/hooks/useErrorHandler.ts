@@ -87,35 +87,41 @@ export const useErrorHandler = () => {
         friendlyError = getDataImportExportError(errorString, 'export', subType as any);
         break;
         
-      case 'system':
+      case 'system': {
         const resourceType = (subType as 'memory' | 'cpu' | 'disk' | 'network') || 'memory';
         friendlyError = getSystemResourceError(resourceType, undefined, undefined, contextInfo);
         break;
-        
-      case 'ui':
+      }
+
+      case 'ui': {
         const interactionType = (subType as 'form' | 'drag' | 'chart' | 'theme' | 'layout' | 'component') || 'component';
         friendlyError = getUIInteractionError(interactionType, errorString, contextInfo);
         break;
-        
-      case 'extension':
+      }
+
+      case 'extension': {
         const extensionContext = (subType as 'load' | 'install' | 'uninstall' | 'dependency' | 'version' | 'permission' | 'api') || 'load';
         friendlyError = getExtensionError(errorString, extensionContext);
         break;
-        
-      case 'security':
+      }
+
+      case 'security': {
         const securityContext = (subType as 'session' | 'permission' | 'certificate' | 'token' | 'authentication' | 'authorization') || 'authentication';
         friendlyError = getSecurityError(errorString, securityContext);
         break;
-        
-      case 'application':
+      }
+
+      case 'application': {
         const appContext = (subType as 'startup' | 'shutdown' | 'update' | 'config' | 'migration' | 'backup') || 'startup';
         friendlyError = getApplicationError(errorString, appContext);
         break;
-        
-      case 'file':
+      }
+
+      case 'file': {
         const fileOperation = (subType as 'read' | 'write' | 'select' | 'save') || 'read';
         friendlyError = getFileOperationError(errorString, fileOperation);
         break;
+      }
         
       case 'network':
         friendlyError = getNetworkError(errorString);
@@ -125,10 +131,11 @@ export const useErrorHandler = () => {
         friendlyError = getPortDiscoveryError(errorString);
         break;
         
-      case 'preferences':
+      case 'preferences': {
         const prefOperation = (subType as 'load' | 'save') || 'load';
         friendlyError = getUserPreferencesError(errorString, prefOperation);
         break;
+      }
         
       default:
         friendlyError = {

@@ -49,7 +49,6 @@ import {
   CheckCircle,
   XCircle,
   RefreshCw,
-  Filter,
   SortAsc,
   SortDesc,
   Bookmark,

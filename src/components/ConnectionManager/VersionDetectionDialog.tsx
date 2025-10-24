@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 数据库版本检测确认对话框
  * 
  * 在保存连接时显示检测到的数据库版本信息，让用户确认
@@ -11,10 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog';
-import { Button } from '@/components/ui/Button';
-import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { Badge } from '@/components/ui/Badge';
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertTriangle, Info, Clock } from 'lucide-react';
 import type { VersionDetectionResult, DatabaseVersionInfo } from '@/types';
 import { DatabaseVersionDetectionService } from '@/services/databaseVersionDetection';

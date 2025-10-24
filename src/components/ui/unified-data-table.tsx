@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 统一数据表格组件
  * 高性能版本 - 使用真正的虚拟化滚动优化大数据集性能
  * 支持虚拟化滚动、懒加载、列管理、排序、筛选、导出等功能
@@ -6,7 +6,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { TableVirtuoso, TableVirtuosoHandle } from 'react-virtuoso';
+import { TableVirtuosoHandle } from 'react-virtuoso';
 import {
     Card,
     CardHeader,
@@ -25,7 +25,7 @@ import {
     Input,
     SearchInput,
 } from '@/components/ui';
-import { Spin } from '@/components/ui/Spin';
+import { Spin } from '@/components/ui/spin';
 import {
     Filter,
     Download,
@@ -573,6 +573,8 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
         }
 
         // 完全禁用spacer调试 - 避免日志泛滥
+        // 调试代码已禁用，如需启用请将 false 改为 true
+        /* eslint-disable no-constant-condition, no-constant-binary-expression */
         if (false && data.length >= 500 && remainingRows === 0 && actualEndIndex === data.length - 1 && startIndex > data.length - 20) {
             const topSpacerHeight = startIndex > 0 ? startIndex * rowHeight : 0;
             const visibleRowsHeight = (actualEndIndex - startIndex + 1) * rowHeight;
@@ -594,6 +596,7 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                 missingRows: data.length - 1 - actualEndIndex
             });
         }
+        /* eslint-enable no-constant-condition, no-constant-binary-expression */
 
         return rows;
     };
@@ -1569,7 +1572,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
     // 统一的数据处理逻辑 - 虚拟化和非虚拟化使用不同的处理方式
     const processedData = useMemo(() => {
-        let result = [...filteredData];
+        const result = [...filteredData];
 
         // 统一的排序处理
         if (sortConfig) {

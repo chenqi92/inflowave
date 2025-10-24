@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { cn } from '@/lib/utils';
-import { Button } from './Button';
+import { Button } from './button';
 import { AlertTriangle } from 'lucide-react';
 
 interface PopconfirmProps {

@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useState,
   useEffect,
   useImperativeHandle,
@@ -6,8 +6,8 @@ import React, {
   useCallback,
 } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Button } from '@/components/ui/Button';
-import { TooltipProvider } from '@/components/ui/Tooltip';
+import { Button } from '@/components/ui/button';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { FileText, Plus, FolderOpen } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';

@@ -76,9 +76,7 @@ export interface InfluxDBFieldInfo extends FieldInfo {
 }
 
 // InfluxDB 标签信息
-export interface InfluxDBTagInfo extends TagInfo {
-  // InfluxDB 特定的标签属性
-}
+export type InfluxDBTagInfo = TagInfo;
 
 /**
  * InfluxDB 数据库驱动实现

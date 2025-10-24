@@ -1,5 +1,5 @@
-import React from 'react';
-import { ErrorTooltip } from '@/components/ui/ErrorTooltip';
+﻿import React from 'react';
+import { ErrorTooltip } from '@/components/ui/error-tooltip';
 
 interface DatabaseExplorerErrorTooltipsProps {
     connectionErrors: Map<string, string>;

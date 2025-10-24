@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -13,7 +13,6 @@ import {
   Badge,
   Spin,
 } from '@/components/ui';
-import { Separator } from '@/components/ui/Separator';
 import {
   Database,
   BarChart3,

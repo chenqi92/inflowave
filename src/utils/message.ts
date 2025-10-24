@@ -10,10 +10,9 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { getDatabaseConnectionError } from '@/utils/userFriendlyErrors';
 import { addNotification } from '@/store/notifications';
 import { errorHandler, formatErrorForDisplay } from '@/utils/errorHandler';
-import type { ErrorDetails, RecoverySuggestion } from '@/types/error';
+import type { RecoverySuggestion } from '@/types/error';
 import {
   getNotificationSettings,
-  isNotificationEnabled,
   isNotificationTypeEnabled
 } from '@/stores/userPreferencesStore';
 

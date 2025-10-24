@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useState,
   useEffect,
   useMemo,
@@ -35,8 +35,8 @@ import {
   Slider,
   ScrollArea,
 } from '@/components/ui';
-import { GlideDataTable, type DataSourceType } from '@/components/ui/GlideDataTable';
-import { TableToolbar, type CopyFormat } from '@/components/ui/TableToolbar';
+import { GlideDataTable, type DataSourceType } from '@/components/ui/glide-data-table';
+import { TableToolbar, type CopyFormat } from '@/components/ui/table-toolbar';
 import ExportOptionsDialog, {
   type ExportOptions,
 } from '@/components/query/ExportOptionsDialog';
@@ -670,11 +670,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       switch (format) {
         case 'text':
           // 文本格式：列之间用制表符分隔
-          textToCopy = columns.join('\t') + '\n';
+          textToCopy = `${columns.join('\t')  }\n`;
           textToCopy += rows.map(row => row.join('\t')).join('\n');
           break;
 
-        case 'insert':
+        case 'insert': {
           // INSERT语句格式
           const insertStatements = rows.map(row => {
             const values = row.map(val => {
@@ -686,15 +686,16 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           });
           textToCopy = insertStatements.join('\n');
           break;
+        }
 
         case 'markdown':
           // Markdown表格格式
-          textToCopy = '| ' + columns.join(' | ') + ' |\n';
-          textToCopy += '| ' + columns.map(() => '---').join(' | ') + ' |\n';
-          textToCopy += rows.map(row => '| ' + row.join(' | ') + ' |').join('\n');
+          textToCopy = `| ${  columns.join(' | ')  } |\n`;
+          textToCopy += `| ${  columns.map(() => '---').join(' | ')  } |\n`;
+          textToCopy += rows.map(row => `| ${  row.join(' | ')  } |`).join('\n');
           break;
 
-        case 'json':
+        case 'json': {
           // JSON格式
           const jsonData = rows.map(row => {
             const obj: Record<string, any> = {};
@@ -705,8 +706,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           });
           textToCopy = JSON.stringify(jsonData, null, 2);
           break;
+        }
 
-        case 'csv':
+        case 'csv': {
           // CSV格式
           const escapeCsvValue = (val: any) => {
             if (val === null || val === undefined) return '';
@@ -716,9 +718,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             }
             return str;
           };
-          textToCopy = columns.map(escapeCsvValue).join(',') + '\n';
+          textToCopy = `${columns.map(escapeCsvValue).join(',')  }\n`;
           textToCopy += rows.map(row => row.map(escapeCsvValue).join(',')).join('\n');
           break;
+        }
 
         default:
           toast.error('不支持的复制格式');

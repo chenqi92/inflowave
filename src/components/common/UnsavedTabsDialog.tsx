@@ -1,12 +1,12 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/Dialog';
-import { Button } from '@/components/ui/Button';
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { AlertTriangle, FileText } from 'lucide-react';
 import type { EditorTab } from '@/components/editor/TabManager';
 

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 导出配置对话框
  * 用于配置数据导出选项（CSV/JSON）
  */
@@ -11,7 +11,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/Dialog';
+} from '@/components/ui/dialog';
 import {
   Button,
   Input,

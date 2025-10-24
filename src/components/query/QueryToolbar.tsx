@@ -1,6 +1,6 @@
-import React from 'react';
-import { Button } from '@/components/ui/Button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
+﻿import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlayCircle, Save, Wand2 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';

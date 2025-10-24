@@ -14,7 +14,6 @@ import {
   Badge,
   Title,
   Text,
-  Input,
   Select,
   SelectContent,
   SelectItem,
@@ -36,7 +35,7 @@ import {
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 
-interface ControllerSettings {
+interface ControllerSettingsConfig {
   allow_delete_statements: boolean;
   allow_drop_statements: boolean;
   allow_dangerous_operations: boolean;
@@ -55,7 +54,7 @@ interface QuerySettings {
 }
 
 interface CombinedSettings {
-  controller: ControllerSettings;
+  controller: ControllerSettingsConfig;
   query: QuerySettings;
 }
 
@@ -88,7 +87,7 @@ const ControllerSettings: React.FC = () => {
   const loadSettings = async () => {
     try {
       const [controllerSettings, querySettings] = await Promise.all([
-        safeTauriInvoke<ControllerSettings>('get_controller_settings'),
+        safeTauriInvoke<ControllerSettingsConfig>('get_controller_settings'),
         safeTauriInvoke<QuerySettings>('get_query_settings'),
       ]);
 

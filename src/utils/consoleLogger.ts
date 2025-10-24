@@ -261,7 +261,7 @@ ${'='.repeat(80)}
   }
 
   private async writeLogEntries(entries: ConsoleLogEntry[]): Promise<void> {
-    const logContent = entries.map(entry => this.formatLogEntry(entry)).join('\n') + '\n';
+    const logContent = `${entries.map(entry => this.formatLogEntry(entry)).join('\n')}\n`;
 
     try {
       await FileOperations.appendToFile(this.logFilePath, logContent);

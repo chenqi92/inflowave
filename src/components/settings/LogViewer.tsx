@@ -1,17 +1,17 @@
-/**
+﻿/**
  * 日志查看器组件
  * 显示实时日志流，支持过滤和搜索
  */
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { logger, LogLevel, LogEntry } from '@/utils/logger';
-import { Input } from '@/components/ui/Input';
-import { Button } from '@/components/ui/Button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Switch } from '@/components/ui/Switch';
-import { Label } from '@/components/ui/Label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Copy, Download, Trash2, RefreshCw, ChevronUp, ChevronDown, Filter, FileText, FileJson, FileSpreadsheet } from 'lucide-react';
 import { toast } from 'sonner';
 import { save } from '@tauri-apps/plugin-dialog';

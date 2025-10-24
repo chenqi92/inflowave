@@ -15,7 +15,6 @@ import GlobalSearch from './components/common/GlobalSearch';
 import UserGuideModal from './components/common/UserGuideModal';
 import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
-import { useUserPreferences } from './hooks/useUserPreferences';
 import { useUserPreferencesStore } from './stores/userPreferencesStore';
 import { useAppNotifications } from './hooks/useAppNotifications';
 import { initializeHealthCheck } from './utils/healthCheck';

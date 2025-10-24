@@ -171,7 +171,7 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
                     <ul className="space-y-1">
                         {releaseNote.highlights.map((highlight, index) => (
                             <li key={index} className="text-xs text-blue-700 dark:text-blue-300">
-                                • {highlight.replace(/[🚀✨🎯]/g, '').trim()}
+                                • {highlight.replace(/[🚀✨🎯]/gu, '').trim()}
                             </li>
                         ))}
                     </ul>

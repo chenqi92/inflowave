@@ -92,8 +92,8 @@ FILL(null)`,
     id: 'v1-regex-filter',
     title: '正则表达式过滤',
     description: '使用正则表达式匹配标签值',
-    query: `SELECT * FROM "disk_usage" 
-WHERE "device" =~ /^\/dev\/sd.*/ AND time > now() - 1h`,
+    query: `SELECT * FROM "disk_usage"
+WHERE "device" =~ /^\\/dev\\/sd.*/ AND time > now() - 1h`,
     category: '高级查询',
     difficulty: 'intermediate',
     tags: ['正则表达式', '标签匹配'],
@@ -355,7 +355,7 @@ join(tables: {cpu: cpu, memory: memory}, on: ["_time", "host"])`,
     query: `from(bucket: "telegraf")
   |> range(start: -1h)
   |> filter(fn: (r) => r._measurement == "disk")
-  |> filter(fn: (r) => r.device =~ /^\/dev\/sd.*/)
+  |> filter(fn: (r) => r.device =~ /^\\/dev\\/sd.*/)
   |> filter(fn: (r) => r._field == "used_percent")
   |> aggregateWindow(every: 5m, fn: mean)`,
     category: '高级查询',

@@ -248,10 +248,10 @@ class EditorTelemetry {
       if (stats.count > 0) {
         logger.info(`${type}:`, {
           count: stats.count,
-          avg: stats.avg?.toFixed(2) + 'ms',
-          min: stats.min?.toFixed(2) + 'ms',
-          max: stats.max?.toFixed(2) + 'ms',
-          p95: stats.p95?.toFixed(2) + 'ms',
+          avg: `${stats.avg?.toFixed(2)  }ms`,
+          min: `${stats.min?.toFixed(2)  }ms`,
+          max: `${stats.max?.toFixed(2)  }ms`,
+          p95: `${stats.p95?.toFixed(2)  }ms`,
         });
       }
     }

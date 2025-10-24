@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 快捷键配置对话框
  */
 
@@ -16,10 +16,6 @@ import {
   Alert,
   AlertDescription,
   ScrollArea,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -27,7 +23,7 @@ import {
   SelectValue,
   Switch,
 } from '@/components/ui';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/Table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Keyboard,
   Search,
@@ -35,18 +31,15 @@ import {
   Upload,
   RotateCcw,
   AlertTriangle,
-  CheckCircle,
-  XCircle,
   Edit2,
   Save,
   X,
-  Filter,
   Info,
 } from 'lucide-react';
 import { shortcutManager, ShortcutManager } from '@/utils/shortcutManager';
 import { defaultShortcuts, shortcutCategoryInfo } from '@/config/defaultShortcuts';
 import { ShortcutCategory } from '@/types/shortcuts';
-import type { ShortcutDefinition, ShortcutConfig, ModifierKeys } from '@/types/shortcuts';
+import type { ShortcutDefinition, ModifierKeys } from '@/types/shortcuts';
 import { showMessage } from '@/utils/message';
 import { saveAs } from 'file-saver';
 

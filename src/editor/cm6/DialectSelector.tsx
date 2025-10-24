@@ -6,7 +6,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { Database, Code2, ChevronDown } from 'lucide-react';
+import { Database, Code2 } from 'lucide-react';
 import { Badge } from '@/components/ui';
 import {
   Select,

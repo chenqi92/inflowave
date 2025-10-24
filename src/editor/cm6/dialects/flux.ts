@@ -132,7 +132,7 @@ const fluxLanguage = StreamLanguage.define({
     }
 
     // Regular expressions
-    if (stream.match(/^\/([^\/\\]|\\.)+\//)) {
+    if (stream.match(/^\/([^/\\]|\\.)+\//)) {
       return 'string.special';
     }
 

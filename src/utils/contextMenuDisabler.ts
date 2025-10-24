@@ -9,7 +9,7 @@ import { isTauriEnvironment } from './tauri';
  * 检查是否为生产环境
  */
 const isProduction = (): boolean => {
-  return process.env.NODE_ENV === 'production';
+  return import.meta.env.MODE === 'production';
 };
 
 /**

@@ -1,4 +1,4 @@
-import React, {
+﻿import React, {
   useState,
   useEffect,
   useCallback,
@@ -28,8 +28,8 @@ import { toast } from 'sonner';
 import {
   GlideDataTable,
   type DataSourceType,
-} from '@/components/ui/GlideDataTable';
-import { TableToolbar, type CopyFormat } from '@/components/ui/TableToolbar';
+} from '@/components/ui/glide-data-table';
+import { TableToolbar, type CopyFormat } from '@/components/ui/table-toolbar';
 import {
   DndContext,
   closestCenter,
@@ -2264,13 +2264,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         switch (format) {
           case 'text':
             // 文本格式：列之间用制表符分隔
-            textToCopy = visibleColumns.join('\t') + '\n';
+            textToCopy = `${visibleColumns.join('\t')  }\n`;
             textToCopy += rowsToCopy.map(row =>
               visibleColumns.map(col => row[col] || '').join('\t')
             ).join('\n');
             break;
 
-          case 'insert':
+          case 'insert': {
             // INSERT语句格式
             const insertStatements = rowsToCopy.map(row => {
               const values = visibleColumns.map(col => {
@@ -2283,17 +2283,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             });
             textToCopy = insertStatements.join('\n');
             break;
+          }
 
           case 'markdown':
             // Markdown表格格式
-            textToCopy = '| ' + visibleColumns.join(' | ') + ' |\n';
-            textToCopy += '| ' + visibleColumns.map(() => '---').join(' | ') + ' |\n';
+            textToCopy = `| ${  visibleColumns.join(' | ')  } |\n`;
+            textToCopy += `| ${  visibleColumns.map(() => '---').join(' | ')  } |\n`;
             textToCopy += rowsToCopy.map(row =>
-              '| ' + visibleColumns.map(col => row[col] || '').join(' | ') + ' |'
+              `| ${  visibleColumns.map(col => row[col] || '').join(' | ')  } |`
             ).join('\n');
             break;
 
-          case 'json':
+          case 'json': {
             // JSON格式
             const jsonData = rowsToCopy.map(row => {
               const obj: Record<string, any> = {};
@@ -2304,8 +2305,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             });
             textToCopy = JSON.stringify(jsonData, null, 2);
             break;
+          }
 
-          case 'csv':
+          case 'csv': {
             // CSV格式
             const escapeCsvValue = (val: any) => {
               if (val === null || val === undefined) return '';
@@ -2315,11 +2317,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               }
               return str;
             };
-            textToCopy = visibleColumns.map(escapeCsvValue).join(',') + '\n';
+            textToCopy = `${visibleColumns.map(escapeCsvValue).join(',')  }\n`;
             textToCopy += rowsToCopy.map(row =>
               visibleColumns.map(col => escapeCsvValue(row[col])).join(',')
             ).join('\n');
             break;
+          }
 
           default:
             toast.error('不支持的复制格式');

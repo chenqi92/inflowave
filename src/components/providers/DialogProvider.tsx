@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useCallback, useState } from 'react';
-import CustomDialog from '@/components/ui/CustomDialog';
+﻿import React, { createContext, useContext, useCallback, useState } from 'react';
+import CustomDialog from '@/components/ui/custom-dialog';
 
 interface DialogOptions {
   title?: string;

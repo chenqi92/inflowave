@@ -272,14 +272,14 @@ export const editorEvents = {
   /**
    * Subscribe to focus events
    */
-  onFocus(callback: (event: EditorEvent<{}>) => void): () => void {
+  onFocus(callback: (event: EditorEvent<Record<string, never>>) => void): () => void {
     return editorEventBus.on('focus', callback);
   },
 
   /**
    * Subscribe to blur events
    */
-  onBlur(callback: (event: EditorEvent<{}>) => void): () => void {
+  onBlur(callback: (event: EditorEvent<Record<string, never>>) => void): () => void {
     return editorEventBus.on('blur', callback);
   },
 };

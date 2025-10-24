@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 数据源节点构建器
  * 
  * 根据数据库类型和特征配置构建统一的数据源树节点
@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Star } from 'lucide-react';
-import { Badge } from '@/components/ui/Badge';
+import { Badge } from '@/components/ui/badge';
 import type { 
   DatabaseType,
   DatabaseLevel,

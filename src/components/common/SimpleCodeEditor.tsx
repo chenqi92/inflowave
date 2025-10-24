@@ -5,7 +5,7 @@
  * Replaces Monaco Editor usage in QueryBuilder, IntelligentQueryEngine, etc.
  */
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef } from 'react';
 import { CodeMirrorEditor, type CodeMirrorEditorRef, basicPreset, createEditorTheme, getDialectExtensions, type QueryDialect } from '@/editor/cm6';
 import { useTheme } from '@/components/providers/ThemeProvider';
 

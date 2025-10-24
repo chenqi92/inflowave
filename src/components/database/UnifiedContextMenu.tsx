@@ -1,4 +1,4 @@
-/**
+﻿/**
  * UnifiedContextMenu - 统一的数据库浏览器右键菜单组件
  * 
  * 基于 shadcn/ui ContextMenu 实现，支持所有节点类型的右键菜单
@@ -17,14 +17,13 @@ import {
   ContextMenuSubContent,
   ContextMenuSubTrigger,
   ContextMenuShortcut,
-} from '@/components/ui/ContextMenu';
+} from '@/components/ui/context-menu';
 import {
   Copy,
   RefreshCw,
   Settings,
   Trash2,
   Plus,
-  X,
   Info,
   Clock,
   Star,
@@ -33,11 +32,8 @@ import {
   BarChart,
   Tags,
   FileText,
-  Database,
   Table,
-  FileDown,
   Eye,
-  Zap,
   Activity,
   FolderOpen,
   FolderX,
@@ -49,13 +45,9 @@ import {
   Upload,
   Link,
   Unlink,
-  CheckCircle,
-  XCircle,
   FileStack,
 } from 'lucide-react';
 import { TreeNodeData } from './TreeNodeRenderer';
-import { TreeNodeType } from '@/types/tree';
-import { isIoTDBConnection } from '@/utils/databaseExplorer/nodeUtils';
 
 export interface UnifiedContextMenuProps {
   children: React.ReactNode;

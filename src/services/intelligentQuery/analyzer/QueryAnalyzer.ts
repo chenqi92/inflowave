@@ -157,11 +157,6 @@ export interface ResourceUtilization {
     avgNetworkUsage: number;
 }
 
-export interface TimeRange {
-    start: string;
-    end: string;
-}
-
 /**
  * 查询分析器
  *

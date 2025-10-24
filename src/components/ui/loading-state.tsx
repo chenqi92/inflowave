@@ -4,8 +4,8 @@
  */
 
 import React from 'react';
-import { Spin } from './Spin';
-import { Progress } from './Progress';
+import { Spin } from './spin';
+import { Progress } from './progress';
 import { cn } from '@/lib/utils';
 import { Loader2, Clock } from 'lucide-react';
 

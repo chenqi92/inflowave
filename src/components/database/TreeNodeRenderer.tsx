@@ -4,7 +4,6 @@ import { ChevronRight, ChevronDown, Loader2, Shield } from 'lucide-react';
 import { DatabaseIcon } from '@/components/common/DatabaseIcon';
 import { TreeNodeType, normalizeNodeType, getIoTDBNodeBehavior } from '@/types/tree';
 import { cn } from '@/lib/utils';
-import { useConnectionStore } from '@/store/connection';
 import {
   useTreeStatusStore,
   selectConnectionStatus,
@@ -25,7 +24,7 @@ import {
   FavoriteIndicator,
   ErrorIndicator,
 } from './NodeStatusIndicator';
-import { log, logger } from '@/utils/logger';
+import { log } from '@/utils/logger';
 
 export interface TreeNodeData {
   id: string;

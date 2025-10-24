@@ -5,7 +5,6 @@
  */
 
 import { LanguageSupport, StreamLanguage } from '@codemirror/language';
-import { tags as t } from '@lezer/highlight';
 import type { CompletionContext, CompletionResult } from '@codemirror/autocomplete';
 
 /**

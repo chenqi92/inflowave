@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Minus, Plus } from 'lucide-react';
-import { Button } from './Button';
+import { Button } from './button';
 
 // Helper function to merge refs
 function mergeRefs<T = unknown>(

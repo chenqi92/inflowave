@@ -1,4 +1,4 @@
-import { useState, useRef, useReducer, useCallback } from 'react';
+import { useRef, useReducer, useCallback } from 'react';
 import type { ConnectionConfig } from '@/types';
 import type {
     DataNode,

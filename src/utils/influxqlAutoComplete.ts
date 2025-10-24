@@ -135,58 +135,43 @@ export function setupInfluxQLAutoComplete(monaco: any, editor: any, selectedData
  * 获取数据库中的测量值（表名）
  */
 async function getMeasurements(database: string): Promise<string[]> {
-  try {
-    // 这里应该调用实际的API
-    // 暂时返回示例数据
-    return [
-      'cpu_usage',
-      'memory_usage',
-      'disk_usage',
-      'network_traffic',
-      'temperature',
-      'pressure',
-      'humidity'
-    ];
-  } catch (error) {
-    console.error('Error fetching measurements:', error);
-    return [];
-  }
+  // 这里应该调用实际的API
+  // 暂时返回示例数据
+  return [
+    'cpu_usage',
+    'memory_usage',
+    'disk_usage',
+    'network_traffic',
+    'temperature',
+    'pressure',
+    'humidity'
+  ];
 }
 
 /**
  * 获取测量值的字段名
  */
 async function getFieldKeys(database: string, measurement: string): Promise<string[]> {
-  try {
-    // 这里应该调用实际的API
-    return [
-      'time',
-      'value',
-      'host',
-      'region',
-      'cpu_percent',
-      'memory_percent'
-    ];
-  } catch (error) {
-    console.error('Error fetching field keys:', error);
-    return [];
-  }
+  // 这里应该调用实际的API
+  return [
+    'time',
+    'value',
+    'host',
+    'region',
+    'cpu_percent',
+    'memory_percent'
+  ];
 }
 
 /**
  * 获取测量值的标签键
  */
 async function getTagKeys(database: string, measurement: string): Promise<string[]> {
-  try {
-    // 这里应该调用实际的API
-    return [
-      'host',
-      'region',
-      'datacenter',
-      'environment'
-    ];
-  } catch (error) {
-    console.error('Error fetching tag keys:', error);
-    return [];
-  }
+  // 这里应该调用实际的API
+  return [
+    'host',
+    'region',
+    'datacenter',
+    'environment'
+  ];
 }

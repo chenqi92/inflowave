@@ -46,7 +46,7 @@ abstract class BaseLinter {
     const results: Array<{ match: RegExpMatchArray; index: number }> = [];
     let match: RegExpMatchArray | null;
 
-    const regex = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : pattern.flags + 'g');
+    const regex = new RegExp(pattern.source, pattern.flags.includes('g') ? pattern.flags : `${pattern.flags  }g`);
 
     while ((match = regex.exec(doc)) !== null) {
       results.push({ match, index: match.index ?? 0 });

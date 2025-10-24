@@ -358,7 +358,7 @@ class ReleaseNotesService {
       // 代码
       .replace(/`([^`]*)`/gim, '<code>$1</code>')
       // 列表
-      .replace(/^\- (.*$)/gim, '<li>$1</li>')
+      .replace(/^- (.*$)/gim, '<li>$1</li>')
       // 换行
       .replace(/\n/gim, '<br>');
   }

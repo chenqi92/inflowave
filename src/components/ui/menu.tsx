@@ -9,14 +9,14 @@ interface MenuProps {
   theme?: 'light' | 'dark';
   selectedKeys?: string[];
   onSelect?: (key: string) => void;
-  items?: MenuItem[];
+  items?: MenuItemConfig[];
 }
 
-interface MenuItem {
+interface MenuItemConfig {
   key: string;
   label: React.ReactNode;
   icon?: React.ReactNode;
-  children?: MenuItem[];
+  children?: MenuItemConfig[];
   disabled?: boolean;
   danger?: boolean;
   type?: 'divider' | 'group';
@@ -37,7 +37,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
     },
     ref
   ) => {
-    const renderItem = (item: MenuItem, level = 0) => {
+    const renderItem = (item: MenuItemConfig, level = 0) => {
       if (item.type === 'divider') {
         return <div key={item.key} className='border-t border-border my-1' />;
       }
@@ -157,4 +157,4 @@ const MenuDivider = React.forwardRef<HTMLDivElement, { className?: string }>(
 MenuDivider.displayName = 'MenuDivider';
 
 export { Menu, MenuItem, MenuDivider };
-export type { MenuProps, MenuItem as MenuItemType };
+export type { MenuProps, MenuItemConfig, MenuItemProps };

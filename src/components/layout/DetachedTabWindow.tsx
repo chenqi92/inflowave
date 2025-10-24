@@ -21,8 +21,6 @@ import {
 } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { readFromClipboard, writeToClipboard } from '@/utils/clipboard';
-import { showMessage } from '@/utils/message';
 
 interface DetachedTab {
   id: string;

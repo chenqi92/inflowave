@@ -125,7 +125,7 @@ export async function withTimeoutAndRetry<T>(
  * 超时管理器
  */
 export class TimeoutManager {
-  private timers: Map<string, NodeJS.Timeout> = new Map();
+  private timers: Map<string, ReturnType<typeof setTimeout>> = new Map();
   private startTimes: Map<string, number> = new Map();
 
   /**

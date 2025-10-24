@@ -34,7 +34,7 @@ class Logger {
   private config: LoggerConfig;
   private logs: LogEntry[] = [];
   private logBuffer: LogEntry[] = [];
-  private flushTimer: NodeJS.Timeout | null = null;
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private flushInterval = 2000; // 2秒批量写入
   private maxLogs = 1000;
   private logFilePath = 'logs/frontend.log';

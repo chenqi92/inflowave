@@ -425,7 +425,7 @@ export const MultiDatabaseChart: React.FC<MultiDatabaseChartProps> = ({
           </ResponsiveContainer>
         );
 
-      case 'pie':
+      case 'pie': {
         const pieData = chartData.slice(0, 10).map((item: any, index: number) => ({
           name: item[xAxisField],
           value: item[yAxisFields[0]],
@@ -453,6 +453,7 @@ export const MultiDatabaseChart: React.FC<MultiDatabaseChartProps> = ({
             </PieChart>
           </ResponsiveContainer>
         );
+      }
 
       default:
         return null;

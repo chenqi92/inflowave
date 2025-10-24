@@ -26,7 +26,7 @@ const Layout = forwardRef<HTMLDivElement, LayoutProps>(
 Layout.displayName = 'Layout';
 
 // Header component
-export interface HeaderProps extends React.HTMLAttributes<HTMLElement> {}
+export type HeaderProps = React.HTMLAttributes<HTMLElement>;
 
 const Header = forwardRef<HTMLElement, HeaderProps>(
   ({ className, children, ...props }, ref) => {
@@ -101,7 +101,7 @@ const Sider = forwardRef<HTMLDivElement, SiderProps>(
 Sider.displayName = 'Sider';
 
 // Content component
-export interface ContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+export type ContentProps = React.HTMLAttributes<HTMLDivElement>;
 
 const Content = forwardRef<HTMLDivElement, ContentProps>(
   ({ className, children, ...props }, ref) => {
@@ -119,7 +119,7 @@ const Content = forwardRef<HTMLDivElement, ContentProps>(
 Content.displayName = 'Content';
 
 // Footer component
-export interface FooterProps extends React.HTMLAttributes<HTMLElement> {}
+export type FooterProps = React.HTMLAttributes<HTMLElement>;
 
 const Footer = forwardRef<HTMLElement, FooterProps>(
   ({ className, children, ...props }, ref) => {

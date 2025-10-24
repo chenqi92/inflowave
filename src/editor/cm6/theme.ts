@@ -51,7 +51,7 @@ function hslToHex(hsl: string): string {
   
   const toHex = (n: number) => {
     const hex = Math.round((n + m) * 255).toString(16);
-    return hex.length === 1 ? '0' + hex : hex;
+    return hex.length === 1 ? `0${  hex}` : hex;
   };
   
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
@@ -95,13 +95,13 @@ export function createAppTheme(isDark: boolean): Extension {
       borderLeftWidth: '2px',
     },
     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
-      backgroundColor: selection + '40', // Add transparency
+      backgroundColor: `${selection  }40`, // Add transparency
     },
     '.cm-activeLine': {
-      backgroundColor: lineHighlight + '30',
+      backgroundColor: `${lineHighlight  }30`,
     },
     '.cm-selectionMatch': {
-      backgroundColor: selection + '30',
+      backgroundColor: `${selection  }30`,
     },
     '.cm-gutters': {
       backgroundColor: gutterBackground,
@@ -110,7 +110,7 @@ export function createAppTheme(isDark: boolean): Extension {
       borderRight: `1px solid ${getColor('--border', isDark ? '#2d2d2d' : '#e5e5e5')}`,
     },
     '.cm-activeLineGutter': {
-      backgroundColor: lineHighlight + '30',
+      backgroundColor: `${lineHighlight  }30`,
     },
     '.cm-foldPlaceholder': {
       backgroundColor: getColor('--muted', isDark ? '#3e3e3e' : '#e0e0e0'),

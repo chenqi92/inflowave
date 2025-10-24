@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Badge } from '@/components/ui/Badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
+﻿import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
     Search, 
     Copy, 
@@ -84,9 +83,9 @@ export const ManagementNodeDialog: React.FC<ManagementNodeDialogProps> = ({
             console.log(`🔄 加载管理节点数据: ${nodeName} (${nodeType})`);
             
             const childNodes = await safeTauriInvoke('get_tree_children', {
-                connectionId: connectionId,
+                connectionId,
                 parentNodeId: nodeName,
-                nodeType: nodeType
+                nodeType
             });
 
             console.log(`✅ 成功加载管理节点数据: ${nodeName}`, childNodes);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import { generateUniqueId } from '@/utils/idGenerator';
 import {
   Button,
@@ -7,8 +7,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui';
-import { GlideDataTable } from '@/components/ui/GlideDataTable';
-import type { ColumnConfig, DataRow } from '@/components/ui/GlideDataTable';
+import { GlideDataTable } from '@/components/ui/glide-data-table';
+import type { ColumnConfig, DataRow } from '@/components/ui/glide-data-table';
 import { useGlobalDialog } from '@/components/providers/DialogProvider';
 import {
   Trash2,

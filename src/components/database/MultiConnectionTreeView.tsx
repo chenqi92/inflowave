@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MultiConnectionTreeView - 多连接数据源树组件
  *
  * 基于 Headless Tree 实现的多连接树视图，用于 DatabaseExplorer
@@ -15,7 +15,7 @@
  * - ✅ 主题切换
  */
 
-import React, { useState, useEffect, useRef, useMemo, useCallback, startTransition } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useTree } from '@headless-tree/react';
 import {
   syncDataLoaderFeature,
@@ -26,9 +26,7 @@ import type { ItemInstance } from '@headless-tree/core';
 import { Virtuoso } from 'react-virtuoso';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { Loader2, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { Input } from '@/components/ui/Input';
+import { Button } from '@/components/ui/button';
 import { TreeNodeRenderer, TreeNodeData } from './TreeNodeRenderer';
 import { TreeDataLoader } from './TreeDataLoader';
 import { UnifiedContextMenu } from './UnifiedContextMenu';
@@ -93,8 +91,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 }) => {
   // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
   const renderCountRef = useRef(0);
-  // eslint-disable-next-line no-undef
-  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     renderCountRef.current++;
     logger.render(`MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
   }

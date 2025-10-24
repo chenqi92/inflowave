@@ -1,6 +1,6 @@
-import React, {useState, useCallback, startTransition, useEffect, useRef} from 'react';
-import { GlideDataTable, type ColumnConfig, type DataRow } from '@/components/ui/GlideDataTable';
-import { TableToolbar } from '@/components/ui/TableToolbar';
+﻿import React, {useState, useCallback, startTransition, useEffect, useRef} from 'react';
+import { GlideDataTable, type DataRow } from '@/components/ui/glide-data-table';
+import { TableToolbar } from '@/components/ui/table-toolbar';
 import { ExportConfigDialog } from './ExportConfigDialog';
 import { exportQueryResult, ExportConfig } from '@/utils/dataExport';
 import {
@@ -20,8 +20,6 @@ import {
     SelectValue,
     Dialog,
     DialogContent,
-    DialogDescription,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -53,7 +51,6 @@ import {
 import {useContextMenu} from '@/hooks/useContextMenu';
 import ContextMenu from '@/components/common/ContextMenu';
 import type {QueryResult} from '@/types';
-import {safeTauriInvoke} from '@/utils/tauri';
 import SimpleChart from '../common/SimpleChart';
 
 // SQL语句类型检测工具函数

@@ -49,7 +49,7 @@ class QueryCache {
     cleanupInterval: 60 * 1000, // 1 minute
   };
 
-  private cleanupTimer?: NodeJS.Timeout;
+  private cleanupTimer?: ReturnType<typeof setTimeout>;
 
   constructor(config?: Partial<CacheConfig>) {
     if (config) {

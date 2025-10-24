@@ -74,7 +74,6 @@ import { showMessage } from '@/utils/message';
 import { SimpleCodeEditor } from '@/components/common/SimpleCodeEditor';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { dialog } from '@/utils/dialog';
-import { readFromClipboard, writeToClipboard } from '@/utils/clipboard';
 
 const { Text, Paragraph } = Typography;
 
