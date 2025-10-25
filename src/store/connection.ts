@@ -1008,17 +1008,28 @@ export const useConnectionStore = create<ConnectionState>()(
           logger.debug('同步后端连接配置...');
           const backendConnections = await safeTauriInvoke<ConnectionConfig[]>('get_connections');
 
-          if (!backendConnections) {
+          if (!backendConnections || backendConnections.length === 0) {
             logger.warn('后端返回空连接列表');
             return;
           }
-          
+
+          logger.debug(`从后端获取到 ${backendConnections.length} 个连接配置`);
+
           const backendConnectionIds = new Set(backendConnections.map((conn: ConnectionConfig) => conn.id));
-          
-          // 检查前端连接是否在后端存在
           const { connections } = get();
+          const frontendConnectionMap = new Map(connections.map(conn => [conn.id, conn]));
+
+          // 1. 找出需要添加的新连接（后端有但前端没有）
+          const connectionsToAdd: ConnectionConfig[] = [];
+          for (const backendConn of backendConnections) {
+            if (!frontendConnectionMap.has(backendConn.id)) {
+              connectionsToAdd.push(backendConn);
+              logger.debug(`发现新连接: ${backendConn.id} (${backendConn.name})`);
+            }
+          }
+
+          // 2. 找出需要删除的无效连接（前端有但后端没有）
           const invalidConnections: string[] = [];
-          
           for (const connection of connections) {
             if (connection.id && !backendConnectionIds.has(connection.id)) {
               invalidConnections.push(connection.id);
@@ -1026,27 +1037,40 @@ export const useConnectionStore = create<ConnectionState>()(
             }
           }
 
-          // 清理无效连接
-          if (invalidConnections.length > 0) {
-            logger.info(`清理 ${invalidConnections.length} 个无效连接`);
-            set(state => ({
-              connections: state.connections.filter(conn => conn.id && !invalidConnections.includes(conn.id)),
-              connectionStatuses: Object.fromEntries(
-                Object.entries(state.connectionStatuses).filter(([id]) => !invalidConnections.includes(id))
-              ),
-              tableConnectionStatuses: Object.fromEntries(
-                Object.entries(state.tableConnectionStatuses).filter(([id]) => !invalidConnections.includes(id))
-              ),
-              connectedConnectionIds: state.connectedConnectionIds.filter(
-                id => !invalidConnections.includes(id)
-              ),
-              activeConnectionId: state.activeConnectionId && invalidConnections.includes(state.activeConnectionId)
-                ? null
-                : state.activeConnectionId,
-            }));
+          // 3. 合并连接配置
+          if (connectionsToAdd.length > 0 || invalidConnections.length > 0) {
+            logger.info(`同步连接: 添加 ${connectionsToAdd.length} 个, 删除 ${invalidConnections.length} 个`);
+
+            set(state => {
+              // 移除无效连接
+              let updatedConnections = state.connections.filter(
+                conn => conn.id && !invalidConnections.includes(conn.id)
+              );
+
+              // 添加新连接
+              updatedConnections = [...updatedConnections, ...connectionsToAdd];
+
+              return {
+                connections: updatedConnections,
+                connectionStatuses: Object.fromEntries(
+                  Object.entries(state.connectionStatuses).filter(([id]) => !invalidConnections.includes(id))
+                ),
+                tableConnectionStatuses: Object.fromEntries(
+                  Object.entries(state.tableConnectionStatuses).filter(([id]) => !invalidConnections.includes(id))
+                ),
+                connectedConnectionIds: state.connectedConnectionIds.filter(
+                  id => !invalidConnections.includes(id)
+                ),
+                activeConnectionId: state.activeConnectionId && invalidConnections.includes(state.activeConnectionId)
+                  ? null
+                  : state.activeConnectionId,
+              };
+            });
+          } else {
+            logger.debug('连接配置已同步，无需更新');
           }
 
-          // 同步后端连接状态
+          // 4. 同步后端连接状态
           try {
             logger.debug('同步后端连接状态...');
             const backendStatuses = await safeTauriInvoke<Record<string, any>>('get_all_connection_statuses');
@@ -1086,7 +1110,7 @@ export const useConnectionStore = create<ConnectionState>()(
             logger.warn('同步连接状态失败，将在后续重试:', statusError);
           }
 
-          logger.info('连接配置同步完成');
+          logger.info(`连接配置同步完成，当前共 ${get().connections.length} 个连接`);
         } catch (error) {
           logger.error('同步连接配置失败:', error);
         }
