@@ -149,7 +149,16 @@ export function createAppTheme(isDark: boolean): Extension {
       flexShrink: '0',
     },
     // Custom completion icons for different types
-    // 使用 SVG 图标
+    // 使用 SVG 图标 + CSS filter 动态调整颜色
+    //
+    // 方案1（当前）: 使用 CSS filter 动态调整单色SVG的颜色
+    // - 优点: 只需要一套图标文件，自动适配亮暗主题
+    // - 适用: 单色SVG图标（stroke-based，无fill颜色）
+    //
+    // 方案2（备选）: 如果filter效果不理想，可以使用两套图标文件
+    // - 创建 table-light.svg, table-dark.svg 等
+    // - 使用条件: backgroundImage: isDark ? 'url(".../table-dark.svg")' : 'url(".../table-light.svg")'
+    // - 移除 filter 属性
     '.cm-completionIcon-db-table': {
       backgroundImage: 'url("/src/assets/icons/completion/table.svg")',
       backgroundSize: 'contain',
@@ -228,13 +237,35 @@ export function createAppTheme(isDark: boolean): Extension {
       fontStyle: 'italic',
       opacity: '0.7',
     },
-    // 为不同类型的补全项添加颜色
-    'li[aria-selected] .cm-completionLabel': {
-      color: 'inherit !important',
-    },
     '.cm-completionMatchedText': {
       textDecoration: 'none',
       fontWeight: 'bold',
+    },
+    // 为不同类型的补全项label添加颜色（使用相邻兄弟选择器）
+    '.cm-completionIcon-db-table + .cm-completionLabel': {
+      color: isDark ? '#4A9EFF' : '#2563EB', // 蓝色
+    },
+    '.cm-completionIcon-db-field + .cm-completionLabel': {
+      color: isDark ? '#10B981' : '#059669', // 绿色
+    },
+    '.cm-completionIcon-db-tag + .cm-completionLabel': {
+      color: isDark ? '#A855F7' : '#7C3AED', // 紫色
+    },
+    '.cm-completionIcon-keyword + .cm-completionLabel': {
+      color: isDark ? '#F97316' : '#EA580C', // 橙色
+    },
+    '.cm-completionIcon-function + .cm-completionLabel': {
+      color: isDark ? '#FBBF24' : '#D97706', // 黄色
+    },
+    '.cm-completionIcon-type + .cm-completionLabel': {
+      color: isDark ? '#06B6D4' : '#0891B2', // 青色
+    },
+    '.cm-completionIcon-constant + .cm-completionLabel': {
+      color: isDark ? '#EC4899' : '#DB2777', // 粉色
+    },
+    // 选中状态时保持高对比度
+    'li[aria-selected] .cm-completionLabel': {
+      color: 'inherit !important',
     },
     '.cm-panels': {
       backgroundColor: getColor('--card'),
