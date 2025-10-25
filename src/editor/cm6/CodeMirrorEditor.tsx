@@ -5,14 +5,15 @@
  */
 
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import { EditorState, Extension } from '@codemirror/state';
+import { EditorState, Extension, Compartment } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { basicPreset } from './preset';
-import { createEditorTheme, watchThemeChanges } from './theme';
+import { createEditorTheme } from './theme';
 import { editorEvents } from './eventBus';
 import { editorTelemetry } from './telemetry';
 import { cn } from '@/lib/utils';
+import { getCurrentStatement, getAllStatements } from './sqlUtils';
 
 export interface CodeMirrorEditorProps {
   /** Initial document content */
@@ -64,6 +65,10 @@ export interface CodeMirrorEditorRef {
   getCursorPosition: () => number;
   /** Set cursor position */
   setCursorPosition: (pos: number) => void;
+  /** Get the SQL statement at current cursor position */
+  getCurrentStatement: () => string | null;
+  /** Get all SQL statements in the editor */
+  getAllStatements: () => string[];
 }
 
 /**
@@ -91,6 +96,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
   ) => {
     const editorRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
+    const themeCompartmentRef = useRef<Compartment>(new Compartment());
     const { resolvedTheme } = useTheme();
     const isDark = resolvedTheme === 'dark';
 
@@ -143,6 +149,15 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
           });
         }
       },
+      getCurrentStatement: () => {
+        if (!viewRef.current) return null;
+        return getCurrentStatement(viewRef.current);
+      },
+      getAllStatements: () => {
+        if (!viewRef.current) return [];
+        const text = viewRef.current.state.doc.toString();
+        return getAllStatements(text);
+      },
     }));
 
     // Initialize editor
@@ -163,8 +178,8 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
             readOnly,
             editable: !readOnly && editable,
           }),
-          // Theme
-          ...createEditorTheme(isDark),
+          // Theme (using compartment for dynamic updates)
+          themeCompartmentRef.current.of(createEditorTheme(isDark)),
           // Update listener
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
@@ -236,19 +251,9 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
     useEffect(() => {
       if (!viewRef.current) return;
 
-      const unwatch = watchThemeChanges((newIsDark) => {
-        if (viewRef.current) {
-          viewRef.current.dispatch({
-            effects: [
-              // Reconfigure theme
-              // Note: This is a simplified approach. In production, you'd use compartments
-              // for dynamic reconfiguration
-            ],
-          });
-        }
+      viewRef.current.dispatch({
+        effects: themeCompartmentRef.current.reconfigure(createEditorTheme(isDark)),
       });
-
-      return unwatch;
     }, [isDark]);
 
     // Update value when prop changes (controlled component)

@@ -1,6 +1,6 @@
 /**
  * Schema-aware Auto-completion for CodeMirror 6
- * 
+ *
  * Provides intelligent auto-completion based on database schema
  */
 
@@ -8,6 +8,44 @@ import type { CompletionContext, CompletionResult, Completion } from '@codemirro
 import { safeTauriInvoke } from '@/utils/tauri';
 import { logger } from '@/utils/logger';
 import type { QueryDialect } from './DialectSelector';
+
+/**
+ * SQL Keywords by dialect
+ */
+const SQL_KEYWORDS: Record<QueryDialect, string[]> = {
+  'sql': [
+    'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET',
+    'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
+    'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'OUTER JOIN',
+    'ON', 'AS', 'AND', 'OR', 'NOT', 'IN', 'LIKE', 'BETWEEN',
+    'IS NULL', 'IS NOT NULL', 'DISTINCT', 'COUNT', 'SUM', 'AVG', 'MIN', 'MAX',
+  ],
+  'influxql': [
+    'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET',
+    'SHOW', 'DATABASES', 'MEASUREMENTS', 'SERIES', 'TAG', 'KEYS', 'FIELD',
+    'RETENTION', 'POLICIES', 'CREATE', 'DROP', 'DELETE',
+    'AND', 'OR', 'NOT', 'IN', 'FILL',
+    'COUNT', 'SUM', 'MEAN', 'MEDIAN', 'MIN', 'MAX', 'FIRST', 'LAST',
+  ],
+  'flux': [
+    'from', 'range', 'filter', 'map', 'reduce', 'group', 'sort', 'limit',
+    'yield', 'to', 'aggregateWindow', 'window',
+    'count', 'sum', 'mean', 'median', 'min', 'max',
+  ],
+  'iotdb-sql': [
+    'SELECT', 'FROM', 'WHERE', 'GROUP BY', 'ORDER BY', 'LIMIT', 'OFFSET',
+    'SHOW', 'TIMESERIES', 'DEVICES', 'STORAGE', 'GROUP',
+    'CREATE', 'DROP', 'INSERT', 'DELETE',
+    'AND', 'OR', 'NOT', 'IN', 'LIKE',
+    'COUNT', 'SUM', 'AVG', 'MIN', 'MAX',
+  ],
+  'promql': [
+    'sum', 'avg', 'min', 'max', 'count',
+    'rate', 'irate', 'increase', 'delta',
+    'by', 'without', 'on', 'ignoring',
+    'and', 'or', 'unless',
+  ],
+};
 
 /**
  * Schema cache for auto-completion
@@ -320,6 +358,19 @@ export class SchemaCompletionProvider {
   }
 
   /**
+   * Get keyword completions
+   */
+  private getKeywordCompletions(): Completion[] {
+    const keywords = SQL_KEYWORDS[this.dialect] || SQL_KEYWORDS['sql'];
+    return keywords.map(keyword => ({
+      label: keyword,
+      type: 'keyword',
+      boost: 15,
+      apply: keyword,
+    }));
+  }
+
+  /**
    * Provide schema-aware completions
    */
   async provideCompletions(context: CompletionContext): Promise<CompletionResult | null> {
@@ -333,17 +384,20 @@ export class SchemaCompletionProvider {
 
     // Get text before cursor
     const textBefore = context.state.doc.sliceString(0, context.pos).toLowerCase();
-    
+
     // Determine what to suggest based on context
     let completions: Completion[] = [];
 
+    // Always include keywords
+    const keywords = this.getKeywordCompletions();
+
     // After FROM keyword - suggest tables
     if (/\bfrom\s+\w*$/i.test(textBefore)) {
-      completions = this.getTableCompletions();
+      completions = [...this.getTableCompletions(), ...keywords];
     }
     // After SELECT keyword - suggest fields
     else if (/\bselect\s+\w*$/i.test(textBefore)) {
-      completions = this.getFieldCompletions();
+      completions = [...this.getFieldCompletions(), ...keywords];
     }
     // After WHERE keyword - suggest fields and tags
     else if (/\bwhere\s+\w*$/i.test(textBefore)) {
@@ -351,16 +405,18 @@ export class SchemaCompletionProvider {
       completions = [
         ...this.getFieldCompletions(table || undefined),
         ...this.getTagCompletions(table || undefined),
+        ...keywords,
       ];
     }
     // After GROUP BY - suggest tags
     else if (/\bgroup\s+by\s+\w*$/i.test(textBefore)) {
       const table = this.extractTableFromContext(textBefore);
-      completions = this.getTagCompletions(table || undefined);
+      completions = [...this.getTagCompletions(table || undefined), ...keywords];
     }
-    // Default - suggest everything
+    // Default - suggest everything including keywords
     else {
       completions = [
+        ...keywords,
         ...this.getTableCompletions(),
         ...this.getFieldCompletions(),
         ...this.getTagCompletions(),

@@ -46,6 +46,16 @@ export type { SchemaCompletionProvider } from './schemaCompletion';
 export { createLinter } from './linting';
 
 export {
+  getCurrentStatement,
+  getCurrentStatementFromText,
+  getAllStatements,
+  findStatementBoundaries,
+  getStatementCount,
+  isAtStatementEnd,
+  highlightStatementSeparators
+} from './sqlUtils';
+
+export {
   getDialectLanguage,
   getDialectCompletion,
   getDialectLinting,
