@@ -148,6 +148,11 @@ export function createAppTheme(isDark: boolean): Extension {
       lineHeight: '16px',
       flexShrink: '0',
     },
+    // 清除CodeMirror默认的图标内容（包括伪元素）
+    '.cm-completionIcon::before, .cm-completionIcon::after': {
+      content: 'none !important',
+      display: 'none !important',
+    },
     // Custom completion icons for different types
     // 使用 SVG 图标 + CSS filter 动态调整颜色
     //
