@@ -461,6 +461,23 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             handleTableQuery
         );
 
+        // 监听打开日志查看器事件
+        const handleOpenLogViewer = () => {
+            console.log('📥 DataGripStyleLayout收到打开日志查看器事件');
+            // 打开右侧面板的通知中心，并切换到日志标签页
+            setSelectedFunction('notifications');
+            setRightPanelCollapsed(false);
+            // 通过自定义事件通知 NotificationPanel 切换到日志标签页
+            setTimeout(() => {
+                document.dispatchEvent(new CustomEvent('switch-to-logs-tab'));
+            }, 100);
+        };
+
+        document.addEventListener(
+            'open-log-viewer',
+            handleOpenLogViewer
+        );
+
         return () => {
             document.removeEventListener(
                 'refresh-database-tree',
@@ -469,6 +486,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             document.removeEventListener(
                 'table-query',
                 handleTableQuery
+            );
+            document.removeEventListener(
+                'open-log-viewer',
+                handleOpenLogViewer
             );
         };
     }, []);

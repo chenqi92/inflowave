@@ -39,6 +39,7 @@ import {
   Info,
   AlertCircle,
   CheckCircle2,
+  ExternalLink,
 } from 'lucide-react';
 import { useUserPreferencesStore, type LoggingSettings } from '@/stores/userPreferencesStore';
 import { open } from '@tauri-apps/plugin-shell';
@@ -188,6 +189,13 @@ const LoggingSettingsComponent: React.FC = () => {
 
   const currentLevel = form.watch('level');
 
+  // 打开日志查看器（在侧面板中）
+  const handleOpenLogViewer = () => {
+    // 触发自定义事件，通知主布局打开日志查看器
+    document.dispatchEvent(new CustomEvent('open-log-viewer'));
+    showMessage.success('已打开日志查看器');
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
@@ -201,6 +209,31 @@ const LoggingSettingsComponent: React.FC = () => {
             </Text>
           </div>
         </div>
+
+        {/* 日志查看器入口提示 */}
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium mb-1">实时日志查看</p>
+                <p className="text-sm">
+                  您可以在侧面板的"消息中心 → 系统日志"标签页中查看实时日志流
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleOpenLogViewer}
+                className="ml-4"
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                打开日志查看器
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
 
         {/* 日志级别说明 */}
         <Alert>
