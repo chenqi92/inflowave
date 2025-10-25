@@ -251,8 +251,13 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
     useEffect(() => {
       if (!viewRef.current) return;
 
-      viewRef.current.dispatch({
-        effects: themeCompartmentRef.current.reconfigure(createEditorTheme(isDark)),
+      // Use requestAnimationFrame to ensure CSS variables are updated
+      requestAnimationFrame(() => {
+        if (!viewRef.current) return;
+
+        viewRef.current.dispatch({
+          effects: themeCompartmentRef.current.reconfigure(createEditorTheme(isDark)),
+        });
       });
     }, [isDark]);
 

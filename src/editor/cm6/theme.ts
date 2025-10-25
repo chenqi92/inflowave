@@ -136,12 +136,89 @@ export function createAppTheme(isDark: boolean): Extension {
       },
     },
     '.cm-completionIcon': {
-      fontSize: '90%',
-      width: '1em',
+      fontSize: '14px',
+      width: '16px',
+      height: '16px',
       display: 'inline-block',
       textAlign: 'center',
-      paddingRight: '0.5em',
-      opacity: '0.6',
+      paddingRight: '6px',
+      marginRight: '4px',
+      opacity: '1',
+      verticalAlign: 'middle',
+      lineHeight: '16px',
+      flexShrink: '0',
+    },
+    // Custom completion icons for different types
+    // 使用 SVG 图标
+    '.cm-completionIcon-db-table': {
+      backgroundImage: 'url("/src/assets/icons/completion/table.svg")',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      content: '""',
+      filter: isDark
+        ? 'brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(180deg) brightness(95%) contrast(101%)' // 蓝色 #4A9EFF
+        : 'brightness(0) saturate(100%) invert(35%) sepia(85%) saturate(2498%) hue-rotate(200deg) brightness(95%) contrast(101%)', // 深蓝 #2563EB
+    },
+    '.cm-completionIcon-db-field': {
+      backgroundImage: 'url("/src/assets/icons/completion/field.svg")',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      content: '""',
+      filter: isDark
+        ? 'brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(70deg) brightness(95%) contrast(101%)' // 绿色 #10B981
+        : 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(95%) contrast(101%)', // 深绿 #059669
+    },
+    '.cm-completionIcon-db-tag': {
+      backgroundImage: 'url("/src/assets/icons/completion/tag.svg")',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      content: '""',
+      filter: isDark
+        ? 'brightness(0) saturate(100%) invert(68%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%)' // 紫色 #A855F7
+        : 'brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(260deg) brightness(95%) contrast(101%)', // 深紫 #7C3AED
+    },
+    '.cm-completionIcon-keyword': {
+      backgroundImage: 'url("/src/assets/icons/completion/keyword.svg")',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      content: '""',
+      filter: isDark
+        ? 'brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(340deg) brightness(95%) contrast(101%)' // 橙色 #F97316
+        : 'brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%)', // 深橙 #EA580C
+    },
+    '.cm-completionIcon-function': {
+      backgroundImage: 'url("/src/assets/icons/completion/function.svg")',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      content: '""',
+      filter: isDark
+        ? 'brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(30deg) brightness(95%) contrast(101%)' // 黄色 #FBBF24
+        : 'brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%)', // 深黄 #D97706
+    },
+    '.cm-completionIcon-type': {
+      backgroundImage: 'url("/src/assets/icons/completion/type.svg")',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      content: '""',
+      filter: isDark
+        ? 'brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(160deg) brightness(95%) contrast(101%)' // 青色 #06B6D4
+        : 'brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(170deg) brightness(95%) contrast(101%)', // 深青 #0891B2
+    },
+    '.cm-completionIcon-constant': {
+      backgroundImage: 'url("/src/assets/icons/completion/constant.svg")',
+      backgroundSize: 'contain',
+      backgroundRepeat: 'no-repeat',
+      backgroundPosition: 'center',
+      content: '""',
+      filter: isDark
+        ? 'brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(300deg) brightness(95%) contrast(101%)' // 粉色 #EC4899
+        : 'brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%)', // 深粉 #DB2777
     },
     '.cm-completionLabel': {
       fontFamily: 'var(--font-mono)',
@@ -150,6 +227,14 @@ export function createAppTheme(isDark: boolean): Extension {
       marginLeft: '0.5em',
       fontStyle: 'italic',
       opacity: '0.7',
+    },
+    // 为不同类型的补全项添加颜色
+    'li[aria-selected] .cm-completionLabel': {
+      color: 'inherit !important',
+    },
+    '.cm-completionMatchedText': {
+      textDecoration: 'none',
+      fontWeight: 'bold',
     },
     '.cm-panels': {
       backgroundColor: getColor('--card'),

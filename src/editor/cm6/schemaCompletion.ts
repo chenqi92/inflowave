@@ -266,11 +266,13 @@ export class SchemaCompletionProvider {
     if (!this.currentDatabase) return [];
 
     const tables = this.cache.tables.get(this.currentDatabase) || [];
+    const detailType = this.dialect === 'influxql' ? 'measurement' : 'table';
+
     return tables.map(table => ({
       label: table,
-      type: 'type', // Use 'type' for tables/measurements - shows as a type icon
+      type: 'db-table', // Custom type for CSS styling
       boost: 10,
-      detail: this.dialect === 'influxql' ? '📊 measurement' : '📊 table',
+      detail: detailType,
     }));
   }
 
@@ -286,9 +288,9 @@ export class SchemaCompletionProvider {
       const fields = this.cache.fields.get(key) || [];
       return fields.map(field => ({
         label: field,
-        type: 'variable', // Use 'variable' for fields - shows as a variable icon
+        type: 'db-field', // Custom type for CSS styling
         boost: 8,
-        detail: '📝 field',
+        detail: 'field',
       }));
     }
 
@@ -300,9 +302,9 @@ export class SchemaCompletionProvider {
 
     return Array.from(allFields).map(field => ({
       label: field,
-      type: 'variable', // Use 'variable' for fields - shows as a variable icon
+      type: 'db-field', // Custom type for CSS styling
       boost: 5,
-      detail: '📝 field',
+      detail: 'field',
     }));
   }
 
@@ -318,9 +320,9 @@ export class SchemaCompletionProvider {
       const tags = this.cache.tags.get(key) || [];
       return tags.map(tag => ({
         label: tag,
-        type: 'constant', // Use 'constant' for tags - shows as a constant icon
+        type: 'db-tag', // Custom type for CSS styling
         boost: 8,
-        detail: '🏷️ tag',
+        detail: 'tag',
       }));
     }
 
@@ -332,9 +334,9 @@ export class SchemaCompletionProvider {
 
     return Array.from(allTags).map(tag => ({
       label: tag,
-      type: 'constant', // Use 'constant' for tags - shows as a constant icon
+      type: 'db-tag', // Custom type for CSS styling
       boost: 5,
-      detail: '🏷️ tag',
+      detail: 'tag',
     }));
   }
 
@@ -364,10 +366,10 @@ export class SchemaCompletionProvider {
     const keywords = SQL_KEYWORDS[this.dialect] || SQL_KEYWORDS['sql'];
     return keywords.map(keyword => ({
       label: keyword,
-      type: 'keyword', // Use 'keyword' for SQL keywords - shows as a keyword icon
+      type: 'keyword',
       boost: 15,
       apply: keyword,
-      detail: '🔑 keyword',
+      detail: 'keyword',
     }));
   }
 
