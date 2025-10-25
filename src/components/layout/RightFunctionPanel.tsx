@@ -123,9 +123,6 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
           <h3 className="text-lg font-semibold text-foreground truncate">
             {functionTitles[selectedFunction]}
           </h3>
-          <p className="text-sm text-muted-foreground mt-1 truncate">
-            {functionDescriptions[selectedFunction]}
-          </p>
         </div>
         <Button
           variant="ghost"

@@ -4,6 +4,7 @@ import {
   CardContent,
   Button,
   SearchInput,
+  ExpandableSearchInput,
   Tabs,
   TabsContent,
   TabsList,
@@ -143,7 +144,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
 
   // 渲染历史记录项
   const renderHistoryItem = (item: QueryHistoryItem) => (
-    <Card key={item.id} className="mb-2 hover:shadow-sm transition-shadow">
+    <Card key={item.id} className="mb-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)] transition-all duration-200">
       <CardContent className="p-3">
         <div className="space-y-2">
           {/* 查询预览和状态 */}
@@ -224,7 +225,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
 
   // 渲染保存的查询项
   const renderSavedQuery = (query: SavedQuery) => (
-    <Card key={query.id} className="mb-2 hover:shadow-sm transition-shadow">
+    <Card key={query.id} className="mb-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)] transition-all duration-200">
       <CardContent className="p-3">
         <div className="space-y-2">
           {/* 查询名称和收藏状态 */}
@@ -316,70 +317,79 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
       <div className={`h-full flex flex-col bg-background ${className}`}>
         {/* 头部 */}
         <div className="p-3 border-b">
-          <div className="flex items-center justify-end mb-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={refreshAll}
-              disabled={loading}
-              className="h-7 w-7 p-0"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-          </div>
-
-          {/* 搜索框 */}
-          <div className="mb-3">
-            <SearchInput
+          <div className="flex items-center justify-start gap-1">
+            <ExpandableSearchInput
               placeholder="搜索查询..."
               value={searchText}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+              onChange={(value: string) => setSearchText(value)}
               onClear={() => setSearchText('')}
-              className="h-8 text-xs"
-              iconSize="sm"
             />
-          </div>
 
-          {/* 数据库过滤 */}
-          {uniqueDatabases.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="w-full h-7 text-xs justify-between">
-                  <span className="flex items-center gap-1">
-                    <Filter className="w-3 h-3" />
-                    {selectedDatabase || '所有数据库'}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-full">
-                <DropdownMenuItem onClick={() => setSelectedDatabase('')}>
-                  所有数据库
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {uniqueDatabases.map(db => (
-                  <DropdownMenuItem key={db} onClick={() => setSelectedDatabase(db)}>
-                    {db}
+            {uniqueDatabases.length > 0 && (
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant={selectedDatabase ? 'default' : 'ghost'}
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Filter className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>数据库过滤</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setSelectedDatabase('')}>
+                    所有数据库
                   </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+                  <DropdownMenuSeparator />
+                  {uniqueDatabases.map(db => (
+                    <DropdownMenuItem key={db} onClick={() => setSelectedDatabase(db)}>
+                      {db}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={refreshAll}
+                  disabled={loading}
+                  className="h-8 w-8 p-0"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>刷新</TooltipContent>
+            </Tooltip>
+          </div>
         </div>
 
         {/* 标签页 */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'history' | 'saved')} className="flex-1 flex flex-col">
-          <div className="px-3 border-b">
-            <TabsList className="grid w-full grid-cols-2 h-8">
-              <TabsTrigger value="history" className="text-xs">
-                <History className="w-3 h-3 mr-1" />
-                历史 ({filteredHistoryItems.length})
-              </TabsTrigger>
-              <TabsTrigger value="saved" className="text-xs">
-                <Book className="w-3 h-3 mr-1" />
-                保存 ({filteredSavedQueries.length})
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="w-full rounded-none border-b bg-transparent p-0 h-auto grid grid-cols-2">
+            <TabsTrigger
+              value="history"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            >
+              <History className="w-4 h-4 mr-2" />
+              历史 ({filteredHistoryItems.length})
+            </TabsTrigger>
+            <TabsTrigger
+              value="saved"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            >
+              <Book className="w-4 h-4 mr-2" />
+              保存 ({filteredSavedQueries.length})
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="history" className="flex-1 mt-0">
             <ScrollArea className="h-full">

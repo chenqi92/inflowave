@@ -10,6 +10,10 @@ import {
   Badge,
   Switch,
   Label,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from '@/components/ui';
 import {
   Database,
@@ -202,105 +206,34 @@ export const VerticalPerformanceMonitor: React.FC<
     fetchPerformanceData();
   }, [fetchConfig, fetchPerformanceData]);
 
-  // 渲染监控配置
-  const renderMonitoringConfig = () => (
-    <div className='flex items-center gap-4 p-4 bg-muted/30 rounded-lg'>
-      <div className='flex items-center gap-2'>
-        <Label htmlFor='auto-refresh' className='text-sm'>
-          自动刷新
-        </Label>
-        <Switch
-          id='auto-refresh'
-          checked={config.autoRefresh}
-          onCheckedChange={checked => updateConfig({ autoRefresh: checked })}
-        />
-      </div>
-
-      <div className='flex items-center gap-2'>
-        <Label className='text-sm'>间隔:</Label>
-        <Select
-          value={config.refreshInterval.toString()}
-          onValueChange={value =>
-            updateConfig({ refreshInterval: parseInt(value) })
-          }
-        >
-          <SelectTrigger className='w-20'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value='10'>10s</SelectItem>
-            <SelectItem value='30'>30s</SelectItem>
-            <SelectItem value='60'>1m</SelectItem>
-            <SelectItem value='300'>5m</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className='flex items-center gap-2'>
-        <Label className='text-sm'>范围:</Label>
-        <Select
-          value={config.timeRange}
-          onValueChange={value => updateConfig({ timeRange: value })}
-        >
-          <SelectTrigger className='w-20'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value='1h'>1h</SelectItem>
-            <SelectItem value='6h'>6h</SelectItem>
-            <SelectItem value='24h'>24h</SelectItem>
-            <SelectItem value='7d'>7d</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <Button
-        onClick={fetchPerformanceData}
-        disabled={loading}
-        size='sm'
-        variant='outline'
-      >
-        <RefreshCw
-          className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`}
-        />
-        刷新
-      </Button>
-    </div>
-  );
-
   return (
-    <div className={`h-full flex flex-col ${className}`}>
-      {/* 头部控制栏 */}
-      <div className='p-4 border-b border-border bg-muted/30'>
-        <div className='flex items-center justify-between'>
-          <div>
-            <h2 className='text-lg font-semibold'>性能监控</h2>
-            <p className='text-sm text-muted-foreground'>
-              打开数据源的实时性能监控
-            </p>
-          </div>
-          <div className='flex items-center gap-2'>
-            <Badge variant='outline'>{metricsData.length} 个数据源</Badge>
-            <Badge variant='outline'>
-              {metricsData.filter(m => m.isConnected).length} 个已连接
-            </Badge>
-            {config.autoRefresh && (
-              <Badge variant='default'>
-                <RefreshCw className='w-3 h-3 mr-1' />
-                自动刷新
-              </Badge>
-            )}
+    <TooltipProvider>
+      <div className={`h-full flex flex-col ${className}`}>
+        {/* 头部控制栏 */}
+        <div className='p-3 border-b'>
+          <div className='flex items-center justify-start gap-1'>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={config.autoRefresh ? 'default' : 'ghost'}
+                  size='sm'
+                  onClick={() => updateConfig({ autoRefresh: !config.autoRefresh })}
+                  className='h-8 w-8 p-0'
+                >
+                  <RefreshCw className={`w-4 h-4 ${config.autoRefresh || loading ? 'animate-spin' : ''}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {config.autoRefresh ? '关闭自动刷新' : '开启自动刷新'}
+              </TooltipContent>
+            </Tooltip>
           </div>
         </div>
-      </div>
 
-      {/* 监控配置 */}
-      <div className='p-4'>{renderMonitoringConfig()}</div>
-
-      {/* 主要内容区域 - 纵向布局 */}
-      <div className='flex-1 overflow-y-auto p-4 space-y-6'>
+        {/* 主要内容区域 - 纵向布局 */}
+        <div className='flex-1 overflow-y-auto p-4 space-y-6'>
         {/* 打开的数据源概览 */}
-        <Card>
+        <Card className="shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]">
           <CardHeader className='pb-3'>
             <CardTitle className='text-sm flex items-center gap-2'>
               <Database className='w-4 h-4' />
@@ -418,7 +351,7 @@ export const VerticalPerformanceMonitor: React.FC<
 
             if (!selectedMetrics) {
               return (
-                <Card>
+                <Card className="shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]">
                   <CardContent className='text-center py-8 text-muted-foreground'>
                     <Activity className='w-8 h-8 mx-auto mb-2 opacity-50' />
                     <p>未找到选中数据源的信息</p>
@@ -428,7 +361,7 @@ export const VerticalPerformanceMonitor: React.FC<
             }
 
             return (
-              <Card>
+              <Card className="shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]">
                 <CardHeader>
                   <CardTitle className='flex items-center justify-between'>
                     <div>
@@ -585,7 +518,8 @@ export const VerticalPerformanceMonitor: React.FC<
               </Card>
             );
           })()}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 };

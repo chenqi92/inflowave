@@ -217,7 +217,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                   key={notification.id}
                   className={`
                     p-3 rounded-lg cursor-pointer group
-                    hover:shadow-sm hover:scale-[1.02]
+                    shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]
+                    hover:shadow-[inset_0_3px_6px_rgba(0,0,0,0.15)] dark:hover:shadow-[inset_0_3px_6px_rgba(0,0,0,0.4)]
+                    transition-all duration-200
                     ${getNotificationBgColor(notification.type, notification.read)}
                     ${!notification.read ? 'ring-1 ring-primary/30 dark:ring-primary/50' : ''}
                   `}

@@ -379,7 +379,7 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
       <div className={`h-full flex flex-col bg-background ${className}`}>
         {/* 头部 */}
         <div className="p-3 border-b">
-          <div className="flex items-center justify-end gap-1 mb-3">
+          <div className="flex items-center justify-start gap-1">
             <Button
               variant="ghost"
               size="sm"
@@ -396,7 +396,37 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
                   新建
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-md">
+            </Dialog>
+          </div>
+        </div>
+
+        {/* 搜索和过滤 */}
+        <div className="p-3 border-b space-y-2">
+          <SearchInput
+            placeholder="搜索图表..."
+            value={searchText}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
+            onClear={() => setSearchText('')}
+            className="h-8 text-xs"
+            iconSize="sm"
+          />
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="所有类型" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">所有类型</SelectItem>
+              <SelectItem value="line">折线图</SelectItem>
+              <SelectItem value="bar">柱状图</SelectItem>
+              <SelectItem value="pie">饼图</SelectItem>
+              <SelectItem value="area">面积图</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* 创建图表对话框 */}
+        <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+          <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>创建新图表</DialogTitle>
                 </DialogHeader>
@@ -469,34 +499,8 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
                       </Button>
                     </div>
                   </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-
-          {/* 搜索和过滤 */}
-          <div className="space-y-2">
-            <SearchInput
-              placeholder="搜索图表..."
-              value={searchText}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
-              onClear={() => setSearchText('')}
-              className="h-8 text-xs"
-              iconSize="sm"
-            />
-            <Select value={selectedType} onValueChange={setSelectedType}>
-              <SelectTrigger className="h-8 text-xs">
-                <SelectValue placeholder="所有类型" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">所有类型</SelectItem>
-                <SelectItem value="line">折线图</SelectItem>
-                <SelectItem value="bar">柱状图</SelectItem>
-                <SelectItem value="pie">饼图</SelectItem>
-                <SelectItem value="area">面积图</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+          </DialogContent>
+        </Dialog>
 
         {/* 图表列表 */}
         <ScrollArea className="flex-1">
@@ -507,7 +511,7 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
               </div>
             ) : filteredCharts.length > 0 ? (
               filteredCharts.map(chart => (
-                <Card key={chart.id} className="hover:shadow-sm transition-shadow">
+                <Card key={chart.id} className="shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)] transition-all duration-200">
                   <CardHeader className="p-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">

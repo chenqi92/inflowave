@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui';
 import { Badge } from '@/components/ui';
-import { RefreshCw, Download, Trash2, Pause, Play, Copy, ArrowDownToLine } from 'lucide-react';
+import { RefreshCw, Download, Trash2, Pause, Play, Copy, ChevronsDown } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
@@ -250,7 +250,7 @@ const BackendLogViewer: React.FC<BackendLogViewerProps> = ({ className = '' }) =
                 className="h-8 w-8 p-0"
                 onClick={() => setAutoScroll(!autoScroll)}
               >
-                <ArrowDownToLine className="w-4 h-4" />
+                <ChevronsDown className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent>{autoScroll ? '关闭自动滚动' : '开启自动滚动'}</TooltipContent>
@@ -315,7 +315,7 @@ const BackendLogViewer: React.FC<BackendLogViewerProps> = ({ className = '' }) =
           logs.map((log) => (
             <div
               key={log.id}
-              className="flex items-start gap-3 p-2 rounded hover:bg-accent/50 transition-colors"
+              className="flex items-start gap-3 p-2 rounded shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)] hover:bg-accent/30 transition-all duration-200"
             >
               {/* 选择框 */}
               <input

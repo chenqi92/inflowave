@@ -20,11 +20,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
   Select,
   SelectContent,
   SelectItem,
@@ -261,7 +259,7 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
 
   // 渲染插件项
   const renderPluginItem = (plugin: Plugin) => (
-    <Card key={plugin.id} className="mb-2">
+    <Card key={plugin.id} className="mb-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)] transition-all duration-200">
       <CardContent className="p-3">
         <div className="space-y-2">
           {/* 插件信息 */}
@@ -327,7 +325,7 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
 
   // 渲染 API 集成项
   const renderApiIntegrationItem = (integration: APIIntegration) => (
-    <Card key={integration.id} className="mb-2">
+    <Card key={integration.id} className="mb-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)] transition-all duration-200">
       <CardContent className="p-3">
         <div className="space-y-2">
           <div className="flex items-start justify-between gap-2">
@@ -397,133 +395,151 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
   return (
     <TooltipProvider>
       <div className={`h-full flex flex-col bg-background ${className}`}>
-        {/* 头部 - 紧凑图标按钮 */}
-        <div className="px-3 py-2 border-b">
-          <div className="flex items-center justify-between gap-1">
-            {/* 左侧：搜索和过滤 */}
-            <div className="flex items-center gap-1">
-              <ExpandableSearchInput
-                placeholder="搜索扩展..."
-                value={searchText}
-                onChange={(value: string) => setSearchText(value)}
-                onClear={() => setSearchText('')}
-              />
+        {/* 头部 */}
+        <div className="p-3 border-b">
+          <div className="flex items-center justify-start gap-1">
+            <ExpandableSearchInput
+              placeholder="搜索扩展..."
+              value={searchText}
+              onChange={(value: string) => setSearchText(value)}
+              onClear={() => setSearchText('')}
+            />
 
-              <DropdownMenu>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant={filterStatus !== 'all' ? 'default' : 'ghost'}
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Filter className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>状态过滤</TooltipContent>
-                </Tooltip>
-                <DropdownMenuContent align="start">
-                  <DropdownMenuItem onClick={() => setFilterStatus('all')}>
-                    所有状态
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterStatus('active')}>
-                    活跃
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterStatus('inactive')}>
-                    非活跃
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setFilterStatus('error')}>
-                    错误
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-
-            {/* 右侧：刷新和添加 */}
-            <div className="flex items-center gap-1">
+            <DropdownMenu>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={loadData}
-                    disabled={loading}
-                    className="h-8 w-8 p-0"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                  </Button>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={filterStatus !== 'all' ? 'default' : 'ghost'}
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Filter className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent>刷新</TooltipContent>
+                <TooltipContent>状态过滤</TooltipContent>
               </Tooltip>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setFilterStatus('all')}>
+                  所有状态
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterStatus('active')}>
+                  活跃
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterStatus('inactive')}>
+                  非活跃
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setFilterStatus('error')}>
+                  错误
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </DialogTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>添加扩展</TooltipContent>
-                </Tooltip>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>添加扩展</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <p className="text-sm text-muted-foreground">
-                      选择要添加的扩展类型
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant="outline" className="h-16 flex flex-col gap-1">
-                        <Package className="w-5 h-5" />
-                        <span className="text-xs">插件</span>
-                      </Button>
-                      <Button variant="outline" className="h-16 flex flex-col gap-1">
-                        <Webhook className="w-5 h-5" />
-                        <span className="text-xs">API集成</span>
-                      </Button>
-                      <Button variant="outline" className="h-16 flex flex-col gap-1">
-                        <Zap className="w-5 h-5" />
-                        <span className="text-xs">Webhook</span>
-                      </Button>
-                      <Button variant="outline" className="h-16 flex flex-col gap-1">
-                        <Bot className="w-5 h-5" />
-                        <span className="text-xs">自动化</span>
-                      </Button>
-                    </div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadData}
+                  disabled={loading}
+                  className="h-8 w-8 p-0"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>刷新</TooltipContent>
+            </Tooltip>
+
+            <Popover open={createModalOpen} onOpenChange={setCreateModalOpen}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </PopoverTrigger>
+                </TooltipTrigger>
+                <TooltipContent>添加扩展</TooltipContent>
+              </Tooltip>
+              <PopoverContent className="w-80" align="end" side="bottom">
+                <div className="space-y-3">
+                  <h4 className="font-medium text-sm">添加扩展</h4>
+                  <p className="text-xs text-muted-foreground">
+                    选择要添加的扩展类型
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      className="h-16 flex flex-col gap-1"
+                      onClick={() => setCreateModalOpen(false)}
+                    >
+                      <Package className="w-5 h-5" />
+                      <span className="text-xs">插件</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-16 flex flex-col gap-1"
+                      onClick={() => setCreateModalOpen(false)}
+                    >
+                      <Webhook className="w-5 h-5" />
+                      <span className="text-xs">API集成</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-16 flex flex-col gap-1"
+                      onClick={() => setCreateModalOpen(false)}
+                    >
+                      <Zap className="w-5 h-5" />
+                      <span className="text-xs">Webhook</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="h-16 flex flex-col gap-1"
+                      onClick={() => setCreateModalOpen(false)}
+                    >
+                      <Bot className="w-5 h-5" />
+                      <span className="text-xs">自动化</span>
+                    </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
-            </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
         {/* 标签页 */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'plugins' | 'api' | 'webhooks' | 'automation')} className="flex-1 flex flex-col">
-          <div className="px-3 border-b">
-            <TabsList className="grid w-full grid-cols-4 h-8">
-              <TabsTrigger value="plugins" className="text-xs">
-                <Package className="w-3 h-3 mr-1" />
-                插件
-              </TabsTrigger>
-              <TabsTrigger value="api" className="text-xs">
-                <Webhook className="w-3 h-3 mr-1" />
-                API
-              </TabsTrigger>
-              <TabsTrigger value="webhooks" className="text-xs">
-                <Zap className="w-3 h-3 mr-1" />
-                Hook
-              </TabsTrigger>
-              <TabsTrigger value="automation" className="text-xs">
-                <Bot className="w-3 h-3 mr-1" />
-                自动化
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList className="w-full rounded-none border-b bg-transparent p-0 h-auto grid grid-cols-4">
+            <TabsTrigger
+              value="plugins"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            >
+              <Package className="w-4 h-4 mr-2" />
+              插件
+            </TabsTrigger>
+            <TabsTrigger
+              value="api"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            >
+              <Webhook className="w-4 h-4 mr-2" />
+              API
+            </TabsTrigger>
+            <TabsTrigger
+              value="webhooks"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Hook
+            </TabsTrigger>
+            <TabsTrigger
+              value="automation"
+              className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            >
+              <Bot className="w-4 h-4 mr-2" />
+              自动化
+            </TabsTrigger>
+          </TabsList>
 
           <TabsContent value="plugins" className="flex-1 mt-0">
             <ScrollArea className="h-full">
@@ -574,7 +590,7 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
                   </div>
                 ) : webhooks.length > 0 ? (
                   webhooks.map(webhook => (
-                    <Card key={webhook.id} className="mb-2">
+                    <Card key={webhook.id} className="mb-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)] transition-all duration-200">
                       <CardContent className="p-3">
                         <div className="space-y-2">
                           <div className="flex items-start justify-between gap-2">
@@ -651,7 +667,7 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
                   </div>
                 ) : automationRules.length > 0 ? (
                   automationRules.map(rule => (
-                    <Card key={rule.id} className="mb-2">
+                    <Card key={rule.id} className="mb-2 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)] transition-all duration-200">
                       <CardContent className="p-3">
                         <div className="space-y-2">
                           <div className="flex items-start justify-between gap-2">

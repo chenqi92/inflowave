@@ -38,27 +38,24 @@ export const VerticalDevTools: React.FC<VerticalDevToolsProps> = ({
 
   return (
     <div className={`h-full flex flex-col bg-background ${className}`}>
-      {/* 头部 */}
-      <div className='p-3 border-b'>
-        <div className='flex items-center justify-between'>
-          <h2 className='text-sm font-semibold'>开发工具</h2>
-        </div>
-      </div>
-
       {/* 标签页 */}
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
-        <div className="px-3 border-b">
-          <TabsList className="grid w-full grid-cols-2 h-8">
-            <TabsTrigger value="generator" className="text-xs">
-              <Database className="w-3 h-3 mr-1" />
-              数据生成
-            </TabsTrigger>
-            <TabsTrigger value="telemetry" className="text-xs">
-              <Activity className="w-3 h-3 mr-1" />
-              性能监控
-            </TabsTrigger>
-          </TabsList>
-        </div>
+        <TabsList className="w-full rounded-none border-b bg-transparent p-0 h-auto grid grid-cols-2">
+          <TabsTrigger
+            value="generator"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+          >
+            <Database className="w-4 h-4 mr-2" />
+            数据生成
+          </TabsTrigger>
+          <TabsTrigger
+            value="telemetry"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+          >
+            <Activity className="w-4 h-4 mr-2" />
+            性能监控
+          </TabsTrigger>
+        </TabsList>
 
         <TabsContent value="generator" className="flex-1 m-0">
           <ScrollArea className='h-full'>
@@ -96,7 +93,7 @@ export const VerticalDevTools: React.FC<VerticalDevToolsProps> = ({
                     if (stats.count === 0) return null;
 
                     return (
-                      <Card key={type}>
+                      <Card key={type} className="shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.12)] dark:hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.35)] transition-all duration-200">
                         <CardHeader className="p-3">
                           <CardTitle className="text-sm">{type}</CardTitle>
                         </CardHeader>
