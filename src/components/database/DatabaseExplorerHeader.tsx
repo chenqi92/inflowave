@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, CardContent, Tooltip, TooltipContent, TooltipTrigger, Typography, SearchInput } from '@/components/ui';
+import { Button, CardContent, Tooltip, TooltipContent, TooltipTrigger, Typography, ExpandableSearchInput } from '@/components/ui';
 import { Filter, RefreshCw, Plus } from 'lucide-react';
 import type { ConnectionConfig } from '@/types';
 
@@ -26,15 +26,23 @@ export const DatabaseExplorerHeader: React.FC<DatabaseExplorerHeaderProps> = ({
 }) => {
     return (
         <CardContent className='p-3 border-b'>
-            <div ref={headerRef} className='flex items-center justify-between mb-3'>
+            <div ref={headerRef} className='flex items-center justify-between'>
                 <div className='flex items-center gap-2'>
                     <Typography.Text className='text-sm font-medium'>数据源</Typography.Text>
                 </div>
                 <div className='flex items-center gap-1'>
+                    {/* 可展开搜索框 */}
+                    <ExpandableSearchInput
+                        placeholder='搜索连接、数据库、表...'
+                        value={searchValue}
+                        onChange={(value: string) => setSearchValue(value)}
+                        onClear={() => setSearchValue('')}
+                    />
+
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button
-                                variant={hideSystemNodes ? 'ghost' : 'default'}
+                                variant={hideSystemNodes ? 'default' : 'ghost'}
                                 size='sm'
                                 onClick={() => {
                                     const newHideSystemNodes = !hideSystemNodes;
@@ -79,15 +87,6 @@ export const DatabaseExplorerHeader: React.FC<DatabaseExplorerHeaderProps> = ({
                     </Tooltip>
                 </div>
             </div>
-
-            {/* 搜索框 */}
-            <SearchInput
-                placeholder='搜索连接、数据库、表...'
-                value={searchValue}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchValue(e.target.value)}
-                onClear={() => setSearchValue('')}
-                className='text-sm'
-            />
         </CardContent>
     );
 };

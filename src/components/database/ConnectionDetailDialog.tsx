@@ -1,11 +1,11 @@
 ﻿import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -200,19 +200,19 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0">
+    <Sheet open={open} onOpenChange={onClose}>
+      <SheetContent side="right" size="2xl" className="flex flex-col p-0 overflow-hidden">
         {/* 固定头部 */}
         <div className="flex-shrink-0 px-6 pt-6 pb-4">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
               <Server className="w-5 h-5" />
               连接详细信息
-            </DialogTitle>
-            <DialogDescription>
+            </SheetTitle>
+            <SheetDescription>
               查看连接的详细配置和状态信息
-            </DialogDescription>
-          </DialogHeader>
+            </SheetDescription>
+          </SheetHeader>
         </div>
 
         {/* 可滚动内容区域 */}
@@ -421,8 +421,8 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
             </div>
           </div>
         )}
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 };
 

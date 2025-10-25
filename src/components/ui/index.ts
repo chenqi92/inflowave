@@ -6,6 +6,8 @@ export { Input } from './input';
 
 export { SearchInput } from './search-input';
 
+export { ExpandableSearchInput } from './expandable-search-input';
+
 export {
   Select,
   SelectContent,

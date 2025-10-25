@@ -1,5 +1,5 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -256,19 +256,21 @@ export const ManagementNodeDialog: React.FC<ManagementNodeDialogProps> = ({
     };
 
     return (
-        <Dialog open={open} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl max-h-[80vh]">
-                <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        {getIcon()}
-                        {getTitle()}
-                        <Badge variant="outline" className="ml-auto">
-                            {filteredItems.length} 项
-                        </Badge>
-                    </DialogTitle>
-                </DialogHeader>
+        <Sheet open={open} onOpenChange={onClose}>
+            <SheetContent side="right" size="3xl" className="flex flex-col p-0 overflow-hidden">
+                <div className="flex-shrink-0 px-6 pt-6 pb-4">
+                    <SheetHeader>
+                        <SheetTitle className="flex items-center gap-2">
+                            {getIcon()}
+                            {getTitle()}
+                            <Badge variant="outline" className="ml-auto">
+                                {filteredItems.length} 项
+                            </Badge>
+                        </SheetTitle>
+                    </SheetHeader>
+                </div>
 
-                <div className="flex flex-col gap-4">
+                <div className="flex-1 overflow-hidden px-6 pb-6 flex flex-col gap-4">
                     {/* 工具栏 */}
                     <div className="flex items-center gap-2">
                         <div className="relative flex-1">
@@ -328,7 +330,7 @@ export const ManagementNodeDialog: React.FC<ManagementNodeDialogProps> = ({
                         </div>
                     </div>
                 </div>
-            </DialogContent>
-        </Dialog>
+            </SheetContent>
+        </Sheet>
     );
 };

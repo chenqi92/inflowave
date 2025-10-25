@@ -1,11 +1,11 @@
 ﻿import React, { useState, useEffect } from 'react';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -157,17 +157,21 @@ ${distribution.distribution.map(d => `${d.value}: ${d.count.toLocaleString()} �
   const displayedValues = showAllValues ? details?.values : details?.values.slice(0, 10);
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Tag className="w-5 h-5" />
-            标签详细信息 - {tag}
-          </DialogTitle>
-          <DialogDescription>
-            查看标签的所有可能值、基数统计和分布信息
-          </DialogDescription>
-        </DialogHeader>
+    <Sheet open={open} onOpenChange={onClose}>
+      <SheetContent side="right" size="2xl" className="flex flex-col p-0 overflow-hidden">
+        <div className="flex-shrink-0 px-6 pt-6 pb-4">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Tag className="w-5 h-5" />
+              标签详细信息 - {tag}
+            </SheetTitle>
+            <SheetDescription>
+              查看标签的所有可能值、基数统计和分布信息
+            </SheetDescription>
+          </SheetHeader>
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6">
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
@@ -317,8 +321,9 @@ ${distribution.distribution.map(d => `${d.value}: ${d.count.toLocaleString()} �
             </div>
           </div>
         ) : null}
-      </DialogContent>
-    </Dialog>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 };
 
