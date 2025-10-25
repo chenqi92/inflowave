@@ -685,7 +685,7 @@ pub async fn read_file_env(app: tauri::AppHandle, path: String) -> Result<String
 
     match std::fs::read_to_string(&resolved_path) {
         Ok(content) => {
-            info!("成功读取文件: {:?}", resolved_path);
+            // info!("成功读取文件: {:?}", resolved_path);
             Ok(content)
         }
         Err(e) => {
