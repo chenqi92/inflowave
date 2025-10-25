@@ -1637,6 +1637,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     setDatabaseInfoDialog,
     setRetentionPolicyDialog,
     setManagementNodeDialog,
+    setConnectionDetailDialog,
     setDialogStates,
     handleConnectionToggle: connectionHandlers.handleConnectionToggle,
     handleOpenConnectionDialog,

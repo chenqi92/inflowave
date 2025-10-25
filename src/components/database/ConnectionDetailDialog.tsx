@@ -25,7 +25,8 @@ import {
   Link,
   User,
   Key,
-  Globe
+  Globe,
+  Share2
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
@@ -121,6 +122,34 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
     try {
       await writeToClipboard(infoText);
       showMessage.success('连接信息已复制到剪贴板');
+    } catch (err) {
+      showMessage.error('复制失败');
+    }
+  };
+
+  const shareConnectionConfig = async () => {
+    if (!info) return;
+
+    // 创建可分享的连接配置（不包含敏感信息）
+    const shareableConfig = {
+      name: info.name,
+      dbType: info.dbType,
+      host: info.host,
+      port: info.port,
+      username: info.username,
+      // 不包含密码、token等敏感信息
+      serverInfo: {
+        type: info.serverInfo?.type || '未知',
+        version: info.serverInfo?.version || '未知',
+      },
+      note: '此配置不包含密码等敏感信息，请在导入后手动配置认证信息',
+    };
+
+    const configText = JSON.stringify(shareableConfig, null, 2);
+
+    try {
+      await writeToClipboard(configText);
+      showMessage.success('连接配置已复制到剪贴板（JSON格式）');
     } catch (err) {
       showMessage.error('复制失败');
     }
@@ -364,18 +393,24 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
             </Card>
 
             {/* 操作按钮 */}
-            <div className="flex justify-end gap-2 pt-2">
-              <Button onClick={copyInfoToClipboard} variant="outline" size="sm">
-                <Copy className="w-4 h-4 mr-2" />
-                复制信息
+            <div className="flex justify-between items-center gap-2 pt-2">
+              <Button onClick={shareConnectionConfig} variant="outline" size="sm">
+                <Share2 className="w-4 h-4 mr-2" />
+                分享配置
               </Button>
-              <Button onClick={loadConnectionInfo} variant="outline" size="sm">
-                <RefreshCw className="w-4 h-4 mr-2" />
-                刷新
-              </Button>
-              <Button onClick={onClose} variant="default" size="sm">
-                关闭
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={copyInfoToClipboard} variant="outline" size="sm">
+                  <Copy className="w-4 h-4 mr-2" />
+                  复制信息
+                </Button>
+                <Button onClick={loadConnectionInfo} variant="outline" size="sm">
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  刷新
+                </Button>
+                <Button onClick={onClose} variant="default" size="sm">
+                  关闭
+                </Button>
+              </div>
             </div>
           </div>
         ) : null}

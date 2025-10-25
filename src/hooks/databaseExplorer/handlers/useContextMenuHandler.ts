@@ -10,6 +10,7 @@ import type {
     DatabaseInfoDialogState,
     RetentionPolicyDialogState,
     ManagementNodeDialogState,
+    ConnectionDetailDialogState,
     DialogStates,
 } from '@/types/databaseExplorer';
 
@@ -34,6 +35,7 @@ interface UseContextMenuHandlerProps {
     setDatabaseInfoDialog: React.Dispatch<React.SetStateAction<DatabaseInfoDialogState>>;
     setRetentionPolicyDialog: React.Dispatch<React.SetStateAction<RetentionPolicyDialogState>>;
     setManagementNodeDialog: React.Dispatch<React.SetStateAction<ManagementNodeDialogState>>;
+    setConnectionDetailDialog: React.Dispatch<React.SetStateAction<ConnectionDetailDialogState>>;
     setDialogStates: React.Dispatch<React.SetStateAction<DialogStates>>;
     handleConnectionToggle: (connectionId: string) => Promise<void>;
     handleOpenConnectionDialog: (connection: ConnectionConfig) => void;
@@ -69,6 +71,8 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
         setDatabaseInfoDialog,
         setRetentionPolicyDialog,
         setManagementNodeDialog,
+        setConnectionDetailDialog,
+        setDialogStates,
         handleConnectionToggle,
         handleOpenConnectionDialog,
         onCreateAndExecuteQuery,
@@ -117,6 +121,64 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                     }
                     break;
 
+                case 'test_connection':
+                    if (nodeType === 'connection') {
+                        try {
+                            setLoading(true);
+                            logger.debug(`🧪 测试连接: ${node.name} (${connectionId})`);
+                            const result = await safeTauriInvoke<{ success: boolean; message: string }>(
+                                'test_connection',
+                                { connectionId }
+                            );
+
+                            if (result.success) {
+                                showMessage.success(result.message || '连接测试成功');
+                            } else {
+                                showMessage.error(result.message || '连接测试失败');
+                            }
+                        } catch (error) {
+                            logger.error('测试连接失败:', error);
+                            showMessage.error(`测试连接失败: ${error}`);
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                    break;
+
+                case 'connection_info':
+                    if (nodeType === 'connection') {
+                        try {
+                            logger.debug(`📊 获取连接信息: ${node.name} (${connectionId})`);
+                            const connection = getConnection(connectionId);
+                            if (!connection) {
+                                showMessage.error('连接不存在');
+                                return;
+                            }
+
+                            // 打开连接详情对话框（ConnectionDetailDialog 会自动调用 get_connection_info）
+                            setConnectionDetailDialog({
+                                open: true,
+                                connectionId,
+                            });
+                        } catch (error) {
+                            logger.error('打开连接信息对话框失败:', error);
+                            showMessage.error(`打开连接信息对话框失败: ${error}`);
+                        }
+                    }
+                    break;
+
+                case 'copy_connection_name':
+                    if (nodeType === 'connection') {
+                        try {
+                            await writeToClipboard(node.name);
+                            showMessage.success(`已复制连接名: ${node.name}`);
+                        } catch (error) {
+                            logger.error('复制连接名失败:', error);
+                            showMessage.error('复制失败');
+                        }
+                    }
+                    break;
+
                 case 'connection_properties':
                     if (nodeType === 'connection') {
                         const connection = getConnection(connectionId);
@@ -126,6 +188,25 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                         } else {
                             logger.error('连接不存在');
                             // 🔧 不再显示全局toast - 这种情况很少见
+                        }
+                    }
+                    break;
+
+                case 'manage_templates':
+                    if (nodeType === 'connection') {
+                        try {
+                            logger.debug(`📋 管理 IoTDB 模板: ${node.name} (${connectionId})`);
+                            props.setDialogStates((prev: any) => ({
+                                ...prev,
+                                iotdbTemplate: {
+                                    open: true,
+                                    connectionId,
+                                    mode: 'list',
+                                },
+                            }));
+                        } catch (error) {
+                            logger.error('打开模板管理失败:', error);
+                            showMessage.error('打开模板管理失败');
                         }
                     }
                     break;
@@ -225,7 +306,26 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
 
                 case 'create_database':
                     if (nodeType === 'connection') {
-                        setCreateDatabaseDialogOpen(true);
+                        try {
+                            logger.debug(`🗄️ 创建数据库: ${node.name} (${connectionId})`);
+                            const connection = getConnection(connectionId);
+                            if (!connection) {
+                                showMessage.error('连接不存在');
+                                return;
+                            }
+
+                            // 打开创建数据库对话框
+                            setDialogStates((prev: any) => ({
+                                ...prev,
+                                createDatabase: {
+                                    open: true,
+                                    connectionId,
+                                },
+                            }));
+                        } catch (error) {
+                            logger.error('打开创建数据库对话框失败:', error);
+                            showMessage.error('打开创建数据库对话框失败');
+                        }
                     }
                     break;
 

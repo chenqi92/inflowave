@@ -105,12 +105,19 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
 
             {/* 数据库管理对话框 */}
             <CreateDatabaseDialog
-                open={createDatabaseDialogOpen}
-                onClose={() => setCreateDatabaseDialogOpen(false)}
+                open={createDatabaseDialogOpen || dialogStates.createDatabase?.open || false}
+                onClose={() => {
+                    setCreateDatabaseDialogOpen(false);
+                    setDialogStates(prev => ({
+                        ...prev,
+                        createDatabase: { open: false, connectionId: '' },
+                    }));
+                }}
                 onSuccess={() => {
                     // 刷新树形数据
                     buildCompleteTreeData(true);
                 }}
+                connectionId={dialogStates.createDatabase?.connectionId}
             />
 
             <DatabaseInfoDialog

@@ -83,6 +83,10 @@ export interface DialogStates {
         database: string;
         table: string;
     };
+    createDatabase?: {
+        open: boolean;
+        connectionId: string;
+    };
 }
 
 /**
