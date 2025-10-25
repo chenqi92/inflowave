@@ -717,7 +717,7 @@ pub async fn delete_file_env(app: tauri::AppHandle, path: String) -> Result<bool
 #[tauri::command]
 pub async fn file_exists_env(app: tauri::AppHandle, path: String) -> Result<bool, String> {
     let resolved_path = resolve_path(&app, &path)?;
-    debug!("检查文件存在性 [环境感知]: {} -> {:?}", path, resolved_path);
+    // debug!("检查文件存在性 [环境感知]: {} -> {:?}", path, resolved_path);
 
     Ok(resolved_path.exists())
 }
