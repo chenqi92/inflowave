@@ -13,9 +13,10 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Copy, Download, Trash2, RefreshCw, ChevronUp, ChevronDown, Filter, FileText, FileJson, FileSpreadsheet } from 'lucide-react';
-import { toast } from 'sonner';
+import { showMessage } from '@/utils/message';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
+import { writeToClipboard } from '@/utils/clipboard';
 
 const LogViewer: React.FC = () => {
   const [logs, setLogs] = useState<LogEntry[]>([]);
@@ -95,13 +96,18 @@ const LogViewer: React.FC = () => {
   }, [logs, autoScroll]);
 
   // 复制所有日志
-  const handleCopyAll = () => {
-    const text = logs.map(log => 
+  const handleCopyAll = async () => {
+    const text = logs.map(log =>
       `[${log.timestamp.toLocaleString()}] [${log.level}] ${log.message}${log.args.length > 0 ? ` ${  JSON.stringify(log.args)}` : ''}`
     ).join('\n');
-    
-    navigator.clipboard.writeText(text);
-    toast.success('日志已复制到剪贴板');
+
+    try {
+      await writeToClipboard(text);
+      showMessage.success('日志已复制到剪贴板');
+    } catch (error) {
+      console.error('复制失败:', error);
+      showMessage.error('复制日志失败');
+    }
   };
 
   // 导出为文本格式
@@ -115,8 +121,10 @@ const LogViewer: React.FC = () => {
     ).join('\n');
 
     try {
+      // 生成安全的文件名（移除所有特殊字符）
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_');
       const filePath = await save({
-        defaultPath: `logs-${new Date().toISOString().replace(/:/g, '-')}.txt`,
+        defaultPath: `frontend-logs-${timestamp}.txt`,
         filters: [{
           name: 'Text Files',
           extensions: ['txt']
@@ -125,11 +133,11 @@ const LogViewer: React.FC = () => {
 
       if (filePath) {
         await writeTextFile(filePath, text);
-        toast.success(`已导出 ${logsToExport.length} 条日志到文本文件`);
+        showMessage.success(`已导出 ${logsToExport.length} 条日志到文本文件`);
       }
     } catch (error) {
       console.error('导出失败:', error);
-      toast.error('导出失败');
+      showMessage.error(`导出失败: ${error}`);
     }
   };
 
@@ -149,8 +157,10 @@ const LogViewer: React.FC = () => {
     }));
 
     try {
+      // 生成安全的文件名（移除所有特殊字符）
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_');
       const filePath = await save({
-        defaultPath: `logs-${new Date().toISOString().replace(/:/g, '-')}.json`,
+        defaultPath: `frontend-logs-${timestamp}.json`,
         filters: [{
           name: 'JSON Files',
           extensions: ['json']
@@ -159,11 +169,11 @@ const LogViewer: React.FC = () => {
 
       if (filePath) {
         await writeTextFile(filePath, JSON.stringify(jsonData, null, 2));
-        toast.success(`已导出 ${logsToExport.length} 条日志到JSON文件`);
+        showMessage.success(`已导出 ${logsToExport.length} 条日志到JSON文件`);
       }
     } catch (error) {
       console.error('导出失败:', error);
-      toast.error('导出失败');
+      showMessage.error(`导出失败: ${error}`);
     }
   };
 
@@ -186,8 +196,10 @@ const LogViewer: React.FC = () => {
     ];
 
     try {
+      // 生成安全的文件名（移除所有特殊字符）
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_');
       const filePath = await save({
-        defaultPath: `logs-${new Date().toISOString().replace(/:/g, '-')}.csv`,
+        defaultPath: `frontend-logs-${timestamp}.csv`,
         filters: [{
           name: 'CSV Files',
           extensions: ['csv']
@@ -196,11 +208,11 @@ const LogViewer: React.FC = () => {
 
       if (filePath) {
         await writeTextFile(filePath, csvRows.join('\n'));
-        toast.success(`已导出 ${logsToExport.length} 条日志到CSV文件`);
+        showMessage.success(`已导出 ${logsToExport.length} 条日志到CSV文件`);
       }
     } catch (error) {
       console.error('导出失败:', error);
-      toast.error('导出失败');
+      showMessage.error(`导出失败: ${error}`);
     }
   };
 
@@ -209,7 +221,7 @@ const LogViewer: React.FC = () => {
     logger.clearLogs();
     setLogs([]);
     setSelectedLogs(new Set());
-    toast.success('日志已清空');
+    showMessage.success('日志已清空');
   };
 
   // 切换日志选择
@@ -320,292 +332,81 @@ const LogViewer: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      {/* 工具栏 */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* 快速过滤预设 */}
+    <div className="flex flex-col h-full">
+      {/* 简化的工具栏 */}
+      <div className="flex items-center justify-between p-3 border-b bg-muted/30">
         <div className="flex items-center gap-2">
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => applyQuickFilter('errors')}
-          >
-            仅错误
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => applyQuickFilter('recent')}
-          >
-            最近5分钟
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => applyQuickFilter('all')}
-          >
-            全部
-          </Button>
-        </div>
-
-        {/* 高级过滤开关 */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-        >
-          <Filter className="w-4 h-4 mr-1" />
-          {showAdvancedFilters ? '隐藏' : '显示'}过滤器
-        </Button>
-
-        {/* 操作按钮 */}
-        <div className="flex items-center gap-2 ml-auto">
-          <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={() => setIsPaused(!isPaused)}
+            title={isPaused ? '继续刷新' : '暂停刷新'}
           >
             {isPaused ? '继续' : '暂停'}
           </Button>
-
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={loadLogs}
+            title="刷新日志"
           >
             <RefreshCw className="w-4 h-4" />
           </Button>
-
+          <div className="h-4 w-px bg-border mx-1" />
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={autoScroll}
+              onChange={(e) => setAutoScroll(e.target.checked)}
+              className="rounded cursor-pointer"
+            />
+            自动滚动
+          </label>
+        </div>
+        <div className="flex items-center gap-2">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={handleCopyAll}
+            title="复制日志"
           >
-            <Copy className="w-4 h-4 mr-1" />
+            <Copy className="w-4 h-4" />
             复制
           </Button>
-
-          {/* 导出菜单 */}
-          <div className="relative">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowExportMenu(!showExportMenu)}
-            >
-              <Download className="w-4 h-4 mr-1" />
-              导出 {selectedLogs.size > 0 && `(${selectedLogs.size})`}
-            </Button>
-
-            {showExportMenu && (
-              <Card className="absolute right-0 top-full mt-2 z-50 p-2 min-w-[150px]">
-                <div className="flex flex-col gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="justify-start"
-                    onClick={() => {
-                      exportAsText();
-                      setShowExportMenu(false);
-                    }}
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    文本格式 (.txt)
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="justify-start"
-                    onClick={() => {
-                      exportAsJSON();
-                      setShowExportMenu(false);
-                    }}
-                  >
-                    <FileJson className="w-4 h-4 mr-2" />
-                    JSON格式 (.json)
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="justify-start"
-                    onClick={() => {
-                      exportAsCSV();
-                      setShowExportMenu(false);
-                    }}
-                  >
-                    <FileSpreadsheet className="w-4 h-4 mr-2" />
-                    CSV格式 (.csv)
-                  </Button>
-                </div>
-              </Card>
-            )}
-          </div>
-
           <Button
-            variant="outline"
+            variant="ghost"
+            size="sm"
+            onClick={exportAsText}
+            title="导出日志"
+          >
+            <Download className="w-4 h-4" />
+            导出
+          </Button>
+          <Button
+            variant="ghost"
             size="sm"
             onClick={handleClear}
+            title="清空日志"
           >
-            <Trash2 className="w-4 h-4 mr-1" />
+            <Trash2 className="w-4 h-4" />
             清空
           </Button>
         </div>
       </div>
 
-      {/* 高级过滤器 */}
-      {showAdvancedFilters && (
-        <Card className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* 日志级别 */}
-            <div className="space-y-2">
-              <Label>日志级别</Label>
-              <Select
-                value={filterLevel.toString()}
-                onValueChange={(value) => setFilterLevel(parseInt(value) as LogLevel)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={LogLevel.ERROR.toString()}>ERROR</SelectItem>
-                  <SelectItem value={LogLevel.WARN.toString()}>WARN+</SelectItem>
-                  <SelectItem value={LogLevel.INFO.toString()}>INFO+</SelectItem>
-                  <SelectItem value={LogLevel.DEBUG.toString()}>ALL</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 时间范围 */}
-            <div className="space-y-2">
-              <Label>时间范围</Label>
-              <Select
-                value={timeFilter}
-                onValueChange={(value: any) => setTimeFilter(value)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部</SelectItem>
-                  <SelectItem value="5m">最近5分钟</SelectItem>
-                  <SelectItem value="30m">最近30分钟</SelectItem>
-                  <SelectItem value="1h">最近1小时</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 搜索选项 */}
-            <div className="space-y-2">
-              <Label>搜索选项</Label>
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="regex-mode"
-                    checked={useRegex}
-                    onCheckedChange={setUseRegex}
-                  />
-                  <Label htmlFor="regex-mode" className="text-sm cursor-pointer">
-                    正则表达式
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="highlight-mode"
-                    checked={highlightSearch}
-                    onCheckedChange={setHighlightSearch}
-                  />
-                  <Label htmlFor="highlight-mode" className="text-sm cursor-pointer">
-                    高亮
-                  </Label>
-                </div>
-              </div>
-            </div>
-
-            {/* 搜索框 */}
-            <div className="space-y-2">
-              <Label>搜索</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder={useRegex ? "正则表达式..." : "搜索关键词..."}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1"
-                />
-                {searchQuery && logs.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={navigateToPrevMatch}
-                    >
-                      <ChevronUp className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={navigateToNextMatch}
-                    >
-                      <ChevronDown className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* 统计信息 */}
-      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-        <span>总计: {logs.length} 条</span>
-        {selectedLogs.size > 0 && (
-          <span>已选: {selectedLogs.size} 条</span>
-        )}
-        {searchQuery && logs.length > 0 && (
-          <span>匹配: {currentMatchIndex + 1} / {logs.length}</span>
-        )}
-        {logs.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleSelectAll}
-          >
-            {selectedLogs.size === logs.length ? '取消全选' : '全选'}
-          </Button>
-        )}
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={autoScroll}
-            onChange={(e) => setAutoScroll(e.target.checked)}
-            className="rounded"
-          />
-          自动滚动
-        </label>
-      </div>
-
       {/* 日志列表 */}
-      <Card className="flex-1 overflow-hidden">
-        <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-2 font-mono text-sm">
+      <div className="flex-1 overflow-hidden">
+        <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-2 font-mono text-sm bg-background">
           {logs.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               暂无日志
             </div>
           ) : (
-            logs.map((log, index) => (
+            logs.map((log) => (
                 <div
                   key={log.id}
-                  className={`flex items-start gap-3 p-2 rounded hover:bg-accent/50 transition-colors ${
-                    searchQuery && index === currentMatchIndex ? 'bg-accent border-2 border-primary' : ''
-                  }`}
+                  className="flex items-start gap-3 p-2 rounded hover:bg-accent/50 transition-colors"
                 >
-                  {/* 选择框 */}
-                  <input
-                    type="checkbox"
-                    checked={selectedLogs.has(log.id)}
-                    onChange={() => toggleLogSelection(log.id)}
-                    className="mt-1 rounded cursor-pointer"
-                  />
-
                   {/* 时间戳 */}
                   <span className="text-muted-foreground whitespace-nowrap text-xs">
                     {log.timestamp.toLocaleTimeString()}
@@ -618,24 +419,18 @@ const LogViewer: React.FC = () => {
 
                   {/* 消息 */}
                   <div className="flex-1 break-all">
-                    <div>{highlightText(log.message)}</div>
+                    <div>{log.message}</div>
                     {log.args.length > 0 && (
-                      <div className="text-muted-foreground mt-1">
-                        {highlightText(JSON.stringify(log.args, null, 2))}
+                      <div className="text-muted-foreground mt-1 text-xs">
+                        {JSON.stringify(log.args, null, 2)}
                       </div>
-                    )}
-                    {log.stack && (
-                      <details className="mt-1 text-xs text-muted-foreground">
-                        <summary className="cursor-pointer">堆栈跟踪</summary>
-                        <pre className="mt-1 whitespace-pre-wrap">{log.stack}</pre>
-                      </details>
                     )}
                   </div>
                 </div>
               ))
             )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 };

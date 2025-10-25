@@ -653,7 +653,7 @@ pub async fn create_dir(path: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn write_file_env(app: tauri::AppHandle, path: String, content: String) -> Result<bool, String> {
     let resolved_path = resolve_path(&app, &path)?;
-    debug!("写入文件 [环境感知]: {} -> {:?}", path, resolved_path);
+    // debug!("写入文件 [环境感知]: {} -> {:?}", path, resolved_path);
 
     // 确保目录存在
     if let Some(parent) = resolved_path.parent() {
@@ -681,7 +681,7 @@ pub async fn write_file_env(app: tauri::AppHandle, path: String, content: String
 #[tauri::command]
 pub async fn read_file_env(app: tauri::AppHandle, path: String) -> Result<String, String> {
     let resolved_path = resolve_path(&app, &path)?;
-    debug!("读取文件 [环境感知]: {} -> {:?}", path, resolved_path);
+    // debug!("读取文件 [环境感知]: {} -> {:?}", path, resolved_path);
 
     match std::fs::read_to_string(&resolved_path) {
         Ok(content) => {
@@ -726,7 +726,7 @@ pub async fn file_exists_env(app: tauri::AppHandle, path: String) -> Result<bool
 #[tauri::command]
 pub async fn create_dir_env(app: tauri::AppHandle, path: String) -> Result<bool, String> {
     let resolved_path = resolve_path(&app, &path)?;
-    debug!("创建目录 [环境感知]: {} -> {:?}", path, resolved_path);
+    // debug!("创建目录 [环境感知]: {} -> {:?}", path, resolved_path);
 
     std::fs::create_dir_all(&resolved_path).map_err(|e| {
         error!("创建目录失败: {:?}: {}", resolved_path, e);

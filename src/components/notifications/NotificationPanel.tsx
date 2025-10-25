@@ -21,6 +21,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { notify } from '@/hooks/useAppNotifications';
 import LogViewer from '@/components/settings/LogViewer';
+import BackendLogViewer from './BackendLogViewer';
 
 interface NotificationPanelProps {
   onClose: () => void;
@@ -79,7 +80,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
   // 监听切换到日志标签页的事件
   useEffect(() => {
     const handleSwitchToLogsTab = () => {
-      setActiveTab('logs');
+      setActiveTab('frontend-logs');
     };
 
     document.addEventListener('switch-to-logs-tab', handleSwitchToLogsTab);
@@ -168,10 +169,10 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
       {/* Tabs 切换 */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-        <TabsList className="w-full rounded-none border-b bg-transparent p-0 h-auto">
+        <TabsList className="w-full rounded-none border-b bg-transparent p-0 h-auto grid grid-cols-3">
           <TabsTrigger
             value="notifications"
-            className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
           >
             <Bell className="w-4 h-4 mr-2" />
             通知消息
@@ -182,11 +183,18 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
             )}
           </TabsTrigger>
           <TabsTrigger
-            value="logs"
-            className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+            value="frontend-logs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
           >
             <FileText className="w-4 h-4 mr-2" />
-            系统日志
+            前端日志
+          </TabsTrigger>
+          <TabsTrigger
+            value="backend-logs"
+            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
+          >
+            <FileText className="w-4 h-4 mr-2" />
+            后端日志
           </TabsTrigger>
         </TabsList>
 
@@ -297,9 +305,14 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
           </div>
         </TabsContent>
 
-        {/* 系统日志标签页 */}
-        <TabsContent value="logs" className="flex-1 m-0 overflow-hidden p-4">
+        {/* 前端日志标签页 */}
+        <TabsContent value="frontend-logs" className="flex-1 m-0 overflow-hidden">
           <LogViewer />
+        </TabsContent>
+
+        {/* 后端日志标签页 */}
+        <TabsContent value="backend-logs" className="flex-1 m-0 overflow-hidden">
+          <BackendLogViewer />
         </TabsContent>
       </Tabs>
     </div>

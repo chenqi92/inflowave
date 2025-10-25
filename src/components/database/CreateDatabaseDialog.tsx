@@ -68,7 +68,7 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
       };
     }
 
-    const dbType = connection.db_type?.toLowerCase() || 'influxdb';
+    const dbType = connection.dbType?.toLowerCase() || 'influxdb';
     const version = connection.version || '';
 
     if (dbType === 'influxdb') {
@@ -141,7 +141,7 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
         databaseName: values.name,
       });
 
-      const successMessage = connection?.db_type === 'iotdb'
+      const successMessage = connection?.dbType === 'iotdb'
         ? '存储组创建成功'
         : connection?.version?.includes('2.')
           ? '存储桶创建成功'
@@ -154,7 +154,7 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
         onSuccess();
       }
     } catch (error) {
-      const errorMessage = connection?.db_type === 'iotdb'
+      const errorMessage = connection?.dbType === 'iotdb'
         ? '创建存储组失败'
         : connection?.version?.includes('2.')
           ? '创建存储桶失败'
