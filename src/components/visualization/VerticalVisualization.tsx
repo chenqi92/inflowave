@@ -6,6 +6,7 @@ import {
   Button,
   Input,
   SearchInput,
+  ExpandableSearchInput,
   Select,
   SelectContent,
   SelectItem,
@@ -13,7 +14,10 @@ import {
   SelectValue,
   ScrollArea,
   Badge,
+  Tooltip,
+  TooltipContent,
   TooltipProvider,
+  TooltipTrigger,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -39,6 +43,7 @@ import {
   Database,
   Activity,
   AlertCircle,
+  Filter,
 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -380,48 +385,76 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
         {/* 头部 */}
         <div className="p-3 border-b">
           <div className="flex items-center justify-start gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={loadCharts}
-              disabled={loading}
-              className="h-7 w-7 p-0"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 text-xs">
-                  <Plus className="w-3 h-3 mr-1" />
-                  新建
+            <ExpandableSearchInput
+              placeholder="搜索图表..."
+              value={searchText}
+              onChange={(value: string) => setSearchText(value)}
+              onClear={() => setSearchText('')}
+            />
+
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={selectedType && selectedType !== 'all' ? 'default' : 'ghost'}
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Filter className="w-4 h-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent>类型过滤</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setSelectedType('all')}>
+                  所有类型
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setSelectedType('line')}>
+                  折线图
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSelectedType('bar')}>
+                  柱状图
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSelectedType('pie')}>
+                  饼图
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSelectedType('area')}>
+                  面积图
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={loadCharts}
+                  disabled={loading}
+                  className="h-8 w-8 p-0"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </Button>
-              </DialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>刷新</TooltipContent>
+            </Tooltip>
+
+            <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </DialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent>新建图表</TooltipContent>
+              </Tooltip>
             </Dialog>
           </div>
-        </div>
-
-        {/* 搜索和过滤 */}
-        <div className="p-3 border-b space-y-2">
-          <SearchInput
-            placeholder="搜索图表..."
-            value={searchText}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
-            onClear={() => setSearchText('')}
-            className="h-8 text-xs"
-            iconSize="sm"
-          />
-          <Select value={selectedType} onValueChange={setSelectedType}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue placeholder="所有类型" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">所有类型</SelectItem>
-              <SelectItem value="line">折线图</SelectItem>
-              <SelectItem value="bar">柱状图</SelectItem>
-              <SelectItem value="pie">饼图</SelectItem>
-              <SelectItem value="area">面积图</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* 创建图表对话框 */}
