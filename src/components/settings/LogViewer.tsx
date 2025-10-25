@@ -87,10 +87,10 @@ const LogViewer: React.FC = () => {
     }
   }, [filterLevel, searchQuery, isPaused, useRegex, timeFilter]);
 
-  // 自动滚动到底部
+  // 自动滚动到顶部（最新日志在顶部）
   useEffect(() => {
     if (autoScroll && scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = 0;
     }
   }, [logs, autoScroll]);
 
