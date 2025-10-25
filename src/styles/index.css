@@ -2186,3 +2186,39 @@ pre,
   display: inline !important;
   line-height: 1.4 !important;
 }
+
+/* Sonner Toast 关闭按钮位置优化 - 强制显示在右上角 */
+[data-sonner-toast] {
+  position: relative !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  left: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+}
+
+/* 确保关闭按钮样式正确 */
+[data-sonner-toast] [data-close-button] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 20px !important;
+  height: 20px !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  background: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  opacity: 0.7 !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  opacity: 1 !important;
+  background: hsl(var(--muted)) !important;
+}
