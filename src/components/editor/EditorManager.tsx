@@ -26,7 +26,6 @@ import { logger } from '@/utils/logger';
 import {
   CodeMirrorEditor,
   type CodeMirrorEditorRef,
-  DialectSelector,
   type QueryDialect,
   basicPreset,
   createEditorTheme,
@@ -307,16 +306,6 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
 
   return (
     <div className="relative h-full flex flex-col">
-      {/* Dialect Selector */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b bg-background">
-        <DialectSelector
-          connection={getCurrentConnection()}
-          dialect={currentDialect}
-          onDialectChange={handleDialectChange}
-          compact
-        />
-      </div>
-
       {/* Editor */}
       <div className="flex-1 overflow-hidden">
         <CodeMirrorEditor

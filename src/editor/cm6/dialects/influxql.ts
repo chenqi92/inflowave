@@ -180,6 +180,7 @@ export function influxqlCompletion(context: CompletionContext): CompletionResult
       label: k,
       type: 'keyword',
       boost: 2,
+      detail: '🔑 keyword',
     })),
     // Functions
     ...FUNCTIONS.map(f => ({
@@ -187,16 +188,19 @@ export function influxqlCompletion(context: CompletionContext): CompletionResult
       type: 'function',
       boost: 1,
       apply: `${f}()`,
+      detail: 'ƒ function',
     })),
     // Data types
     ...DATA_TYPES.map(d => ({
       label: d,
       type: 'type',
+      detail: '📘 type',
     })),
     // Constants
     ...CONSTANTS.map(c => ({
       label: c,
       type: 'constant',
+      detail: '💎 constant',
     })),
   ];
 

@@ -268,9 +268,9 @@ export class SchemaCompletionProvider {
     const tables = this.cache.tables.get(this.currentDatabase) || [];
     return tables.map(table => ({
       label: table,
-      type: 'class',
+      type: 'type', // Use 'type' for tables/measurements - shows as a type icon
       boost: 10,
-      detail: this.dialect === 'influxql' ? 'measurement' : 'table',
+      detail: this.dialect === 'influxql' ? '📊 measurement' : '📊 table',
     }));
   }
 
@@ -286,9 +286,9 @@ export class SchemaCompletionProvider {
       const fields = this.cache.fields.get(key) || [];
       return fields.map(field => ({
         label: field,
-        type: 'property',
+        type: 'variable', // Use 'variable' for fields - shows as a variable icon
         boost: 8,
-        detail: 'field',
+        detail: '📝 field',
       }));
     }
 
@@ -300,9 +300,9 @@ export class SchemaCompletionProvider {
 
     return Array.from(allFields).map(field => ({
       label: field,
-      type: 'property',
+      type: 'variable', // Use 'variable' for fields - shows as a variable icon
       boost: 5,
-      detail: 'field',
+      detail: '📝 field',
     }));
   }
 
@@ -318,9 +318,9 @@ export class SchemaCompletionProvider {
       const tags = this.cache.tags.get(key) || [];
       return tags.map(tag => ({
         label: tag,
-        type: 'property',
+        type: 'constant', // Use 'constant' for tags - shows as a constant icon
         boost: 8,
-        detail: 'tag',
+        detail: '🏷️ tag',
       }));
     }
 
@@ -332,9 +332,9 @@ export class SchemaCompletionProvider {
 
     return Array.from(allTags).map(tag => ({
       label: tag,
-      type: 'property',
+      type: 'constant', // Use 'constant' for tags - shows as a constant icon
       boost: 5,
-      detail: 'tag',
+      detail: '🏷️ tag',
     }));
   }
 
@@ -364,9 +364,10 @@ export class SchemaCompletionProvider {
     const keywords = SQL_KEYWORDS[this.dialect] || SQL_KEYWORDS['sql'];
     return keywords.map(keyword => ({
       label: keyword,
-      type: 'keyword',
+      type: 'keyword', // Use 'keyword' for SQL keywords - shows as a keyword icon
       boost: 15,
       apply: keyword,
+      detail: '🔑 keyword',
     }));
   }
 
