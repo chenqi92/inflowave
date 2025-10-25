@@ -564,7 +564,7 @@ pub async fn read_file(path: String) -> Result<String, String> {
 
     match std::fs::read_to_string(&path) {
         Ok(content) => {
-            info!("成功读取文件: {}", path);
+            // info!("成功读取文件: {}", path);
             Ok(content)
         }
         Err(e) => {
@@ -591,7 +591,7 @@ pub async fn write_file(path: String, content: String) -> Result<(), String> {
     
     match std::fs::write(&path, content) {
         Ok(_) => {
-            info!("成功写入文件: {}", path);
+            // info!("成功写入文件: {}", path);
             Ok(())
         }
         Err(e) => {
@@ -667,7 +667,7 @@ pub async fn write_file_env(app: tauri::AppHandle, path: String, content: String
 
     match std::fs::write(&resolved_path, content) {
         Ok(_) => {
-            info!("成功写入文件: {:?}", resolved_path);
+            // info!("成功写入文件: {:?}", resolved_path);
             Ok(true)
         }
         Err(e) => {
