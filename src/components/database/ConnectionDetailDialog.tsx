@@ -201,32 +201,37 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Server className="w-5 h-5" />
-            连接详细信息
-          </DialogTitle>
-          <DialogDescription>
-            查看连接的详细配置和状态信息
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col p-0">
+        {/* 固定头部 */}
+        <div className="flex-shrink-0 px-6 pt-6 pb-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Server className="w-5 h-5" />
+              连接详细信息
+            </DialogTitle>
+            <DialogDescription>
+              查看连接的详细配置和状态信息
+            </DialogDescription>
+          </DialogHeader>
+        </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-12 space-y-4">
-            <Info className="w-12 h-12 text-destructive" />
-            <p className="text-sm text-muted-foreground">{error}</p>
-            <Button onClick={loadConnectionInfo} variant="outline" size="sm">
-              <RefreshCw className="w-4 h-4 mr-2" />
-              重试
-            </Button>
-          </div>
-        ) : info ? (
-          <div className="space-y-4">
+        {/* 可滚动内容区域 */}
+        <div className="flex-1 overflow-y-auto px-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+              <Info className="w-12 h-12 text-destructive" />
+              <p className="text-sm text-muted-foreground">{error}</p>
+              <Button onClick={loadConnectionInfo} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                重试
+              </Button>
+            </div>
+          ) : info ? (
+            <div className="space-y-4 pb-4">
             {/* 基本信息 */}
             <Card>
               <CardHeader className="pb-3">
@@ -392,17 +397,19 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
               </CardContent>
             </Card>
 
-            {/* 操作按钮 */}
-            <div className="flex justify-between items-center gap-2 pt-2">
+            </div>
+          ) : null}
+        </div>
+
+        {/* 固定底部按钮区域 */}
+        {info && !loading && !error && (
+          <div className="flex-shrink-0 px-6 py-4 border-t bg-background">
+            <div className="flex justify-between items-center gap-2">
               <Button onClick={shareConnectionConfig} variant="outline" size="sm">
                 <Share2 className="w-4 h-4 mr-2" />
                 分享配置
               </Button>
               <div className="flex gap-2">
-                <Button onClick={copyInfoToClipboard} variant="outline" size="sm">
-                  <Copy className="w-4 h-4 mr-2" />
-                  复制信息
-                </Button>
                 <Button onClick={loadConnectionInfo} variant="outline" size="sm">
                   <RefreshCw className="w-4 h-4 mr-2" />
                   刷新
@@ -413,7 +420,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
               </div>
             </div>
           </div>
-        ) : null}
+        )}
       </DialogContent>
     </Dialog>
   );

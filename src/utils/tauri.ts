@@ -105,6 +105,14 @@ const VOID_COMMANDS = new Set([
   'clear_workspace',
   'save_tabs_to_workspace',
 
+  // Database operations (返回 Result<(), String>)
+  'create_database',
+  'drop_database',
+  'create_retention_policy',
+  'drop_retention_policy',
+  'alter_retention_policy',
+  'drop_measurement',
+
   // Legacy/deprecated
   'reset_settings',
   'save_app_config',
