@@ -1012,6 +1012,13 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
               // 保留连接节点本身
               if (nodeId === connectionNodeId) return false;
 
+              // 先检查节点是否存在于 dataLoader 中，避免访问不存在的节点
+              if (!dataLoaderRef.current?.hasNode(nodeId)) {
+                // 节点不存在，从展开列表中移除
+                logger.debug(`[连接断开] 节点 ${nodeId} 不存在于 dataLoader，从展开列表中移除`);
+                return false;
+              }
+
               // 检查是否是该连接的子节点
               const nodeItem = tree.getItemInstance(nodeId);
               if (!nodeItem) return true;

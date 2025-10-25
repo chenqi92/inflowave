@@ -201,6 +201,8 @@ const createToastOptions = async (
     return {
         duration: duration ? duration * 1000 : undefined,
         position: position as ExternalToast['position'],
+        closeButton: true, // 默认启用关闭按钮
+        dismissible: true, // 允许手动关闭
         ...options,
     };
 };
@@ -326,7 +328,7 @@ export const showMessage = {
 export const showNotification = {
     success: (config: NotificationConfig | string) => {
         if (typeof config === 'string') {
-            return toast.success(config);
+            return toast.success(config, { closeButton: true, dismissible: true });
         }
 
         const options: ExternalToast = {
@@ -334,7 +336,8 @@ export const showNotification = {
             duration: config.duration ? config.duration * 1000 : 4000,
             icon: config.icon,
             id: config.id,
-            dismissible: config.dismissible,
+            dismissible: config.dismissible !== undefined ? config.dismissible : true,
+            closeButton: true,
             onDismiss: config.onDismiss,
             onAutoClose: config.onAutoClose,
         };
@@ -359,7 +362,7 @@ export const showNotification = {
 
     error: (config: NotificationConfig | string) => {
         if (typeof config === 'string') {
-            return toast.error(config);
+            return toast.error(config, { closeButton: true, dismissible: true });
         }
 
         const options: ExternalToast = {
@@ -367,7 +370,8 @@ export const showNotification = {
             duration: config.duration ? config.duration * 1000 : 5000,
             icon: config.icon,
             id: config.id,
-            dismissible: config.dismissible,
+            dismissible: config.dismissible !== undefined ? config.dismissible : true,
+            closeButton: true,
             onDismiss: config.onDismiss,
             onAutoClose: config.onAutoClose,
         };
@@ -392,7 +396,7 @@ export const showNotification = {
 
     warning: (config: NotificationConfig | string) => {
         if (typeof config === 'string') {
-            return toast.warning(config);
+            return toast.warning(config, { closeButton: true, dismissible: true });
         }
 
         const options: ExternalToast = {
@@ -400,7 +404,8 @@ export const showNotification = {
             duration: config.duration ? config.duration * 1000 : 4000,
             icon: config.icon,
             id: config.id,
-            dismissible: config.dismissible,
+            dismissible: config.dismissible !== undefined ? config.dismissible : true,
+            closeButton: true,
             onDismiss: config.onDismiss,
             onAutoClose: config.onAutoClose,
         };
@@ -425,7 +430,7 @@ export const showNotification = {
 
     info: (config: NotificationConfig | string) => {
         if (typeof config === 'string') {
-            return toast.info(config);
+            return toast.info(config, { closeButton: true, dismissible: true });
         }
 
         const options: ExternalToast = {
@@ -433,7 +438,8 @@ export const showNotification = {
             duration: config.duration ? config.duration * 1000 : 4000,
             icon: config.icon,
             id: config.id,
-            dismissible: config.dismissible,
+            dismissible: config.dismissible !== undefined ? config.dismissible : true,
+            closeButton: true,
             onDismiss: config.onDismiss,
             onAutoClose: config.onAutoClose,
         };
@@ -458,14 +464,15 @@ export const showNotification = {
 
     loading: (config: NotificationConfig | string) => {
         if (typeof config === 'string') {
-            return toast.loading(config);
+            return toast.loading(config, { closeButton: true, dismissible: true });
         }
 
         const options: ExternalToast = {
             description: config.description,
             icon: config.icon,
             id: config.id,
-            dismissible: config.dismissible,
+            dismissible: config.dismissible !== undefined ? config.dismissible : true,
+            closeButton: true,
             onDismiss: config.onDismiss,
         };
 
@@ -478,7 +485,8 @@ export const showNotification = {
             duration: config.duration ? config.duration * 1000 : 4000,
             icon: config.icon,
             id: config.id,
-            dismissible: config.dismissible,
+            dismissible: config.dismissible !== undefined ? config.dismissible : true,
+            closeButton: true,
             onDismiss: config.onDismiss,
             onAutoClose: config.onAutoClose,
         };
