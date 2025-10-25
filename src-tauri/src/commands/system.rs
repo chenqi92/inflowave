@@ -807,7 +807,7 @@ pub struct FileInfo {
 /// 获取文件信息
 #[tauri::command]
 pub async fn get_file_info(path: String) -> Result<FileInfo, String> {
-    debug!("获取文件信息: {}", path);
+    // debug!("获取文件信息: {}", path);
 
     let file_path = Path::new(&path);
 
