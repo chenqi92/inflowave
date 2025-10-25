@@ -50,6 +50,7 @@ interface TreeNodeRendererProps {
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
   nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
   selectedItems: string[];
+  nodeLoadingStates?: Map<string, boolean>;
 }
 
 // ✅ 使用 React.memo 优化性能，Headless Tree 支持 memo
@@ -61,6 +62,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   isDatabaseOpened,
   nodeRefsMap,
   selectedItems,
+  nodeLoadingStates,
 }, forwardedRef) => {
   const data = item.getItemData();
   const level = item.getItemMeta().level;
@@ -169,9 +171,28 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   if (data.nodeType === 'connection') {
     isLoading = connectionStatus === 'connecting';
     error = connectionError;
+
+    // 添加调试日志
+    if (isLoading) {
+      log.debug(`[TreeNodeRenderer] 连接节点 ${data.id} (${data.name}) 正在连接，connectionStatus=${connectionStatus}`);
+    }
   } else if (data.nodeType === 'database' || data.nodeType === 'system_database') {
     isLoading = databaseLoading ?? false;
     error = databaseError;
+
+    // 添加调试日志
+    if (isLoading) {
+      log.debug(`[TreeNodeRenderer] 数据库节点 ${data.id} (${data.name}) 正在加载，databaseLoading=${databaseLoading}`);
+    }
+  } else {
+    // 🔧 对于其他节点类型，使用 nodeLoadingStates
+    const loadingFromState = nodeLoadingStates?.get(data.id) ?? false;
+    isLoading = loadingFromState || data.isLoading || false;
+
+    // 添加调试日志
+    if (loadingFromState || isLoading) {
+      log.debug(`[TreeNodeRenderer] 节点 ${data.id} (${data.name}) loading 状态: loadingFromState=${loadingFromState}, data.isLoading=${data.isLoading}, final isLoading=${isLoading}`);
+    }
   }
 
   const isFavorite = data.isFavorite ?? false;
@@ -197,16 +218,28 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   // children === undefined: 未加载，可能有子节点
   // children.length > 0: 已加载且有子节点，显示箭头
   // children.length === 0: 已加载但为空，不显示箭头
+  // isLoading: 正在加载时，总是显示箭头（用于显示 loading 图标）
   let hasChildren = false;
   if (normalizedNodeType === 'connection') {
-    // 连接节点：只有已连接才显示箭头
-    hasChildren = isConnected && (data.children === undefined || (data.children && data.children.length > 0));
+    // 连接节点：
+    // 1. 正在加载时，总是显示箭头（用于显示 loading 图标）
+    // 2. 已连接且（未加载或有子节点）时，显示箭头
+    hasChildren = isLoading || (isConnected && (data.children === undefined || (data.children && data.children.length > 0)));
   } else if (normalizedNodeType === 'database' || normalizedNodeType === 'system_database') {
-    // 数据库节点：只有当 children 是非空数组时才显示箭头（未打开时不显示箭头）
-    hasChildren = !!(data.children && data.children.length > 0);
+    // 数据库节点：
+    // 1. 正在加载时，总是显示箭头（用于显示 loading 图标）
+    // 2. 有子节点时，显示箭头
+    hasChildren = isLoading || !!(data.children && data.children.length > 0);
   } else {
-    // 其他节点：未加载(undefined)或有子节点时显示箭头
-    hasChildren = data.children === undefined || !!(data.children && data.children.length > 0);
+    // 其他节点：
+    // 1. 正在加载时，总是显示箭头（用于显示 loading 图标）
+    // 2. 未加载(undefined)或有子节点时，显示箭头
+    hasChildren = isLoading || data.children === undefined || !!(data.children && data.children.length > 0);
+  }
+
+  // 添加调试日志：hasChildren 计算结果
+  if (isLoading) {
+    log.debug(`[TreeNodeRenderer] 节点 ${data.id} (${data.name}) hasChildren=${hasChildren}, isLoading=${isLoading}, children=${data.children === undefined ? 'undefined' : data.children?.length}`);
   }
 
   // 计算节点层级深度（用于视觉层级优化）
@@ -376,6 +409,16 @@ export const TreeNodeRenderer = React.memo(TreeNodeRendererInner, (prevProps, ne
   // 如果节点 ID 不同，需要重新渲染
   if (prevData.id !== nextData.id) {
     return false;
+  }
+
+  // 🔧 比较 nodeLoadingStates - 检查当前节点的 loading 状态是否改变
+  const nodeId = prevData.id;
+  const prevLoading = prevProps.nodeLoadingStates?.get(nodeId) ?? false;
+  const nextLoading = nextProps.nodeLoadingStates?.get(nodeId) ?? false;
+
+  if (prevLoading !== nextLoading) {
+    log.debug(`[TreeNodeRenderer] 节点 ${nodeId} loading 状态改变: ${prevLoading} -> ${nextLoading}`);
+    return false; // loading 状态改变，需要重新渲染
   }
 
   // 其他情况不重新渲染

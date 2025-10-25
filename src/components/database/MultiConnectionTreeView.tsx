@@ -120,6 +120,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   const [focusedItem, setFocusedItem] = useState<string | null>(null);
   // 🔧 添加更新定时器ref，用于批量更新
   const updateTimeoutRef = useRef<number | null>(null);
+  // 🔧 添加节点 loading 状态管理（独立于 treeData）
+  const [nodeLoadingStates, setNodeLoadingStates] = useState<Map<string, boolean>>(new Map());
 
   // TreeDataLoader 实例
   const dataLoaderRef = useRef<TreeDataLoader | null>(null);
@@ -402,6 +404,12 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
     const nodeData = item.getItemData();
 
+    // 🔧 防止重复触发：如果节点正在 loading，直接返回
+    if (nodeLoadingStates.get(nodeId)) {
+      logger.debug(`[Loading] 节点 ${nodeId} 正在加载中，忽略重复触发`);
+      return;
+    }
+
     // 如果是连接节点且未连接，先建立连接
     if (nodeData.nodeType === 'connection') {
       const connectionId = nodeData.metadata?.connectionId;
@@ -442,8 +450,14 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     logger.debug(`懒加载节点: ${nodeId}`, nodeData);
     logger.debug(`[性能] 当前树节点总数: ${treeData.length}, 已加载节点数: ${loadedNodesRef.current.size}`);
 
-    // 不再设置 loading 状态，避免触发额外的重新渲染
-    // 直接加载数据，在加载完成后一次性更新节点
+    // 🔧 设置节点 loading 状态 - 使用独立的状态管理
+    setNodeLoadingStates(prev => {
+      const newMap = new Map(prev);
+      newMap.set(nodeId, true);
+      logger.debug(`[Loading] 设置节点 ${nodeId} loading 状态为 true，当前 loading 节点数: ${newMap.size}`);
+      return newMap;
+    });
+    logger.info(`[Loading] ✅ 开始加载节点: ${nodeId}`);
 
     try {
       // 获取连接 ID
@@ -530,6 +544,15 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       // 🔧 标记节点已加载（使用 ref，避免触发渲染）
       loadedNodesRef.current.add(nodeId);
 
+      // 🔧 清除 loading 状态
+      setNodeLoadingStates(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(nodeId);
+        logger.debug(`[Loading] 清除节点 ${nodeId} loading 状态 (成功)，剩余 loading 节点数: ${newMap.size}`);
+        return newMap;
+      });
+      logger.info(`[Loading] ✅ 节点加载成功: ${nodeId}`);
+
       // 加载完成后自动展开节点
       const treeItem = tree.getItemInstance(nodeId);
       if (treeItem && !treeItem.isExpanded()) {
@@ -538,7 +561,17 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       }
     } catch (err) {
       logger.error('加载子节点失败:', err);
-      // 加载失败时，设置空的 children 数组，避免重复加载
+
+      // 🔧 加载失败时，清除 loading 状态并设置错误信息
+      setNodeLoadingStates(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(nodeId);
+        logger.debug(`[Loading] 清除节点 ${nodeId} loading 状态 (失败)，剩余 loading 节点数: ${newMap.size}`);
+        return newMap;
+      });
+      logger.error(`[Loading] ❌ 节点加载失败: ${nodeId}`, err);
+
+      // 更新 treeData
       setTreeData(prevData => {
         const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
           for (let i = 0; i < nodes.length; i++) {
@@ -546,7 +579,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
             if (n.id === nodeId) {
               const newNodes = [...nodes];
-              newNodes[i] = { ...n, children: [], error: String(err) };
+              newNodes[i] = { ...n, children: [], error: String(err), isLoading: false };
               return newNodes;
             }
 
@@ -564,7 +597,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         return updateNode(prevData);
       });
     }
-  }, [connections, connectionStatuses, databaseLoadingStates, connectionErrors, databaseErrors, isFavorite, onConnectionToggle]); // 移除 loadedNodes 依赖
+  }, [tree, connections, connectionStatuses, isDatabaseOpened, onConnectionToggle, nodeLoadingStates]); // 添加 tree 和 nodeLoadingStates 依赖
 
   // 转换节点格式为 React Arborist 格式
   const convertToArboristFormat = (
@@ -1182,6 +1215,34 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // 双击时选中当前节点
     item.select();
 
+    const nodeType = nodeData.nodeType;
+
+    // 🔧 防止重复触发：检查节点是否正在 loading
+    // 1. 对于连接节点，检查 connectionStatus 是否为 'connecting'
+    // 2. 对于数据库节点，检查 databaseLoadingStates
+    // 3. 对于其他节点，检查 nodeLoadingStates
+    if (nodeType === 'connection') {
+      const connectionId = nodeData.metadata?.connectionId;
+      const status = connectionStatuses?.get(connectionId);
+      if (status === 'connecting') {
+        logger.debug(`⚠️ 连接节点 ${nodeId} 正在连接中，忽略双击事件`);
+        return;
+      }
+    } else if (nodeType === 'database' || nodeType === 'system_database') {
+      const connectionId = nodeData.metadata?.connectionId;
+      const database = nodeData.name;
+      const isLoading = databaseLoadingStates?.get(`${connectionId}/${database}`);
+      if (isLoading) {
+        logger.debug(`⚠️ 数据库节点 ${nodeId} 正在加载中，忽略双击事件`);
+        return;
+      }
+    } else {
+      if (nodeLoadingStates.get(nodeId)) {
+        logger.debug(`⚠️ 节点 ${nodeId} 正在加载中，忽略双击事件`);
+        return;
+      }
+    }
+
     // 防止双击重复触发（300ms 内的重复双击会被忽略）
     // 但如果节点有错误状态，允许立即重试
     const hasError = nodeData.error;
@@ -1192,8 +1253,6 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
     lastActivateTimeRef.current = now;
     lastActivateNodeRef.current = nodeId;
-
-    const nodeType = nodeData.nodeType;
 
     // measurement/table 节点：双击时打开数据 tab，不展开节点
     if (nodeType === 'measurement' || nodeType === 'table') {
@@ -1327,7 +1386,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // 其他叶子节点：通知父组件
     logger.debug(`双击叶子节点，通知父组件: ${nodeType}`);
     onNodeActivate?.(nodeData);
-  }, [onNodeActivate, handleToggle, isDatabaseOpened, collapseNodeRecursively]);
+  }, [onNodeActivate, handleToggle, isDatabaseOpened, collapseNodeRecursively, nodeLoadingStates, connectionStatuses, databaseLoadingStates]);
 
   // 处理右键菜单
   const handleContextMenu = useCallback((item: ItemInstance<TreeNodeData>, event: React.MouseEvent) => {
@@ -1416,6 +1475,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         isDatabaseOpened={isDatabaseOpened}
         nodeRefsMap={nodeRefsMap}
         selectedItems={selectedItems}
+        nodeLoadingStates={nodeLoadingStates}
       />
     );
 
