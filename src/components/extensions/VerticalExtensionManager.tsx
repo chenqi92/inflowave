@@ -4,6 +4,7 @@ import {
   CardContent,
   Button,
   SearchInput,
+  ExpandableSearchInput,
   ScrollArea,
   Tabs,
   TabsContent,
@@ -11,7 +12,9 @@ import {
   TabsTrigger,
   Badge,
   Switch,
-  TooltipProvider,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -26,7 +29,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
+  SelectValue, TooltipProvider,
 } from '@/components/ui';
 import {
   Package,
@@ -44,6 +47,8 @@ import {
   XCircle,
   AlertCircle,
   ExternalLink,
+  Filter,
+  ChevronDown,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
@@ -392,29 +397,82 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
   return (
     <TooltipProvider>
       <div className={`h-full flex flex-col bg-background ${className}`}>
-        {/* 头部 */}
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-end gap-1 mb-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={loadData}
-              disabled={loading}
-              className="h-7 w-7 p-0"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </Button>
-            <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="h-7 text-xs">
-                  <Plus className="w-3 h-3 mr-1" />
-                  添加
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-md">
-                <DialogHeader>
-                  <DialogTitle>添加扩展</DialogTitle>
-                </DialogHeader>
+        {/* 头部 - 紧凑图标按钮 */}
+        <div className="px-3 py-2 border-b">
+          <div className="flex items-center justify-between gap-1">
+            {/* 左侧：搜索和过滤 */}
+            <div className="flex items-center gap-1">
+              <ExpandableSearchInput
+                placeholder="搜索扩展..."
+                value={searchText}
+                onChange={(value: string) => setSearchText(value)}
+                onClear={() => setSearchText('')}
+              />
+
+              <DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant={filterStatus !== 'all' ? 'default' : 'ghost'}
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                      >
+                        <Filter className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>状态过滤</TooltipContent>
+                </Tooltip>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem onClick={() => setFilterStatus('all')}>
+                    所有状态
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilterStatus('active')}>
+                    活跃
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilterStatus('inactive')}>
+                    非活跃
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFilterStatus('error')}>
+                    错误
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+
+            {/* 右侧：刷新和添加 */}
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={loadData}
+                    disabled={loading}
+                    className="h-8 w-8 p-0"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>刷新</TooltipContent>
+              </Tooltip>
+
+              <Dialog open={createModalOpen} onOpenChange={setCreateModalOpen}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </DialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>添加扩展</TooltipContent>
+                </Tooltip>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>添加扩展</DialogTitle>
+                  </DialogHeader>
                   <div className="space-y-4">
                     <p className="text-sm text-muted-foreground">
                       选择要添加的扩展类型
@@ -441,31 +499,7 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
                 </DialogContent>
               </Dialog>
             </div>
-
-          {/* 搜索框 */}
-          <div className="mb-3">
-            <SearchInput
-              placeholder="搜索扩展..."
-              value={searchText}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
-              onClear={() => setSearchText('')}
-              className="h-8 text-xs"
-              iconSize="sm"
-            />
           </div>
-
-          {/* 状态过滤 */}
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">所有状态</SelectItem>
-              <SelectItem value="active">活跃</SelectItem>
-              <SelectItem value="inactive">非活跃</SelectItem>
-              <SelectItem value="error">错误</SelectItem>
-            </SelectContent>
-          </Select>
         </div>
 
         {/* 标签页 */}

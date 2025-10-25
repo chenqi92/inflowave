@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from '@/components/ui';
+import { Button, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui';
 import { Badge } from '@/components/ui';
-import { RefreshCw, Download, Trash2, Pause, Play, Copy } from 'lucide-react';
+import { RefreshCw, Download, Trash2, Pause, Play, Copy, ArrowDownToLine } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
@@ -209,64 +209,96 @@ const BackendLogViewer: React.FC<BackendLogViewerProps> = ({ className = '' }) =
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
-      {/* 工具栏 */}
-      <div className="flex items-center justify-between p-3 border-b bg-muted/30">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsPaused(!isPaused)}
-            title={isPaused ? '继续刷新' : '暂停刷新'}
-          >
-            {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={loadLogs}
-            title="刷新日志"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
+      {/* 工具栏 - 紧凑图标按钮 */}
+      <div className="flex items-center justify-between px-3 py-2 border-b bg-muted/30">
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setIsPaused(!isPaused)}
+              >
+                {isPaused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{isPaused ? '继续刷新' : '暂停刷新'}</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={loadLogs}
+              >
+                <RefreshCw className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>刷新日志</TooltipContent>
+          </Tooltip>
+
           <div className="h-4 w-px bg-border mx-1" />
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={autoScroll}
-              onChange={(e) => setAutoScroll(e.target.checked)}
-              className="rounded cursor-pointer"
-            />
-            自动滚动
-          </label>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={autoScroll ? 'default' : 'ghost'}
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setAutoScroll(!autoScroll)}
+              >
+                <ArrowDownToLine className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{autoScroll ? '关闭自动滚动' : '开启自动滚动'}</TooltipContent>
+          </Tooltip>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCopy}
-            title="复制日志"
-          >
-            <Copy className="w-4 h-4" />
-            复制
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleExport}
-            title="导出日志"
-          >
-            <Download className="w-4 h-4" />
-            导出
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClear}
-            title="清空日志"
-          >
-            <Trash2 className="w-4 h-4" />
-            清空
-          </Button>
+
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handleCopy}
+              >
+                <Copy className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>复制日志</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handleExport}
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>导出日志</TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={handleClear}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>清空日志</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
