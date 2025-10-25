@@ -62,16 +62,6 @@ const functionTitles: Record<FunctionType, string> = {
   tools: '开发工具',
 };
 
-// 功能描述映射
-const functionDescriptions: Record<FunctionType, string> = {
-  notifications: '查看和管理软件启动后的所有消息通知',
-  visualization: '创建图表和仪表板来可视化您的时序数据',
-  monitoring: '监控系统性能和诊断瓶颈问题',
-  history: '查看和管理查询历史记录',
-  extensions: '管理插件、API集成和自动化规则',
-  tools: '开发和调试工具集合',
-};
-
 const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
   selectedFunction,
   onClose,
