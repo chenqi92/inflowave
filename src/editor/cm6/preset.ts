@@ -178,17 +178,13 @@ function createClipboardKeybindings(): KeyBinding[] {
       run: (view) => {
         const selection = view.state.selection.main;
         if (selection.empty) {
-          console.log('📋 [CodeMirror Keymap] Ctrl+C - 没有选中内容');
           return false; // 让浏览器处理
         }
 
         const text = view.state.sliceDoc(selection.from, selection.to);
-        console.log('📋 [CodeMirror Keymap] Ctrl+C - 复制文本:', text.substring(0, 50));
 
         // 使用 Clipboard API
-        navigator.clipboard.writeText(text).then(() => {
-          console.log('✅ [CodeMirror Keymap] 复制成功');
-        }).catch(err => {
+        navigator.clipboard.writeText(text).catch(err => {
           console.error('❌ [CodeMirror Keymap] 复制失败:', err);
         });
 
@@ -200,16 +196,13 @@ function createClipboardKeybindings(): KeyBinding[] {
       run: (view) => {
         const selection = view.state.selection.main;
         if (selection.empty) {
-          console.log('✂️ [CodeMirror Keymap] Ctrl+X - 没有选中内容');
           return false; // 让浏览器处理
         }
 
         const text = view.state.sliceDoc(selection.from, selection.to);
-        console.log('✂️ [CodeMirror Keymap] Ctrl+X - 剪切文本:', text.substring(0, 50));
 
         // 使用 Clipboard API
         navigator.clipboard.writeText(text).then(() => {
-          console.log('✅ [CodeMirror Keymap] 剪切成功，删除选中内容');
           // 删除选中的文本
           view.dispatch({
             changes: { from: selection.from, to: selection.to },
@@ -225,11 +218,8 @@ function createClipboardKeybindings(): KeyBinding[] {
     {
       key: 'Mod-v',
       run: (view) => {
-        console.log('📌 [CodeMirror Keymap] Ctrl+V - 粘贴');
-
         // 使用 Clipboard API
         navigator.clipboard.readText().then(text => {
-          console.log('✅ [CodeMirror Keymap] 粘贴成功:', text.substring(0, 50));
           const selection = view.state.selection.main;
           view.dispatch({
             changes: { from: selection.from, to: selection.to, insert: text },

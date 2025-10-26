@@ -8,9 +8,6 @@ import React, { useRef, useCallback, useEffect, useState, forwardRef, useImperat
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { useConnectionStore } from '@/store/connection';
 import type { EditorTab } from './TabManager';
-// TODO: 迁移到 CodeMirror 6 的智能提示系统
-// import { useSmartSuggestion } from '@/hooks/useSmartSuggestion';
-// import { SmartSuggestionPopup } from './SmartSuggestionPopup';
 import type { DataSourceType } from '@/utils/suggestionTypes';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -118,21 +115,6 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
     // Default to SQL
     return 'sql';
   }, [getCurrentConnection]);
-
-  // TODO: 迁移到 CodeMirror 6 的智能提示系统
-  // Smart suggestion hook (暂时禁用，等待迁移到 CodeMirror 6)
-  // const {
-  //   suggestions,
-  //   position,
-  //   visible: suggestionVisible,
-  //   showSuggestions,
-  //   hideSuggestions,
-  //   selectSuggestion,
-  // } = useSmartSuggestion({
-  //   connectionId: currentTab?.connectionId || activeConnectionId || '',
-  //   database: selectedDatabase || '',
-  //   dataSourceType: getDataSourceType(),
-  // });
 
   // Expose methods to parent component
   useImperativeHandle(ref, () => ({
@@ -318,20 +300,6 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
           height="100%"
         />
       </div>
-
-      {/* TODO: Smart Suggestion Popup - 迁移到 CodeMirror 6 的自动补全系统 */}
-      {/* {suggestionVisible && (
-        <SmartSuggestionPopup
-          suggestions={suggestions}
-          position={position}
-          visible={suggestionVisible}
-          onSelect={(item) => {
-            // TODO: Integrate with CM6 auto-completion
-            logger.debug('Suggestion selected:', item);
-          }}
-          onClose={hideSuggestions}
-        />
-      )} */}
 
       {/* Context Menu */}
       {contextMenu.visible && (

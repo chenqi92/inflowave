@@ -632,7 +632,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           // 检查当前焦点元素
           const activeElement = document.activeElement;
 
-          // 处理CodeMirror编辑器的粘贴，其他输入框由 inputClipboardHandler 处理
+          // 处理CodeMirror编辑器的粘贴
           if (activeElement && (
             activeElement.closest('.cm-editor') ||
             activeElement.closest('.cm-content') ||
@@ -660,9 +660,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
               });
             }
           } else {
-            // 对于其他输入元素，不在这里处理，让 inputClipboardHandler 处理
-            logger.debug('非CodeMirror编辑器元素，由 inputClipboardHandler 处理粘贴');
-            // 触发键盘事件让 inputClipboardHandler 处理
+            // 对于其他输入元素，使用浏览器默认行为
+            logger.debug('非CodeMirror编辑器元素，使用浏览器默认粘贴');
+            // 触发键盘事件
             if (activeElement && (
               activeElement.tagName === 'INPUT' ||
               activeElement.tagName === 'TEXTAREA' ||
