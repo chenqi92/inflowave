@@ -1,5 +1,5 @@
-﻿use crate::models::{RetentionPolicy, RetentionPolicyConfig, QueryResult, DatabaseInfo, DatabaseStats};
-use crate::services::{ConnectionService, database_service::DatabaseService};
+﻿use crate::models::{RetentionPolicy, RetentionPolicyConfig, QueryResult, DatabaseInfo, DatabaseStats, Measurement};
+use crate::services::ConnectionService;
 use crate::models::TableSchema;
 use crate::commands::settings::SettingsStorage;
 use tauri::State;
@@ -159,7 +159,7 @@ pub async fn drop_database(
 }
 
 /// 获取保留策略
-#[tauri::command(rename_all = "camelCase")]
+#[tauri::command]
 pub async fn get_retention_policies(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
@@ -266,33 +266,173 @@ pub async fn drop_retention_policy(
 /// 获取数据库信息
 #[tauri::command]
 pub async fn get_database_info(
-    database_service: State<'_, DatabaseService>,
+    connection_service: State<'_, ConnectionService>,
     connection_id: String,
     database: String,
 ) -> Result<DatabaseInfo, String> {
     debug!("处理获取数据库信息命令: {} - {}", connection_id, database);
 
-    database_service.get_database_info(&connection_id, &database).await
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
         .map_err(|e| {
-            error!("获取数据库信息失败: {}", e);
-            format!("获取数据库信息失败: {}", e)
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取保留策略
+    let retention_policies = client.get_retention_policies(&database).await
+        .map_err(|e| {
+            error!("获取保留策略失败: {}", e);
+            format!("获取保留策略失败: {}", e)
+        })?;
+
+    // 获取测量列表
+    let measurement_names = client.get_measurements(&database).await
+        .map_err(|e| {
+            error!("获取测量列表失败: {}", e);
+            format!("获取测量列表失败: {}", e)
+        })?;
+
+    // 构建测量信息（简化版本）
+    let measurements: Vec<Measurement> = measurement_names
+        .into_iter()
+        .map(|name| Measurement {
+            name,
+            fields: vec![],
+            tags: vec![],
+            last_write: None,
+            series_count: None,
         })
+        .collect();
+
+    let database_info = DatabaseInfo {
+        name: database.clone(),
+        retention_policies,
+        measurements,
+        created_at: None,
+    };
+
+    info!("数据库信息获取成功: {}", database);
+    Ok(database_info)
 }
 
 /// 获取数据库统计信息
 #[tauri::command]
 pub async fn get_database_stats(
-    database_service: State<'_, DatabaseService>,
+    connection_service: State<'_, ConnectionService>,
     connection_id: String,
     database: String,
 ) -> Result<DatabaseStats, String> {
     debug!("处理获取数据库统计信息命令: {} - {}", connection_id, database);
 
-    database_service.get_database_stats(&connection_id, &database).await
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
         .map_err(|e| {
-            error!("获取数据库统计信息失败: {}", e);
-            format!("获取数据库统计信息失败: {}", e)
-        })
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取保留策略
+    let retention_policies = client.get_retention_policies(&database).await
+        .map_err(|e| {
+            error!("获取保留策略失败: {}", e);
+            format!("获取保留策略失败: {}", e)
+        })?;
+
+    // 获取测量数量
+    let measurements = client.get_measurements(&database).await
+        .map_err(|e| {
+            error!("获取测量列表失败: {}", e);
+            format!("获取测量列表失败: {}", e)
+        })?;
+    let measurement_count = measurements.len() as u64;
+
+    // 尝试获取序列数量
+    let series_count = match get_series_count(&client, &database).await {
+        Ok(count) => count,
+        Err(e) => {
+            debug!("获取序列数量失败: {}", e);
+            0
+        }
+    };
+
+    // 尝试获取数据点数量
+    let point_count = match get_point_count(&client, &database).await {
+        Ok(count) => count,
+        Err(e) => {
+            debug!("获取数据点数量失败: {}", e);
+            0
+        }
+    };
+
+    // 获取保留策略信息用于返回
+    let retention_policies_for_stats = retention_policies.clone();
+
+    let stats = DatabaseStats {
+        name: database.clone(),
+        size: point_count, // 使用数据点数量作为大小的估算
+        series_count,
+        measurement_count,
+        retention_policies: retention_policies_for_stats,
+        last_write: None,
+    };
+
+    info!("数据库统计信息获取成功: {} (测量: {}, 序列: {}, 数据点: {})",
+          database, measurement_count, series_count, point_count);
+    Ok(stats)
+}
+
+/// 获取序列数量
+async fn get_series_count(
+    client: &std::sync::Arc<crate::database::client::DatabaseClient>,
+    database: &str,
+) -> Result<u64, String> {
+    let query = format!("SHOW SERIES ON \"{}\"", database);
+    let result = client.execute_query(&query, Some(database)).await
+        .map_err(|e| format!("获取序列数量失败: {}", e))?;
+
+    Ok(result.row_count.unwrap_or(0) as u64)
+}
+
+/// 获取数据点数量（估算）
+async fn get_point_count(
+    client: &std::sync::Arc<crate::database::client::DatabaseClient>,
+    database: &str,
+) -> Result<u64, String> {
+    // 获取所有测量值
+    let measurements = client.get_measurements(database).await
+        .map_err(|e| format!("获取测量列表失败: {}", e))?;
+
+    let mut total_count = 0u64;
+
+    // 对每个测量值执行 COUNT(*) 查询
+    for measurement in measurements.iter().take(10) { // 限制只查询前10个测量值以提高性能
+        let query = format!("SELECT COUNT(*) FROM \"{}\"", measurement);
+        match client.execute_query(&query, Some(database)).await {
+            Ok(result) => {
+                if let Some(data) = result.data {
+                    if let Some(first_row) = data.first() {
+                        if let Some(count_value) = first_row.get(1) {
+                            if let Some(count) = count_value.as_u64() {
+                                total_count += count;
+                            } else if let Some(count) = count_value.as_i64() {
+                                total_count += count as u64;
+                            } else if let Some(count_str) = count_value.as_str() {
+                                if let Ok(count) = count_str.parse::<u64>() {
+                                    total_count += count;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                debug!("获取测量 {} 的数据点数量失败: {}", measurement, e);
+            }
+        }
+    }
+
+    Ok(total_count)
 }
 
 /// 执行表查询（右键菜单操作）
