@@ -1628,6 +1628,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     openDatabase,
     closeDatabase,
     isDatabaseOpened,
+    isFavorite,
     addFavorite,
     removeFavorite,
     clearDatabasesCache,

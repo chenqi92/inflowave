@@ -205,6 +205,9 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     const database = node.name;
     const isOpened = isDatabaseOpened?.(connectionId, database) || false;
 
+    // 获取数据源类型
+    const dataSourceType = metadata.dataSourceType || 'influxdb';
+
     return (
       <>
         <ContextMenuLabel>数据库操作</ContextMenuLabel>
@@ -227,25 +230,10 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         </ContextMenuItem>
         <ContextMenuSeparator />
 
-        <ContextMenuLabel>结构操作</ContextMenuLabel>
-        <ContextMenuItem onSelect={() => handleAction('create_table')}>
-          <Plus className="w-4 h-4 mr-2" />
-          创建表
-        </ContextMenuItem>
-        <ContextMenuItem onSelect={() => handleAction('create_measurement')}>
-          <Plus className="w-4 h-4 mr-2" />
-          创建测量值
-        </ContextMenuItem>
-        <ContextMenuSeparator />
-
         <ContextMenuLabel>查询操作</ContextMenuLabel>
         <ContextMenuItem onSelect={() => handleAction('show_tables')}>
           <Table className="w-4 h-4 mr-2" />
           显示所有表
-        </ContextMenuItem>
-        <ContextMenuItem onSelect={() => handleAction('query_management')}>
-          <Search className="w-4 h-4 mr-2" />
-          查询管理
         </ContextMenuItem>
         <ContextMenuSeparator />
 
@@ -254,10 +242,13 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
           <Info className="w-4 h-4 mr-2" />
           数据库信息
         </ContextMenuItem>
-        <ContextMenuItem onSelect={() => handleAction('manage_retention_policies')}>
-          <Clock className="w-4 h-4 mr-2" />
-          保留策略
-        </ContextMenuItem>
+        {/* 只有 InfluxDB 1.x 支持保留策略 */}
+        {dataSourceType === 'influxdb' && (
+          <ContextMenuItem onSelect={() => handleAction('manage_retention_policies')}>
+            <Clock className="w-4 h-4 mr-2" />
+            保留策略
+          </ContextMenuItem>
+        )}
         <ContextMenuItem onSelect={() => handleAction('export_metadata')}>
           <Download className="w-4 h-4 mr-2" />
           导出元数据

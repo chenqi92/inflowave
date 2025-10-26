@@ -87,6 +87,12 @@ export interface DialogStates {
         open: boolean;
         connectionId: string;
     };
+    tableList?: {
+        open: boolean;
+        connectionId: string;
+        database: string;
+        tables: string[];
+    };
 }
 
 /**

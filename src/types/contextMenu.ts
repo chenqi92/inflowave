@@ -23,10 +23,7 @@ export type ContextMenuAction =
   | 'open_database'
   | 'close_database'
   | 'refresh_database'
-  | 'create_table'
-  | 'create_measurement'
   | 'show_tables'
-  | 'query_management'
   | 'database_info'
   | 'manage_retention_policies'
   | 'export_metadata'
@@ -252,25 +249,10 @@ export const CONTEXT_MENU_ACTIONS: Record<ContextMenuAction, ContextMenuActionMe
     description: '刷新数据库的表列表',
     successMessage: '数据库已刷新',
   },
-  create_table: {
-    action: 'create_table',
-    label: '创建表',
-    description: '在数据库中创建新表',
-  },
-  create_measurement: {
-    action: 'create_measurement',
-    label: '创建测量值',
-    description: '创建新的测量值',
-  },
   show_tables: {
     action: 'show_tables',
     label: '显示所有表',
     description: '显示数据库中的所有表',
-  },
-  query_management: {
-    action: 'query_management',
-    label: '查询管理',
-    description: '打开查询管理界面',
   },
   database_info: {
     action: 'database_info',

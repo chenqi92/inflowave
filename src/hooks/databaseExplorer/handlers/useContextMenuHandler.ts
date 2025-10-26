@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { dialog } from '@/utils/dialog';
@@ -13,6 +13,7 @@ import type {
     ConnectionDetailDialogState,
     DialogStates,
 } from '@/types/databaseExplorer';
+import { createContextMenuHandlerFactory, type MenuHandlerDependencies } from './contextMenu';
 
 interface UseContextMenuHandlerProps {
     contextMenuTarget: TreeNodeData | null;
@@ -26,6 +27,7 @@ interface UseContextMenuHandlerProps {
     openDatabase: (connectionId: string, database: string) => void;
     closeDatabase: (connectionId: string, database: string) => void;
     isDatabaseOpened: (connectionId: string, database: string) => boolean;
+    isFavorite: (path: string) => boolean;
     addFavorite: (favorite: any) => void;
     removeFavorite: (id: string) => void;
     clearDatabasesCache: (connectionId?: string) => void;
@@ -62,6 +64,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
         openDatabase,
         closeDatabase,
         isDatabaseOpened,
+        isFavorite,
         addFavorite,
         removeFavorite,
         clearDatabasesCache,
@@ -83,6 +86,66 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
     } = props;
 
     // ============================================================================
+    // Create Context Menu Handler Factory
+    // ============================================================================
+    const handlerFactory = useMemo(() => {
+        const deps: MenuHandlerDependencies = {
+            getConnection,
+            isConnectionConnected,
+            isDatabaseOpened,
+            isFavorite,
+            disconnectFromDatabase,
+            removeConnection,
+            openDatabase,
+            closeDatabase,
+            addFavorite,
+            removeFavorite,
+            clearDatabasesCache,
+            buildCompleteTreeData,
+            setLoading,
+            setCreateDatabaseDialogOpen,
+            setDatabaseInfoDialog,
+            setRetentionPolicyDialog,
+            setManagementNodeDialog,
+            setDialogStates,
+            handleConnectionToggle,
+            handleOpenConnectionDialog,
+            onCreateAndExecuteQuery,
+            generateQuery,
+            executeTableQuery,
+            refreshTree,
+            openDialog,
+        };
+        return createContextMenuHandlerFactory(deps);
+    }, [
+        getConnection,
+        isConnectionConnected,
+        isDatabaseOpened,
+        isFavorite,
+        disconnectFromDatabase,
+        removeConnection,
+        openDatabase,
+        closeDatabase,
+        addFavorite,
+        removeFavorite,
+        clearDatabasesCache,
+        buildCompleteTreeData,
+        setLoading,
+        setCreateDatabaseDialogOpen,
+        setDatabaseInfoDialog,
+        setRetentionPolicyDialog,
+        setManagementNodeDialog,
+        setDialogStates,
+        handleConnectionToggle,
+        handleOpenConnectionDialog,
+        onCreateAndExecuteQuery,
+        generateQuery,
+        executeTableQuery,
+        refreshTree,
+        openDialog,
+    ]);
+
+    // ============================================================================
     // Context Menu Action Handler
     // ============================================================================
     const handleContextMenuAction = useCallback(async (action: string, node: TreeNodeData) => {
@@ -94,6 +157,19 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
         const table = metadata.table || metadata.tableName || node.name;
 
         try {
+            // 🔧 First try to handle with specialized handlers
+            try {
+                await handlerFactory.handleAction(action as any, node);
+                // If successful, close menu and return
+                setContextMenuOpen(false);
+                setContextMenuTarget(null);
+                return;
+            } catch (handlerError) {
+                // If handler doesn't support this action, fall through to legacy handling
+                logger.debug(`Handler factory didn't handle action ${action}, falling back to legacy handler`);
+            }
+
+            // 🔧 Legacy handling for actions not yet migrated to specialized handlers
             switch (action) {
                 // Connection actions
                 case 'refresh_connection':

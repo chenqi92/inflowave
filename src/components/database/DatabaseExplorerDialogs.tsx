@@ -9,6 +9,7 @@ import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleCon
 import { ManagementNodeDialog } from '@/components/database/ManagementNodeDialog';
 import IoTDBTemplateDialog from '@/components/database/IoTDBTemplateDialog';
 import QueryBuilder from '@/components/query/QueryBuilder';
+import TableListDialog from '@/components/database/TableListDialog';
 import type {
     DialogStates,
     DatabaseInfoDialogState,
@@ -209,6 +210,27 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                         // 可以通过 props 传递一个执行查询的函数
                         console.log('执行查询:', query);
                     }}
+                />
+            )}
+
+            {/* 表列表对话框 */}
+            {dialogStates.tableList && (
+                <TableListDialog
+                    open={dialogStates.tableList.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            tableList: {
+                                open: false,
+                                connectionId: '',
+                                database: '',
+                                tables: [],
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.tableList.connectionId}
+                    database={dialogStates.tableList.database}
+                    tables={dialogStates.tableList.tables}
                 />
             )}
         </>

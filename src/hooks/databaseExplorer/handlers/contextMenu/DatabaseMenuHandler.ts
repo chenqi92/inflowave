@@ -23,17 +23,8 @@ export class DatabaseMenuHandler extends BaseMenuHandler {
         await this.handleRefresh(action, connectionId);
         break;
 
-      case 'create_table':
-      case 'create_measurement':
-        await this.createMeasurement(connectionId, database);
-        break;
-
       case 'show_tables':
         await this.showTables(connectionId, database);
-        break;
-
-      case 'query_management':
-        this.openQueryManagement(connectionId, database);
         break;
 
       case 'database_info':
@@ -82,31 +73,6 @@ export class DatabaseMenuHandler extends BaseMenuHandler {
   }
 
   /**
-   * 创建测量值/表
-   */
-  private async createMeasurement(connectionId: string, database: string): Promise<void> {
-    try {
-      const template = await this.invokeTauri<string>('create_measurement_template', {
-        connectionId,
-        database,
-      });
-
-      // 显示创建模板对话框
-      this.deps.setDialogStates((prev: any) => ({
-        ...prev,
-        createMeasurement: {
-          open: true,
-          connectionId,
-          database,
-          template,
-        },
-      }));
-    } catch (error) {
-      this.showError('create_measurement', error);
-    }
-  }
-
-  /**
    * 显示所有表
    */
   private async showTables(connectionId: string, database: string): Promise<void> {
@@ -131,20 +97,7 @@ export class DatabaseMenuHandler extends BaseMenuHandler {
     }
   }
 
-  /**
-   * 打开查询管理
-   */
-  private openQueryManagement(connectionId: string, database: string): void {
-    // 切换到查询标签页并设置数据库
-    this.deps.setDialogStates((prev: any) => ({
-      ...prev,
-      activeTab: 'query',
-      queryContext: {
-        connectionId,
-        database,
-      },
-    }));
-  }
+
 
   /**
    * 显示数据库信息
@@ -170,10 +123,51 @@ export class DatabaseMenuHandler extends BaseMenuHandler {
    * 导出元数据
    */
   private async exportMetadata(connectionId: string, database: string): Promise<void> {
-    await this.handleExport('export_metadata', 'export_database_metadata', {
-      connectionId,
-      database,
-    });
+    try {
+      this.deps.setLoading(true);
+
+      // 获取元数据
+      const metadata = await this.invokeTauri<any>('export_database_metadata', {
+        connectionId,
+        database,
+      });
+
+      // 打开保存文件对话框
+      const dialogResult = await this.invokeTauri<{ path: string; name: string } | null>(
+        'save_file_dialog',
+        {
+          params: {
+            default_path: `${database}_metadata_${Date.now()}.json`,
+            filters: [
+              {
+                name: 'JSON',
+                extensions: ['json'],
+              },
+            ],
+          },
+        }
+      );
+
+      if (!dialogResult) {
+        this.deps.setLoading(false);
+        return; // 用户取消了保存
+      }
+
+      // 将元数据转换为格式化的 JSON 字符串
+      const content = JSON.stringify(metadata, null, 2);
+
+      // 写入文件
+      await this.invokeTauri('write_file', {
+        path: dialogResult.path,
+        content,
+      });
+
+      this.showSuccess('export_metadata', `元数据已导出到: ${dialogResult.path}`);
+    } catch (error) {
+      this.showError('export_metadata', error);
+    } finally {
+      this.deps.setLoading(false);
+    }
   }
 
   /**
