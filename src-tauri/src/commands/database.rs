@@ -589,6 +589,11 @@ pub async fn get_table_structure(
                 data: None,
                 columns: Some(vec![]),
                 error: None,
+                messages: None,
+                statistics: None,
+                execution_plan: None,
+                aggregations: None,
+                sql_type: None,
             }
         } else {
             // InfluxDB获取标签信息

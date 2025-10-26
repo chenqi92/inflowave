@@ -840,6 +840,11 @@ impl InfluxDB2Client {
             error: None,
             data: None,
             columns: None,
+            messages: None,
+            statistics: None,
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
         };
 
         debug!("Flux 查询模拟执行成功，延迟: {}ms", latency);
@@ -1820,6 +1825,11 @@ impl InfluxDB2Client {
             error: None,
             data: Some(vec![]),
             columns: Some(vec![]),
+            messages: None,
+            statistics: None,
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
         })
     }
 
@@ -1858,6 +1868,11 @@ impl InfluxDB2Client {
             error: None,
             data: Some(data),
             columns: Some(columns),
+            messages: None,
+            statistics: None,
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
         })
     }
 }
@@ -3363,6 +3378,11 @@ impl InfluxClient {
             error: None,
             data: Some(vec![]),
             columns: Some(vec![]),
+            messages: None,
+            statistics: None,
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
         })
     }
 
@@ -3401,6 +3421,11 @@ impl InfluxClient {
             error: None,
             data: Some(data),
             columns: Some(columns),
+            messages: None,
+            statistics: None,
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
         })
     }
 }

@@ -11,6 +11,83 @@ pub struct QueryRequest {
     pub timeout: Option<u64>,
 }
 
+/// 执行消息类型
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "lowercase")]
+pub enum MessageType {
+    Success,
+    Warning,
+    Error,
+    Info,
+}
+
+/// 执行消息
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ExecutionMessage {
+    #[serde(rename = "type")]
+    pub message_type: MessageType,
+    pub timestamp: DateTime<Utc>,
+    pub message: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "sqlStatement")]
+    pub sql_statement: Option<String>,
+}
+
+/// 执行统计信息
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ExecutionStatistics {
+    #[serde(skip_serializing_if = "Option::is_none", rename = "affectedRows")]
+    pub affected_rows: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "insertedRows")]
+    pub inserted_rows: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "updatedRows")]
+    pub updated_rows: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "deletedRows")]
+    pub deleted_rows: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub warnings: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub errors: Option<usize>,
+}
+
+/// 执行计划步骤
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ExecutionPlanStep {
+    pub operation: String,
+    pub cost: Option<f64>,
+    pub rows: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub children: Option<Vec<ExecutionPlanStep>>,
+}
+
+/// 执行计划
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct ExecutionPlan {
+    pub steps: Vec<ExecutionPlanStep>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "totalCost")]
+    pub total_cost: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "estimatedRows")]
+    pub estimated_rows: Option<usize>,
+}
+
+/// 聚合信息
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct AggregationInfo {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sum: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub avg: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min: Option<f64>,
+}
+
 /// 查询结果
 #[derive(Debug, Serialize, Deserialize)]
 pub struct QueryResult {
@@ -20,6 +97,19 @@ pub struct QueryResult {
     #[serde(rename = "rowCount")]
     pub row_count: Option<usize>,
     pub error: Option<String>,
+
+    // 新增字段
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub messages: Option<Vec<ExecutionMessage>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub statistics: Option<ExecutionStatistics>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "executionPlan")]
+    pub execution_plan: Option<ExecutionPlan>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aggregations: Option<AggregationInfo>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "sqlType")]
+    pub sql_type: Option<String>,
+
     // 兼容性字段
     #[serde(skip_serializing_if = "Option::is_none")]
     pub data: Option<Vec<Vec<serde_json::Value>>>,
@@ -69,6 +159,11 @@ impl QueryResult {
             execution_time: Some(execution_time),
             row_count: Some(row_count),
             error: None,
+            messages: None,
+            statistics: None,
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
             // 设置兼容性字段
             data: Some(rows),
             columns: Some(columns),
@@ -92,6 +187,11 @@ impl QueryResult {
             execution_time: Some(execution_time),
             row_count: Some(total_rows),
             error: None,
+            messages: None,
+            statistics: None,
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
             data,
             columns,
         }
@@ -106,12 +206,25 @@ impl QueryResult {
             execution_time: Some(0),
             row_count: Some(0),
             error: None,
+            messages: None,
+            statistics: None,
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
             data: Some(vec![]),
             columns: Some(vec![]),
         }
     }
 
     pub fn with_error(error: String) -> Self {
+        let error_message = ExecutionMessage {
+            message_type: MessageType::Error,
+            timestamp: Utc::now(),
+            message: error.clone(),
+            details: None,
+            sql_statement: None,
+        };
+
         Self {
             results: vec![QueryResultItem {
                 series: None,
@@ -120,9 +233,58 @@ impl QueryResult {
             execution_time: None,
             row_count: None,
             error: Some(error),
+            messages: Some(vec![error_message]),
+            statistics: Some(ExecutionStatistics {
+                affected_rows: None,
+                inserted_rows: None,
+                updated_rows: None,
+                deleted_rows: None,
+                warnings: None,
+                errors: Some(1),
+            }),
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
             data: None,
             columns: None,
         }
+    }
+
+    /// 添加执行消息
+    pub fn add_message(&mut self, message_type: MessageType, message: String, details: Option<String>) {
+        let msg = ExecutionMessage {
+            message_type,
+            timestamp: Utc::now(),
+            message,
+            details,
+            sql_statement: None,
+        };
+
+        if let Some(ref mut messages) = self.messages {
+            messages.push(msg);
+        } else {
+            self.messages = Some(vec![msg]);
+        }
+    }
+
+    /// 设置统计信息
+    pub fn set_statistics(&mut self, statistics: ExecutionStatistics) {
+        self.statistics = Some(statistics);
+    }
+
+    /// 设置执行计划
+    pub fn set_execution_plan(&mut self, plan: ExecutionPlan) {
+        self.execution_plan = Some(plan);
+    }
+
+    /// 设置聚合信息
+    pub fn set_aggregations(&mut self, aggregations: AggregationInfo) {
+        self.aggregations = Some(aggregations);
+    }
+
+    /// 设置 SQL 类型
+    pub fn set_sql_type(&mut self, sql_type: String) {
+        self.sql_type = Some(sql_type);
     }
 
     // 兼容性方法，用于访问旧的字段格式

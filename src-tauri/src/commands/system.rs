@@ -839,7 +839,7 @@ pub async fn get_file_info(path: String) -> Result<FileInfo, String> {
                 is_dir: metadata.is_dir(),
             };
 
-            info!("文件信息获取成功: {:?}", file_info);
+            // info!("文件信息获取成功: {:?}", file_info);
             Ok(file_info)
         }
         Err(e) => {

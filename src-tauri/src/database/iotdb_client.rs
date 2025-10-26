@@ -440,6 +440,11 @@ impl IoTDBHttpClient {
                     error: None,
                     data: Some(rows),
                     columns: Some(columns),
+                    messages: None,
+                    statistics: None,
+                    execution_plan: None,
+                    aggregations: None,
+                    sql_type: None,
                 });
             }
         }
@@ -452,6 +457,11 @@ impl IoTDBHttpClient {
             error: None,
             data: None,
             columns: None,
+            messages: None,
+            statistics: None,
+            execution_plan: None,
+            aggregations: None,
+            sql_type: None,
         })
     }
 

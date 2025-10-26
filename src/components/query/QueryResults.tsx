@@ -47,54 +47,34 @@ import {
     Trash2,
     Shield,
     FileText,
+    MessageSquare,
+    History,
+    LayoutGrid,
 } from 'lucide-react';
 import {useContextMenu} from '@/hooks/useContextMenu';
 import ContextMenu from '@/components/common/ContextMenu';
 import type {QueryResult} from '@/types';
 import SimpleChart from '../common/SimpleChart';
+import { MessagesTab } from './MessagesTab';
+import { StatusCard } from './StatusCard';
+import { AggregateStatCards } from './AggregateStatCards';
+import { ExecutionPlanTab } from './ExecutionPlanTab';
+import { EnhancedChartView } from './EnhancedChartView';
+import {
+    detectSQLStatementType,
+    getSQLStatementCategory,
+    getDefaultTab,
+    shouldShowAggregateCards,
+    shouldShowExecutionPlan,
+    type SQLStatementType,
+    type SQLStatementCategory
+} from '@/utils/sqlTypeDetector';
 
-// SQL语句类型检测工具函数
+// 向后兼容的类型检测函数
 const detectQueryType = (query?: string): string => {
     if (!query) return 'UNKNOWN';
+    return detectSQLStatementType(query);
 
-    const trimmed = query.trim().toUpperCase();
-
-    if (trimmed.startsWith('SELECT')) return 'SELECT';
-    if (trimmed.startsWith('INSERT')) return 'INSERT';
-    if (trimmed.startsWith('DELETE')) return 'DELETE';
-    if (trimmed.startsWith('UPDATE')) return 'UPDATE';
-    if (trimmed.startsWith('CREATE')) return 'CREATE';
-    if (trimmed.startsWith('DROP')) return 'DROP';
-    if (trimmed.startsWith('ALTER')) return 'ALTER';
-    if (trimmed.startsWith('SHOW')) return 'SHOW';
-    if (trimmed.startsWith('EXPLAIN')) return 'EXPLAIN';
-    if (trimmed.startsWith('GRANT')) return 'GRANT';
-    if (trimmed.startsWith('REVOKE')) return 'REVOKE';
-
-    return 'UNKNOWN';
-};
-
-// 获取语句类型的分类
-const getStatementCategory = (queryType: string): 'query' | 'write' | 'delete' | 'ddl' | 'permission' | 'unknown' => {
-    switch (queryType) {
-        case 'SELECT':
-        case 'SHOW':
-        case 'EXPLAIN':
-            return 'query';
-        case 'INSERT':
-            return 'write';
-        case 'DELETE':
-            return 'delete';
-        case 'CREATE':
-        case 'DROP':
-        case 'ALTER':
-            return 'ddl';
-        case 'GRANT':
-        case 'REVOKE':
-            return 'permission';
-        default:
-            return 'unknown';
-    }
 };
 
 interface QueryResultsProps {
@@ -111,30 +91,17 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                                        queryType,
                                                    }) => {
     // 检测SQL语句类型
-    const detectedQueryType = queryType || detectQueryType(executedQuery);
-    const statementCategory = getStatementCategory(detectedQueryType);
+    const detectedQueryType = (queryType || detectQueryType(executedQuery)) as SQLStatementType;
+    const statementCategory = getSQLStatementCategory(detectedQueryType);
 
-    // 根据语句类型设置默认tab
-    const getDefaultTab = (category: string) => {
-        switch (category) {
-            case 'query':
-                return 'table';
-            case 'write':
-            case 'delete':
-            case 'ddl':
-            case 'permission':
-                return 'status';
-            default:
-                return 'json';
-        }
-    };
-
-    const [activeTab, setActiveTab] = useState(() => getDefaultTab(statementCategory));
+    // 获取默认 Tab
+    const defaultTab = getDefaultTab(detectedQueryType);
+    const [activeTab, setActiveTab] = useState(defaultTab);
 
     // 当语句类型改变时，重置activeTab
     React.useEffect(() => {
-        setActiveTab(getDefaultTab(statementCategory));
-    }, [statementCategory]);
+        setActiveTab(getDefaultTab(detectedQueryType));
+    }, [detectedQueryType]);
     const [exportModalVisible, setExportModalVisible] = useState(false);
     const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'excel'>(
         'csv'
@@ -540,200 +507,35 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         </ScrollArea>
     );
 
-    const renderChartTab = () => (
-        <ScrollArea className="h-full">
-            <div className="p-4 h-full">
-                {result && isChartable(result) ? (
-                    <div className="h-full flex flex-col">
-                        <div className="mb-4">
-                            <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">图表类型:</span>
-                                <Select value={chartType}
-                                        onValueChange={(value) => setChartType(value as 'line' | 'bar' | 'area' | 'pie')}>
-                                    <SelectTrigger className="w-32">
-                                        <SelectValue placeholder='选择图表类型'/>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value='line'>
-                                            <div className='flex items-center gap-2'>
-                                                <TrendingUp className='w-4 h-4'/>
-                                                <span>折线图</span>
-                                            </div>
-                                        </SelectItem>
-                                        <SelectItem value='bar'>
-                                            <div className='flex items-center gap-2'>
-                                                <BarChart className='w-4 h-4'/>
-                                                <span>柱状图</span>
-                                            </div>
-                                        </SelectItem>
-                                        <SelectItem value='area'>
-                                            <div className='flex items-center gap-2'>
-                                                <AreaChart className='w-4 h-4'/>
-                                                <span>面积图</span>
-                                            </div>
-                                        </SelectItem>
-                                        <SelectItem value='pie'>
-                                            <div className='flex items-center gap-2'>
-                                                <PieChart className='w-4 h-4'/>
-                                                <span>饼图</span>
-                                            </div>
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <div className="flex-1 min-h-0">
-                            <SimpleChart data={prepareChartData(result)} type={chartType}/>
-                        </div>
-                    </div>
-                ) : (
-                    <Empty
-                        description={result ? '当前数据不适合图表显示' : '暂无查询结果'}
-                    />
-                )}
-            </div>
-        </ScrollArea>
-    );
+    // 渲染图表 Tab - 使用增强的图表视图组件
+    const renderChartTab = () => {
+        if (!result) return null;
+        return <EnhancedChartView result={result} />;
+    };
 
-    // 渲染写入操作结果
-    const renderWriteResultTab = () => (
-        <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-                <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-green-500" />
-                    <Text className="font-medium text-green-700">写入操作执行成功</Text>
-                </div>
+    // 渲染写入操作结果 - 使用新的 StatusCard 组件
+    const renderWriteResultTab = () => {
+        if (!result) return null;
+        return <StatusCard result={result} statementType={detectedQueryType} />;
+    };
 
-                {stats && (
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">执行时间:</span>
-                            <span className="font-mono">{stats.executionTime}ms</span>
-                        </div>
-                        {result?.rowCount !== undefined && (
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">影响行数:</span>
-                                <span className="font-mono">{result.rowCount}</span>
-                            </div>
-                        )}
-                    </div>
-                )}
+    // 渲染删除操作结果 - 使用新的 StatusCard 组件
+    const renderDeleteResultTab = () => {
+        if (!result) return null;
+        return <StatusCard result={result} statementType={detectedQueryType} />;
+    };
 
-                {executedQuery && (
-                    <div>
-                        <Text className="font-medium mb-2">执行的语句:</Text>
-                        <pre className="bg-muted p-3 rounded-md text-xs font-mono overflow-auto">
-                            {executedQuery}
-                        </pre>
-                    </div>
-                )}
-            </div>
-        </ScrollArea>
-    );
+    // 渲染DDL操作结果 - 使用新的 StatusCard 组件
+    const renderDDLResultTab = () => {
+        if (!result) return null;
+        return <StatusCard result={result} statementType={detectedQueryType} />;
+    };
 
-    // 渲染删除操作结果
-    const renderDeleteResultTab = () => (
-        <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-                <div className="flex items-center gap-2">
-                    <Trash2 className="w-5 h-5 text-orange-500" />
-                    <Text className="font-medium text-orange-700">删除操作执行成功</Text>
-                </div>
-
-                {stats && (
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">执行时间:</span>
-                            <span className="font-mono">{stats.executionTime}ms</span>
-                        </div>
-                        {result?.rowCount !== undefined && (
-                            <div className="flex justify-between">
-                                <span className="text-muted-foreground">删除行数:</span>
-                                <span className="font-mono text-orange-600">{result.rowCount}</span>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {executedQuery && (
-                    <div>
-                        <Text className="font-medium mb-2">执行的语句:</Text>
-                        <pre className="bg-muted p-3 rounded-md text-xs font-mono overflow-auto">
-                            {executedQuery}
-                        </pre>
-                    </div>
-                )}
-            </div>
-        </ScrollArea>
-    );
-
-    // 渲染DDL操作结果
-    const renderDDLResultTab = () => (
-        <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-                <div className="flex items-center gap-2">
-                    <Database className="w-5 h-5 text-blue-500" />
-                    <Text className="font-medium text-blue-700">结构操作执行成功</Text>
-                </div>
-
-                {stats && (
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">执行时间:</span>
-                            <span className="font-mono">{stats.executionTime}ms</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">操作类型:</span>
-                            <span className="font-mono">{detectedQueryType}</span>
-                        </div>
-                    </div>
-                )}
-
-                {executedQuery && (
-                    <div>
-                        <Text className="font-medium mb-2">执行的语句:</Text>
-                        <pre className="bg-muted p-3 rounded-md text-xs font-mono overflow-auto">
-                            {executedQuery}
-                        </pre>
-                    </div>
-                )}
-            </div>
-        </ScrollArea>
-    );
-
-    // 渲染权限操作结果
-    const renderPermissionResultTab = () => (
-        <ScrollArea className="h-full">
-            <div className="p-4 space-y-4">
-                <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-purple-500" />
-                    <Text className="font-medium text-purple-700">权限操作执行成功</Text>
-                </div>
-
-                {stats && (
-                    <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">执行时间:</span>
-                            <span className="font-mono">{stats.executionTime}ms</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-muted-foreground">操作类型:</span>
-                            <span className="font-mono">{detectedQueryType}</span>
-                        </div>
-                    </div>
-                )}
-
-                {executedQuery && (
-                    <div>
-                        <Text className="font-medium mb-2">执行的语句:</Text>
-                        <pre className="bg-muted p-3 rounded-md text-xs font-mono overflow-auto">
-                            {executedQuery}
-                        </pre>
-                    </div>
-                )}
-            </div>
-        </ScrollArea>
-    );
+    // 渲染权限操作结果 - 使用新的 StatusCard 组件
+    const renderPermissionResultTab = () => {
+        if (!result) return null;
+        return <StatusCard result={result} statementType={detectedQueryType} />;
+    };
 
     return (
         <Card className="h-full border-none">
@@ -854,6 +656,18 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                         表格视图
                                         {stats && <Badge variant="secondary" className="ml-1">{stats.totalRows}</Badge>}
                                     </TabsTrigger>
+                                    {shouldShowAggregateCards(detectedQueryType) && (
+                                        <TabsTrigger value="aggregate" className="flex items-center gap-2">
+                                            <LayoutGrid className='w-4 h-4'/>
+                                            聚合统计
+                                        </TabsTrigger>
+                                    )}
+                                    {shouldShowExecutionPlan(detectedQueryType) && (
+                                        <TabsTrigger value="executionPlan" className="flex items-center gap-2">
+                                            <TrendingUp className='w-4 h-4'/>
+                                            执行计划
+                                        </TabsTrigger>
+                                    )}
                                     <TabsTrigger value="json" className="flex items-center gap-2">
                                         <FileText className='w-4 h-4'/>
                                         JSON 视图
@@ -861,6 +675,13 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                     <TabsTrigger value="chart" className="flex items-center gap-2">
                                         <BarChart className='w-4 h-4'/>
                                         图表视图
+                                    </TabsTrigger>
+                                    <TabsTrigger value="messages" className="flex items-center gap-2">
+                                        <MessageSquare className='w-4 h-4'/>
+                                        消息
+                                        {result?.messages && result.messages.length > 0 && (
+                                            <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
+                                        )}
                                     </TabsTrigger>
                                 </>
                             )}
@@ -876,6 +697,13 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                         <FileText className='w-4 h-4'/>
                                         JSON 视图
                                     </TabsTrigger>
+                                    <TabsTrigger value="messages" className="flex items-center gap-2">
+                                        <MessageSquare className='w-4 h-4'/>
+                                        消息
+                                        {result?.messages && result.messages.length > 0 && (
+                                            <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
+                                        )}
+                                    </TabsTrigger>
                                 </>
                             )}
 
@@ -889,6 +717,13 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                     <TabsTrigger value="json" className="flex items-center gap-2">
                                         <FileText className='w-4 h-4'/>
                                         JSON 视图
+                                    </TabsTrigger>
+                                    <TabsTrigger value="messages" className="flex items-center gap-2">
+                                        <MessageSquare className='w-4 h-4'/>
+                                        消息
+                                        {result?.messages && result.messages.length > 0 && (
+                                            <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
+                                        )}
                                     </TabsTrigger>
                                 </>
                             )}
@@ -904,6 +739,13 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                         <FileText className='w-4 h-4'/>
                                         JSON 视图
                                     </TabsTrigger>
+                                    <TabsTrigger value="messages" className="flex items-center gap-2">
+                                        <MessageSquare className='w-4 h-4'/>
+                                        消息
+                                        {result?.messages && result.messages.length > 0 && (
+                                            <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
+                                        )}
+                                    </TabsTrigger>
                                 </>
                             )}
 
@@ -917,6 +759,13 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                     <TabsTrigger value="json" className="flex items-center gap-2">
                                         <FileText className='w-4 h-4'/>
                                         JSON 视图
+                                    </TabsTrigger>
+                                    <TabsTrigger value="messages" className="flex items-center gap-2">
+                                        <MessageSquare className='w-4 h-4'/>
+                                        消息
+                                        {result?.messages && result.messages.length > 0 && (
+                                            <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
+                                        )}
                                     </TabsTrigger>
                                 </>
                             )}
@@ -936,11 +785,24 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                 <TabsContent value="table" className="flex-1 m-0 px-4">
                                     {renderTableTab()}
                                 </TabsContent>
+                                {shouldShowAggregateCards(detectedQueryType) && (
+                                    <TabsContent value="aggregate" className="flex-1 m-0">
+                                        {result && <AggregateStatCards result={result} />}
+                                    </TabsContent>
+                                )}
+                                {shouldShowExecutionPlan(detectedQueryType) && (
+                                    <TabsContent value="executionPlan" className="flex-1 m-0">
+                                        <ExecutionPlanTab executionPlan={result?.executionPlan} />
+                                    </TabsContent>
+                                )}
                                 <TabsContent value="json" className="flex-1 m-0 px-4">
                                     {renderJsonTab()}
                                 </TabsContent>
                                 <TabsContent value="chart" className="flex-1 m-0 px-4">
                                     {renderChartTab()}
+                                </TabsContent>
+                                <TabsContent value="messages" className="flex-1 m-0">
+                                    <MessagesTab messages={result?.messages} />
                                 </TabsContent>
                             </>
                         )}
@@ -948,11 +810,14 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                         {/* 写入类语句的内容 */}
                         {statementCategory === 'write' && (
                             <>
-                                <TabsContent value="status" className="flex-1 m-0 px-4">
+                                <TabsContent value="status" className="flex-1 m-0">
                                     {renderWriteResultTab()}
                                 </TabsContent>
                                 <TabsContent value="json" className="flex-1 m-0 px-4">
                                     {renderJsonTab()}
+                                </TabsContent>
+                                <TabsContent value="messages" className="flex-1 m-0">
+                                    <MessagesTab messages={result?.messages} />
                                 </TabsContent>
                             </>
                         )}
@@ -960,11 +825,14 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                         {/* 删除类语句的内容 */}
                         {statementCategory === 'delete' && (
                             <>
-                                <TabsContent value="status" className="flex-1 m-0 px-4">
+                                <TabsContent value="status" className="flex-1 m-0">
                                     {renderDeleteResultTab()}
                                 </TabsContent>
                                 <TabsContent value="json" className="flex-1 m-0 px-4">
                                     {renderJsonTab()}
+                                </TabsContent>
+                                <TabsContent value="messages" className="flex-1 m-0">
+                                    <MessagesTab messages={result?.messages} />
                                 </TabsContent>
                             </>
                         )}
@@ -972,11 +840,14 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                         {/* DDL类语句的内容 */}
                         {statementCategory === 'ddl' && (
                             <>
-                                <TabsContent value="status" className="flex-1 m-0 px-4">
+                                <TabsContent value="status" className="flex-1 m-0">
                                     {renderDDLResultTab()}
                                 </TabsContent>
                                 <TabsContent value="json" className="flex-1 m-0 px-4">
                                     {renderJsonTab()}
+                                </TabsContent>
+                                <TabsContent value="messages" className="flex-1 m-0">
+                                    <MessagesTab messages={result?.messages} />
                                 </TabsContent>
                             </>
                         )}
@@ -984,11 +855,14 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                         {/* 权限类语句的内容 */}
                         {statementCategory === 'permission' && (
                             <>
-                                <TabsContent value="status" className="flex-1 m-0 px-4">
+                                <TabsContent value="status" className="flex-1 m-0">
                                     {renderPermissionResultTab()}
                                 </TabsContent>
                                 <TabsContent value="json" className="flex-1 m-0 px-4">
                                     {renderJsonTab()}
+                                </TabsContent>
+                                <TabsContent value="messages" className="flex-1 m-0">
+                                    <MessagesTab messages={result?.messages} />
                                 </TabsContent>
                             </>
                         )}

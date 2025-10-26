@@ -222,6 +222,53 @@ export interface QueryRequest {
   maxRows?: number; // 最大返回行数
 }
 
+// 执行消息类型
+export type MessageType = 'success' | 'warning' | 'error' | 'info';
+
+// 执行消息
+export interface ExecutionMessage {
+  type: MessageType;
+  timestamp: Date;
+  message: string;
+  details?: string;
+  sqlStatement?: string;
+}
+
+// 执行统计信息
+export interface ExecutionStatistics {
+  affectedRows?: number;
+  insertedRows?: number;
+  updatedRows?: number;
+  deletedRows?: number;
+  warnings?: number;
+  errors?: number;
+}
+
+// 执行计划步骤
+export interface ExecutionPlanStep {
+  operation: string;
+  cost?: number;
+  rows?: number;
+  details?: string;
+  children?: ExecutionPlanStep[];
+}
+
+// 执行计划
+export interface ExecutionPlan {
+  steps: ExecutionPlanStep[];
+  totalCost?: number;
+  estimatedRows?: number;
+}
+
+// 聚合信息
+export interface AggregationInfo {
+  count?: number;
+  sum?: number;
+  avg?: number;
+  max?: number;
+  min?: number;
+}
+
 export interface QueryResult {
   results: {
     series?: Series[];
@@ -230,6 +277,14 @@ export interface QueryResult {
   executionTime?: number;
   rowCount?: number;
   error?: string;
+
+  // 新增字段
+  messages?: ExecutionMessage[];
+  statistics?: ExecutionStatistics;
+  executionPlan?: ExecutionPlan;
+  aggregations?: AggregationInfo;
+  sqlType?: string;
+
   // Compatibility fields from Rust backend
   data?: (string | number | boolean | null)[][];
   columns?: string[];
