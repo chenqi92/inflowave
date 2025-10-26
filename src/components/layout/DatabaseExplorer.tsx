@@ -150,6 +150,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     hideSystemNodes,
     setHideSystemNodes,
     treeNodeCache,
+    setTreeNodeCache,
     databasesCache,
     setDatabasesCache,
     loading,
@@ -1918,6 +1919,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         setRetentionPolicyDialog={setRetentionPolicyDialog}
         activeConnectionId={activeConnectionId}
         buildCompleteTreeData={buildCompleteTreeData}
+        setTreeNodeCache={setTreeNodeCache}
         isConnectionDialogVisible={isConnectionDialogVisible}
         editingConnection={editingConnection}
         handleCloseConnectionDialog={handleCloseConnectionDialog}

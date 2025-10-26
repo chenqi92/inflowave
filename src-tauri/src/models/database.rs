@@ -12,6 +12,7 @@ pub struct DatabaseInfo {
 
 /// 保留策略
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct RetentionPolicy {
     pub name: String,
     pub duration: String,

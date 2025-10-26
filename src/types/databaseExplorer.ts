@@ -108,7 +108,7 @@ export interface DatabaseInfoDialogState {
  */
 export interface RetentionPolicyDialogState {
     open: boolean;
-    mode: 'create' | 'edit';
+    mode: 'create' | 'edit' | 'view';
     connectionId: string;
     database: string;
     policy: any | null;

@@ -99,21 +99,19 @@ class GenericMenuHandler extends BaseMenuHandler {
       });
 
       if (action === 'view_retention_policy') {
-        this.deps.setDialogStates((prev: any) => ({
-          ...prev,
-          retentionPolicyView: {
-            open: true,
-            connectionId,
-            database,
-            policyName,
-            policy,
-          },
-        }));
+        // 查看策略：使用编辑对话框但设置为只读模式
+        this.handleInfo('retention_policy', {
+          connectionId,
+          database,  // 使用 database 而不是 databaseName
+          policyName,
+          policy,
+          mode: 'view',  // 添加 view 模式
+        });
       } else if (action === 'edit_retention_policy') {
         // 编辑策略时也需要传递策略详情
         this.handleInfo('retention_policy', {
           connectionId,
-          databaseName: database,
+          database,  // 修复：使用 database 而不是 databaseName
           policyName,
           policy, // 传递策略详情用于回填
           mode: 'edit',
@@ -121,7 +119,7 @@ class GenericMenuHandler extends BaseMenuHandler {
       } else {
         this.handleInfo('retention_policy', {
           connectionId,
-          databaseName: database,
+          database,  // 修复：使用 database 而不是 databaseName
           policyName,
         });
       }

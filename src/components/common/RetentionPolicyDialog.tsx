@@ -35,7 +35,7 @@ import type { RetentionPolicy } from '@/types';
 
 interface RetentionPolicyDialogProps {
   visible: boolean;
-  mode: 'create' | 'edit';
+  mode: 'create' | 'edit' | 'view';
   policy?: RetentionPolicy;
   database: string;
   connectionId: string;
@@ -50,6 +50,44 @@ interface RetentionPolicyForm {
   replicaN?: number;
   default?: boolean;
 }
+
+// 将 InfluxDB 持续时间格式转换为选择器格式
+const normalizeDuration = (duration: string): string => {
+  if (!duration || duration === '0' || duration === '0s') {
+    return '0s'; // 永久
+  }
+
+  // 解析 InfluxDB 格式 (如 "8760h0m0s", "168h0m0s")
+  const match = duration.match(/^(\d+)h/);
+  if (match) {
+    const hours = parseInt(match[1], 10);
+
+    // 转换为天数
+    if (hours % 24 === 0) {
+      const days = hours / 24;
+
+      // 匹配常见的天数选项
+      if (days === 1) return '1d';
+      if (days === 7) return '7d';
+      if (days === 30) return '30d';
+      if (days === 90) return '90d';
+      if (days === 180) return '180d';
+      if (days === 365) return '365d';
+
+      // 如果不是标准选项，返回天数格式
+      return `${days}d`;
+    }
+
+    // 如果是小时数
+    if (hours === 1) return '1h';
+
+    // 返回小时格式
+    return `${hours}h`;
+  }
+
+  // 如果已经是标准格式，直接返回
+  return duration;
+};
 
 const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   visible,
@@ -66,11 +104,11 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
   // 初始化表单值
   useEffect(() => {
     if (visible) {
-      if (mode === 'edit' && policy) {
+      if ((mode === 'edit' || mode === 'view') && policy) {
         form.reset({
           name: policy.name,
-          duration: policy.duration,
-          shardDuration: policy.shardGroupDuration,
+          duration: normalizeDuration(policy.duration),
+          shardDuration: normalizeDuration(policy.shardGroupDuration),
           replicaN: policy.replicaN,
           default: policy.default,
         });
@@ -189,11 +227,13 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
         <DialogHeader>
           <DialogTitle className='flex items-center gap-2'>
             <Info className='w-4 h-4' />
-            {mode === 'create' ? '创建保留策略' : '编辑保留策略'}
+            {mode === 'create' ? '创建保留策略' : mode === 'view' ? '查看保留策略' : '编辑保留策略'}
           </DialogTitle>
           <DialogDescription>
             {mode === 'create'
               ? '为数据库创建新的数据保留策略，控制数据存储时长'
+              : mode === 'view'
+              ? '查看保留策略的详细配置信息'
               : '修改现有保留策略的配置'}
           </DialogDescription>
         </DialogHeader>
@@ -230,7 +270,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                     <FormControl>
                       <Input
                         placeholder='请输入策略名称'
-                        disabled={mode === 'edit'}
+                        disabled={mode === 'edit' || mode === 'view'}
                         {...field}
                       />
                     </FormControl>
@@ -257,6 +297,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      disabled={mode === 'view'}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -293,6 +334,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      disabled={mode === 'view'}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -334,6 +376,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                         className='w-full'
                         value={field.value}
                         onChange={field.onChange}
+                        disabled={mode === 'view'}
                       />
                     </FormControl>
                     <FormMessage />
@@ -361,6 +404,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
                       <Switch
                         checked={field.value}
                         onCheckedChange={field.onChange}
+                        disabled={mode === 'view'}
                       />
                     </FormControl>
                   </FormItem>
@@ -390,7 +434,7 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
 
         {/* Footer */}
         <div className='flex justify-end gap-3 pt-4 border-t'>
-          <Button onClick={onClose}>取消</Button>
+          <Button onClick={onClose}>{mode === 'view' ? '关闭' : '取消'}</Button>
           {mode === 'edit' && policy && !policy.default && (
             <Popconfirm
               title='确认删除保留策略'
@@ -405,13 +449,15 @@ const RetentionPolicyDialog: React.FC<RetentionPolicyDialogProps> = ({
               </Button>
             </Popconfirm>
           )}
-          <Button
-            variant='default'
-            disabled={loading}
-            onClick={form.handleSubmit(handleSubmit)}
-          >
-            {mode === 'create' ? '创建' : '保存'}
-          </Button>
+          {mode !== 'view' && (
+            <Button
+              variant='default'
+              disabled={loading}
+              onClick={form.handleSubmit(handleSubmit)}
+            >
+              {mode === 'create' ? '创建' : '保存'}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
