@@ -1,6 +1,6 @@
 /**
  * CodeMirror 6 Preset Configuration
- * 
+ *
  * Provides a comprehensive set of extensions for a fully-featured code editor
  * including history, search, folding, bracket matching, multi-cursor, theming, and VS Code-style keybindings
  */
@@ -8,6 +8,7 @@
 import { Extension, EditorSelection } from '@codemirror/state';
 import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, KeyBinding } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
+import { writeText, readText } from '@tauri-apps/plugin-clipboard-manager';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { foldGutter, indentOnInput, bracketMatching, foldKeymap, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
@@ -170,9 +171,8 @@ export function basicPreset(options: PresetOptions = {}): Extension[] {
 /**
  * Create clipboard keybindings
  *
- * Handles copy, cut, and paste operations using a combination of:
- * - Clipboard API for copy/cut (no permission needed for writing)
- * - DOM events for paste (to avoid permission prompts)
+ * Uses Tauri's native clipboard API to avoid browser permission prompts.
+ * This is a desktop-only application, so we use the native API for better UX.
  */
 function createClipboardKeybindings(): KeyBinding[] {
   return [
@@ -189,17 +189,12 @@ function createClipboardKeybindings(): KeyBinding[] {
 
         const text = view.state.sliceDoc(selection.from, selection.to);
 
-        // Try to use Clipboard API
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).catch(err => {
-            console.error('❌ [Clipboard] Copy failed:', err);
-          });
-          console.log('✅ [Clipboard] Copied:', text.substring(0, 50));
-          return true;
-        }
+        // Use Tauri's native clipboard API
+        writeText(text).catch(err => {
+          console.error('❌ [Clipboard] Copy failed:', err);
+        });
 
-        // Fallback: let browser handle
-        return false;
+        return true;
       },
     },
     // Cut: Mod-x
@@ -215,48 +210,38 @@ function createClipboardKeybindings(): KeyBinding[] {
 
         const text = view.state.sliceDoc(selection.from, selection.to);
 
-        // Try to use Clipboard API
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(() => {
-            // Delete the selected text
-            view.dispatch({
-              changes: { from: selection.from, to: selection.to },
-              selection: { anchor: selection.from },
-            });
-            console.log('✅ [Clipboard] Cut:', text.substring(0, 50));
-          }).catch(err => {
-            console.error('❌ [Clipboard] Cut failed:', err);
+        // Use Tauri's native clipboard API
+        writeText(text).then(() => {
+          // Delete the selected text
+          view.dispatch({
+            changes: { from: selection.from, to: selection.to },
+            selection: { anchor: selection.from },
           });
-          return true;
-        }
+        }).catch(err => {
+          console.error('❌ [Clipboard] Cut failed:', err);
+        });
 
-        // Fallback: let browser handle
-        return false;
+        return true;
       },
     },
     // Paste: Mod-v
     {
       key: 'Mod-v',
       run: (view) => {
-        // Use Clipboard API directly
-        if (navigator.clipboard && navigator.clipboard.readText) {
-          navigator.clipboard.readText().then(text => {
+        // Use Tauri's native clipboard API (no permission prompt!)
+        readText().then(text => {
+          if (text) {
             const selection = view.state.selection.main;
             view.dispatch({
               changes: { from: selection.from, to: selection.to, insert: text },
               selection: { anchor: selection.from + text.length },
             });
-            console.log('✅ [Clipboard] Pasted:', text.substring(0, 50));
-          }).catch(err => {
-            console.error('❌ [Clipboard] Paste failed:', err);
-            console.error('💡 [Clipboard] You may need to grant clipboard permission');
-          });
-          return true;
-        }
+          }
+        }).catch(err => {
+          console.error('❌ [Clipboard] Paste failed:', err);
+        });
 
-        // No Clipboard API available
-        console.error('❌ [Clipboard] Clipboard API not available');
-        return false;
+        return true;
       },
     },
   ];
