@@ -7,8 +7,6 @@ import type {
     RetentionPolicyDialogState,
     ManagementNodeDialogState,
     ConnectionDetailDialogState,
-    FieldDetailDialogState,
-    TagDetailDialogState,
     ContextMenuPosition,
 } from '@/types/databaseExplorer';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
@@ -48,8 +46,6 @@ interface DatabaseExplorerState {
     retentionPolicyDialog: RetentionPolicyDialogState;
     managementNodeDialog: ManagementNodeDialogState;
     connectionDetailDialog: ConnectionDetailDialogState;
-    fieldDetailDialog: FieldDetailDialogState;
-    tagDetailDialog: TagDetailDialogState;
 
     // Context Menu State
     contextMenuTarget: TreeNodeData | null;
@@ -84,8 +80,6 @@ type DatabaseExplorerAction =
     | { type: 'SET_RETENTION_POLICY_DIALOG'; payload: RetentionPolicyDialogState }
     | { type: 'SET_MANAGEMENT_NODE_DIALOG'; payload: ManagementNodeDialogState }
     | { type: 'SET_CONNECTION_DETAIL_DIALOG'; payload: ConnectionDetailDialogState }
-    | { type: 'SET_FIELD_DETAIL_DIALOG'; payload: FieldDetailDialogState }
-    | { type: 'SET_TAG_DETAIL_DIALOG'; payload: TagDetailDialogState }
     | { type: 'SET_CONTEXT_MENU_TARGET'; payload: TreeNodeData | null }
     | { type: 'SET_CONTEXT_MENU_OPEN'; payload: boolean }
     | { type: 'SET_CONTEXT_MENU_POSITION'; payload: ContextMenuPosition }
@@ -135,20 +129,6 @@ const initialState: DatabaseExplorerState = {
     connectionDetailDialog: {
         open: false,
         connectionId: '',
-    },
-    fieldDetailDialog: {
-        open: false,
-        connectionId: '',
-        database: '',
-        table: '',
-        field: '',
-    },
-    tagDetailDialog: {
-        open: false,
-        connectionId: '',
-        database: '',
-        table: '',
-        tag: '',
     },
     contextMenuTarget: null,
     contextMenuOpen: false,
@@ -206,10 +186,6 @@ function databaseExplorerReducer(
             return { ...state, managementNodeDialog: action.payload };
         case 'SET_CONNECTION_DETAIL_DIALOG':
             return { ...state, connectionDetailDialog: action.payload };
-        case 'SET_FIELD_DETAIL_DIALOG':
-            return { ...state, fieldDetailDialog: action.payload };
-        case 'SET_TAG_DETAIL_DIALOG':
-            return { ...state, tagDetailDialog: action.payload };
         case 'SET_CONTEXT_MENU_TARGET':
             return { ...state, contextMenuTarget: action.payload };
         case 'SET_CONTEXT_MENU_OPEN':
@@ -411,24 +387,6 @@ export const useDatabaseExplorerState = () => {
         }
     }, []);
 
-    const setFieldDetailDialog = useCallback((value: FieldDetailDialogState | ((prev: FieldDetailDialogState) => FieldDetailDialogState)) => {
-        if (typeof value === 'function') {
-            const newValue = value(stateRef.current.fieldDetailDialog);
-            dispatch({ type: 'SET_FIELD_DETAIL_DIALOG', payload: newValue });
-        } else {
-            dispatch({ type: 'SET_FIELD_DETAIL_DIALOG', payload: value });
-        }
-    }, []);
-
-    const setTagDetailDialog = useCallback((value: TagDetailDialogState | ((prev: TagDetailDialogState) => TagDetailDialogState)) => {
-        if (typeof value === 'function') {
-            const newValue = value(stateRef.current.tagDetailDialog);
-            dispatch({ type: 'SET_TAG_DETAIL_DIALOG', payload: newValue });
-        } else {
-            dispatch({ type: 'SET_TAG_DETAIL_DIALOG', payload: value });
-        }
-    }, []);
-
     const setContextMenuTarget = useCallback((value: TreeNodeData | null) => {
         dispatch({ type: 'SET_CONTEXT_MENU_TARGET', payload: value });
     }, []);
@@ -507,10 +465,6 @@ export const useDatabaseExplorerState = () => {
         setManagementNodeDialog,
         connectionDetailDialog: state.connectionDetailDialog,
         setConnectionDetailDialog,
-        fieldDetailDialog: state.fieldDetailDialog,
-        setFieldDetailDialog,
-        tagDetailDialog: state.tagDetailDialog,
-        setTagDetailDialog,
 
         // Context Menu State
         contextMenuTarget: state.contextMenuTarget,

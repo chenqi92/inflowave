@@ -4,8 +4,6 @@ import TableInfoDialog from '@/components/database/TableInfoDialog';
 import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
 import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
 import ConnectionDetailDialog from '@/components/database/ConnectionDetailDialog';
-import FieldDetailDialog from '@/components/database/FieldDetailDialog';
-import TagDetailDialog from '@/components/database/TagDetailDialog';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
 import { ManagementNodeDialog } from '@/components/database/ManagementNodeDialog';
@@ -17,8 +15,6 @@ import type {
     RetentionPolicyDialogState,
     ManagementNodeDialogState,
     ConnectionDetailDialogState,
-    FieldDetailDialogState,
-    TagDetailDialogState
 } from '@/types/databaseExplorer';
 import type { ConnectionConfig } from '@/types';
 
@@ -51,10 +47,6 @@ interface DatabaseExplorerDialogsProps {
     // Detail dialogs
     connectionDetailDialog: ConnectionDetailDialogState;
     setConnectionDetailDialog: (state: ConnectionDetailDialogState) => void;
-    fieldDetailDialog: FieldDetailDialogState;
-    setFieldDetailDialog: (state: FieldDetailDialogState) => void;
-    tagDetailDialog: TagDetailDialogState;
-    setTagDetailDialog: (state: TagDetailDialogState) => void;
 }
 
 export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = ({
@@ -77,10 +69,6 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
     setManagementNodeDialog,
     connectionDetailDialog,
     setConnectionDetailDialog,
-    fieldDetailDialog,
-    setFieldDetailDialog,
-    tagDetailDialog,
-    setTagDetailDialog,
 }) => {
     return (
         <>
@@ -176,38 +164,6 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     connectionId: '',
                 })}
                 connectionId={connectionDetailDialog.connectionId}
-            />
-
-            {/* 字段详情对话框 */}
-            <FieldDetailDialog
-                open={fieldDetailDialog.open}
-                onClose={() => setFieldDetailDialog({
-                    open: false,
-                    connectionId: '',
-                    database: '',
-                    table: '',
-                    field: '',
-                })}
-                connectionId={fieldDetailDialog.connectionId}
-                database={fieldDetailDialog.database}
-                table={fieldDetailDialog.table}
-                field={fieldDetailDialog.field}
-            />
-
-            {/* 标签详情对话框 */}
-            <TagDetailDialog
-                open={tagDetailDialog.open}
-                onClose={() => setTagDetailDialog({
-                    open: false,
-                    connectionId: '',
-                    database: '',
-                    table: '',
-                    tag: '',
-                })}
-                connectionId={tagDetailDialog.connectionId}
-                database={tagDetailDialog.database}
-                table={tagDetailDialog.table}
-                tag={tagDetailDialog.tag}
             />
 
             {/* IoTDB 模板管理对话框 */}

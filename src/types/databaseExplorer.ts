@@ -127,28 +127,6 @@ export interface ConnectionDetailDialogState {
 }
 
 /**
- * Field detail dialog state
- */
-export interface FieldDetailDialogState {
-    open: boolean;
-    connectionId: string;
-    database: string;
-    table: string;
-    field: string;
-}
-
-/**
- * Tag detail dialog state
- */
-export interface TagDetailDialogState {
-    open: boolean;
-    connectionId: string;
-    database: string;
-    table: string;
-    tag: string;
-}
-
-/**
  * Context menu position
  */
 export interface ContextMenuPosition {
