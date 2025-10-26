@@ -136,9 +136,10 @@ export function basicPreset(options: PresetOptions = {}): Extension[] {
   // Add indentWithTab for better tab handling
   keymaps.push(keymap.of([indentWithTab]));
 
-  // Add clipboard keybindings BEFORE defaultKeymap to ensure they have priority
+  // Add clipboard keybindings with proper event handling
   keymaps.push(keymap.of(createClipboardKeybindings()));
 
+  // Use default keymap for other operations
   if (opts.defaultKeymap) keymaps.push(keymap.of(defaultKeymap));
 
   // VS Code-style keybindings (Cmd/Ctrl+D for multi-cursor, etc.)
@@ -169,67 +170,93 @@ export function basicPreset(options: PresetOptions = {}): Extension[] {
 /**
  * Create clipboard keybindings
  *
- * Explicitly handle clipboard operations using the Clipboard API
+ * Handles copy, cut, and paste operations using a combination of:
+ * - Clipboard API for copy/cut (no permission needed for writing)
+ * - DOM events for paste (to avoid permission prompts)
  */
 function createClipboardKeybindings(): KeyBinding[] {
   return [
+    // Copy: Mod-c
     {
       key: 'Mod-c',
       run: (view) => {
         const selection = view.state.selection.main;
+
+        // If no selection, let browser handle (copy line)
         if (selection.empty) {
-          return false; // 让浏览器处理
+          return false;
         }
 
         const text = view.state.sliceDoc(selection.from, selection.to);
 
-        // 使用 Clipboard API
-        navigator.clipboard.writeText(text).catch(err => {
-          console.error('❌ [CodeMirror Keymap] 复制失败:', err);
-        });
+        // Try to use Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).catch(err => {
+            console.error('❌ [Clipboard] Copy failed:', err);
+          });
+          console.log('✅ [Clipboard] Copied:', text.substring(0, 50));
+          return true;
+        }
 
-        return true; // 阻止默认行为
+        // Fallback: let browser handle
+        return false;
       },
     },
+    // Cut: Mod-x
     {
       key: 'Mod-x',
       run: (view) => {
         const selection = view.state.selection.main;
+
+        // If no selection, let browser handle (cut line)
         if (selection.empty) {
-          return false; // 让浏览器处理
+          return false;
         }
 
         const text = view.state.sliceDoc(selection.from, selection.to);
 
-        // 使用 Clipboard API
-        navigator.clipboard.writeText(text).then(() => {
-          // 删除选中的文本
-          view.dispatch({
-            changes: { from: selection.from, to: selection.to },
-            selection: { anchor: selection.from },
+        // Try to use Clipboard API
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            // Delete the selected text
+            view.dispatch({
+              changes: { from: selection.from, to: selection.to },
+              selection: { anchor: selection.from },
+            });
+            console.log('✅ [Clipboard] Cut:', text.substring(0, 50));
+          }).catch(err => {
+            console.error('❌ [Clipboard] Cut failed:', err);
           });
-        }).catch(err => {
-          console.error('❌ [CodeMirror Keymap] 剪切失败:', err);
-        });
+          return true;
+        }
 
-        return true; // 阻止默认行为
+        // Fallback: let browser handle
+        return false;
       },
     },
+    // Paste: Mod-v
     {
       key: 'Mod-v',
       run: (view) => {
-        // 使用 Clipboard API
-        navigator.clipboard.readText().then(text => {
-          const selection = view.state.selection.main;
-          view.dispatch({
-            changes: { from: selection.from, to: selection.to, insert: text },
-            selection: { anchor: selection.from + text.length },
+        // Use Clipboard API directly
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then(text => {
+            const selection = view.state.selection.main;
+            view.dispatch({
+              changes: { from: selection.from, to: selection.to, insert: text },
+              selection: { anchor: selection.from + text.length },
+            });
+            console.log('✅ [Clipboard] Pasted:', text.substring(0, 50));
+          }).catch(err => {
+            console.error('❌ [Clipboard] Paste failed:', err);
+            console.error('💡 [Clipboard] You may need to grant clipboard permission');
           });
-        }).catch(err => {
-          console.error('❌ [CodeMirror Keymap] 粘贴失败:', err);
-        });
+          return true;
+        }
 
-        return true; // 阻止默认行为
+        // No Clipboard API available
+        console.error('❌ [Clipboard] Clipboard API not available');
+        return false;
       },
     },
   ];

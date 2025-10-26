@@ -205,13 +205,47 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
               });
             }
           }),
-          // Focus/blur listeners
+          // Focus/blur listeners and clipboard debugging
           EditorView.domEventHandlers({
             focus: () => {
               editorEvents.focus();
             },
             blur: () => {
               editorEvents.blur();
+            },
+            copy: (event: ClipboardEvent) => {
+              console.log('📋 [CodeMirror] copy event triggered', {
+                hasClipboardData: !!event.clipboardData,
+                defaultPrevented: event.defaultPrevented,
+              });
+              return false; // Let CodeMirror handle it
+            },
+            cut: (event: ClipboardEvent) => {
+              console.log('✂️ [CodeMirror] cut event triggered', {
+                hasClipboardData: !!event.clipboardData,
+                defaultPrevented: event.defaultPrevented,
+              });
+              return false; // Let CodeMirror handle it
+            },
+            paste: (event: ClipboardEvent) => {
+              console.log('📌 [CodeMirror] paste event triggered', {
+                hasClipboardData: !!event.clipboardData,
+                defaultPrevented: event.defaultPrevented,
+              });
+              return false; // Let CodeMirror handle it
+            },
+            keydown: (event: KeyboardEvent) => {
+              const isClipboard = (event.ctrlKey || event.metaKey) &&
+                                 ['c', 'v', 'x'].includes(event.key.toLowerCase());
+              if (isClipboard) {
+                console.log('⌨️ [CodeMirror] keydown event', {
+                  key: event.key,
+                  ctrl: event.ctrlKey,
+                  meta: event.metaKey,
+                  defaultPrevented: event.defaultPrevented,
+                });
+              }
+              return false; // Let CodeMirror handle it
             },
           }),
           // Custom extensions
