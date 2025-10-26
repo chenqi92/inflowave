@@ -57,6 +57,7 @@ import {
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
+import { useTabStore } from '@/stores/tabStore';
 
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type { QueryResult } from '@/types';
@@ -461,6 +462,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   database,
   tableName,
 }) => {
+  // 🔧 获取当前 tab 的信息，用于管理 loading 状态
+  const { tabs, updateTab } = useTabStore();
+  const currentTab = useMemo(() =>
+    tabs.find(tab =>
+      tab.type === 'data-browser' &&
+      tab.connectionId === connectionId &&
+      tab.database === database &&
+      tab.tableName === tableName
+    ),
+    [tabs, connectionId, database, tableName]
+  );
+
   // 状态管理
   const [data, setData] = useState<DataRow[]>([]);
   const [rawData, setRawData] = useState<DataRow[]>([]); // 存储原始数据用于客户端排序
@@ -1580,9 +1593,39 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         loadData()
       ]).catch(error => {
         logger.error('初始化数据加载失败:', error);
+      }).finally(() => {
+        // 🔧 数据加载完成后，清除 tab 的 loading 状态
+        if (currentTab?.id) {
+          updateTab(currentTab.id, { isLoading: false });
+          logger.debug('🔧 [TableDataBrowser] 清除 tab loading 状态:', currentTab.id);
+        }
       });
     }
-  }, [columns.length]); // 只依赖columns.length，避免函数引用变化导致的重复调用
+  }, [columns.length, currentTab?.id, updateTab]); // 只依赖columns.length，避免函数引用变化导致的重复调用
+
+  // 🔧 监听 refreshTrigger 变化，触发数据刷新
+  useEffect(() => {
+    if (currentTab?.refreshTrigger && columns.length > 0) {
+      logger.debug('🔧 [TableDataBrowser] 检测到刷新触发器，重新加载数据:', {
+        refreshTrigger: currentTab.refreshTrigger,
+        tableName,
+      });
+
+      // 重新加载数据
+      Promise.all([
+        fetchTotalCount(),
+        loadData()
+      ]).catch(error => {
+        logger.error('刷新数据失败:', error);
+      }).finally(() => {
+        // 🔧 数据加载完成后，清除 tab 的 loading 状态
+        if (currentTab?.id) {
+          updateTab(currentTab.id, { isLoading: false });
+          logger.debug('🔧 [TableDataBrowser] 刷新完成，清除 tab loading 状态:', currentTab.id);
+        }
+      });
+    }
+  }, [currentTab?.refreshTrigger, columns.length, currentTab?.id, updateTab, fetchTotalCount, loadData, tableName]);
 
   // 统一的列宽度计算函数 - 优化字段名显示
   const calculateColumnWidth = useCallback((column: string): number => {
@@ -2517,7 +2560,19 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 分页信息计算已移至独立的 PaginationControls 组件中
 
   return (
-    <div className='h-full flex flex-col bg-background table-data-browser'>
+    <div className='h-full flex flex-col bg-background table-data-browser relative'>
+      {/* 🔧 Loading 遮罩层 */}
+      {currentTab?.isLoading && (
+        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="text-sm text-muted-foreground">
+              {data.length > 0 ? '正在刷新数据...' : '正在加载数据...'}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 头部工具栏 */}
       <TableToolbar
         title={tableName}

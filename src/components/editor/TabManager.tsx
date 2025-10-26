@@ -20,6 +20,8 @@ export interface EditorTab {
   connectionId?: string;
   database?: string;
   tableName?: string;
+  isLoading?: boolean; // 🔧 数据加载状态
+  refreshTrigger?: number; // 🔧 刷新触发器（时间戳）
   // 查询结果相关属性
   queryResult?: any | null;
   queryResults?: any[];

@@ -344,11 +344,17 @@ export const useTabOperations = () => {
       connectionId,
       database,
       tableName,
+      isLoading: true, // 🔧 新创建的 tab 默认为 loading 状态
     };
 
     addTab(newTab);
     setActiveKey(newTab.id); // 自动切换到新创建的数据浏览标签页
     return newTab;
+  };
+
+  // 🔧 刷新数据浏览tab（设置 loading 状态并触发重新加载）
+  const refreshDataBrowserTab = (tabId: string) => {
+    updateTab(tabId, { isLoading: true, refreshTrigger: Date.now() });
   };
 
   // 保存tab内容
@@ -359,6 +365,7 @@ export const useTabOperations = () => {
   return {
     createQueryTab,
     createDataBrowserTab,
+    refreshDataBrowserTab,
     duplicateTab,
     closeOtherTabs,
     closeLeftTabs,

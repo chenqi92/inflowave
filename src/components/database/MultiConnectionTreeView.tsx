@@ -1238,8 +1238,24 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   }, [tree]);
 
   // 获取tab store的方法
-  const { setActiveKey } = useTabStore();
-  const { createDataBrowserTab } = useTabOperations();
+  const { tabs: allTabs, setActiveKey } = useTabStore();
+  const { createDataBrowserTab, refreshDataBrowserTab } = useTabOperations();
+
+  // 🔧 防止双击时重复触发的 ref
+  const loadingTabsRef = useRef<Set<string>>(new Set());
+
+  // 🔧 监听 tabs 的 loading 状态变化，清除 loadingTabsRef 中的标记
+  useEffect(() => {
+    allTabs.forEach(tab => {
+      if (tab.type === 'data-browser' && !tab.isLoading) {
+        const tabKey = `${tab.connectionId}/${tab.database}/${tab.tableName}`;
+        if (loadingTabsRef.current.has(tabKey)) {
+          logger.debug(`[Tab加载完成] 清除 loading 标记: ${tabKey}`);
+          loadingTabsRef.current.delete(tabKey);
+        }
+      }
+    });
+  }, [allTabs]);
 
   // 处理节点双击
   const handleNodeDoubleClick = useCallback(async (nodeData: TreeNodeData, item: ItemInstance<TreeNodeData>) => {
@@ -1317,6 +1333,12 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         // 🔧 使用 getState() 获取最新的 tabs，而不是依赖响应式的 tabs
         const currentTabs = useTabStore.getState().tabs;
 
+        // 🔧 检查该表是否正在加载中
+        if (loadingTabsRef.current.has(tabKey)) {
+          logger.debug(`[Tab查找] 表 ${tabKey} 正在加载中，忽略重复双击`);
+          return;
+        }
+
         // 添加详细的调试日志
         logger.debug(`[Tab查找] 查找参数:`, {
           connectionId,
@@ -1324,6 +1346,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           tableName,
           tabKey,
           isCreating: creatingTabsRef.current.has(tabKey),
+          isLoading: loadingTabsRef.current.has(tabKey),
           currentTabsCount: currentTabs.length,
           currentTabs: currentTabs.map(t => ({
             id: t.id,
@@ -1348,14 +1371,25 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         });
 
         if (existingTab) {
-          // 如果tab已存在，切换到该tab并刷新
-          logger.debug(`Tab已存在，切换到该tab: ${existingTab.id}`);
+          // 🔧 如果tab已存在，切换到该tab并触发刷新
+          logger.debug(`Tab已存在，切换到该tab并刷新: ${existingTab.id}`);
+
+          // 🔧 标记该表正在加载
+          loadingTabsRef.current.add(tabKey);
+
+          // 切换到该tab
           setActiveKey(existingTab.id);
-          // TODO: 触发tab刷新逻辑
+
+          // 触发tab刷新（设置 loading 状态）
+          refreshDataBrowserTab(existingTab.id);
+          logger.debug(`触发tab刷新: ${existingTab.id}`);
         } else {
+          // 🔧 标记该表正在加载
+          loadingTabsRef.current.add(tabKey);
+
           // 🔧 标记该 tab 正在创建
           creatingTabsRef.current.add(tabKey);
-          logger.debug(`[Tab查找] 标记 tab 正在创建: ${tabKey}`);
+          logger.debug(`[Tab查找] 标记 tab 正在创建和加载: ${tabKey}`);
 
           // 🔧 直接调用 createDataBrowserTab，不通过 onNodeActivate
           createDataBrowserTab(connectionId, database, tableName);
