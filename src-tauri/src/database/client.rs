@@ -1485,7 +1485,9 @@ impl InfluxDB2Client {
                 }
             }
             TreeNodeType::Measurement => {
-                // InfluxDB 2.x/3.x: 获取测量值下的字段
+                // InfluxDB 2.x/3.x: 获取测量值下的 Tags 和 Fields 分组
+                log::info!("为测量节点获取 Tags 和 Fields 分组");
+
                 // 解析测量值节点 ID 来获取存储桶和测量值名称
                 let measurement_name = if let Some(measurement_part) = parent_node_id.split("measurement_").nth(1) {
                     // 从 "measurement_{parent_id}_{measurement_name}" 中提取测量值名称
@@ -1525,21 +1527,120 @@ impl InfluxDB2Client {
                     "unknown".to_string()
                 };
 
-                // 获取字段
-                match self.get_field_keys_flux(&bucket_name, &measurement_name).await {
-                    Ok(fields) => {
-                        for field in fields {
-                            let field_node = TreeNodeFactory::create_field(
-                                field.clone(),
-                                parent_node_id.to_string(),
-                                "unknown".to_string()
-                            );
-                            children.push(field_node);
+                log::debug!("解析测量节点: bucket={}, measurement={}", bucket_name, measurement_name);
+
+                // 创建 Tags 分组节点
+                let tags_group = TreeNodeFactory::create_tag_group(parent_node_id.to_string())
+                    .with_metadata("database".to_string(), serde_json::Value::String(bucket_name.clone()))
+                    .with_metadata("bucket".to_string(), serde_json::Value::String(bucket_name.clone()))
+                    .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
+                    .with_metadata("databaseName".to_string(), serde_json::Value::String(bucket_name.clone()))
+                    .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name.clone()));
+                children.push(tags_group);
+
+                // 创建 Fields 分组节点
+                let fields_group = TreeNodeFactory::create_field_group(parent_node_id.to_string())
+                    .with_metadata("database".to_string(), serde_json::Value::String(bucket_name.clone()))
+                    .with_metadata("bucket".to_string(), serde_json::Value::String(bucket_name.clone()))
+                    .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
+                    .with_metadata("databaseName".to_string(), serde_json::Value::String(bucket_name))
+                    .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name));
+                children.push(fields_group);
+
+                log::info!("为测量节点创建了 {} 个分组节点", children.len());
+            }
+            TreeNodeType::TagGroup => {
+                // Tags 分组节点：返回所有标签
+                log::info!("为 Tags 分组节点获取标签列表");
+
+                if let Some(metadata) = _metadata {
+                    let bucket = metadata.get("bucket")
+                        .or_else(|| metadata.get("database"))
+                        .or_else(|| metadata.get("databaseName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let measurement = metadata.get("measurement")
+                        .or_else(|| metadata.get("tableName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+
+                    if !bucket.is_empty() && !measurement.is_empty() {
+                        log::debug!("获取标签: bucket={}, measurement={}", bucket, measurement);
+
+                        // 获取标签列表 (InfluxDB 2.x/3.x 使用 Flux)
+                        match self.get_tag_keys_flux(bucket, measurement).await {
+                            Ok(tags) => {
+                                for tag_name in tags {
+                                    let tag_node = TreeNodeFactory::create_tag(tag_name.clone(), parent_node_id.to_string())
+                                        .with_metadata("database".to_string(), serde_json::Value::String(bucket.to_string()))
+                                        .with_metadata("bucket".to_string(), serde_json::Value::String(bucket.to_string()))
+                                        .with_metadata("measurement".to_string(), serde_json::Value::String(measurement.to_string()))
+                                        .with_metadata("tag".to_string(), serde_json::Value::String(tag_name.clone()))
+                                        .with_metadata("databaseName".to_string(), serde_json::Value::String(bucket.to_string()))
+                                        .with_metadata("tableName".to_string(), serde_json::Value::String(measurement.to_string()))
+                                        .with_metadata("tagName".to_string(), serde_json::Value::String(tag_name));
+                                    children.push(tag_node);
+                                }
+                                log::info!("获取到 {} 个标签", children.len());
+                            }
+                            Err(e) => {
+                                log::warn!("获取标签列表失败: {}", e);
+                            }
                         }
+                    } else {
+                        log::warn!("Tags 分组节点缺少必要的元数据");
                     }
-                    Err(e) => {
-                        log::warn!("获取测量值 {} 的字段失败: {}", measurement_name, e);
+                } else {
+                    log::warn!("Tags 分组节点没有元数据");
+                }
+            }
+            TreeNodeType::FieldGroup => {
+                // Fields 分组节点：返回所有字段
+                log::info!("为 Fields 分组节点获取字段列表");
+
+                if let Some(metadata) = _metadata {
+                    let bucket = metadata.get("bucket")
+                        .or_else(|| metadata.get("database"))
+                        .or_else(|| metadata.get("databaseName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let measurement = metadata.get("measurement")
+                        .or_else(|| metadata.get("tableName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+
+                    if !bucket.is_empty() && !measurement.is_empty() {
+                        log::debug!("获取字段: bucket={}, measurement={}", bucket, measurement);
+
+                        // 获取字段列表
+                        match self.get_field_keys_flux(bucket, measurement).await {
+                            Ok(fields) => {
+                                for field_name in fields {
+                                    let field_node = TreeNodeFactory::create_field(
+                                        field_name.clone(),
+                                        parent_node_id.to_string(),
+                                        "unknown".to_string()
+                                    )
+                                    .with_metadata("database".to_string(), serde_json::Value::String(bucket.to_string()))
+                                    .with_metadata("bucket".to_string(), serde_json::Value::String(bucket.to_string()))
+                                    .with_metadata("measurement".to_string(), serde_json::Value::String(measurement.to_string()))
+                                    .with_metadata("field".to_string(), serde_json::Value::String(field_name.clone()))
+                                    .with_metadata("databaseName".to_string(), serde_json::Value::String(bucket.to_string()))
+                                    .with_metadata("tableName".to_string(), serde_json::Value::String(measurement.to_string()))
+                                    .with_metadata("fieldName".to_string(), serde_json::Value::String(field_name));
+                                    children.push(field_node);
+                                }
+                                log::info!("获取到 {} 个字段", children.len());
+                            }
+                            Err(e) => {
+                                log::warn!("获取字段列表失败: {}", e);
+                            }
+                        }
+                    } else {
+                        log::warn!("Fields 分组节点缺少必要的元数据");
                     }
+                } else {
+                    log::warn!("Fields 分组节点没有元数据");
                 }
             }
             _ => {}
@@ -1624,6 +1725,48 @@ impl InfluxDB2Client {
             }
             Err(e) => {
                 warn!("Flux 查询获取字段失败: {}, 返回空列表", e);
+                Ok(vec![])
+            }
+        }
+    }
+
+    /// 通过 Flux 查询获取标签列表
+    pub async fn get_tag_keys_flux(&self, bucket: &str, measurement: &str) -> Result<Vec<String>> {
+        debug!("通过 Flux 查询获取标签列表: bucket={}, measurement={}", bucket, measurement);
+
+        // 构建 Flux 查询来获取标签
+        let flux_query = format!(
+            r#"
+            import "influxdata/influxdb/schema"
+
+            schema.tagKeys(
+                bucket: "{}",
+                predicate: (r) => r._measurement == "{}"
+            )
+            "#,
+            bucket, measurement
+        );
+
+        match self.execute_flux_query(flux_query).await {
+            Ok(result) => {
+                let mut tags = Vec::new();
+
+                // 解析 Flux 查询结果
+                if let Some(data) = result.data {
+                    for row in data {
+                        if let Some(tag) = row.get(0) {
+                            if let Some(tag_str) = tag.as_str() {
+                                tags.push(tag_str.to_string());
+                            }
+                        }
+                    }
+                }
+
+                debug!("获取到 {} 个标签", tags.len());
+                Ok(tags)
+            }
+            Err(e) => {
+                warn!("Flux 查询获取标签失败: {}, 返回空列表", e);
                 Ok(vec![])
             }
         }
@@ -2819,6 +2962,8 @@ impl InfluxClient {
             "systemdatabase" | "system_database" => TreeNodeType::SystemDatabase,
             "retentionpolicy" | "retention_policy" => TreeNodeType::RetentionPolicy,
             "measurement" => TreeNodeType::Measurement,
+            "tag_group" | "taggroup" => TreeNodeType::TagGroup,
+            "field_group" | "fieldgroup" => TreeNodeType::FieldGroup,
             "organization" => TreeNodeType::Organization,
             "bucket" => TreeNodeType::Bucket,
             "systembucket" | "system_bucket" => TreeNodeType::SystemBucket,
@@ -2923,7 +3068,9 @@ impl InfluxClient {
                 log::debug!("InfluxDB 3.x 数据库子节点获取暂未实现");
             }
             TreeNodeType::Measurement => {
-                // 获取字段和标签
+                // 统一客户端: 获取测量值下的 Tags 和 Fields 分组
+                log::info!("为测量节点获取 Tags 和 Fields 分组 (统一客户端)");
+
                 // 从 metadata 中获取数据库名和 measurement 名
                 let (db_name, measurement_name) = if let Some(meta) = metadata {
                     let db = meta.get("database")
@@ -2954,38 +3101,119 @@ impl InfluxClient {
 
                 log::debug!("获取 measurement 子节点: db={}, measurement={}", db_name, measurement_name);
 
-                // 获取字段
-                match self.get_field_keys(&db_name, &measurement_name).await {
-                    Ok(fields) => {
-                        for field in fields {
-                            let field_type = format!("{:?}", field.field_type);
-                            let field_node = TreeNodeFactory::create_field(
-                                field.name.clone(),
-                                parent_node_id.to_string(),
-                                field_type
-                            );
-                            children.push(field_node);
-                        }
-                    }
-                    Err(e) => {
-                        log::warn!("获取字段失败: {}", e);
-                    }
-                }
+                // 创建 Tags 分组节点
+                let tags_group = TreeNodeFactory::create_tag_group(parent_node_id.to_string())
+                    .with_metadata("database".to_string(), serde_json::Value::String(db_name.clone()))
+                    .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
+                    .with_metadata("databaseName".to_string(), serde_json::Value::String(db_name.clone()))
+                    .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name.clone()));
+                children.push(tags_group);
 
-                // 获取标签键
-                match self.get_tag_keys(&db_name, &measurement_name).await {
-                    Ok(tag_keys) => {
-                        for tag_key in tag_keys {
-                            let tag_node = TreeNodeFactory::create_tag(
-                                tag_key.name.clone(),
-                                parent_node_id.to_string(),
-                            );
-                            children.push(tag_node);
+                // 创建 Fields 分组节点
+                let fields_group = TreeNodeFactory::create_field_group(parent_node_id.to_string())
+                    .with_metadata("database".to_string(), serde_json::Value::String(db_name.clone()))
+                    .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
+                    .with_metadata("databaseName".to_string(), serde_json::Value::String(db_name))
+                    .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name));
+                children.push(fields_group);
+
+                log::info!("为测量节点创建了 {} 个分组节点 (统一客户端)", children.len());
+            }
+            TreeNodeType::TagGroup => {
+                // Tags 分组节点：返回所有标签 (统一客户端)
+                log::info!("为 Tags 分组节点获取标签列表 (统一客户端)");
+
+                if let Some(meta) = metadata {
+                    let database = meta.get("database")
+                        .or_else(|| meta.get("databaseName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let measurement = meta.get("measurement")
+                        .or_else(|| meta.get("tableName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+
+                    if !database.is_empty() && !measurement.is_empty() {
+                        log::debug!("获取标签: database={}, measurement={}", database, measurement);
+
+                        // 获取标签列表
+                        match self.get_tag_keys(database, measurement).await {
+                            Ok(tags) => {
+                                for tag_info in tags {
+                                    let tag_node = TreeNodeFactory::create_tag(tag_info.name.clone(), parent_node_id.to_string())
+                                        .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
+                                        .with_metadata("measurement".to_string(), serde_json::Value::String(measurement.to_string()))
+                                        .with_metadata("tag".to_string(), serde_json::Value::String(tag_info.name.clone()))
+                                        .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
+                                        .with_metadata("tableName".to_string(), serde_json::Value::String(measurement.to_string()))
+                                        .with_metadata("tagName".to_string(), serde_json::Value::String(tag_info.name));
+                                    children.push(tag_node);
+                                }
+                                log::info!("获取到 {} 个标签 (统一客户端)", children.len());
+                            }
+                            Err(e) => {
+                                log::warn!("获取标签列表失败: {}", e);
+                            }
                         }
+                    } else {
+                        log::warn!("Tags 分组节点缺少必要的元数据");
                     }
-                    Err(e) => {
-                        log::warn!("获取标签键失败: {}", e);
+                } else {
+                    log::warn!("Tags 分组节点没有元数据");
+                }
+            }
+            TreeNodeType::FieldGroup => {
+                // Fields 分组节点：返回所有字段 (统一客户端)
+                log::info!("为 Fields 分组节点获取字段列表 (统一客户端)");
+
+                if let Some(meta) = metadata {
+                    let database = meta.get("database")
+                        .or_else(|| meta.get("databaseName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let measurement = meta.get("measurement")
+                        .or_else(|| meta.get("tableName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+
+                    if !database.is_empty() && !measurement.is_empty() {
+                        log::debug!("获取字段: database={}, measurement={}", database, measurement);
+
+                        // 获取字段列表
+                        match self.get_field_keys(database, measurement).await {
+                            Ok(fields) => {
+                                for field_info in fields {
+                                    let field_type_str = match field_info.field_type {
+                                        FieldType::Float => "float",
+                                        FieldType::Integer => "integer",
+                                        FieldType::String => "string",
+                                        FieldType::Boolean => "boolean",
+                                    };
+
+                                    let field_node = TreeNodeFactory::create_field(
+                                        field_info.name.clone(),
+                                        parent_node_id.to_string(),
+                                        field_type_str.to_string()
+                                    )
+                                    .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
+                                    .with_metadata("measurement".to_string(), serde_json::Value::String(measurement.to_string()))
+                                    .with_metadata("field".to_string(), serde_json::Value::String(field_info.name.clone()))
+                                    .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
+                                    .with_metadata("tableName".to_string(), serde_json::Value::String(measurement.to_string()))
+                                    .with_metadata("fieldName".to_string(), serde_json::Value::String(field_info.name));
+                                    children.push(field_node);
+                                }
+                                log::info!("获取到 {} 个字段 (统一客户端)", children.len());
+                            }
+                            Err(e) => {
+                                log::warn!("获取字段列表失败: {}", e);
+                            }
+                        }
+                    } else {
+                        log::warn!("Fields 分组节点缺少必要的元数据");
                     }
+                } else {
+                    log::warn!("Fields 分组节点没有元数据");
                 }
             }
             _ => {

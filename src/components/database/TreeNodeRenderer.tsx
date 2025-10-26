@@ -47,6 +47,7 @@ export interface TreeNodeData {
 interface TreeNodeRendererProps {
   item: ItemInstance<TreeNodeData>;
   onNodeDoubleClick?: (nodeData: TreeNodeData, item: ItemInstance<TreeNodeData>) => void;
+  onNodeToggle?: (nodeId: string) => void;
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
   nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
   selectedItems: string[];
@@ -59,6 +60,7 @@ interface TreeNodeRendererProps {
 const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererProps>(({
   item,
   onNodeDoubleClick,
+  onNodeToggle,
   isDatabaseOpened,
   nodeRefsMap,
   selectedItems,
@@ -228,8 +230,8 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   } else if (normalizedNodeType === 'database' || normalizedNodeType === 'system_database') {
     // 数据库节点：
     // 1. 正在加载时，总是显示箭头（用于显示 loading 图标）
-    // 2. 有子节点时，显示箭头
-    hasChildren = isLoading || !!(data.children && data.children.length > 0);
+    // 2. 未加载(undefined)或有子节点时，显示箭头
+    hasChildren = isLoading || data.children === undefined || !!(data.children && data.children.length > 0);
   } else {
     // 其他节点：
     // 1. 正在加载时，总是显示箭头（用于显示 loading 图标）
@@ -325,7 +327,12 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
               if (item.isExpanded()) {
                 item.collapse();
               } else {
-                item.expand();
+                // 如果子节点未加载，先调用 handleToggle 加载子节点
+                if (data.children === undefined && onNodeToggle) {
+                  onNodeToggle(data.id);
+                } else {
+                  item.expand();
+                }
               }
             }}
           >

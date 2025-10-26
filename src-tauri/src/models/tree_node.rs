@@ -102,6 +102,7 @@ pub struct TreeNode {
     pub name: String,
     pub node_type: TreeNodeType,
     pub parent_id: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub children: Vec<TreeNode>,
     pub is_leaf: bool,
     pub is_system: bool,           // 是否为系统节点

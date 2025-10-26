@@ -146,6 +146,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         || data.nodeType === 'database3x'
         || data.nodeType === 'storage_group'
         || data.nodeType === 'device'
+        || data.nodeType === 'measurement'
+        || data.nodeType === 'tag_group'
+        || data.nodeType === 'field_group'
         || data.metadata?.is_container === true;
     },
 
@@ -1472,6 +1475,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       <TreeNodeRenderer
         item={item}
         onNodeDoubleClick={handleNodeDoubleClick}
+        onNodeToggle={handleToggle}
         isDatabaseOpened={isDatabaseOpened}
         nodeRefsMap={nodeRefsMap}
         selectedItems={selectedItems}
