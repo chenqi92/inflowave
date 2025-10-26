@@ -103,6 +103,9 @@ import {
   getSQLStatementCategory,
   getSQLStatementDisplayInfo,
   getResultStatsLabels,
+  shouldShowFieldStatistics,
+  shouldShowVisualization,
+  shouldShowInsights,
 } from '@/utils/sqlTypeDetector';
 import { generateChartConfig, type ChartType } from '@/utils/chartConfig';
 
@@ -1910,24 +1913,40 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             });
           })()}
 
-          {/* 字段统计tab - 合并所有结果的统计 */}
-          {allResults.length > 0 && (
-            <TabsTrigger
-              value='statistics'
-              className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
-            >
-              <Info className='w-3 h-3' />
-              字段统计
-              {allResults.length > 0 && (
-                <Badge variant='secondary' className='ml-1 text-xs px-1'>
-                  {allResults.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          )}
+          {/* 字段统计tab - 只有普通 SELECT 查询才显示 */}
+          {allResults.length > 0 && (() => {
+            // 检查是否有任何结果需要显示字段统计
+            const hasFieldStatistics = allResults.some((_, index) => {
+              const statementType = sqlStatementTypes[index] || 'UNKNOWN';
+              return shouldShowFieldStatistics(statementType);
+            });
 
-          {/* 动态可视化tab - 为每个查询结果创建一个可视化tab */}
+            if (!hasFieldStatistics) return null;
+
+            return (
+              <TabsTrigger
+                value='statistics'
+                className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
+              >
+                <Info className='w-3 h-3' />
+                字段统计
+                <Badge variant='secondary' className='ml-1 text-xs px-1'>
+                  {allResults.filter((_, index) => {
+                    const statementType = sqlStatementTypes[index] || 'UNKNOWN';
+                    return shouldShowFieldStatistics(statementType);
+                  }).length}
+                </Badge>
+              </TabsTrigger>
+            );
+          })()}
+
+          {/* 动态可视化tab - 只有普通 SELECT 查询才显示 */}
           {allResults.map((result, index) => {
+            const statementType = sqlStatementTypes[index] || 'UNKNOWN';
+
+            // 只有普通 SELECT 查询才显示可视化
+            if (!shouldShowVisualization(statementType)) return null;
+
             const isChartable =
               result &&
               result.data &&
@@ -1947,21 +1966,31 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             );
           })}
 
-          {/* 洞察tab */}
-          {allResults.length > 0 && (
-            <TabsTrigger
-              value='insights'
-              className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
-            >
-              <Brain className='w-3 h-3' />
-              洞察
-              {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0) > 0 && (
-                <Badge variant='secondary' className='ml-1 text-xs px-1'>
-                  {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0)}
-                </Badge>
-              )}
-            </TabsTrigger>
-          )}
+          {/* 洞察tab - 只有普通 SELECT 查询才显示 */}
+          {allResults.length > 0 && (() => {
+            // 检查是否有任何结果需要显示洞察
+            const hasInsights = allResults.some((_, index) => {
+              const statementType = sqlStatementTypes[index] || 'UNKNOWN';
+              return shouldShowInsights(statementType);
+            });
+
+            if (!hasInsights) return null;
+
+            return (
+              <TabsTrigger
+                value='insights'
+                className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
+              >
+                <Brain className='w-3 h-3' />
+                洞察
+                {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0) > 0 && (
+                  <Badge variant='secondary' className='ml-1 text-xs px-1'>
+                    {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0)}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            );
+          })()}
           </TabsList>
         </div>
 
@@ -2389,24 +2418,61 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   {/* 高级数据表格 - 完全按照 TableDataBrowser.tsx 的配置 */}
                   <div className='flex-1 min-h-0'>
                     <GlideDataTable
-                      data={parsedResult.data.map((row, rowIndex) => ({
-                        _id: `result-${rowIndex}`,
-                        ...row,
-                      }))}
-                      columns={parsedResult.columns.map(column => {
+                      data={parsedResult.data.map((row, rowIndex) => {
+                        // 对于聚合查询，过滤掉 time 列（值为 0 或 1970-01-01）
+                        if (statementType === 'SELECT_AGGREGATE' || statementType === 'SELECT_GROUP') {
+                          const filteredRow: any = { _id: `result-${rowIndex}` };
+                          parsedResult.columns.forEach((col, colIndex) => {
+                            // 跳过 time 列
+                            if (col.toLowerCase() === 'time') {
+                              const timeValue = row[col];
+                              // 如果 time 值为 0 或 1970-01-01，则跳过
+                              if (timeValue === 0 || timeValue === '0' ||
+                                  (typeof timeValue === 'string' && timeValue.includes('1970-01-01'))) {
+                                return;
+                              }
+                            }
+                            filteredRow[col] = row[col];
+                          });
+                          return filteredRow;
+                        }
                         return {
-                          key: column,
-                          title: column,
-                          width: column === 'time' ? 180 : 120,
-                          sortable: true,
-                          filterable: true,
-                          render:
-                            column === 'time'
-                              ? (value: any) =>
-                                  value ? new Date(value).toLocaleString() : '-'
-                              : undefined,
+                          _id: `result-${rowIndex}`,
+                          ...row,
                         };
                       })}
+                      columns={parsedResult.columns
+                        .filter(column => {
+                          // 对于聚合查询，过滤掉值为 0 或 1970-01-01 的 time 列
+                          if ((statementType === 'SELECT_AGGREGATE' || statementType === 'SELECT_GROUP') &&
+                              column.toLowerCase() === 'time') {
+                            // 检查第一行的 time 值
+                            if (parsedResult.data.length > 0) {
+                              const firstRow = parsedResult.data[0];
+                              const timeValue = firstRow[column];
+                              // 如果 time 值为 0 或 1970-01-01，则过滤掉
+                              if (timeValue === 0 || timeValue === '0' ||
+                                  (typeof timeValue === 'string' && timeValue.includes('1970-01-01'))) {
+                                return false;
+                              }
+                            }
+                          }
+                          return true;
+                        })
+                        .map(column => {
+                          return {
+                            key: column,
+                            title: column,
+                            width: column === 'time' ? 180 : 120,
+                            sortable: true,
+                            filterable: true,
+                            render:
+                              column === 'time'
+                                ? (value: any) =>
+                                    value ? new Date(value).toLocaleString() : '-'
+                                : undefined,
+                          };
+                        })}
                       loading={false}
                       pagination={{
                         current: currentPage,

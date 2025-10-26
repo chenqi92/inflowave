@@ -550,6 +550,30 @@ export const shouldShowChartView = (statementType: SQLStatementType): boolean =>
 };
 
 /**
+ * 检测是否需要显示字段统计 Tab
+ * 只有普通 SELECT 查询才显示字段统计
+ */
+export const shouldShowFieldStatistics = (statementType: SQLStatementType): boolean => {
+  return statementType === 'SELECT';
+};
+
+/**
+ * 检测是否需要显示可视化 Tab
+ * 只有普通 SELECT 查询才显示可视化
+ */
+export const shouldShowVisualization = (statementType: SQLStatementType): boolean => {
+  return statementType === 'SELECT';
+};
+
+/**
+ * 检测是否需要显示洞察 Tab
+ * 只有普通 SELECT 查询才显示洞察
+ */
+export const shouldShowInsights = (statementType: SQLStatementType): boolean => {
+  return statementType === 'SELECT';
+};
+
+/**
  * 获取 SQL 语句的简短描述
  */
 export const getSQLStatementDescription = (statementType: SQLStatementType): string => {
