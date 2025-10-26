@@ -134,11 +134,15 @@ class GenericMenuHandler extends BaseMenuHandler {
     const database = metadata.database || '';
     const policyName = metadata.policyName || node.name;
 
+    // 构造数据库节点 ID，用于局部刷新
+    const databaseNodeId = `db_${database}`;
+
     await this.handleDelete(
       'delete_retention_policy',
       'drop_retention_policy',
       { connectionId, database, policyName },
-      true
+      true,
+      databaseNodeId
     );
   }
 

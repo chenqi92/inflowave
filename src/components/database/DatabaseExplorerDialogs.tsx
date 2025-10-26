@@ -35,6 +35,7 @@ interface DatabaseExplorerDialogsProps {
     activeConnectionId: string | null;
     buildCompleteTreeData: (forceRefresh?: boolean) => Promise<void>;
     setTreeNodeCache: React.Dispatch<React.SetStateAction<Record<string, any[]>>>;
+    refreshNode?: (nodeId: string) => void;
 
     // Connection dialog
     isConnectionDialogVisible: boolean;
@@ -64,6 +65,7 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
     activeConnectionId,
     buildCompleteTreeData,
     setTreeNodeCache,
+    refreshNode,
     isConnectionDialogVisible,
     editingConnection,
     handleCloseConnectionDialog,
@@ -139,8 +141,11 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                             return newCache;
                         });
                     }
-                    // 刷新数据库树
-                    buildCompleteTreeData(true);
+                    // 触发数据库节点刷新
+                    if (refreshNode && retentionPolicyDialog.database) {
+                        const nodeId = `db_${retentionPolicyDialog.database}`;
+                        refreshNode(nodeId);
+                    }
                 }}
             />
 

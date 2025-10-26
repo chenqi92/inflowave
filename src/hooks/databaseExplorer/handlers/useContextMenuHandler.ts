@@ -32,6 +32,7 @@ interface UseContextMenuHandlerProps {
     removeFavorite: (id: string) => void;
     clearDatabasesCache: (connectionId?: string) => void;
     buildCompleteTreeData: (forceRefresh?: boolean) => Promise<void>;
+    refreshNode?: (nodeId: string) => void;
     setLoading: (loading: boolean) => void;
     setCreateDatabaseDialogOpen: (open: boolean) => void;
     setDatabaseInfoDialog: React.Dispatch<React.SetStateAction<DatabaseInfoDialogState>>;
@@ -69,6 +70,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
         removeFavorite,
         clearDatabasesCache,
         buildCompleteTreeData,
+        refreshNode,
         setLoading,
         setCreateDatabaseDialogOpen,
         setDatabaseInfoDialog,
@@ -102,6 +104,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
             removeFavorite,
             clearDatabasesCache,
             buildCompleteTreeData,
+            refreshNode,
             setLoading,
             setCreateDatabaseDialogOpen,
             setDatabaseInfoDialog,
@@ -130,6 +133,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
         removeFavorite,
         clearDatabasesCache,
         buildCompleteTreeData,
+        refreshNode,
         setLoading,
         setCreateDatabaseDialogOpen,
         setDatabaseInfoDialog,

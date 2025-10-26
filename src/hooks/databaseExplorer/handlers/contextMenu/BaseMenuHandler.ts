@@ -31,7 +31,8 @@ export interface MenuHandlerDependencies {
   removeFavorite: (id: string) => void;
   clearDatabasesCache: (connectionId?: string) => void;
   buildCompleteTreeData: (forceRefresh?: boolean) => Promise<void>;
-  
+  refreshNode?: (nodeId: string) => void;
+
   // UI 操作
   setLoading: (loading: boolean) => void;
   setCreateDatabaseDialogOpen: (open: boolean) => void;
@@ -234,7 +235,8 @@ export abstract class BaseMenuHandler {
     action: ContextMenuAction,
     command: string,
     args: Record<string, any>,
-    refreshAfter: boolean = true
+    refreshAfter: boolean = true,
+    nodeIdToRefresh?: string
   ): Promise<void> {
     const confirmed = await this.confirm(action);
     if (!confirmed) {
@@ -244,9 +246,15 @@ export abstract class BaseMenuHandler {
     try {
       await this.invokeTauri(command, args);
       this.showSuccess(action);
-      
+
       if (refreshAfter) {
-        await this.refreshTree(true);
+        // 如果提供了节点 ID，使用局部刷新
+        if (nodeIdToRefresh && this.deps.refreshNode) {
+          this.deps.refreshNode(nodeIdToRefresh);
+        } else {
+          // 否则使用全局刷新
+          await this.refreshTree(true);
+        }
       }
     } catch (error) {
       this.showError(action, error);

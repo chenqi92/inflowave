@@ -69,6 +69,8 @@ interface MultiConnectionTreeViewProps {
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
   // 节点元素引用映射（用于错误提示定位）
   nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
+  // 需要刷新的节点 ID（用于局部刷新）
+  nodeToRefresh?: string | null;
 }
 
 export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = ({
@@ -89,6 +91,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   isFavorite,
   isDatabaseOpened,
   nodeRefsMap,
+  nodeToRefresh,
 }) => {
   // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
   const renderCountRef = useRef(0);
@@ -1511,6 +1514,48 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     onRefresh?.();
   }, [loadAllTreeNodes, onRefresh]);
 
+  // 监听需要刷新的节点
+  useEffect(() => {
+    if (nodeToRefresh) {
+      logger.debug(`[局部刷新] 刷新节点: ${nodeToRefresh}`);
+
+      // 清除该节点的缓存
+      loadedNodesRef.current.delete(nodeToRefresh);
+
+      // 找到该节点并清除其 children，触发重新加载
+      setTreeData(prevData => {
+        const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
+          return nodes.map(node => {
+            if (node.id === nodeToRefresh) {
+              logger.debug(`[局部刷新] 找到节点，清除子节点: ${node.id}`);
+              return {
+                ...node,
+                children: undefined, // 清除子节点，触发重新加载
+              };
+            }
+            if (node.children && Array.isArray(node.children)) {
+              return {
+                ...node,
+                children: updateNode(node.children),
+              };
+            }
+            return node;
+          });
+        };
+        return updateNode(prevData);
+      });
+
+      // 如果节点已展开，触发重新加载
+      if (expandedNodeIds.includes(nodeToRefresh)) {
+        logger.debug(`[局部刷新] 节点已展开，触发重新加载: ${nodeToRefresh}`);
+        // 延迟一点时间，确保 children 已清除
+        setTimeout(() => {
+          handleToggleRef.current(nodeToRefresh);
+        }, 50);
+      }
+    }
+  }, [nodeToRefresh, expandedNodeIds]);
+
   // 优化：只在初始加载且没有数据时显示全局 loading
   // 避免在后续操作时整个树闪烁
   if (loading && treeData.length === 0 && !loadedNodesRef.current.size) {
@@ -1757,11 +1802,20 @@ const arePropsEqual = (
     return false;
   }
 
+  // 比较 nodeToRefresh
+  if (prevProps.nodeToRefresh !== nextProps.nodeToRefresh) {
+    logger.debug('[Props比较] nodeToRefresh 变化:', {
+      prev: prevProps.nodeToRefresh,
+      next: nextProps.nodeToRefresh
+    });
+    return false;
+  }
+
   // Props 无变化，跳过重新渲染
   logger.info('[Props比较] Props 无变化，跳过重新渲染');
   return true;
 };
 
 // 使用 React.memo 避免不必要的重新渲染
-export default React.memo(MultiConnectionTreeView, arePropsEqual);
+export default React.memo<MultiConnectionTreeViewProps>(MultiConnectionTreeView, arePropsEqual);
 

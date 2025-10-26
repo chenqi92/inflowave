@@ -181,10 +181,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     setManagementNodeDialog,
     connectionDetailDialog,
     setConnectionDetailDialog,
-    fieldDetailDialog,
-    setFieldDetailDialog,
-    tagDetailDialog,
-    setTagDetailDialog,
     contextMenuTarget,
     setContextMenuTarget,
     contextMenuOpen,
@@ -199,6 +195,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     _updateTimeouts,
     setUpdateTimeouts,
   } = state;
+
+  // 需要刷新的节点 ID
+  const [nodeToRefresh, setNodeToRefresh] = React.useState<string | null>(null);
 
   const { clearDatabasesCache, getTreeNodesWithCache } = cache;
 
@@ -1609,12 +1608,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     onCreateDataBrowserTab,
     openDatabase,
     setManagementNodeDialog,
-    setFieldDetailDialog,
-    setTagDetailDialog,
     setConnectionDetailDialog,
     setContextMenuOpen,
     contextMenuOpenRef,
   });
+
+  // 刷新特定节点
+  const refreshNode = useCallback((nodeId: string) => {
+    logger.debug(`[刷新节点] 触发节点刷新: ${nodeId}`);
+    setNodeToRefresh(nodeId);
+    // 清除状态，以便下次可以再次刷新同一个节点
+    setTimeout(() => {
+      setNodeToRefresh(null);
+    }, 100);
+  }, []);
 
   // Context menu handler
   const { handleContextMenuAction } = useContextMenuHandler({
@@ -1634,6 +1641,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     removeFavorite,
     clearDatabasesCache,
     buildCompleteTreeData,
+    refreshNode,
     setLoading,
     setCreateDatabaseDialogOpen,
     setDatabaseInfoDialog,
@@ -1900,6 +1908,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               onContextMenuAction={stableHandleContextMenuAction}
               onRefresh={stableHandleTreeRefresh}
               nodeRefsMap={nodeRefsMap}
+              nodeToRefresh={nodeToRefresh}
               className='h-full'
             />
           </div>
@@ -1920,6 +1929,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         activeConnectionId={activeConnectionId}
         buildCompleteTreeData={buildCompleteTreeData}
         setTreeNodeCache={setTreeNodeCache}
+        refreshNode={refreshNode}
         isConnectionDialogVisible={isConnectionDialogVisible}
         editingConnection={editingConnection}
         handleCloseConnectionDialog={handleCloseConnectionDialog}
@@ -1928,10 +1938,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         setManagementNodeDialog={setManagementNodeDialog}
         connectionDetailDialog={connectionDetailDialog}
         setConnectionDetailDialog={setConnectionDetailDialog}
-        fieldDetailDialog={fieldDetailDialog}
-        setFieldDetailDialog={setFieldDetailDialog}
-        tagDetailDialog={tagDetailDialog}
-        setTagDetailDialog={setTagDetailDialog}
       />
 
       {/* 错误提示 - 使用 Portal 渲染，避免被容器遮挡 */}
