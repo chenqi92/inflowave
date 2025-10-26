@@ -428,9 +428,9 @@ export const getDefaultTab = (statementType: SQLStatementType): string => {
     return 'plan';
   }
 
-  // 特殊处理：聚合查询默认显示统计卡片
-  if (statementType === 'SELECT_AGGREGATE') {
-    return 'cards';
+  // 特殊处理：聚合查询默认显示聚合统计
+  if (shouldShowAggregateCards(statementType)) {
+    return 'aggregate';
   }
 
   const category = getSQLStatementCategory(statementType);

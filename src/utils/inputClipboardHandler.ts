@@ -11,12 +11,20 @@ import { writeToClipboard, readFromClipboard } from './clipboard';
 function isEditableElement(element: Element | null): element is HTMLInputElement | HTMLTextAreaElement {
   if (!element) return false;
 
+  // 排除 CodeMirror 编辑器（检查所有可能的类名）
+  if (element.closest('.cm-editor') ||
+      element.closest('.cm-content') ||
+      element.closest('.cm6-editor-container') ||
+      element.closest('.CodeMirror')) {
+    return false;
+  }
+
   const htmlElement = element as HTMLElement;
 
   return (
     element.tagName === 'INPUT' ||
     element.tagName === 'TEXTAREA' ||
-    (htmlElement.isContentEditable && !element.closest('.monaco-editor')) ||
+    htmlElement.isContentEditable ||
     element.closest('[contenteditable="true"]') !== null ||
     element.closest('.ProseMirror') !== null ||
     element.closest('[role="textbox"]') !== null
@@ -132,25 +140,43 @@ function handleInputSelectAll(element: HTMLInputElement | HTMLTextAreaElement): 
  */
 function handleGlobalKeyDown(event: KeyboardEvent): void {
   const target = event.target as Element;
-  
+
   // 只处理输入元素
   if (!isEditableElement(target)) {
     return;
   }
 
-  // 跳过 Monaco Editor，它有自己的处理逻辑
-  if (target.closest('.monaco-editor')) {
+  // 跳过 CodeMirror 编辑器，它有自己的处理逻辑（检查所有可能的类名）
+  const isCodeMirror = target.closest('.cm-editor') ||
+                       target.closest('.cm-content') ||
+                       target.closest('.cm6-editor-container') ||
+                       target.closest('.CodeMirror');
+
+  if (isCodeMirror) {
+    console.log('🔍 [InputClipboardHandler] 跳过 CodeMirror 编辑器', {
+      key: event.key,
+      ctrl: event.ctrlKey,
+      meta: event.metaKey,
+      targetTag: (target as HTMLElement).tagName,
+      targetClass: (target as HTMLElement).className,
+    });
     return;
   }
 
   const isCtrlOrCmd = event.ctrlKey || event.metaKey;
-  
+
   if (!isCtrlOrCmd) {
     return;
   }
 
+  console.log('⌨️ [InputClipboardHandler] 处理快捷键', {
+    key: event.key,
+    targetTag: (target as HTMLElement).tagName,
+    targetClass: (target as HTMLElement).className,
+  });
+
   const inputElement = target as HTMLInputElement | HTMLTextAreaElement;
-  
+
   switch (event.key.toLowerCase()) {
     case 'c':
       // Ctrl+C 复制
@@ -158,21 +184,21 @@ function handleGlobalKeyDown(event: KeyboardEvent): void {
       event.stopPropagation();
       handleInputCopy(inputElement);
       break;
-      
+
     case 'x':
       // Ctrl+X 剪切
       event.preventDefault();
       event.stopPropagation();
       handleInputCut(inputElement);
       break;
-      
+
     case 'v':
       // Ctrl+V 粘贴
       event.preventDefault();
       event.stopPropagation();
       handleInputPaste(inputElement);
       break;
-      
+
     case 'a':
       // Ctrl+A 全选
       event.preventDefault();

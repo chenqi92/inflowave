@@ -56,24 +56,34 @@ pub async fn execute_query(
             // InfluxDB不支持UPDATE语句
             Err("InfluxDB不支持UPDATE语句，请使用INSERT语句覆盖数据".to_string())
         }
-        "SELECT" | "SHOW" | "EXPLAIN" | "CREATE" | "DROP" | "ALTER" | "GRANT" | "REVOKE" => {
+        "SELECT" | "SELECT_AGGREGATE" | "SELECT_GROUP" | "SHOW" | "DESCRIBE" | "DESC" | "EXPLAIN" | "CREATE" | "DROP" | "ALTER" | "GRANT" | "REVOKE" => {
             // 处理查询和DDL语句
             let database_ref = request.database.as_deref();
-            client.execute_query_with_database(&request.query, database_ref).await
+            let mut result = client.execute_query_with_database(&request.query, database_ref).await
                 .map_err(|e| {
                     error!("查询执行失败: {}", e);
                     format!("查询执行失败: {}", e)
-                })
+                })?;
+
+            // 设置SQL类型（前端需要这个字段来正确显示结果）
+            result.sql_type = Some(statement_type.clone());
+
+            Ok(result)
         }
         _ => {
             // 未知语句类型，尝试作为查询执行
             debug!("未知语句类型，尝试作为查询执行");
             let database_ref = request.database.as_deref();
-            client.execute_query_with_database(&request.query, database_ref).await
+            let mut result = client.execute_query_with_database(&request.query, database_ref).await
                 .map_err(|e| {
                     error!("查询执行失败: {}", e);
                     format!("查询执行失败: {}", e)
-                })
+                })?;
+
+            // 设置SQL类型
+            result.sql_type = Some(statement_type.clone());
+
+            Ok(result)
         }
     }
 }

@@ -112,26 +112,38 @@ const getOperationDescription = (
   rowCount?: number,
   executionTime?: number
 ): string => {
-  const affectedRows = statistics?.affectedRows || 
-                       statistics?.insertedRows || 
-                       statistics?.updatedRows || 
-                       statistics?.deletedRows || 
-                       rowCount || 
-                       0;
+  const affectedRows = statistics?.affectedRows ||
+                       statistics?.insertedRows ||
+                       statistics?.updatedRows ||
+                       statistics?.deletedRows ||
+                       rowCount;
   const time = formatExecutionTime(executionTime);
 
   switch (statementType) {
     case 'INSERT':
     case 'INSERT_SELECT':
-      return `成功插入 ${formatNumber(affectedRows)} 行数据，耗时 ${time}`;
+      if (affectedRows !== undefined && affectedRows !== null) {
+        return `成功插入 ${formatNumber(affectedRows)} 行数据，耗时 ${time}`;
+      }
+      return `数据插入操作已执行，耗时 ${time}`;
     case 'UPDATE':
-      return `成功更新 ${formatNumber(affectedRows)} 行数据，耗时 ${time}`;
+      if (affectedRows !== undefined && affectedRows !== null) {
+        return `成功更新 ${formatNumber(affectedRows)} 行数据，耗时 ${time}`;
+      }
+      return `数据更新操作已执行，耗时 ${time}`;
     case 'DELETE':
-      return `成功删除 ${formatNumber(affectedRows)} 行数据，耗时 ${time}`;
+      // DELETE操作通常不返回具体删除的行数（InfluxDB特性）
+      if (affectedRows !== undefined && affectedRows !== null && affectedRows > 0) {
+        return `成功删除 ${formatNumber(affectedRows)} 行数据，耗时 ${time}`;
+      }
+      return `删除操作已成功执行，耗时 ${time}`;
     case 'TRUNCATE':
       return `成功清空表数据，耗时 ${time}`;
     default:
-      return `操作成功，影响 ${formatNumber(affectedRows)} 行，耗时 ${time}`;
+      if (affectedRows !== undefined && affectedRows !== null) {
+        return `操作成功，影响 ${formatNumber(affectedRows)} 行，耗时 ${time}`;
+      }
+      return `操作已成功执行，耗时 ${time}`;
   }
 };
 
@@ -189,79 +201,87 @@ export const StatusCard: React.FC<StatusCardProps> = ({
       </Card>
 
       {/* 详细统计信息 */}
-      {!hasError && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {/* 影响行数 */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Hash className="w-4 h-4" />
-                影响行数
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatNumber(
-                  result.statistics?.affectedRows || 
-                  result.statistics?.insertedRows || 
-                  result.statistics?.updatedRows || 
-                  result.statistics?.deletedRows || 
-                  result.rowCount
-                )}
-              </div>
-            </CardContent>
-          </Card>
+      {!hasError && (() => {
+        const affectedRows = result.statistics?.affectedRows ||
+                            result.statistics?.insertedRows ||
+                            result.statistics?.updatedRows ||
+                            result.statistics?.deletedRows ||
+                            result.rowCount;
 
-          {/* 执行时间 */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                执行时间
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                {formatExecutionTime(result.executionTime)}
-              </div>
-            </CardContent>
-          </Card>
+        // 对于DELETE操作，如果没有具体的行数信息，就不显示影响行数卡片
+        const showAffectedRows = statementType !== 'DELETE' ||
+                                (affectedRows !== undefined && affectedRows !== null && affectedRows > 0);
 
-          {/* 警告数 */}
-          {result.statistics?.warnings !== undefined && result.statistics.warnings > 0 && (
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* 影响行数 - 仅在有意义时显示 */}
+            {showAffectedRows && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <Hash className="w-4 h-4" />
+                    影响行数
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">
+                    {formatNumber(affectedRows || 0)}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 执行时间 */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
-                  警告
+                  <Clock className="w-4 h-4" />
+                  执行时间
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
-                  {formatNumber(result.statistics.warnings)}
+                <div className="text-2xl font-bold">
+                  {formatExecutionTime(result.executionTime)}
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* 错误数 */}
-          {result.statistics?.errors !== undefined && result.statistics.errors > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                  <XCircle className="w-4 h-4" />
-                  错误
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-red-600 dark:text-red-400">
-                  {formatNumber(result.statistics.errors)}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+            {/* 警告数 */}
+            {result.statistics?.warnings !== undefined && result.statistics.warnings > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    警告
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                    {formatNumber(result.statistics.warnings)}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* 错误数 */}
+            {result.statistics?.errors !== undefined && result.statistics.errors > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                    <XCircle className="w-4 h-4" />
+                    错误
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">
+                    {formatNumber(result.statistics.errors)}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        );
+      })()}
 
       {/* 特定操作类型的额外信息 */}
       {!hasError && result.statistics && (

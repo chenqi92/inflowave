@@ -91,7 +91,12 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                                        queryType,
                                                    }) => {
     // 检测SQL语句类型
-    const detectedQueryType = (queryType || detectQueryType(executedQuery)) as SQLStatementType;
+    // 优先使用后端返回的 sql_type，其次使用传入的 queryType，最后才是前端检测
+    const detectedQueryType = (
+        result?.sqlType ||
+        queryType ||
+        detectQueryType(executedQuery)
+    ) as SQLStatementType;
     const statementCategory = getSQLStatementCategory(detectedQueryType);
 
     // 获取默认 Tab
@@ -651,42 +656,83 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                             {/* 查询类语句显示传统的表格、JSON、图表视图 */}
                             {statementCategory === 'query' && (
                                 <>
-                                    <TabsTrigger value="table" className="flex items-center gap-2">
-                                        <Table className='w-4 h-4'/>
-                                        表格视图
-                                        {stats && <Badge variant="secondary" className="ml-1">{stats.totalRows}</Badge>}
-                                    </TabsTrigger>
-                                    {shouldShowAggregateCards(detectedQueryType) && (
-                                        <TabsTrigger value="aggregate" className="flex items-center gap-2">
-                                            <LayoutGrid className='w-4 h-4'/>
-                                            聚合统计
-                                        </TabsTrigger>
+                                    {/* SHOW类查询只显示表格、JSON、消息 */}
+                                    {(detectedQueryType === 'SHOW' || detectedQueryType === 'DESCRIBE' || detectedQueryType === 'DESC') ? (
+                                        <>
+                                            <TabsTrigger value="table" className="flex items-center gap-2">
+                                                <Table className='w-4 h-4'/>
+                                                表格视图
+                                                {stats && <Badge variant="secondary" className="ml-1">{stats.totalRows}</Badge>}
+                                            </TabsTrigger>
+                                            <TabsTrigger value="json" className="flex items-center gap-2">
+                                                <FileText className='w-4 h-4'/>
+                                                JSON 视图
+                                            </TabsTrigger>
+                                            <TabsTrigger value="messages" className="flex items-center gap-2">
+                                                <MessageSquare className='w-4 h-4'/>
+                                                消息
+                                                {result?.messages && result.messages.length > 0 && (
+                                                    <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
+                                                )}
+                                            </TabsTrigger>
+                                        </>
+                                    ) : shouldShowAggregateCards(detectedQueryType) ? (
+                                        /* 聚合查询优先显示聚合统计 */
+                                        <>
+                                            <TabsTrigger value="aggregate" className="flex items-center gap-2">
+                                                <LayoutGrid className='w-4 h-4'/>
+                                                聚合统计
+                                            </TabsTrigger>
+                                            <TabsTrigger value="json" className="flex items-center gap-2">
+                                                <FileText className='w-4 h-4'/>
+                                                JSON 视图
+                                            </TabsTrigger>
+                                            <TabsTrigger value="messages" className="flex items-center gap-2">
+                                                <MessageSquare className='w-4 h-4'/>
+                                                消息
+                                                {result?.messages && result.messages.length > 0 && (
+                                                    <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
+                                                )}
+                                            </TabsTrigger>
+                                        </>
+                                    ) : (
+                                        /* 普通查询显示完整的tab */
+                                        <>
+                                            <TabsTrigger value="table" className="flex items-center gap-2">
+                                                <Table className='w-4 h-4'/>
+                                                表格视图
+                                                {stats && <Badge variant="secondary" className="ml-1">{stats.totalRows}</Badge>}
+                                            </TabsTrigger>
+                                            {shouldShowExecutionPlan(detectedQueryType) && (
+                                                <TabsTrigger value="executionPlan" className="flex items-center gap-2">
+                                                    <TrendingUp className='w-4 h-4'/>
+                                                    执行计划
+                                                </TabsTrigger>
+                                            )}
+                                            <TabsTrigger value="json" className="flex items-center gap-2">
+                                                <FileText className='w-4 h-4'/>
+                                                JSON 视图
+                                            </TabsTrigger>
+                                            {/* 只有数据量>1且有数值列时才显示图表 */}
+                                            {stats && stats.totalRows > 1 && isChartable(result!) && (
+                                                <TabsTrigger value="chart" className="flex items-center gap-2">
+                                                    <BarChart className='w-4 h-4'/>
+                                                    图表视图
+                                                </TabsTrigger>
+                                            )}
+                                            <TabsTrigger value="messages" className="flex items-center gap-2">
+                                                <MessageSquare className='w-4 h-4'/>
+                                                消息
+                                                {result?.messages && result.messages.length > 0 && (
+                                                    <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
+                                                )}
+                                            </TabsTrigger>
+                                        </>
                                     )}
-                                    {shouldShowExecutionPlan(detectedQueryType) && (
-                                        <TabsTrigger value="executionPlan" className="flex items-center gap-2">
-                                            <TrendingUp className='w-4 h-4'/>
-                                            执行计划
-                                        </TabsTrigger>
-                                    )}
-                                    <TabsTrigger value="json" className="flex items-center gap-2">
-                                        <FileText className='w-4 h-4'/>
-                                        JSON 视图
-                                    </TabsTrigger>
-                                    <TabsTrigger value="chart" className="flex items-center gap-2">
-                                        <BarChart className='w-4 h-4'/>
-                                        图表视图
-                                    </TabsTrigger>
-                                    <TabsTrigger value="messages" className="flex items-center gap-2">
-                                        <MessageSquare className='w-4 h-4'/>
-                                        消息
-                                        {result?.messages && result.messages.length > 0 && (
-                                            <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
-                                        )}
-                                    </TabsTrigger>
                                 </>
                             )}
 
-                            {/* 写入类语句显示执行状态 */}
+                            {/* 写入类语句只显示执行状态、JSON、消息 */}
                             {statementCategory === 'write' && (
                                 <>
                                     <TabsTrigger value="status" className="flex items-center gap-2">
@@ -707,7 +753,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                 </>
                             )}
 
-                            {/* 删除类语句显示删除状态 */}
+                            {/* 删除类语句只显示删除状态、JSON、消息 */}
                             {statementCategory === 'delete' && (
                                 <>
                                     <TabsTrigger value="status" className="flex items-center gap-2">
@@ -728,7 +774,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                 </>
                             )}
 
-                            {/* DDL类语句显示结构操作状态 */}
+                            {/* DDL类语句只显示操作状态、JSON、消息 */}
                             {statementCategory === 'ddl' && (
                                 <>
                                     <TabsTrigger value="status" className="flex items-center gap-2">
@@ -749,7 +795,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                 </>
                             )}
 
-                            {/* 权限类语句显示权限操作状态 */}
+                            {/* 权限类语句只显示权限状态、JSON、消息 */}
                             {statementCategory === 'permission' && (
                                 <>
                                     <TabsTrigger value="status" className="flex items-center gap-2">
@@ -782,28 +828,56 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                         {/* 查询类语句的内容 */}
                         {statementCategory === 'query' && (
                             <>
-                                <TabsContent value="table" className="flex-1 m-0 px-4">
-                                    {renderTableTab()}
-                                </TabsContent>
-                                {shouldShowAggregateCards(detectedQueryType) && (
-                                    <TabsContent value="aggregate" className="flex-1 m-0">
-                                        {result && <AggregateStatCards result={result} />}
-                                    </TabsContent>
+                                {/* SHOW类查询只显示表格、JSON、消息 */}
+                                {(detectedQueryType === 'SHOW' || detectedQueryType === 'DESCRIBE' || detectedQueryType === 'DESC') ? (
+                                    <>
+                                        <TabsContent value="table" className="flex-1 m-0 px-4">
+                                            {renderTableTab()}
+                                        </TabsContent>
+                                        <TabsContent value="json" className="flex-1 m-0 px-4">
+                                            {renderJsonTab()}
+                                        </TabsContent>
+                                        <TabsContent value="messages" className="flex-1 m-0">
+                                            <MessagesTab messages={result?.messages} />
+                                        </TabsContent>
+                                    </>
+                                ) : shouldShowAggregateCards(detectedQueryType) ? (
+                                    /* 聚合查询优先显示聚合统计 */
+                                    <>
+                                        <TabsContent value="aggregate" className="flex-1 m-0">
+                                            {result && <AggregateStatCards result={result} />}
+                                        </TabsContent>
+                                        <TabsContent value="json" className="flex-1 m-0 px-4">
+                                            {renderJsonTab()}
+                                        </TabsContent>
+                                        <TabsContent value="messages" className="flex-1 m-0">
+                                            <MessagesTab messages={result?.messages} />
+                                        </TabsContent>
+                                    </>
+                                ) : (
+                                    /* 普通查询显示完整的内容 */
+                                    <>
+                                        <TabsContent value="table" className="flex-1 m-0 px-4">
+                                            {renderTableTab()}
+                                        </TabsContent>
+                                        {shouldShowExecutionPlan(detectedQueryType) && (
+                                            <TabsContent value="executionPlan" className="flex-1 m-0">
+                                                <ExecutionPlanTab executionPlan={result?.executionPlan} />
+                                            </TabsContent>
+                                        )}
+                                        <TabsContent value="json" className="flex-1 m-0 px-4">
+                                            {renderJsonTab()}
+                                        </TabsContent>
+                                        {stats && stats.totalRows > 1 && isChartable(result!) && (
+                                            <TabsContent value="chart" className="flex-1 m-0 px-4">
+                                                {renderChartTab()}
+                                            </TabsContent>
+                                        )}
+                                        <TabsContent value="messages" className="flex-1 m-0">
+                                            <MessagesTab messages={result?.messages} />
+                                        </TabsContent>
+                                    </>
                                 )}
-                                {shouldShowExecutionPlan(detectedQueryType) && (
-                                    <TabsContent value="executionPlan" className="flex-1 m-0">
-                                        <ExecutionPlanTab executionPlan={result?.executionPlan} />
-                                    </TabsContent>
-                                )}
-                                <TabsContent value="json" className="flex-1 m-0 px-4">
-                                    {renderJsonTab()}
-                                </TabsContent>
-                                <TabsContent value="chart" className="flex-1 m-0 px-4">
-                                    {renderChartTab()}
-                                </TabsContent>
-                                <TabsContent value="messages" className="flex-1 m-0">
-                                    <MessagesTab messages={result?.messages} />
-                                </TabsContent>
                             </>
                         )}
 

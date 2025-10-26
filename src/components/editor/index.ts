@@ -1,9 +1,9 @@
 /**
  * 编辑器模块导出
- * 
+ *
  * 这个模块包含了重构后的TabEditor相关组件：
  * - TabManager: 标签页管理
- * - EditorManager: Monaco编辑器管理
+ * - EditorManager: CodeMirror编辑器管理
  * - QueryExecutor: 查询执行逻辑
  * - FileOperations: 文件操作功能
  */

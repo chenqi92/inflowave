@@ -138,12 +138,12 @@ impl ValidationUtils {
         if let Some(settings) = controller_settings {
             // 检查DELETE语句权限
             if !settings.allow_delete_statements && upper_query.starts_with("DELETE") {
-                return Err(anyhow!("DELETE语句已被管理员禁用。请在设置中启用控制器权限。"));
+                return Err(anyhow!("DELETE语句已被禁用\n\n原因：为了保护数据安全，DELETE操作默认被禁用。\n\n解决方法：\n1. 打开应用设置（右上角齿轮图标）\n2. 进入「查询设置」标签\n3. 在「语句权限控制」区域启用「允许DELETE语句」\n4. 保存设置后重新执行查询"));
             }
 
             // 检查DROP语句权限
             if !settings.allow_drop_statements && upper_query.starts_with("DROP") {
-                return Err(anyhow!("DROP语句已被管理员禁用。请在设置中启用控制器权限。"));
+                return Err(anyhow!("DROP语句已被禁用\n\n原因：为了保护数据安全，DROP操作默认被禁用。\n\n解决方法：\n1. 打开应用设置（右上角齿轮图标）\n2. 进入「查询设置」标签\n3. 在「语句权限控制」区域启用「允许DROP语句」\n4. 保存设置后重新执行查询"));
             }
 
             // 检查危险操作权限（只有在对应的语句类型被允许时才检查）
@@ -218,6 +218,14 @@ impl ValidationUtils {
         let trimmed_query = query.trim().to_uppercase();
 
         if trimmed_query.starts_with("SELECT") {
+            // 检测聚合查询
+            if Self::is_aggregate_query(&trimmed_query) {
+                return "SELECT_AGGREGATE".to_string();
+            }
+            // 检测分组查询
+            if Self::is_group_by_query(&trimmed_query) {
+                return "SELECT_GROUP".to_string();
+            }
             "SELECT".to_string()
         } else if trimmed_query.starts_with("INSERT") {
             "INSERT".to_string()
@@ -242,6 +250,17 @@ impl ValidationUtils {
         } else {
             "UNKNOWN".to_string()
         }
+    }
+
+    /// 检测是否为聚合查询
+    fn is_aggregate_query(query: &str) -> bool {
+        let aggregate_functions = ["COUNT(", "SUM(", "AVG(", "MAX(", "MIN(", "STDDEV(", "VARIANCE("];
+        aggregate_functions.iter().any(|func| query.contains(func))
+    }
+
+    /// 检测是否为分组查询
+    fn is_group_by_query(query: &str) -> bool {
+        query.contains("GROUP BY")
     }
 
     /// 将INSERT语句转换为Line Protocol格式

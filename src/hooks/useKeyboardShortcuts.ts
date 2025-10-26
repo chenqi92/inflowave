@@ -67,7 +67,10 @@ export const useKeyboardShortcuts = (
                     const isInputElement = target.tagName === 'INPUT' ||
                                          target.tagName === 'TEXTAREA' ||
                                          target.isContentEditable ||
-                                         target.closest('.monaco-editor') ||
+                                         target.closest('.cm-editor') ||  // CodeMirror 6
+                                         target.closest('.cm-content') ||  // CodeMirror 6 content area
+                                         target.closest('.cm6-editor-container') ||  // CodeMirror 6 container
+                                         target.closest('.CodeMirror') ||  // Legacy CodeMirror
                                          target.closest('[contenteditable="true"]');
 
                     // 不要阻止系统级的复制粘贴快捷键，特别是在输入元素中
@@ -76,9 +79,9 @@ export const useKeyboardShortcuts = (
                         ['c', 'v', 'x', 'a', 'z', 'y'].includes(keyboardEvent.key.toLowerCase())
                     );
 
-                    // 如果是输入元素中的系统快捷键，完全不处理
+                    // 如果是输入元素中的系统快捷键，完全不处理（跳过此快捷键）
                     if (isInputElement && isSystemClipboard) {
-                        return;
+                        continue;  // 跳过此快捷键，继续检查下一个
                     }
 
                     if (!isSystemClipboard) {
