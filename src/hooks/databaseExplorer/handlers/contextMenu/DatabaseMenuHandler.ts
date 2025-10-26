@@ -113,9 +113,12 @@ export class DatabaseMenuHandler extends BaseMenuHandler {
    * 管理保留策略
    */
   private manageRetentionPolicies(connectionId: string, database: string): void {
-    this.handleInfo('retention_policy', {
+    this.deps.setRetentionPolicyDialog({
+      open: true,
+      mode: 'create',
       connectionId,
-      databaseName: database,
+      database,
+      policy: null,
     });
   }
 

@@ -120,10 +120,11 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                 mode={retentionPolicyDialog.mode}
                 database={retentionPolicyDialog.database}
                 policy={retentionPolicyDialog.policy}
-                connectionId={activeConnectionId || ''}
+                connectionId={retentionPolicyDialog.connectionId}
                 onClose={() => setRetentionPolicyDialog({
                     open: false,
                     mode: 'create',
+                    connectionId: '',
                     database: '',
                     policy: null,
                 })}

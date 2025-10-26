@@ -425,6 +425,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                         setRetentionPolicyDialog({
                             open: true,
                             mode: 'create',
+                            connectionId,
                             database,
                             policy: null,
                         });

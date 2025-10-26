@@ -398,27 +398,33 @@ impl InfluxDriver for V1HttpDriver {
     
     async fn create_retention_policy(&self, database: &str, policy: &RetentionPolicyConfig) -> Result<()> {
         debug!("创建保留策略: {}.{}", database, policy.name);
-        
+
+        // 注意：InfluxDB 语法要求 REPLICATION 必须在 SHARD DURATION 之前
         let mut query_str = format!(
             "CREATE RETENTION POLICY \"{}\" ON \"{}\" DURATION {}",
             policy.name, database, policy.duration
         );
-        
-        if let Some(shard_duration) = &policy.shard_group_duration {
-            query_str.push_str(&format!(" SHARD DURATION {}", shard_duration));
-        }
-        
+
+        // 先添加 REPLICATION（必须在 SHARD DURATION 之前）
         if let Some(replica_n) = policy.replica_n {
             query_str.push_str(&format!(" REPLICATION {}", replica_n));
         }
-        
+
+        // 再添加 SHARD DURATION
+        if let Some(shard_duration) = &policy.shard_group_duration {
+            query_str.push_str(&format!(" SHARD DURATION {}", shard_duration));
+        }
+
+        // 最后添加 DEFAULT
         if policy.default.unwrap_or(false) {
             query_str.push_str(" DEFAULT");
         }
-        
+
+        debug!("创建保留策略 SQL: {}", query_str);
+
         let query = Query::new(QueryLanguage::InfluxQL, query_str);
         self.query(&query).await?;
-        
+
         info!("保留策略创建成功: {}.{}", database, policy.name);
         Ok(())
     }

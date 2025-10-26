@@ -116,6 +116,7 @@ const initialState: DatabaseExplorerState = {
     retentionPolicyDialog: {
         open: false,
         mode: 'create',
+        connectionId: '',
         database: '',
         policy: null,
     },

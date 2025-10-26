@@ -198,29 +198,36 @@ pub async fn create_retention_policy(
         })?;
     
     // 构建创建保留策略的查询
+    // 注意：InfluxDB 语法要求 REPLICATION 必须在 SHARD DURATION 之前
     let mut query = format!(
         "CREATE RETENTION POLICY \"{}\" ON \"{}\" DURATION {}",
         config.name, config.database, config.duration
     );
-    
-    if let Some(shard_duration) = &config.shard_duration {
-        query.push_str(&format!(" REPLICATION {}", shard_duration));
-    }
-    
+
+    // 先添加 REPLICATION（必须在 SHARD DURATION 之前）
     if let Some(replica_n) = config.replica_n {
         query.push_str(&format!(" REPLICATION {}", replica_n));
     }
-    
+
+    // 再添加 SHARD DURATION
+    if let Some(shard_duration) = &config.shard_duration {
+        query.push_str(&format!(" SHARD DURATION {}", shard_duration));
+    }
+
+    // 最后添加 DEFAULT
     if config.default.unwrap_or(false) {
         query.push_str(" DEFAULT");
     }
-    
+
+    debug!("创建保留策略 SQL: {}", query);
+
     client.execute_query(&query, Some(&config.database)).await
         .map_err(|e| {
             error!("创建保留策略失败: {}", e);
             format!("创建保留策略失败: {}", e)
         })?;
-    
+
+    info!("保留策略创建成功: {}.{}", config.database, config.name);
     Ok(())
 }
 
