@@ -758,6 +758,7 @@ async fn main() {
             create_database,
             drop_database,
             get_retention_policies,
+            get_retention_policy,
             create_retention_policy,
             drop_retention_policy,
             alter_retention_policy,

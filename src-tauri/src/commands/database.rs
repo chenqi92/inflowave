@@ -159,7 +159,7 @@ pub async fn drop_database(
 }
 
 /// 获取保留策略
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_retention_policies(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
@@ -178,6 +178,39 @@ pub async fn get_retention_policies(
         .map_err(|e| {
             error!("获取保留策略失败: {}", e);
             format!("获取保留策略失败: {}", e)
+        })
+}
+
+/// 获取单个保留策略详情
+#[tauri::command(rename_all = "camelCase")]
+pub async fn get_retention_policy(
+    connection_service: State<'_, ConnectionService>,
+    connection_id: String,
+    database: String,
+    policy_name: String,
+) -> Result<RetentionPolicy, String> {
+    debug!("处理获取保留策略详情命令: {} - {} - {}", connection_id, database, policy_name);
+
+    let manager = connection_service.get_manager();
+    let client = manager.get_connection(&connection_id).await
+        .map_err(|e| {
+            error!("获取连接失败: {}", e);
+            format!("获取连接失败: {}", e)
+        })?;
+
+    // 获取所有保留策略
+    let policies = client.get_retention_policies(&database).await
+        .map_err(|e| {
+            error!("获取保留策略失败: {}", e);
+            format!("获取保留策略失败: {}", e)
+        })?;
+
+    // 查找指定的保留策略
+    policies.into_iter()
+        .find(|p| p.name == policy_name)
+        .ok_or_else(|| {
+            error!("未找到保留策略: {}", policy_name);
+            format!("未找到保留策略: {}", policy_name)
         })
 }
 
@@ -264,7 +297,7 @@ pub async fn drop_retention_policy(
 }
 
 /// 获取数据库信息
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_database_info(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,
@@ -317,7 +350,7 @@ pub async fn get_database_info(
 }
 
 /// 获取数据库统计信息
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_database_stats(
     connection_service: State<'_, ConnectionService>,
     connection_id: String,

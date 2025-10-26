@@ -766,34 +766,44 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   // ============================================================================
   // 保留策略节点菜单
   // ============================================================================
-  const renderRetentionPolicyMenu = (metadata: Record<string, any>) => (
-    <>
-      <ContextMenuLabel>保留策略操作</ContextMenuLabel>
-      <ContextMenuItem onSelect={() => handleAction('view_retention_policy')}>
-        <Eye className="w-4 h-4 mr-2" />
-        查看策略
-      </ContextMenuItem>
-      <ContextMenuItem onSelect={() => handleAction('edit_retention_policy')}>
-        <Edit className="w-4 h-4 mr-2" />
-        编辑策略
-      </ContextMenuItem>
-      <ContextMenuSeparator />
+  const renderRetentionPolicyMenu = (metadata: Record<string, any>) => {
+    // 检查是否为默认策略
+    const isDefaultPolicy = metadata.default === true;
 
-      <ContextMenuItem onSelect={() => handleAction('copy_policy_name')}>
-        <Copy className="w-4 h-4 mr-2" />
-        复制策略名
-      </ContextMenuItem>
-      <ContextMenuSeparator />
+    return (
+      <>
+        <ContextMenuLabel>保留策略操作</ContextMenuLabel>
+        <ContextMenuItem onSelect={() => handleAction('view_retention_policy')}>
+          <Eye className="w-4 h-4 mr-2" />
+          查看策略
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => handleAction('edit_retention_policy')}>
+          <Edit className="w-4 h-4 mr-2" />
+          编辑策略
+        </ContextMenuItem>
+        <ContextMenuSeparator />
 
-      <ContextMenuItem
-        onSelect={() => handleAction('delete_retention_policy')}
-        className="text-destructive focus:text-destructive"
-      >
-        <Trash2 className="w-4 h-4 mr-2" />
-        删除策略
-      </ContextMenuItem>
-    </>
-  );
+        <ContextMenuItem onSelect={() => handleAction('copy_policy_name')}>
+          <Copy className="w-4 h-4 mr-2" />
+          复制策略名
+        </ContextMenuItem>
+
+        {/* 只有非默认策略才显示删除选项 */}
+        {!isDefaultPolicy && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem
+              onSelect={() => handleAction('delete_retention_policy')}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              删除策略
+            </ContextMenuItem>
+          </>
+        )}
+      </>
+    );
+  };
 
   // ============================================================================
   // 组织节点菜单 (InfluxDB 2.x)

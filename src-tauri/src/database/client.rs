@@ -2986,12 +2986,17 @@ impl InfluxClient {
                 match self.get_retention_policies(db_name).await {
                     Ok(policies) => {
                         for policy in policies {
-                            let rp_node = TreeNodeFactory::create_retention_policy(
+                            let mut rp_node = TreeNodeFactory::create_retention_policy(
                                 policy.name.clone(),
                                 db_name.to_string(),
                                 policy.duration.clone(),
                                 policy.replica_n.try_into().unwrap_or(1)
                             );
+                            // 添加 database 和 policyName metadata，供前端使用
+                            rp_node = rp_node
+                                .with_metadata("database".to_string(), serde_json::Value::String(db_name.to_string()))
+                                .with_metadata("policyName".to_string(), serde_json::Value::String(policy.name.clone()))
+                                .with_metadata("default".to_string(), serde_json::Value::Bool(policy.default));
                             children.push(rp_node);
                         }
                     }
@@ -3019,9 +3024,12 @@ impl InfluxClient {
             }
             TreeNodeType::RetentionPolicy => {
                 // 保留策略下的测量值
-                let parts: Vec<&str> = parent_node_id.split('_').collect();
-                if parts.len() >= 3 {
-                    let db_name = parts[1];
+                // 节点ID格式: database_name/rp_policy_name
+                // 例如: my_test_db/rp_re 或 my_test_db/rp_autogen
+                if let Some(slash_pos) = parent_node_id.find("/rp_") {
+                    let db_name = &parent_node_id[..slash_pos];
+                    log::debug!("从保留策略节点ID解析数据库名: {} (原始ID: {})", db_name, parent_node_id);
+
                     match self.get_measurements(db_name).await {
                         Ok(measurements) => {
                             for measurement in measurements {
@@ -3037,6 +3045,8 @@ impl InfluxClient {
                             log::warn!("获取测量值失败: {}", e);
                         }
                     }
+                } else {
+                    log::warn!("无法从保留策略节点ID解析数据库名: {}", parent_node_id);
                 }
             }
             TreeNodeType::Organization => {

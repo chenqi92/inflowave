@@ -91,13 +91,14 @@ class GenericMenuHandler extends BaseMenuHandler {
     const policyName = metadata.policyName || node.name;
 
     try {
-      if (action === 'view_retention_policy') {
-        const policy = await this.invokeTauri<any>('get_retention_policy', {
-          connectionId,
-          database,
-          policyName,
-        });
+      // 获取策略详情
+      const policy = await this.invokeTauri<any>('get_retention_policy', {
+        connectionId,
+        database,
+        policyName,
+      });
 
+      if (action === 'view_retention_policy') {
         this.deps.setDialogStates((prev: any) => ({
           ...prev,
           retentionPolicyView: {
@@ -108,6 +109,15 @@ class GenericMenuHandler extends BaseMenuHandler {
             policy,
           },
         }));
+      } else if (action === 'edit_retention_policy') {
+        // 编辑策略时也需要传递策略详情
+        this.handleInfo('retention_policy', {
+          connectionId,
+          databaseName: database,
+          policyName,
+          policy, // 传递策略详情用于回填
+          mode: 'edit',
+        });
       } else {
         this.handleInfo('retention_policy', {
           connectionId,

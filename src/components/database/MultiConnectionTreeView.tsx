@@ -731,9 +731,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       return false; // 过滤掉系统节点
     }
 
-    // InfluxDB 1.x: autogen 是默认的保留策略，视为系统节点
-    if (node.nodeType === 'retention_policy' && node.name === 'autogen') {
-      return false; // 过滤掉 autogen 保留策略
+    // InfluxDB 1.x: 过滤所有保留策略节点（保留策略是数据库管理功能，不是用户数据）
+    if (node.nodeType === 'retention_policy') {
+      return false; // 过滤掉所有保留策略节点
     }
 
     // IoTDB: 过滤系统相关的节点

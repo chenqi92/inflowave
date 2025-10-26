@@ -72,33 +72,28 @@ const DatabaseInfoDialog: React.FC<DatabaseInfoDialogProps> = ({
 
     try {
       setLoading(true);
-      
-      // 并行加载数据库信息
-      const [statsResult, policiesResult, measurementsResult] = await Promise.allSettled([
+
+      // 只调用 get_database_info，它会返回保留策略和测量列表
+      // 避免重复调用 get_retention_policies 和 get_measurements
+      const [infoResult, statsResult] = await Promise.allSettled([
+        safeTauriInvoke('get_database_info', {
+          connectionId: activeConnectionId,
+          database: databaseName,
+        }),
         safeTauriInvoke('get_database_stats', {
-          connection_id: activeConnectionId,
-          database: databaseName,
-        }),
-        safeTauriInvoke('get_retention_policies', {
-          connection_id: activeConnectionId,
-          database: databaseName,
-        }),
-        safeTauriInvoke('get_measurements', {
-          connection_id: activeConnectionId,
+          connectionId: activeConnectionId,
           database: databaseName,
         }),
       ]);
 
+      if (infoResult.status === 'fulfilled') {
+        const info = infoResult.value as any;
+        setRetentionPolicies(info.retention_policies || []);
+        setMeasurements(info.measurements || []);
+      }
+
       if (statsResult.status === 'fulfilled') {
         setStats(statsResult.value);
-      }
-      
-      if (policiesResult.status === 'fulfilled') {
-        setRetentionPolicies(policiesResult.value || []);
-      }
-      
-      if (measurementsResult.status === 'fulfilled') {
-        setMeasurements(measurementsResult.value || []);
       }
     } catch (error) {
       showMessage.error(`加载数据库信息失败: ${error}`);
