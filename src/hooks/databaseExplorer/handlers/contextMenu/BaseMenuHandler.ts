@@ -321,9 +321,12 @@ export abstract class BaseMenuHandler {
       case 'use':
         return `USE "${database}";`;
       case 'select':
-        return table ? `SELECT * FROM "${database}"."${table}" LIMIT 1000;` : '';
+        // InfluxDB 1.x: 只使用 measurement 名称，不加 database 前缀
+        // 数据库通过 execute_query 的 database 参数指定
+        return table ? `SELECT * FROM "${table}" LIMIT 1000;` : '';
       case 'count':
-        return table ? `SELECT COUNT(*) FROM "${database}"."${table}";` : '';
+        // InfluxDB 1.x: 只使用 measurement 名称，不加 database 前缀
+        return table ? `SELECT COUNT(*) FROM "${table}";` : '';
       case 'show':
         return `SHOW MEASUREMENTS ON "${database}";`;
       default:

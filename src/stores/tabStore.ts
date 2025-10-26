@@ -332,8 +332,24 @@ export const useTabOperations = () => {
     return tabs.filter(tab => tab.modified);
   };
 
-  // 创建数据浏览tab
+  // 创建数据浏览tab（如果已存在则切换并刷新）
   const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
+    // 检查是否已存在该表的tab
+    const existingTab = tabs.find(tab =>
+      tab.type === 'data-browser' &&
+      tab.connectionId === connectionId &&
+      tab.database === database &&
+      tab.tableName === tableName
+    );
+
+    if (existingTab) {
+      // 如果tab已存在，切换到该tab并触发刷新
+      setActiveKey(existingTab.id);
+      refreshDataBrowserTab(existingTab.id);
+      return existingTab;
+    }
+
+    // 如果不存在，创建新tab
     const newTab: EditorTab = {
       id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       title: tableName,

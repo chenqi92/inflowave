@@ -52,6 +52,9 @@ interface DatabaseExplorerDialogsProps {
     // Detail dialogs
     connectionDetailDialog: ConnectionDetailDialogState;
     setConnectionDetailDialog: (state: ConnectionDetailDialogState) => void;
+
+    // Query execution callback
+    onCreateAndExecuteQuery?: (query: string, database: string, connectionId: string) => void;
 }
 
 export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = ({
@@ -76,6 +79,7 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
     setManagementNodeDialog,
     connectionDetailDialog,
     setConnectionDetailDialog,
+    onCreateAndExecuteQuery,
 }) => {
     return (
         <>
@@ -224,9 +228,14 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     database={dialogStates.queryBuilder.database}
                     table={dialogStates.queryBuilder.table}
                     onExecute={(query) => {
-                        // 执行查询的回调
-                        // 可以通过 props 传递一个执行查询的函数
-                        console.log('执行查询:', query);
+                        // 创建查询tab并执行查询
+                        if (onCreateAndExecuteQuery && dialogStates.queryBuilder) {
+                            onCreateAndExecuteQuery(
+                                query,
+                                dialogStates.queryBuilder.database,
+                                dialogStates.queryBuilder.connectionId
+                            );
+                        }
                     }}
                 />
             )}

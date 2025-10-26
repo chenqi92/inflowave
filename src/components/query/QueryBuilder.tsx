@@ -98,10 +98,32 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
   const [generatedQuery, setGeneratedQuery] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
+  // 重置所有状态
+  const resetState = () => {
+    setFields([]);
+    setTags([]);
+    setSelectedFields([]);
+    setSelectedTags([]);
+    setWhereConditions([]);
+    setTimeRange('now() - 1h');
+    setCustomTimeStart('');
+    setCustomTimeEnd('');
+    setAggregateFunction('none');
+    setGroupByFields([]);
+    setGroupByTime('');
+    setOrderBy('time');
+    setOrderDirection('DESC');
+    setLimit('100');
+    setGeneratedQuery('');
+  };
+
   // 加载字段和标签信息
   useEffect(() => {
     if (open && connectionId && database && table) {
       loadTableSchema();
+    } else if (!open) {
+      // 对话框关闭时重置状态
+      resetState();
     }
   }, [open, connectionId, database, table]);
 

@@ -163,10 +163,12 @@ export class TableMenuHandler extends BaseMenuHandler {
           query = this.generateSqlStatement('count', database, table);
           break;
         case 'recent':
-          query = `SELECT * FROM "${database}"."${table}" WHERE time > now() - 1h ORDER BY time DESC LIMIT 1000;`;
+          // InfluxDB 1.x: 只使用 measurement 名称，不加 database 前缀
+          query = `SELECT * FROM "${table}" WHERE time > now() - 1h ORDER BY time DESC LIMIT 1000;`;
           break;
         case 'aggregate':
-          query = `SELECT MEAN(*) FROM "${database}"."${table}" WHERE time > now() - 1h GROUP BY time(1m);`;
+          // InfluxDB 1.x: 只使用 measurement 名称，不加 database 前缀
+          query = `SELECT MEAN(*) FROM "${table}" WHERE time > now() - 1h GROUP BY time(1m);`;
           break;
       }
 

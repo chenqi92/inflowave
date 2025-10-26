@@ -93,6 +93,20 @@ export interface DialogStates {
         database: string;
         tables: string[];
     };
+    tableStatistics?: {
+        open: boolean;
+        connectionId: string;
+        database: string;
+        table: string;
+        stats: any;
+    };
+    dataPreview?: {
+        open: boolean;
+        connectionId: string;
+        database: string;
+        table: string;
+        data: any;
+    };
 }
 
 /**

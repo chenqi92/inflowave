@@ -1939,6 +1939,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         setManagementNodeDialog={setManagementNodeDialog}
         connectionDetailDialog={connectionDetailDialog}
         setConnectionDetailDialog={setConnectionDetailDialog}
+        onCreateAndExecuteQuery={onCreateAndExecuteQuery}
       />
 
       {/* 错误提示 - 使用 Portal 渲染，避免被容器遮挡 */}
