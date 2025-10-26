@@ -48,10 +48,12 @@ interface TreeNodeRendererProps {
   item: ItemInstance<TreeNodeData>;
   onNodeDoubleClick?: (nodeData: TreeNodeData, item: ItemInstance<TreeNodeData>) => void;
   onNodeToggle?: (nodeId: string) => void;
+  onToggleExpand?: (nodeId: string, shouldExpand: boolean) => void;
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
   nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
   selectedItems: string[];
   nodeLoadingStates?: Map<string, boolean>;
+  expandedNodeIds?: string[];
 }
 
 // ✅ 使用 React.memo 优化性能，Headless Tree 支持 memo
@@ -61,13 +63,19 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   item,
   onNodeDoubleClick,
   onNodeToggle,
+  onToggleExpand,
   isDatabaseOpened,
   nodeRefsMap,
   selectedItems,
   nodeLoadingStates,
+  expandedNodeIds = [],
 }, forwardedRef) => {
   const data = item.getItemData();
   const level = item.getItemMeta().level;
+
+  // 🔧 从 expandedNodeIds 数组中判断节点是否展开，而不是使用 item.isExpanded()
+  // 这样可以确保当 expandedNodeIds 变化时，组件会重新渲染
+  const isNodeExpanded = expandedNodeIds.includes(data.id);
 
   // 🔧 修复：从 props 读取选中状态，确保 React 重新渲染
   const isSelected = selectedItems.includes(data.id);
@@ -332,21 +340,31 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
             className="w-4 h-4 hover:bg-muted rounded cursor-pointer flex items-center justify-center transition-colors"
             onClick={(e) => {
               e.stopPropagation();
-              if (item.isExpanded()) {
-                item.collapse();
+
+              // 🔧 直接更新 expandedNodeIds state，而不是调用 item.expand()/collapse()
+              const shouldExpand = !isNodeExpanded;
+
+              if (!shouldExpand) {
+                // 收起节点
+                log.debug(`[TreeNodeRenderer] 收起节点: ${data.id}`);
+                onToggleExpand?.(data.id, false);
               } else {
-                // 如果子节点未加载，先调用 handleToggle 加载子节点
+                // 展开节点
                 if (data.children === undefined && onNodeToggle) {
+                  // 子节点未加载，先加载子节点
+                  log.debug(`[TreeNodeRenderer] 加载并展开节点: ${data.id}`);
                   onNodeToggle(data.id);
                 } else {
-                  item.expand();
+                  // 子节点已加载，直接展开
+                  log.debug(`[TreeNodeRenderer] 展开节点: ${data.id}`);
+                  onToggleExpand?.(data.id, true);
                 }
               }
             }}
           >
             {isLoading ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
-            ) : item.isExpanded() ? (
+            ) : isNodeExpanded ? (
               <ChevronDown className="w-3.5 h-3.5 text-foreground" />
             ) : (
               <ChevronRight className="w-3.5 h-3.5 text-foreground" />
@@ -364,10 +382,10 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
           nodeType={normalizedNodeType}
           isOpen={
             // 对于数据库节点，只使用 isActivated（数据库是否被打开）
-            // 对于其他容器节点，使用 item.isExpanded()（节点是否展开）
+            // 对于其他容器节点，使用 isNodeExpanded（节点是否展开）
             normalizedNodeType.includes('database')
               ? isActivated
-              : (isActivated || item.isExpanded())
+              : (isActivated || isNodeExpanded)
           }
           isConnected={isConnected}
           dbType={data.dbType}
@@ -424,6 +442,24 @@ export const TreeNodeRenderer = React.memo(TreeNodeRendererInner, (prevProps, ne
   // 如果节点 ID 不同，需要重新渲染
   if (prevData.id !== nextData.id) {
     return false;
+  }
+
+  // 🔧 比较展开状态 - 从 expandedNodeIds 数组中判断
+  const prevExpanded = prevProps.expandedNodeIds?.includes(prevData.id) ?? false;
+  const nextExpanded = nextProps.expandedNodeIds?.includes(nextData.id) ?? false;
+
+  if (prevExpanded !== nextExpanded) {
+    log.debug(`[TreeNodeRenderer] 节点 ${prevData.id} 展开状态改变: ${prevExpanded} -> ${nextExpanded}`);
+    return false; // 展开状态改变，需要重新渲染
+  }
+
+  // 🔧 比较 expandedNodeIds 数组长度 - 如果长度变化，可能影响子节点的展开状态
+  const prevExpandedLength = prevProps.expandedNodeIds?.length ?? 0;
+  const nextExpandedLength = nextProps.expandedNodeIds?.length ?? 0;
+
+  if (prevExpandedLength !== nextExpandedLength) {
+    log.debug(`[TreeNodeRenderer] expandedNodeIds 长度改变: ${prevExpandedLength} -> ${nextExpandedLength}`);
+    return false; // 数组长度改变，需要重新渲染
   }
 
   // 🔧 比较 nodeLoadingStates - 检查当前节点的 loading 状态是否改变

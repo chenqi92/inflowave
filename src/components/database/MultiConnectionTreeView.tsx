@@ -32,7 +32,7 @@ import { TreeDataLoader } from './TreeDataLoader';
 import { UnifiedContextMenu } from './UnifiedContextMenu';
 import { TreeNodeType, getNodeBehavior, normalizeNodeType } from '@/types/tree';
 import useResizeObserver from 'use-resize-observer';
-import { useTabStore } from '@/stores/tabStore';
+import { useTabStore, useTabOperations } from '@/stores/tabStore';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { logger } from '@/utils/logger';
 
@@ -180,6 +180,14 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         const newItems = typeof updater === 'function' ? updater(prevItems) : updater;
         // 确保 root 节点始终展开
         const itemsWithRoot = newItems.includes('root') ? newItems : ['root', ...newItems];
+
+        logger.debug(`[setExpandedItems] 展开状态更新:`, {
+          prevCount: prevItems.length,
+          newCount: itemsWithRoot.length,
+          added: itemsWithRoot.filter(id => !prevItems.includes(id)),
+          removed: prevItems.filter(id => !itemsWithRoot.includes(id)),
+        });
+
         return itemsWithRoot;
       });
     },
@@ -234,6 +242,26 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   // 防止双击重复触发
   const lastActivateTimeRef = useRef<number>(0);
   const lastActivateNodeRef = useRef<string>('');
+
+  // 🔧 跟踪正在创建的 tab，防止重复创建
+  const creatingTabsRef = useRef<Set<string>>(new Set());
+
+  // 🔧 处理节点展开/收起 - 只使用 headless-tree 的 API，通过 setExpandedItems 回调更新 state
+  const handleToggleExpand = useCallback((nodeId: string, shouldExpand: boolean) => {
+    logger.debug(`[handleToggleExpand] nodeId: ${nodeId}, shouldExpand: ${shouldExpand}`);
+
+    // 🔧 只调用 headless-tree 的 API，让 setExpandedItems 回调来更新 expandedNodeIds
+    const item = tree.getItemInstance(nodeId);
+    if (item) {
+      if (shouldExpand) {
+        logger.debug(`[handleToggleExpand] 展开节点: ${nodeId}`);
+        item.expand();
+      } else {
+        logger.debug(`[handleToggleExpand] 收起节点: ${nodeId}`);
+        item.collapse();
+      }
+    }
+  }, [tree]);
 
   // 使用 resize observer 获取容器尺寸
   const { ref: containerRef, width = 300, height = 600 } = useResizeObserver();
@@ -557,7 +585,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       });
       logger.info(`[Loading] ✅ 节点加载成功: ${nodeId}`);
 
-      // 加载完成后自动展开节点
+      // 🔧 加载完成后自动展开节点 - 使用 item.expand()，让 setExpandedItems 回调更新 state
       const treeItem = tree.getItemInstance(nodeId);
       if (treeItem && !treeItem.isExpanded()) {
         logger.debug(`自动展开已加载的节点: ${nodeId}`);
@@ -1210,8 +1238,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   }, [tree]);
 
   // 获取tab store的方法
-  const { tabs, setActiveKey } = useTabStore();
-  const { createDataBrowserTab } = useTabStore.getState();
+  const { setActiveKey } = useTabStore();
+  const { createDataBrowserTab } = useTabOperations();
 
   // 处理节点双击
   const handleNodeDoubleClick = useCallback(async (nodeData: TreeNodeData, item: ItemInstance<TreeNodeData>) => {
@@ -1277,13 +1305,47 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         const database = nodeData.metadata?.database || nodeData.metadata?.databaseName || '';
         const tableName = nodeData.metadata?.table || nodeData.metadata?.tableName || nodeData.name;
 
+        // 🔧 生成唯一的 tab key，用于防止重复创建
+        const tabKey = `${connectionId}/${database}/${tableName}`;
+
+        // 🔧 检查是否正在创建该 tab
+        if (creatingTabsRef.current.has(tabKey)) {
+          logger.debug(`[Tab查找] Tab 正在创建中，忽略重复请求: ${tabKey}`);
+          return;
+        }
+
+        // 🔧 使用 getState() 获取最新的 tabs，而不是依赖响应式的 tabs
+        const currentTabs = useTabStore.getState().tabs;
+
+        // 添加详细的调试日志
+        logger.debug(`[Tab查找] 查找参数:`, {
+          connectionId,
+          database,
+          tableName,
+          tabKey,
+          isCreating: creatingTabsRef.current.has(tabKey),
+          currentTabsCount: currentTabs.length,
+          currentTabs: currentTabs.map(t => ({
+            id: t.id,
+            type: t.type,
+            connectionId: t.connectionId,
+            database: t.database,
+            tableName: t.tableName,
+          })),
+        });
+
         // 检查是否已存在该表的tab
-        const existingTab = tabs.find(tab =>
+        const existingTab = currentTabs.find(tab =>
           tab.type === 'data-browser' &&
           tab.connectionId === connectionId &&
           tab.database === database &&
           tab.tableName === tableName
         );
+
+        logger.debug(`[Tab查找] 查找结果:`, {
+          found: !!existingTab,
+          existingTabId: existingTab?.id,
+        });
 
         if (existingTab) {
           // 如果tab已存在，切换到该tab并刷新
@@ -1291,9 +1353,17 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           setActiveKey(existingTab.id);
           // TODO: 触发tab刷新逻辑
         } else {
-          // 创建新的数据浏览tab
+          // 🔧 标记该 tab 正在创建
+          creatingTabsRef.current.add(tabKey);
+          logger.debug(`[Tab查找] 标记 tab 正在创建: ${tabKey}`);
+
+          // 🔧 直接调用 createDataBrowserTab，不通过 onNodeActivate
+          createDataBrowserTab(connectionId, database, tableName);
           logger.debug(`创建新的数据浏览tab: ${tableName}`);
-          onNodeActivate?.(nodeData);
+
+          // 🔧 立即清除创建标记，因为 createDataBrowserTab 是同步的
+          creatingTabsRef.current.delete(tabKey);
+          logger.debug(`[Tab查找] 清除创建标记: ${tabKey}`);
         }
         return;
       }
@@ -1392,7 +1462,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         return;
       }
     }
-  }, [onNodeActivate, handleToggle, isDatabaseOpened, nodeLoadingStates, connectionStatuses, databaseLoadingStates, tabs, setActiveKey]);
+  }, [onNodeActivate, handleToggle, isDatabaseOpened, nodeLoadingStates, connectionStatuses, databaseLoadingStates, setActiveKey]);
 
   // 处理右键菜单
   const handleContextMenu = useCallback((item: ItemInstance<TreeNodeData>, event: React.MouseEvent) => {
@@ -1471,18 +1541,23 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // 🔧 检查节点是否有子节点（用于展开/收起按钮显示）
     const hasChildren = nodeData.children !== undefined && nodeData.children.length > 0;
 
-    // 🔧 使用节点 ID + 选中状态 + 激活状态 + 子节点状态作为 key，确保状态改变时重新渲染
-    const itemKey = `${nodeData.id}-${isSelected}-${isActivated}-${hasChildren}`;
+    // 🔧 检查节点是否展开
+    const isNodeExpanded = expandedNodeIds.includes(nodeData.id);
+
+    // 🔧 使用节点 ID + 选中状态 + 激活状态 + 展开状态 + 子节点状态作为 key，确保状态改变时重新渲染
+    const itemKey = `${nodeData.id}-${isSelected}-${isActivated}-${isNodeExpanded}-${hasChildren}`;
 
     const nodeRenderer = (
       <TreeNodeRenderer
         item={item}
         onNodeDoubleClick={handleNodeDoubleClick}
         onNodeToggle={handleToggle}
+        onToggleExpand={handleToggleExpand}
         isDatabaseOpened={isDatabaseOpened}
         nodeRefsMap={nodeRefsMap}
         selectedItems={selectedItems}
         nodeLoadingStates={nodeLoadingStates}
+        expandedNodeIds={expandedNodeIds}
       />
     );
 
