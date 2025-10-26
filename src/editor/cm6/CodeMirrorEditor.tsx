@@ -205,13 +205,48 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
               });
             }
           }),
-          // Focus/blur listeners
+          // Focus/blur listeners and clipboard events
           EditorView.domEventHandlers({
             focus: () => {
               editorEvents.focus();
             },
             blur: () => {
               editorEvents.blur();
+            },
+            keydown: (event: KeyboardEvent) => {
+              // 添加调试日志
+              const isSystemKey = (event.ctrlKey || event.metaKey) && ['c', 'v', 'x', 'a', 'z', 'y'].includes(event.key.toLowerCase());
+              if (isSystemKey) {
+                console.log('✅ [CodeMirror] 收到 keydown 事件', {
+                  key: event.key,
+                  ctrl: event.ctrlKey,
+                  meta: event.metaKey,
+                  defaultPrevented: event.defaultPrevented,
+                  propagationStopped: event.cancelBubble,
+                });
+              }
+              return false; // 不阻止默认行为
+            },
+            copy: (event: ClipboardEvent) => {
+              console.log('📋 [CodeMirror] 收到 copy 事件', {
+                defaultPrevented: event.defaultPrevented,
+                hasClipboardData: !!event.clipboardData,
+              });
+              return false; // 不阻止默认行为，让CodeMirror处理
+            },
+            cut: (event: ClipboardEvent) => {
+              console.log('✂️ [CodeMirror] 收到 cut 事件', {
+                defaultPrevented: event.defaultPrevented,
+                hasClipboardData: !!event.clipboardData,
+              });
+              return false; // 不阻止默认行为，让CodeMirror处理
+            },
+            paste: (event: ClipboardEvent) => {
+              console.log('📌 [CodeMirror] 收到 paste 事件', {
+                defaultPrevented: event.defaultPrevented,
+                hasClipboardData: !!event.clipboardData,
+              });
+              return false; // 不阻止默认行为，让CodeMirror处理
             },
           }),
           // Custom extensions

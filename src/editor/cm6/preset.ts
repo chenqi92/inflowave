@@ -6,7 +6,7 @@
  */
 
 import { Extension, EditorSelection } from '@codemirror/state';
-import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine } from '@codemirror/view';
+import { EditorView, keymap, lineNumbers, highlightActiveLineGutter, highlightSpecialChars, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightActiveLine, KeyBinding } from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
@@ -136,6 +136,9 @@ export function basicPreset(options: PresetOptions = {}): Extension[] {
   // Add indentWithTab for better tab handling
   keymaps.push(keymap.of([indentWithTab]));
 
+  // Add clipboard keybindings BEFORE defaultKeymap to ensure they have priority
+  keymaps.push(keymap.of(createClipboardKeybindings()));
+
   if (opts.defaultKeymap) keymaps.push(keymap.of(defaultKeymap));
 
   // VS Code-style keybindings (Cmd/Ctrl+D for multi-cursor, etc.)
@@ -161,6 +164,85 @@ export function basicPreset(options: PresetOptions = {}): Extension[] {
   }
 
   return extensions;
+}
+
+/**
+ * Create clipboard keybindings
+ *
+ * Explicitly handle clipboard operations using the Clipboard API
+ */
+function createClipboardKeybindings(): KeyBinding[] {
+  return [
+    {
+      key: 'Mod-c',
+      run: (view) => {
+        const selection = view.state.selection.main;
+        if (selection.empty) {
+          console.log('📋 [CodeMirror Keymap] Ctrl+C - 没有选中内容');
+          return false; // 让浏览器处理
+        }
+
+        const text = view.state.sliceDoc(selection.from, selection.to);
+        console.log('📋 [CodeMirror Keymap] Ctrl+C - 复制文本:', text.substring(0, 50));
+
+        // 使用 Clipboard API
+        navigator.clipboard.writeText(text).then(() => {
+          console.log('✅ [CodeMirror Keymap] 复制成功');
+        }).catch(err => {
+          console.error('❌ [CodeMirror Keymap] 复制失败:', err);
+        });
+
+        return true; // 阻止默认行为
+      },
+    },
+    {
+      key: 'Mod-x',
+      run: (view) => {
+        const selection = view.state.selection.main;
+        if (selection.empty) {
+          console.log('✂️ [CodeMirror Keymap] Ctrl+X - 没有选中内容');
+          return false; // 让浏览器处理
+        }
+
+        const text = view.state.sliceDoc(selection.from, selection.to);
+        console.log('✂️ [CodeMirror Keymap] Ctrl+X - 剪切文本:', text.substring(0, 50));
+
+        // 使用 Clipboard API
+        navigator.clipboard.writeText(text).then(() => {
+          console.log('✅ [CodeMirror Keymap] 剪切成功，删除选中内容');
+          // 删除选中的文本
+          view.dispatch({
+            changes: { from: selection.from, to: selection.to },
+            selection: { anchor: selection.from },
+          });
+        }).catch(err => {
+          console.error('❌ [CodeMirror Keymap] 剪切失败:', err);
+        });
+
+        return true; // 阻止默认行为
+      },
+    },
+    {
+      key: 'Mod-v',
+      run: (view) => {
+        console.log('📌 [CodeMirror Keymap] Ctrl+V - 粘贴');
+
+        // 使用 Clipboard API
+        navigator.clipboard.readText().then(text => {
+          console.log('✅ [CodeMirror Keymap] 粘贴成功:', text.substring(0, 50));
+          const selection = view.state.selection.main;
+          view.dispatch({
+            changes: { from: selection.from, to: selection.to, insert: text },
+            selection: { anchor: selection.from + text.length },
+          });
+        }).catch(err => {
+          console.error('❌ [CodeMirror Keymap] 粘贴失败:', err);
+        });
+
+        return true; // 阻止默认行为
+      },
+    },
+  ];
 }
 
 /**

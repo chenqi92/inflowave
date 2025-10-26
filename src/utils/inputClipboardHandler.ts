@@ -141,26 +141,52 @@ function handleInputSelectAll(element: HTMLInputElement | HTMLTextAreaElement): 
 function handleGlobalKeyDown(event: KeyboardEvent): void {
   const target = event.target as Element;
 
-  // 只处理输入元素
-  if (!isEditableElement(target)) {
-    return;
-  }
+  // 添加详细日志用于调试
+  const isSystemKey = (event.ctrlKey || event.metaKey) && ['c', 'v', 'x', 'a', 'z', 'y'].includes(event.key.toLowerCase());
 
-  // 跳过 CodeMirror 编辑器，它有自己的处理逻辑（检查所有可能的类名）
+  // ⚠️ 重要：先检查 CodeMirror，因为 isEditableElement 会排除它
   const isCodeMirror = target.closest('.cm-editor') ||
                        target.closest('.cm-content') ||
                        target.closest('.cm6-editor-container') ||
                        target.closest('.CodeMirror');
 
-  if (isCodeMirror) {
-    console.log('🔍 [InputClipboardHandler] 跳过 CodeMirror 编辑器', {
+  if (isSystemKey) {
+    console.log('🔍 [InputClipboardHandler] 捕获阶段拦截到系统快捷键', {
       key: event.key,
       ctrl: event.ctrlKey,
       meta: event.metaKey,
+      isCodeMirror,
       targetTag: (target as HTMLElement).tagName,
       targetClass: (target as HTMLElement).className,
+      targetClosest_cm_editor: !!target.closest('.cm-editor'),
+      targetClosest_cm_content: !!target.closest('.cm-content'),
+      targetClosest_cm6_container: !!target.closest('.cm6-editor-container'),
     });
+  }
+
+  if (isCodeMirror) {
+    if (isSystemKey) {
+      console.log('✅ [InputClipboardHandler] 检测到 CodeMirror，不拦截事件');
+    }
+    // CodeMirror 有自己的剪贴板处理，完全不干预
     return;
+  }
+
+  // 只处理其他输入元素
+  if (!isEditableElement(target)) {
+    if (isSystemKey) {
+      console.log('🔍 [InputClipboardHandler] 不是可编辑元素，不处理');
+    }
+    return;
+  }
+
+  if (isSystemKey) {
+    console.log('⚠️ [InputClipboardHandler] 将处理此快捷键（非 CodeMirror 的输入元素）', {
+      key: event.key,
+      targetTag: (target as HTMLElement).tagName,
+      targetClass: (target as HTMLElement).className,
+      targetId: (target as HTMLElement).id,
+    });
   }
 
   const isCtrlOrCmd = event.ctrlKey || event.metaKey;
@@ -169,17 +195,12 @@ function handleGlobalKeyDown(event: KeyboardEvent): void {
     return;
   }
 
-  console.log('⌨️ [InputClipboardHandler] 处理快捷键', {
-    key: event.key,
-    targetTag: (target as HTMLElement).tagName,
-    targetClass: (target as HTMLElement).className,
-  });
-
   const inputElement = target as HTMLInputElement | HTMLTextAreaElement;
 
   switch (event.key.toLowerCase()) {
     case 'c':
       // Ctrl+C 复制
+      console.log('❌ [InputClipboardHandler] 阻止 Ctrl+C 并手动处理');
       event.preventDefault();
       event.stopPropagation();
       handleInputCopy(inputElement);
@@ -187,6 +208,7 @@ function handleGlobalKeyDown(event: KeyboardEvent): void {
 
     case 'x':
       // Ctrl+X 剪切
+      console.log('❌ [InputClipboardHandler] 阻止 Ctrl+X 并手动处理');
       event.preventDefault();
       event.stopPropagation();
       handleInputCut(inputElement);
@@ -194,6 +216,7 @@ function handleGlobalKeyDown(event: KeyboardEvent): void {
 
     case 'v':
       // Ctrl+V 粘贴
+      console.log('❌ [InputClipboardHandler] 阻止 Ctrl+V 并手动处理');
       event.preventDefault();
       event.stopPropagation();
       handleInputPaste(inputElement);
@@ -201,6 +224,7 @@ function handleGlobalKeyDown(event: KeyboardEvent): void {
 
     case 'a':
       // Ctrl+A 全选
+      console.log('❌ [InputClipboardHandler] 阻止 Ctrl+A 并手动处理');
       event.preventDefault();
       event.stopPropagation();
       handleInputSelectAll(inputElement);

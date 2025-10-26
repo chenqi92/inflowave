@@ -533,10 +533,24 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
               // 触发input事件
               inputElement.dispatchEvent(new Event('input', { bubbles: true }));
             }
-          } else if (activeElement && activeElement.closest('.monaco-editor')) {
-            // 如果是Monaco编辑器，触发自定义剪切事件
-            const cutEvent = new CustomEvent('monaco-cut', { bubbles: true });
-            activeElement.dispatchEvent(cutEvent);
+          } else if (activeElement && (
+            activeElement.closest('.cm-editor') ||
+            activeElement.closest('.cm-content') ||
+            activeElement.closest('.cm6-editor-container')
+          )) {
+            // 如果是CodeMirror编辑器，使用浏览器原生剪切
+            try {
+              document.execCommand('cut');
+            } catch (err) {
+              logger.warn('execCommand cut 失败，尝试使用Clipboard API');
+              // 如果execCommand失败，尝试使用Clipboard API
+              const selection = window.getSelection();
+              if (selection && selection.toString()) {
+                import('@/utils/clipboard').then(({ writeToClipboard }) => {
+                  writeToClipboard(selection.toString(), { showSuccess: false });
+                });
+              }
+            }
           } else {
             // 对于其他元素，尝试安全的剪切操作
             const selection = window.getSelection();
@@ -578,10 +592,24 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
                 writeToClipboard(selectedText, { showSuccess: false });
               });
             }
-          } else if (activeElement && activeElement.closest('.monaco-editor')) {
-            // 如果是Monaco编辑器，触发自定义复制事件
-            const copyEvent = new CustomEvent('monaco-copy', { bubbles: true });
-            activeElement.dispatchEvent(copyEvent);
+          } else if (activeElement && (
+            activeElement.closest('.cm-editor') ||
+            activeElement.closest('.cm-content') ||
+            activeElement.closest('.cm6-editor-container')
+          )) {
+            // 如果是CodeMirror编辑器，使用浏览器原生复制
+            try {
+              document.execCommand('copy');
+            } catch (err) {
+              logger.warn('execCommand copy 失败，尝试使用Clipboard API');
+              // 如果execCommand失败，尝试使用Clipboard API
+              const selection = window.getSelection();
+              if (selection && selection.toString()) {
+                import('@/utils/clipboard').then(({ writeToClipboard }) => {
+                  writeToClipboard(selection.toString(), { showSuccess: false });
+                });
+              }
+            }
           } else {
             // 对于其他元素，复制选中的文本
             const selection = window.getSelection();
@@ -604,15 +632,36 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           // 检查当前焦点元素
           const activeElement = document.activeElement;
 
-          // 只处理Monaco编辑器的粘贴，其他输入框由 inputClipboardHandler 处理
-          if (activeElement && activeElement.closest('.monaco-editor')) {
-            // 如果是Monaco编辑器，触发自定义粘贴事件
-            const pasteEvent = new CustomEvent('monaco-paste', { bubbles: true });
-            activeElement.dispatchEvent(pasteEvent);
-            logger.debug('Monaco编辑器粘贴事件已触发');
+          // 处理CodeMirror编辑器的粘贴，其他输入框由 inputClipboardHandler 处理
+          if (activeElement && (
+            activeElement.closest('.cm-editor') ||
+            activeElement.closest('.cm-content') ||
+            activeElement.closest('.cm6-editor-container')
+          )) {
+            // 如果是CodeMirror编辑器，使用浏览器原生粘贴
+            try {
+              document.execCommand('paste');
+              logger.debug('CodeMirror编辑器粘贴事件已触发');
+            } catch (err) {
+              logger.warn('execCommand paste 失败，尝试使用Clipboard API');
+              // 如果execCommand失败，尝试使用Clipboard API
+              import('@/utils/clipboard').then(({ readFromClipboard }) => {
+                readFromClipboard().then(text => {
+                  if (text) {
+                    // 触发input事件，让CodeMirror处理
+                    const inputEvent = new InputEvent('input', {
+                      data: text,
+                      bubbles: true,
+                      cancelable: true
+                    });
+                    activeElement.dispatchEvent(inputEvent);
+                  }
+                });
+              });
+            }
           } else {
             // 对于其他输入元素，不在这里处理，让 inputClipboardHandler 处理
-            logger.debug('非Monaco编辑器元素，由 inputClipboardHandler 处理粘贴');
+            logger.debug('非CodeMirror编辑器元素，由 inputClipboardHandler 处理粘贴');
             // 触发键盘事件让 inputClipboardHandler 处理
             if (activeElement && (
               activeElement.tagName === 'INPUT' ||

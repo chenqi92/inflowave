@@ -50,6 +50,32 @@ export const useKeyboardShortcuts = (
             const keyboardEvent = event as KeyboardEvent;
             if (!enabled) return;
 
+            // 提前检查：如果是编辑器内的系统快捷键，完全不处理
+            const target = keyboardEvent.target as HTMLElement;
+            const isInputElement = target.tagName === 'INPUT' ||
+                                 target.tagName === 'TEXTAREA' ||
+                                 target.isContentEditable ||
+                                 target.closest('.cm-editor') ||  // CodeMirror 6
+                                 target.closest('.cm-content') ||  // CodeMirror 6 content area
+                                 target.closest('.cm6-editor-container') ||  // CodeMirror 6 container
+                                 target.closest('.CodeMirror') ||  // Legacy CodeMirror
+                                 target.closest('[contenteditable="true"]');
+
+            const isSystemClipboard = (
+                (keyboardEvent.ctrlKey || keyboardEvent.metaKey) &&
+                ['c', 'v', 'x', 'a', 'z', 'y'].includes(keyboardEvent.key.toLowerCase())
+            );
+
+            // 如果是输入元素中的系统快捷键，完全不处理
+            if (isInputElement && isSystemClipboard) {
+                console.log('🔍 [useKeyboardShortcuts] 跳过编辑器内的系统快捷键', {
+                    key: keyboardEvent.key,
+                    ctrl: keyboardEvent.ctrlKey,
+                    meta: keyboardEvent.metaKey,
+                });
+                return;  // 直接返回，不处理任何快捷键
+            }
+
             const currentShortcuts = shortcutsRef.current;
 
             for (const shortcut of currentShortcuts) {
@@ -62,28 +88,6 @@ export const useKeyboardShortcuts = (
                 const metaMatch = !!shortcut.metaKey === !!keyboardEvent.metaKey;
 
                 if (keyMatch && ctrlMatch && shiftMatch && altMatch && metaMatch) {
-                    // 检查是否在输入元素中
-                    const target = keyboardEvent.target as HTMLElement;
-                    const isInputElement = target.tagName === 'INPUT' ||
-                                         target.tagName === 'TEXTAREA' ||
-                                         target.isContentEditable ||
-                                         target.closest('.cm-editor') ||  // CodeMirror 6
-                                         target.closest('.cm-content') ||  // CodeMirror 6 content area
-                                         target.closest('.cm6-editor-container') ||  // CodeMirror 6 container
-                                         target.closest('.CodeMirror') ||  // Legacy CodeMirror
-                                         target.closest('[contenteditable="true"]');
-
-                    // 不要阻止系统级的复制粘贴快捷键，特别是在输入元素中
-                    const isSystemClipboard = (
-                        (keyboardEvent.ctrlKey || keyboardEvent.metaKey) &&
-                        ['c', 'v', 'x', 'a', 'z', 'y'].includes(keyboardEvent.key.toLowerCase())
-                    );
-
-                    // 如果是输入元素中的系统快捷键，完全不处理（跳过此快捷键）
-                    if (isInputElement && isSystemClipboard) {
-                        continue;  // 跳过此快捷键，继续检查下一个
-                    }
-
                     if (!isSystemClipboard) {
                         if (shortcut.preventDefault ?? preventDefault) {
                             keyboardEvent.preventDefault();

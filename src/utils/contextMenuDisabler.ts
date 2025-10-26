@@ -33,7 +33,10 @@ const disableKeyboardShortcuts = (): void => {
     const isEditable = target.isContentEditable ||
                      target.tagName === 'INPUT' ||
                      target.tagName === 'TEXTAREA' ||
-                     target.closest('.monaco-editor') ||
+                     target.closest('.cm-editor') ||  // CodeMirror 6
+                     target.closest('.cm-content') ||  // CodeMirror 6 content area
+                     target.closest('.cm6-editor-container') ||  // CodeMirror 6 container
+                     target.closest('.CodeMirror') ||  // Legacy CodeMirror
                      target.closest('[contenteditable="true"]') ||
                      target.closest('.ProseMirror') ||
                      target.closest('[role="textbox"]');
