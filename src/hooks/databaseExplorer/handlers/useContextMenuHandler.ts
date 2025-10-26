@@ -43,6 +43,7 @@ interface UseContextMenuHandlerProps {
     handleConnectionToggle: (connectionId: string) => Promise<void>;
     handleOpenConnectionDialog: (connection: ConnectionConfig) => void;
     onCreateAndExecuteQuery?: (query: string, database: string, connectionId: string) => void;
+    onCreateDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
     generateQuery: (table: string, connectionId?: string) => string;
     executeTableQuery: (connectionId: string, database: string, table: string) => Promise<void>;
     refreshTree: () => void;
@@ -81,6 +82,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
         handleConnectionToggle,
         handleOpenConnectionDialog,
         onCreateAndExecuteQuery,
+        onCreateDataBrowserTab,
         generateQuery,
         executeTableQuery,
         refreshTree,
@@ -114,6 +116,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
             handleConnectionToggle,
             handleOpenConnectionDialog,
             onCreateAndExecuteQuery,
+            onCreateDataBrowserTab,
             generateQuery,
             executeTableQuery,
             refreshTree,
@@ -143,6 +146,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
         handleConnectionToggle,
         handleOpenConnectionDialog,
         onCreateAndExecuteQuery,
+        onCreateDataBrowserTab,
         generateQuery,
         executeTableQuery,
         refreshTree,

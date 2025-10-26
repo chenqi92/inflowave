@@ -89,7 +89,7 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
   const [timeRange, setTimeRange] = useState<string>('now() - 1h');
   const [customTimeStart, setCustomTimeStart] = useState<string>('');
   const [customTimeEnd, setCustomTimeEnd] = useState<string>('');
-  const [aggregateFunction, setAggregateFunction] = useState<string>('');
+  const [aggregateFunction, setAggregateFunction] = useState<string>('none');
   const [groupByFields, setGroupByFields] = useState<string[]>([]);
   const [groupByTime, setGroupByTime] = useState<string>('');
   const [orderBy, setOrderBy] = useState<string>('time');
@@ -150,8 +150,8 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
 
     // 构建 SELECT 子句
     const selectFields: string[] = [];
-    
-    if (aggregateFunction) {
+
+    if (aggregateFunction && aggregateFunction !== 'none') {
       // 如果有聚合函数，应用到所有选中的字段
       selectedFields.forEach(field => {
         selectFields.push(`${aggregateFunction}("${field}") AS "${field}_${aggregateFunction.toLowerCase()}"`);
@@ -453,7 +453,7 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
                         <div className="grid grid-cols-12 gap-2">
                           <div className="col-span-4">
                             <Select
-                              value={condition.field}
+                              value={condition.field || undefined}
                               onValueChange={(value) =>
                                 updateWhereCondition(condition.id, { field: value })
                               }
@@ -472,13 +472,13 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
                           </div>
                           <div className="col-span-3">
                             <Select
-                              value={condition.operator}
+                              value={condition.operator || undefined}
                               onValueChange={(value) =>
                                 updateWhereCondition(condition.id, { operator: value })
                               }
                             >
                               <SelectTrigger>
-                                <SelectValue />
+                                <SelectValue placeholder="选择操作符" />
                               </SelectTrigger>
                               <SelectContent>
                                 {OPERATORS.map(op => (
@@ -525,7 +525,7 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
                       <SelectValue placeholder="选择聚合函数（可选）" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">无</SelectItem>
+                      <SelectItem value="none">无</SelectItem>
                       {AGGREGATE_FUNCTIONS.map(func => (
                         <SelectItem key={func} value={func}>
                           {func}

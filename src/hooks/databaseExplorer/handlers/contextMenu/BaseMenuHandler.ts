@@ -47,6 +47,7 @@ export interface MenuHandlerDependencies {
   
   // 查询操作
   onCreateAndExecuteQuery?: (query: string, database: string, connectionId: string) => void;
+  onCreateDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
   generateQuery: (table: string, connectionId?: string) => string;
   executeTableQuery: (connectionId: string, database: string, table: string) => Promise<void>;
   refreshTree: () => void;

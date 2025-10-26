@@ -12,6 +12,9 @@ export class TableMenuHandler extends BaseMenuHandler {
 
     switch (action) {
       case 'view_table_data':
+        await this.viewTableData(connectionId, database, table);
+        break;
+
       case 'query_table':
         await this.queryTable(connectionId, database, table);
         break;
@@ -91,7 +94,26 @@ export class TableMenuHandler extends BaseMenuHandler {
   }
 
   /**
-   * 查询表数据
+   * 查看表数据（打开数据浏览器tab）
+   */
+  private async viewTableData(connectionId: string, database: string, table: string): Promise<void> {
+    try {
+      // 调用数据浏览器回调（类似双击表的行为）
+      if (this.deps.onCreateDataBrowserTab) {
+        this.deps.onCreateDataBrowserTab(connectionId, database, table);
+        this.showSuccess('view_table_data', `正在打开表 "${table}" 的数据浏览器`);
+      } else {
+        // 如果没有数据浏览器回调，降级为查询tab
+        await this.generateAndExecuteQuery(connectionId, database, table, 'select');
+        this.showSuccess('view_table_data', `正在查询表 "${table}"`);
+      }
+    } catch (error) {
+      this.showError('view_table_data', error);
+    }
+  }
+
+  /**
+   * 查询表数据（创建查询tab）
    */
   private async queryTable(connectionId: string, database: string, table: string): Promise<void> {
     try {

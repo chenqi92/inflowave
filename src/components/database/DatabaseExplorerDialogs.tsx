@@ -10,6 +10,8 @@ import { ManagementNodeDialog } from '@/components/database/ManagementNodeDialog
 import IoTDBTemplateDialog from '@/components/database/IoTDBTemplateDialog';
 import QueryBuilder from '@/components/query/QueryBuilder';
 import TableListDialog from '@/components/database/TableListDialog';
+import TableStatisticsDialog from '@/components/database/TableStatisticsDialog';
+import DataPreviewDialog from '@/components/database/DataPreviewDialog';
 import type {
     DialogStates,
     DatabaseInfoDialogState,
@@ -247,6 +249,52 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     connectionId={dialogStates.tableList.connectionId}
                     database={dialogStates.tableList.database}
                     tables={dialogStates.tableList.tables}
+                />
+            )}
+
+            {/* 表统计分析对话框 */}
+            {dialogStates.tableStatistics && (
+                <TableStatisticsDialog
+                    open={dialogStates.tableStatistics.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            tableStatistics: {
+                                open: false,
+                                connectionId: '',
+                                database: '',
+                                table: '',
+                                stats: null,
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.tableStatistics.connectionId}
+                    database={dialogStates.tableStatistics.database}
+                    table={dialogStates.tableStatistics.table}
+                    stats={dialogStates.tableStatistics.stats}
+                />
+            )}
+
+            {/* 数据预览对话框 */}
+            {dialogStates.dataPreview && (
+                <DataPreviewDialog
+                    open={dialogStates.dataPreview.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            dataPreview: {
+                                open: false,
+                                connectionId: '',
+                                database: '',
+                                table: '',
+                                data: null,
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.dataPreview.connectionId}
+                    database={dialogStates.dataPreview.database}
+                    table={dialogStates.dataPreview.table}
+                    data={dialogStates.dataPreview.data}
                 />
             )}
         </>
