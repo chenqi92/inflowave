@@ -306,12 +306,15 @@ export function getExpectedTreeLevels(dbType: string): TreeNodeType[] {
 }
 
 /**
- * IoTDB 节点行为配置
+ * 节点行为配置
+ * 定义节点的通用行为规则，适用于所有数据源类型
  */
 export interface NodeBehaviorConfig {
-  canExpand: boolean;           // 是否可以展开
+  canExpand: boolean;           // 是否可以展开（有子节点）
   canQuery: boolean;            // 是否可以查询数据
-  canDoubleClick: boolean;      // 是否支持双击打开查询
+  canDoubleClick: boolean;      // 是否支持双击操作
+  hasActivationState: boolean;  // 是否有打开/关闭状态（如连接、数据库）
+  doubleClickAction: 'activate' | 'toggle' | 'open_tab' | 'none'; // 双击行为类型
   contextMenuType: 'data' | 'management' | 'info' | 'container'; // 右键菜单类型
   description: string;          // 节点描述
 }
@@ -327,7 +330,9 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         return {
           canExpand: true,
           canQuery: false,
-          canDoubleClick: false,
+          canDoubleClick: true,
+          hasActivationState: false,
+          doubleClickAction: 'toggle',
           contextMenuType: 'container',
           description: '函数管理容器，包含用户定义函数列表'
         };
@@ -335,7 +340,9 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         return {
           canExpand: true,
           canQuery: false,
-          canDoubleClick: false,
+          canDoubleClick: true,
+          hasActivationState: false,
+          doubleClickAction: 'toggle',
           contextMenuType: 'container',
           description: '触发器管理容器，包含数据库触发器列表'
         };
@@ -343,7 +350,9 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         return {
           canExpand: true,
           canQuery: false,
-          canDoubleClick: false,
+          canDoubleClick: true,
+          hasActivationState: false,
+          doubleClickAction: 'toggle',
           contextMenuType: 'container',
           description: '模式模板管理容器，包含设备模板列表'
         };
@@ -351,7 +360,9 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         return {
           canExpand: true,
           canQuery: false,
-          canDoubleClick: false,
+          canDoubleClick: true,
+          hasActivationState: false,
+          doubleClickAction: 'toggle',
           contextMenuType: 'container',
           description: '系统信息容器，包含系统状态信息'
         };
@@ -359,7 +370,9 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         return {
           canExpand: true,
           canQuery: false,
-          canDoubleClick: false,
+          canDoubleClick: true,
+          hasActivationState: false,
+          doubleClickAction: 'toggle',
           contextMenuType: 'container',
           description: '版本信息容器，包含软件版本详情'
         };
@@ -367,7 +380,9 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         return {
           canExpand: true,
           canQuery: false,
-          canDoubleClick: false,
+          canDoubleClick: true,
+          hasActivationState: false,
+          doubleClickAction: 'toggle',
           contextMenuType: 'container',
           description: '管理容器节点'
         };
@@ -382,6 +397,8 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         canExpand: true,
         canQuery: true,
         canDoubleClick: true,
+        hasActivationState: true, // 存储组有打开/关闭状态
+        doubleClickAction: 'activate',
         contextMenuType: 'data',
         description: '存储组，包含设备和时间序列数据'
       };
@@ -390,6 +407,8 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         canExpand: true,
         canQuery: true,
         canDoubleClick: true,
+        hasActivationState: false,
+        doubleClickAction: 'toggle', // 设备节点双击展开/收起
         contextMenuType: 'data',
         description: '设备，包含多个时间序列'
       };
@@ -399,6 +418,8 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         canExpand: false,
         canQuery: true,
         canDoubleClick: true,
+        hasActivationState: false,
+        doubleClickAction: 'open_tab', // 时间序列双击打开数据tab
         contextMenuType: 'data',
         description: '时间序列，存储具体的传感器数据'
       };
@@ -409,6 +430,8 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         canExpand: false,
         canQuery: false,
         canDoubleClick: false,
+        hasActivationState: false,
+        doubleClickAction: 'none',
         contextMenuType: 'management',
         description: '用户定义函数，用于数据处理和计算'
       };
@@ -417,6 +440,8 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         canExpand: false,
         canQuery: false,
         canDoubleClick: false,
+        hasActivationState: false,
+        doubleClickAction: 'none',
         contextMenuType: 'management',
         description: '数据库触发器，用于自动化数据处理'
       };
@@ -426,6 +451,8 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         canExpand: false,
         canQuery: false,
         canDoubleClick: false,
+        hasActivationState: false,
+        doubleClickAction: 'none',
         contextMenuType: 'management',
         description: '设备模板，定义设备的时间序列结构'
       };
@@ -442,6 +469,8 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         canExpand: false,
         canQuery: false,
         canDoubleClick: false,
+        hasActivationState: false,
+        doubleClickAction: 'none',
         contextMenuType: 'info',
         description: '系统信息，只读配置或状态数据'
       };
@@ -452,6 +481,8 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         canExpand: false,
         canQuery: false,
         canDoubleClick: false,
+        hasActivationState: false,
+        doubleClickAction: 'none',
         contextMenuType: 'info',
         description: '未知节点类型'
       };
@@ -463,6 +494,86 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
  */
 export function canHaveChildren(nodeType: TreeNodeType, isContainer: boolean = false): boolean {
   return getIoTDBNodeBehavior(nodeType, isContainer).canExpand;
+}
+
+/**
+ * 获取通用节点行为配置
+ * 适用于所有数据源类型（InfluxDB、IoTDB等）
+ */
+export function getNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = false): NodeBehaviorConfig {
+  const normalized = normalizeNodeType(nodeType);
+
+  // 有打开/关闭状态的节点（连接、数据库）
+  if (normalized === 'connection') {
+    return {
+      canExpand: true,
+      canQuery: false,
+      canDoubleClick: true,
+      hasActivationState: true,
+      doubleClickAction: 'activate', // 关闭时打开，打开时展开/收起
+      contextMenuType: 'management',
+      description: '数据源连接节点'
+    };
+  }
+
+  if (normalized === 'database' || normalized === 'system_database' ||
+      normalized === 'bucket' || normalized === 'system_bucket' ||
+      normalized === 'database3x' || normalized === 'storage_group') {
+    return {
+      canExpand: true,
+      canQuery: false,
+      canDoubleClick: true,
+      hasActivationState: true,
+      doubleClickAction: 'activate', // 关闭时打开，打开时展开/收起
+      contextMenuType: 'management',
+      description: '数据库节点'
+    };
+  }
+
+  // 需要打开数据查询tab的节点（measurement、table、timeseries）
+  if (normalized === 'measurement' || normalized === 'table' ||
+      normalized === 'timeseries' || normalized === 'aligned_timeseries') {
+    return {
+      canExpand: true, // measurement可能有tags/fields子节点
+      canQuery: true,
+      canDoubleClick: true,
+      hasActivationState: false,
+      doubleClickAction: 'open_tab', // 双击打开数据tab
+      contextMenuType: 'data',
+      description: '数据表/测量节点'
+    };
+  }
+
+  // 普通容器节点（tag_group、field_group、device等）
+  if (normalized === 'tag_group' || normalized === 'field_group' ||
+      normalized === 'device' || normalized === 'retention_policy' ||
+      normalized === 'organization' || isContainer) {
+    return {
+      canExpand: true,
+      canQuery: false,
+      canDoubleClick: true,
+      hasActivationState: false,
+      doubleClickAction: 'toggle', // 双击展开/收起
+      contextMenuType: 'container',
+      description: '容器节点'
+    };
+  }
+
+  // 叶子节点（tag、field等）
+  if (normalized === 'tag' || normalized === 'field') {
+    return {
+      canExpand: false,
+      canQuery: false,
+      canDoubleClick: true,
+      hasActivationState: false,
+      doubleClickAction: 'none', // 可能打开详情对话框
+      contextMenuType: 'info',
+      description: '叶子节点'
+    };
+  }
+
+  // 对于IoTDB特定节点，使用原有的配置
+  return getIoTDBNodeBehavior(nodeType, isContainer);
 }
 
 /**

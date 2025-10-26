@@ -2,7 +2,7 @@ import React from 'react';
 import type { ItemInstance } from '@headless-tree/core';
 import { ChevronRight, ChevronDown, Loader2, Shield } from 'lucide-react';
 import { DatabaseIcon } from '@/components/common/DatabaseIcon';
-import { TreeNodeType, normalizeNodeType, getIoTDBNodeBehavior } from '@/types/tree';
+import { TreeNodeType, normalizeNodeType, getIoTDBNodeBehavior, getNodeBehavior } from '@/types/tree';
 import { cn } from '@/lib/utils';
 import {
   useTreeStatusStore,
@@ -203,7 +203,11 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   // 获取节点元数据
   const isContainer = data.metadata?.is_container === true;
   const normalizedNodeType = normalizeNodeType(data.nodeType) as TreeNodeType;
-  const behaviorConfig = getIoTDBNodeBehavior(normalizedNodeType, isContainer);
+
+  // 使用通用的节点行为配置
+  const behaviorConfig = React.useMemo(() => {
+    return getNodeBehavior(normalizedNodeType, isContainer);
+  }, [normalizedNodeType, isContainer]);
 
   // 调试日志：数据库节点的状态（仅在开发环境且状态变化时输出）
   // 注释掉以减少日志输出，需要时可以取消注释
@@ -217,26 +221,30 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   // }
 
   // 判断是否显示展开箭头
-  // children === undefined: 未加载，可能有子节点
-  // children.length > 0: 已加载且有子节点，显示箭头
-  // children.length === 0: 已加载但为空，不显示箭头
-  // isLoading: 正在加载时，总是显示箭头（用于显示 loading 图标）
+  // 规则：
+  // 1. 有打开/关闭状态的节点（连接、数据库）：关闭时不显示箭头，打开时才显示
+  // 2. 其他节点：根据是否有子节点决定
+  // 3. isLoading时总是显示箭头（用于显示loading图标）
   let hasChildren = false;
-  if (normalizedNodeType === 'connection') {
-    // 连接节点：
-    // 1. 正在加载时，总是显示箭头（用于显示 loading 图标）
-    // 2. 已连接且（未加载或有子节点）时，显示箭头
-    hasChildren = isLoading || (isConnected && (data.children === undefined || (data.children && data.children.length > 0)));
-  } else if (normalizedNodeType === 'database' || normalizedNodeType === 'system_database') {
-    // 数据库节点：
-    // 1. 正在加载时，总是显示箭头（用于显示 loading 图标）
-    // 2. 未加载(undefined)或有子节点时，显示箭头
-    hasChildren = isLoading || data.children === undefined || !!(data.children && data.children.length > 0);
+
+  if (behaviorConfig.hasActivationState) {
+    // 有打开/关闭状态的节点（连接、数据库）
+    if (normalizedNodeType === 'connection') {
+      // 连接节点：只有已连接时才显示箭头
+      hasChildren = isLoading || (isConnected && (data.children === undefined || (data.children && data.children.length > 0)));
+    } else {
+      // 数据库节点：只有已激活时才显示箭头
+      hasChildren = isLoading || (isActivated && (data.children === undefined || (data.children && data.children.length > 0)));
+    }
   } else {
-    // 其他节点：
-    // 1. 正在加载时，总是显示箭头（用于显示 loading 图标）
-    // 2. 未加载(undefined)或有子节点时，显示箭头
-    hasChildren = isLoading || data.children === undefined || !!(data.children && data.children.length > 0);
+    // 没有打开/关闭状态的节点：根据是否有子节点决定
+    // 如果节点配置为可展开，则显示箭头
+    if (behaviorConfig.canExpand) {
+      hasChildren = isLoading || data.children === undefined || !!(data.children && data.children.length > 0);
+    } else {
+      // 不可展开的节点不显示箭头
+      hasChildren = false;
+    }
   }
 
   // 添加调试日志：hasChildren 计算结果

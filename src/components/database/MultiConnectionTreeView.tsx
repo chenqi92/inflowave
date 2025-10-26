@@ -30,8 +30,9 @@ import { Button } from '@/components/ui/button';
 import { TreeNodeRenderer, TreeNodeData } from './TreeNodeRenderer';
 import { TreeDataLoader } from './TreeDataLoader';
 import { UnifiedContextMenu } from './UnifiedContextMenu';
-import { TreeNodeType } from '@/types/tree';
+import { TreeNodeType, getNodeBehavior, normalizeNodeType } from '@/types/tree';
 import useResizeObserver from 'use-resize-observer';
+import { useTabStore } from '@/stores/tabStore';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { logger } from '@/utils/logger';
 
@@ -1208,6 +1209,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     });
   }, [tree]);
 
+  // 获取tab store的方法
+  const { tabs, setActiveKey } = useTabStore();
+  const { createDataBrowserTab } = useTabStore.getState();
+
   // 处理节点双击
   const handleNodeDoubleClick = useCallback(async (nodeData: TreeNodeData, item: ItemInstance<TreeNodeData>) => {
     const now = Date.now();
@@ -1219,6 +1224,11 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     item.select();
 
     const nodeType = nodeData.nodeType;
+    const normalized = normalizeNodeType(nodeType);
+    const isContainer = nodeData.metadata?.is_container === true;
+    const behaviorConfig = getNodeBehavior(normalized, isContainer);
+
+    logger.debug(`节点行为配置:`, behaviorConfig);
 
     // 🔧 防止重复触发：检查节点是否正在 loading
     // 1. 对于连接节点，检查 connectionStatus 是否为 'connecting'
@@ -1257,139 +1267,132 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     lastActivateTimeRef.current = now;
     lastActivateNodeRef.current = nodeId;
 
-    // measurement/table 节点：双击时打开数据 tab，不展开节点
-    if (nodeType === 'measurement' || nodeType === 'table') {
-      logger.debug(`双击表节点，打开数据浏览器: ${nodeType}`);
-      onNodeActivate?.(nodeData);
-      return;
-    }
+    // 根据节点行为配置决定双击行为
+    switch (behaviorConfig.doubleClickAction) {
+      case 'open_tab': {
+        // 打开数据查询tab（measurement、table、timeseries等）
+        logger.debug(`双击节点，打开数据浏览器: ${nodeType}`);
 
-    // 容器节点（需要展开/收起的节点）
-    if (nodeType === 'connection' ||
-        nodeType === 'database' ||
-        nodeType === 'system_database' ||
-        nodeType === 'bucket' ||
-        nodeType === 'system_bucket' ||
-        nodeType === 'database3x' ||
-        nodeType === 'storage_group' ||
-        nodeType === 'device') {
-
-      // 特殊处理：连接节点
-      if (nodeType === 'connection') {
         const connectionId = nodeData.metadata?.connectionId || '';
-        // 🔧 使用 connectionStatuses 获取最新的连接状态，而不是 nodeData.isConnected
-        // 因为 nodeData.isConnected 可能没有及时更新
-        const status = connectionStatuses?.get(connectionId);
-        const isConnected = status === 'connected';
+        const database = nodeData.metadata?.database || nodeData.metadata?.databaseName || '';
+        const tableName = nodeData.metadata?.table || nodeData.metadata?.tableName || nodeData.name;
 
-        // 添加调试日志
-        logger.debug(`[双击连接节点] connectionId: ${connectionId}, status: ${status}, isConnected: ${isConnected}, nodeData.isConnected: ${nodeData.isConnected}`);
+        // 检查是否已存在该表的tab
+        const existingTab = tabs.find(tab =>
+          tab.type === 'data-browser' &&
+          tab.connectionId === connectionId &&
+          tab.database === database &&
+          tab.tableName === tableName
+        );
 
-        // 如果有错误状态，允许重新尝试连接
-        if (hasError) {
-          logger.debug(`双击有错误的连接节点，重新尝试连接: ${nodeType}`);
-          await handleToggle(item.getId());
-          return;
-        }
-
-        // 如果未连接，先建立连接
-        if (!isConnected) {
-          logger.debug(`双击未连接的连接节点，建立连接: ${nodeType}`);
-          await handleToggle(item.getId());
-          return;
-        }
-
-        // 如果已连接且已加载子节点，只切换自己的展开/收起状态
-        // 不递归收起子节点，保持子节点的展开状态
-        if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
-          logger.debug(`双击已连接且已加载的连接节点，切换展开/收起: ${nodeType}, isExpanded: ${item.isExpanded()}, expandedNodeIds:`, expandedNodeIds);
-          if (item.isExpanded()) {
-            logger.debug(`收起连接节点（不影响子节点状态）: ${nodeId}`);
-            item.collapse();
-            // 🔧 添加日志验证 collapse 是否生效
-            setTimeout(() => {
-              logger.debug(`[验证] collapse 后 isExpanded: ${item.isExpanded()}, expandedNodeIds:`, expandedNodeIds);
-            }, 100);
-          } else {
-            logger.debug(`展开连接节点: ${nodeId}`);
-            item.expand();
-            // 🔧 添加日志验证 expand 是否生效
-            setTimeout(() => {
-              logger.debug(`[验证] expand 后 isExpanded: ${item.isExpanded()}, expandedNodeIds:`, expandedNodeIds);
-            }, 100);
-          }
-          return;
-        }
-      }
-
-      // 🔧 特殊处理：数据库节点（优先处理，避免被通用逻辑拦截）
-      if (nodeType === 'database' || nodeType === 'system_database') {
-        // 使用 isDatabaseOpened 函数检查数据库是否已打开
-        const connectionId = nodeData.metadata?.connectionId || '';
-        const database = nodeData.name;
-        const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, database) : false;
-
-        logger.debug(`[双击数据库] nodeId: ${nodeId}, isActivated: ${isActivated}`);
-
-        // 如果数据库未打开，双击应该打开数据库
-        if (!isActivated) {
-          logger.debug(`[打开数据库] 双击未打开的数据库节点: ${nodeData.name}`);
-          // 标记此节点需要在打开后自动展开
-          nodesToAutoExpandRef.current.add(nodeId);
-          logger.debug(`[打开数据库] 标记节点 ${nodeId} 需要自动展开`);
-          // 通知父组件打开数据库（通过 onNodeActivate）
+        if (existingTab) {
+          // 如果tab已存在，切换到该tab并刷新
+          logger.debug(`Tab已存在，切换到该tab: ${existingTab.id}`);
+          setActiveKey(existingTab.id);
+          // TODO: 触发tab刷新逻辑
+        } else {
+          // 创建新的数据浏览tab
+          logger.debug(`创建新的数据浏览tab: ${tableName}`);
           onNodeActivate?.(nodeData);
+        }
+        return;
+      }
+
+      case 'activate': {
+        // 有打开/关闭状态的节点（连接、数据库）
+        const connectionId = nodeData.metadata?.connectionId || '';
+
+        if (normalized === 'connection') {
+          // 连接节点
+          const status = connectionStatuses?.get(connectionId);
+          const isConnected = status === 'connected';
+
+          logger.debug(`[双击连接节点] connectionId: ${connectionId}, status: ${status}, isConnected: ${isConnected}`);
+
+          // 如果有错误或未连接，先建立连接
+          if (hasError || !isConnected) {
+            logger.debug(`双击未连接的连接节点，建立连接`);
+            await handleToggle(item.getId());
+            return;
+          }
+
+          // 如果已连接，切换展开/收起
+          if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
+            logger.debug(`双击已连接的连接节点，切换展开/收起`);
+            if (item.isExpanded()) {
+              item.collapse();
+            } else {
+              item.expand();
+            }
+            return;
+          }
+        } else {
+          // 数据库节点
+          const database = nodeData.name;
+          const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, database) : false;
+
+          logger.debug(`[双击数据库] nodeId: ${nodeId}, isActivated: ${isActivated}`);
+
+          // 如果数据库未打开，打开数据库
+          if (!isActivated) {
+            logger.debug(`[打开数据库] 双击未打开的数据库节点: ${database}`);
+            nodesToAutoExpandRef.current.add(nodeId);
+            onNodeActivate?.(nodeData);
+            return;
+          }
+
+          // 如果数据库已打开，切换展开/收起
+          if (item.isExpanded()) {
+            logger.debug(`收起数据库节点: ${nodeId}`);
+            setExpandedNodeIds(prev => prev.filter(id => id !== nodeId));
+          } else {
+            // 如果子节点未加载，先加载再展开
+            if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
+              logger.debug(`子节点未加载，触发加载: ${nodeId}`);
+              await handleToggle(item.getId());
+            } else {
+              logger.debug(`子节点已加载，直接展开: ${nodeId}`);
+              setExpandedNodeIds(prev => prev.includes(nodeId) ? prev : [...prev, nodeId]);
+            }
+          }
           return;
         }
+        break;
+      }
 
-        // 如果数据库已打开，双击只切换展开/收起
-        logger.debug(`双击已打开的数据库节点，切换展开/收起: ${nodeType}`);
-        if (item.isExpanded()) {
-          // 只收起当前节点，不影响子节点的展开状态
-          logger.debug(`收起数据库节点（不影响子节点状态）: ${nodeId}`);
-          // 🔧 手动更新 expandedNodeIds，因为 item.collapse() 可能不会触发状态更新
-          setExpandedNodeIds(prev => prev.filter(id => id !== nodeId));
-        } else {
-          // 如果子节点未加载，先加载再展开
-          if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
-            logger.debug(`[打开数据库] 子节点未加载，触发加载: ${nodeId}`);
-            await handleToggle(item.getId());
+      case 'toggle': {
+        // 普通容器节点（tag_group、field_group、device等）
+        logger.debug(`双击容器节点，切换展开/收起: ${nodeType}`);
+
+        const hasChildren = nodeData.children !== undefined;
+        const inCache = loadedNodesRef.current.has(nodeId);
+
+        if (hasChildren || inCache) {
+          // 已加载子节点，直接切换展开/收起
+          if (item.isExpanded()) {
+            logger.debug(`收起容器节点: ${nodeId}`);
+            item.collapse();
           } else {
-            logger.debug(`[打开数据库] 子节点已加载，直接展开: ${nodeId}`);
-            // 🔧 手动更新 expandedNodeIds，确保节点展开
-            setExpandedNodeIds(prev => prev.includes(nodeId) ? prev : [...prev, nodeId]);
+            logger.debug(`展开容器节点: ${nodeId}`);
+            item.expand();
           }
-        }
-        return;
-      }
-
-      // 其他容器节点：先检查是否已加载子节点
-      const hasChildren = nodeData.children !== undefined;
-      const inCache = loadedNodesRef.current.has(nodeId);
-      logger.debug(`[双击检查] nodeId: ${nodeId}, hasChildren: ${hasChildren}, inCache: ${inCache}, children:`, nodeData.children);
-
-      if (hasChildren || inCache) {
-        logger.debug(`双击已加载的容器节点，切换展开/收起: ${nodeType}`);
-        if (item.isExpanded()) {
-          // 只收起当前节点，不影响子节点的展开状态
-          logger.debug(`收起容器节点（不影响子节点状态）: ${nodeId}`);
-          item.collapse();
         } else {
-          item.expand();
+          // 未加载子节点，先加载再展开
+          logger.debug(`加载子节点: ${nodeId}`);
+          await handleToggle(item.getId());
         }
         return;
       }
 
-      // 如果节点未加载子节点（children === undefined 且不在缓存中），调用 handleToggle 加载数据
-      logger.debug(`双击容器节点，加载子节点: ${nodeType}`);
-      await handleToggle(item.getId());
-      return;
+      case 'none':
+      default: {
+        // 其他节点：通知父组件（可能打开详情对话框等）
+        logger.debug(`双击节点，通知父组件: ${nodeType}`);
+        onNodeActivate?.(nodeData);
+        return;
+      }
     }
-
-    // 其他叶子节点：通知父组件
-    logger.debug(`双击叶子节点，通知父组件: ${nodeType}`);
-    onNodeActivate?.(nodeData);
-  }, [onNodeActivate, handleToggle, isDatabaseOpened, collapseNodeRecursively, nodeLoadingStates, connectionStatuses, databaseLoadingStates]);
+  }, [onNodeActivate, handleToggle, isDatabaseOpened, nodeLoadingStates, connectionStatuses, databaseLoadingStates, tabs, setActiveKey]);
 
   // 处理右键菜单
   const handleContextMenu = useCallback((item: ItemInstance<TreeNodeData>, event: React.MouseEvent) => {
