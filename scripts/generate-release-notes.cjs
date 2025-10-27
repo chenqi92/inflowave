@@ -16,18 +16,19 @@
  * 
  * Features:
  *   - 自动读取 src-tauri/tauri.conf.json 中的版本号
- *   - 查找对应版本的 docs/release-notes/{version}.md 文件
- *   - 如果没有找到版本文件，使用 docs/release-notes/default.md 作为通用模板
+ *   - 查找对应版本的 docs/release-notes/v{version}.md 文件（优先）
+ *   - 如果没有找到，尝试查找 docs/release-notes/{version}.md 文件（向后兼容）
+ *   - 如果仍未找到版本文件，使用 docs/release-notes/default.md 作为通用模板
  *   - 如果通用模板也不存在，则使用硬编码的默认内容
  *   - 根据构建类型(release/development)生成不同的下载说明
  *   - 支持输出到文件或控制台
- * 
+ *
  * Directory Structure:
  *   docs/
  *   └── release-notes/
- *       ├── 0.1.1.md          # 版本特定的发布说明
- *       ├── 0.1.2.md          # 版本特定的发布说明
- *       ├── 0.1.3.md          # 版本特定的发布说明
+ *       ├── v0.7.9.md         # 版本特定的发布说明（推荐格式，带 v 前缀）
+ *       ├── v0.7.7.md         # 版本特定的发布说明
+ *       ├── 0.1.1.md          # 版本特定的发布说明（旧格式，向后兼容）
  *       ├── default.md        # 通用回退模板
  *       ├── TEMPLATE.md       # 编写模板参考
  *       └── README.md         # 说明文档
@@ -58,13 +59,22 @@ function getCurrentVersion() {
  * 读取版本对应的release notes文件
  */
 function loadReleaseNotes(version) {
-  const notesPath = path.join('docs', 'release-notes', `${version}.md`);
-  
-  if (fs.existsSync(notesPath)) {
-    console.log(`📝 Found release notes file: ${notesPath}`);
-    return fs.readFileSync(notesPath, 'utf8');
+  // 首先尝试查找带 v 前缀的版本文件 (例如 v0.7.9.md)
+  const versionWithPrefix = path.join('docs', 'release-notes', `v${version}.md`);
+
+  if (fs.existsSync(versionWithPrefix)) {
+    console.log(`📝 Found release notes file: ${versionWithPrefix}`);
+    return fs.readFileSync(versionWithPrefix, 'utf8');
   }
-  
+
+  // 尝试查找不带 v 前缀的版本文件 (例如 0.7.9.md) - 向后兼容
+  const versionWithoutPrefix = path.join('docs', 'release-notes', `${version}.md`);
+
+  if (fs.existsSync(versionWithoutPrefix)) {
+    console.log(`📝 Found release notes file: ${versionWithoutPrefix}`);
+    return fs.readFileSync(versionWithoutPrefix, 'utf8');
+  }
+
   // 尝试读取通用默认文档
   const defaultPath = path.join('docs', 'release-notes', 'default.md');
   if (fs.existsSync(defaultPath)) {
@@ -73,7 +83,7 @@ function loadReleaseNotes(version) {
     // 替换版本占位符
     return defaultContent.replace(/{VERSION}/g, version);
   }
-  
+
   console.log(`⚠️ No release notes file found for version ${version} and no default.md exists`);
   return null;
 }
