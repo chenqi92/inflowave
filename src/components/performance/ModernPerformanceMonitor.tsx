@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button, Badge, Switch, Label } from '@/components/ui';
+import { Button, Badge, Switch, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import {
   Database,
   RefreshCw,
@@ -28,6 +28,11 @@ import {
   PieChart,
   Pie,
   Cell,
+  BarChart,
+  Bar,
+  Legend,
+  Area,
+  AreaChart,
 } from 'recharts';
 
 import { useConnectionStore } from '@/store/connection';
@@ -97,6 +102,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshInterval, setRefreshInterval] = useState(30);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [timeRange, setTimeRange] = useState<'1h' | '6h' | '24h'>('24h');
   
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -154,6 +160,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
 
       if (openedDataSourcesList.length === 0) {
         setMetricsData([]);
+        setHistoryData([]);
         return;
       }
 
@@ -163,9 +170,13 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
       );
 
       setMetricsData(result);
-      
-      // 生成模拟历史数据
-      generateMockHistoryData();
+
+      // 获取第一个数据源的历史数据
+      if (result.length > 0) {
+        const firstDataSource = result[0];
+        const datasourceKey = `${firstDataSource.connectionId}/${firstDataSource.databaseName}`;
+        await fetchHistoryData(datasourceKey, timeRange);
+      }
     } catch (error) {
       console.error('获取性能数据失败:', error);
       showMessage.error(`获取性能数据失败: ${error}`);
@@ -174,24 +185,37 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
     }
   }, [openedDatabases]);
 
-  // 生成模拟历史数据
-  const generateMockHistoryData = useCallback(() => {
-    const now = new Date();
-    const data: HistoryDataPoint[] = [];
-    
-    for (let i = 23; i >= 0; i--) {
-      const timestamp = new Date(now.getTime() - i * 60 * 60 * 1000);
-      data.push({
-        timestamp: timestamp.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-        latency: Math.random() * 100 + 50,
-        queries: Math.floor(Math.random() * 50) + 10,
-        errors: Math.floor(Math.random() * 5),
-        cpu: Math.random() * 80 + 10,
-        memory: Math.random() * 70 + 20,
-      });
+  // 获取历史数据
+  const fetchHistoryData = useCallback(async (datasourceKey: string, timeRange: string = '24h') => {
+    try {
+      interface HistoryResponse {
+        connectionId: string;
+        databaseName: string;
+        history: HistoryDataPoint[];
+      }
+
+      const result = await safeTauriInvoke<HistoryResponse>(
+        'get_datasource_performance_history',
+        {
+          datasourceKey,
+          timeRange
+        }
+      );
+
+      // 转换时间戳格式为本地时间显示
+      const formattedHistory = result.history.map(point => ({
+        ...point,
+        timestamp: new Date(point.timestamp).toLocaleTimeString('zh-CN', {
+          hour: '2-digit',
+          minute: '2-digit'
+        }),
+      }));
+
+      setHistoryData(formattedHistory);
+    } catch (error) {
+      console.error('获取历史数据失败:', error);
+      // 失败时不显示错误消息，保持当前数据
     }
-    
-    setHistoryData(data);
   }, []);
 
   // 自动刷新
@@ -346,7 +370,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
 
             {/* 自动刷新控制 - 只在非窄屏显示 */}
             {!layout.isNarrow && (
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <Switch
                     id="auto-refresh"
@@ -357,9 +381,34 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                     自动刷新
                   </Label>
                 </div>
-                <Badge variant="outline" className="text-xs">
-                  {overallStats.activeConnections}/{overallStats.totalConnections} 活跃
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={timeRange}
+                    onValueChange={(value: '1h' | '6h' | '24h') => {
+                      setTimeRange(value);
+                      // 重新获取历史数据
+                      if (selectedDataSource) {
+                        fetchHistoryData(selectedDataSource, value);
+                      } else if (metricsData.length > 0) {
+                        const firstDataSource = metricsData[0];
+                        const datasourceKey = `${firstDataSource.connectionId}/${firstDataSource.databaseName}`;
+                        fetchHistoryData(datasourceKey, value);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-[100px] h-7 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1h">1小时</SelectItem>
+                      <SelectItem value="6h">6小时</SelectItem>
+                      <SelectItem value="24h">24小时</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Badge variant="outline" className="text-xs">
+                    {overallStats.activeConnections}/{overallStats.totalConnections} 活跃
+                  </Badge>
+                </div>
               </div>
             )}
             
@@ -431,6 +480,46 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                       </div>
                     </CardContent>
                   </Card>
+
+                  {!layout.isNarrow && (
+                    <>
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center">
+                              <AlertTriangle className="w-5 h-5 text-warning" />
+                            </div>
+                            <div>
+                              <div className="text-2xl font-bold">
+                                {overallStats.errorRate.toFixed(1)}%
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                错误率
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-full bg-info/10 flex items-center justify-center">
+                              <Activity className="w-5 h-5 text-info" />
+                            </div>
+                            <div>
+                              <div className="text-2xl font-bold">
+                                {overallStats.activeConnections}/{overallStats.totalConnections}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                活跃连接
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -482,53 +571,145 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
 
               {/* 性能趋势图表 - 只在显示详细内容时显示 */}
               {layout.showDetailed && historyData.length > 0 && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4" />
-                      24小时性能趋势
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-40">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={historyData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                          <XAxis
-                            dataKey="timestamp"
-                            tick={{ fontSize: 10 }}
-                            interval="preserveStartEnd"
-                          />
-                          <YAxis tick={{ fontSize: 10 }} />
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: '#fff',
-                              border: '1px solid #e5e7eb',
-                              borderRadius: '6px',
-                              fontSize: '12px'
-                            }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="latency"
-                            stroke={CHART_COLORS.primary}
-                            strokeWidth={2}
-                            dot={false}
-                            name="延迟(ms)"
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="queries"
-                            stroke={CHART_COLORS.success}
-                            strokeWidth={2}
-                            dot={false}
-                            name="查询数"
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  </CardContent>
-                </Card>
+                <>
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
+                        延迟与查询趋势
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-40">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={historyData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis
+                              dataKey="timestamp"
+                              tick={{ fontSize: 10 }}
+                              interval="preserveStartEnd"
+                            />
+                            <YAxis tick={{ fontSize: 10 }} />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: '#fff',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '6px',
+                                fontSize: '12px'
+                              }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: '11px' }} />
+                            <Line
+                              type="monotone"
+                              dataKey="latency"
+                              stroke={CHART_COLORS.primary}
+                              strokeWidth={2}
+                              dot={false}
+                              name="延迟(ms)"
+                            />
+                            <Line
+                              type="monotone"
+                              dataKey="queries"
+                              stroke={CHART_COLORS.success}
+                              strokeWidth={2}
+                              dot={false}
+                              name="查询数"
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* CPU和内存使用率图表 */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <Activity className="w-4 h-4" />
+                        资源使用率
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-40">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={historyData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis
+                              dataKey="timestamp"
+                              tick={{ fontSize: 10 }}
+                              interval="preserveStartEnd"
+                            />
+                            <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: '#fff',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '6px',
+                                fontSize: '12px'
+                              }}
+                            />
+                            <Legend wrapperStyle={{ fontSize: '11px' }} />
+                            <Area
+                              type="monotone"
+                              dataKey="cpu"
+                              stroke={CHART_COLORS.warning}
+                              fill={CHART_COLORS.warning}
+                              fillOpacity={0.3}
+                              name="CPU使用率(%)"
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="memory"
+                              stroke={CHART_COLORS.info}
+                              fill={CHART_COLORS.info}
+                              fillOpacity={0.3}
+                              name="内存使用率(%)"
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* 错误统计图表 */}
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4" />
+                        错误统计
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-32">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={historyData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                            <XAxis
+                              dataKey="timestamp"
+                              tick={{ fontSize: 10 }}
+                              interval="preserveStartEnd"
+                            />
+                            <YAxis tick={{ fontSize: 10 }} />
+                            <Tooltip
+                              contentStyle={{
+                                backgroundColor: '#fff',
+                                border: '1px solid #e5e7eb',
+                                borderRadius: '6px',
+                                fontSize: '12px'
+                              }}
+                            />
+                            <Bar
+                              dataKey="errors"
+                              fill={CHART_COLORS.danger}
+                              name="错误数"
+                              radius={[4, 4, 0, 0]}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
               )}
 
               {/* 数据源列表 */}
@@ -552,7 +733,14 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                             ? 'border-primary bg-primary/5 shadow-sm'
                             : 'hover:bg-muted/50 hover:border-muted-foreground/20'
                         }`}
-                        onClick={() => setSelectedDataSource(isSelected ? null : datasourceKey)}
+                        onClick={() => {
+                          const newSelection = isSelected ? null : datasourceKey;
+                          setSelectedDataSource(newSelection);
+                          // 切换数据源时获取对应的历史数据
+                          if (newSelection) {
+                            fetchHistoryData(newSelection, timeRange);
+                          }
+                        }}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">

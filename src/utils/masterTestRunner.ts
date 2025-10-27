@@ -239,16 +239,18 @@ class MasterTestRunner {
           if (typeof window !== 'undefined' && (window as any).__TAURI__) {
             // Tauri 环境：使用原生文件保存对话框
             const { safeTauriInvoke } = await import('@/utils/tauri');
-            
+
             const filename = `inflowave-test-report-${Date.now()}.json`;
-            const dialogResult = await safeTauriInvoke<{ path?: string } | null>(
-              'show_save_dialog',
+            const dialogResult = await safeTauriInvoke<{ path?: string; name?: string } | null>(
+              'save_file_dialog',
               {
-                defaultFilename: filename,
-                filters: [{
-                  name: 'JSON 文件',
-                  extensions: ['json']
-                }]
+                params: {
+                  defaultPath: filename,
+                  filters: [{
+                    name: 'JSON 文件',
+                    extensions: ['json']
+                  }]
+                }
               }
             );
 

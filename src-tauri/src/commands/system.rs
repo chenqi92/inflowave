@@ -4,7 +4,12 @@ use tauri::{State, Manager, AppHandle};
 use log::{debug, error, info, warn};
 use tauri::Emitter;
 use std::path::{Path, PathBuf};
-use anyhow::Error;
+use lazy_static::lazy_static;
+
+// 全局应用启动时间
+lazy_static! {
+    static ref APP_START_TIME: std::time::Instant = std::time::Instant::now();
+}
 
 /// 获取系统信息
 #[tauri::command]
@@ -26,58 +31,112 @@ pub async fn get_system_info() -> Result<SystemInfo, String> {
 
 /// 获取应用运行时间
 fn get_uptime() -> String {
-    // 简单实现，返回固定值
-    // 在实际应用中，应该记录应用启动时间
-    "运行中".to_string()
+    let elapsed = APP_START_TIME.elapsed();
+    let total_seconds = elapsed.as_secs();
+
+    let days = total_seconds / 86400;
+    let hours = (total_seconds % 86400) / 3600;
+    let minutes = (total_seconds % 3600) / 60;
+    let seconds = total_seconds % 60;
+
+    if days > 0 {
+        format!("{}天 {}小时 {}分钟", days, hours, minutes)
+    } else if hours > 0 {
+        format!("{}小时 {}分钟", hours, minutes)
+    } else if minutes > 0 {
+        format!("{}分钟 {}秒", minutes, seconds)
+    } else {
+        format!("{}秒", seconds)
+    }
 }
 
 /// 获取内存使用情况
 fn get_memory_usage() -> u64 {
-    // 简单实现，返回固定值
-    // 在实际应用中，可以使用 sysinfo 等库获取真实内存使用情况
-    0
+    use sysinfo::{System, SystemExt};
+
+    let mut sys = System::new_all();
+    sys.refresh_memory();
+    sys.used_memory()
 }
 
 /// 获取 CPU 使用率
 fn get_cpu_usage() -> f64 {
-    // 简单实现，返回固定值
-    // 在实际应用中，可以使用 sysinfo 等库获取真实 CPU 使用率
-    0.0
+    use sysinfo::{System, SystemExt, CpuExt};
+
+    let mut sys = System::new_all();
+    sys.refresh_cpu();
+
+    // 等待一小段时间以获取准确的 CPU 使用率
+    std::thread::sleep(std::time::Duration::from_millis(200));
+    sys.refresh_cpu();
+
+    // 计算所有 CPU 核心的平均使用率
+    let cpus = sys.cpus();
+    if cpus.is_empty() {
+        return 0.0;
+    }
+
+    let total_usage: f32 = cpus.iter().map(|cpu| cpu.cpu_usage()).sum();
+    (total_usage / cpus.len() as f32) as f64
 }
 
 /// 获取磁盘使用情况
 fn get_disk_usage() -> DiskUsage {
-    // 简单实现，返回默认值
-    // 在实际应用中，可以使用 sysinfo 等库获取真实磁盘使用情况
+    use sysinfo::{System, SystemExt, DiskExt};
+
+    let mut sys = System::new_all();
+    sys.refresh_disks_list();
+    sys.refresh_disks();
+
+    let mut total = 0u64;
+    let mut used = 0u64;
+
+    for disk in sys.disks() {
+        total += disk.total_space();
+        used += disk.total_space() - disk.available_space();
+    }
+
+    let free = total.saturating_sub(used);
+    let usage_percent = if total > 0 {
+        (used as f64 / total as f64) * 100.0
+    } else {
+        0.0
+    };
+
     DiskUsage {
-        total: 0,
-        used: 0,
-        free: 0,
-        usage_percent: 0.0,
+        total,
+        used,
+        free,
+        usage_percent,
     }
 }
 
 /// 获取网络统计信息
 fn get_network_stats() -> NetworkStats {
-    // 简单实现，返回默认值
-    // 在实际应用中，可以使用 sysinfo 等库获取真实网络统计信息
-    NetworkStats {
-        bytes_sent: 0,
-        bytes_received: 0,
-        packets_sent: 0,
-        packets_received: 0,
-    }
-}
+    use sysinfo::{System, SystemExt, NetworkExt};
 
-/// 获取序列数量
-#[allow(dead_code)]
-async fn get_series_count(
-    client: &crate::database::client::InfluxClient,
-    database: &str,
-) -> Result<u64, Error> {
-    let query = format!("SHOW SERIES ON \"{}\"", database);
-    let result = client.execute_query(&query).await?;
-    Ok(result.row_count.unwrap_or(0) as u64)
+    let mut sys = System::new_all();
+    sys.refresh_networks_list();
+    sys.refresh_networks();
+
+    let mut bytes_sent = 0u64;
+    let mut bytes_received = 0u64;
+    let mut packets_sent = 0u64;
+    let mut packets_received = 0u64;
+
+    for (_interface_name, network) in sys.networks() {
+        bytes_sent += network.total_transmitted();
+        bytes_received += network.total_received();
+        packets_sent += network.total_packets_transmitted();
+        packets_received += network.total_packets_received();
+    }
+
+    NetworkStats {
+        bytes_sent,
+        bytes_received,
+        packets_sent,
+        packets_received,
+    }
 }
 
 /// 健康检查
@@ -310,33 +369,6 @@ pub async fn get_app_config() -> Result<serde_json::Value, String> {
     });
     
     Ok(config)
-}
-
-/// 显示文件打开对话框
-#[tauri::command]
-pub async fn show_open_dialog(
-    _filters: Option<Vec<serde_json::Value>>,
-) -> Result<Option<String>, String> {
-    debug!("显示文件打开对话框");
-
-    // 简化实现，返回模拟结果
-    // 在实际应用中，这里应该调用系统文件对话框
-    info!("文件打开对话框功能开发中");
-    Ok(None)
-}
-
-/// 显示文件保存对话框
-#[tauri::command]
-pub async fn show_save_dialog(
-    _default_name: Option<String>,
-    _filters: Option<Vec<serde_json::Value>>,
-) -> Result<Option<String>, String> {
-    debug!("显示文件保存对话框");
-
-    // 简化实现，返回模拟结果
-    // 在实际应用中，这里应该调用系统文件对话框
-    info!("文件保存对话框功能开发中");
-    Ok(None)
 }
 
 /// 切换开发者工具

@@ -61,14 +61,16 @@ export const exportChart = async (options: ChartExportOptions): Promise<void> =>
   // 检查是否在 Tauri 环境中
   if (typeof window !== 'undefined' && (window as any).__TAURI__) {
     // Tauri 环境：使用原生文件保存对话框
-    const dialogResult = await safeTauriInvoke<{ path?: string } | null>(
-      'show_save_dialog',
+    const dialogResult = await safeTauriInvoke<{ path?: string; name?: string } | null>(
+      'save_file_dialog',
       {
-        defaultFilename: defaultFileName,
-        filters: [{
-          name: getFilterName(format),
-          extensions: [fileExtension]
-        }]
+        params: {
+          defaultPath: defaultFileName,
+          filters: [{
+            name: getFilterName(format),
+            extensions: [fileExtension]
+          }]
+        }
       }
     );
 

@@ -836,8 +836,6 @@ async fn main() {
             health_check,
             cleanup_resources,
             get_app_config,
-            show_open_dialog,
-            show_save_dialog,
             toggle_devtools,
             open_file_dialog,
             save_file_dialog,
@@ -953,6 +951,7 @@ async fn main() {
             get_datasource_performance_details,
             get_performance_monitoring_config,
             update_performance_monitoring_config,
+            get_datasource_performance_history,
 
             // User experience
             get_user_preferences,
