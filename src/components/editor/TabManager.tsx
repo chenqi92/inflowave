@@ -70,6 +70,8 @@ export const TabManager: React.FC<TabManagerProps> = ({
   onTabDragOver,
 }) => {
   const [closingTab, setClosingTab] = useState<ClosingTab | null>(null);
+  const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
+  const draggedTabIdRef = React.useRef<string | null>(null);
 
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<{
@@ -412,6 +414,84 @@ export const TabManager: React.FC<TabManagerProps> = ({
     }
   };
 
+  // 处理tab拖拽排序
+  const handleTabDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, tab: EditorTab) => {
+    draggedTabIdRef.current = tab.id;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', tab.id);
+
+    // 调用外部的拖拽开始处理
+    if (onTabDragStart) {
+      onTabDragStart(e, {
+        id: tab.id,
+        title: tab.title,
+        content: tab.content,
+        type: tab.type,
+        connectionId: tab.connectionId,
+        database: tab.database,
+        tableName: tab.tableName,
+      });
+    }
+  }, [onTabDragStart]);
+
+  const handleTabDragOver = useCallback((e: React.DragEvent<HTMLDivElement>, targetTabId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (draggedTabIdRef.current && draggedTabIdRef.current !== targetTabId) {
+      setDragOverTabId(targetTabId);
+    }
+  }, []);
+
+  const handleTabDrop = useCallback((e: React.DragEvent<HTMLDivElement>, targetTabId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const draggedId = draggedTabIdRef.current;
+    if (!draggedId || draggedId === targetTabId) {
+      setDragOverTabId(null);
+      draggedTabIdRef.current = null;
+      return;
+    }
+
+    // 找到拖拽的tab和目标tab的索引
+    const draggedIndex = tabs.findIndex(t => t.id === draggedId);
+    const targetIndex = tabs.findIndex(t => t.id === targetTabId);
+
+    if (draggedIndex === -1 || targetIndex === -1) {
+      setDragOverTabId(null);
+      draggedTabIdRef.current = null;
+      return;
+    }
+
+    // 重新排序tabs
+    const newTabs = [...tabs];
+    const [draggedTab] = newTabs.splice(draggedIndex, 1);
+    newTabs.splice(targetIndex, 0, draggedTab);
+
+    onTabsChange(newTabs);
+    setDragOverTabId(null);
+    draggedTabIdRef.current = null;
+  }, [tabs, onTabsChange]);
+
+  const handleTabDragLeave = useCallback(() => {
+    setDragOverTabId(null);
+  }, []);
+
+  const handleTabDragEndInternal = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    setDragOverTabId(null);
+    draggedTabIdRef.current = null;
+
+    // 调用外部的拖拽结束处理
+    if (onTabDragEnd) {
+      onTabDragEnd(e, (tabId, action) => {
+        if (action === 'detach') {
+          showMessage.info(`Tab 分离操作（演示）`);
+        }
+      });
+    }
+  }, [onTabDragEnd]);
+
   return (
     <div className='flex items-center flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent'
          onDrop={onTabDrop ? (e) => onTabDrop(e, () => {}) : undefined}
@@ -424,24 +504,17 @@ export const TabManager: React.FC<TabManagerProps> = ({
             activeKey === tab.id
               ? 'bg-background border-b-2 border-b-primary'
               : 'bg-muted/20'
-          } ${isDragging && draggedTab?.id === tab.id ? 'opacity-50' : ''}`}
+          } ${isDragging && draggedTab?.id === tab.id ? 'opacity-50' : ''} ${
+            dragOverTabId === tab.id ? 'border-l-2 border-l-primary' : ''
+          }`}
           onClick={() => onActiveKeyChange(tab.id)}
           onContextMenu={(e) => handleContextMenu(e, tab)}
-          onDragStart={onTabDragStart ? (e) => onTabDragStart(e, {
-            id: tab.id,
-            title: tab.title,
-            content: tab.content,
-            type: tab.type,
-            connectionId: tab.connectionId,
-            database: tab.database,
-            tableName: tab.tableName,
-          }) : undefined}
+          onDragStart={(e) => handleTabDragStart(e, tab)}
           onDrag={onTabDrag}
-          onDragEnd={onTabDragEnd ? (e) => onTabDragEnd(e, (tabId, action) => {
-            if (action === 'detach') {
-              showMessage.info(`Tab "${tab.title}" 分离操作（演示）`);
-            }
-          }) : undefined}
+          onDragOver={(e) => handleTabDragOver(e, tab.id)}
+          onDragLeave={handleTabDragLeave}
+          onDrop={(e) => handleTabDrop(e, tab.id)}
+          onDragEnd={handleTabDragEndInternal}
         >
           {getTabIcon(tab.type)}
           <span className='text-sm truncate flex-1'>{tab.title}</span>

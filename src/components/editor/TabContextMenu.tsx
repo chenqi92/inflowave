@@ -165,19 +165,19 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
   if (!open) return null;
 
   // 调整菜单位置以防止超出屏幕
-  const menuWidth = 200;
+  const menuWidth = 160;
   const menuHeight = Math.min(300, menuItems.length * 32 + 20);
   const adjustedX = x + menuWidth > window.innerWidth ? x - menuWidth : x;
   const adjustedY = y + menuHeight > window.innerHeight ? y - menuHeight : y;
 
   return createPortal(
-    <div 
-      className="fixed inset-0 z-50" 
+    <div
+      className="fixed inset-0 z-50"
       onClick={onClose}
       onContextMenu={(e) => e.preventDefault()}
     >
       <Card
-        className="absolute min-w-[200px] p-1 shadow-lg border"
+        className="absolute w-[160px] p-1 shadow-lg border"
         style={{
           left: adjustedX,
           top: adjustedY,
