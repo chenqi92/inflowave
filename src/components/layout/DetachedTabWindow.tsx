@@ -7,15 +7,18 @@ import { EditorManager } from '@/components/editor/EditorManager';
 import type { EditorManagerRef } from '@/components/editor/EditorManager';
 import { useQueryExecutor } from '@/components/editor/QueryExecutor';
 import { useConnectionStore } from '@/store/connection';
+import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import {
   ResizablePanel,
   ResizablePanelGroup,
   ResizableHandle,
+  Button,
 } from '@/components/ui';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import type { QueryResult } from '@/types/query';
+import { ArrowLeftToLine } from 'lucide-react';
 
 interface DetachedTab {
   id: string;
@@ -45,17 +48,42 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
   // 查询相关状态
   const [selectedDatabase, setSelectedDatabase] = useState(tab.database || '');
-  const [selectedTimeRange, setSelectedTimeRange] = useState('1h');
+  const [selectedTimeRange, setSelectedTimeRange] = useState<any>(undefined); // 默认不限制时间
   const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
   const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
   const [executedQueries, setExecutedQueries] = useState<string[]>([]);
   const [executionTime, setExecutionTime] = useState(0);
 
   const { activeConnectionId, setActiveConnection, connections } = useConnectionStore();
+  const { openedDatabasesList } = useOpenedDatabasesStore();
   const editorManagerRef = useRef<EditorManagerRef>(null);
 
-  // 获取数据库列表
-  const databases = connections.find(c => c.id === (tab.connectionId || activeConnectionId))?.databases || [];
+  // 初始化连接ID
+  useEffect(() => {
+    if (tab.connectionId && tab.connectionId !== activeConnectionId) {
+      setActiveConnection(tab.connectionId);
+    }
+  }, [tab.connectionId, activeConnectionId, setActiveConnection]);
+
+  // 获取数据库列表 - 使用openedDatabasesList而不是connections.databases
+  const databases = React.useMemo(() => {
+    const connectionId = tab.connectionId || activeConnectionId;
+    if (!connectionId) return [];
+
+    const { openedDatabases } = useOpenedDatabasesStore.getState();
+    const connectionDatabases: string[] = [];
+
+    for (const key of openedDatabases) {
+      if (key.startsWith(`${connectionId}/`)) {
+        const database = key.substring(connectionId.length + 1);
+        if (database) {
+          connectionDatabases.push(database);
+        }
+      }
+    }
+
+    return connectionDatabases;
+  }, [tab.connectionId, activeConnectionId, openedDatabasesList]);
 
   // 创建一个临时的tab对象用于查询执行器
   const currentTab = {
@@ -100,6 +128,35 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
     setModified(value !== tab.content);
   }, [tab.content]);
 
+  // 处理移回主窗口
+  const handleReattach = useCallback(async () => {
+    try {
+      // 创建tab数据
+      const tabData = {
+        id: tab.id,
+        title: tab.title,
+        content: content,
+        type: tab.type,
+        connectionId: tab.connectionId,
+        database: selectedDatabase,
+        tableName: tab.tableName,
+        modified: modified,
+      };
+
+      // 通过Tauri命令通知主窗口
+      await safeTauriInvoke('reattach_tab', { tab: tabData });
+
+      // 关闭当前窗口
+      const currentWindow = getCurrentWindow();
+      await currentWindow.close();
+
+      showMessage.success(`Tab "${tab.title}" 已移回主窗口`);
+    } catch (error) {
+      console.error('移回主窗口失败:', error);
+      showMessage.error('移回主窗口失败');
+    }
+  }, [tab, content, selectedDatabase, modified]);
+
 
 
 
@@ -143,6 +200,25 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
   return (
     <div className="h-screen bg-background flex flex-col">
+      {/* 顶部操作栏 */}
+      <div className="flex-shrink-0 bg-muted/30 border-b px-4 py-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium">{tab.title}</span>
+            {modified && <span className="text-xs text-orange-500">●</span>}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleReattach}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeftToLine className="w-4 h-4" />
+            移回主窗口
+          </Button>
+        </div>
+      </div>
+
       {/* 主要内容区域 */}
       <div className="flex-1 overflow-hidden">
         {tab.type === 'data-browser' ? (

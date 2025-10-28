@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback, useRef } from 'react';
+﻿import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popconfirm } from '@/components/ui/popconfirm';
 import { FileText, Table, Database, Plus, X } from 'lucide-react';
@@ -6,6 +6,7 @@ import { generateUniqueId } from '@/utils/idGenerator';
 import { showMessage } from '@/utils/message';
 import TabContextMenu from './TabContextMenu';
 import SaveConfirmDialog from '../common/SaveConfirmDialog';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export interface EditorTab {
   id: string;
@@ -619,6 +620,58 @@ export const TabManager: React.FC<TabManagerProps> = ({
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   }, []);
+
+  // 监听从分离窗口重新附加的tab
+  useEffect(() => {
+    const setupListener = async () => {
+      try {
+        const currentWindow = getCurrentWindow();
+        const unlisten = await currentWindow.listen('reattach-tab', (event: any) => {
+          console.log('收到重新附加tab事件:', event.payload);
+
+          const { tab } = event.payload;
+          if (!tab) return;
+
+          // 检查tab是否已存在
+          const existingTab = tabs.find(t => t.id === tab.id);
+          if (existingTab) {
+            // 如果已存在,只激活它
+            onActiveKeyChange(tab.id);
+            showMessage.info(`Tab "${tab.title}" 已存在`);
+            return;
+          }
+
+          // 添加tab到主窗口
+          const newTabs = [...tabs, {
+            id: tab.id,
+            title: tab.title,
+            content: tab.content,
+            type: tab.type,
+            modified: tab.modified || false,
+            saved: false,
+            connectionId: tab.connectionId,
+            database: tab.database,
+            tableName: tab.tableName,
+          }];
+
+          onTabsChange(newTabs);
+          onActiveKeyChange(tab.id);
+
+          showMessage.success(`Tab "${tab.title}" 已移回主窗口`);
+        });
+
+        return unlisten;
+      } catch (error) {
+        console.error('设置重新附加监听器失败:', error);
+      }
+    };
+
+    const unlistenPromise = setupListener();
+
+    return () => {
+      unlistenPromise?.then(unlisten => unlisten?.());
+    };
+  }, [tabs, onTabsChange, onActiveKeyChange]);
 
   return (
     <div className='flex items-center flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent'

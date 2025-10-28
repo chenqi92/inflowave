@@ -13,7 +13,7 @@ pub async fn set_window_background<R: Runtime>(
     app: AppHandle<R>,
     theme: ThemeMode,
 ) -> Result<(), String> {
-    let window = app
+    let _window = app
         .get_webview_window("main")
         .ok_or("Failed to get main window")?;
 
@@ -28,7 +28,7 @@ pub async fn set_window_background<R: Runtime>(
         use cocoa::appkit::{NSColor, NSWindow};
         use cocoa::base::{id, nil};
 
-        let ns_window = window.ns_window().map_err(|e| e.to_string())? as id;
+        let ns_window = _window.ns_window().map_err(|e| e.to_string())? as id;
 
         unsafe {
             // 解析颜色

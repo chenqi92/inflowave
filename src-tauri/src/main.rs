@@ -1045,6 +1045,7 @@ async fn main() {
             commands::window::create_detached_window,
             commands::window::close_detached_window,
             commands::window::get_all_windows,
+            commands::window::reattach_tab,
         ])
         .setup(|app| {
             info!("Application setup started");

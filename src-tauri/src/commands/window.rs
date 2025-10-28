@@ -1,8 +1,8 @@
-use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 use log::{debug, error, info};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DetachedTab {
     pub id: String,
@@ -92,13 +92,49 @@ pub async fn close_detached_window(
 #[tauri::command]
 pub async fn get_all_windows(app: AppHandle) -> Result<Vec<String>, String> {
     debug!("获取所有窗口列表");
-    
+
     let windows: Vec<String> = app.webview_windows()
         .keys()
         .cloned()
         .collect();
-    
+
     info!("当前窗口列表: {:?}", windows);
     Ok(windows)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReattachTabData {
+    #[serde(rename = "type")]
+    pub data_type: String,
+    pub tab: DetachedTab,
+}
+
+/// 将tab重新附加到主窗口
+#[tauri::command(rename_all = "camelCase")]
+pub async fn reattach_tab(
+    app: AppHandle,
+    tab: DetachedTab,
+) -> Result<(), String> {
+    debug!("重新附加tab到主窗口: {}", tab.id);
+
+    // 获取主窗口
+    let main_window = app.get_webview_window("main")
+        .ok_or_else(|| "找不到主窗口".to_string())?;
+
+    // 创建事件数据
+    let event_data = ReattachTabData {
+        data_type: "detached-tab".to_string(),
+        tab,
+    };
+
+    // 向主窗口发送事件
+    main_window.emit("reattach-tab", event_data).map_err(|e| {
+        error!("发送重新附加事件失败: {}", e);
+        format!("发送重新附加事件失败: {}", e)
+    })?;
+
+    info!("成功发送重新附加事件");
+    Ok(())
 }
 
