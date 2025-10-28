@@ -9,6 +9,7 @@ import {
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
 import SettingsModal from '@/components/common/SettingsModal';
+import QuickSettings from '@/components/toolbar/QuickSettings';
 import {
   TimeRange,
 } from '@/components/common/TimeRangeSelector';
@@ -128,6 +129,9 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
 
 
         {/* 注意：扩展、历史、工具等功能已移至右侧功能面板 */}
+
+        {/* 快速设置 - 安全和查询设置 */}
+        <QuickSettings />
 
         {/* 设置按钮 */}
         <Button

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import {
   Form,
@@ -33,128 +33,53 @@ import {
   Zap,
   Layers,
 } from 'lucide-react';
-import { safeTauriInvoke } from '@/utils/tauri';
-
-interface ControllerSettingsConfig {
-  allow_delete_statements: boolean;
-  allow_drop_statements: boolean;
-  allow_dangerous_operations: boolean;
-  require_confirmation_for_delete: boolean;
-  require_confirmation_for_drop: boolean;
-}
-
-interface QuerySettings {
-  timeout: number;
-  max_results: number;
-  auto_complete: boolean;
-  syntax_highlight: boolean;
-  format_on_save: boolean;
-  enable_lazy_loading: boolean;
-  lazy_loading_batch_size: number;
-}
-
-interface CombinedSettings {
-  controller: ControllerSettingsConfig;
-  query: QuerySettings;
-}
+import {
+  useQueryControllerSettings,
+  type CombinedSettings,
+} from '@/hooks/useQueryControllerSettings';
 
 const ControllerSettings: React.FC = () => {
-  const [loading, setLoading] = useState(false);
-  const [settings, setSettings] = useState<CombinedSettings>({
-    controller: {
-      allow_delete_statements: false,
-      allow_drop_statements: false,
-      allow_dangerous_operations: false,
-      require_confirmation_for_delete: true,
-      require_confirmation_for_drop: true,
-    },
-    query: {
-      timeout: 30000,
-      max_results: 10000,
-      auto_complete: true,
-      syntax_highlight: true,
-      format_on_save: false,
-      enable_lazy_loading: true,
-      lazy_loading_batch_size: 500,
-    },
-  });
+  // 使用共享的设置管理 hook
+  const {
+    settings,
+    loading,
+    updateSettings,
+    resetSettings: resetToDefaults,
+  } = useQueryControllerSettings();
 
   const form = useForm<CombinedSettings>({
     defaultValues: settings,
   });
 
-  // 加载控制器设置和查询设置
-  const loadSettings = async () => {
-    try {
-      const [controllerSettings, querySettings] = await Promise.all([
-        safeTauriInvoke<ControllerSettingsConfig>('get_controller_settings'),
-        safeTauriInvoke<QuerySettings>('get_query_settings'),
-      ]);
+  // 当设置从外部更新时（如从工具栏），同步到表单
+  useEffect(() => {
+    form.reset(settings);
+  }, [settings, form]);
 
-      const combined: CombinedSettings = {
-        controller: controllerSettings,
-        query: querySettings,
-      };
-
-      setSettings(combined);
-      form.reset(combined);
-    } catch (error) {
-      console.error('加载设置失败:', error);
-      showMessage.error('加载设置失败');
-    }
-  };
-
-  // 保存控制器设置和查询设置
+  // 保存设置
   const saveSettings = async (values: CombinedSettings) => {
-    setLoading(true);
     try {
-      await Promise.all([
-        safeTauriInvoke('update_controller_settings', {
-          controllerSettings: values.controller,
-        }),
-        safeTauriInvoke('update_query_settings', {
-          querySettings: values.query,
-        }),
-      ]);
-
-      setSettings(values);
+      await updateSettings({
+        controller: values.controller,
+        query: values.query,
+      });
       showMessage.success('设置已保存');
     } catch (error) {
       console.error('保存设置失败:', error);
-      showMessage.error('保存设置失败');
-    } finally {
-      setLoading(false);
+      // 错误消息已在 hook 中显示
     }
   };
 
   // 重置设置
-  const resetSettings = () => {
-    const defaultSettings: CombinedSettings = {
-      controller: {
-        allow_delete_statements: false,
-        allow_drop_statements: false,
-        allow_dangerous_operations: false,
-        require_confirmation_for_delete: true,
-        require_confirmation_for_drop: true,
-      },
-      query: {
-        timeout: 30000,
-        max_results: 10000,
-        auto_complete: true,
-        syntax_highlight: true,
-        format_on_save: false,
-        enable_lazy_loading: true,
-        lazy_loading_batch_size: 500,
-      },
-    };
-
-    form.reset(defaultSettings);
-    showMessage.success('设置已重置为默认值');
+  const handleResetSettings = async () => {
+    try {
+      await resetToDefaults();
+      // 成功消息已在 hook 中显示
+    } catch (error) {
+      console.error('重置设置失败:', error);
+      // 错误消息已在 hook 中显示
+    }
   };
-
-  useEffect(() => {
-    loadSettings();
-  }, []);
 
   const watchedValues = form.watch();
 
@@ -460,7 +385,7 @@ const ControllerSettings: React.FC = () => {
 
       {/* 操作按钮 - 固定在底部 */}
       <div className='flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky'>
-        <Button type='button' variant='outline' size='sm' onClick={resetSettings}>
+        <Button type='button' variant='outline' size='sm' onClick={handleResetSettings}>
           <RefreshCw className='w-4 h-4 mr-2' />
           重置为默认
         </Button>
