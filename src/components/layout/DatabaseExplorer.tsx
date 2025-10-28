@@ -1876,7 +1876,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   return (
     <>
-      <Card className='database-explorer h-full flex flex-col'>
+      <Card className='database-explorer h-full flex flex-col rounded-none'>
         {/* 头部：连接状态和操作 */}
         <DatabaseExplorerHeader
           headerRef={headerRef}

@@ -420,8 +420,8 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={open => !open && onClose()}>
-      <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
-        <DialogHeader>
+      <DialogContent className='max-w-4xl h-[90vh] p-0 flex flex-col gap-0'>
+        <DialogHeader className='px-6 py-4 border-b shrink-0'>
           <DialogTitle>
             {hasQueryResult ? '导出查询结果' : '数据导出'}
           </DialogTitle>
@@ -430,7 +430,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-6'>
+        <div className='flex-1 overflow-y-auto px-6 py-4 space-y-6'>
           {hasQueryResult && queryResult ? (
             // 查询结果导出模式
             <div>
@@ -488,8 +488,8 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           )}
         </div>
 
-        {/* 底部按钮 */}
-        <div className='flex justify-end gap-2 pt-4 border-t'>
+        {/* 底部按钮 - 固定在底部 */}
+        <div className='flex justify-end gap-2 px-6 py-4 border-t shrink-0'>
           <Button variant='outline' onClick={onClose}>
             取消
           </Button>

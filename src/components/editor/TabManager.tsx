@@ -413,17 +413,17 @@ export const TabManager: React.FC<TabManagerProps> = ({
   };
 
   return (
-    <div className='flex items-center border-b border flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent'
+    <div className='flex items-center flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent'
          onDrop={onTabDrop ? (e) => onTabDrop(e, () => {}) : undefined}
          onDragOver={onTabDragOver}>
       {tabs.map(tab => (
         <div
           key={tab.id}
           draggable
-          className={`flex items-center gap-1 px-3 py-2 border-r border cursor-pointer hover:bg-muted/50 flex-shrink-0 min-w-[120px] max-w-[180px] transition-all duration-200 ${
+          className={`flex items-center gap-1 px-3 py-1.5 border-r border cursor-pointer hover:bg-background/80 flex-shrink-0 min-w-[120px] max-w-[180px] transition-all duration-200 ${
             activeKey === tab.id
-              ? 'bg-background border-b-2 border-primary'
-              : 'bg-muted/50'
+              ? 'bg-background border-b-2 border-b-primary'
+              : 'bg-muted/20'
           } ${isDragging && draggedTab?.id === tab.id ? 'opacity-50' : ''}`}
           onClick={() => onActiveKeyChange(tab.id)}
           onContextMenu={(e) => handleContextMenu(e, tab)}

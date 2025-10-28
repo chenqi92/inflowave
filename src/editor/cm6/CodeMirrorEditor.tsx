@@ -4,7 +4,7 @@
  * A React wrapper for CodeMirror 6 with theme integration and event handling
  */
 
-import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
+import React, { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react';
 import { EditorState, Extension, Compartment } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
 import { useTheme } from '@/components/providers/ThemeProvider';
@@ -319,15 +319,29 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
       overflow: 'auto',
     };
 
+    // 点击容器空白区域时聚焦编辑器
+    const handleContainerClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+      // 只有点击容器本身(不是编辑器内容)时才聚焦
+      if (e.target === e.currentTarget && viewRef.current) {
+        viewRef.current.focus();
+        // 将光标移到文档末尾
+        const doc = viewRef.current.state.doc;
+        viewRef.current.dispatch({
+          selection: { anchor: doc.length },
+        });
+      }
+    }, []);
+
     return (
       <div
         ref={editorRef}
         className={cn(
           'cm6-editor-container',
-          'border rounded-md overflow-hidden',
+          'border-0 overflow-hidden',
           className
         )}
         style={containerStyle}
+        onClick={handleContainerClick}
       />
     );
   }

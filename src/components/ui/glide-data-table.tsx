@@ -877,8 +877,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         </Card>
       )}
 
-      {/* 数据表格 */}
-      <div ref={containerRef} className="flex-1 min-h-0 flex flex-col border rounded-md overflow-hidden bg-background">
+      {/* 数据表格 - 移除圆角 */}
+      <div ref={containerRef} className="flex-1 min-h-0 flex flex-col border rounded-none overflow-hidden bg-background">
         <div className="flex-1 min-h-0 relative">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-background">

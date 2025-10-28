@@ -96,14 +96,14 @@ const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({
 
   return (
     <Dialog open={visible} onOpenChange={(open) => { if (!open) onClose(); }}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-4xl h-[80vh] p-0 flex flex-col gap-0">
+        <DialogHeader className='px-6 py-4 border-b shrink-0'>
           <DialogTitle className='flex gap-2'>
             <Settings className='w-4 h-4' />
             <span>键盘快捷键</span>
           </DialogTitle>
         </DialogHeader>
-      <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+      <div className='flex-1 overflow-y-auto px-6 py-4'>
         {shortcutCategories.map((category, index) => (
           <div key={category.title} style={{ marginBottom: 24 }}>
             <Title level={4} style={{ marginBottom: 16 }}>

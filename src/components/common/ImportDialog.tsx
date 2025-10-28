@@ -387,14 +387,14 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={(open: any) => !open && onClose()}>
-      <DialogContent className='max-w-5xl max-h-[90vh] overflow-y-auto'>
-        <DialogHeader>
+      <DialogContent className='max-w-5xl h-[90vh] p-0 flex flex-col gap-0'>
+        <DialogHeader className='px-6 py-4 border-b shrink-0'>
           <DialogTitle>数据导入</DialogTitle>
           <DialogDescription>
             从 CSV 或 JSON 文件导入数据到 InfluxDB 数据库
           </DialogDescription>
         </DialogHeader>
-        <div className='space-y-6'>
+        <div className='flex-1 overflow-y-auto px-6 py-4 space-y-6'>
           {/* 步骤指示器 */}
           <div className='flex items-center justify-between mb-6'>
             {[

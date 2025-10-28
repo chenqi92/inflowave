@@ -1807,9 +1807,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         onValueChange={setActiveTab}
         className='h-full flex flex-col'
       >
-        {/* 可滚动的Tab列表 */}
-        <div className='flex-shrink-0 w-full border-b overflow-x-auto overflow-y-hidden'>
-          <TabsList className='inline-flex h-8 items-center justify-start rounded-none bg-muted p-1 text-muted-foreground w-max'>
+        {/* 可滚动的Tab列表 - 凹陷效果 */}
+        <div className='flex-shrink-0 w-full border-b overflow-x-auto overflow-y-hidden shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]'>
+          <TabsList className='inline-flex h-8 items-center justify-start rounded-none bg-muted/30 p-1 text-muted-foreground w-max'>
             {/* 执行器tab */}
             <TabsTrigger
               value='executor'

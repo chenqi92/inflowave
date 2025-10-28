@@ -2662,7 +2662,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       {/* 过滤栏 */}
       {filters.length > 0 && (
-        <Card className='flex-shrink-0 border-0 border-b rounded-none bg-background'>
+        <Card className='flex-shrink-0 border-0 border-b rounded-none bg-background shadow-none'>
           <CardContent className='pt-0 pb-3'>
             <div className='space-y-2'>
               <div className='flex items-center justify-between'>

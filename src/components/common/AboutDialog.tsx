@@ -61,8 +61,8 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
 
   return (
     <Dialog open={visible} onOpenChange={onClose}>
-      <DialogContent className='max-w-3xl max-h-[80vh] overflow-y-auto'>
-        <DialogHeader>
+      <DialogContent className='max-w-3xl h-[80vh] p-0 flex flex-col gap-0'>
+        <DialogHeader className='px-6 py-4 border-b shrink-0'>
           <DialogTitle className='flex items-center gap-2'>
             <Database className='w-5 h-5 text-primary' />
             <span>关于 {appInfo.name}</span>
@@ -71,7 +71,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
             查看应用程序信息、版本详情和系统配置
           </DialogDescription>
         </DialogHeader>
-        <div style={{ padding: '16px 0' }}>
+        <div className='flex-1 overflow-y-auto px-6 py-4'>
           {/* 应用信息 */}
           <div className='grid grid-cols-1 gap-4'>
             <div>

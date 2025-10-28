@@ -277,9 +277,9 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
     return (
       <TooltipProvider>
-        <div className='h-full flex flex-col bg-background border-0 shadow-none'>
-          {/* 标签页头部 */}
-          <div className='flex items-center justify-between border-b border min-h-[48px] p-0'>
+        <div className='h-full flex flex-col bg-background'>
+          {/* 标签页头部 - 凹陷效果 */}
+          <div className='flex items-center justify-between border-b border min-h-[36px] p-0 shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)] bg-muted/30'>
             {/* 左侧标签区域 */}
             <div className='flex-1 flex items-center min-w-0'>
               <TabManager
