@@ -25,8 +25,7 @@ import { useTabStore, useCurrentTab, useTabOperations } from '@/stores/tabStore'
 import { QueryToolbar } from '@/components/query/QueryToolbar';
 import DataExportDialog from '@/components/common/DataExportDialog';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
-import SimpleDragOverlay from '@/components/common/SimpleDragOverlay';
-import useSimpleTabDrag from '@/hooks/useSimpleTabDrag';
+
 
 import type { QueryResult } from '@/types';
 
@@ -82,18 +81,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       }
     }, [currentTimeRange, selectedTimeRange, setSelectedTimeRange]);
 
-    // 拖拽功能
-    const {
-      isDragging,
-      draggedTab,
-      dropZoneActive,
-      handleTabDragStart,
-      handleTabDrag,
-      handleTabDragEnd,
-      handleTabDrop,
-      handleTabDragOver,
-      showTabInPopup,
-    } = useSimpleTabDrag();
+
 
     // 更新标签页内容的包装函数
     const handleTabContentChange = useCallback((tabId: string, content: string) => {
@@ -291,13 +279,6 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                 onSaveTab={saveCurrentTab}
                 onSaveTabAs={saveFileAs}
                 onSaveAllTabs={saveAllTabs}
-                isDragging={isDragging}
-                draggedTab={draggedTab}
-                onTabDragStart={handleTabDragStart}
-                onTabDrag={handleTabDrag}
-                onTabDragEnd={handleTabDragEnd}
-                onTabDrop={handleTabDrop}
-                onTabDragOver={handleTabDragOver}
               />
             </div>
 
@@ -406,9 +387,6 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
               setShowExportDialog(false);
             }}
           />
-
-          {/* 拖拽提示覆盖层 */}
-          <SimpleDragOverlay active={dropZoneActive} />
         </div>
       </TooltipProvider>
     );

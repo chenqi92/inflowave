@@ -38,13 +38,6 @@ interface TabManagerProps {
   onSaveTab?: (tabId: string) => void;
   onSaveTabAs?: (tabId: string) => void;
   onSaveAllTabs?: () => Promise<void>;
-  isDragging?: boolean;
-  draggedTab?: any;
-  onTabDragStart?: (e: React.DragEvent<HTMLElement>, tab: any) => void;
-  onTabDrag?: (e: React.DragEvent<HTMLElement>) => void;
-  onTabDragEnd?: (e: React.DragEvent<HTMLElement>, callback: (tabId: string, action: string) => void) => void;
-  onTabDrop?: (e: React.DragEvent<HTMLElement>, callback: (tab: any) => void) => void;
-  onTabDragOver?: (e: React.DragEvent<HTMLElement>) => void;
 }
 
 interface ClosingTab {
@@ -61,13 +54,6 @@ export const TabManager: React.FC<TabManagerProps> = ({
   onSaveTab,
   onSaveTabAs,
   onSaveAllTabs,
-  isDragging,
-  draggedTab,
-  onTabDragStart,
-  onTabDrag,
-  onTabDragEnd,
-  onTabDrop,
-  onTabDragOver,
 }) => {
   const [closingTab, setClosingTab] = useState<ClosingTab | null>(null);
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
@@ -434,20 +420,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
     document.body.appendChild(dragImage);
     e.dataTransfer.setDragImage(dragImage, 50, 20);
     setTimeout(() => document.body.contains(dragImage) && document.body.removeChild(dragImage), 0);
-
-    // 调用外部的拖拽开始处理
-    if (onTabDragStart) {
-      onTabDragStart(e, {
-        id: tab.id,
-        title: tab.title,
-        content: tab.content,
-        type: tab.type,
-        connectionId: tab.connectionId,
-        database: tab.database,
-        tableName: tab.tableName,
-      });
-    }
-  }, [onTabDragStart]);
+  }, []);
 
   const handleTabDragInternal = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     if (!dragStartPosRef.current || !draggedTabIdRef.current) return;
@@ -474,12 +447,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
       isDraggingOutRef.current = true;
       showMessage.info('松开鼠标将Tab分离到新窗口');
     }
-
-    // 调用外部的拖拽处理
-    if (onTabDrag) {
-      onTabDrag(e);
-    }
-  }, [onTabDrag]);
+  }, []);
 
   const handleTabDragOver = useCallback((e: React.DragEvent<HTMLDivElement>, targetTabId: string) => {
     e.preventDefault();
@@ -600,12 +568,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
     draggedTabIdRef.current = null;
     dragStartPosRef.current = null;
     isDraggingOutRef.current = false;
-
-    // 调用外部的拖拽结束处理
-    if (onTabDragEnd) {
-      onTabDragEnd(e, (tabId, action) => {});
-    }
-  }, [tabs, onTabsChange, activeKey, onActiveKeyChange, onTabDragEnd]);
+  }, [tabs, onTabsChange, activeKey, onActiveKeyChange]);
 
   // 处理从分离窗口拖回的tab
   const handleContainerDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
@@ -669,7 +632,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
             activeKey === tab.id
               ? 'bg-background border-b-2 border-b-primary'
               : 'bg-muted/20'
-          } ${isDragging && draggedTab?.id === tab.id ? 'opacity-50' : ''} ${
+          } ${
             dragOverTabId === tab.id ? 'border-l-2 border-l-primary' : ''
           }`}
           onClick={() => onActiveKeyChange(tab.id)}
