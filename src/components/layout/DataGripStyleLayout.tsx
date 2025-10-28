@@ -704,6 +704,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 <MainToolbar
                     currentView={currentView}
                     onViewChange={handleViewChange}
+                    onCreateQueryTab={handleCreateQueryTab}
                     currentTimeRange={currentTimeRange}
                     onTimeRangeChange={setCurrentTimeRange}
 

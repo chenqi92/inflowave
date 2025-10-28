@@ -5,6 +5,7 @@ import {
 import {
   Database,
   Settings,
+  FilePlus,
 } from 'lucide-react';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +17,7 @@ import {
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
+  onCreateQueryTab?: () => void;
   currentView?: string;
   currentTimeRange?: {
     label: string;
@@ -33,6 +35,7 @@ interface MainToolbarProps {
 
 const MainToolbar: React.FC<MainToolbarProps> = ({
   onViewChange,
+  onCreateQueryTab,
   currentView = 'datasource', // 软件启动时默认选中数据源按钮
   currentTimeRange,
   onTimeRangeChange,
@@ -113,10 +116,20 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           </div>
         </div>
 
-        {/* 区域2: 预留空间 - 时间范围选择器已移至查询工具栏 */}
-        <div className='flex items-center gap-2 px-3 w-48'>
-          {/* 时间范围选择器已移动到查询tab的工具栏中 */}
-        </div>
+        {/* 区域2: 新建查询按钮 */}
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+          onClick={() => {
+            onViewChange?.('query');
+            onCreateQueryTab?.();
+          }}
+          title='新建SQL查询'
+        >
+          <FilePlus className='w-4 h-4' />
+          <span className='text-xs'>新建查询</span>
+        </Button>
 
         <div className='w-px h-6 bg-border mx-3' />
 

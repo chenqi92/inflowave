@@ -7,6 +7,7 @@ import {
   Switch,
   Badge,
   Separator,
+  Input,
 } from '@/components/ui';
 import {
   Shield,
@@ -84,7 +85,7 @@ const QuickSettings: React.FC = () => {
         <Button
           variant='ghost'
           size='sm'
-          className='h-10 px-3 flex items-center gap-2 relative'
+          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1 relative'
           title='快速设置'
         >
           <Shield className='w-4 h-4' />
@@ -262,6 +263,50 @@ const QuickSettings: React.FC = () => {
                 }
                 disabled={loading}
               />
+            </div>
+
+            {/* 懒加载批次大小 */}
+            <div className='pl-6 space-y-2'>
+              <label className='text-sm font-medium'>批次大小</label>
+              <div className='flex items-center gap-2'>
+                <Input
+                  type='number'
+                  min={100}
+                  max={10000}
+                  step={100}
+                  value={settings.query.lazy_loading_batch_size}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // 允许空值或正在输入的中间状态
+                    if (value === '') {
+                      updateQuerySettings({ lazy_loading_batch_size: 100 });
+                      return;
+                    }
+                    const numValue = parseInt(value);
+                    // 只要是有效数字就允许输入
+                    if (!isNaN(numValue)) {
+                      updateQuerySettings({ lazy_loading_batch_size: numValue });
+                    }
+                  }}
+                  onBlur={(e) => {
+                    // 失焦时确保值在有效范围内
+                    const value = parseInt(e.target.value);
+                    if (isNaN(value) || value < 100) {
+                      updateQuerySettings({ lazy_loading_batch_size: 100 });
+                    } else if (value > 10000) {
+                      updateQuerySettings({ lazy_loading_batch_size: 10000 });
+                    }
+                  }}
+                  disabled={loading || !settings.query.enable_lazy_loading}
+                  className='h-8 text-sm'
+                />
+                <span className='text-xs text-muted-foreground whitespace-nowrap'>
+                  条/批次
+                </span>
+              </div>
+              <p className='text-xs text-muted-foreground'>
+                每批加载的数据行数 (100-10000)
+              </p>
             </div>
           </div>
 

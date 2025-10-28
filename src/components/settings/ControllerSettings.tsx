@@ -19,6 +19,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Input,
 } from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import {
@@ -348,29 +349,44 @@ const ControllerSettings: React.FC = () => {
                           懒加载批次大小
                         </FormLabel>
                         <FormDescription>
-                          每次加载的数据行数（推荐：500-1000）
+                          每次加载的数据行数，范围：100-10000（推荐：500-1000）
                         </FormDescription>
                         <div className='flex items-center gap-4'>
                           <FormControl>
-                            <Select
-                              value={String(field.value)}
-                              onValueChange={(value) => field.onChange(parseInt(value))}
+                            <Input
+                              type='number'
+                              min={100}
+                              max={10000}
+                              step={100}
+                              value={field.value}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                // 允许空值或正在输入的中间状态
+                                if (value === '') {
+                                  field.onChange(100); // 空值时设为最小值
+                                  return;
+                                }
+                                const numValue = parseInt(value);
+                                // 只要是有效数字就允许输入，不限制范围（让浏览器的 min/max 处理）
+                                if (!isNaN(numValue)) {
+                                  field.onChange(numValue);
+                                }
+                              }}
+                              onBlur={(e) => {
+                                // 失焦时确保值在有效范围内
+                                const value = parseInt(e.target.value);
+                                if (isNaN(value) || value < 100) {
+                                  field.onChange(100);
+                                } else if (value > 10000) {
+                                  field.onChange(10000);
+                                }
+                              }}
                               disabled={!watchedValues.query?.enable_lazy_loading}
-                            >
-                              <SelectTrigger className='w-[200px]'>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value='200'>200 行</SelectItem>
-                                <SelectItem value='500'>500 行（推荐）</SelectItem>
-                                <SelectItem value='1000'>1000 行</SelectItem>
-                                <SelectItem value='2000'>2000 行</SelectItem>
-                                <SelectItem value='5000'>5000 行</SelectItem>
-                              </SelectContent>
-                            </Select>
+                              className='w-[200px]'
+                            />
                           </FormControl>
                           <Text type='secondary' className='text-sm'>
-                            当前：{field.value} 行/批次
+                            条/批次
                           </Text>
                         </div>
                       </div>
