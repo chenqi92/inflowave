@@ -71,7 +71,7 @@ export const useSimpleTabDrag = () => {
     // 如果拖拽距离超过阈值，显示分离提示
     if (distance > dragThreshold && !dropZoneActive) {
       setDropZoneActive(true);
-      showMessage.info('拖拽到窗口外边缘可以分离Tab（演示功能）');
+      showMessage.info('拖拽到窗口外边缘可以分离Tab');
     }
   }, [draggedTab, dropZoneActive, dragThreshold]);
 
@@ -150,9 +150,7 @@ ${tab.content || '-- 空查询'}
             </div>
           `}
           
-          <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; text-align: center; color: #6b7280; font-size: 12px;">
-            ⚠️ 这是一个演示功能。在实际应用中，分离的Tab会保持与主窗口的数据同步。
-          </div>
+
         </div>
       `;
 
@@ -191,7 +189,7 @@ ${tab.content || '-- 空查询'}
       try {
         const tab: DraggedTab = JSON.parse(tabData);
         // 在简化版本中，只是显示消息
-        showMessage.info(`Tab "${tab.title}" 放置操作（演示功能）`);
+        showMessage.info(`Tab "${tab.title}" 放置操作`);
       } catch (error) {
         console.error('解析拖拽数据失败:', error);
       }

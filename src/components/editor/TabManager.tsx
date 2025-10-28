@@ -1,4 +1,4 @@
-﻿import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popconfirm } from '@/components/ui/popconfirm';
 import { FileText, Table, Database, Plus, X } from 'lucide-react';
@@ -71,7 +71,9 @@ export const TabManager: React.FC<TabManagerProps> = ({
 }) => {
   const [closingTab, setClosingTab] = useState<ClosingTab | null>(null);
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
-  const draggedTabIdRef = React.useRef<string | null>(null);
+  const draggedTabIdRef = useRef<string | null>(null);
+  const dragStartPosRef = useRef<{ x: number; y: number } | null>(null);
+  const isDraggingOutRef = useRef(false);
 
   // 右键菜单状态
   const [contextMenu, setContextMenu] = useState<{
@@ -414,11 +416,24 @@ export const TabManager: React.FC<TabManagerProps> = ({
     }
   };
 
-  // 处理tab拖拽排序
+  // 处理tab拖拽排序和拖出窗口
   const handleTabDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, tab: EditorTab) => {
     draggedTabIdRef.current = tab.id;
+    dragStartPosRef.current = { x: e.clientX, y: e.clientY };
+    isDraggingOutRef.current = false;
+
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('text/plain', tab.id);
+
+    // 设置拖拽图像
+    const dragImage = document.createElement('div');
+    dragImage.className = 'bg-primary text-primary-foreground px-3 py-2 rounded shadow-lg text-sm font-medium flex items-center gap-2';
+    dragImage.innerHTML = `<span>📋</span><span>${tab.title}</span>`;
+    dragImage.style.position = 'absolute';
+    dragImage.style.top = '-1000px';
+    document.body.appendChild(dragImage);
+    e.dataTransfer.setDragImage(dragImage, 50, 20);
+    setTimeout(() => document.body.contains(dragImage) && document.body.removeChild(dragImage), 0);
 
     // 调用外部的拖拽开始处理
     if (onTabDragStart) {
@@ -434,11 +449,43 @@ export const TabManager: React.FC<TabManagerProps> = ({
     }
   }, [onTabDragStart]);
 
+  const handleTabDragInternal = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    if (!dragStartPosRef.current || !draggedTabIdRef.current) return;
+
+    const currentX = e.clientX;
+    const currentY = e.clientY;
+    const distance = Math.sqrt(
+      Math.pow(currentX - dragStartPosRef.current.x, 2) +
+      Math.pow(currentY - dragStartPosRef.current.y, 2)
+    );
+
+    // 检查是否拖拽到窗口边缘
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const edgeThreshold = 50;
+    const dragThreshold = 100;
+
+    const nearEdge = currentX < edgeThreshold ||
+                     currentX > windowWidth - edgeThreshold ||
+                     currentY < edgeThreshold ||
+                     currentY > windowHeight - edgeThreshold;
+
+    if (distance > dragThreshold && nearEdge && !isDraggingOutRef.current) {
+      isDraggingOutRef.current = true;
+      showMessage.info('松开鼠标将Tab分离到新窗口');
+    }
+
+    // 调用外部的拖拽处理
+    if (onTabDrag) {
+      onTabDrag(e);
+    }
+  }, [onTabDrag]);
+
   const handleTabDragOver = useCallback((e: React.DragEvent<HTMLDivElement>, targetTabId: string) => {
     e.preventDefault();
     e.stopPropagation();
 
-    if (draggedTabIdRef.current && draggedTabIdRef.current !== targetTabId) {
+    if (draggedTabIdRef.current && draggedTabIdRef.current !== targetTabId && !isDraggingOutRef.current) {
       setDragOverTabId(targetTabId);
     }
   }, []);
@@ -448,9 +495,8 @@ export const TabManager: React.FC<TabManagerProps> = ({
     e.stopPropagation();
 
     const draggedId = draggedTabIdRef.current;
-    if (!draggedId || draggedId === targetTabId) {
+    if (!draggedId || draggedId === targetTabId || isDraggingOutRef.current) {
       setDragOverTabId(null);
-      draggedTabIdRef.current = null;
       return;
     }
 
@@ -460,7 +506,6 @@ export const TabManager: React.FC<TabManagerProps> = ({
 
     if (draggedIndex === -1 || targetIndex === -1) {
       setDragOverTabId(null);
-      draggedTabIdRef.current = null;
       return;
     }
 
@@ -471,31 +516,151 @@ export const TabManager: React.FC<TabManagerProps> = ({
 
     onTabsChange(newTabs);
     setDragOverTabId(null);
-    draggedTabIdRef.current = null;
   }, [tabs, onTabsChange]);
 
   const handleTabDragLeave = useCallback(() => {
     setDragOverTabId(null);
   }, []);
 
-  const handleTabDragEndInternal = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+  const handleTabDragEndInternal = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
+    const draggedId = draggedTabIdRef.current;
+    const dragStartPos = dragStartPosRef.current;
+
+    if (!draggedId || !dragStartPos) {
+      setDragOverTabId(null);
+      draggedTabIdRef.current = null;
+      dragStartPosRef.current = null;
+      isDraggingOutRef.current = false;
+      return;
+    }
+
+    const currentX = e.clientX;
+    const currentY = e.clientY;
+    const distance = Math.sqrt(
+      Math.pow(currentX - dragStartPos.x, 2) +
+      Math.pow(currentY - dragStartPos.y, 2)
+    );
+
+    // 检查是否拖拽到窗口边缘
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const edgeThreshold = 50;
+    const dragThreshold = 100;
+
+    const nearEdge = currentX < edgeThreshold ||
+                     currentX > windowWidth - edgeThreshold ||
+                     currentY < edgeThreshold ||
+                     currentY > windowHeight - edgeThreshold;
+
+    if (distance > dragThreshold && nearEdge) {
+      // 拖出窗口,创建独立窗口
+      const draggedTab = tabs.find(t => t.id === draggedId);
+      if (draggedTab) {
+        try {
+          const { safeTauriInvoke } = await import('@/utils/tauri');
+          const windowLabel = `detached-tab-${draggedTab.id}-${Date.now()}`;
+
+          await safeTauriInvoke('create_detached_window', {
+            label: windowLabel,
+            title: `📋 ${draggedTab.title}`,
+            x: Math.max(0, currentX - 200),
+            y: Math.max(0, currentY - 100),
+            width: 1000,
+            height: 700,
+            tab: {
+              id: draggedTab.id,
+              title: draggedTab.title,
+              content: draggedTab.content,
+              type: draggedTab.type,
+              connectionId: draggedTab.connectionId,
+              database: draggedTab.database,
+              tableName: draggedTab.tableName,
+              modified: draggedTab.modified,
+            }
+          });
+
+          // 从主窗口移除该tab
+          const newTabs = tabs.filter(t => t.id !== draggedId);
+          onTabsChange(newTabs);
+
+          // 如果移除的是当前激活的tab,激活第一个tab
+          if (activeKey === draggedId && newTabs.length > 0) {
+            onActiveKeyChange(newTabs[0].id);
+          }
+
+          showMessage.success(`Tab "${draggedTab.title}" 已分离到新窗口`);
+        } catch (error) {
+          console.error('创建分离窗口失败:', error);
+          showMessage.error('创建分离窗口失败');
+        }
+      }
+    }
+
     setDragOverTabId(null);
     draggedTabIdRef.current = null;
+    dragStartPosRef.current = null;
+    isDraggingOutRef.current = false;
 
     // 调用外部的拖拽结束处理
     if (onTabDragEnd) {
-      onTabDragEnd(e, (tabId, action) => {
-        if (action === 'detach') {
-          showMessage.info(`Tab 分离操作（演示）`);
-        }
-      });
+      onTabDragEnd(e, (tabId, action) => {});
     }
-  }, [onTabDragEnd]);
+  }, [tabs, onTabsChange, activeKey, onActiveKeyChange, onTabDragEnd]);
+
+  // 处理从分离窗口拖回的tab
+  const handleContainerDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    try {
+      const data = e.dataTransfer.getData('application/json');
+      if (!data) return;
+
+      const dragData = JSON.parse(data);
+      if (dragData.type === 'detached-tab' && dragData.tab) {
+        const tab = dragData.tab;
+
+        // 检查tab是否已存在
+        const existingTab = tabs.find(t => t.id === tab.id);
+        if (existingTab) {
+          // 如果已存在,只激活它
+          onActiveKeyChange(tab.id);
+          showMessage.info(`Tab "${tab.title}" 已存在`);
+          return;
+        }
+
+        // 添加tab到主窗口
+        const newTabs = [...tabs, {
+          id: tab.id,
+          title: tab.title,
+          content: tab.content,
+          type: tab.type,
+          modified: tab.modified,
+          saved: false,
+          connectionId: tab.connectionId,
+          database: tab.database,
+          tableName: tab.tableName,
+        }];
+
+        onTabsChange(newTabs);
+        onActiveKeyChange(tab.id);
+
+        showMessage.success(`Tab "${tab.title}" 已移回主窗口`);
+      }
+    } catch (error) {
+      console.error('处理拖拽回来的tab失败:', error);
+    }
+  }, [tabs, onTabsChange, onActiveKeyChange]);
+
+  const handleContainerDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
 
   return (
     <div className='flex items-center flex-1 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground scrollbar-track-transparent'
-         onDrop={onTabDrop ? (e) => onTabDrop(e, () => {}) : undefined}
-         onDragOver={onTabDragOver}>
+         onDrop={handleContainerDrop}
+         onDragOver={handleContainerDragOver}>
       {tabs.map(tab => (
         <div
           key={tab.id}
@@ -510,7 +675,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
           onClick={() => onActiveKeyChange(tab.id)}
           onContextMenu={(e) => handleContextMenu(e, tab)}
           onDragStart={(e) => handleTabDragStart(e, tab)}
-          onDrag={onTabDrag}
+          onDrag={handleTabDragInternal}
           onDragOver={(e) => handleTabDragOver(e, tab.id)}
           onDragLeave={handleTabDragLeave}
           onDrop={(e) => handleTabDrop(e, tab.id)}

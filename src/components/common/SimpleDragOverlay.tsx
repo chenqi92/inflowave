@@ -34,11 +34,6 @@ const SimpleDragOverlay: React.FC<SimpleDragOverlayProps> = ({
           <p>📋 分离的Tab将在新窗口中打开</p>
           <p>⌨️ 按ESC键取消拖拽</p>
         </div>
-        
-        <div className="mt-4 flex items-center gap-2 text-xs opacity-75">
-          <Info className="w-4 h-4" />
-          <span>这是一个演示功能</span>
-        </div>
       </div>
     </div>
   );

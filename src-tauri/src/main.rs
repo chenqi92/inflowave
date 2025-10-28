@@ -1040,6 +1040,11 @@ async fn main() {
             commands::logs::list_log_files,
             commands::logs::delete_log_file,
             commands::logs::cleanup_old_log_files,
+
+            // Window management commands
+            commands::window::create_detached_window,
+            commands::window::close_detached_window,
+            commands::window::get_all_windows,
         ])
         .setup(|app| {
             info!("Application setup started");

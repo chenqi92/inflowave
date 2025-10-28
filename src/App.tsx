@@ -31,6 +31,7 @@ import { useUpdater } from './hooks/useUpdater';
 // 页面组件
 import DataGripStyleLayout from './components/layout/DataGripStyleLayout';
 import NativeMenuHandler from './components/layout/NativeMenuHandler';
+import DetachedTabWindow from './components/layout/DetachedTabWindow';
 
 // UI 组件导入
 import { Text, Spin, Layout, Content, Toaster } from '@/components/ui';
@@ -43,6 +44,22 @@ const MainLayout: React.FC = () => {
   const [globalSearchVisible, setGlobalSearchVisible] = useState(false);
   const [userGuideVisible, setUserGuideVisible] = useState(false);
   const { browserModeNoticeDismissed } = useNoticeStore();
+
+  // 检查是否为分离窗口
+  const [detachedTab, setDetachedTab] = useState<any>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const detachedTabParam = params.get('detached_tab');
+    if (detachedTabParam) {
+      try {
+        const tab = JSON.parse(decodeURIComponent(detachedTabParam));
+        setDetachedTab(tab);
+      } catch (error) {
+        console.error('解析分离tab参数失败:', error);
+      }
+    }
+  }, []);
   
   // 更新功能
   const {
@@ -135,6 +152,28 @@ const MainLayout: React.FC = () => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // 如果是分离窗口,直接显示DetachedTabWindow
+  if (detachedTab) {
+    return (
+      <DetachedTabWindow
+        tab={detachedTab}
+        onReattach={() => {
+          // 重新附加到主窗口的逻辑
+          showMessage.info('重新附加功能待实现');
+        }}
+        onClose={async () => {
+          try {
+            const { getCurrentWindow } = await import('@tauri-apps/api/window');
+            const window = getCurrentWindow();
+            await window.close();
+          } catch (error) {
+            console.error('关闭窗口失败:', error);
+          }
+        }}
+      />
+    );
+  }
 
   // 检查是否为需要特殊处理的页面（调试页面等）
   const isSpecialPage = [
