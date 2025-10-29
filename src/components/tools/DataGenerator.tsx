@@ -671,6 +671,12 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           case 'network_bytes_out':
             value = Math.floor(Math.random() * 10000000); // 0-10MB
             break;
+          case 'network_packets_in':
+            value = Math.floor(Math.random() * 100000); // 0-100k packets
+            break;
+          case 'network_packets_out':
+            value = Math.floor(Math.random() * 100000); // 0-100k packets
+            break;
           case 'load_average_1m':
             value = Math.round(Math.random() * 10 * 100) / 100; // 0-10
             break;
