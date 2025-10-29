@@ -61,10 +61,19 @@ export const useTabStore = create<TabStore>()(
       // Tab管理方法
       setTabs: (tabs) => set({ tabs }),
       
-      addTab: (tab) => set((state) => ({
-        tabs: [...state.tabs, tab],
-        activeKey: tab.id,
-      })),
+      addTab: (tab) => {
+        console.log(`➕ [TabStore] 添加Tab:`, {
+          id: tab.id,
+          title: tab.title,
+          type: tab.type,
+          contentLength: tab.content?.length || 0,
+          contentPreview: tab.content?.substring(0, 50) || '(空)',
+        });
+        return set((state) => ({
+          tabs: [...state.tabs, tab],
+          activeKey: tab.id,
+        }));
+      },
       
       removeTab: (tabId) => set((state) => {
         const newTabs = state.tabs.filter(tab => tab.id !== tabId);
@@ -83,11 +92,20 @@ export const useTabStore = create<TabStore>()(
         };
       }),
       
-      updateTab: (tabId, updates) => set((state) => ({
-        tabs: state.tabs.map(tab =>
-          tab.id === tabId ? { ...tab, ...updates } : tab
-        ),
-      })),
+      updateTab: (tabId, updates) => {
+        console.log(`🔄 [TabStore] 更新Tab:`, {
+          tabId,
+          updates: {
+            ...updates,
+            content: updates.content ? `${updates.content.substring(0, 50)}... (${updates.content.length}字符)` : undefined,
+          },
+        });
+        return set((state) => ({
+          tabs: state.tabs.map(tab =>
+            tab.id === tabId ? { ...tab, ...updates } : tab
+          ),
+        }));
+      },
       
       setActiveKey: (key) => set({ activeKey: key }),
       
@@ -96,13 +114,36 @@ export const useTabStore = create<TabStore>()(
       setSelectedTimeRange: (timeRange) => set({ selectedTimeRange: timeRange }),
       
       // 内容更新
-      updateTabContent: (tabId, content) => set((state) => ({
-        tabs: state.tabs.map(tab =>
-          tab.id === tabId 
-            ? { ...tab, content, modified: true }
-            : tab
-        ),
-      })),
+      updateTabContent: (tabId, content) => {
+        console.log(`📝 [TabStore] 更新Tab内容:`, {
+          tabId,
+          contentLength: content.length,
+          contentPreview: content.substring(0, 50),
+        });
+
+        // 🔧 获取当前状态，检查是否真的在更新正确的Tab
+        const state = get();
+        const targetTab = state.tabs.find(tab => tab.id === tabId);
+        if (!targetTab) {
+          console.error(`❌ [TabStore] 找不到Tab: ${tabId}`);
+          return;
+        }
+
+        console.log(`📝 [TabStore] 目标Tab信息:`, {
+          id: targetTab.id,
+          title: targetTab.title,
+          type: targetTab.type,
+          oldContentLength: targetTab.content?.length || 0,
+        });
+
+        return set((state) => ({
+          tabs: state.tabs.map(tab =>
+            tab.id === tabId
+              ? { ...tab, content, modified: true }
+              : tab
+          ),
+        }));
+      },
       
       // 批量操作
       clearAllTabs: () => set({
@@ -231,6 +272,13 @@ export const useTabOperations = () => {
 
   // 创建新的查询tab
   const createQueryTab = (database?: string, query?: string, connectionId?: string) => {
+    console.log(`🆕 [createQueryTab] 开始创建查询Tab:`, {
+      database,
+      query: query?.substring(0, 50),
+      connectionId,
+      currentTabsCount: tabs.length,
+    });
+
     // 生成唯一的 tab ID
     const timestamp = Date.now();
     const random = Math.random().toString(36).substr(2, 9);
@@ -251,8 +299,16 @@ export const useTabOperations = () => {
       connectionId, // 设置连接ID
     };
 
+    console.log(`🆕 [createQueryTab] 新Tab信息:`, {
+      id: newTab.id,
+      title: newTab.title,
+      content: newTab.content,
+    });
+
     addTab(newTab);
     setActiveKey(newTab.id); // 自动切换到新创建的标签页
+
+    console.log(`✅ [createQueryTab] Tab创建完成，当前Tab总数: ${tabs.length + 1}`);
     return newTab;
   };
 
@@ -334,6 +390,13 @@ export const useTabOperations = () => {
 
   // 创建数据浏览tab（如果已存在则切换并刷新）
   const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
+    console.log(`🆕 [createDataBrowserTab] 开始创建数据浏览Tab:`, {
+      connectionId,
+      database,
+      tableName,
+      currentTabsCount: tabs.length,
+    });
+
     // 检查是否已存在该表的tab
     const existingTab = tabs.find(tab =>
       tab.type === 'data-browser' &&
@@ -343,6 +406,7 @@ export const useTabOperations = () => {
     );
 
     if (existingTab) {
+      console.log(`ℹ️ [createDataBrowserTab] Tab已存在，切换并刷新:`, existingTab.id);
       // 如果tab已存在，切换到该tab并触发刷新
       setActiveKey(existingTab.id);
       refreshDataBrowserTab(existingTab.id);
@@ -363,8 +427,16 @@ export const useTabOperations = () => {
       isLoading: true, // 🔧 新创建的 tab 默认为 loading 状态
     };
 
+    console.log(`🆕 [createDataBrowserTab] 新Tab信息:`, {
+      id: newTab.id,
+      title: newTab.title,
+      type: newTab.type,
+    });
+
     addTab(newTab);
     setActiveKey(newTab.id); // 自动切换到新创建的数据浏览标签页
+
+    console.log(`✅ [createDataBrowserTab] Tab创建完成，当前Tab总数: ${tabs.length + 1}`);
     return newTab;
   };
 

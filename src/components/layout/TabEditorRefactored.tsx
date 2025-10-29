@@ -83,11 +83,55 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
 
 
+    // 🔧 使用ref存储当前Tab ID，避免闭包问题
+    const currentTabIdRef = React.useRef<string | null>(null);
+
+    // 🔧 立即同步更新 currentTabIdRef，不等待 useEffect
+    // 这样可以确保在 EditorManager 同步内容之前，currentTabIdRef 已经是最新的
+    if (activeKey && currentTabIdRef.current !== activeKey) {
+      console.log(`🔄 Tab切换（同步）: ${currentTabIdRef.current} -> ${activeKey}`);
+      currentTabIdRef.current = activeKey;
+    }
+
+    // 🔧 打印调试信息（在 useEffect 中，避免在每次渲染时都打印）
+    React.useEffect(() => {
+      if (activeKey) {
+        // 🔧 打印所有Tab的内容，用于调试
+        console.log(`📋 当前所有Tab的内容:`);
+        tabs.forEach((tab, index) => {
+          if (tab.type === 'query') {
+            console.log(`  Tab ${index + 1}: ${tab.title} (${tab.id})`);
+            console.log(`    内容: ${tab.content?.substring(0, 100) || '(空)'}`);
+          }
+        });
+
+        // 🔧 打印当前Tab的详细信息
+        const currentTab = tabs.find(t => t.id === activeKey);
+        if (currentTab) {
+          console.log(`✅ 当前激活的Tab:`, {
+            id: currentTab.id,
+            title: currentTab.title,
+            type: currentTab.type,
+            content: currentTab.content?.substring(0, 100),
+          });
+        }
+      }
+    }, [activeKey, tabs]);
+
     // 更新标签页内容的包装函数
     const handleTabContentChange = useCallback((tabId: string, content: string) => {
-      updateTabContent(tabId, content);
-      console.log(`Tab ${tabId} content changed`);
-    }, [updateTabContent]);
+      console.log(`📝 handleTabContentChange 被调用: tabId=${tabId}, currentTabIdRef=${currentTabIdRef.current}, activeKey=${activeKey}`);
+
+      // 🔧 验证：只更新当前激活的Tab
+      if (tabId !== currentTabIdRef.current) {
+        console.warn(`⚠️ 警告：尝试更新非当前Tab的内容！tabId=${tabId}, currentTabId=${currentTabIdRef.current}`);
+        console.warn(`⚠️ 这可能是闭包问题导致的！`);
+        // 🔧 使用正确的Tab ID
+        updateTabContent(currentTabIdRef.current!, content);
+      } else {
+        updateTabContent(tabId, content);
+      }
+    }, [updateTabContent, activeKey]);
 
     // 编辑器引用，用于获取选中的文本
     const editorManagerRef = React.useRef<EditorManagerRef>(null);
@@ -326,7 +370,12 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                         currentTab={currentTab}
                         selectedDatabase={selectedDatabase}
                         databases={databases}
-                        onContentChange={(content) => handleTabContentChange(currentTab.id, content)}
+                        onContentChange={(content) => {
+                          // 🔧 使用ref中的当前Tab ID，避免闭包问题
+                          const tabId = currentTabIdRef.current || currentTab.id;
+                          console.log(`📝 EditorManager onContentChange: tabId=${tabId}, currentTab.id=${currentTab.id}`);
+                          handleTabContentChange(tabId, content);
+                        }}
                         onExecuteQuery={executeQuery}
                       />
                     </div>
