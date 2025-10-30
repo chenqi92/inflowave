@@ -1,6 +1,7 @@
 use tauri::State;
-use log::{info, warn};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
+use std::sync::Arc;
 
 use crate::services::ConnectionService;
 
@@ -72,6 +73,7 @@ pub struct DataSourcePerformanceHistory {
 #[tauri::command(rename_all = "camelCase")]
 pub async fn get_opened_datasources_performance(
     connection_service: State<'_, ConnectionService>,
+    performance_stats: State<'_, Arc<crate::services::PerformanceStatsService>>,
     opened_datasources: Vec<String>, // ["connectionId/database", ...]
 ) -> Result<Vec<RealPerformanceMetrics>, String> {
     info!("📊 获取打开数据源的性能监控 - 数据源数量: {}", opened_datasources.len());
@@ -97,6 +99,7 @@ pub async fn get_opened_datasources_performance(
                 // 获取真实的性能指标
                 let metrics = get_real_performance_metrics(
                     &manager,
+                    &performance_stats,
                     connection_id,
                     &database_name,
                     &connection_config,
@@ -119,6 +122,7 @@ pub async fn get_opened_datasources_performance(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn get_datasource_performance_details(
     connection_service: State<'_, ConnectionService>,
+    performance_stats: State<'_, Arc<crate::services::PerformanceStatsService>>,
     datasource_key: String, // "connectionId/database"
 ) -> Result<RealPerformanceMetrics, String> {
     info!("📊 获取数据源性能详情: {}", datasource_key);
@@ -142,6 +146,7 @@ pub async fn get_datasource_performance_details(
     // 获取详细的性能指标
     let metrics = get_real_performance_metrics(
         &manager,
+        &performance_stats,
         connection_id,
         &database_name,
         &connection_config,
@@ -197,6 +202,7 @@ pub async fn update_performance_monitoring_config(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn get_datasource_performance_history(
     _connection_service: State<'_, ConnectionService>,
+    performance_stats: State<'_, Arc<crate::services::PerformanceStatsService>>,
     datasource_key: String, // "connectionId/database"
     time_range: Option<String>, // "1h", "6h", "24h"
 ) -> Result<DataSourcePerformanceHistory, String> {
@@ -209,40 +215,30 @@ pub async fn get_datasource_performance_history(
 
     let connection_id = parts[0];
     let database_name = parts[1..].join("/");
-    let time_range = time_range.unwrap_or_else(|| "24h".to_string());
+    let time_range_str = time_range.unwrap_or_else(|| "24h".to_string());
 
-    // 解析时间范围
-    let hours = parse_time_range(&time_range)?;
-    let now = chrono::Utc::now();
-    let start_time = now - chrono::Duration::hours(hours as i64);
+    // 从性能统计服务获取真实的历史数据
+    let history_points = performance_stats.get_history(connection_id, &database_name, &time_range_str).await;
 
-    // 生成历史数据点
     let mut history = Vec::new();
-    let points_count = if hours <= 1 { 12 } else if hours <= 6 { 24 } else { 48 }; // 根据时间范围调整数据点数量
-    let interval_minutes = (hours * 60) / points_count;
 
-    for i in 0..points_count {
-        let timestamp = start_time + chrono::Duration::minutes((i * interval_minutes) as i64);
+    if history_points.is_empty() {
+        // 如果没有历史数据，返回空数组
+        info!("暂无历史数据，返回空数组");
+    } else {
+        // 转换为前端需要的格式
+        for point in history_points {
+            history.push(PerformanceHistoryPoint {
+                timestamp: point.timestamp.to_rfc3339(),
+                latency: point.average_latency,
+                queries: point.queries_per_minute as u32,
+                errors: point.error_count,
+                cpu: point.cpu_usage,
+                memory: point.memory_usage,
+            });
+        }
 
-        // 使用正弦波模拟真实的性能波动
-        let time_factor = (i as f64 / points_count as f64) * std::f64::consts::PI * 2.0;
-        let random_factor = ((i as f64 * 0.7).cos() * 0.3).abs();
-
-        // 基于连接ID生成一致的基准值
-        let connection_hash = connection_id.bytes().fold(0u32, |acc, b| acc.wrapping_add(b as u32));
-        let base_latency = 50.0 + (connection_hash % 50) as f64;
-        let base_queries = 10 + (connection_hash % 20);
-        let base_cpu = 20.0 + (connection_hash % 30) as f64;
-        let base_memory = 30.0 + (connection_hash % 40) as f64;
-
-        history.push(PerformanceHistoryPoint {
-            timestamp: timestamp.to_rfc3339(),
-            latency: (base_latency + time_factor.sin() * 30.0 + random_factor * 20.0).max(10.0).min(500.0),
-            queries: ((base_queries as f64 + time_factor.sin() * 15.0 + random_factor * 10.0).max(0.0).min(100.0)) as u32,
-            errors: ((time_factor.sin().abs() * 3.0 + random_factor * 2.0).max(0.0).min(10.0)) as u32,
-            cpu: (base_cpu + time_factor.sin() * 20.0 + random_factor * 15.0).max(5.0).min(95.0),
-            memory: (base_memory + time_factor.sin() * 25.0 + random_factor * 10.0).max(10.0).min(90.0),
-        });
+        info!("返回 {} 个历史数据点", history.len());
     }
 
     info!("✅ 成功生成 {} 个历史数据点", history.len());
@@ -276,6 +272,7 @@ fn parse_time_range(time_range: &str) -> Result<u32, String> {
 /// 获取真实的性能指标
 async fn get_real_performance_metrics(
     manager: &crate::database::connection::ConnectionManager,
+    performance_stats: &Arc<crate::services::PerformanceStatsService>,
     connection_id: &str,
     database_name: &str,
     connection_config: &crate::models::connection::ConnectionConfig,
@@ -355,6 +352,23 @@ async fn get_real_performance_metrics(
         Err(e) => {
             metrics.issues.push(format!("获取数据库指标失败: {}", e));
         }
+    }
+
+    // 获取真实的查询统计数据
+    if let Some(stats) = performance_stats.get_stats(connection_id, database_name).await {
+        metrics.active_queries = stats.active_queries;
+        metrics.total_queries_today = stats.total_queries_today;
+        metrics.average_query_time = stats.average_query_time;
+        metrics.slow_queries_count = stats.slow_queries_count;
+        metrics.failed_queries_count = stats.failed_queries as u32;
+
+        debug!(
+            "使用真实统计数据: 今日查询={}, 平均时间={}ms, 慢查询={}, 失败={}",
+            stats.total_queries_today,
+            stats.average_query_time,
+            stats.slow_queries_count,
+            stats.failed_queries
+        );
     }
 
     // 计算健康分数和生成建议

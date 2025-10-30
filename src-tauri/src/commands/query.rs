@@ -1,5 +1,5 @@
 use crate::models::{QueryRequest, QueryResult, QueryResultItem, QueryValidationResult};
-use crate::services::ConnectionService;
+use crate::services::{ConnectionService, PerformanceStatsService};
 use crate::utils::validation::ValidationUtils;
 use crate::database::client::DatabaseClient;
 use crate::commands::settings::SettingsStorage;
@@ -12,6 +12,7 @@ use std::sync::Arc;
 pub async fn execute_query(
     connection_service: State<'_, ConnectionService>,
     settings_storage: State<'_, SettingsStorage>,
+    performance_stats: State<'_, Arc<PerformanceStatsService>>,
     request: QueryRequest,
 ) -> Result<QueryResult, String> {
     debug!("处理执行查询命令: {}", request.connection_id);
@@ -39,11 +40,17 @@ pub async fn execute_query(
             format!("获取连接失败: {}", e)
         })?;
 
+    // 记录查询开始
+    let database_name = request.database.clone().unwrap_or_else(|| "default".to_string());
+    performance_stats.record_query_start(&request.connection_id, &database_name).await;
+
+    let start_time = std::time::Instant::now();
+
     // 根据SQL语句类型选择执行方式
     let statement_type = ValidationUtils::get_statement_type(&request.query);
     debug!("检测到SQL语句类型: {}", statement_type);
 
-    match statement_type.as_str() {
+    let result = match statement_type.as_str() {
         "INSERT" => {
             // 处理INSERT语句
             execute_insert_statement(client, &request).await
@@ -85,7 +92,19 @@ pub async fn execute_query(
 
             Ok(result)
         }
-    }
+    };
+
+    // 记录查询完成
+    let execution_time_ms = start_time.elapsed().as_millis() as f64;
+    let success = result.is_ok();
+    performance_stats.record_query_complete(
+        &request.connection_id,
+        &database_name,
+        execution_time_ms,
+        success,
+    ).await;
+
+    result
 }
 
 /// 验证查询

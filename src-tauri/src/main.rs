@@ -1195,6 +1195,15 @@ async fn main() {
             // Initialize performance monitoring storage
             app.manage(commands::performance::QueryMetricsStorage::new(Vec::new()));
 
+            // Initialize performance stats service
+            let performance_stats = std::sync::Arc::new(services::PerformanceStatsService::new());
+            app.manage(performance_stats.clone());
+
+            // Start performance data collector
+            let performance_collector = std::sync::Arc::new(services::PerformanceCollector::new(performance_stats.clone()));
+            performance_collector.clone().start();
+            info!("✅ 性能数据采集器已启动");
+
             // Initialize user experience storage - 从文件加载或使用默认值
             let user_preferences = {
                 let pm = persistence_manager.lock().unwrap();

@@ -3,14 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button, Badge, Switch, Label, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import {
   Database,
-  RefreshCw,
   Activity,
   AlertTriangle,
   Clock,
   HardDrive,
   TrendingUp,
-  ChevronLeft,
-  ChevronRight,
   BarChart3,
   Gauge,
   Timer,
@@ -90,16 +87,15 @@ const CHART_COLORS = {
 
 const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'];
 
-export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> = ({ 
-  className = '' 
+export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> = ({
+  className = ''
 }) => {
   // 状态管理
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [selectedDataSource, setSelectedDataSource] = useState<string | null>(null);
   const [metricsData, setMetricsData] = useState<PerformanceMetrics[]>([]);
   const [historyData, setHistoryData] = useState<HistoryDataPoint[]>([]);
   const [loading, setLoading] = useState(false);
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const [refreshInterval, setRefreshInterval] = useState(30);
   const [containerWidth, setContainerWidth] = useState(0);
   const [timeRange, setTimeRange] = useState<'1h' | '6h' | '24h'>('24h');
@@ -277,66 +273,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
     ].filter(item => item.value > 0);
   }, [metricsData]);
 
-  // 自动折叠逻辑：当宽度过小时自动折叠
-  useEffect(() => {
-    if (containerWidth > 0 && containerWidth < 200 && !isCollapsed) {
-      setIsCollapsed(true);
-    }
-  }, [containerWidth, isCollapsed]);
 
-  // 渲染折叠状态的简化视图
-  const renderCollapsedView = () => (
-    <div className="h-full flex flex-col">
-      {/* 折叠状态头部 */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsCollapsed(false)}
-            className="p-2"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* 折叠状态指标 */}
-      <div className="flex-1 p-2 space-y-4">
-        <div className="text-center">
-          <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-primary/10 flex items-center justify-center">
-            <Activity className="w-4 h-4 text-primary" />
-          </div>
-          <div className="text-xs font-medium">{overallStats.activeConnections}</div>
-          <div className="text-xs text-muted-foreground">活跃</div>
-        </div>
-
-        <div className="text-center">
-          <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-success/10 flex items-center justify-center">
-            <CheckCircle className="w-4 h-4 text-success" />
-          </div>
-          <div className="text-xs font-medium">{overallStats.healthyCount}</div>
-          <div className="text-xs text-muted-foreground">健康</div>
-        </div>
-
-        <div className="text-center">
-          <div className="w-8 h-8 mx-auto mb-2 rounded-full bg-warning/10 flex items-center justify-center">
-            <Clock className="w-4 h-4 text-warning" />
-          </div>
-          <div className="text-xs font-medium">{overallStats.avgLatency.toFixed(0)}</div>
-          <div className="text-xs text-muted-foreground">ms</div>
-        </div>
-      </div>
-    </div>
-  );
-
-  if (isCollapsed) {
-    return (
-      <div ref={containerRef} className={`w-full h-full border-r border-border bg-background ${className}`}>
-        {renderCollapsedView()}
-      </div>
-    );
-  }
 
   return (
     <div ref={containerRef} className={`w-full h-full border-r border-border bg-background ${className}`}>
@@ -344,30 +281,6 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
         {/* 头部控制栏 */}
         {layout.showHeader && (
           <div className={`${layout.isNarrow ? 'p-2' : 'p-4'} border-b border-border`}>
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsCollapsed(true)}
-                  className="p-1"
-                >
-                  <ChevronLeft className="w-3 h-3" />
-                </Button>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={fetchPerformanceData}
-                  disabled={loading}
-                  className="p-1"
-                >
-                  <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
-                </Button>
-              </div>
-            </div>
-
             {/* 自动刷新控制 - 只在非窄屏显示 */}
             {!layout.isNarrow && (
               <div className="flex items-center justify-between gap-2">
@@ -411,7 +324,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                 </div>
               </div>
             )}
-            
+
             {/* 窄屏时的简化状态显示 */}
             {layout.isNarrow && (
               <div className="flex items-center justify-center">
@@ -471,7 +384,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                         </div>
                         <div>
                           <div className={`${layout.isNarrow ? 'text-lg' : 'text-2xl'} font-bold`}>
-                            {overallStats.avgLatency.toFixed(0)}
+                            {overallStats.avgLatency.toFixed(3)}
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {layout.isNarrow ? 'ms' : '平均延迟(ms)'}
@@ -491,7 +404,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                             </div>
                             <div>
                               <div className="text-2xl font-bold">
-                                {overallStats.errorRate.toFixed(1)}%
+                                {overallStats.errorRate.toFixed(3)}%
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 错误率
@@ -785,7 +698,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                               metrics.connectionLatency > 500 ? 'text-danger' : 'text-success'
                             }>
                               {metrics.connectionLatency >= 0
-                                ? `${metrics.connectionLatency.toFixed(0)}ms`
+                                ? `${metrics.connectionLatency.toFixed(3)}ms`
                                 : 'N/A'}
                             </span>
                             <span>{metrics.totalQueriesToday}</span>
@@ -801,7 +714,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                                 metrics.connectionLatency > 500 ? 'text-danger' : 'text-success'
                               }>
                                 {metrics.connectionLatency >= 0
-                                  ? `${metrics.connectionLatency.toFixed(0)}ms`
+                                  ? `${metrics.connectionLatency.toFixed(3)}ms`
                                   : 'N/A'}
                               </span>
                             </div>
@@ -811,7 +724,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                             </div>
                             <div className="flex items-center gap-1">
                               <HardDrive className="w-3 h-3 text-muted-foreground" />
-                              <span>{(metrics.databaseSize / 1024 / 1024).toFixed(1)}MB</span>
+                              <span>{(metrics.databaseSize / 1024 / 1024).toFixed(3)}MB</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <Database className="w-3 h-3 text-muted-foreground" />
@@ -826,7 +739,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                             <div className="text-xs">
                               <div className="font-medium mb-1">性能指标</div>
                               <div className="grid grid-cols-2 gap-2">
-                                <div>平均查询时间: {metrics.averageQueryTime.toFixed(0)}ms</div>
+                                <div>平均查询时间: {metrics.averageQueryTime.toFixed(3)}ms</div>
                                 <div>慢查询: {metrics.slowQueriesCount}</div>
                                 <div>失败查询: {metrics.failedQueriesCount}</div>
                                 <div>记录数: {metrics.recordCount.toLocaleString()}</div>
