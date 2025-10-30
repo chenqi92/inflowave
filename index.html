@@ -205,29 +205,8 @@
     
     <!-- Remove loading screen when app is ready -->
     <script>
-      // 更智能的loading状态管理
-      let loadingStep = 0;
+      // ✅ 优化：移除假进度，直接响应真实的启动完成事件
       let hasAppStarted = false;
-      const loadingSteps = [
-        '正在启动应用程序...',
-        '正在加载组件...',
-        '正在初始化服务...',
-        '正在建立连接...',
-        '启动完成'
-      ];
-      
-      // 模拟启动进度
-      function updateLoadingProgress() {
-        const loadingText = document.getElementById('loading-text');
-        if (loadingText && loadingStep < loadingSteps.length - 1) {
-          loadingStep++;
-          loadingText.textContent = loadingSteps[loadingStep];
-          setTimeout(updateLoadingProgress, 800 + Math.random() * 400); // 随机间隔
-        }
-      }
-      
-      // 开始loading进度更新
-      setTimeout(updateLoadingProgress, 500);
 
       // Listen for app ready signal
       window.addEventListener('app-ready', function() {
@@ -236,15 +215,14 @@
         if (loadingText) {
           loadingText.textContent = '启动完成';
         }
-        
+
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) {
+          // 立即开始淡出动画，不再延迟
+          loadingScreen.classList.add('fade-out');
           setTimeout(() => {
-            loadingScreen.classList.add('fade-out');
-            setTimeout(() => {
-              loadingScreen.style.display = 'none';
-            }, 400);
-          }, 200);
+            loadingScreen.style.display = 'none';
+          }, 400);
         }
       });
 
@@ -296,19 +274,22 @@
         }
       }
 
-      // Auto-remove loading screen if it takes too long (fallback)
+      // ✅ 优化：缩短超时时间，桌面应用启动应该很快
+      // 如果3秒后还没启动完成，显示错误
       setTimeout(() => {
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen && loadingScreen.style.display !== 'none' && !hasAppStarted) {
           showStartupError('应用程序启动超时，可能存在问题');
         }
-      }, 10000); // 10秒超时
-      
-      // 检测应用是否成功启动
+      }, 3000); // 3秒超时（桌面应用应该更快）
+
+      // 如果2秒后还没收到 app-ready 事件，强制移除加载屏幕
+      // 这是最后的保险措施，避免用户一直看到加载屏幕
       setTimeout(() => {
         if (!hasAppStarted) {
           const loadingScreen = document.getElementById('loading-screen');
           if (loadingScreen && loadingScreen.style.display !== 'none') {
+            console.warn('应用启动超过2秒，强制移除加载屏幕');
             hasAppStarted = true;
             loadingScreen.classList.add('fade-out');
             setTimeout(() => {
@@ -316,7 +297,7 @@
             }, 400);
           }
         }
-      }, 5000); // 5秒后强制移除loading
+      }, 2000); // 2秒后强制移除loading
       
       // 字体加载检测
       if ('fonts' in document) {

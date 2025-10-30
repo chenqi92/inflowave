@@ -17,7 +17,8 @@ import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
 import { useUserPreferencesStore } from './stores/userPreferencesStore';
 import { useAppNotifications } from './hooks/useAppNotifications';
-import { initializeHealthCheck } from './utils/healthCheck';
+// 移除自动健康检查导入 - 桌面应用不需要定期健康检查
+// import { initializeHealthCheck } from './utils/healthCheck';
 import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
 import { useTabStore } from './stores/tabStore';
 import UnsavedTabsDialog from './components/common/UnsavedTabsDialog';
@@ -589,12 +590,6 @@ const App: React.FC = () => {
       try {
         logger.debug('InfloWave 启动中...');
 
-        // 初始化控制台日志拦截器
-        logger.debug('初始化控制台日志拦截器...');
-
-        // 初始化错误日志系统
-        logger.debug('初始化错误日志系统...');
-
         // 初始化环境检测
         initializeEnvironment();
 
@@ -609,40 +604,27 @@ const App: React.FC = () => {
           logger.warn('用户偏好设置加载失败，使用默认值:', prefError);
         }
 
-        // 尝试获取应用配置信息
-        try {
-          await safeTauriInvoke<any>('get_app_config');
-          logger.debug('应用配置加载成功');
-        } catch (configError) {
-          logger.warn('应用配置加载失败，使用默认配置:', configError);
-        }
+        // ✅ 优化：应用配置加载改为非阻塞后台加载
+        safeTauriInvoke<any>('get_app_config')
+          .then(() => logger.debug('应用配置加载成功'))
+          .catch(err => logger.warn('应用配置加载失败，使用默认配置:', err));
 
-        // 尝试初始化连接服务
-        try {
-          await safeTauriInvoke<void>('initialize_connections');
-          logger.debug('连接服务初始化成功');
+        // ✅ 优化：连接服务初始化改为非阻塞后台加载
+        // 后端已在 main.rs 中异步加载连接配置，前端延迟加载不影响启动速度
+        safeTauriInvoke<void>('initialize_connections')
+          .then(() => {
+            logger.debug('连接服务初始化成功');
+            // 初始化时同步一次连接配置
+            const { syncConnectionsFromBackend } = useConnectionStore.getState();
+            return syncConnectionsFromBackend();
+          })
+          .then(() => logger.debug('连接配置后台加载完成'))
+          .catch(err => logger.warn('连接服务初始化失败:', err));
 
-          // 初始化时同步一次连接配置
-          const { syncConnectionsFromBackend } = useConnectionStore.getState();
-          await syncConnectionsFromBackend();
-          logger.debug('连接配置初始化同步完成');
-
-          // 不再启动定时同步，因为：
-          // 1. 每次操作（展开节点、双击表等）都会向后端发送请求，本身就是状态检测
-          // 2. 用户可以通过刷新按钮主动同步
-          // 3. 定时同步会导致不必要的组件重新渲染，造成树闪烁
-          logger.debug('连接配置初始化完成（已禁用定时同步）');
-        } catch (connError) {
-          logger.warn('连接服务初始化失败:', connError);
-        }
-
-        // 初始化性能监控健康检查
-        try {
-          initializeHealthCheck();
-          logger.debug('性能监控健康检查初始化成功');
-        } catch (healthError) {
-          logger.warn('性能监控健康检查初始化失败:', healthError);
-        }
+        // ❌ 移除：桌面应用不需要定期健康检查
+        // 健康检查应该是按需的（用户打开性能监控页面时才执行）
+        // 如需检查，可在性能监控组件中手动触发
+        // initializeHealthCheck();
 
         showMessage.success('应用启动成功');
       } catch (error) {
@@ -660,7 +642,7 @@ const App: React.FC = () => {
         // 立即通知加载屏幕应用已准备就绪
         // 确保窗口标题正确设置
         document.title = 'InfloWave';
-        
+
         // 如果是Tauri环境，也通过Tauri API设置标题
         if ((window as any).__TAURI__) {
           import('@tauri-apps/api/webviewWindow').then(({ getCurrentWebviewWindow }) => {
@@ -671,7 +653,7 @@ const App: React.FC = () => {
             logger.warn('无法导入Tauri webviewWindow模块:', err);
           });
         }
-        
+
         window.dispatchEvent(new CustomEvent('app-ready'));
         logger.info('应用启动完成，窗口标题已设置，已发送ready信号');
 
