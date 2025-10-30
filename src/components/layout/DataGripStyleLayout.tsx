@@ -23,6 +23,7 @@ import RightFunctionPanel from './RightFunctionPanel';
 
 import {dataExplorerRefresh} from '@/utils/refreshEvents';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
+import { useTabStore } from '@/stores/tabStore';
 import type {QueryResult} from '@/types';
 import { debounce } from 'lodash-es';
 
@@ -42,6 +43,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                                                                  }) => {
     // 🔧 使用 userPreferencesStore 替代废弃的 useUserPreferences hook
     const { preferences, updateWorkspace } = useUserPreferencesStore();
+    // 🔧 获取Tab状态，用于判断是否有Tab
+    const { tabs } = useTabStore();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -315,6 +318,28 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             // setCurrentView('datasource'); // 取消注释以启用自动切换
         }
     }, [currentView, expandedDatabases]);
+
+    // 🔧 调试：监控tabs数量变化
+    useEffect(() => {
+        console.log('🔍 [DataGripStyleLayout] tabs数量变化:', {
+            tabsLength: tabs.length,
+            activeTabType,
+            bottomPanelCollapsed,
+            hasQueryResult: !!queryResult,
+            hasQueryResults: queryResults && queryResults.length > 0,
+        });
+    }, [tabs.length, activeTabType, bottomPanelCollapsed, queryResult, queryResults]);
+
+    // 🔧 当所有Tab关闭时，强制清空查询结果
+    useEffect(() => {
+        if (tabs.length === 0) {
+            console.log('🧹 [DataGripStyleLayout] 所有Tab已关闭，强制清空查询结果');
+            setQueryResult(null);
+            setQueryResults([]);
+            setExecutedQueries([]);
+            setExecutionTime(0);
+        }
+    }, [tabs.length]);
 
 
     const [currentTimeRange, setCurrentTimeRange] = useState<{
@@ -647,7 +672,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     </ResizablePanel>
 
                     {/* 分割线和下半部分：结果面板 - 只在query类型标签时显示 */}
-                    {!bottomPanelCollapsed && activeTabType === 'query' && (
+                    {!bottomPanelCollapsed && activeTabType === 'query' && tabs.length > 0 && (
                         <>
                             <ResizableHandle
                                 withHandle

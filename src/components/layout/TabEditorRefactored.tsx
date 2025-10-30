@@ -102,9 +102,17 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       // 检查是否是真正的Tab切换（activeKey变化）
       const isTabSwitch = activeKey !== previousActiveKeyRef.current;
 
-      if (activeKey && isTabSwitch) {
+      if (isTabSwitch) {
         console.log(`🔄 检测到Tab切换: ${previousActiveKeyRef.current} -> ${activeKey}`);
         previousActiveKeyRef.current = activeKey;
+
+        // 🔧 如果 activeKey 为空，说明所有Tab都已关闭
+        if (!activeKey || activeKey === '') {
+          console.log(`📭 所有Tab已关闭，清空结果面板`);
+          onQueryResult?.(null);
+          onBatchQueryResults?.([], [], 0);
+          return;
+        }
 
         // 从store中获取最新的tabs，避免闭包问题
         const currentTabs = useTabStore.getState().tabs;
