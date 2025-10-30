@@ -332,6 +332,20 @@ export const useQueryExecutor = ({
 
       console.log('✅ 表查询执行成功:', result);
 
+      // 🔧 保存查询结果到Tab对象（修复右键查询数据后切换Tab结果不显示的问题）
+      if (onUpdateTab && currentTab) {
+        console.log('💾 保存查询结果到Tab对象:', {
+          tabId: currentTab.id,
+          tabTitle: currentTab.title,
+          hasResult: !!result,
+        });
+        onUpdateTab(currentTab.id, {
+          queryResults: [result],
+          executedQueries: [processedQuery],
+          executionTime: result.executionTime || 0,
+        });
+      }
+
       // 调用回调函数
       onQueryResult?.(result);
       onBatchQueryResults?.([result], [processedQuery], result.executionTime || 0);
@@ -343,14 +357,14 @@ export const useQueryExecutor = ({
     } catch (error) {
       console.error('❌ 表查询执行失败:', error);
       showMessage.error(`查询执行失败: ${error}`);
-      
+
       // 清空结果
       onQueryResult?.(null);
       onBatchQueryResults?.([], [], 0);
     } finally {
       setLoading(false);
     }
-  }, [activeConnectionId, currentTab?.connectionId, onQueryResult, onBatchQueryResults]);
+  }, [activeConnectionId, currentTab, onQueryResult, onBatchQueryResults, onUpdateTab]);
 
   // 测试智能提示
   const testIntelligentHints = useCallback(async () => {

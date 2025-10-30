@@ -161,18 +161,6 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       }
     }, [activeKey, onQueryResult, onBatchQueryResults]); // 移除tabs依赖，避免查询执行完成后重复触发
 
-    // 🔧 监听所有Tab关闭的情况
-    React.useEffect(() => {
-      const queryTabs = tabs.filter(tab => tab.type === 'query');
-
-      if (queryTabs.length === 0) {
-        // 所有查询Tab都已关闭，清空结果面板
-        console.log(`📭 所有查询Tab已关闭，清空结果面板`);
-        onQueryResult?.(null);
-        onBatchQueryResults?.([], [], 0);
-      }
-    }, [tabs, onQueryResult, onBatchQueryResults]);
-
     // 更新标签页内容的包装函数
     const handleTabContentChange = useCallback((tabId: string, content: string) => {
       console.log(`📝 handleTabContentChange 被调用: tabId=${tabId}, currentTabIdRef=${currentTabIdRef.current}, activeKey=${activeKey}`);

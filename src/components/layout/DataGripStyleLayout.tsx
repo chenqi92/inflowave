@@ -635,10 +635,9 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                                 setQueryResults(results);
                                 setExecutedQueries(queries);
                                 setExecutionTime(executionTime);
-                                // 如果只有一个结果，也设置 queryResult 以保持兼容性
-                                if (results.length === 1) {
-                                    setQueryResult(results[0]);
-                                }
+                                // 🔧 确保 queryResult 始终与 queryResults 保持一致
+                                // 只有一个结果时设置 queryResult，否则清空
+                                setQueryResult(results.length === 1 ? results[0] : null);
                             }}
                             onActiveTabTypeChange={setActiveTabType}
                             expandedDatabases={expandedDatabases}
