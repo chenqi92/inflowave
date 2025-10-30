@@ -632,7 +632,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
       try {
         const currentWindow = getCurrentWindow();
         const unlisten = await currentWindow.listen('reattach-tab', (event: any) => {
-          console.log('收到重新附加tab事件:', event.payload);
+          console.log('📥 收到重新附加tab事件:', event.payload);
 
           const { tab } = event.payload;
           if (!tab) return;
@@ -640,13 +640,36 @@ export const TabManager: React.FC<TabManagerProps> = ({
           // 检查tab是否已存在
           const existingTab = tabs.find(t => t.id === tab.id);
           if (existingTab) {
-            // 如果已存在,只激活它
+            // 🔧 如果已存在，更新tab内容和查询结果
+            console.log('🔄 Tab已存在，更新内容和查询结果');
+            const updatedTabs = tabs.map(t =>
+              t.id === tab.id
+                ? {
+                    ...t,
+                    content: tab.content,
+                    modified: tab.modified || false,
+                    database: tab.database,
+                    // 🔧 更新查询结果
+                    queryResult: tab.queryResult,
+                    queryResults: tab.queryResults,
+                    executedQueries: tab.executedQueries,
+                    executionTime: tab.executionTime,
+                  }
+                : t
+            );
+            onTabsChange(updatedTabs);
             onActiveKeyChange(tab.id);
-            showMessage.info(`Tab "${tab.title}" 已存在`);
+            showMessage.success(`Tab "${tab.title}" 已更新`);
             return;
           }
 
-          // 添加tab到主窗口
+          // 🔧 添加tab到主窗口，包含查询结果
+          console.log('➕ 添加新Tab到主窗口，包含查询结果:', {
+            tabId: tab.id,
+            hasQueryResult: !!tab.queryResult,
+            queryResultsCount: tab.queryResults?.length || 0,
+          });
+
           const newTabs = [...tabs, {
             id: tab.id,
             title: tab.title,
@@ -657,6 +680,11 @@ export const TabManager: React.FC<TabManagerProps> = ({
             connectionId: tab.connectionId,
             database: tab.database,
             tableName: tab.tableName,
+            // 🔧 包含查询结果
+            queryResult: tab.queryResult,
+            queryResults: tab.queryResults,
+            executedQueries: tab.executedQueries,
+            executionTime: tab.executionTime,
           }];
 
           onTabsChange(newTabs);

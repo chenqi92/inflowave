@@ -19,6 +19,8 @@ pub struct DetachedTab {
     pub query_results: Option<Vec<serde_json::Value>>,
     pub executed_queries: Option<Vec<String>>,
     pub execution_time: Option<f64>,
+    // 🔧 窗口label，用于关闭独立窗口
+    pub window_label: Option<String>,
 }
 
 /// 创建分离的tab窗口
@@ -123,6 +125,9 @@ pub async fn reattach_tab(
 ) -> Result<(), String> {
     debug!("重新附加tab到主窗口: {}", tab.id);
 
+    // 🔧 获取窗口label（如果有）
+    let window_label = tab.window_label.clone();
+
     // 获取主窗口
     let main_window = app.get_webview_window("main")
         .ok_or_else(|| "找不到主窗口".to_string())?;
@@ -140,6 +145,27 @@ pub async fn reattach_tab(
     })?;
 
     info!("成功发送重新附加事件");
+
+    // 🔧 如果提供了窗口label，关闭独立窗口
+    if let Some(label) = window_label {
+        debug!("准备关闭独立窗口: {}", label);
+
+        // 延迟关闭窗口，确保主窗口有时间处理事件
+        let app_clone = app.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(tokio::time::Duration::from_millis(300)).await;
+
+            if let Some(window) = app_clone.get_webview_window(&label) {
+                match window.close() {
+                    Ok(_) => info!("✅ 成功关闭独立窗口: {}", label),
+                    Err(e) => error!("❌ 关闭独立窗口失败: {}", e),
+                }
+            } else {
+                error!("❌ 找不到独立窗口: {}", label);
+            }
+        });
+    }
+
     Ok(())
 }
 

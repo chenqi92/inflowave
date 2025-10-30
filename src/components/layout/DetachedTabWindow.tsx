@@ -48,9 +48,24 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   onReattach,
   onClose,
 }) => {
+  // 🔧 添加详细的初始化日志
+  console.log('🚀 DetachedTabWindow 组件渲染:', {
+    tabId: tab.id,
+    tabTitle: tab.title,
+    tabType: tab.type,
+    hasContent: !!tab.content,
+    contentLength: tab.content?.length || 0,
+    connectionId: tab.connectionId,
+    database: tab.database,
+    tableName: tab.tableName,
+    modified: tab.modified,
+    hasQueryResult: !!tab.queryResult,
+    queryResultsCount: tab.queryResults?.length || 0,
+  });
+
   const { resolvedTheme } = useTheme();
-  const [content, setContent] = useState(tab.content);
-  const [modified, setModified] = useState(false);
+  const [content, setContent] = useState(tab.content || '');
+  const [modified, setModified] = useState(tab.modified || false);
 
   // 查询相关状态 - 从tab prop中恢复初始值
   const [selectedDatabase, setSelectedDatabase] = useState(tab.database || '');
@@ -149,7 +164,17 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   // 处理移回主窗口
   const handleReattach = useCallback(async () => {
     try {
-      // 创建tab数据
+      // 🔧 获取当前窗口的label
+      const currentWindow = getCurrentWindow();
+      const windowLabel = currentWindow.label;
+
+      console.log('🔄 准备移回主窗口:', {
+        windowLabel,
+        tabId: tab.id,
+        tabTitle: tab.title,
+      });
+
+      // 创建tab数据，包含查询结果和窗口label
       const tabData = {
         id: tab.id,
         title: tab.title,
@@ -159,21 +184,34 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
         database: selectedDatabase,
         tableName: tab.tableName,
         modified: modified,
+        // 🔧 包含查询结果，确保移回主窗口后结果不丢失
+        queryResult: queryResult,
+        queryResults: queryResults,
+        executedQueries: executedQueries,
+        executionTime: executionTime,
+        // 🔧 包含窗口label，用于后端关闭窗口
+        windowLabel: windowLabel,
       };
 
-      // 通过Tauri命令通知主窗口
+      console.log('🔄 移回主窗口，tab数据:', {
+        tabId: tabData.id,
+        windowLabel: tabData.windowLabel,
+        hasQueryResult: !!tabData.queryResult,
+        queryResultsCount: tabData.queryResults?.length || 0,
+      });
+
+      // 🔧 通过Tauri命令通知主窗口，后端会关闭独立窗口
       await safeTauriInvoke('reattach_tab', { tab: tabData });
 
-      // 关闭当前窗口
-      const currentWindow = getCurrentWindow();
-      await currentWindow.close();
+      console.log('✅ 已发送reattach命令，等待后端关闭窗口');
 
-      showMessage.success(`Tab "${tab.title}" 已移回主窗口`);
+      // 🔧 不再在前端关闭窗口，由后端处理
+      // 这样可以确保窗口在主窗口处理完reattach事件后才关闭
     } catch (error) {
-      console.error('移回主窗口失败:', error);
+      console.error('❌ 移回主窗口失败:', error);
       showMessage.error('移回主窗口失败');
     }
-  }, [tab, content, selectedDatabase, modified]);
+  }, [tab, content, selectedDatabase, modified, queryResult, queryResults, executedQueries, executionTime]);
 
 
 
@@ -216,14 +254,49 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [modified, content, tab.id, onClose]);
 
-  return (
-    <div className="h-screen bg-background flex flex-col">
+  // 🔧 调试：打印渲染信息
+  console.log('🪟 DetachedTabWindow 准备渲染UI:', {
+    tabId: tab.id,
+    tabTitle: tab.title,
+    tabType: tab.type,
+    hasConnectionId: !!tab.connectionId,
+    hasDatabase: !!tab.database,
+    hasTableName: !!tab.tableName,
+    hasQueryResult: !!queryResult,
+    queryResultsCount: queryResults?.length || 0,
+    hasActiveConnection: !!activeConnectionId,
+    connectionsCount: connections.length,
+  });
+
+  // 🔧 如果是data-browser类型但缺少必要信息，显示错误
+  if (tab.type === 'data-browser' && (!tab.connectionId || !tab.database || !tab.tableName)) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold text-destructive mb-4">数据浏览器配置错误</h1>
+          <p className="text-muted-foreground mb-2">缺少必要的连接信息</p>
+          <pre className="text-xs text-left bg-muted p-4 rounded mt-4">
+            {JSON.stringify({
+              connectionId: tab.connectionId,
+              database: tab.database,
+              tableName: tab.tableName,
+            }, null, 2)}
+          </pre>
+        </div>
+      </div>
+    );
+  }
+
+  try {
+    return (
+      <div className="h-screen bg-background flex flex-col">
       {/* 顶部操作栏 */}
       <div className="flex-shrink-0 bg-muted/30 border-b px-4 py-2">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium">{tab.title}</span>
             {modified && <span className="text-xs text-orange-500">●</span>}
+            <span className="text-xs text-muted-foreground">({tab.type})</span>
           </div>
           <Button
             variant="outline"
@@ -341,7 +414,21 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
         </div>
       </div>
     </div>
-  );
+    );
+  } catch (error) {
+    console.error('❌ DetachedTabWindow 渲染错误:', error);
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold text-destructive mb-4">独立窗口渲染错误</h1>
+          <p className="text-muted-foreground mb-4">渲染组件时发生错误</p>
+          <pre className="text-xs text-left bg-muted p-4 rounded mt-4 max-w-2xl overflow-auto">
+            {String(error)}
+          </pre>
+        </div>
+      </div>
+    );
+  }
 };
 
 export default DetachedTabWindow;

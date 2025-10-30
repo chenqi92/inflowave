@@ -47,16 +47,34 @@ const MainLayout: React.FC = () => {
 
   // 检查是否为分离窗口
   const [detachedTab, setDetachedTab] = useState<any>(null);
+  const [detachedTabError, setDetachedTabError] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const detachedTabParam = params.get('detached_tab');
+
+    console.log('🔍 检查URL参数:', {
+      hasDetachedTabParam: !!detachedTabParam,
+      paramLength: detachedTabParam?.length || 0,
+      fullUrl: window.location.href,
+    });
+
     if (detachedTabParam) {
       try {
-        const tab = JSON.parse(decodeURIComponent(detachedTabParam));
+        const decodedParam = decodeURIComponent(detachedTabParam);
+        console.log('📦 解码后的参数:', decodedParam.substring(0, 200));
+
+        const tab = JSON.parse(decodedParam);
+        console.log('✅ 成功解析detached tab:', {
+          tabId: tab.id,
+          tabTitle: tab.title,
+          tabType: tab.type,
+        });
+
         setDetachedTab(tab);
       } catch (error) {
-        console.error('解析分离tab参数失败:', error);
+        console.error('❌ 解析分离tab参数失败:', error);
+        setDetachedTabError(`解析失败: ${error}`);
       }
     }
   }, []);
@@ -153,15 +171,25 @@ const MainLayout: React.FC = () => {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // 如果是分离窗口,直接显示DetachedTabWindow
+  // 🔧 如果解析detached tab失败，显示错误信息
+  if (detachedTabError) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-background">
+        <div className="text-center p-8">
+          <h1 className="text-2xl font-bold text-destructive mb-4">无法加载独立窗口</h1>
+          <p className="text-muted-foreground mb-4">{detachedTabError}</p>
+          <p className="text-sm text-muted-foreground">请关闭此窗口并重试</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔧 如果是分离窗口,直接显示DetachedTabWindow
   if (detachedTab) {
+    console.log('🪟 渲染DetachedTabWindow组件');
     return (
       <DetachedTabWindow
         tab={detachedTab}
-        onReattach={() => {
-          // 重新附加到主窗口的逻辑
-          showMessage.info('重新附加功能待实现');
-        }}
         onClose={async () => {
           try {
             const { getCurrentWindow } = await import('@tauri-apps/api/window');
