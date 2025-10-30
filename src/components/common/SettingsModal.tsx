@@ -56,6 +56,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
 import { performHealthCheck } from '@/utils/healthCheck';
 import type { AppConfig } from '@/types';
+import { getAppVersion } from '@/utils/version';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -722,7 +723,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 </div>
                 <div className='flex justify-between'>
                   <span className='text-muted-foreground'>版本:</span>
-                  <span>1.1.1</span>
+                  <span>{getAppVersion()}</span>
                 </div>
                 <div className='flex justify-between'>
                   <span className='text-muted-foreground'>构建时间:</span>
