@@ -1040,6 +1040,8 @@ async fn main() {
             commands::logs::list_log_files,
             commands::logs::delete_log_file,
             commands::logs::cleanup_old_log_files,
+            commands::logs::get_log_dir_path,
+            commands::logs::open_log_folder,
 
             // Window management commands
             commands::window::create_detached_window,

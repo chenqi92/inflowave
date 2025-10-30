@@ -167,3 +167,58 @@ pub async fn cleanup_old_log_files(app: AppHandle, keep_count: usize) -> Result<
     Ok(delete_count)
 }
 
+/// 获取日志目录路径
+#[tauri::command]
+pub async fn get_log_dir_path(app: AppHandle) -> Result<String, String> {
+    debug!("获取日志目录路径");
+
+    let log_dir = app.path().app_log_dir()
+        .map_err(|e| format!("获取日志目录失败: {}", e))?;
+
+    let path = log_dir.to_string_lossy().to_string();
+    info!("日志目录路径: {}", path);
+    Ok(path)
+}
+
+/// 打开日志文件夹
+#[tauri::command]
+pub async fn open_log_folder(app: AppHandle) -> Result<(), String> {
+    debug!("打开日志文件夹");
+
+    let log_dir = app.path().app_log_dir()
+        .map_err(|e| format!("获取日志目录失败: {}", e))?;
+
+    // 确保目录存在
+    if !log_dir.exists() {
+        fs::create_dir_all(&log_dir)
+            .map_err(|e| format!("创建日志目录失败: {}", e))?;
+    }
+
+    // 使用系统默认程序打开文件夹
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(&log_dir)
+            .spawn()
+            .map_err(|e| format!("打开文件夹失败: {}", e))?;
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&log_dir)
+            .spawn()
+            .map_err(|e| format!("打开文件夹失败: {}", e))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&log_dir)
+            .spawn()
+            .map_err(|e| format!("打开文件夹失败: {}", e))?;
+    }
+
+    info!("成功打开日志文件夹: {:?}", log_dir);
+    Ok(())
+}

@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui';
 import { Badge } from '@/components/ui';
 import { ScrollArea } from '@/components/ui';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Bell,
   X,
@@ -14,14 +13,11 @@ import {
   XCircle,
   Clock,
   Copy,
-  FileText
 } from 'lucide-react';
 import { useNotificationStore, type NotificationItem } from '@/store/notifications';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { notify } from '@/hooks/useAppNotifications';
-import LogViewer from '@/components/settings/LogViewer';
-import BackendLogViewer from './BackendLogViewer';
 
 interface NotificationPanelProps {
   onClose: () => void;
@@ -67,7 +63,6 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
   onClose,
   className = '',
 }) => {
-  const [activeTab, setActiveTab] = useState('notifications');
   const {
     notifications,
     unreadCount,
@@ -77,18 +72,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
     clearAllNotifications,
   } = useNotificationStore();
 
-  // 监听切换到日志标签页的事件
-  useEffect(() => {
-    const handleSwitchToLogsTab = () => {
-      setActiveTab('frontend-logs');
-    };
 
-    document.addEventListener('switch-to-logs-tab', handleSwitchToLogsTab);
-
-    return () => {
-      document.removeEventListener('switch-to-logs-tab', handleSwitchToLogsTab);
-    };
-  }, []);
 
   const handleNotificationClick = (notification: NotificationItem) => {
     if (!notification.read) {
@@ -121,15 +105,15 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 dark:bg-muted/20">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold">消息中心</h3>
-          {unreadCount > 0 && activeTab === 'notifications' && (
+          {unreadCount > 0 && (
             <Badge variant="destructive" className="text-xs">
               {unreadCount}
             </Badge>
           )}
         </div>
         <div className="flex items-center gap-1">
-          {/* 全部标记为已读 - 仅在通知标签页显示 */}
-          {activeTab === 'notifications' && unreadCount > 0 && (
+          {/* 全部标记为已读 */}
+          {unreadCount > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -141,8 +125,8 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
             </Button>
           )}
 
-          {/* 清空所有通知 - 仅在通知标签页显示 */}
-          {activeTab === 'notifications' && notifications.length > 0 && (
+          {/* 清空所有通知 */}
+          {notifications.length > 0 && (
             <Button
               variant="ghost"
               size="sm"
@@ -167,40 +151,8 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
         </div>
       </div>
 
-      {/* Tabs 切换 */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
-        <TabsList className="w-full rounded-none border-b bg-transparent p-0 h-auto grid grid-cols-3">
-          <TabsTrigger
-            value="notifications"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            <Bell className="w-4 h-4 mr-2" />
-            通知消息
-            {unreadCount > 0 && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {unreadCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-          <TabsTrigger
-            value="frontend-logs"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            前端日志
-          </TabsTrigger>
-          <TabsTrigger
-            value="backend-logs"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            <FileText className="w-4 h-4 mr-2" />
-            后端日志
-          </TabsTrigger>
-        </TabsList>
-
-        {/* 通知消息标签页 */}
-        <TabsContent value="notifications" className="flex-1 m-0 overflow-hidden">
-          <div className="flex-1 overflow-hidden h-full">
+      {/* 通知消息内容 */}
+      <div className="flex-1 overflow-hidden">
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground dark:text-muted-foreground">
             <Bell className="w-12 h-12 mb-4 opacity-50 dark:opacity-40" />
@@ -230,7 +182,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                     <div className="flex-shrink-0 mt-0.5">
                       {getNotificationIcon(notification.type)}
                     </div>
-                    
+
                     {/* 通知内容 */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
@@ -267,7 +219,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                           </Button>
                         </div>
                       </div>
-                      
+
                       <p className={`text-xs mt-1 ${
                         !notification.read
                           ? 'text-foreground/80 dark:text-foreground/90'
@@ -275,7 +227,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                       }`}>
                         {notification.message}
                       </p>
-                      
+
                       {/* 时间和来源 */}
                       <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground dark:text-muted-foreground">
                         <Clock className="w-3 h-3" />
@@ -293,7 +245,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                         )}
                       </div>
                     </div>
-                    
+
                     {/* 未读标识 */}
                     {!notification.read && (
                       <div className="w-2 h-2 bg-primary dark:bg-primary rounded-full flex-shrink-0 mt-2 shadow-sm"></div>
@@ -304,19 +256,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
             </div>
           </ScrollArea>
         )}
-          </div>
-        </TabsContent>
-
-        {/* 前端日志标签页 */}
-        <TabsContent value="frontend-logs" className="flex-1 m-0 overflow-hidden">
-          <LogViewer />
-        </TabsContent>
-
-        {/* 后端日志标签页 */}
-        <TabsContent value="backend-logs" className="flex-1 m-0 overflow-hidden">
-          <BackendLogViewer />
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 };
