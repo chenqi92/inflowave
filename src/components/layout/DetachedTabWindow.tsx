@@ -67,25 +67,48 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   const [content, setContent] = useState(tab.content || '');
   const [modified, setModified] = useState(tab.modified || false);
 
-  // 查询相关状态 - 从tab prop中恢复初始值
+  // 查询相关状态 - 从localStorage恢复查询结果
   const [selectedDatabase, setSelectedDatabase] = useState(tab.database || '');
   const [selectedTimeRange, setSelectedTimeRange] = useState<any>(undefined); // 默认不限制时间
-  const [queryResult, setQueryResult] = useState<QueryResult | null>(tab.queryResult || null);
-  const [queryResults, setQueryResults] = useState<QueryResult[]>(tab.queryResults || []);
-  const [executedQueries, setExecutedQueries] = useState<string[]>(tab.executedQueries || []);
-  const [executionTime, setExecutionTime] = useState(tab.executionTime || 0);
+  const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
+  const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
+  const [executedQueries, setExecutedQueries] = useState<string[]>([]);
+  const [executionTime, setExecutionTime] = useState(0);
 
-  // 初始化时打印查询结果恢复信息
+  // 🔧 从localStorage恢复查询结果
   useEffect(() => {
-    console.log(`🪟 独立窗口初始化，恢复查询结果:`, {
+    console.log(`🪟 独立窗口初始化，尝试从localStorage恢复查询结果:`, {
       tabId: tab.id,
       tabTitle: tab.title,
-      hasQueryResult: !!tab.queryResult,
-      hasQueryResults: !!tab.queryResults,
-      queryResultsCount: tab.queryResults?.length || 0,
-      executedQueriesCount: tab.executedQueries?.length || 0,
     });
-  }, []);
+
+    try {
+      const storageKey = `detached-tab-query-${tab.id}`;
+      const savedData = localStorage.getItem(storageKey);
+
+      if (savedData) {
+        const queryData = JSON.parse(savedData);
+        console.log('✅ 成功从localStorage恢复查询结果:', {
+          hasQueryResult: !!queryData.queryResult,
+          queryResultsCount: queryData.queryResults?.length || 0,
+          executedQueriesCount: queryData.executedQueries?.length || 0,
+        });
+
+        setQueryResult(queryData.queryResult || null);
+        setQueryResults(queryData.queryResults || []);
+        setExecutedQueries(queryData.executedQueries || []);
+        setExecutionTime(queryData.executionTime || 0);
+
+        // 清理localStorage
+        localStorage.removeItem(storageKey);
+        console.log('🧹 已清理localStorage中的查询结果');
+      } else {
+        console.log('ℹ️ localStorage中没有保存的查询结果');
+      }
+    } catch (error) {
+      console.error('❌ 从localStorage恢复查询结果失败:', error);
+    }
+  }, [tab.id]);
 
   const { activeConnectionId, setActiveConnection, connections } = useConnectionStore();
   const { openedDatabasesList } = useOpenedDatabasesStore();
@@ -174,7 +197,23 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
         tabTitle: tab.title,
       });
 
-      // 创建tab数据，包含查询结果和窗口label
+      // 🔧 将查询结果保存到localStorage，供主窗口恢复
+      if (queryResult || (queryResults && queryResults.length > 0)) {
+        const queryData = {
+          queryResult: queryResult,
+          queryResults: queryResults,
+          executedQueries: executedQueries,
+          executionTime: executionTime,
+        };
+        localStorage.setItem(`reattach-tab-query-${tab.id}`, JSON.stringify(queryData));
+        console.log('💾 已保存查询结果到localStorage供主窗口恢复:', {
+          tabId: tab.id,
+          hasQueryResult: !!queryData.queryResult,
+          queryResultsCount: queryData.queryResults?.length || 0,
+        });
+      }
+
+      // 创建tab数据，不包含查询结果（避免数据过大）
       const tabData = {
         id: tab.id,
         title: tab.title,
@@ -184,11 +223,11 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
         database: selectedDatabase,
         tableName: tab.tableName,
         modified: modified,
-        // 🔧 包含查询结果，确保移回主窗口后结果不丢失
-        queryResult: queryResult,
-        queryResults: queryResults,
-        executedQueries: executedQueries,
-        executionTime: executionTime,
+        // 🔧 不包含查询结果，避免数据过大
+        // queryResult: queryResult,
+        // queryResults: queryResults,
+        // executedQueries: executedQueries,
+        // executionTime: executionTime,
         // 🔧 包含窗口label，用于后端关闭窗口
         windowLabel: windowLabel,
       };
@@ -196,8 +235,6 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
       console.log('🔄 移回主窗口，tab数据:', {
         tabId: tabData.id,
         windowLabel: tabData.windowLabel,
-        hasQueryResult: !!tabData.queryResult,
-        queryResultsCount: tabData.queryResults?.length || 0,
       });
 
       // 🔧 通过Tauri命令通知主窗口，后端会关闭独立窗口

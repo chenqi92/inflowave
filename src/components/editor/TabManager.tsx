@@ -529,6 +529,26 @@ export const TabManager: React.FC<TabManagerProps> = ({
           const { safeTauriInvoke } = await import('@/utils/tauri');
           const windowLabel = `detached-tab-${draggedTab.id}-${Date.now()}`;
 
+          // 🔧 不要通过URL传递查询结果，避免URL过长导致页面无法加载
+          // 查询结果会在独立窗口中通过localStorage恢复
+          console.log('📤 创建独立窗口，保存查询结果到localStorage');
+
+          // 将查询结果保存到localStorage
+          if (draggedTab.queryResult || (draggedTab.queryResults && draggedTab.queryResults.length > 0)) {
+            const queryData = {
+              queryResult: draggedTab.queryResult,
+              queryResults: draggedTab.queryResults,
+              executedQueries: draggedTab.executedQueries,
+              executionTime: draggedTab.executionTime,
+            };
+            localStorage.setItem(`detached-tab-query-${draggedTab.id}`, JSON.stringify(queryData));
+            console.log('💾 已保存查询结果到localStorage:', {
+              tabId: draggedTab.id,
+              hasQueryResult: !!queryData.queryResult,
+              queryResultsCount: queryData.queryResults?.length || 0,
+            });
+          }
+
           await safeTauriInvoke('create_detached_window', {
             label: windowLabel,
             title: `📋 ${draggedTab.title}`,
@@ -545,11 +565,11 @@ export const TabManager: React.FC<TabManagerProps> = ({
               database: draggedTab.database,
               tableName: draggedTab.tableName,
               modified: draggedTab.modified,
-              // 传递查询结果数据
-              queryResult: draggedTab.queryResult,
-              queryResults: draggedTab.queryResults,
-              executedQueries: draggedTab.executedQueries,
-              executionTime: draggedTab.executionTime,
+              // 🔧 不传递查询结果，避免URL过长
+              // queryResult: draggedTab.queryResult,
+              // queryResults: draggedTab.queryResults,
+              // executedQueries: draggedTab.executedQueries,
+              // executionTime: draggedTab.executionTime,
             }
           });
 
@@ -663,12 +683,38 @@ export const TabManager: React.FC<TabManagerProps> = ({
             return;
           }
 
+          // 🔧 从localStorage恢复查询结果
+          let queryResult = null;
+          let queryResults: any[] = [];
+          let executedQueries: string[] = [];
+          let executionTime = 0;
+
+          try {
+            const storageKey = `reattach-tab-query-${tab.id}`;
+            const savedData = localStorage.getItem(storageKey);
+
+            if (savedData) {
+              const queryData = JSON.parse(savedData);
+              queryResult = queryData.queryResult || null;
+              queryResults = queryData.queryResults || [];
+              executedQueries = queryData.executedQueries || [];
+              executionTime = queryData.executionTime || 0;
+
+              console.log('✅ 从localStorage恢复查询结果:', {
+                tabId: tab.id,
+                hasQueryResult: !!queryResult,
+                queryResultsCount: queryResults.length,
+              });
+
+              // 清理localStorage
+              localStorage.removeItem(storageKey);
+            }
+          } catch (error) {
+            console.error('❌ 从localStorage恢复查询结果失败:', error);
+          }
+
           // 🔧 添加tab到主窗口，包含查询结果
-          console.log('➕ 添加新Tab到主窗口，包含查询结果:', {
-            tabId: tab.id,
-            hasQueryResult: !!tab.queryResult,
-            queryResultsCount: tab.queryResults?.length || 0,
-          });
+          console.log('➕ 添加新Tab到主窗口');
 
           const newTabs = [...tabs, {
             id: tab.id,
@@ -680,11 +726,11 @@ export const TabManager: React.FC<TabManagerProps> = ({
             connectionId: tab.connectionId,
             database: tab.database,
             tableName: tab.tableName,
-            // 🔧 包含查询结果
-            queryResult: tab.queryResult,
-            queryResults: tab.queryResults,
-            executedQueries: tab.executedQueries,
-            executionTime: tab.executionTime,
+            // 🔧 包含从localStorage恢复的查询结果
+            queryResult: queryResult,
+            queryResults: queryResults,
+            executedQueries: executedQueries,
+            executionTime: executionTime,
           }];
 
           onTabsChange(newTabs);
