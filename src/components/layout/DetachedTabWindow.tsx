@@ -2,8 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
 import { QueryToolbar } from '@/components/query/QueryToolbar';
-import QueryResults from '@/components/query/QueryResults';
-import BatchResultsView from '@/components/query/BatchResultsView';
+import EnhancedResultPanel from '@/components/layout/EnhancedResultPanel';
 import { EditorManager } from '@/components/editor/EditorManager';
 import type { EditorManagerRef } from '@/components/editor/EditorManager';
 import { useQueryExecutor } from '@/components/editor/QueryExecutor';
@@ -140,6 +139,26 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
     return connectionDatabases;
   }, [tab.connectionId, activeConnectionId, openedDatabasesList]);
+
+  // 🔧 修复问题1：自动设置数据库下拉框的值
+  useEffect(() => {
+    console.log('🔍 检查数据库自动选择:', {
+      tabDatabase: tab.database,
+      currentSelectedDatabase: selectedDatabase,
+      availableDatabases: databases,
+    });
+
+    // 如果tab有指定的数据库，且该数据库在可用列表中，且当前未选择，则自动选择
+    if (tab.database && databases.includes(tab.database) && selectedDatabase !== tab.database) {
+      console.log(`✅ 自动选择数据库: ${tab.database}`);
+      setSelectedDatabase(tab.database);
+    }
+    // 如果tab没有指定数据库，但有可用数据库且当前未选择，则选择第一个
+    else if (!tab.database && databases.length > 0 && !selectedDatabase) {
+      console.log(`✅ 自动选择第一个数据库: ${databases[0]}`);
+      setSelectedDatabase(databases[0]);
+    }
+  }, [tab.database, databases, selectedDatabase]);
 
   // 创建一个临时的tab对象用于查询执行器
   const currentTab = {
@@ -408,24 +427,21 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
               <>
                 <ResizableHandle withHandle className="h-2 bg-border hover:bg-border/80" />
 
-                {/* 下半部分: 结果面板 */}
+                {/* 下半部分: 结果面板 - 🔧 修复问题2：使用EnhancedResultPanel与主窗口保持一致 */}
                 <ResizablePanel defaultSize={50} minSize={20} className="bg-background">
-                  {queryResults && queryResults.length > 1 ? (
-                    // 批量查询结果
-                    <BatchResultsView
-                      results={queryResults}
-                      queries={executedQueries}
-                      totalExecutionTime={executionTime}
-                      mode="tabs"
-                    />
-                  ) : (
-                    // 单个查询结果
-                    <QueryResults
-                      result={queryResult}
-                      loading={loading}
-                      executedQuery={executedQueries?.[0]}
-                    />
-                  )}
+                  <EnhancedResultPanel
+                    collapsed={false}
+                    queryResult={queryResult}
+                    queryResults={queryResults}
+                    executedQueries={executedQueries}
+                    executionTime={executionTime}
+                    onClearResult={() => {
+                      setQueryResult(null);
+                      setQueryResults([]);
+                      setExecutedQueries([]);
+                      setExecutionTime(0);
+                    }}
+                  />
                 </ResizablePanel>
               </>
             )}
