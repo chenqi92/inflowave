@@ -86,6 +86,7 @@ export const smartMessage = {
             await sendDesktopNotification(title, content);
         } else {
             // 否则使用shadcn通知
+            toast.dismiss(); // 清除所有现有消息，避免位置叠加
             const options = await createToastOptions();
             if (options === null) return; // 通知被禁用
             return toast.success(content, options);
@@ -102,6 +103,7 @@ export const smartMessage = {
         if (settings.desktop && settings.system_alerts && title) {
             await sendDesktopNotification(title, content);
         } else {
+            toast.dismiss(); // 清除所有现有消息，避免位置叠加
             const options = await createToastOptions();
             if (options === null) return; // 通知被禁用
             return toast.error(content, options);
@@ -118,6 +120,7 @@ export const smartMessage = {
         if (settings.desktop && settings.system_alerts && title) {
             await sendDesktopNotification(title, content);
         } else {
+            toast.dismiss(); // 清除所有现有消息，避免位置叠加
             const options = await createToastOptions();
             if (options === null) return; // 通知被禁用
             return toast.warning(content, options);
@@ -134,6 +137,7 @@ export const smartMessage = {
         if (settings.desktop && settings.system_alerts && title) {
             await sendDesktopNotification(title, content);
         } else {
+            toast.dismiss(); // 清除所有现有消息，避免位置叠加
             const options = await createToastOptions();
             if (options === null) return; // 通知被禁用
             return toast.info(content, options);
@@ -210,32 +214,38 @@ const createToastOptions = async (
 // 兼容的 message 对象 - 简单消息提示
 const message = {
     success: async (content: string, duration?: number) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         const options = await createToastOptions(duration);
         if (options === null) return; // 通知被禁用
         return toast.success(content, options);
     },
     error: async (content: string, duration?: number) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         const options = await createToastOptions(duration);
         if (options === null) return; // 通知被禁用
         return toast.error(content, options);
     },
     warning: async (content: string, duration?: number) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         const options = await createToastOptions(duration);
         if (options === null) return; // 通知被禁用
         return toast.warning(content, options);
     },
     info: async (content: string, duration?: number) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         const options = await createToastOptions(duration);
         if (options === null) return; // 通知被禁用
         return toast.info(content, options);
     },
     loading: async (content: string, duration?: number) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         const options = await createToastOptions(duration);
         if (options === null) return; // 通知被禁用
         return toast.loading(content, options);
     },
     // 新增：自定义消息
     custom: (content: string, options?: ExternalToast) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         return toast(content, options);
     },
     // Promise 消息
@@ -327,6 +337,7 @@ export const showMessage = {
 // 便捷的通知方法 - 带描述的复杂通知
 export const showNotification = {
     success: (config: NotificationConfig | string) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         if (typeof config === 'string') {
             return toast.success(config, { closeButton: true, dismissible: true });
         }
@@ -361,6 +372,7 @@ export const showNotification = {
     },
 
     error: (config: NotificationConfig | string) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         if (typeof config === 'string') {
             return toast.error(config, { closeButton: true, dismissible: true });
         }
@@ -395,6 +407,7 @@ export const showNotification = {
     },
 
     warning: (config: NotificationConfig | string) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         if (typeof config === 'string') {
             return toast.warning(config, { closeButton: true, dismissible: true });
         }
@@ -429,6 +442,7 @@ export const showNotification = {
     },
 
     info: (config: NotificationConfig | string) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         if (typeof config === 'string') {
             return toast.info(config, { closeButton: true, dismissible: true });
         }
@@ -514,17 +528,30 @@ export const showNotification = {
 export const toastControl = {
     dismiss: (id?: string | number) => toast.dismiss(id),
     dismissAll: () => toast.dismiss(),
-    loading: (message: string, options?: ExternalToast) =>
-        toast.loading(message, options),
-    success: (message: string, options?: ExternalToast) =>
-        toast.success(message, options),
-    error: (message: string, options?: ExternalToast) =>
-        toast.error(message, options),
-    info: (message: string, options?: ExternalToast) =>
-        toast.info(message, options),
-    warning: (message: string, options?: ExternalToast) =>
-        toast.warning(message, options),
-    custom: (message: string, options?: ExternalToast) => toast(message, options),
+    loading: (message: string, options?: ExternalToast) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
+        return toast.loading(message, options);
+    },
+    success: (message: string, options?: ExternalToast) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
+        return toast.success(message, options);
+    },
+    error: (message: string, options?: ExternalToast) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
+        return toast.error(message, options);
+    },
+    info: (message: string, options?: ExternalToast) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
+        return toast.info(message, options);
+    },
+    warning: (message: string, options?: ExternalToast) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
+        return toast.warning(message, options);
+    },
+    custom: (message: string, options?: ExternalToast) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
+        return toast(message, options);
+    },
     promise: <T>(
         promise: Promise<T>,
         msgs: {
@@ -773,6 +800,9 @@ export const enhancedError = {
         const options = await createToastOptions();
         if (options === null) return; // 通知被禁用
 
+        // 清除所有现有消息，避免位置叠加
+        toast.dismiss();
+
         // 显示错误 toast
         const toastId = toast.error(formatted.message, {
             ...options,
@@ -824,6 +854,9 @@ export const enhancedError = {
         const options = await createToastOptions();
         if (options === null) return;
 
+        // 清除所有现有消息，避免位置叠加
+        toast.dismiss();
+
         const toastId = toast.error(formatted.message, {
             ...options,
             description: formatted.description,
@@ -856,6 +889,7 @@ export const enhancedError = {
      * 快速显示错误（不分析）
      */
     quick: async (message: string, duration?: number) => {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         const options = await createToastOptions(duration);
         if (options === null) return;
 
@@ -867,19 +901,22 @@ export const enhancedError = {
  * 显示恢复建议对话框
  */
 function showRecoverySuggestions(suggestions: RecoverySuggestion[]) {
+    // 清除所有现有消息
+    toast.dismiss();
+
     // 使用 toast 显示建议列表
-    suggestions.forEach((suggestion, index) => {
-        setTimeout(() => {
-            toast.info(suggestion.title, {
-                description: suggestion.description,
-                duration: 6000,
-                action: suggestion.action && suggestion.actionLabel ? {
-                    label: suggestion.actionLabel,
-                    onClick: suggestion.action,
-                } : undefined,
-            });
-        }, index * 300); // 错开显示时间
-    });
+    // 由于我们只显示一条消息，这里只显示第一条建议
+    if (suggestions.length > 0) {
+        const suggestion = suggestions[0];
+        toast.info(suggestion.title, {
+            description: suggestion.description,
+            duration: 6000,
+            action: suggestion.action && suggestion.actionLabel ? {
+                label: suggestion.actionLabel,
+                onClick: suggestion.action,
+            } : undefined,
+        });
+    }
 }
 
 // 便捷的全局访问

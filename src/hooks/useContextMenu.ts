@@ -490,9 +490,10 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
       connectionId: activeConnectionId,
       database: params.database,
     });
-    
+
+    toast.dismiss(); // 清除所有现有消息，避免位置叠加
     toast.success(`数据库 "${params.database}" 信息已获取`);
-    
+
     return info;
   }, [activeConnectionId]);
 

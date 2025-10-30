@@ -217,15 +217,17 @@ export function useSmartSql(options: UseSmartSqlOptions = {}) {
 
       // 这里可以集成到查询编辑器或直接执行
       // 暂时显示成功消息
+      toast.dismiss(); // 清除所有现有消息，避免位置叠加
       toast.success(`SQL 已生成: ${description || '查询语句'}`);
-      
+
       // 可以通过事件或回调将 SQL 传递给查询编辑器
       window.dispatchEvent(new CustomEvent('sql-generated', {
         detail: { sql, description }
       }));
-      
+
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '执行失败';
+      toast.dismiss(); // 清除所有现有消息，避免位置叠加
       toast.error(errorMessage);
       throw err;
     }

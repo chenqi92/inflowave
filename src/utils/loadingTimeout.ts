@@ -48,6 +48,7 @@ export function withTimeout<T>(
       if (onTimeout) {
         onTimeout();
       }
+      toast.dismiss(); // 清除所有现有消息，避免位置叠加
       toast.warning(message);
 
       if (throwOnTimeout) {
@@ -146,6 +147,7 @@ export class TimeoutManager {
     // 创建新的计时器
     const timer = setTimeout(() => {
       if (message) {
+        toast.dismiss(); // 清除所有现有消息，避免位置叠加
         toast.warning(message);
       }
       callback();
