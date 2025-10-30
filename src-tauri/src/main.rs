@@ -1158,8 +1158,34 @@ async fn main() {
             app.manage(commands::query_history::QueryHistoryStorage::new(Vec::new()));
             app.manage(commands::query_history::SavedQueryStorage::new(std::collections::HashMap::new()));
 
-            // Initialize settings storage
-            app.manage(commands::settings::SettingsStorage::new(commands::settings::AppSettings::default()));
+            // Initialize persistence manager
+            let persistence_manager = match utils::persistence::create_persistence_manager() {
+                Ok(manager) => {
+                    info!("✅ 持久化管理器初始化成功");
+                    manager
+                }
+                Err(e) => {
+                    error!("❌ 持久化管理器初始化失败: {}", e);
+                    // 使用默认值继续运行
+                    std::sync::Mutex::new(utils::persistence::PersistenceManager::new().unwrap())
+                }
+            };
+
+            // Initialize settings storage - 从文件加载或使用默认值
+            let app_settings = {
+                let pm = persistence_manager.lock().unwrap();
+                match pm.read_json::<commands::settings::AppSettings>("app_settings.json") {
+                    Ok(settings) => {
+                        info!("✅ 从文件加载应用设置成功");
+                        settings
+                    }
+                    Err(e) => {
+                        info!("📝 使用默认应用设置 (原因: {})", e);
+                        commands::settings::AppSettings::default()
+                    }
+                }
+            };
+            app.manage(commands::settings::SettingsStorage::new(app_settings));
 
             // Initialize dashboard storage
             app.manage(commands::dashboard::DashboardStorage::new(std::collections::HashMap::new()));
@@ -1167,8 +1193,24 @@ async fn main() {
             // Initialize performance monitoring storage
             app.manage(commands::performance::QueryMetricsStorage::new(Vec::new()));
 
-            // Initialize user experience storage
-            app.manage(commands::user_experience::UserPreferencesStorage::new(commands::user_experience::UserPreferences::default()));
+            // Initialize user experience storage - 从文件加载或使用默认值
+            let user_preferences = {
+                let pm = persistence_manager.lock().unwrap();
+                match pm.read_json::<commands::user_experience::UserPreferences>("user_preferences.json") {
+                    Ok(prefs) => {
+                        info!("✅ 从文件加载用户偏好成功");
+                        prefs
+                    }
+                    Err(e) => {
+                        info!("📝 使用默认用户偏好 (原因: {})", e);
+                        commands::user_experience::UserPreferences::default()
+                    }
+                }
+            };
+            app.manage(commands::user_experience::UserPreferencesStorage::new(user_preferences));
+
+            // Manage persistence manager after loading settings
+            app.manage(persistence_manager);
 
             // Initialize extensions storage
             app.manage(commands::extensions::PluginStorage::new(std::collections::HashMap::new()));

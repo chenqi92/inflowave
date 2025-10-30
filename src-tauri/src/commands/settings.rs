@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use tauri::State;
 use log::{debug, error, info, warn};
 use std::sync::Mutex;
+use crate::utils::persistence::PersistenceManagerState;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppSettings {
@@ -80,6 +81,25 @@ pub struct MonitoringSettings {
 
 pub type SettingsStorage = Mutex<AppSettings>;
 
+/// 持久化设置到文件的辅助函数
+fn persist_settings(
+    persistence: &State<'_, PersistenceManagerState>,
+    settings: &AppSettings,
+) -> Result<(), String> {
+    let persistence_manager = persistence.lock().map_err(|e| {
+        error!("获取持久化管理器锁失败: {}", e);
+        "持久化管理器访问失败".to_string()
+    })?;
+
+    persistence_manager.write_json("app_settings.json", settings).map_err(|e| {
+        error!("保存应用设置到文件失败: {}", e);
+        format!("保存设置失败: {}", e)
+    })?;
+
+    debug!("应用设置已持久化到文件");
+    Ok(())
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
@@ -156,6 +176,7 @@ pub async fn get_app_settings(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn update_app_settings(
     settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
     new_settings: AppSettings,
 ) -> Result<(), String> {
     debug!("更新应用设置");
@@ -165,8 +186,11 @@ pub async fn update_app_settings(
         "存储访问失败".to_string()
     })?;
 
-    *settings = new_settings;
+    *settings = new_settings.clone();
     info!("应用设置已更新");
+
+    // 持久化到文件
+    persist_settings(&persistence, &new_settings)?;
     Ok(())
 }
 
@@ -174,9 +198,10 @@ pub async fn update_app_settings(
 #[tauri::command]
 pub async fn reset_app_settings(
     settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
 ) -> Result<AppSettings, String> {
     debug!("重置应用设置");
-    
+
     let mut settings = settings_storage.lock().map_err(|e| {
         error!("获取设置存储锁失败: {}", e);
         "存储访问失败".to_string()
@@ -184,6 +209,10 @@ pub async fn reset_app_settings(
 
     *settings = AppSettings::default();
     info!("应用设置已重置为默认值");
+
+    // 持久化到文件
+    persist_settings(&persistence, &settings)?;
+
     Ok(settings.clone())
 }
 
@@ -191,10 +220,11 @@ pub async fn reset_app_settings(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn update_general_settings(
     settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
     general_settings: GeneralSettings,
 ) -> Result<(), String> {
     debug!("更新通用设置");
-    
+
     let mut settings = settings_storage.lock().map_err(|e| {
         error!("获取设置存储锁失败: {}", e);
         "存储访问失败".to_string()
@@ -202,6 +232,9 @@ pub async fn update_general_settings(
 
     settings.general = general_settings;
     info!("通用设置已更新");
+
+    // 持久化到文件
+    persist_settings(&persistence, &settings)?;
     Ok(())
 }
 
@@ -209,10 +242,11 @@ pub async fn update_general_settings(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn update_editor_settings(
     settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
     editor_settings: EditorSettings,
 ) -> Result<(), String> {
     debug!("更新编辑器设置");
-    
+
     let mut settings = settings_storage.lock().map_err(|e| {
         error!("获取设置存储锁失败: {}", e);
         "存储访问失败".to_string()
@@ -220,6 +254,9 @@ pub async fn update_editor_settings(
 
     settings.editor = editor_settings;
     info!("编辑器设置已更新");
+
+    // 持久化到文件
+    persist_settings(&persistence, &settings)?;
     Ok(())
 }
 
@@ -242,6 +279,7 @@ pub async fn get_query_settings(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn update_query_settings(
     settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
     query_settings: QuerySettings,
 ) -> Result<(), String> {
     debug!("更新查询设置");
@@ -253,6 +291,9 @@ pub async fn update_query_settings(
 
     settings.query = query_settings;
     info!("查询设置已更新");
+
+    // 持久化到文件
+    persist_settings(&persistence, &settings)?;
     Ok(())
 }
 
@@ -260,10 +301,11 @@ pub async fn update_query_settings(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn update_visualization_settings(
     settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
     visualization_settings: VisualizationSettings,
 ) -> Result<(), String> {
     debug!("更新可视化设置");
-    
+
     let mut settings = settings_storage.lock().map_err(|e| {
         error!("获取设置存储锁失败: {}", e);
         "存储访问失败".to_string()
@@ -271,6 +313,9 @@ pub async fn update_visualization_settings(
 
     settings.visualization = visualization_settings;
     info!("可视化设置已更新");
+
+    // 持久化到文件
+    persist_settings(&persistence, &settings)?;
     Ok(())
 }
 
@@ -278,6 +323,7 @@ pub async fn update_visualization_settings(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn update_security_settings(
     settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
     security_settings: SecuritySettings,
 ) -> Result<(), String> {
     debug!("更新安全设置");
@@ -289,6 +335,9 @@ pub async fn update_security_settings(
 
     settings.security = security_settings;
     info!("安全设置已更新");
+
+    // 持久化到文件
+    persist_settings(&persistence, &settings)?;
     Ok(())
 }
 
@@ -551,6 +600,7 @@ pub async fn reset_all_settings(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn update_controller_settings(
     settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
     controller_settings: ControllerSettings,
 ) -> Result<(), String> {
     debug!("更新控制器设置: {:?}", controller_settings);
@@ -563,6 +613,9 @@ pub async fn update_controller_settings(
     settings.security.controller = controller_settings;
 
     info!("控制器设置更新成功");
+
+    // 持久化到文件
+    persist_settings(&persistence, &settings)?;
     Ok(())
 }
 
@@ -585,10 +638,11 @@ pub async fn get_controller_settings(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn update_monitoring_settings(
     settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
     monitoring_settings: MonitoringSettings,
 ) -> Result<(), String> {
     debug!("更新监控设置");
-    
+
     let mut settings = settings_storage.lock().map_err(|e| {
         error!("获取设置存储锁失败: {}", e);
         "存储访问失败".to_string()
@@ -596,6 +650,9 @@ pub async fn update_monitoring_settings(
 
     settings.monitoring = monitoring_settings;
     info!("监控设置已更新");
+
+    // 持久化到文件
+    persist_settings(&persistence, &settings)?;
     Ok(())
 }
 

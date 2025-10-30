@@ -4,6 +4,7 @@ use tauri_plugin_notification::NotificationExt;
 use log::{debug, error, info, warn};
 use std::collections::HashMap;
 use std::sync::Mutex;
+use crate::utils::persistence::PersistenceManagerState;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct KeyboardShortcut {
@@ -96,6 +97,7 @@ pub async fn get_user_preferences(
 #[tauri::command]
 pub async fn update_user_preferences(
     preferences_storage: State<'_, UserPreferencesStorage>,
+    persistence: State<'_, PersistenceManagerState>,
     preferences: UserPreferences,
 ) -> Result<(), String> {
     use std::sync::atomic::{AtomicU64, AtomicU32, Ordering};
@@ -139,7 +141,20 @@ pub async fn update_user_preferences(
         "存储访问失败".to_string()
     })?;
 
-    *storage = preferences;
+    *storage = preferences.clone();
+
+    // 持久化到文件
+    let persistence_manager = persistence.lock().map_err(|e| {
+        error!("获取持久化管理器锁失败: {}", e);
+        "持久化管理器访问失败".to_string()
+    })?;
+
+    persistence_manager.write_json("user_preferences.json", &preferences).map_err(|e| {
+        error!("保存用户偏好到文件失败: {}", e);
+        format!("保存偏好失败: {}", e)
+    })?;
+
+    debug!("用户偏好已持久化到文件");
     Ok(())
 }
 
