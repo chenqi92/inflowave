@@ -545,6 +545,11 @@ export const TabManager: React.FC<TabManagerProps> = ({
               database: draggedTab.database,
               tableName: draggedTab.tableName,
               modified: draggedTab.modified,
+              // 传递查询结果数据
+              queryResult: draggedTab.queryResult,
+              queryResults: draggedTab.queryResults,
+              executedQueries: draggedTab.executedQueries,
+              executionTime: draggedTab.executionTime,
             }
           });
 

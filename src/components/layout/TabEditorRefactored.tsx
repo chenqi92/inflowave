@@ -86,6 +86,9 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
     // 🔧 使用ref存储当前Tab ID，避免闭包问题
     const currentTabIdRef = React.useRef<string | null>(null);
 
+    // 🔧 使用ref记录上一次的activeKey，用于检测Tab切换
+    const previousActiveKeyRef = React.useRef<string | null>(null);
+
     // 🔧 立即同步更新 currentTabIdRef，不等待 useEffect
     // 这样可以确保在 EditorManager 同步内容之前，currentTabIdRef 已经是最新的
     if (activeKey && currentTabIdRef.current !== activeKey) {
@@ -93,30 +96,82 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       currentTabIdRef.current = activeKey;
     }
 
-    // 🔧 打印调试信息（在 useEffect 中，避免在每次渲染时都打印）
+    // 🔧 Tab切换时恢复查询结果
+    // 注意：只在activeKey变化时触发，不在tabs变化时触发，避免查询执行完成后重复恢复结果
     React.useEffect(() => {
-      if (activeKey) {
-        // 🔧 打印所有Tab的内容，用于调试
-        console.log(`📋 当前所有Tab的内容:`);
-        tabs.forEach((tab, index) => {
-          if (tab.type === 'query') {
-            console.log(`  Tab ${index + 1}: ${tab.title} (${tab.id})`);
-            console.log(`    内容: ${tab.content?.substring(0, 100) || '(空)'}`);
-          }
-        });
+      // 检查是否是真正的Tab切换（activeKey变化）
+      const isTabSwitch = activeKey !== previousActiveKeyRef.current;
 
-        // 🔧 打印当前Tab的详细信息
-        const currentTab = tabs.find(t => t.id === activeKey);
+      if (activeKey && isTabSwitch) {
+        console.log(`🔄 检测到Tab切换: ${previousActiveKeyRef.current} -> ${activeKey}`);
+        previousActiveKeyRef.current = activeKey;
+
+        // 从store中获取最新的tabs，避免闭包问题
+        const currentTabs = useTabStore.getState().tabs;
+        const currentTab = currentTabs.find(t => t.id === activeKey);
+
         if (currentTab) {
-          console.log(`✅ 当前激活的Tab:`, {
-            id: currentTab.id,
-            title: currentTab.title,
-            type: currentTab.type,
-            content: currentTab.content?.substring(0, 100),
+          console.log(`🔄 Tab切换，恢复查询结果:`, {
+            tabId: currentTab.id,
+            tabTitle: currentTab.title,
+            tabType: currentTab.type,
+            hasQueryResults: !!currentTab.queryResults,
+            queryResultsCount: currentTab.queryResults?.length || 0,
+            hasExecutedQueries: !!currentTab.executedQueries,
+            executedQueriesCount: currentTab.executedQueries?.length || 0,
           });
+
+          // 如果是查询类型的Tab，恢复其查询结果
+          if (currentTab.type === 'query') {
+            if (currentTab.queryResults && currentTab.queryResults.length > 0) {
+              // 恢复批量查询结果
+              console.log(`✅ 恢复Tab的查询结果到结果面板`);
+              onBatchQueryResults?.(
+                currentTab.queryResults,
+                currentTab.executedQueries || [],
+                currentTab.executionTime || 0
+              );
+
+              // 如果只有一个结果，也设置单个结果
+              if (currentTab.queryResults.length === 1) {
+                onQueryResult?.(currentTab.queryResults[0]);
+              }
+            } else if (currentTab.queryResult) {
+              // 兼容旧的单个结果格式
+              console.log(`✅ 恢复Tab的单个查询结果到结果面板`);
+              onQueryResult?.(currentTab.queryResult);
+              onBatchQueryResults?.(
+                [currentTab.queryResult],
+                currentTab.executedQueries || [],
+                currentTab.executionTime || 0
+              );
+            } else {
+              // 该Tab没有查询结果，清空结果面板
+              console.log(`📭 Tab没有查询结果，清空结果面板`);
+              onQueryResult?.(null);
+              onBatchQueryResults?.([], [], 0);
+            }
+          } else {
+            // 非查询类型的Tab，清空查询结果
+            console.log(`📭 非查询Tab，清空结果面板`);
+            onQueryResult?.(null);
+            onBatchQueryResults?.([], [], 0);
+          }
         }
       }
-    }, [activeKey, tabs]);
+    }, [activeKey, onQueryResult, onBatchQueryResults]); // 移除tabs依赖，避免查询执行完成后重复触发
+
+    // 🔧 监听所有Tab关闭的情况
+    React.useEffect(() => {
+      const queryTabs = tabs.filter(tab => tab.type === 'query');
+
+      if (queryTabs.length === 0) {
+        // 所有查询Tab都已关闭，清空结果面板
+        console.log(`📭 所有查询Tab已关闭，清空结果面板`);
+        onQueryResult?.(null);
+        onBatchQueryResults?.([], [], 0);
+      }
+    }, [tabs, onQueryResult, onBatchQueryResults]);
 
     // 更新标签页内容的包装函数
     const handleTabContentChange = useCallback((tabId: string, content: string) => {

@@ -14,6 +14,11 @@ pub struct DetachedTab {
     pub database: Option<String>,
     pub table_name: Option<String>,
     pub modified: Option<bool>,
+    // 查询结果相关字段 - 使用 serde_json::Value 来存储任意 JSON 数据
+    pub query_result: Option<serde_json::Value>,
+    pub query_results: Option<Vec<serde_json::Value>>,
+    pub executed_queries: Option<Vec<String>>,
+    pub execution_time: Option<f64>,
 }
 
 /// 创建分离的tab窗口
