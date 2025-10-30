@@ -14,6 +14,7 @@ import QuickSettings from '@/components/toolbar/QuickSettings';
 import {
   TimeRange,
 } from '@/components/common/TimeRangeSelector';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -142,6 +143,14 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
 
 
         {/* 注意：扩展、历史、工具等功能已移至右侧功能面板 */}
+
+        {/* 主题切换按钮 */}
+        <ThemeToggle
+          variant='ghost'
+          size='sm'
+          showLabel={true}
+          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+        />
 
         {/* 快速设置 - 安全和查询设置 */}
         <QuickSettings />

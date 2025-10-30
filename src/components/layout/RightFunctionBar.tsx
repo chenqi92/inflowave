@@ -51,12 +51,13 @@ const functionItems: FunctionItem[] = [
     label: '历史',
     description: '查询历史记录',
   },
-  {
-    key: 'extensions',
-    icon: <Package className="w-4 h-4" />,
-    label: '扩展',
-    description: '插件和集成',
-  },
+  // 扩展管理功能暂时隐藏
+  // {
+  //   key: 'extensions',
+  //   icon: <Package className="w-4 h-4" />,
+  //   label: '扩展',
+  //   description: '插件和集成',
+  // },
   {
     key: 'tools',
     icon: <Wrench className="w-4 h-4" />,
