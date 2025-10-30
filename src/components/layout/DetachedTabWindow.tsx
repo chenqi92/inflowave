@@ -140,7 +140,32 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
     return connectionDatabases;
   }, [tab.connectionId, activeConnectionId, openedDatabasesList]);
 
-  // 🔧 修复问题1：自动设置数据库下拉框的值
+  // 🔧 修复问题1：初始化openedDatabasesStore，确保数据库下拉框可用
+  useEffect(() => {
+    const connectionId = tab.connectionId || activeConnectionId;
+
+    console.log('🔍 初始化独立窗口的数据库状态:', {
+      connectionId,
+      tabDatabase: tab.database,
+      currentSelectedDatabase: selectedDatabase,
+      availableDatabases: databases,
+    });
+
+    // 如果tab有指定的数据库和连接ID，确保这个数据库被添加到openedDatabasesStore中
+    if (connectionId && tab.database) {
+      const { openedDatabases, openDatabase } = useOpenedDatabasesStore.getState();
+      const databaseKey = `${connectionId}/${tab.database}`;
+
+      if (!openedDatabases.has(databaseKey)) {
+        console.log(`➕ 将数据库添加到openedDatabasesStore: ${databaseKey}`);
+        openDatabase(connectionId, tab.database);
+      } else {
+        console.log(`✅ 数据库已在openedDatabasesStore中: ${databaseKey}`);
+      }
+    }
+  }, [tab.connectionId, tab.database, activeConnectionId]);
+
+  // 🔧 自动设置数据库下拉框的值
   useEffect(() => {
     console.log('🔍 检查数据库自动选择:', {
       tabDatabase: tab.database,

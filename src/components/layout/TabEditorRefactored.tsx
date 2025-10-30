@@ -169,6 +169,47 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       }
     }, [activeKey, onQueryResult, onBatchQueryResults]); // 移除tabs依赖，避免查询执行完成后重复触发
 
+  // 🔧 修复问题2：当新Tab被添加时（如从独立窗口返回），立即恢复其查询结果
+  useEffect(() => {
+    // 只在activeKey变化时触发，确保新添加的Tab的查询结果被立即恢复
+    if (!activeKey) return;
+
+    const currentTab = tabs.find(t => t.id === activeKey);
+    if (!currentTab) return;
+
+    // 检查是否有查询结果需要恢复
+    const hasQueryResults = currentTab.queryResults && currentTab.queryResults.length > 0;
+    const hasQueryResult = currentTab.queryResult;
+
+    if (currentTab.type === 'query' && (hasQueryResults || hasQueryResult)) {
+      console.log('🔄 [TabEditorRefactored] 检测到新Tab有查询结果，立即恢复:', {
+        tabId: currentTab.id,
+        hasQueryResults,
+        hasQueryResult,
+        queryResultsCount: currentTab.queryResults?.length || 0,
+      });
+
+      // 强制恢复查询结果
+      if (hasQueryResults) {
+        onBatchQueryResults?.(
+          currentTab.queryResults!,
+          currentTab.executedQueries || [],
+          currentTab.executionTime || 0
+        );
+        if (currentTab.queryResults!.length === 1) {
+          onQueryResult?.(currentTab.queryResults![0]);
+        }
+      } else if (hasQueryResult) {
+        onQueryResult?.(currentTab.queryResult!);
+        onBatchQueryResults?.(
+          [currentTab.queryResult!],
+          currentTab.executedQueries || [],
+          currentTab.executionTime || 0
+        );
+      }
+    }
+  }, [tabs.length, activeKey]); // 监听tabs.length变化，确保新Tab添加时触发
+
     // 更新标签页内容的包装函数
     const handleTabContentChange = useCallback((tabId: string, content: string) => {
       console.log(`📝 handleTabContentChange 被调用: tabId=${tabId}, currentTabIdRef=${currentTabIdRef.current}, activeKey=${activeKey}`);
