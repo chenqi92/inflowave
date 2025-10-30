@@ -129,11 +129,18 @@ export const useTabStore = create<TabStore>()(
           return;
         }
 
+        // 检查内容是否真的改变了
+        if (targetTab.content === content) {
+          console.log(`📝 [TabStore] 内容未改变，跳过更新`);
+          return;
+        }
+
         console.log(`📝 [TabStore] 目标Tab信息:`, {
           id: targetTab.id,
           title: targetTab.title,
           type: targetTab.type,
           oldContentLength: targetTab.content?.length || 0,
+          newContentLength: content.length,
         });
 
         return set((state) => ({
@@ -288,13 +295,16 @@ export const useTabOperations = () => {
     const queryTabs = tabs.filter(tab => tab.type === 'query');
     const tabNumber = queryTabs.length + 1;
 
+    const content = query || '';
+    const hasContent = content.trim().length > 0;
+
     const newTab: EditorTab = {
       id: tabId,
       title: `查询-${tabNumber}`,
-      content: query || 'SELECT * FROM ',
+      content,
       type: 'query',
-      modified: true,
-      saved: false,
+      modified: hasContent, // 只有有内容时才标记为已修改
+      saved: !hasContent,   // 空内容视为已保存
       database,
       connectionId, // 设置连接ID
     };

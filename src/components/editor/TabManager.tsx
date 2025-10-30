@@ -307,10 +307,10 @@ export const TabManager: React.FC<TabManagerProps> = ({
     const newTab: EditorTab = {
       id: generateUniqueId('tab'),
       title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
-      content: type === 'query' ? 'SELECT * FROM ' : '',
+      content: '', // 所有类型的新标签都从空内容开始
       type,
-      modified: true, // 新建标签页为未保存状态
-      saved: false,   // 未保存到工作区
+      modified: false, // 空内容不标记为已修改
+      saved: true,     // 空内容视为已保存
     };
 
     const newTabs = [...tabs, newTab];
@@ -339,13 +339,16 @@ export const TabManager: React.FC<TabManagerProps> = ({
 
   // 创建带数据库选择的查询标签页
   const createQueryTabWithDatabase = useCallback((database: string, query?: string) => {
+    const content = query || '';
+    const hasContent = content.trim().length > 0;
+
     const newTab: EditorTab = {
       id: generateUniqueId('tab'),
       title: `查询-${tabs.length + 1}`,
-      content: query || 'SELECT * FROM ',
+      content,
       type: 'query',
-      modified: true,  // 新建查询标签为未保存状态
-      saved: false,    // 未保存到工作区
+      modified: hasContent,  // 只有有内容时才标记为已修改
+      saved: !hasContent,    // 空内容视为已保存
     };
 
     const newTabs = [...tabs, newTab];
