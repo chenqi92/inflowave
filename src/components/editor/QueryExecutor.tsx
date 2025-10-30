@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { useConnectionStore } from '@/store/connection';
+import { useTabStore } from '@/stores/tabStore';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { SQLParser } from '@/utils/sqlParser';
@@ -287,8 +288,12 @@ export const useQueryExecutor = ({
 
   // 执行指定内容和数据库的查询
   const executeQueryWithContent = useCallback(async (query: string, database: string) => {
+    // 🔧 使用 getState() 获取最新的当前Tab，避免闭包问题
+    const { tabs: currentTabs, activeKey: currentActiveKey } = useTabStore.getState();
+    const latestCurrentTab = currentTabs.find(t => t.id === currentActiveKey);
+
     // 优先使用当前tab的connectionId,如果没有则使用全局activeConnectionId
-    const effectiveConnectionId = currentTab?.connectionId || activeConnectionId;
+    const effectiveConnectionId = latestCurrentTab?.connectionId || activeConnectionId;
 
     if (!effectiveConnectionId) {
       showMessage.warning('请先选择数据库连接');
@@ -303,6 +308,8 @@ export const useQueryExecutor = ({
       connection_id: effectiveConnectionId,
       database,
       query: query.trim(),
+      currentTabId: latestCurrentTab?.id,
+      currentTabTitle: latestCurrentTab?.title,
     });
 
     // 确保数据库名称不为空
@@ -333,13 +340,14 @@ export const useQueryExecutor = ({
       console.log('✅ 表查询执行成功:', result);
 
       // 🔧 保存查询结果到Tab对象（修复右键查询数据后切换Tab结果不显示的问题）
-      if (onUpdateTab && currentTab) {
+      // 使用最新的当前Tab，而不是闭包中的 currentTab
+      if (onUpdateTab && latestCurrentTab) {
         console.log('💾 保存查询结果到Tab对象:', {
-          tabId: currentTab.id,
-          tabTitle: currentTab.title,
+          tabId: latestCurrentTab.id,
+          tabTitle: latestCurrentTab.title,
           hasResult: !!result,
         });
-        onUpdateTab(currentTab.id, {
+        onUpdateTab(latestCurrentTab.id, {
           queryResults: [result],
           executedQueries: [processedQuery],
           executionTime: result.executionTime || 0,
