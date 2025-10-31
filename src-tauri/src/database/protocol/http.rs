@@ -60,14 +60,17 @@ pub struct HttpClient {
 
 impl HttpClient {
     pub fn new(config: ProtocolConfig) -> Result<Self> {
-        let client = Client::builder()
-            .timeout(config.timeout)
-            .build()
-            .map_err(|e| ProtocolError::ConnectionError(format!("创建HTTP客户端失败: {}", e)))?;
-        
+        // 使用代理配置创建HTTP客户端
+        let client = crate::utils::http_client::build_http_client_with_timeout(
+            config.proxy_config.as_ref(),
+            config.timeout,
+            config.ssl,
+        )
+        .map_err(|e| ProtocolError::ConnectionError(format!("创建HTTP客户端失败: {}", e)))?;
+
         let protocol = if config.ssl { "https" } else { "http" };
         let base_url = format!("{}://{}:{}", protocol, config.host, config.port);
-        
+
         Ok(Self {
             config,
             client,

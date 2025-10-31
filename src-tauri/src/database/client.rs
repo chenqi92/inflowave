@@ -1908,7 +1908,8 @@ impl InfluxClient {
         // 设置默认数据库 (InfluxDB 0.7 不支持 with_database 方法)
         // 数据库将在查询时指定
 
-        let http_client = reqwest::Client::new();
+        // 使用代理配置创建HTTP客户端
+        let http_client = crate::utils::http_client::build_http_client(&config)?;
 
         info!("创建 InfluxDB 客户端: {}:{}", config.host, config.port);
 

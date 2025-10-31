@@ -9,6 +9,7 @@ use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::Duration;
+use crate::models::ProxyConfig;
 
 pub mod http;
 pub mod iotdb_official;
@@ -37,6 +38,7 @@ pub struct ProtocolConfig {
     pub timeout: Duration,
     pub username: Option<String>,
     pub password: Option<String>,
+    pub proxy_config: Option<ProxyConfig>,
     pub extra_params: HashMap<String, String>,
 }
 
@@ -157,7 +159,7 @@ impl ProtocolFactory {
             ProtocolType::IoTDBOfficial,  // IoTDB 官方客户端，唯一选择
             ProtocolType::Http,           // REST API 备用协议
         ];
-        
+
         for protocol in protocols {
             let config = ProtocolConfig {
                 protocol_type: protocol.clone(),
@@ -167,16 +169,17 @@ impl ProtocolFactory {
                 timeout: Duration::from_secs(5),
                 username: username.clone(),
                 password: password.clone(),
+                proxy_config: None,
                 extra_params: HashMap::new(),
             };
-            
+
             if let Ok(mut client) = Self::create_client(config) {
                 if client.test_connection().await.is_ok() {
                     return Ok(protocol);
                 }
             }
         }
-        
+
         Err(anyhow::anyhow!("无法检测到可用的协议"))
     }
     

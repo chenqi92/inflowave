@@ -55,10 +55,13 @@ impl IoTDBHttpClient {
             30 // 默认30秒
         };
 
-        let client = Client::builder()
-            .timeout(std::time::Duration::from_secs(timeout_secs))
-            .build()
-            .expect("Failed to create HTTP client");
+        // 使用代理配置创建HTTP客户端
+        let client = crate::utils::http_client::build_http_client_with_timeout(
+            config.proxy_config.as_ref(),
+            std::time::Duration::from_secs(timeout_secs),
+            config.ssl,
+        )
+        .expect("Failed to create HTTP client");
 
         let base_url = format!("http://{}:{}", config.host, config.port);
 
