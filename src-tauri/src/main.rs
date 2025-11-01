@@ -31,6 +31,7 @@ use commands::port_manager::*;
 use commands::embedded_server::*;
 use commands::workspace::*;
 use commands::iotdb::*;
+use commands::influxdb2::*;
 use commands::database_detection::*;
 use commands::multi_source_performance::*;
 
@@ -809,6 +810,15 @@ async fn main() {
             get_iotdb_device_info,
             get_iotdb_timeseries_info,
             get_iotdb_timeseries_statistics,
+
+            // InfluxDB 2.x specific operations
+            get_influxdb2_organizations,
+            get_organization_info,
+            get_influxdb2_buckets,
+            get_bucket_info,
+            create_influxdb2_bucket,
+            delete_influxdb2_bucket,
+            update_bucket_retention,
 
             // Database version detection
             commands::database_detection::detect_database_version,

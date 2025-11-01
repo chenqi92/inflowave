@@ -16,6 +16,7 @@ pub mod port_manager;
 pub mod embedded_server;
 pub mod workspace;
 pub mod iotdb;
+pub mod influxdb2;
 pub mod database_detection;
 pub mod multi_source_performance;
 pub mod window_theme;

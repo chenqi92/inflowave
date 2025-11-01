@@ -447,6 +447,390 @@ impl InfluxDBClient {
             }
         }
     }
+
+    // InfluxDB 2.x 特定方法
+
+    /// 获取 InfluxDB 2.x 组织列表
+    pub async fn get_influxdb2_organizations(&self) -> Result<Vec<String>> {
+        debug!("获取 InfluxDB 2.x 组织列表");
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let url = format!("{}/api/v2/orgs", base_url);
+            let client = reqwest::Client::new();
+
+            match client
+                .get(&url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(orgs_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(orgs) = orgs_response.get("orgs").and_then(|o| o.as_array()) {
+                                let org_names: Vec<String> = orgs
+                                    .iter()
+                                    .filter_map(|org| org.get("name").and_then(|n| n.as_str()))
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                return Ok(org_names);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取组织列表"))
+    }
+
+    /// 获取组织详细信息
+    pub async fn get_influxdb2_organization_info(&self, org_name: &str) -> Result<crate::commands::influxdb2::OrganizationInfo> {
+        debug!("获取组织信息: {}", org_name);
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let url = format!("{}/api/v2/orgs?org={}", base_url, org_name);
+            let client = reqwest::Client::new();
+
+            match client
+                .get(&url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(orgs_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(orgs) = orgs_response.get("orgs").and_then(|o| o.as_array()) {
+                                if let Some(org) = orgs.first() {
+                                    return Ok(crate::commands::influxdb2::OrganizationInfo {
+                                        id: org.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                        name: org.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                        description: org.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                        created_at: org.get("createdAt").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                        updated_at: org.get("updatedAt").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取组织 {} 的详细信息", org_name))
+    }
+
+    /// 获取 InfluxDB 2.x 存储桶列表
+    pub async fn get_influxdb2_buckets(&self) -> Result<Vec<String>> {
+        debug!("获取 InfluxDB 2.x 存储桶列表");
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let url = format!("{}/api/v2/buckets", base_url);
+            let client = reqwest::Client::new();
+
+            match client
+                .get(&url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(buckets_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(buckets) = buckets_response.get("buckets").and_then(|b| b.as_array()) {
+                                let bucket_names: Vec<String> = buckets
+                                    .iter()
+                                    .filter_map(|bucket| bucket.get("name").and_then(|n| n.as_str()))
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                return Ok(bucket_names);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取存储桶列表"))
+    }
+
+    /// 获取特定组织的存储桶列表
+    pub async fn get_influxdb2_buckets_for_org(&self, org_name: &str) -> Result<Vec<String>> {
+        debug!("获取组织 {} 的存储桶列表", org_name);
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let url = format!("{}/api/v2/buckets?org={}", base_url, org_name);
+            let client = reqwest::Client::new();
+
+            match client
+                .get(&url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(buckets_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(buckets) = buckets_response.get("buckets").and_then(|b| b.as_array()) {
+                                let bucket_names: Vec<String> = buckets
+                                    .iter()
+                                    .filter_map(|bucket| bucket.get("name").and_then(|n| n.as_str()))
+                                    .map(|s| s.to_string())
+                                    .collect();
+                                return Ok(bucket_names);
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取组织 {} 的存储桶列表", org_name))
+    }
+
+    /// 获取存储桶详细信息
+    pub async fn get_influxdb2_bucket_info(&self, bucket_name: &str) -> Result<crate::commands::influxdb2::BucketInfo> {
+        debug!("获取存储桶信息: {}", bucket_name);
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let url = format!("{}/api/v2/buckets?name={}", base_url, bucket_name);
+            let client = reqwest::Client::new();
+
+            match client
+                .get(&url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    if let Ok(text) = response.text().await {
+                        if let Ok(buckets_response) = serde_json::from_str::<serde_json::Value>(&text) {
+                            if let Some(buckets) = buckets_response.get("buckets").and_then(|b| b.as_array()) {
+                                if let Some(bucket) = buckets.first() {
+                                    let retention_rules = bucket.get("retentionRules").and_then(|r| r.as_array());
+                                    let retention_period = retention_rules
+                                        .and_then(|rules| rules.first())
+                                        .and_then(|rule| rule.get("everySeconds"))
+                                        .and_then(|v| v.as_i64());
+
+                                    return Ok(crate::commands::influxdb2::BucketInfo {
+                                        id: bucket.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                        name: bucket.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                        org_id: bucket.get("orgID").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                        org_name: bucket.get("org").and_then(|v| v.as_str()).unwrap_or("").to_string(),
+                                        retention_period,
+                                        description: bucket.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                        created_at: bucket.get("createdAt").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                        updated_at: bucket.get("updatedAt").and_then(|v| v.as_str()).map(|s| s.to_string()),
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        Err(anyhow::anyhow!("无法获取存储桶 {} 的详细信息", bucket_name))
+    }
+
+    /// 创建存储桶
+    pub async fn create_influxdb2_bucket(&self, name: &str, org_id: &str, retention_period: Option<i64>, description: Option<&str>) -> Result<()> {
+        debug!("创建存储桶: {}", name);
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let url = format!("{}/api/v2/buckets", base_url);
+            let client = reqwest::Client::new();
+
+            let mut body = serde_json::json!({
+                "name": name,
+                "orgID": org_id,
+            });
+
+            if let Some(desc) = description {
+                body["description"] = serde_json::json!(desc);
+            }
+
+            if let Some(retention) = retention_period {
+                body["retentionRules"] = serde_json::json!([{
+                    "type": "expire",
+                    "everySeconds": retention
+                }]);
+            }
+
+            match client
+                .post(&url)
+                .header("Authorization", format!("Token {}", token))
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    info!("存储桶 '{}' 创建成功", name);
+                    return Ok(());
+                }
+                Ok(response) => {
+                    let status = response.status();
+                    let error_text = response.text().await.unwrap_or_else(|_| "未知错误".to_string());
+                    return Err(anyhow::anyhow!("创建存储桶失败 ({}): {}", status, error_text));
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("创建存储桶请求失败: {}", e));
+                }
+            }
+        }
+
+        Err(anyhow::anyhow!("缺少 InfluxDB 2.x 配置"))
+    }
+
+    /// 删除存储桶
+    pub async fn delete_influxdb2_bucket(&self, bucket_name: &str) -> Result<()> {
+        debug!("删除存储桶: {}", bucket_name);
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let client = reqwest::Client::new();
+
+            // 首先获取存储桶 ID
+            let bucket_info = self.get_influxdb2_bucket_info(bucket_name).await?;
+            let url = format!("{}/api/v2/buckets/{}", base_url, bucket_info.id);
+
+            match client
+                .delete(&url)
+                .header("Authorization", format!("Token {}", token))
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    info!("存储桶 '{}' 删除成功", bucket_name);
+                    return Ok(());
+                }
+                Ok(response) => {
+                    let status = response.status();
+                    let error_text = response.text().await.unwrap_or_else(|_| "未知错误".to_string());
+                    return Err(anyhow::anyhow!("删除存储桶失败 ({}): {}", status, error_text));
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("删除存储桶请求失败: {}", e));
+                }
+            }
+        }
+
+        Err(anyhow::anyhow!("缺少 InfluxDB 2.x 配置"))
+    }
+
+    /// 更新存储桶保留策略
+    pub async fn update_influxdb2_bucket_retention(&self, bucket_name: &str, retention_period: Option<i64>) -> Result<()> {
+        debug!("更新存储桶保留策略: {}", bucket_name);
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        if let Some(v2_config) = &self.config.v2_config {
+            let token = &v2_config.api_token;
+            let client = reqwest::Client::new();
+
+            // 首先获取存储桶信息
+            let bucket_info = self.get_influxdb2_bucket_info(bucket_name).await?;
+            let url = format!("{}/api/v2/buckets/{}", base_url, bucket_info.id);
+
+            let mut body = serde_json::json!({
+                "name": bucket_info.name,
+                "orgID": bucket_info.org_id,
+            });
+
+            if let Some(retention) = retention_period {
+                body["retentionRules"] = serde_json::json!([{
+                    "type": "expire",
+                    "everySeconds": retention
+                }]);
+            } else {
+                body["retentionRules"] = serde_json::json!([]);
+            }
+
+            match client
+                .patch(&url)
+                .header("Authorization", format!("Token {}", token))
+                .header("Content-Type", "application/json")
+                .json(&body)
+                .send()
+                .await
+            {
+                Ok(response) if response.status().is_success() => {
+                    info!("存储桶 '{}' 保留策略更新成功", bucket_name);
+                    return Ok(());
+                }
+                Ok(response) => {
+                    let status = response.status();
+                    let error_text = response.text().await.unwrap_or_else(|_| "未知错误".to_string());
+                    return Err(anyhow::anyhow!("更新保留策略失败 ({}): {}", status, error_text));
+                }
+                Err(e) => {
+                    return Err(anyhow::anyhow!("更新保留策略请求失败: {}", e));
+                }
+            }
+        }
+
+        Err(anyhow::anyhow!("缺少 InfluxDB 2.x 配置"))
+    }
 }
 
 impl std::fmt::Debug for InfluxDBClient {
