@@ -13,6 +13,8 @@ import { DatabaseMenuHandler } from './DatabaseMenuHandler';
 import { TableMenuHandler } from './TableMenuHandler';
 import { FieldMenuHandler, TagMenuHandler } from './FieldMenuHandler';
 import { DeviceMenuHandler, TimeseriesMenuHandler, TemplateMenuHandler } from './IoTDBMenuHandler';
+import { OrganizationMenuHandler } from './OrganizationMenuHandler';
+import { BucketMenuHandler } from './BucketMenuHandler';
 
 /**
  * 通用菜单处理器 - 处理简单的通用操作
@@ -186,6 +188,8 @@ export class ContextMenuHandlerFactory {
     // 注册所有处理器
     this.registerHandler('connection', new ConnectionMenuHandler(deps));
     this.registerHandler('database', new DatabaseMenuHandler(deps));
+    this.registerHandler('organization', new OrganizationMenuHandler(deps));
+    this.registerHandler('bucket', new BucketMenuHandler(deps));
     this.registerHandler('table', new TableMenuHandler(deps));
     this.registerHandler('field', new FieldMenuHandler(deps));
     this.registerHandler('tag', new TagMenuHandler(deps));
@@ -207,10 +211,19 @@ export class ContextMenuHandlerFactory {
       return this.handlers.get('connection')!;
     }
 
-    // 数据库节点
+    // InfluxDB 2.x 组织节点
+    if (nodeType === 'organization') {
+      return this.handlers.get('organization')!;
+    }
+
+    // InfluxDB 2.x 存储桶节点
+    if (nodeType === 'bucket') {
+      return this.handlers.get('bucket')!;
+    }
+
+    // 数据库节点（InfluxDB 1.x 和 IoTDB 存储组）
     if (
       nodeType === 'database' ||
-      nodeType === 'bucket' ||
       nodeType === 'storage_group'
     ) {
       return this.handlers.get('database')!;

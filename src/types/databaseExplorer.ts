@@ -87,6 +87,13 @@ export interface DialogStates {
         open: boolean;
         connectionId: string;
     };
+    create_database?: {
+        open: boolean;
+        connectionId: string;
+        metadata?: {
+            organization?: string;
+        };
+    };
     tableList?: {
         open: boolean;
         connectionId: string;

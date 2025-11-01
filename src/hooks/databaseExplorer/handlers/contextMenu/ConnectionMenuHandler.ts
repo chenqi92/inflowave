@@ -26,7 +26,12 @@ export class ConnectionMenuHandler extends BaseMenuHandler {
         break;
 
       case 'create_database':
-        this.openDialog('create_database', true);
+        // 只有 InfluxDB 1.x 支持创建数据库
+        if (this.isInfluxDB1x(connection)) {
+          this.openDialog('create_database', true);
+        } else {
+          this.showError(action, new Error('当前数据库版本不支持创建数据库操作'));
+        }
         break;
 
       case 'connection_info':
@@ -56,6 +61,34 @@ export class ConnectionMenuHandler extends BaseMenuHandler {
       default:
         console.warn(`未处理的连接菜单动作: ${action}`);
     }
+  }
+
+  /**
+   * 检查是否为 InfluxDB 1.x
+   */
+  private isInfluxDB1x(connection: any): boolean {
+    return connection.dbType === 'influxdb' && connection.version === '1.x';
+  }
+
+  /**
+   * 检查是否为 InfluxDB 2.x
+   */
+  private isInfluxDB2x(connection: any): boolean {
+    return connection.dbType === 'influxdb' && connection.version === '2.x';
+  }
+
+  /**
+   * 检查是否为 InfluxDB 3.x
+   */
+  private isInfluxDB3x(connection: any): boolean {
+    return connection.dbType === 'influxdb' && connection.version === '3.x';
+  }
+
+  /**
+   * 检查是否为 IoTDB
+   */
+  private isIoTDB(connection: any): boolean {
+    return connection.dbType === 'iotdb';
   }
 
   /**

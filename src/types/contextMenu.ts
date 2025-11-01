@@ -117,7 +117,15 @@ export type ContextMenuAction =
   | 'refresh_organization'
   | 'organization_info'
   | 'copy_organization_name'
-  
+
+  // Bucket 操作
+  | 'create_bucket'
+  | 'refresh_bucket'
+  | 'bucket_info'
+  | 'update_bucket_retention'
+  | 'copy_bucket_name'
+  | 'delete_bucket'
+
   // 通用操作
   | 'refresh'
   | 'copy_name';
@@ -453,9 +461,49 @@ export const CONTEXT_MENU_ACTIONS: Record<ContextMenuAction, ContextMenuActionMe
   edit_retention_policy: { action: 'edit_retention_policy', label: '编辑策略', description: '编辑保留策略' },
   copy_policy_name: { action: 'copy_policy_name', label: '复制策略名', description: '复制策略名', successMessage: '已复制策略名' },
   delete_retention_policy: { action: 'delete_retention_policy', label: '删除策略', description: '删除保留策略', requiresConfirmation: true, confirmationMessage: '确定要删除此策略吗？', successMessage: '策略已删除' },
-  refresh_organization: { action: 'refresh_organization', label: '刷新组织', description: '刷新组织' },
+  refresh_organization: { action: 'refresh_organization', label: '刷新组织', description: '刷新组织', successMessage: '组织已刷新' },
   organization_info: { action: 'organization_info', label: '组织信息', description: '查看组织信息' },
   copy_organization_name: { action: 'copy_organization_name', label: '复制组织名', description: '复制组织名', successMessage: '已复制组织名' },
+
+  // Bucket 操作
+  create_bucket: {
+    action: 'create_bucket',
+    label: '创建存储桶',
+    description: '在组织中创建新的存储桶',
+    successMessage: '存储桶创建成功'
+  },
+  refresh_bucket: {
+    action: 'refresh_bucket',
+    label: '刷新存储桶',
+    description: '刷新存储桶的测量列表',
+    successMessage: '存储桶已刷新'
+  },
+  bucket_info: {
+    action: 'bucket_info',
+    label: '存储桶信息',
+    description: '查看存储桶详细信息'
+  },
+  update_bucket_retention: {
+    action: 'update_bucket_retention',
+    label: '更新保留策略',
+    description: '更新存储桶的数据保留策略',
+    successMessage: '保留策略已更新'
+  },
+  copy_bucket_name: {
+    action: 'copy_bucket_name',
+    label: '复制存储桶名',
+    description: '复制存储桶名称到剪贴板',
+    successMessage: '已复制存储桶名'
+  },
+  delete_bucket: {
+    action: 'delete_bucket',
+    label: '删除存储桶',
+    description: '删除此存储桶及其所有数据',
+    requiresConfirmation: true,
+    confirmationMessage: '确定要删除此存储桶吗？此操作不可撤销！',
+    successMessage: '存储桶已删除'
+  },
+
   refresh: { action: 'refresh', label: '刷新', description: '刷新节点' },
   copy_name: { action: 'copy_name', label: '复制名称', description: '复制名称', successMessage: '已复制名称' },
 };

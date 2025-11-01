@@ -29,11 +29,15 @@ interface CreateDatabaseDialogProps {
   onClose: () => void;
   onSuccess?: () => void;
   connectionId?: string; // 新增：从右键菜单传入的连接ID
+  metadata?: {
+    organization?: string; // InfluxDB 2.x 组织名称
+  };
 }
 
 interface CreateDatabaseForm {
   name: string;
   description?: string;
+  retentionPeriod?: string; // InfluxDB 2.x 保留策略（如 "30d", "7d", "0" 表示永久）
 }
 
 const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
@@ -41,6 +45,7 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
   onClose,
   onSuccess,
   connectionId: propConnectionId,
+  metadata,
 }) => {
   const { activeConnectionId, getConnection } = useConnectionStore();
   const [loading, setLoading] = useState(false);
@@ -54,6 +59,14 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
     if (!effectiveConnectionId) return null;
     return getConnection(effectiveConnectionId);
   }, [effectiveConnectionId, getConnection]);
+
+  // 检查是否为 InfluxDB 2.x
+  const isInfluxDB2x = useMemo(() => {
+    if (!connection) return false;
+    const dbType = connection.dbType?.toLowerCase() || '';
+    const version = connection.version || '';
+    return dbType === 'influxdb' && (version.includes('2.') || version.includes('2x'));
+  }, [connection]);
 
   // 根据连接类型确定对话框标题和描述
   const dialogInfo = useMemo(() => {
@@ -135,19 +148,64 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
 
     try {
       setLoading(true);
-      // 🔧 修复：使用 camelCase 参数名称以匹配后端 #[tauri::command(rename_all = "camelCase")]
-      await safeTauriInvoke('create_database', {
-        connectionId: effectiveConnectionId,
-        databaseName: values.name,
-      });
 
-      const successMessage = connection?.dbType === 'iotdb'
-        ? '存储组创建成功'
-        : connection?.version?.includes('2.')
-          ? '存储桶创建成功'
+      // InfluxDB 2.x 使用专门的 Bucket 创建命令
+      if (isInfluxDB2x) {
+        // 获取组织信息
+        const organizationName = metadata?.organization;
+        if (!organizationName) {
+          showMessage.error('缺少组织信息，无法创建存储桶');
+          return;
+        }
+
+        // 获取组织 ID
+        const orgInfo = await safeTauriInvoke<any>('get_organization_info', {
+          connectionId: effectiveConnectionId,
+          orgName: organizationName,
+        });
+
+        // 解析保留策略（转换为秒）
+        let retentionPeriod: number | null = null;
+        if (values.retentionPeriod && values.retentionPeriod !== '0') {
+          const match = values.retentionPeriod.match(/^(\d+)([dhms])$/);
+          if (match) {
+            const value = parseInt(match[1]);
+            const unit = match[2];
+            switch (unit) {
+              case 'd': retentionPeriod = value * 86400; break;
+              case 'h': retentionPeriod = value * 3600; break;
+              case 'm': retentionPeriod = value * 60; break;
+              case 's': retentionPeriod = value; break;
+            }
+          }
+        }
+
+        // 创建存储桶
+        await safeTauriInvoke('create_influxdb2_bucket', {
+          connectionId: effectiveConnectionId,
+          request: {
+            name: values.name,
+            orgId: orgInfo.id,
+            retentionPeriod,
+            description: values.description || null,
+          },
+        });
+
+        showMessage.success('存储桶创建成功');
+      } else {
+        // 其他数据库类型使用通用的 create_database 命令
+        await safeTauriInvoke('create_database', {
+          connectionId: effectiveConnectionId,
+          databaseName: values.name,
+        });
+
+        const successMessage = connection?.dbType === 'iotdb'
+          ? '存储组创建成功'
           : '数据库创建成功';
 
-      showMessage.success(successMessage);
+        showMessage.success(successMessage);
+      }
+
       form.reset();
       onClose();
       if (onSuccess) {
@@ -156,7 +214,7 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
     } catch (error) {
       const errorMessage = connection?.dbType === 'iotdb'
         ? '创建存储组失败'
-        : connection?.version?.includes('2.')
+        : isInfluxDB2x
           ? '创建存储桶失败'
           : '创建数据库失败';
 
@@ -241,6 +299,29 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
                   </FormItem>
                 )}
               />
+
+              {/* InfluxDB 2.x 保留策略字段 */}
+              {isInfluxDB2x && (
+                <FormField
+                  control={form.control}
+                  name="retentionPeriod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>保留策略（可选）</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="例如: 30d, 7d, 24h, 0 (永久保留)"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                      <p className="text-xs text-muted-foreground">
+                        格式: 数字+单位 (d=天, h=小时, m=分钟, s=秒)，0 表示永久保留
+                      </p>
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <DialogFooter>
                 <Button

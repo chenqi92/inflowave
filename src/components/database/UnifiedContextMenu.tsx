@@ -301,26 +301,39 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
             关闭 Bucket
           </ContextMenuItem>
         )}
-        <ContextMenuItem onSelect={() => handleAction('refresh_database')}>
+        <ContextMenuItem onSelect={() => handleAction('refresh_bucket')}>
           <RefreshCw className="w-4 h-4 mr-2" />
           刷新 Bucket
         </ContextMenuItem>
         <ContextMenuSeparator />
-        
+
         <ContextMenuLabel>数据管理</ContextMenuLabel>
-        <ContextMenuItem onSelect={() => handleAction('database_info')}>
+        <ContextMenuItem onSelect={() => handleAction('bucket_info')}>
           <Info className="w-4 h-4 mr-2" />
           Bucket 信息
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => handleAction('update_bucket_retention')}>
+          <Clock className="w-4 h-4 mr-2" />
+          更新保留策略
         </ContextMenuItem>
         <ContextMenuItem onSelect={() => handleAction('export_metadata')}>
           <Download className="w-4 h-4 mr-2" />
           导出元数据
         </ContextMenuItem>
         <ContextMenuSeparator />
-        
-        <ContextMenuItem onSelect={() => handleAction('copy_database_name')}>
+
+        <ContextMenuItem onSelect={() => handleAction('copy_bucket_name')}>
           <Copy className="w-4 h-4 mr-2" />
           复制 Bucket 名
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+
+        <ContextMenuItem
+          onSelect={() => handleAction('delete_bucket')}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="w-4 h-4 mr-2" />
+          删除 Bucket
         </ContextMenuItem>
       </>
     );
@@ -818,6 +831,13 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
       <ContextMenuItem onSelect={() => handleAction('organization_info')}>
         <Info className="w-4 h-4 mr-2" />
         组织信息
+      </ContextMenuItem>
+      <ContextMenuSeparator />
+
+      <ContextMenuLabel>Bucket 管理</ContextMenuLabel>
+      <ContextMenuItem onSelect={() => handleAction('create_bucket')}>
+        <Plus className="w-4 h-4 mr-2" />
+        创建 Bucket
       </ContextMenuItem>
       <ContextMenuSeparator />
 

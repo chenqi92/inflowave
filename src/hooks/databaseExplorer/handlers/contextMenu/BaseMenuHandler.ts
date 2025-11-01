@@ -137,6 +137,8 @@ export abstract class BaseMenuHandler {
     table: string;
     field: string;
     tag: string;
+    organization: string;
+    bucket: string;
   } {
     const metadata = node.metadata || {};
     return {
@@ -145,6 +147,8 @@ export abstract class BaseMenuHandler {
       table: metadata.table || metadata.tableName || node.name,
       field: metadata.field || metadata.fieldName || node.name,
       tag: metadata.tag || metadata.tagName || node.name,
+      organization: metadata.organization || metadata.organizationName || node.name,
+      bucket: metadata.bucket || metadata.bucketName || node.name,
     };
   }
 
