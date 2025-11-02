@@ -7,8 +7,7 @@
 use tauri::State;
 use log::{debug, info};
 use serde::{Deserialize, Serialize};
-use std::sync::Arc;
-use crate::database::connection::ConnectionManager;
+use crate::services::connection_service::ConnectionService;
 
 /// 存储桶信息
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -49,11 +48,12 @@ pub struct CreateBucketRequest {
 #[tauri::command]
 pub async fn get_influxdb2_organizations(
     connection_id: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<String>, String> {
     debug!("获取 InfluxDB 2.x 组织列表: {}", connection_id);
 
-    let client = connection_manager
+    let manager = connection_service.get_manager();
+    let client = manager
         .get_connection(&connection_id)
         .await
         .map_err(|e| format!("获取连接失败: {}", e))?;
@@ -73,11 +73,12 @@ pub async fn get_influxdb2_organizations(
 pub async fn get_organization_info(
     connection_id: String,
     org_name: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<OrganizationInfo, String> {
     debug!("获取组织信息: {} - {}", connection_id, org_name);
 
-    let client = connection_manager
+    let manager = connection_service.get_manager();
+    let client = manager
         .get_connection(&connection_id)
         .await
         .map_err(|e| format!("获取连接失败: {}", e))?;
@@ -96,11 +97,12 @@ pub async fn get_organization_info(
 pub async fn get_influxdb2_buckets(
     connection_id: String,
     org_name: Option<String>,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<String>, String> {
     debug!("获取 InfluxDB 2.x 存储桶列表: {} - {:?}", connection_id, org_name);
 
-    let client = connection_manager
+    let manager = connection_service.get_manager();
+    let client = manager
         .get_connection(&connection_id)
         .await
         .map_err(|e| format!("获取连接失败: {}", e))?;
@@ -120,11 +122,12 @@ pub async fn get_influxdb2_buckets(
 pub async fn get_bucket_info(
     connection_id: String,
     bucket_name: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<BucketInfo, String> {
     debug!("获取存储桶信息: {} - {}", connection_id, bucket_name);
 
-    let client = connection_manager
+    let manager = connection_service.get_manager();
+    let client = manager
         .get_connection(&connection_id)
         .await
         .map_err(|e| format!("获取连接失败: {}", e))?;
@@ -143,11 +146,12 @@ pub async fn get_bucket_info(
 pub async fn create_influxdb2_bucket(
     connection_id: String,
     request: CreateBucketRequest,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("创建 InfluxDB 2.x 存储桶: {} - {}", connection_id, request.name);
 
-    let client = connection_manager
+    let manager = connection_service.get_manager();
+    let client = manager
         .get_connection(&connection_id)
         .await
         .map_err(|e| format!("获取连接失败: {}", e))?;
@@ -167,11 +171,12 @@ pub async fn create_influxdb2_bucket(
 pub async fn delete_influxdb2_bucket(
     connection_id: String,
     bucket_name: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("删除 InfluxDB 2.x 存储桶: {} - {}", connection_id, bucket_name);
 
-    let client = connection_manager
+    let manager = connection_service.get_manager();
+    let client = manager
         .get_connection(&connection_id)
         .await
         .map_err(|e| format!("获取连接失败: {}", e))?;
@@ -192,11 +197,12 @@ pub async fn update_bucket_retention(
     connection_id: String,
     bucket_name: String,
     retention_period: Option<i64>,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("更新存储桶保留策略: {} - {} - {:?}", connection_id, bucket_name, retention_period);
 
-    let client = connection_manager
+    let manager = connection_service.get_manager();
+    let client = manager
         .get_connection(&connection_id)
         .await
         .map_err(|e| format!("获取连接失败: {}", e))?;
