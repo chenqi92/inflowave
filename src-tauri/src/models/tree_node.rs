@@ -224,18 +224,20 @@ impl TreeNodeFactory {
         } else {
             TreeNodeType::Bucket
         };
-        
+
         let mut node = TreeNode::new(
             format!("bucket_{}_{}", org, name),
-            name,
+            name.clone(),
             node_type,
         )
-        .with_parent(format!("org_{}", org));
-        
+        .with_parent(format!("org_{}", org))
+        .with_metadata("bucket_name".to_string(), serde_json::Value::String(name))
+        .with_metadata("organization".to_string(), serde_json::Value::String(org.to_string()));
+
         if is_system {
             node = node.as_system();
         }
-        
+
         node
     }
 

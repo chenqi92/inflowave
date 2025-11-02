@@ -80,6 +80,11 @@ const VOID_COMMANDS = new Set([
 
   // Data operations
   'import_data',
+  'create_database',
+  'delete_database',
+  'create_influxdb2_bucket',
+  'delete_influxdb2_bucket',
+  'update_bucket_retention',
 
   // Performance monitoring
   'perform_health_check',

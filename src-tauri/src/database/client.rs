@@ -1545,14 +1545,43 @@ impl InfluxDB2Client {
             }
             TreeNodeType::Bucket | TreeNodeType::SystemBucket => {
                 // InfluxDB 2.x: 获取存储桶下的测量值
-                let bucket_name = if let Some(bucket_part) = parent_node_id.split("/bucket_").nth(1) {
-                    bucket_part.to_string()
+                // 优先从 metadata 读取 bucket_name，如果没有则从 ID 解析
+                let bucket_name = if let Some(metadata) = _metadata {
+                    if let Some(bucket_name_value) = metadata.get("bucket_name") {
+                        bucket_name_value.as_str().unwrap_or("").to_string()
+                    } else {
+                        // 从 ID 解析：bucket_{org}_{name} -> {name}
+                        if let Some(bucket_part) = parent_node_id.strip_prefix("bucket_") {
+                            // bucket_my-org_test -> my-org_test
+                            // 找到第一个下划线后的部分
+                            if let Some(first_underscore) = bucket_part.find('_') {
+                                bucket_part[first_underscore + 1..].to_string()
+                            } else {
+                                bucket_part.to_string()
+                            }
+                        } else {
+                            parent_node_id.to_string()
+                        }
+                    }
                 } else {
-                    parent_node_id.strip_prefix("bucket_").unwrap_or(parent_node_id).to_string()
+                    // 从 ID 解析：bucket_{org}_{name} -> {name}
+                    if let Some(bucket_part) = parent_node_id.strip_prefix("bucket_") {
+                        // bucket_my-org_test -> my-org_test
+                        // 找到第一个下划线后的部分
+                        if let Some(first_underscore) = bucket_part.find('_') {
+                            bucket_part[first_underscore + 1..].to_string()
+                        } else {
+                            bucket_part.to_string()
+                        }
+                    } else {
+                        parent_node_id.to_string()
+                    }
                 };
 
+                log::debug!("获取存储桶 {} 的测量值", bucket_name);
                 match self.get_measurements_flux(&bucket_name).await {
                     Ok(measurements) => {
+                        log::debug!("存储桶 {} 包含 {} 个测量值", bucket_name, measurements.len());
                         for measurement in measurements {
                             let measurement_node = TreeNodeFactory::create_measurement(
                                 parent_node_id.to_string(),
@@ -3671,9 +3700,55 @@ impl InfluxClient {
             }
             TreeNodeType::Bucket | TreeNodeType::SystemBucket => {
                 // InfluxDB 2.x/3.x: 获取存储桶下的测量值
-                // 这里可以通过 Flux 查询获取测量值，但需要更复杂的实现
-                // 暂时返回空，后续可以扩展
-                log::debug!("存储桶子节点获取暂未实现");
+                // 优先从 metadata 读取 bucket_name，如果没有则从 ID 解析
+                let bucket_name = if let Some(metadata) = metadata {
+                    if let Some(bucket_name_value) = metadata.get("bucket_name") {
+                        bucket_name_value.as_str().unwrap_or("").to_string()
+                    } else {
+                        // 从 ID 解析：bucket_{org}_{name} -> {name}
+                        if let Some(bucket_part) = parent_node_id.strip_prefix("bucket_") {
+                            // bucket_my-org_test -> my-org_test
+                            // 找到第一个下划线后的部分
+                            if let Some(first_underscore) = bucket_part.find('_') {
+                                bucket_part[first_underscore + 1..].to_string()
+                            } else {
+                                bucket_part.to_string()
+                            }
+                        } else {
+                            parent_node_id.to_string()
+                        }
+                    }
+                } else {
+                    // 从 ID 解析：bucket_{org}_{name} -> {name}
+                    if let Some(bucket_part) = parent_node_id.strip_prefix("bucket_") {
+                        // bucket_my-org_test -> my-org_test
+                        // 找到第一个下划线后的部分
+                        if let Some(first_underscore) = bucket_part.find('_') {
+                            bucket_part[first_underscore + 1..].to_string()
+                        } else {
+                            bucket_part.to_string()
+                        }
+                    } else {
+                        parent_node_id.to_string()
+                    }
+                };
+
+                log::debug!("获取存储桶 {} 的测量值", bucket_name);
+                match self.get_measurements_flux(&bucket_name).await {
+                    Ok(measurements) => {
+                        log::debug!("存储桶 {} 包含 {} 个测量值", bucket_name, measurements.len());
+                        for measurement in measurements {
+                            let measurement_node = TreeNodeFactory::create_measurement(
+                                parent_node_id.to_string(),
+                                measurement
+                            );
+                            children.push(measurement_node);
+                        }
+                    }
+                    Err(e) => {
+                        log::warn!("获取存储桶 {} 的测量值失败: {}", bucket_name, e);
+                    }
+                }
             }
             TreeNodeType::Database3x => {
                 // InfluxDB 3.x: 获取数据库下的表/测量值

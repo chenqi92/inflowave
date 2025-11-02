@@ -139,6 +139,7 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     const metadata = node.metadata || {};
     const dbType = metadata.dbType?.toLowerCase();
     const isIoTDB = dbType === 'iotdb';
+    const isInfluxDB2x = dbType === 'influxdb2' || metadata.version === '2.x';
 
     return (
       <>
@@ -154,18 +155,23 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         </ContextMenuItem>
         <ContextMenuSeparator />
 
-        <ContextMenuLabel>数据库管理</ContextMenuLabel>
-        <ContextMenuItem onSelect={() => handleAction('create_database')}>
-          <Plus className="w-4 h-4 mr-2" />
-          创建数据库
-        </ContextMenuItem>
-        {isIoTDB && (
-          <ContextMenuItem onSelect={() => handleAction('manage_templates')}>
-            <FileStack className="w-4 h-4 mr-2" />
-            模板管理
-          </ContextMenuItem>
+        {/* InfluxDB 2.x 不显示"创建数据库"选项，因为它使用 Organization → Bucket 结构 */}
+        {!isInfluxDB2x && (
+          <>
+            <ContextMenuLabel>数据库管理</ContextMenuLabel>
+            <ContextMenuItem onSelect={() => handleAction('create_database')}>
+              <Plus className="w-4 h-4 mr-2" />
+              创建数据库
+            </ContextMenuItem>
+            {isIoTDB && (
+              <ContextMenuItem onSelect={() => handleAction('manage_templates')}>
+                <FileStack className="w-4 h-4 mr-2" />
+                模板管理
+              </ContextMenuItem>
+            )}
+            <ContextMenuSeparator />
+          </>
         )}
-        <ContextMenuSeparator />
 
         <ContextMenuLabel>连接管理</ContextMenuLabel>
         <ContextMenuItem onSelect={() => handleAction('connection_info')}>

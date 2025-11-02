@@ -516,8 +516,8 @@ export function getNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = f
     };
   }
 
+  // InfluxDB 1.x 数据库节点（需要先打开才能查询）
   if (normalized === 'database' || normalized === 'system_database' ||
-      normalized === 'bucket' || normalized === 'system_bucket' ||
       normalized === 'database3x' || normalized === 'storage_group') {
     return {
       canExpand: true,
@@ -527,6 +527,19 @@ export function getNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = f
       doubleClickAction: 'activate', // 关闭时打开，打开时展开/收起
       contextMenuType: 'management',
       description: '数据库节点'
+    };
+  }
+
+  // InfluxDB 2.x Bucket 节点（不需要打开，直接展开/收起）
+  if (normalized === 'bucket' || normalized === 'system_bucket') {
+    return {
+      canExpand: true,
+      canQuery: false,
+      canDoubleClick: true,
+      hasActivationState: false,
+      doubleClickAction: 'toggle', // 双击直接展开/收起
+      contextMenuType: 'management',
+      description: 'Bucket 节点'
     };
   }
 
