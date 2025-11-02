@@ -588,12 +588,15 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       });
       logger.info(`[Loading] ✅ 节点加载成功: ${nodeId}`);
 
-      // 🔧 加载完成后自动展开节点 - 使用 item.expand()，让 setExpandedItems 回调更新 state
-      const treeItem = tree.getItemInstance(nodeId);
-      if (treeItem && !treeItem.isExpanded()) {
-        logger.debug(`自动展开已加载的节点: ${nodeId}`);
-        treeItem.expand();
-      }
+      // 🔧 加载完成后自动展开节点 - 直接更新 expandedNodeIds 状态
+      // 注意：不能使用 treeItem.expand()，因为 setTreeData 会触发 tree.rebuildTree()，导致 treeItem 实例失效
+      setExpandedNodeIds(prev => {
+        if (!prev.includes(nodeId)) {
+          logger.debug(`自动展开已加载的节点: ${nodeId}`);
+          return [...prev, nodeId];
+        }
+        return prev;
+      });
     } catch (err) {
       logger.error('加载子节点失败:', err);
 
