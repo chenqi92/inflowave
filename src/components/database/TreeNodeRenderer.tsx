@@ -144,6 +144,21 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
     const database = data.name;
     isActivated = isDatabaseOpened(connectionId, database);
     log.debug(`[TreeNodeRenderer] 数据库节点 ${database} isActivated: ${isActivated}, connectionId: ${connectionId}`);
+  } else if (data.nodeType === 'organization' && isDatabaseOpened) {
+    // InfluxDB 2.x Organization 节点
+    const connectionId = data.metadata?.connectionId || '';
+    const organization = data.name;
+    // 使用特殊格式检查 organization 是否打开
+    isActivated = isDatabaseOpened(connectionId, `org:${organization}`);
+    log.debug(`[TreeNodeRenderer] Organization 节点 ${organization} isActivated: ${isActivated}, connectionId: ${connectionId}`);
+  } else if ((data.nodeType === 'bucket' || data.nodeType === 'system_bucket') && isDatabaseOpened) {
+    // InfluxDB 2.x Bucket 节点
+    const connectionId = data.metadata?.connectionId || '';
+    const organization = data.metadata?.organization || '';
+    const bucket = data.name;
+    // 使用特殊格式检查 bucket 是否打开
+    isActivated = isDatabaseOpened(connectionId, `bucket:${organization}/${bucket}`);
+    log.debug(`[TreeNodeRenderer] Bucket 节点 ${bucket} isActivated: ${isActivated}, connectionId: ${connectionId}, organization: ${organization}`);
   }
 
   // 开发环境下添加渲染日志（INFO 级别，用于诊断）
@@ -236,12 +251,12 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   let hasChildren = false;
 
   if (behaviorConfig.hasActivationState) {
-    // 有打开/关闭状态的节点（连接、数据库）
+    // 有打开/关闭状态的节点（连接、数据库、organization、bucket）
     if (normalizedNodeType === 'connection') {
       // 连接节点：只有已连接时才显示箭头
       hasChildren = isLoading || (isConnected && (data.children === undefined || (data.children && data.children.length > 0)));
     } else {
-      // 数据库节点：只有已激活时才显示箭头
+      // 数据库/organization/bucket 节点：只有已激活时才显示箭头
       hasChildren = isLoading || (isActivated && (data.children === undefined || (data.children && data.children.length > 0)));
     }
   } else {

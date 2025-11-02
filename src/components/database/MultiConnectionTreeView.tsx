@@ -1436,6 +1436,67 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
             }
             return;
           }
+        } else if (normalized === 'organization') {
+          // InfluxDB 2.x Organization 节点
+          const organization = nodeData.name;
+          const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, `org:${organization}`) : false;
+
+          logger.debug(`[双击 Organization] nodeId: ${nodeId}, isActivated: ${isActivated}`);
+
+          // 如果 organization 未打开，打开 organization
+          if (!isActivated) {
+            logger.debug(`[打开 Organization] 双击未打开的 Organization 节点: ${organization}`);
+            nodesToAutoExpandRef.current.add(nodeId);
+            onNodeActivate?.(nodeData);
+            return;
+          }
+
+          // 如果 organization 已打开，切换展开/收起
+          if (item.isExpanded()) {
+            logger.debug(`收起 Organization 节点: ${nodeId}`);
+            setExpandedNodeIds(prev => prev.filter(id => id !== nodeId));
+          } else {
+            // 如果子节点未加载，先加载再展开
+            if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
+              logger.debug(`子节点未加载，触发加载: ${nodeId}`);
+              await handleToggle(item.getId());
+            } else {
+              logger.debug(`子节点已加载，直接展开: ${nodeId}`);
+              setExpandedNodeIds(prev => prev.includes(nodeId) ? prev : [...prev, nodeId]);
+            }
+          }
+          return;
+        } else if (normalized === 'bucket' || normalized === 'system_bucket') {
+          // InfluxDB 2.x Bucket 节点
+          const bucket = nodeData.name;
+          const organization = nodeData.metadata?.organization || '';
+          const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, `bucket:${organization}/${bucket}`) : false;
+
+          logger.debug(`[双击 Bucket] nodeId: ${nodeId}, isActivated: ${isActivated}, organization: ${organization}`);
+
+          // 如果 bucket 未打开，打开 bucket
+          if (!isActivated) {
+            logger.debug(`[打开 Bucket] 双击未打开的 Bucket 节点: ${bucket}`);
+            nodesToAutoExpandRef.current.add(nodeId);
+            onNodeActivate?.(nodeData);
+            return;
+          }
+
+          // 如果 bucket 已打开，切换展开/收起
+          if (item.isExpanded()) {
+            logger.debug(`收起 Bucket 节点: ${nodeId}`);
+            setExpandedNodeIds(prev => prev.filter(id => id !== nodeId));
+          } else {
+            // 如果子节点未加载，先加载再展开
+            if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
+              logger.debug(`子节点未加载，触发加载: ${nodeId}`);
+              await handleToggle(item.getId());
+            } else {
+              logger.debug(`子节点已加载，直接展开: ${nodeId}`);
+              setExpandedNodeIds(prev => prev.includes(nodeId) ? prev : [...prev, nodeId]);
+            }
+          }
+          return;
         } else {
           // 数据库节点
           const database = nodeData.name;

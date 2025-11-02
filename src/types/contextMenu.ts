@@ -114,12 +114,16 @@ export type ContextMenuAction =
   | 'delete_retention_policy'
   
   // 组织操作
+  | 'open_organization'
+  | 'close_organization'
   | 'refresh_organization'
   | 'organization_info'
   | 'copy_organization_name'
 
   // Bucket 操作
   | 'create_bucket'
+  | 'open_bucket'
+  | 'close_bucket'
   | 'refresh_bucket'
   | 'bucket_info'
   | 'update_bucket_retention'
@@ -461,6 +465,8 @@ export const CONTEXT_MENU_ACTIONS: Record<ContextMenuAction, ContextMenuActionMe
   edit_retention_policy: { action: 'edit_retention_policy', label: '编辑策略', description: '编辑保留策略' },
   copy_policy_name: { action: 'copy_policy_name', label: '复制策略名', description: '复制策略名', successMessage: '已复制策略名' },
   delete_retention_policy: { action: 'delete_retention_policy', label: '删除策略', description: '删除保留策略', requiresConfirmation: true, confirmationMessage: '确定要删除此策略吗？', successMessage: '策略已删除' },
+  open_organization: { action: 'open_organization', label: '打开组织', description: '打开组织', successMessage: '组织已打开' },
+  close_organization: { action: 'close_organization', label: '关闭组织', description: '关闭组织', successMessage: '组织已关闭' },
   refresh_organization: { action: 'refresh_organization', label: '刷新组织', description: '刷新组织', successMessage: '组织已刷新' },
   organization_info: { action: 'organization_info', label: '组织信息', description: '查看组织信息' },
   copy_organization_name: { action: 'copy_organization_name', label: '复制组织名', description: '复制组织名', successMessage: '已复制组织名' },
@@ -471,6 +477,18 @@ export const CONTEXT_MENU_ACTIONS: Record<ContextMenuAction, ContextMenuActionMe
     label: '创建存储桶',
     description: '在组织中创建新的存储桶',
     successMessage: '存储桶创建成功'
+  },
+  open_bucket: {
+    action: 'open_bucket',
+    label: '打开存储桶',
+    description: '打开存储桶',
+    successMessage: '存储桶已打开'
+  },
+  close_bucket: {
+    action: 'close_bucket',
+    label: '关闭存储桶',
+    description: '关闭存储桶',
+    successMessage: '存储桶已关闭'
   },
   refresh_bucket: {
     action: 'refresh_bucket',

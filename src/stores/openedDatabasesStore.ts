@@ -3,13 +3,21 @@ import { create } from 'zustand';
 interface OpenedDatabasesState {
   openedDatabases: Set<string>;
   openedDatabasesList: string[];
-  
+
   // Actions
   openDatabase: (connectionId: string, database: string) => void;
   closeDatabase: (connectionId: string, database: string) => void;
   closeAllDatabasesForConnection: (connectionId: string) => void;
   isDatabaseOpened: (connectionId: string, database: string) => boolean;
   getOpenedDatabasesList: () => string[];
+
+  // InfluxDB 2.x Organization/Bucket support
+  openOrganization: (connectionId: string, organization: string) => void;
+  closeOrganization: (connectionId: string, organization: string) => void;
+  isOrganizationOpened: (connectionId: string, organization: string) => boolean;
+  openBucket: (connectionId: string, organization: string, bucket: string) => void;
+  closeBucket: (connectionId: string, organization: string, bucket: string) => void;
+  isBucketOpened: (connectionId: string, organization: string, bucket: string) => boolean;
 }
 
 export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) => ({
@@ -101,5 +109,104 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
 
   getOpenedDatabasesList: () => {
     return get().openedDatabasesList;
-  }
+  },
+
+  // InfluxDB 2.x Organization support
+  openOrganization: (connectionId: string, organization: string) => {
+    const key = `${connectionId}/org:${organization}`;
+    set((state) => {
+      const newOpenedDatabases = new Set(state.openedDatabases);
+      newOpenedDatabases.add(key);
+      const newOpenedDatabasesList = Array.from(newOpenedDatabases);
+
+      console.log(`📂 [Store] 打开 Organization: ${key}`, {
+        before: Array.from(state.openedDatabases),
+        after: Array.from(newOpenedDatabases),
+      });
+
+      return {
+        openedDatabases: newOpenedDatabases,
+        openedDatabasesList: newOpenedDatabasesList
+      };
+    });
+  },
+
+  closeOrganization: (connectionId: string, organization: string) => {
+    const key = `${connectionId}/org:${organization}`;
+    set((state) => {
+      const newOpenedDatabases = new Set(state.openedDatabases);
+      const wasDeleted = newOpenedDatabases.delete(key);
+
+      // 同时关闭该 organization 下的所有 bucket
+      const bucketPrefix = `${connectionId}/bucket:${organization}/`;
+      for (const dbKey of newOpenedDatabases) {
+        if (dbKey.startsWith(bucketPrefix)) {
+          newOpenedDatabases.delete(dbKey);
+        }
+      }
+
+      const newOpenedDatabasesList = Array.from(newOpenedDatabases);
+
+      console.log(`📁 [Store] 关闭 Organization: ${key}`, {
+        wasDeleted,
+        before: Array.from(state.openedDatabases),
+        after: Array.from(newOpenedDatabases),
+      });
+
+      return {
+        openedDatabases: newOpenedDatabases,
+        openedDatabasesList: newOpenedDatabasesList
+      };
+    });
+  },
+
+  isOrganizationOpened: (connectionId: string, organization: string) => {
+    const key = `${connectionId}/org:${organization}`;
+    return get().openedDatabases.has(key);
+  },
+
+  // InfluxDB 2.x Bucket support
+  openBucket: (connectionId: string, organization: string, bucket: string) => {
+    const key = `${connectionId}/bucket:${organization}/${bucket}`;
+    set((state) => {
+      const newOpenedDatabases = new Set(state.openedDatabases);
+      newOpenedDatabases.add(key);
+      const newOpenedDatabasesList = Array.from(newOpenedDatabases);
+
+      console.log(`📂 [Store] 打开 Bucket: ${key}`, {
+        before: Array.from(state.openedDatabases),
+        after: Array.from(newOpenedDatabases),
+      });
+
+      return {
+        openedDatabases: newOpenedDatabases,
+        openedDatabasesList: newOpenedDatabasesList
+      };
+    });
+  },
+
+  closeBucket: (connectionId: string, organization: string, bucket: string) => {
+    const key = `${connectionId}/bucket:${organization}/${bucket}`;
+    set((state) => {
+      const newOpenedDatabases = new Set(state.openedDatabases);
+      const wasDeleted = newOpenedDatabases.delete(key);
+      const newOpenedDatabasesList = Array.from(newOpenedDatabases);
+
+      console.log(`📁 [Store] 关闭 Bucket: ${key}`, {
+        wasDeleted,
+        before: Array.from(state.openedDatabases),
+        after: Array.from(newOpenedDatabases),
+      });
+
+      return {
+        openedDatabases: newOpenedDatabases,
+        openedDatabasesList: newOpenedDatabasesList
+      };
+    });
+  },
+
+  isBucketOpened: (connectionId: string, organization: string, bucket: string) => {
+    const key = `${connectionId}/bucket:${organization}/${bucket}`;
+    return get().openedDatabases.has(key);
+  },
 }));

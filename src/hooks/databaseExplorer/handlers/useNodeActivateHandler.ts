@@ -58,6 +58,35 @@ export const useNodeActivateHandler = ({
             return;
         }
 
+        // InfluxDB 2.x Organization 节点：双击打开 organization
+        if (nodeType === 'organization') {
+            const organization = node.name;
+            console.log(`📂 [DatabaseExplorer] 双击 Organization 节点，打开 Organization: ${organization}`);
+            const { openOrganization, isOrganizationOpened } = useOpenedDatabasesStore.getState();
+            if (!isOrganizationOpened(connectionId, organization)) {
+                openOrganization(connectionId, organization);
+                showMessage.success(`已打开 Organization "${organization}"`);
+            } else {
+                console.log(`📂 [DatabaseExplorer] Organization 已打开，跳过: ${organization}`);
+            }
+            return;
+        }
+
+        // InfluxDB 2.x Bucket 节点：双击打开 bucket
+        if (nodeType === 'bucket' || nodeType === 'system_bucket') {
+            const bucket = node.name;
+            const organization = metadata.organization || '';
+            console.log(`📂 [DatabaseExplorer] 双击 Bucket 节点，打开 Bucket: ${bucket}, Organization: ${organization}`);
+            const { openBucket, isBucketOpened } = useOpenedDatabasesStore.getState();
+            if (!isBucketOpened(connectionId, organization, bucket)) {
+                openBucket(connectionId, organization, bucket);
+                showMessage.success(`已打开 Bucket "${bucket}"`);
+            } else {
+                console.log(`📂 [DatabaseExplorer] Bucket 已打开，跳过: ${bucket}`);
+            }
+            return;
+        }
+
         // 容器节点（connection 等）已经由 MultiConnectionTreeView 的 handleToggle 处理
         // 这里只处理叶子节点
 

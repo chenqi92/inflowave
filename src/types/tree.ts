@@ -530,14 +530,27 @@ export function getNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = f
     };
   }
 
-  // InfluxDB 2.x Bucket 节点（不需要打开，直接展开/收起）
+  // InfluxDB 2.x Organization 节点（需要先打开才能查询，类似 Database）
+  if (normalized === 'organization') {
+    return {
+      canExpand: true,
+      canQuery: false,
+      canDoubleClick: true,
+      hasActivationState: true,
+      doubleClickAction: 'activate', // 关闭时打开，打开时展开/收起
+      contextMenuType: 'management',
+      description: 'Organization 节点'
+    };
+  }
+
+  // InfluxDB 2.x Bucket 节点（需要先打开才能查询，类似 Database）
   if (normalized === 'bucket' || normalized === 'system_bucket') {
     return {
       canExpand: true,
       canQuery: false,
       canDoubleClick: true,
-      hasActivationState: false,
-      doubleClickAction: 'toggle', // 双击直接展开/收起
+      hasActivationState: true,
+      doubleClickAction: 'activate', // 关闭时打开，打开时展开/收起
       contextMenuType: 'management',
       description: 'Bucket 节点'
     };
@@ -559,8 +572,7 @@ export function getNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = f
 
   // 普通容器节点（tag_group、field_group、device等）
   if (normalized === 'tag_group' || normalized === 'field_group' ||
-      normalized === 'device' || normalized === 'retention_policy' ||
-      normalized === 'organization' || isContainer) {
+      normalized === 'device' || normalized === 'retention_policy' || isContainer) {
     return {
       canExpand: true,
       canQuery: false,

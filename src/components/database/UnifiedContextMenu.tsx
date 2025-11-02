@@ -289,20 +289,21 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   // ============================================================================
   const renderBucketMenu = (metadata: Record<string, any>) => {
     const connectionId = metadata.connectionId || '';
+    const organization = metadata.organization || '';
     const bucket = node.name;
-    const isOpened = isDatabaseOpened?.(connectionId, bucket) || false;
+    const isOpened = isDatabaseOpened?.(connectionId, `bucket:${organization}/${bucket}`) || false;
 
     return (
       <>
         <ContextMenuLabel>Bucket 操作</ContextMenuLabel>
         {!isOpened && (
-          <ContextMenuItem onSelect={() => handleAction('open_database')}>
+          <ContextMenuItem onSelect={() => handleAction('open_bucket')}>
             <FolderOpen className="w-4 h-4 mr-2" />
             打开 Bucket
           </ContextMenuItem>
         )}
         {isOpened && (
-          <ContextMenuItem onSelect={() => handleAction('close_database')}>
+          <ContextMenuItem onSelect={() => handleAction('close_bucket')}>
             <FolderX className="w-4 h-4 mr-2" />
             关闭 Bucket
           </ContextMenuItem>
@@ -827,32 +828,50 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
   // ============================================================================
   // 组织节点菜单 (InfluxDB 2.x)
   // ============================================================================
-  const renderOrganizationMenu = (metadata: Record<string, any>) => (
-    <>
-      <ContextMenuLabel>组织操作</ContextMenuLabel>
-      <ContextMenuItem onSelect={() => handleAction('refresh_organization')}>
-        <RefreshCw className="w-4 h-4 mr-2" />
-        刷新组织
-      </ContextMenuItem>
-      <ContextMenuItem onSelect={() => handleAction('organization_info')}>
-        <Info className="w-4 h-4 mr-2" />
-        组织信息
-      </ContextMenuItem>
-      <ContextMenuSeparator />
+  const renderOrganizationMenu = (metadata: Record<string, any>) => {
+    const connectionId = metadata.connectionId || '';
+    const organization = node.name;
+    const isOpened = isDatabaseOpened?.(connectionId, `org:${organization}`) || false;
 
-      <ContextMenuLabel>Bucket 管理</ContextMenuLabel>
-      <ContextMenuItem onSelect={() => handleAction('create_bucket')}>
-        <Plus className="w-4 h-4 mr-2" />
-        创建 Bucket
-      </ContextMenuItem>
-      <ContextMenuSeparator />
+    return (
+      <>
+        <ContextMenuLabel>组织操作</ContextMenuLabel>
+        {!isOpened && (
+          <ContextMenuItem onSelect={() => handleAction('open_organization')}>
+            <FolderOpen className="w-4 h-4 mr-2" />
+            打开组织
+          </ContextMenuItem>
+        )}
+        {isOpened && (
+          <ContextMenuItem onSelect={() => handleAction('close_organization')}>
+            <FolderX className="w-4 h-4 mr-2" />
+            关闭组织
+          </ContextMenuItem>
+        )}
+        <ContextMenuItem onSelect={() => handleAction('refresh_organization')}>
+          <RefreshCw className="w-4 h-4 mr-2" />
+          刷新组织
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => handleAction('organization_info')}>
+          <Info className="w-4 h-4 mr-2" />
+          组织信息
+        </ContextMenuItem>
+        <ContextMenuSeparator />
 
-      <ContextMenuItem onSelect={() => handleAction('copy_organization_name')}>
-        <Copy className="w-4 h-4 mr-2" />
-        复制组织名
-      </ContextMenuItem>
-    </>
-  );
+        <ContextMenuLabel>Bucket 管理</ContextMenuLabel>
+        <ContextMenuItem onSelect={() => handleAction('create_bucket')}>
+          <Plus className="w-4 h-4 mr-2" />
+          创建 Bucket
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+
+        <ContextMenuItem onSelect={() => handleAction('copy_organization_name')}>
+          <Copy className="w-4 h-4 mr-2" />
+          复制组织名
+        </ContextMenuItem>
+      </>
+    );
+  };
 
   // ============================================================================
   // 默认菜单（未知节点类型）

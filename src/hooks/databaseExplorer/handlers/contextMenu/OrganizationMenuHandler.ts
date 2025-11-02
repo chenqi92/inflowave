@@ -5,12 +5,21 @@
 import { BaseMenuHandler } from './BaseMenuHandler';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import type { ContextMenuAction } from '@/types/contextMenu';
+import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 
 export class OrganizationMenuHandler extends BaseMenuHandler {
   async handle(action: ContextMenuAction, node: TreeNodeData): Promise<void> {
     const { connectionId, organization } = this.getMetadata(node);
 
     switch (action) {
+      case 'open_organization':
+        this.openOrganization(connectionId, organization);
+        break;
+
+      case 'close_organization':
+        this.closeOrganization(connectionId, organization);
+        break;
+
       case 'refresh_organization':
         await this.handleRefresh(action, connectionId);
         break;
@@ -30,6 +39,24 @@ export class OrganizationMenuHandler extends BaseMenuHandler {
       default:
         console.warn(`未处理的组织菜单动作: ${action}`);
     }
+  }
+
+  /**
+   * 打开组织
+   */
+  private openOrganization(connectionId: string, organization: string): void {
+    const { openOrganization } = useOpenedDatabasesStore.getState();
+    openOrganization(connectionId, organization);
+    this.showSuccess('open_organization', `已打开 Organization "${organization}"`);
+  }
+
+  /**
+   * 关闭组织
+   */
+  private closeOrganization(connectionId: string, organization: string): void {
+    const { closeOrganization } = useOpenedDatabasesStore.getState();
+    closeOrganization(connectionId, organization);
+    this.showSuccess('close_organization', `已关闭 Organization "${organization}"`);
   }
 
   /**

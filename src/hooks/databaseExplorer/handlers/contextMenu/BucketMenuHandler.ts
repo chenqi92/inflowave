@@ -5,12 +5,21 @@
 import { BaseMenuHandler } from './BaseMenuHandler';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import type { ContextMenuAction } from '@/types/contextMenu';
+import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 
 export class BucketMenuHandler extends BaseMenuHandler {
   async handle(action: ContextMenuAction, node: TreeNodeData): Promise<void> {
     const { connectionId, bucket, organization } = this.getMetadata(node);
 
     switch (action) {
+      case 'open_bucket':
+        this.openBucket(connectionId, organization, bucket);
+        break;
+
+      case 'close_bucket':
+        this.closeBucket(connectionId, organization, bucket);
+        break;
+
       case 'refresh_bucket':
         await this.handleRefresh(action, connectionId);
         break;
@@ -34,6 +43,24 @@ export class BucketMenuHandler extends BaseMenuHandler {
       default:
         console.warn(`未处理的存储桶菜单动作: ${action}`);
     }
+  }
+
+  /**
+   * 打开 Bucket
+   */
+  private openBucket(connectionId: string, organization: string, bucket: string): void {
+    const { openBucket } = useOpenedDatabasesStore.getState();
+    openBucket(connectionId, organization, bucket);
+    this.showSuccess('open_bucket', `已打开 Bucket "${bucket}"`);
+  }
+
+  /**
+   * 关闭 Bucket
+   */
+  private closeBucket(connectionId: string, organization: string, bucket: string): void {
+    const { closeBucket } = useOpenedDatabasesStore.getState();
+    closeBucket(connectionId, organization, bucket);
+    this.showSuccess('close_bucket', `已关闭 Bucket "${bucket}"`);
   }
 
   /**
