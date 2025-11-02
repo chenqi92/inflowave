@@ -1502,28 +1502,33 @@ impl InfluxDB2Client {
 
         let mut children = Vec::new();
 
-        // 解析节点类型
-        let parsed_type = match node_type {
-            "connection" => {
-                // 连接节点：返回组织列表
-                log::info!("为 InfluxDB 2.x 连接节点获取组织列表");
-                match self.get_organizations().await {
-                    Ok(org_names) => {
-                        for org_name in org_names {
-                            let org_node = TreeNodeFactory::create_organization(org_name);
-                            children.push(org_node);
-                        }
-                    }
-                    Err(e) => {
-                        log::warn!("获取组织列表失败: {}", e);
+        // 处理连接节点
+        if node_type == "connection" {
+            // 连接节点：返回组织列表
+            log::info!("为 InfluxDB 2.x 连接节点获取组织列表");
+            match self.get_organizations().await {
+                Ok(org_names) => {
+                    for org_name in org_names {
+                        let org_node = TreeNodeFactory::create_organization(org_name);
+                        children.push(org_node);
                     }
                 }
+                Err(e) => {
+                    log::warn!("获取组织列表失败: {}", e);
+                }
+            }
+            return Ok(children);
+        }
+
+        // 解析节点类型（支持大小写和多种格式）
+        let parsed_type = match node_type.to_lowercase().as_str() {
+            "organization" => TreeNodeType::Organization,
+            "bucket" => TreeNodeType::Bucket,
+            "systembucket" | "system_bucket" => TreeNodeType::SystemBucket,
+            _ => {
+                log::warn!("InfluxDB 2.x 不支持的节点类型: {}", node_type);
                 return Ok(children);
             }
-            "Organization" => TreeNodeType::Organization,
-            "Bucket" => TreeNodeType::Bucket,
-            "SystemBucket" => TreeNodeType::SystemBucket,
-            _ => return Ok(children),
         };
 
         match parsed_type {

@@ -114,8 +114,10 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     }));
                 }}
                 onSuccess={() => {
-                    // 刷新树形数据
-                    buildCompleteTreeData(true);
+                    // 延迟刷新树形数据，确保后端已完成创建操作
+                    setTimeout(() => {
+                        buildCompleteTreeData(true);
+                    }, 300);
                 }}
                 connectionId={dialogStates.createDatabase?.connectionId || dialogStates.create_database?.connectionId}
                 metadata={dialogStates.create_database?.metadata}
