@@ -1,11 +1,13 @@
-use crate::models::{QueryRequest, QueryResult, QueryResultItem, QueryValidationResult};
+use crate::models::{QueryRequest, QueryResult, QueryResultItem, QueryValidationResult, QueryHistoryItem};
 use crate::services::{ConnectionService, PerformanceStatsService};
 use crate::utils::validation::ValidationUtils;
 use crate::database::client::DatabaseClient;
 use crate::commands::settings::SettingsStorage;
+use crate::commands::query_history::QueryHistoryStorage;
 use tauri::State;
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use std::sync::Arc;
+use uuid::Uuid;
 
 /// 执行查询
 #[tauri::command(rename_all = "camelCase")]
@@ -13,6 +15,7 @@ pub async fn execute_query(
     connection_service: State<'_, ConnectionService>,
     settings_storage: State<'_, SettingsStorage>,
     performance_stats: State<'_, Arc<PerformanceStatsService>>,
+    query_history_storage: State<'_, QueryHistoryStorage>,
     request: QueryRequest,
 ) -> Result<QueryResult, String> {
     debug!("处理执行查询命令: {}", request.connection_id);
@@ -103,6 +106,34 @@ pub async fn execute_query(
         execution_time_ms,
         success,
     ).await;
+
+    // 记录查询历史
+    let row_count = result.as_ref().ok().and_then(|r| r.row_count).unwrap_or(0);
+    let error_msg = result.as_ref().err().map(|e| e.to_string());
+
+    let history_item = QueryHistoryItem {
+        id: Uuid::new_v4().to_string(),
+        query: request.query.clone(),
+        database: database_name.clone(),
+        connection_id: request.connection_id.clone(),
+        executed_at: chrono::Utc::now(),
+        duration: execution_time_ms as u64,
+        row_count: row_count as u64,
+        success,
+        error: error_msg.clone(),
+    };
+
+    // 添加到历史存储
+    if let Ok(mut storage) = query_history_storage.lock() {
+        // 限制历史记录数量，保留最新的 1000 条
+        if storage.len() >= 1000 {
+            storage.remove(0);
+        }
+        storage.push(history_item);
+        debug!("查询历史记录已添加");
+    } else {
+        warn!("无法获取查询历史存储锁，跳过历史记录");
+    }
 
     result
 }

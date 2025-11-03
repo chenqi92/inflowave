@@ -154,6 +154,12 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
       setLoading(true);
       const openedDataSourcesList = Array.from(openedDatabases);
 
+      // 🔍 调试日志：查看打开的数据源列表
+      console.log('📊 [性能监控] 打开的数据源列表:', {
+        count: openedDataSourcesList.length,
+        list: openedDataSourcesList
+      });
+
       if (openedDataSourcesList.length === 0) {
         setMetricsData([]);
         setHistoryData([]);
@@ -164,6 +170,16 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
         'get_opened_datasources_performance',
         { openedDatasources: openedDataSourcesList }
       );
+
+      // 🔍 调试日志：查看返回的性能数据
+      console.log('📊 [性能监控] 返回的性能数据:', {
+        count: result.length,
+        data: result.map(m => ({
+          connectionId: m.connectionId,
+          databaseName: m.databaseName,
+          dbType: m.dbType
+        }))
+      });
 
       setMetricsData(result);
 

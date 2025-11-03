@@ -78,17 +78,31 @@ pub async fn get_opened_datasources_performance(
 ) -> Result<Vec<RealPerformanceMetrics>, String> {
     info!("📊 获取打开数据源的性能监控 - 数据源数量: {}", opened_datasources.len());
 
+    // 🔍 调试日志：打印所有接收到的数据源键
+    for (idx, key) in opened_datasources.iter().enumerate() {
+        debug!("  [{}] 数据源键: {}", idx + 1, key);
+    }
+
     let manager = connection_service.get_manager();
     let mut metrics_list = Vec::new();
 
     for datasource_key in opened_datasources {
         let parts: Vec<&str> = datasource_key.split('/').collect();
         if parts.len() < 2 {
+            warn!("⚠️ 跳过无效的数据源键（格式错误）: {}", datasource_key);
             continue;
         }
 
         let connection_id = parts[0];
         let database_name = parts[1..].join("/");
+
+        // 🔍 跳过 InfluxDB 2.x 的 organization 节点（只处理 bucket）
+        if database_name.starts_with("org:") && !database_name.starts_with("bucket:") {
+            debug!("⏭️ 跳过 organization 节点: {}", datasource_key);
+            continue;
+        }
+
+        debug!("🔍 处理数据源: connectionId={}, database={}", connection_id, database_name);
 
         // 获取连接配置
         match connection_service.get_connection(connection_id).await {
@@ -109,7 +123,7 @@ pub async fn get_opened_datasources_performance(
                 metrics_list.push(metrics);
             }
             None => {
-                warn!("连接配置不存在: {}", connection_id);
+                warn!("⚠️ 连接配置不存在: {}", connection_id);
             }
         }
     }
