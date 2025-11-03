@@ -56,6 +56,11 @@ export class OrganizationMenuHandler extends BaseMenuHandler {
   private closeOrganization(connectionId: string, organization: string): void {
     const { closeOrganization } = useOpenedDatabasesStore.getState();
     closeOrganization(connectionId, organization);
+
+    // 🔧 关闭后需要收起节点
+    // 触发树的刷新，让节点收起
+    this.deps.refreshTree?.();
+
     this.showSuccess('close_organization', `已关闭 Organization "${organization}"`);
   }
 

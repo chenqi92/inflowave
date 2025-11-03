@@ -60,6 +60,11 @@ export class BucketMenuHandler extends BaseMenuHandler {
   private closeBucket(connectionId: string, organization: string, bucket: string): void {
     const { closeBucket } = useOpenedDatabasesStore.getState();
     closeBucket(connectionId, organization, bucket);
+
+    // 🔧 关闭后需要收起节点
+    // 触发树的刷新，让节点收起
+    this.deps.refreshTree?.();
+
     this.showSuccess('close_bucket', `已关闭 Bucket "${bucket}"`);
   }
 

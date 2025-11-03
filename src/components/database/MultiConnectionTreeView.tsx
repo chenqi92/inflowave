@@ -809,7 +809,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   // 使用 ref 跟踪上一次的 connectionStatuses，用于检测连接断开
   const prevConnectionStatusesRef = useRef<Map<string, 'connecting' | 'connected' | 'disconnected'>>(new Map());
 
-  // 辅助函数：在树中查找数据库节点（通过 connectionId 和 database 名称）
+  // 辅助函数：在树中查找数据库/bucket/organization节点（通过 connectionId 和 database 名称）
   const findDatabaseNodeInTree = useCallback((
     nodes: TreeNodeData[],
     connectionId: string,
@@ -818,11 +818,15 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     for (const node of nodes) {
       // 检查是否为目标数据库节点
       // 数据库节点的 nodeType 可能是: database, system_database, database3x, storage_group
+      // InfluxDB 2.x 节点类型: bucket, system_bucket, organization
       if (
         (node.nodeType === 'database' ||
          node.nodeType === 'system_database' ||
          node.nodeType === 'database3x' ||
-         node.nodeType === 'storage_group') &&
+         node.nodeType === 'storage_group' ||
+         node.nodeType === 'bucket' ||
+         node.nodeType === 'system_bucket' ||
+         node.nodeType === 'organization') &&
         node.metadata?.connectionId === connectionId &&
         node.name === databaseName
       ) {
@@ -861,27 +865,27 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           const connectionId = parts[0];
           const database = parts.slice(1).join('/');
 
-          logger.debug(`[关闭数据库] 处理数据库: ${database}, connectionId: ${connectionId}`);
-          logger.debug(`[关闭数据库] 当前 treeData 长度: ${treeDataRef.current.length}`);
+          logger.debug(`[关闭节点] 处理: ${database}, connectionId: ${connectionId}`);
+          logger.debug(`[关闭节点] 当前 treeData 长度: ${treeDataRef.current.length}`);
 
-          // 在树中查找数据库节点
+          // 在树中查找数据库/bucket/organization节点
           const dbNode = findDatabaseNodeInTree(treeDataRef.current, connectionId, database);
           if (dbNode) {
-            logger.debug(`[关闭数据库] 找到数据库节点: ${dbNode.id}, nodeType: ${dbNode.nodeType}`);
+            logger.debug(`[关闭节点] 找到节点: ${dbNode.id}, nodeType: ${dbNode.nodeType}`);
             const item = tree.getItemInstance(dbNode.id);
             if (item) {
-              logger.debug(`[关闭数据库] 获取到 tree item, isExpanded: ${item.isExpanded()}`);
+              logger.debug(`[关闭节点] 获取到 tree item, isExpanded: ${item.isExpanded()}`);
               if (item.isExpanded()) {
-                logger.debug(`[关闭数据库] 收起节点: ${dbNode.id}`);
+                logger.debug(`[关闭节点] 收起节点: ${dbNode.id}`);
                 item.collapse();
               } else {
-                logger.debug(`[关闭数据库] 节点已经是收起状态: ${dbNode.id}`);
+                logger.debug(`[关闭节点] 节点已经是收起状态: ${dbNode.id}`);
               }
             } else {
-              logger.warn(`[关闭数据库] 无法从 tree 获取节点: ${dbNode.id}`);
+              logger.warn(`[关闭节点] 无法从 tree 获取节点: ${dbNode.id}`);
             }
           } else {
-            logger.warn(`[关闭数据库] 未找到数据库节点: ${database}, connectionId: ${connectionId}`);
+            logger.warn(`[关闭节点] 未找到节点: ${database}, connectionId: ${connectionId}`);
           }
         }
       });
@@ -899,21 +903,24 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
                 const connectionId = parts[0];
                 const database = parts.slice(1).join('/');
 
-                // 检查是否为目标数据库节点
+                // 检查是否为目标数据库/bucket/organization节点
                 if (
                   (n.nodeType === 'database' ||
                    n.nodeType === 'system_database' ||
                    n.nodeType === 'database3x' ||
-                   n.nodeType === 'storage_group') &&
+                   n.nodeType === 'storage_group' ||
+                   n.nodeType === 'bucket' ||
+                   n.nodeType === 'system_bucket' ||
+                   n.nodeType === 'organization') &&
                   n.metadata?.connectionId === connectionId &&
                   n.name === database
                 ) {
-                  logger.debug(`[关闭数据库] 找到节点: ${n.id}, 清除子节点`);
+                  logger.debug(`[关闭节点] 找到节点: ${n.id} (${n.nodeType}), 清除子节点`);
 
                   // 🔧 清除缓存（使用 ref，避免触发渲染）
                   // 清除节点本身和所有子节点的缓存
                   clearNodeAndChildrenCache(n, loadedNodesRef.current);
-                  logger.debug(`[关闭数据库] 已清除节点缓存: ${n.id}`);
+                  logger.debug(`[关闭节点] 已清除节点缓存: ${n.id}`);
 
                   // 🔧 移除该节点及其所有子节点的展开状态
                   setExpandedNodeIds(prev => {
@@ -928,7 +935,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
                     };
                     collectNodeIds(n);
 
-                    logger.debug(`[关闭数据库] 移除 ${nodesToRemove.size} 个节点的展开状态:`, Array.from(nodesToRemove));
+                    logger.debug(`[关闭节点] 移除 ${nodesToRemove.size} 个节点的展开状态:`, Array.from(nodesToRemove));
 
                     // 过滤掉这些节点
                     return prev.filter(nodeId => !nodesToRemove.has(nodeId));

@@ -2124,18 +2124,28 @@ impl InfluxDB2Client {
             let url = format!("{}/api/v2/query", base_url);
             let client = reqwest::Client::new();
 
+            // 🔧 使用 JSON 格式发送查询，包含 org 参数
+            let request_body = serde_json::json!({
+                "query": flux_query,
+                "type": "flux",
+                "org": v2_config.organization
+            });
+
+            debug!("发送 Flux 查询请求，org: {}", v2_config.organization);
+
             match client
                 .post(&url)
                 .header("Authorization", format!("Token {}", v2_config.api_token))
-                .header("Content-Type", "application/vnd.flux")
-                .body(flux_query.clone())
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/csv")
+                .json(&request_body)
                 .timeout(std::time::Duration::from_secs(30))
                 .send()
                 .await
             {
                 Ok(response) if response.status().is_success() => {
                     if let Ok(text) = response.text().await {
-                        debug!("Flux 查询响应: {}", text);
+                        debug!("Flux 查询响应长度: {} 字节", text.len());
                         return self.parse_flux_response(&text);
                     }
                 }
@@ -4211,18 +4221,28 @@ impl InfluxClient {
             let url = format!("{}/api/v2/query", base_url);
             let client = reqwest::Client::new();
 
+            // 🔧 使用 JSON 格式发送查询，包含 org 参数
+            let request_body = serde_json::json!({
+                "query": flux_query,
+                "type": "flux",
+                "org": v2_config.organization
+            });
+
+            debug!("发送 Flux 查询请求，org: {}", v2_config.organization);
+
             match client
                 .post(&url)
                 .header("Authorization", format!("Token {}", v2_config.api_token))
-                .header("Content-Type", "application/vnd.flux")
-                .body(flux_query.clone())
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/csv")
+                .json(&request_body)
                 .timeout(std::time::Duration::from_secs(30))
                 .send()
                 .await
             {
                 Ok(response) if response.status().is_success() => {
                     if let Ok(text) = response.text().await {
-                        debug!("Flux 查询响应: {}", text);
+                        debug!("Flux 查询响应长度: {} 字节", text.len());
                         return self.parse_flux_response(&text);
                     }
                 }
