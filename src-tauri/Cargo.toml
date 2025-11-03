@@ -68,6 +68,8 @@ tokio-util = { version = "0.7", features = ["codec"] }
 # 用于数据压缩（IoTDB 支持 SNAPPY 压缩）
 snap = "1.1"
 urlencoding = "2.1"
+# CSV 解析（用于 Flux 查询结果）
+csv = "1.3"
 
 # Windows 特定依赖已移除，使用标准库替代
 

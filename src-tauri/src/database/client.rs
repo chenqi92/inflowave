@@ -923,33 +923,231 @@ impl InfluxDB2Client {
         Err(anyhow::anyhow!("InfluxDB 3.x 连接测试失败：无法连接到服务器 {}。请检查：\n1. InfluxDB 3.x 服务是否正在运行\n2. 地址和端口是否正确 (当前: {}:{})\n3. 网络连接是否正常\n4. 防火墙设置是否允许访问", base_url, self.config.host, self.config.port))
     }
 
-    /// 执行 Flux 查询
+    /// 执行 Flux 查询或 Line Protocol 写入
     pub async fn execute_query(&self, query: &str) -> Result<QueryResult> {
+        let start = Instant::now();
+
+        debug!("执行查询/写入: {}", query);
+
+        // 检测是 Line Protocol 还是 Flux 查询
+        let trimmed = query.trim();
+
+        // Line Protocol 格式检测：
+        // 格式: measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp
+        // 或者: measurement field1=value1,field2=value2 timestamp
+        let is_line_protocol = !trimmed.starts_with("from(") &&
+                               !trimmed.starts_with("import ") &&
+                               !trimmed.to_lowercase().starts_with("select ") &&
+                               !trimmed.to_lowercase().starts_with("show ") &&
+                               !trimmed.to_lowercase().starts_with("create ") &&
+                               !trimmed.to_lowercase().starts_with("drop ") &&
+                               (trimmed.contains('=') || trimmed.contains(','));
+
+        if is_line_protocol {
+            // 执行 Line Protocol 写入
+            self.write_line_protocol(query).await?;
+
+            let latency = start.elapsed().as_millis() as u64;
+
+            // 返回写入成功的结果
+            use crate::models::{ExecutionMessage, MessageType};
+            use chrono::Utc;
+
+            let query_result = QueryResult {
+                results: vec![],
+                execution_time: Some(latency),
+                row_count: Some(1), // 写入成功
+                error: None,
+                data: None,
+                columns: None,
+                messages: Some(vec![ExecutionMessage {
+                    message_type: MessageType::Info,
+                    timestamp: Utc::now(),
+                    message: "数据写入成功".to_string(),
+                    details: None,
+                    sql_statement: None,
+                }]),
+                statistics: None,
+                execution_plan: None,
+                aggregations: None,
+                sql_type: Some("INSERT".to_string()),
+            };
+
+            info!("Line Protocol 写入成功，延迟: {}ms", latency);
+            Ok(query_result)
+        } else {
+            // 执行 Flux 查询
+            self.execute_flux_query_real(query).await
+        }
+    }
+
+    /// 执行真实的 Flux 查询
+    async fn execute_flux_query_real(&self, query: &str) -> Result<QueryResult> {
         let start = Instant::now();
 
         debug!("执行 Flux 查询: {}", query);
 
-        // 暂时使用简单的实现，不执行实际查询
-        // 后续可以实现完整的 Flux 查询支持
-        let latency = start.elapsed().as_millis() as u64;
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
 
-        // 创建空的查询结果
-        let query_result = QueryResult {
-            results: vec![], // 暂时返回空结果
+        let v2_config = self.config.v2_config.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("缺少 InfluxDB 2.x 配置"))?;
+
+        let url = format!("{}/api/v2/query", base_url);
+        let client = reqwest::Client::new();
+
+        // 构建请求体
+        let request_body = serde_json::json!({
+            "query": query,
+            "type": "flux",
+            "org": v2_config.organization
+        });
+
+        debug!("发送 Flux 查询请求到: {}", url);
+
+        let response = client
+            .post(&url)
+            .header("Authorization", format!("Token {}", v2_config.api_token))
+            .header("Content-Type", "application/json")
+            .header("Accept", "application/csv")
+            .json(&request_body)
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("Flux 查询请求失败: {}", e))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!("Flux 查询失败，状态码: {}, 错误: {}", status, error_text);
+            return Err(anyhow::anyhow!("Flux 查询失败 ({}): {}", status, error_text));
+        }
+
+        let csv_data = response.text().await
+            .map_err(|e| anyhow::anyhow!("读取响应失败: {}", e))?;
+
+        debug!("收到 CSV 响应，长度: {} 字节", csv_data.len());
+
+        // 解析 CSV 结果
+        let query_result = self.parse_flux_csv_result(&csv_data)?;
+
+        let latency = start.elapsed().as_millis() as u64;
+        info!("Flux 查询执行成功，延迟: {}ms，返回 {} 行", latency, query_result.row_count.unwrap_or(0));
+
+        Ok(QueryResult {
             execution_time: Some(latency),
-            row_count: Some(0),
+            ..query_result
+        })
+    }
+
+    /// 写入 Line Protocol 数据
+    async fn write_line_protocol(&self, line_protocol: &str) -> Result<()> {
+        debug!("写入 Line Protocol 数据");
+
+        let base_url = if self.config.ssl {
+            format!("https://{}:{}", self.config.host, self.config.port)
+        } else {
+            format!("http://{}:{}", self.config.host, self.config.port)
+        };
+
+        let v2_config = self.config.v2_config.as_ref()
+            .ok_or_else(|| anyhow::anyhow!("缺少 InfluxDB 2.x 配置"))?;
+
+        // 从 v2_config 获取 bucket，如果没有则使用默认值
+        let bucket = v2_config.bucket.as_deref().unwrap_or("default");
+
+        let url = format!("{}/api/v2/write", base_url);
+        let client = reqwest::Client::new();
+
+        debug!("发送写入请求到: {}, org: {}, bucket: {}", url, v2_config.organization, bucket);
+
+        let response = client
+            .post(&url)
+            .header("Authorization", format!("Token {}", v2_config.api_token))
+            .header("Content-Type", "text/plain; charset=utf-8")
+            .query(&[("org", &v2_config.organization)])
+            .query(&[("bucket", bucket)])
+            .query(&[("precision", "ns")])
+            .body(line_protocol.to_string())
+            .send()
+            .await
+            .map_err(|e| anyhow::anyhow!("写入请求失败: {}", e))?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let error_text = response.text().await.unwrap_or_default();
+            error!("Line Protocol 写入失败，状态码: {}, 错误: {}", status, error_text);
+            return Err(anyhow::anyhow!("Line Protocol 写入失败 ({}): {}", status, error_text));
+        }
+
+        info!("Line Protocol 写入成功");
+        Ok(())
+    }
+
+    /// 解析 Flux CSV 结果
+    fn parse_flux_csv_result(&self, csv_data: &str) -> Result<QueryResult> {
+        use csv::ReaderBuilder;
+        use serde_json::Value;
+
+        debug!("解析 Flux CSV 结果");
+
+        let mut reader = ReaderBuilder::new()
+            .has_headers(true)
+            .from_reader(csv_data.as_bytes());
+
+        let mut columns = Vec::new();
+        let mut rows = Vec::new();
+
+        // 读取表头
+        if let Ok(headers) = reader.headers() {
+            columns = headers.iter().map(|h| h.to_string()).collect();
+            debug!("CSV 列: {:?}", columns);
+        }
+
+        // 读取数据行
+        for result in reader.records() {
+            match result {
+                Ok(record) => {
+                    let row: Vec<Value> = record.iter()
+                        .map(|field| {
+                            // 尝试解析为数字
+                            if let Ok(num) = field.parse::<f64>() {
+                                Value::Number(serde_json::Number::from_f64(num).unwrap_or_else(|| serde_json::Number::from(0)))
+                            } else if field == "true" {
+                                Value::Bool(true)
+                            } else if field == "false" {
+                                Value::Bool(false)
+                            } else {
+                                Value::String(field.to_string())
+                            }
+                        })
+                        .collect();
+                    rows.push(row);
+                }
+                Err(e) => {
+                    warn!("解析 CSV 行失败: {}", e);
+                }
+            }
+        }
+
+        let row_count = rows.len();
+        debug!("解析完成，共 {} 行", row_count);
+
+        Ok(QueryResult {
+            results: vec![],
+            execution_time: None,
+            row_count: Some(row_count),
             error: None,
-            data: None,
-            columns: None,
+            data: Some(rows),
+            columns: Some(columns),
             messages: None,
             statistics: None,
             execution_plan: None,
             aggregations: None,
-            sql_type: None,
-        };
-
-        debug!("Flux 查询模拟执行成功，延迟: {}ms", latency);
-        Ok(query_result)
+            sql_type: Some("SELECT".to_string()),
+        })
     }
 
     /// 获取组织列表
