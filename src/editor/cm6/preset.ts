@@ -165,6 +165,35 @@ export function basicPreset(options: PresetOptions = {}): Extension[] {
     extensions.push(EditorView.editable.of(opts.editable));
   }
 
+  // Add DOM event handlers for paste events
+  // This handles right-click paste and other paste methods
+  // For desktop apps, we should NOT prevent default paste behavior
+  // Let the browser handle it naturally
+  extensions.push(
+    EditorView.domEventHandlers({
+      paste: (event: ClipboardEvent, view: EditorView) => {
+        console.log('📋 [Clipboard] DOM paste event triggered', {
+          hasClipboardData: !!event.clipboardData,
+          types: event.clipboardData?.types,
+        });
+
+        // Try to get text from the clipboard event
+        const clipboardText = event.clipboardData?.getData('text/plain');
+
+        if (clipboardText) {
+          console.log('📋 [Clipboard] Got text from clipboard event:', clipboardText.length, 'chars');
+          // Let CodeMirror handle the paste naturally
+          // Don't prevent default - this allows native paste to work
+          console.log('✅ [Clipboard] Allowing native paste');
+          return false; // Let CodeMirror handle it
+        }
+
+        console.log('⚠️ [Clipboard] No data in clipboard event');
+        return false; // Let CodeMirror try to handle it
+      },
+    })
+  );
+
   return extensions;
 }
 
@@ -225,23 +254,15 @@ function createClipboardKeybindings(): KeyBinding[] {
       },
     },
     // Paste: Mod-v
+    // For desktop apps, let the browser/CodeMirror handle paste naturally
+    // Don't override the default paste behavior
     {
       key: 'Mod-v',
       run: (view) => {
-        // Use Tauri's native clipboard API (no permission prompt!)
-        readText().then(text => {
-          if (text) {
-            const selection = view.state.selection.main;
-            view.dispatch({
-              changes: { from: selection.from, to: selection.to, insert: text },
-              selection: { anchor: selection.from + text.length },
-            });
-          }
-        }).catch(err => {
-          console.error('❌ [Clipboard] Paste failed:', err);
-        });
-
-        return true;
+        console.log('📋 [Clipboard] Paste keybinding triggered - using native paste');
+        // Return false to let CodeMirror's default paste handler work
+        // This will use the browser's native clipboard API
+        return false;
       },
     },
   ];

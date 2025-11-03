@@ -54,6 +54,17 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
       if (key.startsWith(`${selectedConnectionId}/`)) {
         const database = key.substring(selectedConnectionId.length + 1);
         if (database) {
+          // 🔧 过滤掉 InfluxDB 2.x 的 organization 节点
+          // organization 节点格式: org:orgName
+          // bucket 节点格式: bucket:orgName/bucketName
+          // 普通数据库: databaseName
+          //
+          // InfluxDB 2.x 中，查询必须在 bucket 级别执行，不能在 organization 级别执行
+          // 因此，只显示 bucket 节点和普通数据库节点
+          if (database.startsWith('org:') && !database.startsWith('bucket:')) {
+            continue; // 跳过 organization 节点
+          }
+
           connectionDatabases.push(database);
         }
       }
