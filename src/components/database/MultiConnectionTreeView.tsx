@@ -1019,22 +1019,38 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         if (item) {
           const nodeData = item.getItemData();
           const connectionId = nodeData.metadata?.connectionId || '';
-          const database = nodeData.name;
+          const nodeType = normalizeNodeType(nodeData.nodeType);
 
-          // 检查数据库是否已打开
-          const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, database) : false;
+          // 🔧 修复：根据节点类型构造正确的检查键
+          let checkKey = '';
+          if (nodeType === 'organization') {
+            // InfluxDB 2.x Organization 节点
+            checkKey = `org:${nodeData.name}`;
+          } else if (nodeType === 'bucket' || nodeType === 'system_bucket') {
+            // InfluxDB 2.x Bucket 节点
+            const organization = nodeData.metadata?.organization || '';
+            checkKey = `bucket:${organization}/${nodeData.name}`;
+          } else {
+            // 普通数据库节点
+            checkKey = nodeData.name;
+          }
 
-          // 只展开已打开的数据库节点
+          // 检查节点是否已打开
+          const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, checkKey) : false;
+
+          logger.debug(`[自动展开] 节点: ${nodeId}, 类型: ${nodeType}, 检查键: ${checkKey}, 已打开: ${isActivated}`);
+
+          // 只展开已打开的节点
           if (isActivated && !item.isExpanded()) {
-            logger.debug(`[打开数据库] 自动展开节点: ${nodeId}`);
+            logger.debug(`[自动展开] 展开节点: ${nodeId}`);
             // 🔧 修复：先加载子节点，然后再展开
             // 如果子节点未加载，先触发加载（加载完成后会自动展开）
             if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
-              logger.debug(`[打开数据库] 触发子节点加载: ${nodeId}`);
+              logger.debug(`[自动展开] 触发子节点加载: ${nodeId}`);
               handleToggleRef.current(nodeId);
             } else {
               // 如果子节点已加载，直接展开
-              logger.debug(`[打开数据库] 子节点已加载，直接展开: ${nodeId}`);
+              logger.debug(`[自动展开] 子节点已加载，直接展开: ${nodeId}`);
               item.expand();
             }
           }
@@ -1446,7 +1462,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           // 如果 organization 未打开，打开 organization
           if (!isActivated) {
             logger.debug(`[打开 Organization] 双击未打开的 Organization 节点: ${organization}`);
+            logger.debug(`[打开 Organization] 添加到自动展开列表: ${nodeId}`);
             nodesToAutoExpandRef.current.add(nodeId);
+            logger.debug(`[打开 Organization] 当前自动展开列表:`, Array.from(nodesToAutoExpandRef.current));
             onNodeActivate?.(nodeData);
             return;
           }
@@ -1477,7 +1495,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           // 如果 bucket 未打开，打开 bucket
           if (!isActivated) {
             logger.debug(`[打开 Bucket] 双击未打开的 Bucket 节点: ${bucket}`);
+            logger.debug(`[打开 Bucket] 添加到自动展开列表: ${nodeId}`);
             nodesToAutoExpandRef.current.add(nodeId);
+            logger.debug(`[打开 Bucket] 当前自动展开列表:`, Array.from(nodesToAutoExpandRef.current));
             onNodeActivate?.(nodeData);
             return;
           }
