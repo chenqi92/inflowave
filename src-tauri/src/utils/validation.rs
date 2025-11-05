@@ -179,6 +179,11 @@ impl ValidationUtils {
             }
         }
 
+        // 验证 InfluxQL 函数使用（仅对 SELECT 语句）
+        if upper_query.starts_with("SELECT") {
+            Self::validate_influxql_functions(trimmed_query)?;
+        }
+
         debug!("查询语句验证通过");
         Ok(())
     }
@@ -254,13 +259,49 @@ impl ValidationUtils {
 
     /// 检测是否为聚合查询
     fn is_aggregate_query(query: &str) -> bool {
-        let aggregate_functions = ["COUNT(", "SUM(", "AVG(", "MAX(", "MIN(", "STDDEV(", "VARIANCE("];
-        aggregate_functions.iter().any(|func| query.contains(func))
+        // InfluxQL 聚合函数
+        let influxql_functions = [
+            "COUNT(", "SUM(", "MEAN(", "MAX(", "MIN(", "STDDEV(", "VARIANCE(",
+            "MEDIAN(", "MODE(", "SPREAD(", "INTEGRAL(", "DISTINCT(",
+            "FIRST(", "LAST(", "PERCENTILE(", "SAMPLE(", "TOP(", "BOTTOM("
+        ];
+        // 标准 SQL 聚合函数（用于检测）
+        let sql_functions = ["AVG("];
+
+        influxql_functions.iter().any(|func| query.contains(func)) ||
+        sql_functions.iter().any(|func| query.contains(func))
     }
 
     /// 检测是否为分组查询
     fn is_group_by_query(query: &str) -> bool {
         query.contains("GROUP BY")
+    }
+
+    /// 验证 InfluxQL 函数使用
+    /// 检测不支持的 SQL 函数并提供建议
+    pub fn validate_influxql_functions(query: &str) -> Result<()> {
+        let upper_query = query.to_uppercase();
+
+        // 不支持的 SQL 函数及其 InfluxQL 替代方案
+        let unsupported_functions = [
+            ("AVG(", "MEAN(", "AVG() 函数在 InfluxQL 中不支持，请使用 MEAN() 代替"),
+            ("AVERAGE(", "MEAN(", "AVERAGE() 函数在 InfluxQL 中不支持，请使用 MEAN() 代替"),
+            ("STDEV(", "STDDEV(", "STDEV() 函数在 InfluxQL 中不支持，请使用 STDDEV() 代替"),
+            ("VAR(", "VARIANCE(", "VAR() 函数在 InfluxQL 中不支持，请使用 VARIANCE() 代替"),
+        ];
+
+        for (unsupported, replacement, message) in &unsupported_functions {
+            if upper_query.contains(unsupported) {
+                return Err(anyhow!(
+                    "{}。\n建议修改：将 {} 替换为 {}",
+                    message,
+                    unsupported.trim_end_matches('('),
+                    replacement.trim_end_matches('(')
+                ));
+            }
+        }
+
+        Ok(())
     }
 
     /// 将INSERT语句转换为Line Protocol格式

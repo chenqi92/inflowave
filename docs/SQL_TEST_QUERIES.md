@@ -111,9 +111,9 @@ FROM "app_performance";
 
 ```sql
 -- AVG 聚合
-SELECT AVG("response_time") as avg_response_time,
-       AVG("error_rate") as avg_error_rate,
-       AVG("concurrent_users") as avg_users
+SELECT MEAN("response_time") as avg_response_time,
+       MEAN("error_rate") as avg_error_rate,
+       MEAN("concurrent_users") as avg_users
 FROM "app_performance";
 ```
 

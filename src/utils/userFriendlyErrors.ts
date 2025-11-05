@@ -251,7 +251,38 @@ export const getGenericError = (error: string, context?: string): UserFriendlyEr
  */
 export const getInfluxDBQueryError = (error: string): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  
+
+  // 检测不支持的函数错误
+  if (errorLower.includes('undefined function')) {
+    // 提取函数名
+    const funcMatch = error.match(/undefined function (\w+)\(\)/i);
+    const funcName = funcMatch ? funcMatch[1].toUpperCase() : '';
+
+    // 常见的 SQL 函数到 InfluxQL 函数的映射
+    const functionMapping: Record<string, string> = {
+      'AVG': 'MEAN',
+      'AVERAGE': 'MEAN',
+      'STDEV': 'STDDEV',
+      'VAR': 'VARIANCE',
+    };
+
+    const replacement = functionMapping[funcName];
+
+    if (replacement) {
+      return {
+        title: 'InfluxQL 函数错误',
+        message: `${funcName}() 函数在 InfluxQL 中不支持`,
+        suggestion: `请使用 ${replacement}() 函数代替。InfluxQL 使用不同的聚合函数名称。`
+      };
+    }
+
+    return {
+      title: 'InfluxQL 函数错误',
+      message: `${funcName}() 函数在 InfluxQL 中不支持`,
+      suggestion: '请查阅 InfluxQL 文档，使用支持的聚合函数：COUNT, SUM, MEAN, MAX, MIN, MEDIAN, MODE, STDDEV 等'
+    };
+  }
+
   if (errorLower.includes('measurement') && errorLower.includes('not found')) {
     return {
       title: '测量不存在',
@@ -259,7 +290,7 @@ export const getInfluxDBQueryError = (error: string): UserFriendlyError => {
       suggestion: '请检查测量名称是否正确，或查看可用的测量列表'
     };
   }
-  
+
   if (errorLower.includes('field') && (errorLower.includes('not found') || errorLower.includes('does not exist'))) {
     return {
       title: '字段不存在',
@@ -267,7 +298,7 @@ export const getInfluxDBQueryError = (error: string): UserFriendlyError => {
       suggestion: '请检查字段名称是否正确，或使用SHOW FIELD KEYS查看可用字段'
     };
   }
-  
+
   if (errorLower.includes('tag') && (errorLower.includes('not found') || errorLower.includes('does not exist'))) {
     return {
       title: '标签不存在',
