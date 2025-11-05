@@ -835,7 +835,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
       <Button
         variant='ghost'
         size='sm'
-        className='ml-2 flex-shrink-0'
+        className='ml-2 flex-shrink-0 focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0'
         title='新建SQL查询'
         onClick={() => createNewTab('query')}
       >
