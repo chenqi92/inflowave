@@ -77,7 +77,6 @@
   "bucket": "桶",
   "not_configured": "未配置",
   "enable_v1_compatibility_api": "启用 V1 兼容 API",
-  "server_version": "服务器版本",
   "no_auth": "无认证",
   "token_auth": "令牌认证",
   "auth_method": "认证方式",

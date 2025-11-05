@@ -1048,6 +1048,11 @@ async fn main() {
             commands::logs::get_backend_log_path,
             commands::logs::list_log_files,
             commands::logs::delete_log_file,
+
+            // Custom fonts commands
+            commands::custom_fonts::import_custom_fonts,
+            commands::custom_fonts::get_custom_fonts,
+            commands::custom_fonts::delete_custom_font,
             commands::logs::cleanup_old_log_files,
             commands::logs::get_log_dir_path,
             commands::logs::open_log_folder,

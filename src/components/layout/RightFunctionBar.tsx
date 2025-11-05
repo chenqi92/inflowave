@@ -8,6 +8,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { useNotificationStore } from '@/store/notifications';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export type FunctionType = 'notifications' | 'visualization' | 'monitoring' | 'extensions' | 'history';
 
@@ -24,46 +25,48 @@ interface RightFunctionBarProps {
   className?: string;
 }
 
-const functionItems: FunctionItem[] = [
-  {
-    key: 'notifications',
-    icon: <Bell className="w-4 h-4" />,
-    label: '消息',
-    description: '消息通知中心',
-  },
-  {
-    key: 'visualization',
-    icon: <BarChart className="w-4 h-4" />,
-    label: '可视化',
-    description: '数据图表和仪表板',
-  },
-  {
-    key: 'monitoring',
-    icon: <Activity className="w-4 h-4" />,
-    label: '监控',
-    description: '性能监控和诊断',
-  },
-  {
-    key: 'history',
-    icon: <History className="w-4 h-4" />,
-    label: '历史',
-    description: '查询历史记录',
-  },
-  // 扩展管理功能暂时隐藏
-  // {
-  //   key: 'extensions',
-  //   icon: <Package className="w-4 h-4" />,
-  //   label: '扩展',
-  //   description: '插件和集成',
-  // },
-];
-
 const RightFunctionBar: React.FC<RightFunctionBarProps> = ({
   selectedFunction,
   onFunctionSelect,
   className = '',
 }) => {
   const { unreadCount } = useNotificationStore();
+  const { t } = useTranslation();
+
+  // Generate function items with translations
+  const functionItems: FunctionItem[] = [
+    {
+      key: 'notifications',
+      icon: <Bell className="w-4 h-4" />,
+      label: t('menu.right_panel.notifications'),
+      description: t('menu.right_panel.notifications_description'),
+    },
+    {
+      key: 'visualization',
+      icon: <BarChart className="w-4 h-4" />,
+      label: t('menu.right_panel.visualization'),
+      description: t('menu.right_panel.visualization_description'),
+    },
+    {
+      key: 'monitoring',
+      icon: <Activity className="w-4 h-4" />,
+      label: t('menu.right_panel.monitoring'),
+      description: t('menu.right_panel.monitoring_description'),
+    },
+    {
+      key: 'history',
+      icon: <History className="w-4 h-4" />,
+      label: t('menu.right_panel.history'),
+      description: t('menu.right_panel.history_description'),
+    },
+    // 扩展管理功能暂时隐藏
+    // {
+    //   key: 'extensions',
+    //   icon: <Package className="w-4 h-4" />,
+    //   label: t('menu.right_panel.extensions'),
+    //   description: t('menu.right_panel.extensions_description'),
+    // },
+  ];
 
   const handleFunctionClick = (functionType: FunctionType) => {
     // 如果点击的是当前选中的功能，则折叠面板

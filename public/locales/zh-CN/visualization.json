@@ -27,7 +27,7 @@
   "axis_label": "轴标签",
   "axis_title": "轴标题",
   "legend": "图例",
-  "title": "标题",
+  "chart_title": "标题",
   "subtitle": "副标题",
   "data_series": "数据系列",
   "data_point": "数据点",

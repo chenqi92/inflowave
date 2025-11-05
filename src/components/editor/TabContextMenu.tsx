@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   X,
   Save,
@@ -56,12 +57,13 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
   onDuplicateTab,
 }) => {
   const [isClosing, setIsClosing] = useState(false);
+  const { t } = useTranslation();
 
   // 生成菜单项
   const menuItems: ContextMenuItem[] = [
     {
       id: 'save',
-      label: '另存为...',
+      label: t('menu.tab_menu.save_as'),
       icon: <Save className="w-4 h-4" />,
       action: () => {
         onSaveTab(targetTab.id);
@@ -70,7 +72,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'duplicate',
-      label: '复制标签页',
+      label: t('menu.tab_menu.duplicate_tab'),
       icon: <Copy className="w-4 h-4" />,
       action: () => {
         onDuplicateTab(targetTab.id);
@@ -85,7 +87,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'close',
-      label: '关闭',
+      label: t('menu.tab_menu.close'),
       icon: <X className="w-4 h-4" />,
       action: () => {
         onCloseTab(targetTab.id);
@@ -94,7 +96,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'close-others',
-      label: '关闭其他标签页',
+      label: t('menu.tab_menu.close_other_tabs'),
       icon: <FileText className="w-4 h-4" />,
       action: () => {
         onCloseOtherTabs(targetTab.id);
@@ -104,7 +106,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'close-left',
-      label: '关闭左侧标签页',
+      label: t('menu.tab_menu.close_left_tabs'),
       icon: <ArrowLeft className="w-4 h-4" />,
       action: () => {
         onCloseLeftTabs(targetTab.id);
@@ -114,7 +116,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'close-right',
-      label: '关闭右侧标签页',
+      label: t('menu.tab_menu.close_right_tabs'),
       icon: <ArrowRight className="w-4 h-4" />,
       action: () => {
         onCloseRightTabs(targetTab.id);

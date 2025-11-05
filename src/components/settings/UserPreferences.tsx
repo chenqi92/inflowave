@@ -17,6 +17,7 @@ import {
   Badge,
 } from '@/components/ui';
 import CustomFontSelector from './CustomFontSelector';
+import CustomFontImport from './CustomFontImport';
 import { showMessage } from '@/utils/message';
 import {
   Settings,
@@ -756,7 +757,15 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     )}
                   />
                 </div>
-                
+
+                {/* 自定义字体导入 */}
+                <div className='mt-6'>
+                  <CustomFontImport onFontImported={() => {
+                    // 字体导入后可以刷新字体列表
+                    showMessage.success('字体导入成功，请在字体选择器中查看');
+                  }} />
+                </div>
+
                 <div className='grid grid-cols-2 gap-4'>
                   <FormField
                     control={form.control}

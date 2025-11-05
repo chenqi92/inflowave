@@ -27,7 +27,7 @@
   "axis_label": "Axis Label",
   "axis_title": "Axis Title",
   "legend": "Legend",
-  "title": "Title",
+  "chart_title": "Title",
   "subtitle": "Subtitle",
   "data_series": "Data Series",
   "data_point": "Data Point",

@@ -28,6 +28,7 @@ import {
 import * as echarts from 'echarts';
 import { useVisualizationStore } from '@/store/visualization';
 import { FormatUtils } from '@/utils/format';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { QueryResult, ChartConfig } from '@/types';
 
 interface InteractiveChartProps {
@@ -62,6 +63,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const [zoomLevel, setZoomLevel] = useState(100);
   const [selectedSeries, setSelectedSeries] = useState<string[]>([]);
   const { resolvedTheme } = useTheme();
+  const { t } = useTranslation();
 
   const { updateChart } = useVisualizationStore();
 
@@ -194,13 +196,13 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
   const renderDownloadMenu = () => (
     <DropdownMenuContent align="end">
       <DropdownMenuItem onClick={handleDownloadPNG}>
-        PNG 图片
+        {t('menu.context_menu.png_image')}
       </DropdownMenuItem>
       <DropdownMenuItem onClick={handleDownloadSVG}>
-        SVG 矢量图
+        {t('menu.context_menu.svg_vector')}
       </DropdownMenuItem>
       <DropdownMenuItem onClick={handleDownloadJSON}>
-        JSON 数据
+        {t('menu.context_menu.json_data')}
       </DropdownMenuItem>
     </DropdownMenuContent>
   );

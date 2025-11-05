@@ -18,6 +18,7 @@ import { useConnectionStore } from './store/connection';
 import { useUserPreferencesStore } from './stores/userPreferencesStore';
 import { useAppNotifications } from './hooks/useAppNotifications';
 import { useFontApplier } from './hooks/useFontApplier';
+import { useDayjsLocaleSync } from './hooks/useDayjsLocaleSync';
 // 移除自动健康检查导入 - 桌面应用不需要定期健康检查
 // import { initializeHealthCheck } from './utils/healthCheck';
 import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
@@ -279,6 +280,9 @@ const App: React.FC = () => {
 
   // 🎨 应用字体设置（实时响应用户偏好变化）
   useFontApplier();
+  
+  // 🌐 同步 dayjs locale 与 i18n 语言
+  useDayjsLocaleSync();
 
   // 🔧 监听日志设置变化，动态更新 logger 配置
   useEffect(() => {

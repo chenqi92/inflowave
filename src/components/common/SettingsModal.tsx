@@ -39,6 +39,7 @@ import {
   Download,
   ExternalLink,
   FileText,
+  Globe,
 } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { saveJsonFile } from '@/utils/nativeDownload';
@@ -50,6 +51,7 @@ import UserPreferencesComponent from '@/components/settings/UserPreferences';
 import ControllerSettings from '@/components/settings/ControllerSettings';
 import LoggingSettings from '@/components/settings/LoggingSettings';
 import UserGuideModal from '@/components/common/UserGuideModal';
+import LanguageManagement from '@/components/settings/LanguageManagement';
 import { useNoticeStore } from '@/store/notice';
 import { UpdateSettings } from '@/components/updater/UpdateSettings';
 import { openExternalLink } from '@/utils/externalLinks';
@@ -57,6 +59,9 @@ import { dataExplorerRefresh } from '@/utils/refreshEvents';
 import { performHealthCheck } from '@/utils/healthCheck';
 import type { AppConfig } from '@/types';
 import { getAppVersion } from '@/utils/version';
+import { useTranslation, useSettingsTranslation, useCommonTranslation } from '@/hooks/useTranslation';
+import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
+import { LanguageSelector } from '@/components/settings/LanguageSelector';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -73,6 +78,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
   const { clearConnections } = useConnectionStore();
   const { resetNoticeSettings, browserModeNoticeDismissed } = useNoticeStore();
   const { theme, setTheme, colorScheme, setColorScheme } = useTheme();
+  
+  // 国际化 hooks
+  const { t: tSettings } = useSettingsTranslation();
+  const { t: tCommon } = useCommonTranslation();
+  const { switchLanguage } = useLanguageSwitcher();
 
   // 初始化表单值
   useEffect(() => {
@@ -94,7 +104,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
       }
 
       // 应用语言设置
-      setLanguage(values.language as 'zh-CN' | 'en-US');
+      if (values.language && values.language !== config.language) {
+        await switchLanguage(values.language);
+      }
 
       // 保存到后端
       try {
@@ -151,9 +163,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
         console.info('仅保存到前端状态，后端配置保存功能暂未实现');
       }
 
-      showMessage.success('设置已保存');
+      showMessage.success(tCommon('success'));
     } catch (saveError) {
-      showMessage.error(`保存设置失败: ${saveError}`);
+      showMessage.error(`${tCommon('error')}: ${saveError}`);
     } finally {
       setLoading(false);
     }
@@ -169,7 +181,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           const latestConfig = useAppStore.getState().config;
           form.reset(latestConfig);
         }, 0);
-        showMessage.success('设置已重置为默认值');
+        showMessage.success(tSettings('reset_to_default'));
       } else {
         // Tauri 环境：调用后端重置命令
         const defaultSettings = await safeTauriInvoke('reset_all_settings');
@@ -182,12 +194,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           window.dispatchEvent(new CustomEvent('refresh-connections'));
           // 🔧 已移除 userPreferencesUpdated 事件派发，现在使用 userPreferencesStore 统一管理
 
-          showMessage.success('所有配置已重置为默认值');
+          showMessage.success(tSettings('reset_all_config'));
         }
       }
     } catch (error) {
       console.error('重置配置失败:', error);
-      showMessage.error(`重置配置失败: ${error}`);
+      showMessage.error(`${tCommon('error')}: ${error}`);
     }
   };
 
@@ -222,7 +234,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
             const writable = await fileHandle.createWritable();
             await writable.write(JSON.stringify(settings, null, 2));
             await writable.close();
-            showMessage.success('配置已导出到指定位置');
+            showMessage.success(tSettings('export_config'));
           } else {
             // 使用原生文件保存对话框作为降级方案
             const success = await saveJsonFile(settings, {
@@ -234,12 +246,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
             });
 
             if (success) {
-              showMessage.success('配置已导出');
+              showMessage.success(tSettings('export_config'));
             }
           }
         } catch (exportError) {
           if ((exportError as Error).name === 'AbortError') {
-            showMessage.info('导出已取消');
+            showMessage.info(tCommon('cancel'));
           } else {
             throw exportError;
           }
@@ -247,14 +259,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
       } else {
         // Tauri 环境：调用后端导出命令
         await safeTauriInvoke('export_settings');
-        showMessage.success('配置已导出');
+        showMessage.success(tSettings('export_config'));
       }
     } catch (error) {
       console.error('导出配置失败:', error);
-      if (String(error).includes('取消')) {
-        showMessage.info('导出已取消');
+      if (String(error).includes('取消') || String(error).includes('cancel')) {
+        showMessage.info(tCommon('cancel'));
       } else {
-        showMessage.error(`导出配置失败: ${error}`);
+        showMessage.error(`${tCommon('error')}: ${error}`);
       }
     }
   };
@@ -264,7 +276,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
     try {
       if (isBrowserEnvironment()) {
         // 浏览器环境：使用文件输入
-        showMessage.info('浏览器环境下的配置导入功能开发中...');
+        showMessage.info('Browser import feature in development...');
         return;
       }
 
@@ -279,18 +291,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
         try {
           // 触发连接列表刷新
           window.dispatchEvent(new CustomEvent('refresh-connections'));
-          showMessage.success('配置已导入并应用，连接配置已更新');
+          showMessage.success(tSettings('import_config'));
         } catch (refreshError) {
           console.warn('刷新连接列表失败:', refreshError);
-          showMessage.success('配置已导入并应用');
+          showMessage.success(tSettings('import_config'));
         }
       }
     } catch (error) {
       console.error('导入配置失败:', error);
-      if (String(error).includes('取消')) {
-        showMessage.info('导入已取消');
+      if (String(error).includes('取消') || String(error).includes('cancel')) {
+        showMessage.info(tCommon('cancel'));
       } else {
-        showMessage.error(`导入配置失败: ${error}`);
+        showMessage.error(`${tCommon('error')}: ${error}`);
       }
     }
   };
@@ -301,23 +313,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
     {
       key: 'general',
       icon: <Settings className='w-4 h-4' />,
-      label: '常规设置',
+      label: tSettings('general'),
       children: (
         <form onSubmit={form.handleSubmit((data) => saveSettings(data as AppConfig))} className='space-y-6 settings-content'>
           <div>
             <div className='flex items-center gap-3 mb-4'>
               <Monitor className='w-6 h-6 text-blue-600' />
               <div>
-                <h2 className='text-2xl font-bold'>界面设置</h2>
+                <h2 className='text-2xl font-bold'>{tSettings('interface_settings')}</h2>
                 <p className='text-muted-foreground'>
-                  自定义应用程序的外观和行为
+                  {tSettings('interface_settings_description')}
                 </p>
               </div>
             </div>
             <div className='space-y-4'>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-2'>
-                  <Label htmlFor='theme'>主题</Label>
+                  <Label htmlFor='theme'>{tSettings('theme')}</Label>
                   <Select
                     value={theme}
                     onValueChange={value =>
@@ -325,39 +337,33 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                     }
                   >
                     <SelectTrigger className='h-9'>
-                      <SelectValue placeholder='选择主题' />
+                      <SelectValue placeholder={tSettings('select_theme')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='light'>浅色主题</SelectItem>
-                      <SelectItem value='dark'>深色主题</SelectItem>
-                      <SelectItem value='system'>跟随系统</SelectItem>
+                      <SelectItem value='light'>{tSettings('light_theme')}</SelectItem>
+                      <SelectItem value='dark'>{tSettings('dark_theme')}</SelectItem>
+                      <SelectItem value='system'>{tSettings('system_theme')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className='space-y-2'>
-                  <Label htmlFor='language'>语言</Label>
-                  <Select
+                  <LanguageSelector
                     value={form.watch('language') || config.language}
                     onValueChange={value => form.setValue('language', value)}
-                  >
-                    <SelectTrigger className='h-9'>
-                      <SelectValue placeholder='选择语言' />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='zh-CN'>简体中文</SelectItem>
-                      <SelectItem value='en-US'>English</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    showProgress={true}
+                    showNativeName={true}
+                    showFlag={true}
+                  />
                 </div>
               </div>
 
               {/* 软件风格设置 */}
               <div className='space-y-4'>
                 <div>
-                  <Label className='text-base font-medium'>软件风格</Label>
+                  <Label className='text-base font-medium'>{tSettings('software_style')}</Label>
                   <p className='text-sm text-muted-foreground'>
-                    选择您喜欢的界面颜色主题
+                    {tSettings('software_style_description')}
                   </p>
                 </div>
                 <ThemeColorSelectorWithPreview
@@ -374,7 +380,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                       form.setValue('autoSave', checked)
                     }
                   />
-                  <Label htmlFor='autoSave'>自动保存</Label>
+                  <Label htmlFor='autoSave'>{tSettings('auto_save')}</Label>
                 </div>
 
                 <div className='flex items-center space-x-2'>
@@ -384,7 +390,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                       form.setValue('autoConnect', checked)
                     }
                   />
-                  <Label htmlFor='autoConnect'>自动连接</Label>
+                  <Label htmlFor='autoConnect'>{tSettings('auto_connect')}</Label>
                 </div>
               </div>
 
@@ -406,43 +412,43 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
 
                         // 提供即时反馈
                         if (checked) {
-                          showMessage.success('已开启内部数据库显示并刷新列表');
+                          showMessage.success(tSettings('internal_db_enabled'));
                         } else {
-                          showMessage.success('已关闭内部数据库显示并刷新列表');
+                          showMessage.success(tSettings('internal_db_disabled'));
                         }
                       }).catch(error => {
                         console.error('保存设置失败:', error);
-                        showMessage.error('保存设置失败');
+                        showMessage.error(tSettings('save_settings_failed'));
                         // 回滚设置
                         form.setValue('showInternalDatabases', !checked);
                       });
                     }}
                   />
-                  <Label htmlFor='showInternalDatabases'>显示内部数据库</Label>
+                  <Label htmlFor='showInternalDatabases'>{tSettings('show_internal_databases')}</Label>
                 </div>
                 <div className='text-sm text-muted-foreground'>
-                  <p>是否在数据源树中显示 _internal 等系统数据库</p>
+                  <p>{tSettings('show_internal_databases_description')}</p>
                   <p className='text-xs mt-1 text-amber-600'>
-                    注意：监控功能始终可用，无论此设置如何
+                    {tSettings('show_internal_databases_note')}
                   </p>
                 </div>
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-2'>
-                  <Label htmlFor='logLevel'>日志级别</Label>
+                  <Label htmlFor='logLevel'>{tSettings('log_level')}</Label>
                   <Select
                     value={form.watch('logLevel') || config.logLevel}
                     onValueChange={value => form.setValue('logLevel', value)}
                   >
                     <SelectTrigger className='h-9'>
-                      <SelectValue placeholder='选择日志级别' />
+                      <SelectValue placeholder={tSettings('select_log_level')} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value='debug'>调试 (Debug)</SelectItem>
-                      <SelectItem value='info'>信息 (Info)</SelectItem>
-                      <SelectItem value='warn'>警告 (Warn)</SelectItem>
-                      <SelectItem value='error'>错误 (Error)</SelectItem>
+                      <SelectItem value='debug'>{tSettings('log_level_debug')}</SelectItem>
+                      <SelectItem value='info'>{tSettings('log_level_info')}</SelectItem>
+                      <SelectItem value='warn'>{tSettings('log_level_warn')}</SelectItem>
+                      <SelectItem value='error'>{tSettings('log_level_error')}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -457,9 +463,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
             <div className='flex items-center gap-3 mb-4'>
               <Settings className='w-6 h-6 text-blue-600' />
               <div>
-                <h2 className='text-2xl font-bold'>应用行为</h2>
+                <h2 className='text-2xl font-bold'>{tSettings('app_behavior')}</h2>
                 <p className='text-muted-foreground'>
-                  配置应用程序的自动化行为
+                  {tSettings('app_behavior_description')}
                 </p>
               </div>
             </div>
@@ -467,9 +473,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               <div className='grid grid-cols-2 gap-4'>
                 <div className='flex items-center justify-between p-4 border rounded-lg'>
                   <div className='space-y-0.5'>
-                    <Label className='text-base'>自动保存</Label>
+                    <Label className='text-base'>{tSettings('auto_save')}</Label>
                     <p className='text-sm text-muted-foreground'>
-                      自动保存查询和配置更改
+                      {tSettings('auto_save_description')}
                     </p>
                   </div>
                   <Switch
@@ -482,9 +488,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
 
                 <div className='flex items-center justify-between p-4 border rounded-lg'>
                   <div className='space-y-0.5'>
-                    <Label className='text-base'>自动连接</Label>
+                    <Label className='text-base'>{tSettings('auto_connect')}</Label>
                     <p className='text-sm text-muted-foreground'>
-                      启动时自动连接到上次使用的数据库
+                      {tSettings('auto_connect_description')}
                     </p>
                   </div>
                   <Switch
@@ -499,9 +505,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               {/* 系统健康检查 */}
               <div className='space-y-4'>
                 <div>
-                  <Label className='text-base font-medium'>系统健康检查</Label>
+                  <Label className='text-base font-medium'>{tSettings('system_health_check')}</Label>
                   <p className='text-sm text-muted-foreground'>
-                    检查性能监控系统的运行状态
+                    {tSettings('system_health_check_description')}
                   </p>
                 </div>
                 <div className='flex gap-2'>
@@ -513,10 +519,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                       try {
                         const result = await performHealthCheck();
                         if (result) {
-                          showMessage.success('健康检查完成，系统运行正常');
+                          showMessage.success(tSettings('health_check_success'));
                         }
                       } catch (error) {
-                        showMessage.error(`健康检查失败: ${error}`);
+                        showMessage.error(`${tSettings('health_check_failed')}: ${error}`);
                       } finally {
                         setLoading(false);
                       }
@@ -524,7 +530,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                     disabled={loading}
                   >
                     <Monitor className='w-4 h-4 mr-2' />
-                    执行健康检查
+                    {tSettings('perform_health_check')}
                   </Button>
                 </div>
               </div>
@@ -539,11 +545,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               onClick={handleResetSettings}
             >
               <RefreshCw className='w-4 h-4 mr-2' />
-              重置为默认
+              {tSettings('reset_to_default')}
             </Button>
             <Button type='submit' size='sm' disabled={loading}>
               <Save className='w-4 h-4 mr-2' />
-              保存设置
+              {tSettings('save_settings')}
             </Button>
           </div>
         </form>
@@ -552,23 +558,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
     {
       key: 'query',
       icon: <Shield className='w-4 h-4' />,
-      label: '查询设置',
+      label: tSettings('query_settings'),
       children: <ControllerSettings />,
     },
     {
       key: 'preferences',
       icon: <User className='w-4 h-4' />,
-      label: '用户偏好',
+      label: tSettings('user_preferences'),
       children: <UserPreferencesComponent />,
     },
     {
       key: 'config',
       icon: <Database className='w-4 h-4' />,
-      label: '配置管理',
+      label: tSettings('config_management'),
       children: (
         <div className='space-y-6'>
           <div>
-            <h4 className='text-sm font-medium mb-3'>配置备份与恢复</h4>
+            <h4 className='text-sm font-medium mb-3'>{tSettings('config_backup_restore')}</h4>
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
               <Button
                 variant='outline'
@@ -576,7 +582,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 className='w-full justify-start'
               >
                 <FileDown className='w-4 h-4 mr-2' />
-                导出配置
+                {tSettings('export_config')}
               </Button>
               <Button
                 variant='outline'
@@ -584,7 +590,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 className='w-full justify-start'
               >
                 <FileUp className='w-4 h-4 mr-2' />
-                导入配置
+                {tSettings('import_config')}
               </Button>
               <Button
                 variant='outline'
@@ -592,17 +598,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 className='w-full justify-start'
               >
                 <RefreshCw className='w-4 h-4 mr-2' />
-                重置所有配置
+                {tSettings('reset_all_config')}
               </Button>
             </div>
             <Alert className='mt-4'>
               <Info className='h-4 w-4' />
               <div>
-                <h5 className='font-medium'>配置说明</h5>
+                <h5 className='font-medium'>{tSettings('config_description')}</h5>
                 <p className='text-sm text-muted-foreground mt-1'>
-                  • <strong>导出配置</strong>：将当前所有应用设置、连接配置、用户偏好保存到文件<br/>
-                  • <strong>导入配置</strong>：从配置文件恢复应用设置、连接配置、用户偏好<br/>
-                  • <strong>重置配置</strong>：将所有设置恢复为默认值（不影响连接配置）
+                  • <strong>{tSettings('export_config')}</strong>：{tSettings('export_config_description')}<br/>
+                  • <strong>{tSettings('import_config')}</strong>：{tSettings('import_config_description')}<br/>
+                  • <strong>{tSettings('reset_config')}</strong>：{tSettings('reset_config_description')}
                 </p>
               </div>
             </Alert>
@@ -614,32 +620,32 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
     {
       key: 'user-guide',
       icon: <Bell className='w-4 h-4' />,
-      label: '用户引导',
+      label: tSettings('user_guide'),
       children: (
         <div className='space-y-6'>
           {/* 页面标题 */}
           <div className='flex items-center gap-3 mb-4'>
             <Bell className='w-6 h-6 text-blue-600' />
             <div>
-              <h2 className='text-2xl font-bold'>用户引导</h2>
-              <p className='text-muted-foreground'>管理用户引导和帮助提示</p>
+              <h2 className='text-2xl font-bold'>{tSettings('user_guide_title')}</h2>
+              <p className='text-muted-foreground'>{tSettings('user_guide_description')}</p>
             </div>
           </div>
 
-          {/* 用户引导设置 */}
+          {/* User guide settings */}
           <div className='space-y-4'>
             <div className='p-4 border rounded-lg'>
               <div className='mb-4'>
-                <h4 className='text-base font-medium'>启动时展示用户引导</h4>
+                <h4 className='text-base font-medium'>{tSettings('startup_guide')}</h4>
                 <p className='text-sm text-muted-foreground'>
-                  控制应用启动时是否自动显示用户引导
+                  {tSettings('startup_guide_description')}
                 </p>
               </div>
               <div className='flex items-center justify-between'>
                 <div className='space-y-0.5'>
-                  <Label className='text-sm'>启用启动引导</Label>
+                  <Label className='text-sm'>{tSettings('enable_startup_guide')}</Label>
                   <p className='text-xs text-muted-foreground'>
-                    开启后，每次启动应用时会显示用户引导
+                    {tSettings('enable_startup_guide_description')}
                   </p>
                 </div>
                 <Switch
@@ -647,10 +653,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                   onCheckedChange={(checked) => {
                     if (checked) {
                       resetNoticeSettings();
-                      showMessage.success('已启用启动引导，下次启动时会显示用户引导');
+                      showMessage.success(tSettings('startup_guide_enabled'));
                     } else {
                       useNoticeStore.getState().dismissBrowserModeNotice();
-                      showMessage.success('已关闭启动引导');
+                      showMessage.success(tSettings('startup_guide_disabled'));
                     }
                   }}
                 />
@@ -663,20 +669,18 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 className='w-full justify-start'
               >
                 <Info className='w-4 h-4 mr-2' />
-                查看用户引导
+                {tSettings('view_user_guide')}
               </Button>
               <Button
                 variant='outline'
                 onClick={() => {
                   resetNoticeSettings();
-                  showMessage.success(
-                    '引导设置已重置，下次启动时会再次显示用户引导'
-                  );
+                  showMessage.success(tSettings('guide_settings_reset'));
                 }}
                 className='w-full justify-start'
               >
                 <RefreshCw className='w-4 h-4 mr-2' />
-                重置引导设置
+                {tSettings('reset_guide_settings')}
               </Button>
             </div>
           </div>
@@ -686,28 +690,34 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
     {
       key: 'logging',
       icon: <FileText className='w-4 h-4' />,
-      label: '日志设置',
+      label: tSettings('logging'),
       children: <LoggingSettings />,
+    },
+    {
+      key: 'language-management',
+      icon: <Globe className='w-4 h-4' />,
+      label: tSettings('language_management'),
+      children: <LanguageManagement />,
     },
     {
       key: 'updates',
       icon: <Download className='w-4 h-4' />,
-      label: '更新设置',
+      label: tSettings('updates'),
       children: <UpdateSettings />,
     },
     {
       key: 'about-app',
       icon: <Info className='w-4 h-4' />,
-      label: '关于',
+      label: tSettings('about_app'),
       children: (
         <div className='space-y-6'>
           <div>
             <div className='flex items-center gap-3 mb-4'>
               <Info className='w-6 h-6 text-blue-600' />
               <div>
-                <h2 className='text-2xl font-bold'>关于 InfloWave</h2>
+                <h2 className='text-2xl font-bold'>{tSettings('about_inflowave')}</h2>
                 <p className='text-muted-foreground'>
-                  现代化的 InfluxDB 数据库管理工具
+                  {tSettings('about_inflowave_description')}
                 </p>
               </div>
             </div>
@@ -715,27 +725,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
 
           <div className='space-y-4'>
             <div className='p-4 border rounded-lg'>
-              <h4 className='font-medium mb-2'>应用信息</h4>
+              <h4 className='font-medium mb-2'>{tSettings('app_info')}</h4>
               <div className='space-y-2 text-sm'>
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>应用名称:</span>
+                  <span className='text-muted-foreground'>{tSettings('app_name')}:</span>
                   <span>InfloWave</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>版本:</span>
+                  <span className='text-muted-foreground'>{tSettings('version')}:</span>
                   <span>{getAppVersion()}</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>构建时间:</span>
+                  <span className='text-muted-foreground'>{tSettings('build_time')}:</span>
                   <span>{new Date().toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
 
             <div className='p-4 border rounded-lg'>
-              <h4 className='font-medium mb-2'>开源项目</h4>
+              <h4 className='font-medium mb-2'>{tSettings('open_source_project')}</h4>
               <p className='text-sm text-muted-foreground mb-3'>
-                InfloWave 是一个开源项目，欢迎贡献代码和反馈问题。
+                {tSettings('open_source_description')}
               </p>
               <Button
                 variant='outline'
@@ -750,27 +760,27 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 className='w-full justify-start'
               >
                 <ExternalLink className='w-4 h-4 mr-2' />
-                访问 GitHub 项目
+                {tSettings('visit_github')}
               </Button>
             </div>
 
             <div className='p-4 border rounded-lg'>
-              <h4 className='font-medium mb-2'>技术栈</h4>
+              <h4 className='font-medium mb-2'>{tSettings('tech_stack')}</h4>
               <div className='grid grid-cols-2 gap-2 text-sm'>
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>前端:</span>
+                  <span className='text-muted-foreground'>{tSettings('frontend')}:</span>
                   <span>React + TypeScript</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>后端:</span>
+                  <span className='text-muted-foreground'>{tSettings('backend')}:</span>
                   <span>Rust + Tauri</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>UI框架:</span>
+                  <span className='text-muted-foreground'>{tSettings('ui_framework')}:</span>
                   <span>Shadcn/ui</span>
                 </div>
                 <div className='flex justify-between'>
-                  <span className='text-muted-foreground'>数据库:</span>
+                  <span className='text-muted-foreground'>{tSettings('database')}:</span>
                   <span>InfluxDB</span>
                 </div>
               </div>
@@ -793,10 +803,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           <DialogHeader className='px-6 py-3 border-b shrink-0 space-y-0'>
             <DialogTitle className='flex items-center gap-2'>
               <Settings className='w-5 h-5' />
-              偏好设置
+              {tSettings('title')}
             </DialogTitle>
             <DialogDescription className='sr-only'>
-              配置应用程序的各项设置，包括查询、通知、主题等
+              {tSettings('description')}
             </DialogDescription>
           </DialogHeader>
           <div className='flex flex-1 min-h-0'>

@@ -18,6 +18,9 @@ export default defineConfig({
 
     // 静态资源配置
     publicDir: 'public',
+    
+    // 确保语言资源文件被正确处理
+    assetsInclude: ['**/*.woff', '**/*.woff2', '**/*.ttf', '**/locales/**/*.json'],
 
     // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
     //
@@ -76,12 +79,18 @@ export default defineConfig({
                     editor: ['@codemirror/state', '@codemirror/view', '@codemirror/commands'],
                     utils: ['lodash-es', 'dayjs', 'classnames'],
                     tauri: ['@tauri-apps/api', '@tauri-apps/plugin-shell'],
-                    i18n: ['react-i18next', 'i18next', 'i18next-browser-languagedetector'],
+                    i18n: ['react-i18next', 'i18next', 'i18next-browser-languagedetector', 'date-fns'],
                 },
                 // 优化输出文件名
                 chunkFileNames: 'assets/js/[name]-[hash].js',
                 entryFileNames: 'assets/js/[name]-[hash].js',
-                assetFileNames: 'assets/[ext]/[name]-[hash].[ext]',
+                assetFileNames: (assetInfo: any) => {
+                    // 特殊处理语言资源文件，保持目录结构
+                    if (assetInfo.name && assetInfo.name.includes('locales/')) {
+                        return 'locales/[name].[ext]';
+                    }
+                    return 'assets/[ext]/[name]-[hash].[ext]';
+                },
             },
         },
     },
@@ -132,8 +141,7 @@ export default defineConfig({
         'process.env.DISABLE_CONSOLE_LOGS': JSON.stringify(process.env.DISABLE_CONSOLE_LOGS || 'false'),
     },
 
-    // Monaco Editor 配置
-    assetsInclude: ['**/*.woff', '**/*.woff2', '**/*.ttf'],
+
 
     // Vitest 配置
     test: {

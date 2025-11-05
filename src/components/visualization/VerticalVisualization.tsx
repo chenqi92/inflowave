@@ -50,6 +50,7 @@ import { useTheme } from '@/components/providers/ThemeProvider';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { QueryResult } from '@/types';
 
 interface ChartConfig {
@@ -78,6 +79,7 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [selectedChart, setSelectedChart] = useState<ChartConfig | null>(null);
+  const { t } = useTranslation();
 
   // 创建图表表单状态
   const [newChart, setNewChart] = useState({
@@ -405,24 +407,24 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent>类型过滤</TooltipContent>
+                <TooltipContent>{t('menu.context_menu.type_filter')}</TooltipContent>
               </Tooltip>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setSelectedType('all')}>
-                  所有类型
+                  {t('menu.context_menu.all_types')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setSelectedType('line')}>
-                  折线图
+                  {t('menu.context_menu.line_chart')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSelectedType('bar')}>
-                  柱状图
+                  {t('menu.context_menu.bar_chart')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSelectedType('pie')}>
-                  饼图
+                  {t('menu.context_menu.pie_chart')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSelectedType('area')}>
-                  面积图
+                  {t('menu.context_menu.area_chart')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -569,11 +571,11 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handlePreviewChart(chart)}>
                             <Eye className="w-4 h-4 mr-2" />
-                            预览
+                            {t('menu.context_menu.preview')}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleRefreshChart(chart)}>
                             <RefreshCw className="w-4 h-4 mr-2" />
-                            刷新
+                            {t('menu.context_menu.refresh')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem 
@@ -581,7 +583,7 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
                             className="text-red-600"
                           >
                             <Trash2 className="w-4 h-4 mr-2" />
-                            删除
+                            {t('menu.context_menu.delete')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

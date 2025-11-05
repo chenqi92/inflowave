@@ -77,7 +77,6 @@
   "bucket": "Bucket",
   "not_configured": "Not configured",
   "enable_v1_compatibility_api": "Enable V1 Compatibility API",
-  "server_version": "Server Version",
   "no_auth": "No authentication",
   "token_auth": "Token authentication",
   "auth_method": "Authentication method",

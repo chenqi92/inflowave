@@ -42,6 +42,7 @@ import { showMessage } from '@/utils/message';
 // import { VersionDetectionDialog } from './VersionDetectionDialog'; // 不再使用
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -148,6 +149,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   onCancel,
   onSuccess,
 }) => {
+  const { t } = useTranslation();
   const {
     createConnection,
     editConnection,
@@ -390,33 +392,33 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = '请输入连接名称';
+      newErrors.name = t('connections.validation.name_required');
     }
 
     if (!formData.host.trim()) {
-      newErrors.host = '请输入主机地址';
+      newErrors.host = t('connections.validation.host_required');
     } else {
       const ipError = ValidationUtils.ipAddress(formData.host);
       const hostnameError = ValidationUtils.hostname(formData.host);
       if (ipError && hostnameError) {
-        newErrors.host = '主机地址格式不正确';
+        newErrors.host = t('connections.validation.host_format_invalid');
       }
     }
 
     if (!formData.port || formData.port < 1 || formData.port > 65535) {
-      newErrors.port = '端口范围: 1-65535';
+      newErrors.port = t('connections.validation.port_range');
     }
 
     if (formData.timeout < 5 || formData.timeout > 300) {
-      newErrors.timeout = '超时时间范围: 5-300秒';
+      newErrors.timeout = t('connections.validation.timeout_range');
     }
 
     if (formData.connectionTimeout < 5 || formData.connectionTimeout > 300) {
-      newErrors.connectionTimeout = '连接超时时间范围: 5-300秒';
+      newErrors.connectionTimeout = t('connections.validation.connection_timeout_range');
     }
 
     if (formData.queryTimeout < 10 || formData.queryTimeout > 3600) {
-      newErrors.queryTimeout = '查询超时时间范围: 10-3600秒';
+      newErrors.queryTimeout = t('connections.validation.query_timeout_range');
     }
 
     // InfluxDB 2.x/3.x 特有验证
@@ -425,41 +427,41 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       (formData.version === '2.x' || formData.version === '3.x')
     ) {
       if (!formData.apiToken.trim()) {
-        newErrors.apiToken = '请输入API令牌';
+        newErrors.apiToken = t('connections.validation.api_token_required');
       }
       // InfluxDB 2.x 必须有组织，3.x 可选
       if (formData.version === '2.x' && !formData.organization.trim()) {
-        newErrors.organization = '请输入组织ID或名称';
+        newErrors.organization = t('connections.validation.organization_required');
       }
     }
 
     // IoTDB 特有验证
     if (formData.dbType === 'iotdb') {
       if (formData.sessionPoolSize < 1 || formData.sessionPoolSize > 50) {
-        newErrors.sessionPoolSize = '会话池大小范围: 1-50';
+        newErrors.sessionPoolSize = t('connections.validation.session_pool_size_range');
       }
       if (formData.fetchSize < 100 || formData.fetchSize > 100000) {
-        newErrors.fetchSize = '获取大小范围: 100-100000';
+        newErrors.fetchSize = t('connections.validation.fetch_size_range');
       }
       if (formData.maxRetryCount < 0 || formData.maxRetryCount > 10) {
-        newErrors.maxRetryCount = '最大重试次数范围: 0-10';
+        newErrors.maxRetryCount = t('connections.validation.max_retry_count_range');
       }
       if (formData.retryIntervalMs < 100 || formData.retryIntervalMs > 10000) {
-        newErrors.retryIntervalMs = '重试间隔范围: 100-10000毫秒';
+        newErrors.retryIntervalMs = t('connections.validation.retry_interval_range');
       }
     }
 
     // 代理配置验证
     if (formData.proxyEnabled) {
       if (!formData.proxyHost.trim()) {
-        newErrors.proxyHost = '请输入代理服务器地址';
+        newErrors.proxyHost = t('connections.validation.proxy_host_required');
       }
       if (
         !formData.proxyPort ||
         formData.proxyPort < 1 ||
         formData.proxyPort > 65535
       ) {
-        newErrors.proxyPort = '代理端口范围: 1-65535';
+        newErrors.proxyPort = t('connections.validation.proxy_port_range');
       }
     }
 
@@ -495,7 +497,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       if (abortController.signal.aborted) {
         setTestResult({
           success: false,
-          error: '连接测试已取消',
+          error: t('connections.test_cancelled'),
           latency: 0,
         });
         return;
@@ -515,7 +517,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
         setTestResult(finalTestResult);
       } else {
-        let errorMessage = connectionResult.reason?.message || '连接测试失败';
+        let errorMessage = connectionResult.reason?.message || t('connections.test_failed');
 
         // 为IoTDB提供更友好的错误信息
         if (
@@ -545,7 +547,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       if (abortController.signal.aborted) {
         setTestResult({
           success: false,
-          error: '连接测试超时或已取消',
+          error: t('connections.test_timeout_or_cancelled'),
           latency: 0,
         });
       } else {
@@ -1840,13 +1842,13 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                           testResult.success ? 'text-green-800' : 'text-red-800'
                         }`}
                       >
-                        {testResult.success ? '连接测试成功' : '连接测试失败'}
+                        {testResult.success ? t('connections.test_success') : t('connections.test_failed')}
                       </h4>
                       {testResult.success ? (
                         <div className='mt-2 text-sm text-green-700 space-y-2'>
-                          <p>✅ 数据库连接正常</p>
+                          <p>✅ {t('connections.database_connection_normal')}</p>
                           {testResult.latency && (
-                            <p>⚡ 响应时间: {testResult.latency}ms</p>
+                            <p>⚡ {t('connections.response_time')}: {testResult.latency}ms</p>
                           )}
 
                           {/* 版本信息展示 */}

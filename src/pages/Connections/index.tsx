@@ -5,12 +5,14 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import ConnectionManager from '@/components/ConnectionManager';
 import { ConnectionRecovery } from '@/components/ConnectionRecovery';
+import { useTranslation } from '@/hooks/useTranslation';
 
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
 import type { ConnectionConfig } from '@/types';
 
 const Connections: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const {
     connections,
     addConnection,
@@ -92,7 +94,7 @@ const Connections: React.FC = () => {
       }
     } catch (error) {
       console.error('❌ 同步连接配置失败:', error);
-      showMessage.error('同步连接配置失败，请检查后端服务');
+      showMessage.error(t('errors.sync_connection_config_failed'));
     }
   };
 
@@ -111,7 +113,7 @@ const Connections: React.FC = () => {
         console.log(`📋 连接列表加载完成: ${connectionList.length} 个连接`);
       }
     } catch (error) {
-      showMessage.error(`加载连接列表失败: ${error}`);
+      showMessage.error(t('errors.load_connection_list_failed', { interpolation: { error } }));
     }
   }, [setConnectionStatus]); // 移除syncConnectionsFromBackend依赖
 
@@ -142,12 +144,12 @@ const Connections: React.FC = () => {
 
       if (editingConnection?.id) {
         // 更新现有连接
-        showMessage.success(`连接 "${connection.name}" 已更新`);
+        showMessage.success(t('connections.connection_updated', { interpolation: { name: connection.name } }));
       } else {
         // 创建新连接
         // 注意：SimpleConnectionDialog 内部的 useConnection hook 已经处理了连接创建和添加到store
         // 这里只需要显示成功消息
-        showMessage.success(`连接 "${connection.name}" 已创建`);
+        showMessage.success(t('connections.connection_created', { interpolation: { name: connection.name } }));
         console.log('✅ 新连接已通过 useConnection hook 添加到前端状态:', connection.id);
       }
 
@@ -158,7 +160,7 @@ const Connections: React.FC = () => {
 
     } catch (error) {
       console.error('❌ 连接保存失败:', error);
-      showMessage.error(`连接保存失败: ${error}`);
+      showMessage.error(t('connections.connection_save_failed', { interpolation: { error } }));
     }
   };
 
@@ -173,9 +175,9 @@ const Connections: React.FC = () => {
       {/* 页面标题 */}
       <div className='border-b bg-background'>
         <div className='p-6'>
-          <h1 className='text-2xl font-semibold text-foreground'>数据源管理</h1>
+          <h1 className='text-2xl font-semibold text-foreground'>{t('connections.data_source_management')}</h1>
           <p className='text-sm text-muted-foreground mt-1'>
-            管理和监控 InfluxDB 数据库连接
+            {t('connections.manage_monitor_influxdb')}
           </p>
         </div>
       </div>

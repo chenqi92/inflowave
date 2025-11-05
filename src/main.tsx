@@ -11,6 +11,7 @@ import timezone from 'dayjs/plugin/timezone';
 import App from './App';
 import { TooltipProvider } from '@/components/ui';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
+import { I18nProvider } from '@/i18n';
 
 import './styles/index.css';
 import './styles/font-preview.css';
@@ -40,18 +41,23 @@ const InnerApp: React.FC = () => {
 // 主应用组件
 const AppWrapper: React.FC = () => {
   return (
-    <ThemeProvider defaultTheme='system' storageKey='inflowave-ui-theme'>
-      <TooltipProvider>
-        <BrowserRouter
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
-        >
-          <InnerApp />
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
+    <I18nProvider
+      enableLanguageDetection={true}
+      enablePersistence={true}
+    >
+      <ThemeProvider defaultTheme='system' storageKey='inflowave-ui-theme'>
+        <TooltipProvider>
+          <BrowserRouter
+            future={{
+              v7_startTransition: true,
+              v7_relativeSplatPath: true,
+            }}
+          >
+            <InnerApp />
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </I18nProvider>
   );
 };
 

@@ -26,6 +26,7 @@ import { writeToClipboard } from '@/utils/clipboard';
 import ContextMenu from '@/components/common/ContextMenu';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 import { logger } from '@/utils/logger';
+import { useTranslation } from '@/hooks/useTranslation';
 import './ConnectionManager.css';
 
 interface ConnectionManagerProps {
@@ -53,6 +54,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   onCreateConnection,
 }) => {
   const dialog = useGlobalDialog();
+  const { t } = useTranslation();
   const {
     connections,
     connectionStatuses,
@@ -124,7 +126,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         // 首先确保连接配置存在
         const connection = connections.find(c => c.id === connectionId);
         if (!connection) {
-          showMessage.error('连接配置不存在，请重新加载页面');
+          showMessage.error(t('connections.connection_config_not_exist'));
           return;
         }
 
@@ -132,14 +134,14 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         const result = await testConnection(connectionId);
         
         if (result) {
-          showMessage.success(`连接测试成功: ${connection.name}`);
+          showMessage.success(t('connections.test_success') + `: ${connection.name}`);
         } else {
-          showMessage.error(`连接测试失败: ${connection.name}`);
+          showMessage.error(t('connections.test_failed') + `: ${connection.name}`);
         }
       } catch (error) {
         logger.error('测试连接失败:', error);
         const errorMessage = String(error).replace('Error: ', '');
-        showMessage.error(`测试连接失败: ${errorMessage}`);
+        showMessage.error(t('connections.test_failed') + `: ${errorMessage}`);
       } finally {
         // 清除单个连接的loading状态
         setConnectionLoadingStates(prev => {
@@ -157,17 +159,17 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     try {
       if (monitoringActive) {
         await stopMonitoring();
-        showMessage.success('🛑 连接监控已停止');
+        showMessage.success(t('connections.monitoring_stopped'));
       } else {
         await startMonitoring(30); // 30秒间隔监控
-        showMessage.success('🟢 连接监控已启动，每30秒检查一次连接状态');
+        showMessage.success(t('connections.monitoring_started'));
         // 立即执行一次状态刷新
         setTimeout(() => {
           refreshAllStatuses();
         }, 1000);
       }
     } catch (error) {
-      showMessage.error(`监控操作失败: ${error}`);
+      showMessage.error(t('connections.monitoring_operation_failed', { interpolation: { error } }));
     }
   }, [monitoringActive, startMonitoring, stopMonitoring, refreshAllStatuses]);
 
@@ -180,12 +182,12 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       // 使用强制刷新方法重新加载所有连接
       await forceRefreshConnections();
 
-      showMessage.success('连接列表已刷新');
+      showMessage.success(t('connections.connection_list_refreshed'));
       logger.info('连接列表强制刷新完成');
 
     } catch (error) {
       logger.error('刷新连接列表失败:', error);
-      showMessage.error(`刷新连接列表失败: ${error}`);
+      showMessage.error(t('connections.refresh_connection_list_failed', { interpolation: { error } }));
     } finally {
       setIsRefreshingAll(false);
     }
@@ -204,10 +206,10 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     };
 
     const statusConfig = {
-      connected: { variant: 'success', text: '连接正常' },
-      disconnected: { variant: 'secondary', text: '未测试' },
-      connecting: { variant: 'warning', text: '测试中' },
-      error: { variant: 'destructive', text: '连接失败' },
+      connected: { variant: 'success', text: t('connections.connection_normal') },
+      disconnected: { variant: 'secondary', text: t('connections.not_tested') },
+      connecting: { variant: 'warning', text: t('connections.testing') },
+      error: { variant: 'destructive', text: t('connections.connection_failed') },
     };
 
     const config =
@@ -216,15 +218,15 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     // 构建tooltip内容
     let tooltipContent = '';
     if (actualStatus.error) {
-      tooltipContent = `连接失败: ${actualStatus.error}`;
+      tooltipContent = t('connections.connection_failed_error', { interpolation: { error: actualStatus.error } });
     } else if (actualStatus.latency && actualStatus.status === 'connected') {
-      tooltipContent = `InfluxDB连接正常，延迟: ${actualStatus.latency}ms`;
+      tooltipContent = t('connections.influxdb_connection_normal_latency', { interpolation: { latency: actualStatus.latency } });
     } else if (actualStatus.status === 'connecting') {
-      tooltipContent = '正在测试InfluxDB连接...';
+      tooltipContent = t('connections.testing_influxdb_connection');
     } else if (actualStatus.status === 'connected') {
-      tooltipContent = 'InfluxDB连接正常，可以正常使用';
+      tooltipContent = t('connections.influxdb_connection_normal_ready');
     } else {
-      tooltipContent = '尚未测试InfluxDB连接状态';
+      tooltipContent = t('connections.not_tested_influxdb_connection');
     }
 
     return (
@@ -239,7 +241,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             <p className='text-sm'>{tooltipContent}</p>
             {actualStatus.lastConnected && (
               <p className='text-xs text-muted-foreground mt-1'>
-                最后测试:{' '}
+                {t('connections.last_tested')}:{' '}
                 {new Date(actualStatus.lastConnected).toLocaleString()}
               </p>
             )}
@@ -291,22 +293,22 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       switch (action) {
         case 'connect':
           await connectToDatabase(connection.id);
-          showMessage.success(`已连接到 ${connection.name}`);
+          showMessage.success(t('connections.connected_to', { interpolation: { name: connection.name } }));
           break;
 
         case 'disconnect':
           await disconnectFromDatabase(connection.id);
-          showMessage.success(`已断开 ${connection.name}`);
+          showMessage.success(t('connections.disconnected_from', { interpolation: { name: connection.name } }));
           break;
 
         case 'test_connection':
           await testConnection(connection.id);
-          showMessage.success(`连接测试完成: ${connection.name}`);
+          showMessage.success(t('connections.connection_test_completed', { interpolation: { name: connection.name } }));
           break;
 
         case 'refresh_status':
           await refreshConnectionStatus(connection.id);
-          showMessage.success(`状态已刷新: ${connection.name}`);
+          showMessage.success(t('connections.status_refreshed', { interpolation: { name: connection.name } }));
           break;
 
         case 'edit_connection':
@@ -320,16 +322,16 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
           const duplicatedConnection = {
             ...connection,
             id: generateUniqueId(`${connection.id}_copy`),
-            name: `${connection.name} (副本)`,
+            name: `${connection.name} (${t('connections.copy')})`,
           };
-          showMessage.info(`连接复制功能开发中: ${duplicatedConnection.name}`);
+          showMessage.info(t('connections.connection_copy_in_development', { interpolation: { name: duplicatedConnection.name } }));
           break;
         }
 
         case 'copy_connection_string': {
           const connectionString = `${connection.host}:${connection.port}`;
           await writeToClipboard(connectionString, {
-            successMessage: `已复制连接字符串: ${connectionString}`,
+            successMessage: t('connections.connection_string_copied', { interpolation: { connectionString } }),
           });
           break;
         }
@@ -337,7 +339,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
         case 'copy_connection_info': {
           const connectionInfo = JSON.stringify(connection, null, 2);
           await writeToClipboard(connectionInfo, {
-            successMessage: '已复制连接信息到剪贴板',
+            successMessage: t('connections.connection_info_copied'),
           });
           break;
         }
@@ -345,7 +347,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
         case 'delete_connection': {
           const confirmed = await dialog.confirm(
-            `确定要删除连接 "${connection.name}" 吗？此操作不可撤销。`
+            t('connections.delete_connection_confirm_irreversible', { interpolation: { name: connection.name } })
           );
           if (confirmed) {
             try {
@@ -359,7 +361,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               removeConnection(connection.id);
               logger.info('前端状态删除成功');
 
-              showMessage.success(`连接 ${connection.name} 已删除`);
+              showMessage.success(t('connections.connection_deleted', { interpolation: { name: connection.name } }));
 
               // 延迟刷新以确保状态同步
               setTimeout(() => {
@@ -368,7 +370,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
             } catch (error) {
               logger.error('删除连接失败:', error);
-              showMessage.error(`删除连接失败: ${error}`);
+              showMessage.error(t('connections.delete_connection_failed', { interpolation: { error } }));
             }
           }
           break;
@@ -380,7 +382,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       }
     } catch (error) {
       logger.error('执行右键菜单动作失败:', error);
-      showMessage.error(`操作失败: ${error}`);
+      showMessage.error(t('connections.operation_failed', { interpolation: { error } }));
     }
 
     hideContextMenu();
@@ -389,7 +391,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
   // 表格列定义
   const columns: ColumnConfig[] = [
     {
-      title: '连接名称',
+      title: t('connections.connection_name'),
       dataIndex: 'name',
       key: 'name',
       width: 200,
@@ -439,17 +441,17 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               <div className='space-y-1 p-1'>
                 {record.description && (
                   <div className='text-sm'>
-                    <span className='text-muted-foreground font-medium'>描述：</span>
+                    <span className='text-muted-foreground font-medium'>{t('connections.description')}：</span>
                     <span className='text-foreground'>{record.description}</span>
                   </div>
                 )}
                 <div className='text-sm'>
-                  <span className='text-muted-foreground font-medium'>地址：</span>
+                  <span className='text-muted-foreground font-medium'>{t('connections.address')}：</span>
                   <span className='text-foreground'>{record.host}:{record.port}</span>
                 </div>
                 {record.username && (
                   <div className='text-sm'>
-                    <span className='text-muted-foreground font-medium'>用户：</span>
+                    <span className='text-muted-foreground font-medium'>{t('connections.user')}：</span>
                     <span className='text-foreground'>{record.username}</span>
                   </div>
                 )}
@@ -460,7 +462,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       },
     },
     {
-      title: '数据库类型',
+      title: t('connections.database_type'),
       dataIndex: 'dbType',
       key: 'dbType',
       width: 150,
@@ -517,22 +519,22 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
             <TooltipContent side="bottom" align="start">
               <div className='space-y-1 p-1'>
                 <div className='text-sm'>
-                  <span className='text-muted-foreground font-medium'>数据库：</span>
+                  <span className='text-muted-foreground font-medium'>{t('connections.database')}：</span>
                   <span className='text-foreground'>{dbName}</span>
                 </div>
                 <div className='text-sm'>
-                  <span className='text-muted-foreground font-medium'>配置版本：</span>
+                  <span className='text-muted-foreground font-medium'>{t('connections.configured_version')}：</span>
                   <span className='text-foreground'>{configVersion}</span>
                 </div>
                 {detectedVersion && (
                   <div className='text-sm'>
-                    <span className='text-muted-foreground font-medium'>检测版本：</span>
+                    <span className='text-muted-foreground font-medium'>{t('connections.detected_version')}：</span>
                     <span className='text-success'>{detectedVersion}</span>
                   </div>
                 )}
                 {!detectedVersion && (
                   <div className='text-xs text-muted-foreground'>
-                    测试连接后可检测实际版本
+                    {t('connections.test_connection_to_detect_version')}
                   </div>
                 )}
               </div>
@@ -542,7 +544,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       },
     },
     {
-      title: '数据库信息',
+      title: t('connections.database_info'),
       dataIndex: 'databaseInfo',
       key: 'databaseInfo',
       width: 200,
@@ -552,8 +554,8 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
         // 根据版本显示不同的数据库信息
         const primaryInfo = record.version === '1.x'
-          ? (record.database || '默认数据库')
-          : (record.v2Config?.bucket || '未配置桶');
+          ? (record.database || t('connections.default_database'))
+          : (record.v2Config?.bucket || t('connections.not_configured'));
 
         const secondaryInfo = record.version === '1.x'
           ? record.retentionPolicy
@@ -568,12 +570,12 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 </div>
                 {secondaryInfo && (
                   <div className='text-xs text-muted-foreground truncate'>
-                    {record.version === '1.x' ? `策略: ${secondaryInfo}` : `组织: ${secondaryInfo}`}
+                    {record.version === '1.x' ? `${t('connections.policy')}: ${secondaryInfo}` : `${t('connections.organization')}: ${secondaryInfo}`}
                   </div>
                 )}
                 {record.v2Config?.v1CompatibilityApi && (
                   <div className='flex items-center gap-1'>
-                    <span className='text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded'>V1兼容</span>
+                    <span className='text-xs text-blue-600 bg-blue-50 px-1 py-0.5 rounded'>{t('connections.v1_compatibility')}</span>
                   </div>
                 )}
               </div>
@@ -583,12 +585,12 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 {record.version === '1.x' ? (
                   <>
                     <div className='text-sm'>
-                      <span className='text-muted-foreground font-medium'>数据库：</span>
-                      <span className='text-foreground'>{record.database || '默认'}</span>
+                      <span className='text-muted-foreground font-medium'>{t('connections.database')}：</span>
+                      <span className='text-foreground'>{record.database || t('connections.default')}</span>
                     </div>
                     {record.retentionPolicy && (
                       <div className='text-sm'>
-                        <span className='text-muted-foreground font-medium'>保留策略：</span>
+                        <span className='text-muted-foreground font-medium'>{t('connections.retention_policy')}：</span>
                         <span className='text-foreground'>{record.retentionPolicy}</span>
                       </div>
                     )}
@@ -596,23 +598,23 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 ) : (
                   <>
                     <div className='text-sm'>
-                      <span className='text-muted-foreground font-medium'>桶：</span>
-                      <span className='text-foreground'>{record.v2Config?.bucket || '未配置'}</span>
+                      <span className='text-muted-foreground font-medium'>{t('connections.bucket')}：</span>
+                      <span className='text-foreground'>{record.v2Config?.bucket || t('connections.not_configured')}</span>
                     </div>
                     <div className='text-sm'>
-                      <span className='text-muted-foreground font-medium'>组织：</span>
-                      <span className='text-foreground'>{record.v2Config?.organization || '未配置'}</span>
+                      <span className='text-muted-foreground font-medium'>{t('connections.organization')}：</span>
+                      <span className='text-foreground'>{record.v2Config?.organization || t('connections.not_configured')}</span>
                     </div>
                     {record.v2Config?.v1CompatibilityApi && (
                       <div className='text-sm'>
-                        <span className='text-blue-600'>启用 V1 兼容 API</span>
+                        <span className='text-blue-600'>{t('connections.enable_v1_compatibility_api')}</span>
                       </div>
                     )}
                   </>
                 )}
                 {isConnected && status?.serverVersion && (
                   <div className='text-sm border-t pt-1 mt-1'>
-                    <span className='text-muted-foreground font-medium'>服务器版本：</span>
+                    <span className='text-muted-foreground font-medium'>{t('connections.server_version')}：</span>
                     <span className='text-success'>{status.serverVersion}</span>
                   </div>
                 )}
@@ -623,14 +625,14 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       },
     },
     {
-      title: '认证信息',
+      title: t('connections.auth_info'),
       dataIndex: 'authInfo',
       key: 'authInfo',
       width: 180,
       render: (_: any, record: DataRow) => {
         const authInfo = record.version === '1.x'
-          ? (record.username || '无认证')
-          : '令牌认证';
+          ? (record.username || t('connections.no_auth'))
+          : t('connections.token_auth');
 
         return (
           <Tooltip>
@@ -655,24 +657,24 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               <div className='space-y-1 p-1'>
                 {record.version === '1.x' ? (
                   <div className='text-sm'>
-                    <span className='text-muted-foreground font-medium'>用户名：</span>
-                    <span className='text-foreground'>{record.username || '无'}</span>
+                    <span className='text-muted-foreground font-medium'>{t('connections.username')}：</span>
+                    <span className='text-foreground'>{record.username || t('connections.no_auth')}</span>
                   </div>
                 ) : (
                   <div className='text-sm'>
-                    <span className='text-muted-foreground font-medium'>认证方式：</span>
-                    <span className='text-foreground'>API Token</span>
+                    <span className='text-muted-foreground font-medium'>{t('connections.auth_method')}：</span>
+                    <span className='text-foreground'>{t('connections.api_token')}</span>
                   </div>
                 )}
                 <div className='text-sm'>
-                  <span className='text-muted-foreground font-medium'>SSL：</span>
+                  <span className='text-muted-foreground font-medium'>{t('connections.ssl')}：</span>
                   <span className={record.ssl ? 'text-success' : 'text-muted-foreground'}>
-                    {record.ssl ? '已启用' : '未启用'}
+                    {record.ssl ? t('connections.enabled') : t('connections.disabled')}
                   </span>
                 </div>
                 <div className='text-sm'>
-                  <span className='text-muted-foreground font-medium'>超时：</span>
-                  <span className='text-foreground'>{record.timeout || 30}秒</span>
+                  <span className='text-muted-foreground font-medium'>{t('connections.timeout')}：</span>
+                  <span className='text-foreground'>{t('connections.timeout_seconds', { interpolation: { timeout: record.timeout || 30 } })}</span>
                 </div>
               </div>
             </TooltipContent>
@@ -681,7 +683,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
       },
     },
     {
-      title: '状态',
+      title: t('connections.status'),
       dataIndex: 'status',
       key: 'status',
       width: 120,
@@ -695,7 +697,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               {getStatusTag(status)}
               {isActive && (
                 <Badge variant='default' className='text-xs px-1.5 py-0.5 bg-blue-100 text-blue-700 border-blue-200'>
-                  活跃
+                  {t('connections.active')}
                 </Badge>
               )}
             </div>
@@ -711,7 +713,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
     },
 
     {
-      title: '操作',
+      title: t('connections.actions'),
       dataIndex: 'actions',
       key: 'actions',
       width: 150,
@@ -741,7 +743,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                {isLoading ? '测试中...' : '测试连接'}
+                {isLoading ? t('connections.testing_connection') : t('connections.test_connection')}
               </TooltipContent>
             </Tooltip>
 
@@ -763,7 +765,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                编辑连接
+                {t('connections.edit_connection')}
               </TooltipContent>
             </Tooltip>
 
@@ -775,7 +777,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                   disabled={isLoading}
                   onClick={async () => {
                     const confirmed = await dialog.confirm(
-                      `确定要删除连接 "${record.name}" 吗？此操作无法撤销。`
+                      t('connections.delete_connection_confirm', { interpolation: { name: record.name } })
                     );
                     if (confirmed) {
                       try {
@@ -789,7 +791,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                         removeConnection(record.id!);
                         logger.info('前端状态删除成功');
 
-                        showMessage.success(`连接 ${record.name} 已删除`);
+                        showMessage.success(t('connections.connection_deleted', { interpolation: { name: record.name } }));
 
                         // 延迟刷新以确保状态同步
                         setTimeout(() => {
@@ -798,7 +800,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
 
                       } catch (error) {
                         logger.error('删除连接失败:', error);
-                        showMessage.error(`删除连接失败: ${error}`);
+                        showMessage.error(t('connections.delete_connection_failed', { interpolation: { error } }));
                       }
                     }
                   }}
@@ -808,7 +810,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                删除连接
+                {t('connections.delete_connection')}
               </TooltipContent>
             </Tooltip>
           </div>
@@ -841,7 +843,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 className='h-9'
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshingAll ? 'animate-spin' : ''}`} />
-                {isRefreshingAll ? '测试中...' : '刷新状态'}
+                {isRefreshingAll ? t('connections.testing_connection') : t('connections.refresh_status')}
               </Button>
               <Button
                 variant='default'
@@ -850,7 +852,7 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                 className='h-9'
               >
                 <Plus className='w-4 h-4 mr-2' />
-                新建连接
+                {t('connections.create_connection')}
               </Button>
             </div>
           </div>

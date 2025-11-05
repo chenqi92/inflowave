@@ -78,6 +78,8 @@
     "version:check": "node scripts/sync-version.cjs check",
     "version:sync": "node scripts/sync-version.cjs sync",
     "version:bump": "node scripts/sync-version.cjs bump",
+    "i18n:verify": "node scripts/verify-i18n-build.cjs",
+    "i18n:validate": "node src/i18n/validate-resources.ts",
     "version:bump:patch": "node scripts/sync-version.cjs bump patch --tag",
     "version:bump:minor": "node scripts/sync-version.cjs bump minor --tag",
     "version:bump:major": "node scripts/sync-version.cjs bump major --tag",
