@@ -98,7 +98,11 @@ dist
 
 # Gatsby files
 .cache/
-public
+# public 目录 - 但保留字体文件
+public/*
+!public/fonts/
+!public/locales
+!public/.gitkeep
 
 # Storybook build outputs
 .out

@@ -1,0 +1,70 @@
+{
+  "formats": {
+    "short": "M/d/yyyy",
+    "medium": "MMM d, yyyy",
+    "long": "MMMM d, yyyy",
+    "full": "EEEE, MMMM d, yyyy",
+    "time_short": "h:mm a",
+    "time_medium": "h:mm:ss a",
+    "time_long": "h:mm:ss a z",
+    "datetime_short": "M/d/yyyy h:mm a",
+    "datetime_medium": "MMM d, yyyy h:mm:ss a",
+    "datetime_long": "MMMM d, yyyy h:mm:ss a z"
+  },
+  "relative": {
+    "now": "刚刚",
+    "seconds_ago": "{{count}}秒前",
+    "minute_ago": "1分钟前",
+    "minutes_ago": "{{count}}分钟前",
+    "hour_ago": "1小时前",
+    "hours_ago": "{{count}}小时前",
+    "day_ago": "1天前",
+    "days_ago": "{{count}}天前",
+    "week_ago": "1周前",
+    "weeks_ago": "{{count}}周前",
+    "month_ago": "1个月前",
+    "months_ago": "{{count}}个月前",
+    "year_ago": "1年前",
+    "years_ago": "{{count}}年前",
+    "in_seconds": "{{count}}秒后",
+    "in_minute": "1分钟后",
+    "in_minutes": "{{count}}分钟后",
+    "in_hour": "1小时后",
+    "in_hours": "{{count}}小时后",
+    "in_day": "1天后",
+    "in_days": "{{count}}天后",
+    "in_week": "1周后",
+    "in_weeks": "{{count}}周后",
+    "in_month": "1个月后",
+    "in_months": "{{count}}个月后",
+    "in_year": "1年后",
+    "in_years": "{{count}}年后"
+  },
+  "weekdays": {
+    "sunday": "星期日",
+    "monday": "星期一",
+    "tuesday": "星期二",
+    "wednesday": "星期三",
+    "thursday": "星期四",
+    "friday": "星期五",
+    "saturday": "星期六"
+  },
+  "months": {
+    "january": "一月",
+    "february": "二月",
+    "march": "三月",
+    "april": "四月",
+    "may": "五月",
+    "june": "六月",
+    "july": "七月",
+    "august": "八月",
+    "september": "九月",
+    "october": "十月",
+    "november": "十一月",
+    "december": "十二月"
+  },
+  "periods": {
+    "am": "上午",
+    "pm": "下午"
+  }
+}

@@ -127,60 +127,44 @@ export async function openExternalLink(
 
   logger.info('尝试打开外部链接:', url);
 
-  // 创建超时 Promise
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new Error('操作超时')), timeout);
-  });
-
   try {
     // 检测环境并选择合适的打开方式
     if (isTauriEnvironment()) {
       logger.debug('检测到 Tauri 环境，使用 shell.open API');
-      
+
       try {
         // 使用 Tauri shell API 打开链接
-        const { open } = await Promise.race([
-          import('@tauri-apps/plugin-shell'),
-          timeoutPromise,
-        ]);
-        
-        await Promise.race([
-          open(url),
-          timeoutPromise,
-        ]);
-        
+        const { open } = await import('@tauri-apps/plugin-shell');
+
+        // shell.open 在 Tauri 中是异步的，但不会返回结果
+        // 它会直接在系统默认浏览器中打开链接
+        await open(url);
+
         const duration = Date.now() - startTime;
         logger.info(`外部链接已通过 Tauri shell 打开 (${duration}ms):`, url);
-        
+
         if (showSuccessMessage) {
           showMessage.success(successMessage);
         }
-        
+
         return {
           success: true,
           method: 'tauri-shell',
         };
       } catch (tauriError) {
-        // Tauri API 失败，尝试降级到 window.open
-        logger.warn('Tauri shell.open 失败，尝试降级到 window.open:', tauriError);
-        
-        const fallbackSuccess = openWithWindowOpen(url);
-        
-        if (fallbackSuccess) {
-          const duration = Date.now() - startTime;
-          logger.info(`外部链接已通过降级方案打开 (${duration}ms):`, url);
-          
-          if (showSuccessMessage) {
-            showMessage.success(successMessage);
-          }
-          
-          return {
-            success: true,
-            method: 'fallback',
-          };
+        // Tauri API 失败
+        const errorMsg = tauriError instanceof Error ? tauriError.message : String(tauriError);
+        logger.error('Tauri shell.open 失败:', errorMsg);
+
+        if (showErrorMessage) {
+          showMessage.error(`${errorMessage}: ${errorMsg}`);
         }
-        
-        throw new Error('Tauri shell 和 window.open 都失败了');
+
+        return {
+          success: false,
+          method: 'tauri-shell',
+          error: errorMsg,
+        };
       }
     } else {
       // 浏览器环境，直接使用 window.open

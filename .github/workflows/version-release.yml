@@ -273,11 +273,12 @@ jobs:
       - name: Install frontend dependencies
         run: npm ci
 
-      - name: Download fonts for offline use
-        run: |
-          echo "📦 下载字体文件用于离线使用..."
-          node scripts/download-fonts-ci.cjs
-          echo "✅ 字体下载完成"
+      # 字体文件已包含在仓库中，无需下载
+      # - name: Download fonts for offline use
+      #   run: |
+      #     echo "📦 下载字体文件用于离线使用..."
+      #     node scripts/download-fonts-ci.cjs
+      #     echo "✅ 字体下载完成"
 
       # Tauri 2.0 使用内置 WiX 支持，不需要验证 cargo-wix
       # - name: Verify Windows Build Environment

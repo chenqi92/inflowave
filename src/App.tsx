@@ -17,6 +17,7 @@ import { useNoticeStore } from './store/notice';
 import { useConnectionStore } from './store/connection';
 import { useUserPreferencesStore } from './stores/userPreferencesStore';
 import { useAppNotifications } from './hooks/useAppNotifications';
+import { useFontApplier } from './hooks/useFontApplier';
 // 移除自动健康检查导入 - 桌面应用不需要定期健康检查
 // import { initializeHealthCheck } from './utils/healthCheck';
 import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
@@ -276,6 +277,9 @@ const App: React.FC = () => {
   const [unsavedTabs, setUnsavedTabs] = useState<EditorTab[]>([]);
   const { preferences, loadUserPreferences } = useUserPreferencesStore();
 
+  // 🎨 应用字体设置（实时响应用户偏好变化）
+  useFontApplier();
+
   // 🔧 监听日志设置变化，动态更新 logger 配置
   useEffect(() => {
     if (!preferences?.logging) return;
@@ -311,145 +315,19 @@ const App: React.FC = () => {
     logger.debug(`📝 日志级别已更新为: ${level}, 文件日志: ${enable_file_logging ? '启用' : '禁用'}`);
   }, [preferences?.logging]);
 
-  // 应用无障碍设置到 DOM
+  // 应用无障碍设置到 DOM（高对比度和减少动画）
+  // 注意：字体设置已由 useFontApplier hook 处理
   useEffect(() => {
     if (!preferences?.accessibility) return;
 
-    const { high_contrast, font_size, font_family, reduced_motion} = preferences.accessibility;
+    const { high_contrast, reduced_motion } = preferences.accessibility;
     const body = document.body;
-    
+
     // 高对比度设置
     if (high_contrast) {
       body.classList.add('high-contrast');
     } else {
       body.classList.remove('high-contrast');
-    }
-    
-    // 字体大小设置
-    body.classList.remove('font-small', 'font-medium', 'font-large', 'font-xlarge');
-    switch (font_size) {
-      case 'small':
-        body.classList.add('font-small');
-        break;
-      case 'medium':
-        body.classList.add('font-medium');
-        break;
-      case 'large':
-        body.classList.add('font-large');
-        break;
-      case 'xlarge':
-      case 'extraLarge':
-        body.classList.add('font-xlarge');
-        break;
-      default:
-        body.classList.add('font-medium');
-        break;
-    }
-
-    // 字体系列设置 - 包含所有可用字体
-    body.classList.remove(
-      'font-system', 'font-inter', 'font-roboto', 'font-open-sans', 'font-source-sans',
-      'font-lato', 'font-poppins', 'font-nunito', 'font-montserrat', 'font-fira-sans',
-      'font-work-sans', 'font-dm-sans', 'font-ubuntu', 'font-noto-sans',
-      'font-georgia', 'font-times', 'font-arial', 'font-helvetica', 'font-verdana',
-      'font-tahoma', 'font-trebuchet',
-      'font-sf-mono', 'font-jetbrains-mono', 'font-source-code-pro', 'font-fira-code',
-      'font-inconsolata', 'font-roboto-mono', 'font-ubuntu-mono', 'font-cascadia-code', 'font-courier'
-    );
-    switch (font_family) {
-      // 现代无衬线字体
-      case 'inter':
-        body.classList.add('font-inter');
-        break;
-      case 'roboto':
-        body.classList.add('font-roboto');
-        break;
-      case 'open-sans':
-        body.classList.add('font-open-sans');
-        break;
-      case 'source-sans':
-        body.classList.add('font-source-sans');
-        break;
-      case 'lato':
-        body.classList.add('font-lato');
-        break;
-      case 'poppins':
-        body.classList.add('font-poppins');
-        break;
-      case 'nunito':
-        body.classList.add('font-nunito');
-        break;
-      case 'montserrat':
-        body.classList.add('font-montserrat');
-        break;
-      case 'fira-sans':
-        body.classList.add('font-fira-sans');
-        break;
-      case 'work-sans':
-        body.classList.add('font-work-sans');
-        break;
-      case 'dm-sans':
-        body.classList.add('font-dm-sans');
-        break;
-      case 'ubuntu':
-        body.classList.add('font-ubuntu');
-        break;
-      case 'noto-sans':
-        body.classList.add('font-noto-sans');
-        break;
-      // 经典字体
-      case 'georgia':
-        body.classList.add('font-georgia');
-        break;
-      case 'times':
-        body.classList.add('font-times');
-        break;
-      case 'arial':
-        body.classList.add('font-arial');
-        break;
-      case 'helvetica':
-        body.classList.add('font-helvetica');
-        break;
-      case 'verdana':
-        body.classList.add('font-verdana');
-        break;
-      case 'tahoma':
-        body.classList.add('font-tahoma');
-        break;
-      case 'trebuchet':
-        body.classList.add('font-trebuchet');
-        break;
-      // 等宽字体
-      case 'sf-mono':
-        body.classList.add('font-sf-mono');
-        break;
-      case 'jetbrains-mono':
-        body.classList.add('font-jetbrains-mono');
-        break;
-      case 'source-code-pro':
-        body.classList.add('font-source-code-pro');
-        break;
-      case 'fira-code':
-        body.classList.add('font-fira-code');
-        break;
-      case 'inconsolata':
-        body.classList.add('font-inconsolata');
-        break;
-      case 'roboto-mono':
-        body.classList.add('font-roboto-mono');
-        break;
-      case 'ubuntu-mono':
-        body.classList.add('font-ubuntu-mono');
-        break;
-      case 'cascadia-code':
-        body.classList.add('font-cascadia-code');
-        break;
-      case 'courier':
-        body.classList.add('font-courier');
-        break;
-      default: // system
-        body.classList.add('font-system');
-        break;
     }
 
     // 减少动画设置
@@ -459,7 +337,7 @@ const App: React.FC = () => {
       body.classList.remove('reduced-motion');
     }
 
-    logger.debug('已应用无障碍设置:', { high_contrast, font_size, font_family, reduced_motion });
+    logger.debug('已应用无障碍设置:', { high_contrast, reduced_motion });
   }, [preferences?.accessibility]);
 
   // 应用工作区设置到 DOM

@@ -1,10 +1,13 @@
 @import 'tailwindcss/base';
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
-/* Local Fonts - CI环境动态下载，支持离线使用 */
-@import './fonts-available.css';
-/* 本地下载的字体文件 */
+
+/* 字体配置 - 本地字体优先，CDN 降级 */
+/* 如果本地字体文件存在，使用本地字体；否则使用 Google Fonts CDN */
 @import './fonts-local.css';
+/* Google Fonts CDN 作为降级方案 - 只包含 8 个核心字体 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@300;400;600;700&family=Poppins:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500;600;700&family=Source+Code+Pro:wght@300;400;500;600;700&family=Cascadia+Code:wght@300;400;600;700&display=swap');
+
 /* Modal 优化样式 */
 @import './modal-optimization.css';
 /* macOS 优化样式 */

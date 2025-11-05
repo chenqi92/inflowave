@@ -1,0 +1,70 @@
+{
+  "formats": {
+    "short": "M/d/yyyy",
+    "medium": "MMM d, yyyy",
+    "long": "MMMM d, yyyy",
+    "full": "EEEE, MMMM d, yyyy",
+    "time_short": "h:mm a",
+    "time_medium": "h:mm:ss a",
+    "time_long": "h:mm:ss a z",
+    "datetime_short": "M/d/yyyy h:mm a",
+    "datetime_medium": "MMM d, yyyy h:mm:ss a",
+    "datetime_long": "MMMM d, yyyy h:mm:ss a z"
+  },
+  "relative": {
+    "now": "just now",
+    "seconds_ago": "{{count}} seconds ago",
+    "minute_ago": "1 minute ago",
+    "minutes_ago": "{{count}} minutes ago",
+    "hour_ago": "1 hour ago",
+    "hours_ago": "{{count}} hours ago",
+    "day_ago": "1 day ago",
+    "days_ago": "{{count}} days ago",
+    "week_ago": "1 week ago",
+    "weeks_ago": "{{count}} weeks ago",
+    "month_ago": "1 month ago",
+    "months_ago": "{{count}} months ago",
+    "year_ago": "1 year ago",
+    "years_ago": "{{count}} years ago",
+    "in_seconds": "in {{count}} seconds",
+    "in_minute": "in 1 minute",
+    "in_minutes": "in {{count}} minutes",
+    "in_hour": "in 1 hour",
+    "in_hours": "in {{count}} hours",
+    "in_day": "in 1 day",
+    "in_days": "in {{count}} days",
+    "in_week": "in 1 week",
+    "in_weeks": "in {{count}} weeks",
+    "in_month": "in 1 month",
+    "in_months": "in {{count}} months",
+    "in_year": "in 1 year",
+    "in_years": "in {{count}} years"
+  },
+  "weekdays": {
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday"
+  },
+  "months": {
+    "january": "January",
+    "february": "February",
+    "march": "March",
+    "april": "April",
+    "may": "May",
+    "june": "June",
+    "july": "July",
+    "august": "August",
+    "september": "September",
+    "october": "October",
+    "november": "November",
+    "december": "December"
+  },
+  "periods": {
+    "am": "AM",
+    "pm": "PM"
+  }
+}

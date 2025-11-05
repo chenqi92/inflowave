@@ -5,6 +5,7 @@
 import { safeTauriInvoke } from '@/utils/tauri';
 import { UpdateInfo, UpdaterSettings, DEFAULT_UPDATER_SETTINGS, PlatformInfo, UpdateStatus } from '@/types/updater';
 import { getAppVersion } from '@/utils/version';
+import { openExternalLink } from '@/utils/externalLinks';
 
 import { logger } from '@/utils/logger';
 class UpdaterService {
@@ -231,42 +232,16 @@ class UpdaterService {
       logger.warn('URL is empty, cannot open download page');
       return;
     }
-    
+
     try {
-      // 在 Tauri 环境中使用 shell API 打开链接
-      if (window.__TAURI__) {
-        try {
-          // 使用 Tauri v2 的 shell API
-          const { open } = await import('@tauri-apps/plugin-shell');
-          await open(url);
-        } catch (error: unknown) {
-          logger.error('Failed to open URL with Tauri shell:', error);
-          // 降级到浏览器打开
-          this.fallbackOpenUrl(url);
-        }
-      } else {
-        // 浏览器环境
-        this.fallbackOpenUrl(url);
-      }
+      // 使用统一的外部链接打开工具
+      await openExternalLink(url, {
+        showSuccessMessage: false,
+        showErrorMessage: true,
+        errorMessage: '无法打开下载页面',
+      });
     } catch (error: unknown) {
       logger.error('Failed to open download page:', error);
-      // 最后的降级方案
-      this.fallbackOpenUrl(url);
-    }
-  }
-
-  /**
-   * 降级方案：使用浏览器打开URL
-   */
-  private fallbackOpenUrl(url: string): void {
-    try {
-      if (typeof window !== 'undefined' && window.open) {
-        window.open(url, '_blank', 'noopener,noreferrer');
-      } else {
-        logger.error('Cannot open URL: window.open is not available');
-      }
-    } catch (error) {
-      logger.error('Fallback URL opening failed:', error);
     }
   }
 

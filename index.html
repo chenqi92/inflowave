@@ -10,10 +10,6 @@
       content="A modern time-series database management tool"
     />
 
-    <!-- Local fonts (CI环境动态下载) - 异步加载以防止阻塞 -->
-    <link rel="preload" href="/src/styles/fonts-local.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <noscript><link rel="stylesheet" href="/src/styles/fonts-local.css"></noscript>
-
     <!-- Prevent FOUC and improve startup experience -->
     <style>
       * {
