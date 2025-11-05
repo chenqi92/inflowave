@@ -97,7 +97,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         if (pathname === '/visualization') return 'visualization';
         if (pathname === '/performance') return 'performance';
         if (pathname === '/extensions') return 'extensions';
-        if (pathname === '/dev-tools') return 'dev-tools';
         if (pathname === '/multi-database') return 'multi-database';
         if (pathname === '/iotdb-test') return 'iotdb-test';
 
@@ -611,7 +610,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     visualization: '/visualization',
                     performance: '/performance',
                     extensions: '/extensions',
-                    'dev-tools': '/dev-tools',
                 };
 
                 // 对于需要特定路径的视图，先导航再设置视图状态

@@ -10,7 +10,6 @@ import NotificationPanel from '@/components/notifications/NotificationPanel';
 const VisualizationPage = React.lazy(() => import('@/pages/Visualization'));
 const QueryHistoryPage = React.lazy(() => import('@/pages/QueryHistory'));
 const Extensions = React.lazy(() => import('@/pages/Extensions'));
-const DevTools = React.lazy(() => import('@/pages/DevTools'));
 
 // 直接导入性能监控组件
 import { ModernPerformanceMonitor } from '@/components/performance/ModernPerformanceMonitor';
@@ -40,12 +39,6 @@ const PanelExtensionsPage: React.FC = () => (
   </div>
 );
 
-const PanelDevToolsPage: React.FC = () => (
-  <div className="h-full">
-    <DevTools />
-  </div>
-);
-
 interface RightFunctionPanelProps {
   selectedFunction: FunctionType | null;
   onClose: () => void;
@@ -59,7 +52,6 @@ const functionTitles: Record<FunctionType, string> = {
   monitoring: '性能监控',
   history: '查询历史',
   extensions: '扩展管理',
-  tools: '开发工具',
 };
 
 const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
@@ -83,8 +75,6 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
         return <PanelQueryHistoryPage />;
       case 'extensions':
         return <PanelExtensionsPage />;
-      case 'tools':
-        return <PanelDevToolsPage />;
       default:
         return (
           <div className="p-6">

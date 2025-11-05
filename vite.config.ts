@@ -53,6 +53,7 @@ export default defineConfig({
             '@types': resolve(__dirname, 'src/types'),
             '@utils': resolve(__dirname, 'src/utils'),
             '@assets': resolve(__dirname, 'src/assets'),
+            '@i18n': resolve(__dirname, 'src/i18n'),
         },
     },
 
@@ -75,6 +76,7 @@ export default defineConfig({
                     editor: ['@codemirror/state', '@codemirror/view', '@codemirror/commands'],
                     utils: ['lodash-es', 'dayjs', 'classnames'],
                     tauri: ['@tauri-apps/api', '@tauri-apps/plugin-shell'],
+                    i18n: ['react-i18next', 'i18next', 'i18next-browser-languagedetector'],
                 },
                 // 优化输出文件名
                 chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -109,6 +111,10 @@ export default defineConfig({
             '@codemirror/view',
             '@codemirror/commands',
             '@codemirror/lang-sql',
+            'react-i18next',
+            'i18next',
+            'i18next-browser-languagedetector',
+            'date-fns',
         ],
         force: true, // 强制重新构建依赖
     },

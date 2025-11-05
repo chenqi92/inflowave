@@ -94,10 +94,6 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
     onViewChange?.('query-history');
   }, [onViewChange]);
 
-  const handleDevToolsClick = useCallback(() => {
-    onViewChange?.('dev-tools');
-  }, [onViewChange]);
-
   return (
     <div className='datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent'>
       {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}

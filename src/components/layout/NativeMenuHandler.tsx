@@ -962,13 +962,6 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         handled = true;
         break;
 
-      case 'dev_tools':
-      case 'dev-tools':
-        navigate('/dev-tools');
-        showMessage.success('切换到开发者工具');
-        handled = true;
-        break;
-
       case 'query_performance':
         navigate('/performance');
         showMessage.success('切换到性能分析');

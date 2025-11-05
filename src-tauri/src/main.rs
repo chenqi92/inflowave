@@ -238,7 +238,6 @@ fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri:
     // 工具菜单 - 使用平台特定的快捷键
     let tools_menu = SubmenuBuilder::new(app, "工具")
         .text("console", &format!("控制台\t{}+`", cmd_key))
-        .text("dev_tools", "开发者工具\tF12")
         .text("query_performance", "查询性能分析")
         .separator()
         .text("extensions", "扩展管理")

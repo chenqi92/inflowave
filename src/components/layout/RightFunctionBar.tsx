@@ -4,14 +4,12 @@ import { Badge } from '@/components/ui';
 import {
   BarChart,
   Activity,
-  Package,
   History,
-  Wrench,
   Bell,
 } from 'lucide-react';
 import { useNotificationStore } from '@/store/notifications';
 
-export type FunctionType = 'notifications' | 'visualization' | 'monitoring' | 'extensions' | 'history' | 'tools';
+export type FunctionType = 'notifications' | 'visualization' | 'monitoring' | 'extensions' | 'history';
 
 interface FunctionItem {
   key: FunctionType;
@@ -58,12 +56,6 @@ const functionItems: FunctionItem[] = [
   //   label: '扩展',
   //   description: '插件和集成',
   // },
-  {
-    key: 'tools',
-    icon: <Wrench className="w-4 h-4" />,
-    label: '数据生成',
-    description: '测试数据生成',
-  },
 ];
 
 const RightFunctionBar: React.FC<RightFunctionBarProps> = ({

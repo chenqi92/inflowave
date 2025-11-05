@@ -1,4 +1,5 @@
 /// <reference types="vite/client" />
+/// <reference path="./i18n/react-i18next.d.ts" />
 
 // 扩展 Vite 环境变量接口
 interface ImportMetaEnv {
