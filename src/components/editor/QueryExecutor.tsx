@@ -5,6 +5,8 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { SQLParser } from '@/utils/sqlParser';
 import { getInfluxDBQueryError, formatErrorMessage } from '@/utils/userFriendlyErrors';
+import { showConfirmDialog } from '@/utils/dialog';
+import { useQueryControllerSettings } from '@/hooks/useQueryControllerSettings';
 import type { QueryResult, QueryRequest } from '@/types';
 import type { EditorTab } from './TabManager';
 import type { TimeRange } from '@/components/common/TimeRangeSelector';
@@ -33,6 +35,7 @@ export const useQueryExecutor = ({
   getSelectedText,
 }: QueryExecutorProps) => {
   const { activeConnectionId, connections } = useConnectionStore();
+  const { settings } = useQueryControllerSettings();
   const [loading, setLoading] = useState(false);
   const [actualExecutedQueries, setActualExecutedQueries] = useState<string[]>([]);
 
@@ -102,6 +105,62 @@ export const useQueryExecutor = ({
     });
   }, [connections]);
 
+  /**
+   * 检查是否需要确认危险操作
+   * @param query SQL 语句
+   * @returns 如果需要确认且用户取消，返回 false；否则返回 true
+   */
+  const checkDangerousOperationConfirmation = useCallback(async (query: string): Promise<boolean> => {
+    const upperQuery = query.trim().toUpperCase();
+
+    // 检查 DELETE 语句
+    if (upperQuery.startsWith('DELETE')) {
+      if (settings.controller.require_confirmation_for_delete) {
+        const confirmed = await showConfirmDialog({
+          title: '确认 DELETE 操作',
+          content: `您即将执行 DELETE 操作：\n\n${query}\n\n⚠️ 此操作将永久删除数据，无法恢复。\n\n确定要继续吗？`,
+          confirmText: '确定删除',
+          cancelText: '取消',
+        });
+
+        if (!confirmed) {
+          console.log('❌ 用户取消了 DELETE 操作');
+          return false;
+        }
+      }
+    }
+
+    // 检查 DROP 语句
+    if (upperQuery.startsWith('DROP')) {
+      if (settings.controller.require_confirmation_for_drop) {
+        let warningMessage = `您即将执行 DROP 操作：\n\n${query}\n\n⚠️ 此操作将永久删除数据或结构，无法恢复。`;
+
+        // 特别危险的操作额外警告
+        if (upperQuery.includes('DROP DATABASE')) {
+          warningMessage += '\n\n🔴 警告：这将删除整个数据库及其所有数据！';
+        } else if (upperQuery.includes('DROP MEASUREMENT')) {
+          warningMessage += '\n\n🔴 警告：这将删除整个测量（表）及其所有数据！';
+        }
+
+        warningMessage += '\n\n确定要继续吗？';
+
+        const confirmed = await showConfirmDialog({
+          title: '确认 DROP 操作',
+          content: warningMessage,
+          confirmText: '确定删除',
+          cancelText: '取消',
+        });
+
+        if (!confirmed) {
+          console.log('❌ 用户取消了 DROP 操作');
+          return false;
+        }
+      }
+    }
+
+    return true;
+  }, [settings.controller.require_confirmation_for_delete, settings.controller.require_confirmation_for_drop]);
+
   // 执行查询
   const executeQuery = useCallback(async () => {
     if (!currentTab || currentTab.type !== 'query') {
@@ -170,6 +229,15 @@ export const useQueryExecutor = ({
         statement = addTimeRangeToQuery(statement, effectiveConnectionId);
 
         console.log(`🔄 执行第 ${i + 1} 条语句:`, statement);
+
+        // 检查是否需要确认危险操作
+        const confirmed = await checkDangerousOperationConfirmation(statement);
+        if (!confirmed) {
+          // 用户取消了操作
+          showMessage.info('操作已取消');
+          setLoading(false);
+          return;
+        }
 
         try {
           const request: QueryRequest = {
@@ -280,6 +348,7 @@ export const useQueryExecutor = ({
     selectedDatabase,
     selectedTimeRange,
     addTimeRangeToQuery,
+    checkDangerousOperationConfirmation,
     getSelectedText,
     onQueryResult,
     onBatchQueryResults,

@@ -178,6 +178,28 @@ const QuickSettings: React.FC = () => {
                 disabled={loading}
               />
             </div>
+
+            {/* 允许危险操作 */}
+            <div className='flex items-center justify-between pl-6'>
+              <div className='space-y-0.5'>
+                <div className='flex items-center gap-1.5'>
+                  <ShieldAlert className='w-3.5 h-3.5 text-orange-600' />
+                  <label className='text-sm font-medium cursor-pointer'>
+                    允许危险操作
+                  </label>
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  允许 DROP DATABASE/MEASUREMENT 等特别危险的操作
+                </p>
+              </div>
+              <Switch
+                checked={settings.controller.allow_dangerous_operations}
+                onCheckedChange={(checked) =>
+                  updateControllerSettings({ allow_dangerous_operations: checked })
+                }
+                disabled={loading}
+              />
+            </div>
           </div>
 
           <Separator />

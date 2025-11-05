@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 
 import { getVersionInfo } from '@/utils/version';
+import { openExternalLink } from '@/utils/externalLinks';
 
 interface AboutDialogProps {
   visible: boolean;
@@ -147,27 +148,23 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
 
               <div className='flex justify-between items-center'>
                 <Text className='font-medium'>项目地址:</Text>
-                <a
-                  href={appInfo.repository}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='flex items-center gap-2 text-primary hover:text-blue-800 transition-colors'
+                <button
+                  onClick={() => openExternalLink(appInfo.repository)}
+                  className='flex items-center gap-2 text-primary hover:text-blue-800 transition-colors cursor-pointer'
                 >
                   <Github className='w-4 h-4' />
                   <span>GitHub 仓库</span>
-                </a>
+                </button>
               </div>
 
               <div className='flex justify-between items-center'>
                 <Text className='font-medium'>官方网站:</Text>
-                <a
-                  href={appInfo.website}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='text-primary hover:text-blue-800 transition-colors'
+                <button
+                  onClick={() => openExternalLink(appInfo.website)}
+                  className='text-primary hover:text-blue-800 transition-colors cursor-pointer'
                 >
                   {appInfo.website}
-                </a>
+                </button>
               </div>
             </div>
           </div>
@@ -187,27 +184,23 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
               </Text>
 
               <div className='flex items-center justify-center gap-4'>
-                <a
-                  href={`${appInfo.repository}/issues`}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='flex items-center gap-2 text-primary hover:text-blue-800 transition-colors'
+                <button
+                  onClick={() => openExternalLink(`${appInfo.repository}/issues`)}
+                  className='flex items-center gap-2 text-primary hover:text-blue-800 transition-colors cursor-pointer'
                 >
                   <Bug className='w-4 h-4' />
                   <span>报告问题</span>
-                </a>
+                </button>
 
                 <Separator orientation='vertical' className='h-4' />
 
-                <a
-                  href={`${appInfo.repository}/discussions`}
-                  target='_blank'
-                  rel='noopener noreferrer'
-                  className='flex items-center gap-2 text-primary hover:text-blue-800 transition-colors'
+                <button
+                  onClick={() => openExternalLink(`${appInfo.repository}/discussions`)}
+                  className='flex items-center gap-2 text-primary hover:text-blue-800 transition-colors cursor-pointer'
                 >
                   <Users className='w-4 h-4' />
                   <span>社区讨论</span>
-                </a>
+                </button>
               </div>
             </div>
           </div>

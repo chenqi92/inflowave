@@ -52,7 +52,7 @@ import LoggingSettings from '@/components/settings/LoggingSettings';
 import UserGuideModal from '@/components/common/UserGuideModal';
 import { useNoticeStore } from '@/store/notice';
 import { UpdateSettings } from '@/components/updater/UpdateSettings';
-import { open } from '@tauri-apps/plugin-shell';
+import { openExternalLink } from '@/utils/externalLinks';
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
 import { performHealthCheck } from '@/utils/healthCheck';
 import type { AppConfig } from '@/types';
@@ -740,17 +740,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               <Button
                 variant='outline'
                 onClick={async () => {
-                  try {
-                    if (isBrowserEnvironment()) {
-                      window.open('https://github.com/chenqi92/inflowave', '_blank');
-                    } else {
-                      await open('https://github.com/chenqi92/inflowave');
-                    }
-                    showMessage.success('正在打开GitHub项目页面');
-                  } catch (error) {
-                    console.error('打开GitHub页面失败:', error);
-                    showMessage.error('打开GitHub页面失败');
-                  }
+                  await openExternalLink('https://github.com/chenqi92/inflowave', {
+                    showSuccessMessage: true,
+                    successMessage: '正在打开GitHub项目页面',
+                    showErrorMessage: true,
+                    errorMessage: '打开GitHub页面失败'
+                  });
                 }}
                 className='w-full justify-start'
               >

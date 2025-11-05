@@ -17,6 +17,7 @@ import {
 import {releaseNotesService, ReleaseNote, VersionFeatures} from '@/services/releaseNotesService';
 import {toast} from 'sonner';
 import MarkdownRenderer from '@/components/common/MarkdownRenderer';
+import { openExternalLink } from '@/utils/externalLinks';
 
 interface ReleaseNotesViewerProps {
     version: string;
@@ -68,11 +69,11 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
         }
     };
 
-    const handleExternalLink = (url: string) => {
+    const handleExternalLink = async (url: string) => {
         if (onExternalLink) {
             onExternalLink(url);
         } else {
-            window.open(url, '_blank');
+            await openExternalLink(url);
         }
     };
 

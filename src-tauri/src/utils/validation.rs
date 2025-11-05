@@ -138,30 +138,27 @@ impl ValidationUtils {
         if let Some(settings) = controller_settings {
             // 检查DELETE语句权限
             if !settings.allow_delete_statements && upper_query.starts_with("DELETE") {
-                return Err(anyhow!("DELETE语句已被禁用\n\n原因：为了保护数据安全，DELETE操作默认被禁用。\n\n解决方法：\n1. 打开应用设置（右上角齿轮图标）\n2. 进入「查询设置」标签\n3. 在「语句权限控制」区域启用「允许DELETE语句」\n4. 保存设置后重新执行查询"));
+                return Err(anyhow!("DELETE语句已被禁用\n\n原因：为了保护数据安全，DELETE操作默认被禁用。\n\n解决方法：\n1. 打开工具栏「安全设置」或应用设置（右上角齿轮图标）\n2. 进入「查询设置」标签\n3. 在「语句权限控制」区域启用「允许DELETE语句」\n4. 保存设置后重新执行查询"));
             }
 
             // 检查DROP语句权限
             if !settings.allow_drop_statements && upper_query.starts_with("DROP") {
-                return Err(anyhow!("DROP语句已被禁用\n\n原因：为了保护数据安全，DROP操作默认被禁用。\n\n解决方法：\n1. 打开应用设置（右上角齿轮图标）\n2. 进入「查询设置」标签\n3. 在「语句权限控制」区域启用「允许DROP语句」\n4. 保存设置后重新执行查询"));
+                return Err(anyhow!("DROP语句已被禁用\n\n原因：为了保护数据安全，DROP操作默认被禁用。\n\n解决方法：\n1. 打开工具栏「安全设置」或应用设置（右上角齿轮图标）\n2. 进入「查询设置」标签\n3. 在「语句权限控制」区域启用「允许DROP语句」\n4. 保存设置后重新执行查询"));
             }
 
-            // 检查危险操作权限（只有在对应的语句类型被允许时才检查）
+            // 检查危险操作权限（额外的安全层，用于特别危险的操作）
+            // 注意：allow_dangerous_operations 是一个额外的安全开关
+            // 只有同时满足以下条件才能执行特别危险的操作：
+            // 1. 对应的语句类型权限已开启（allow_delete_statements 或 allow_drop_statements）
+            // 2. 危险操作权限已开启（allow_dangerous_operations）
             if !settings.allow_dangerous_operations {
-                let dangerous_operations = [
-                    ("DROP DATABASE", settings.allow_drop_statements),
-                    ("DROP MEASUREMENT", settings.allow_drop_statements),
-                ];
-
-                for (operation, is_allowed) in &dangerous_operations {
-                    if upper_query.contains(operation) && !is_allowed {
-                        return Err(anyhow!("危险操作 '{}' 已被管理员禁用。请在设置中启用控制器权限。", operation));
-                    }
+                // 检查特别危险的 DROP 操作
+                if upper_query.contains("DROP DATABASE") && settings.allow_drop_statements {
+                    return Err(anyhow!("DROP DATABASE 是特别危险的操作，已被禁用\n\n原因：此操作将永久删除整个数据库及其所有数据。\n\n解决方法：\n1. 打开工具栏「安全设置」或应用设置\n2. 启用「允许危险操作」选项\n3. 保存设置后重新执行查询\n\n⚠️ 警告：启用此选项后，请务必谨慎操作！"));
                 }
 
-                // DELETE FROM 只有在DELETE语句被允许但危险操作被禁用时才检查
-                if upper_query.contains("DELETE FROM") && settings.allow_delete_statements {
-                    return Err(anyhow!("危险操作 'DELETE FROM' 已被管理员禁用。请在设置中启用危险操作权限。"));
+                if upper_query.contains("DROP MEASUREMENT") && settings.allow_drop_statements {
+                    return Err(anyhow!("DROP MEASUREMENT 是特别危险的操作，已被禁用\n\n原因：此操作将永久删除整个测量（表）及其所有数据。\n\n解决方法：\n1. 打开工具栏「安全设置」或应用设置\n2. 启用「允许危险操作」选项\n3. 保存设置后重新执行查询\n\n⚠️ 警告：启用此选项后，请务必谨慎操作！"));
                 }
             }
         }
