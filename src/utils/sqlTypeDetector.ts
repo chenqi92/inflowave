@@ -71,8 +71,16 @@ export type SQLStatementCategory =
  */
 const isAggregateQuery = (query: string): boolean => {
   const upperQuery = query.toUpperCase();
-  const aggregateFunctions = ['COUNT(', 'SUM(', 'AVG(', 'MAX(', 'MIN(', 'STDDEV(', 'VARIANCE('];
-  return aggregateFunctions.some(func => upperQuery.includes(func));
+  // 标准 SQL 聚合函数
+  const sqlAggregateFunctions = ['COUNT(', 'SUM(', 'AVG(', 'MAX(', 'MIN(', 'STDDEV(', 'VARIANCE('];
+  // InfluxQL 聚合函数
+  const influxqlAggregateFunctions = [
+    'MEAN(', 'MEDIAN(', 'MODE(', 'SPREAD(', 'INTEGRAL(', 'DISTINCT(',
+    'FIRST(', 'LAST(', 'PERCENTILE(', 'SAMPLE(', 'TOP(', 'BOTTOM('
+  ];
+
+  const allAggregateFunctions = [...sqlAggregateFunctions, ...influxqlAggregateFunctions];
+  return allAggregateFunctions.some(func => upperQuery.includes(func));
 };
 
 /**
@@ -422,14 +430,14 @@ export const getSQLStatementTabs = (statementType: SQLStatementType) => {
 /**
  * 获取默认选中的tab
  */
-export const getDefaultTab = (statementType: SQLStatementType): string => {
+export const getDefaultTab = (statementType: SQLStatementType, query?: string): string => {
   // 特殊处理：EXPLAIN 查询默认显示执行计划
   if (statementType === 'EXPLAIN' || statementType === 'ANALYZE') {
     return 'plan';
   }
 
-  // 特殊处理：聚合查询默认显示聚合统计
-  if (shouldShowAggregateCards(statementType)) {
+  // 特殊处理：聚合查询（无 GROUP BY）默认显示聚合统计
+  if (shouldShowAggregateCards(statementType, query)) {
     return 'aggregate';
   }
 
@@ -529,9 +537,27 @@ export const getResultStatsLabels = (statementType: SQLStatementType) => {
 
 /**
  * 检测是否需要显示聚合统计卡片
+ *
+ * 规则：
+ * 1. 查询类型为 SELECT_AGGREGATE（包含聚合函数）
+ * 2. 且不包含 GROUP BY（如果有 GROUP BY，应该显示完整的表格视图）
  */
-export const shouldShowAggregateCards = (statementType: SQLStatementType): boolean => {
-  return statementType === 'SELECT_AGGREGATE';
+export const shouldShowAggregateCards = (statementType: SQLStatementType, query?: string): boolean => {
+  if (statementType !== 'SELECT_AGGREGATE') {
+    return false;
+  }
+
+  // 如果没有提供查询语句，默认显示聚合卡片
+  if (!query) {
+    return true;
+  }
+
+  // 如果包含 GROUP BY，不显示聚合卡片（应该显示完整表格）
+  if (isGroupByQuery(query)) {
+    return false;
+  }
+
+  return true;
 };
 
 /**

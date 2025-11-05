@@ -100,13 +100,13 @@ const QueryResults: React.FC<QueryResultsProps> = ({
     const statementCategory = getSQLStatementCategory(detectedQueryType);
 
     // 获取默认 Tab
-    const defaultTab = getDefaultTab(detectedQueryType);
+    const defaultTab = getDefaultTab(detectedQueryType, executedQuery);
     const [activeTab, setActiveTab] = useState(defaultTab);
 
     // 当语句类型改变时，重置activeTab
     React.useEffect(() => {
-        setActiveTab(getDefaultTab(detectedQueryType));
-    }, [detectedQueryType]);
+        setActiveTab(getDefaultTab(detectedQueryType, executedQuery));
+    }, [detectedQueryType, executedQuery]);
     const [exportModalVisible, setExportModalVisible] = useState(false);
     const [exportFormat, setExportFormat] = useState<'csv' | 'json' | 'excel'>(
         'csv'
@@ -841,8 +841,8 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                             <MessagesTab messages={result?.messages} />
                                         </TabsContent>
                                     </>
-                                ) : shouldShowAggregateCards(detectedQueryType) ? (
-                                    /* 聚合查询优先显示聚合统计 */
+                                ) : shouldShowAggregateCards(detectedQueryType, executedQuery) ? (
+                                    /* 聚合查询（无 GROUP BY）只显示聚合统计卡片 */
                                     <>
                                         <TabsContent value="aggregate" className="flex-1 m-0">
                                             {result && <AggregateStatCards result={result} />}

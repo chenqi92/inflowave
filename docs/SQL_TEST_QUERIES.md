@@ -130,7 +130,7 @@ FROM "app_performance";
 -- 完整聚合统计（会显示所有聚合卡片）
 SELECT COUNT(*) as count,
        SUM("concurrent_users") as sum,
-       AVG("response_time") as avg,
+       MEAN("response_time") as avg,
        MAX("error_rate") as max,
        MIN("throughput") as min
 FROM "app_performance";
