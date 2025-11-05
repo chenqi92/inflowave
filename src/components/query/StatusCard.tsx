@@ -284,40 +284,76 @@ export const StatusCard: React.FC<StatusCardProps> = ({
       })()}
 
       {/* 特定操作类型的额外信息 */}
-      {!hasError && result.statistics && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">操作详情</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-sm">
-              {result.statistics.insertedRows !== undefined && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">插入行数:</span>
-                  <span className="font-medium">{formatNumber(result.statistics.insertedRows)}</span>
+      {!hasError && (
+        <>
+          {/* DELETE 操作的特殊提示 */}
+          {statementType === 'DELETE' && (
+            <Card className="border-orange-200 dark:border-orange-800">
+              <CardHeader>
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-orange-600" />
+                  DELETE 操作说明
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>✅ DELETE 语句已成功执行</p>
+                  <p className="text-xs">
+                    ℹ️ InfluxDB 不返回删除的具体行数，这是正常的数据库行为
+                  </p>
+                  <div className="mt-3 p-3 bg-orange-50 dark:bg-orange-950/30 rounded-md border border-orange-200 dark:border-orange-800">
+                    <p className="text-xs font-medium text-orange-900 dark:text-orange-200 mb-2">
+                      ⚠️ 重要提示：
+                    </p>
+                    <ul className="text-xs space-y-1 text-orange-800 dark:text-orange-300">
+                      <li>• DELETE WHERE 条件只能使用 <strong>tags</strong> 和 <strong>time</strong></li>
+                      <li>• 不能使用 <strong>fields</strong> 作为 WHERE 条件</li>
+                      <li>• 如果数据未被删除，请检查 WHERE 条件是否使用了 field</li>
+                      <li>• 可以使用 <code className="px-1 py-0.5 bg-orange-100 dark:bg-orange-900 rounded">SHOW TAG KEYS</code> 查看哪些是 tag</li>
+                    </ul>
+                  </div>
                 </div>
-              )}
-              {result.statistics.updatedRows !== undefined && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">更新行数:</span>
-                  <span className="font-medium">{formatNumber(result.statistics.updatedRows)}</span>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 操作详情 */}
+          {result.statistics && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">操作详情</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2 text-sm">
+                  {result.statistics.insertedRows !== undefined && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">插入行数:</span>
+                      <span className="font-medium">{formatNumber(result.statistics.insertedRows)}</span>
+                    </div>
+                  )}
+                  {result.statistics.updatedRows !== undefined && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">更新行数:</span>
+                      <span className="font-medium">{formatNumber(result.statistics.updatedRows)}</span>
+                    </div>
+                  )}
+                  {result.statistics.deletedRows !== undefined && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">删除行数:</span>
+                      <span className="font-medium">{formatNumber(result.statistics.deletedRows)}</span>
+                    </div>
+                  )}
+                  {result.statistics.affectedRows !== undefined && (
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">总影响行数:</span>
+                      <span className="font-medium">{formatNumber(result.statistics.affectedRows)}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-              {result.statistics.deletedRows !== undefined && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">删除行数:</span>
-                  <span className="font-medium">{formatNumber(result.statistics.deletedRows)}</span>
-                </div>
-              )}
-              {result.statistics.affectedRows !== undefined && (
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">总影响行数:</span>
-                  <span className="font-medium">{formatNumber(result.statistics.affectedRows)}</span>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+          )}
+        </>
       )}
     </div>
   );

@@ -602,7 +602,9 @@ async fn execute_delete_statement(
     client: Arc<DatabaseClient>,
     request: &QueryRequest,
 ) -> Result<QueryResult, String> {
-    debug!("处理DELETE语句: {}", request.query);
+    info!("🗑️ 开始执行DELETE语句");
+    debug!("DELETE SQL: {}", request.query);
+    debug!("数据库: {:?}", request.database);
 
     // 确保有数据库名称
     let database = request.database.as_ref()
@@ -620,27 +622,39 @@ async fn execute_delete_statement(
             result.execution_time = Some(execution_time);
             result.sql_type = Some("DELETE".to_string()); // 设置SQL类型
 
+            // 记录详细的返回结果
+            info!("✅ DELETE执行成功，耗时: {}ms", execution_time);
+            debug!("DELETE返回结果: {:?}", result);
+
+            // 检查是否有错误信息
+            if !result.results.is_empty() {
+                if let Some(error) = &result.results[0].error {
+                    warn!("⚠️ DELETE返回了错误信息: {}", error);
+                }
+                if let Some(series) = &result.results[0].series {
+                    info!("📊 DELETE返回了 {} 个series", series.len());
+                }
+            }
+
             // 为DELETE操作构造更友好的结果
             // InfluxDB的DELETE通常不返回数据，只返回成功状态
             if result.results.is_empty() || result.results[0].series.is_none() {
                 // 构造一个成功的结果
                 result.row_count = Some(0); // DELETE不返回具体删除的行数
-                info!("DELETE执行成功，耗时: {}ms", execution_time);
-            } else {
-                info!("DELETE执行成功，耗时: {}ms，返回结果: {:?}", execution_time, result);
+                info!("ℹ️ DELETE操作已执行（InfluxDB不返回删除的行数）");
             }
 
             Ok(result)
         }
         Err(e) => {
-            error!("DELETE执行失败: {}", e);
+            error!("❌ DELETE执行失败: {}", e);
             let error_msg = e.to_string();
 
             // 提供更友好的错误提示
             if error_msg.contains("unable to parse") || error_msg.contains("invalid") {
-                Err(format!("DELETE语句语法错误: {}\n\n提示：InfluxDB DELETE 语法：\n1. DELETE FROM <measurement> WHERE <tag_key>='<tag_value>'\n2. DELETE FROM <measurement> WHERE time >= '<start_time>' AND time <= '<end_time>'\n3. DELETE FROM <measurement> WHERE <tag_key>='<tag_value>' AND time >= '<start_time>'", error_msg))
+                Err(format!("DELETE语句语法错误: {}\n\n提示：InfluxDB DELETE 语法：\n1. DELETE FROM <measurement> WHERE <tag_key>='<tag_value>'\n2. DELETE FROM <measurement> WHERE time >= '<start_time>' AND time <= '<end_time>'\n3. DELETE FROM <measurement> WHERE <tag_key>='<tag_value>' AND time >= '<start_time>'\n\n⚠️ 注意：WHERE 条件只能使用 tags 和 time，不能使用 fields！", error_msg))
             } else {
-                Err(format!("DELETE执行失败: {}", error_msg))
+                Err(format!("DELETE执行失败\n\n可能的原因：\n1. WHERE 条件使用了 field（只能使用 tag 和 time）\n2. 语法错误\n3. 数据库连接问题\n\n错误详情: {}", error_msg))
             }
         }
     }
