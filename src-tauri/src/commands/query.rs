@@ -578,6 +578,7 @@ async fn execute_insert_statement(
                     let mut result = QueryResult::empty();
                     result.execution_time = Some(execution_time);
                     result.row_count = Some(points_written);
+                    result.sql_type = Some("INSERT".to_string()); // 设置SQL类型
 
                     // 添加成功信息到结果中
                     result.results = vec![QueryResultItem {
@@ -617,6 +618,7 @@ async fn execute_delete_statement(
         Ok(mut result) => {
             let execution_time = start_time.elapsed().as_millis() as u64;
             result.execution_time = Some(execution_time);
+            result.sql_type = Some("DELETE".to_string()); // 设置SQL类型
 
             // 为DELETE操作构造更友好的结果
             // InfluxDB的DELETE通常不返回数据，只返回成功状态

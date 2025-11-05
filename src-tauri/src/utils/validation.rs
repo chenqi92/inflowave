@@ -305,29 +305,90 @@ impl ValidationUtils {
     }
 
     /// 将INSERT语句转换为Line Protocol格式
+    /// 支持单条或多条INSERT语句（通过分号或多个INSERT关键字分割）
     pub fn parse_insert_to_line_protocol(query: &str) -> Result<String> {
         debug!("解析INSERT语句: {}", query);
 
         let trimmed_query = query.trim();
 
-        // 检查是否为INSERT语句
-        if !Self::is_insert_statement(trimmed_query) {
+        // 检查是否包含INSERT关键字
+        if !trimmed_query.to_uppercase().contains("INSERT") {
             return Err(anyhow!("不是有效的INSERT语句"));
         }
 
-        // 简单的INSERT语句解析
-        // 支持格式: INSERT measurement,tag1=value1,tag2=value2 field1=value1,field2=value2 timestamp
+        // 分割多条INSERT语句
+        // 1. 先按分号分割
+        // 2. 再按INSERT关键字分割（处理没有分号的多条INSERT）
+        let mut line_protocols = Vec::new();
+
+        // 按分号分割
+        let statements: Vec<&str> = trimmed_query
+            .split(';')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        for statement in statements {
+            // 检查是否包含多个INSERT关键字（没有分号分割的情况）
+            if statement.matches("INSERT").count() > 1 || statement.matches("insert").count() > 1 {
+                // 使用正则表达式或简单的字符串处理来分割
+                // 这里使用简单的方法：找到所有INSERT关键字的位置
+                let upper_statement = statement.to_uppercase();
+                let mut insert_positions = Vec::new();
+
+                // 找到所有INSERT关键字的位置
+                let mut pos = 0;
+                while let Some(found_pos) = upper_statement[pos..].find("INSERT") {
+                    insert_positions.push(pos + found_pos);
+                    pos += found_pos + 6; // "INSERT".len() = 6
+                }
+
+                // 根据位置分割语句
+                for i in 0..insert_positions.len() {
+                    let start = insert_positions[i];
+                    let end = if i + 1 < insert_positions.len() {
+                        insert_positions[i + 1]
+                    } else {
+                        statement.len()
+                    };
+
+                    let single_statement = statement[start..end].trim();
+                    if !single_statement.is_empty() {
+                        let line_protocol = Self::parse_single_insert(single_statement)?;
+                        line_protocols.push(line_protocol);
+                    }
+                }
+            } else {
+                // 单条INSERT语句
+                let line_protocol = Self::parse_single_insert(statement)?;
+                line_protocols.push(line_protocol);
+            }
+        }
+
+        if line_protocols.is_empty() {
+            return Err(anyhow!("没有找到有效的INSERT语句"));
+        }
+
+        // 合并所有Line Protocol（每行一个数据点）
+        let result = line_protocols.join("\n");
+        debug!("INSERT语句转换为Line Protocol ({} 行): {}", line_protocols.len(), result);
+        Ok(result)
+    }
+
+    /// 解析单条INSERT语句
+    fn parse_single_insert(statement: &str) -> Result<String> {
+        let trimmed = statement.trim();
+
         // 去掉INSERT关键字
-        let line_protocol = trimmed_query
+        let line_protocol = trimmed
             .strip_prefix("INSERT")
-            .or_else(|| trimmed_query.strip_prefix("insert"))
-            .ok_or_else(|| anyhow!("无法解析INSERT语句"))?
+            .or_else(|| trimmed.strip_prefix("insert"))
+            .ok_or_else(|| anyhow!("无法解析INSERT语句: {}", trimmed))?
             .trim();
 
         // 验证Line Protocol格式
         Self::validate_line_protocol_format(line_protocol)?;
 
-        debug!("INSERT语句转换为Line Protocol: {}", line_protocol);
         Ok(line_protocol.to_string())
     }
 
