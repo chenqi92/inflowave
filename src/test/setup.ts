@@ -4,6 +4,10 @@
 
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import initI18n from '@/i18n/config';
+
+// Initialize i18n for tests
+await initI18n();
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

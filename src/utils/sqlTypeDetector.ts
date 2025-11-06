@@ -4,6 +4,8 @@
  * 支持：InfluxDB (InfluxQL, Flux), MySQL, PostgreSQL, IoTDB 等
  */
 
+import { t } from '@/i18n/store';
+
 export type SQLStatementType =
   // 查询类
   | 'SELECT'           // 普通查询
@@ -279,57 +281,57 @@ export const getSQLStatementDisplayInfo = (statementType: SQLStatementType) => {
     color: string;
   }> = {
     query: {
-      title: '查询结果',
+      title: t('utils:sql.display_info.query_result'),
       icon: 'Table',
-      description: '数据查询操作',
+      description: t('utils:sql.display_info.query_description'),
       color: 'blue'
     },
     write: {
-      title: '写入结果',
+      title: t('utils:sql.display_info.write_result'),
       icon: 'CheckCircle',
-      description: '数据写入操作',
+      description: t('utils:sql.display_info.write_description'),
       color: 'green'
     },
     update: {
-      title: '更新结果',
+      title: t('utils:sql.display_info.update_result'),
       icon: 'Edit',
-      description: '数据更新操作',
+      description: t('utils:sql.display_info.update_description'),
       color: 'blue'
     },
     delete: {
-      title: '删除结果',
+      title: t('utils:sql.display_info.delete_result'),
       icon: 'Trash2',
-      description: '数据删除操作',
+      description: t('utils:sql.display_info.delete_description'),
       color: 'orange'
     },
     ddl: {
-      title: '操作结果',
+      title: t('utils:sql.display_info.ddl_result'),
       icon: 'Database',
-      description: '数据结构操作',
+      description: t('utils:sql.display_info.ddl_description'),
       color: 'blue'
     },
     permission: {
-      title: '权限结果',
+      title: t('utils:sql.display_info.permission_result'),
       icon: 'Shield',
-      description: '权限管理操作',
+      description: t('utils:sql.display_info.permission_description'),
       color: 'purple'
     },
     transaction: {
-      title: '事务结果',
+      title: t('utils:sql.display_info.transaction_result'),
       icon: 'GitBranch',
-      description: '事务控制操作',
+      description: t('utils:sql.display_info.transaction_description'),
       color: 'indigo'
     },
     other: {
-      title: '执行结果',
+      title: t('utils:sql.display_info.other_result'),
       icon: 'Terminal',
-      description: '其他操作',
+      description: t('utils:sql.display_info.other_description'),
       color: 'gray'
     },
     unknown: {
-      title: '执行结果',
+      title: t('utils:sql.display_info.unknown_result'),
       icon: 'FileText',
-      description: '未知操作类型',
+      description: t('utils:sql.display_info.unknown_description'),
       color: 'gray'
     }
   };
@@ -486,49 +488,49 @@ export const getResultStatsLabels = (statementType: SQLStatementType) => {
     columns: string;
   }> = {
     query: {
-      rowCount: '查询行数',
-      executionTime: '查询时间',
-      columns: '列数'
+      rowCount: t('utils:sql.stats_labels.query_row_count'),
+      executionTime: t('utils:sql.stats_labels.query_time'),
+      columns: t('utils:sql.stats_labels.query_columns')
     },
     write: {
-      rowCount: '写入行数',
-      executionTime: '写入时间',
-      columns: '字段数'
+      rowCount: t('utils:sql.stats_labels.write_row_count'),
+      executionTime: t('utils:sql.stats_labels.write_time'),
+      columns: t('utils:sql.stats_labels.write_columns')
     },
     update: {
-      rowCount: '更新行数',
-      executionTime: '更新时间',
-      columns: '影响字段'
+      rowCount: t('utils:sql.stats_labels.update_row_count'),
+      executionTime: t('utils:sql.stats_labels.update_time'),
+      columns: t('utils:sql.stats_labels.update_columns')
     },
     delete: {
-      rowCount: '删除行数',
-      executionTime: '删除时间',
-      columns: '影响字段'
+      rowCount: t('utils:sql.stats_labels.delete_row_count'),
+      executionTime: t('utils:sql.stats_labels.delete_time'),
+      columns: t('utils:sql.stats_labels.delete_columns')
     },
     ddl: {
-      rowCount: '影响对象',
-      executionTime: '执行时间',
-      columns: '操作项'
+      rowCount: t('utils:sql.stats_labels.ddl_row_count'),
+      executionTime: t('utils:sql.stats_labels.ddl_time'),
+      columns: t('utils:sql.stats_labels.ddl_columns')
     },
     permission: {
-      rowCount: '影响用户',
-      executionTime: '执行时间',
-      columns: '权限项'
+      rowCount: t('utils:sql.stats_labels.permission_row_count'),
+      executionTime: t('utils:sql.stats_labels.permission_time'),
+      columns: t('utils:sql.stats_labels.permission_columns')
     },
     transaction: {
-      rowCount: '事务操作',
-      executionTime: '执行时间',
-      columns: '操作项'
+      rowCount: t('utils:sql.stats_labels.transaction_row_count'),
+      executionTime: t('utils:sql.stats_labels.transaction_time'),
+      columns: t('utils:sql.stats_labels.transaction_columns')
     },
     other: {
-      rowCount: '影响项',
-      executionTime: '执行时间',
-      columns: '操作项'
+      rowCount: t('utils:sql.stats_labels.other_row_count'),
+      executionTime: t('utils:sql.stats_labels.other_time'),
+      columns: t('utils:sql.stats_labels.other_columns')
     },
     unknown: {
-      rowCount: '影响行数',
-      executionTime: '执行时间',
-      columns: '列数'
+      rowCount: t('utils:sql.stats_labels.unknown_row_count'),
+      executionTime: t('utils:sql.stats_labels.unknown_time'),
+      columns: t('utils:sql.stats_labels.unknown_columns')
     }
   };
 

@@ -1,0 +1,81 @@
+{
+  "version": {
+    "default_version": "0.1.3",
+    "app_name": "InfloWave"
+  },
+  "theme": {
+    "presets": {
+      "default_light": {
+        "name": "默认浅色",
+        "description": "默认的浅色主题"
+      },
+      "default_dark": {
+        "name": "默认深色",
+        "description": "默认的深色主题"
+      },
+      "minimal": {
+        "name": "极简风格",
+        "description": "简约的黑白主题"
+      },
+      "modern": {
+        "name": "现代风格",
+        "description": "现代化的设计"
+      },
+      "nature": {
+        "name": "自然风格",
+        "description": "清新的绿色主题"
+      }
+    }
+  },
+  "sql": {
+    "display_info": {
+      "query_result": "查询结果",
+      "query_description": "数据查询操作",
+      "write_result": "写入结果",
+      "write_description": "数据写入操作",
+      "update_result": "更新结果",
+      "update_description": "数据更新操作",
+      "delete_result": "删除结果",
+      "delete_description": "数据删除操作",
+      "ddl_result": "操作结果",
+      "ddl_description": "数据结构操作",
+      "permission_result": "权限结果",
+      "permission_description": "权限管理操作",
+      "transaction_result": "事务结果",
+      "transaction_description": "事务控制操作",
+      "other_result": "执行结果",
+      "other_description": "其他操作",
+      "unknown_result": "执行结果",
+      "unknown_description": "未知操作类型"
+    },
+    "stats_labels": {
+      "query_row_count": "查询行数",
+      "query_time": "查询时间",
+      "query_columns": "列数",
+      "write_row_count": "写入行数",
+      "write_time": "写入时间",
+      "write_columns": "字段数",
+      "update_row_count": "更新行数",
+      "update_time": "更新时间",
+      "update_columns": "影响字段",
+      "delete_row_count": "删除行数",
+      "delete_time": "删除时间",
+      "delete_columns": "影响字段",
+      "ddl_row_count": "影响对象",
+      "ddl_time": "执行时间",
+      "ddl_columns": "操作项",
+      "permission_row_count": "影响用户",
+      "permission_time": "执行时间",
+      "permission_columns": "权限项",
+      "transaction_row_count": "事务操作",
+      "transaction_time": "执行时间",
+      "transaction_columns": "操作项",
+      "other_row_count": "影响项",
+      "other_time": "执行时间",
+      "other_columns": "操作项",
+      "unknown_row_count": "影响行数",
+      "unknown_time": "执行时间",
+      "unknown_columns": "列数"
+    }
+  }
+}

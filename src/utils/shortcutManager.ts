@@ -2,6 +2,7 @@
  * 快捷键管理工具
  */
 
+import i18n from 'i18next';
 import type {
   ShortcutDefinition,
   ShortcutConfig,
@@ -356,7 +357,7 @@ export class ShortcutManager {
       this.saveToStorage();
       return true;
     } catch (error) {
-      console.error('导入快捷键配置失败:', error);
+      console.error(i18n.t('logs:shortcut.import_failed'), error);
       return false;
     }
   }
@@ -369,7 +370,7 @@ export class ShortcutManager {
       const data = this.export();
       localStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch (error) {
-      console.error('保存快捷键配置失败:', error);
+      console.error(i18n.t('logs:shortcut.save_failed'), error);
     }
   }
 
@@ -384,7 +385,7 @@ export class ShortcutManager {
         this.import(parsed);
       }
     } catch (error) {
-      console.error('加载快捷键配置失败:', error);
+      console.error(i18n.t('logs:shortcut.load_failed'), error);
     }
   }
 }

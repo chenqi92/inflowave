@@ -1,0 +1,64 @@
+{
+  "system": {
+    "initialized": "System initialized",
+    "starting": "Starting...",
+    "ready": "System ready",
+    "shutdown": "Shutting down..."
+  },
+  "tauri": {
+    "invoke_error": "Tauri invoke error: {{command}}",
+    "event_listener_setup": "Setting up event listener: {{event}}",
+    "environment_check": "Tauri environment check",
+    "api_import_success": "Tauri API imported successfully"
+  },
+  "performance": {
+    "metric_recorded": "Performance metric: {{name}}: {{value}}ms",
+    "observer_error": "Performance observer error",
+    "import_failed": "Failed to import performance data"
+  },
+  "theme": {
+    "save_failed": "Failed to save theme configuration",
+    "load_failed": "Failed to load theme configuration",
+    "import_failed": "Failed to import theme configuration",
+    "preset_save_failed": "Failed to save theme preset",
+    "preset_load_failed": "Failed to load theme preset"
+  },
+  "version": {
+    "get_failed": "Unable to get application version"
+  },
+  "sql": {
+    "format_failed": "SQL formatting failed, returning original SQL"
+  },
+  "shortcut": {
+    "import_failed": "Failed to import shortcut configuration",
+    "save_failed": "Failed to save shortcut configuration",
+    "load_failed": "Failed to load shortcut configuration"
+  },
+  "refresh": {
+    "listener_error": "Refresh listener error"
+  },
+  "i18n": {
+    "initialized": "i18next initialized successfully, language: {{language}}",
+    "preload_completed": "Smart preload completed: {{successful}}/{{total}} languages loaded",
+    "preload_failed": "Smart preload failed",
+    "updates_available": "Language resource updates available",
+    "check_updates_failed": "Failed to check for updates",
+    "init_failed": "i18next initialization failed"
+  },
+  "ui_test": {
+    "starting": "Starting InfloWave UI interaction tests...",
+    "testing_toolbar": "Testing toolbar button functionality...",
+    "testing_user_menu": "Testing user menu functionality...",
+    "testing_shortcuts": "Testing keyboard shortcuts...",
+    "testing_forms": "Testing form interactions...",
+    "testing_modals": "Testing modals and dialogs...",
+    "testing_navigation": "Testing page navigation...",
+    "report_summary": "UI Test Report Summary",
+    "total_tests": "Total tests: {{count}}",
+    "passed_tests": "Passed tests: {{count}}",
+    "failed_tests": "Failed tests: {{count}}",
+    "success_rate": "Success rate: {{rate}}%",
+    "category_stats": "Category statistics",
+    "run_failed": "UI test run failed"
+  }
+}

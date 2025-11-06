@@ -3,6 +3,8 @@
  * 专门用于测试界面按钮点击、菜单导航、表单交互等功能
  */
 
+import i18next from 'i18next';
+
 export interface UITestResult {
   testId: string;
   testName: string;
@@ -601,7 +603,7 @@ class UIInteractionTester {
    * 运行所有UI测试
    */
   async runAllUITests(): Promise<UITestReport> {
-    console.log('🎯 开始运行InfloWave UI交互测试...');
+    console.log(`🎯 ${i18next.t('logs:ui_test.starting' as any)}`);
 
     this.results = [];
     this.testCounter = 0;
@@ -610,35 +612,37 @@ class UIInteractionTester {
       // 等待页面加载完成
       await this.wait(1000);
 
-      console.log('📱 测试工具栏按钮功能...');
+      console.log(`📱 ${i18next.t('logs:ui_test.testing_toolbar' as any)}`);
       await this.testToolbarButtons();
 
-      console.log('👤 测试用户菜单功能...');
+      console.log(`👤 ${i18next.t('logs:ui_test.testing_user_menu' as any)}`);
       await this.testUserMenu();
 
-      console.log('⌨️ 测试键盘快捷键...');
+      console.log(`⌨️ ${i18next.t('logs:ui_test.testing_shortcuts' as any)}`);
       await this.testKeyboardShortcuts();
 
-      console.log('📝 测试表单交互...');
+      console.log(`📝 ${i18next.t('logs:ui_test.testing_forms' as any)}`);
       await this.testFormInteractions();
 
-      console.log('🔲 测试模态框和对话框...');
+      console.log(`🔲 ${i18next.t('logs:ui_test.testing_modals' as any)}`);
       await this.testModalsAndDialogs();
 
-      console.log('🗂️ 测试页面导航...');
+      console.log(`🗂️ ${i18next.t('logs:ui_test.testing_navigation' as any)}`);
       await this.testPageNavigation();
 
       const report = this.generateReport();
 
-      console.log('\n📊 UI测试报告摘要:');
-      console.log(`总测试数: ${report.totalTests}`);
-      console.log(`通过测试: ${report.passedTests}`);
-      console.log(`失败测试: ${report.failedTests}`);
+      console.log(`\n📊 ${i18next.t('logs:ui_test.report_summary' as any)}:`);
+      console.log(i18next.t('logs:ui_test.total_tests' as any, { count: report.totalTests }));
+      console.log(i18next.t('logs:ui_test.passed_tests' as any, { count: report.passedTests }));
+      console.log(i18next.t('logs:ui_test.failed_tests' as any, { count: report.failedTests }));
       console.log(
-        `成功率: ${((report.passedTests / report.totalTests) * 100).toFixed(1)}%`
+        i18next.t('logs:ui_test.success_rate' as any, { 
+          rate: ((report.passedTests / report.totalTests) * 100).toFixed(1) 
+        })
       );
 
-      console.log('\n📋 分类统计:');
+      console.log(`\n📋 ${i18next.t('logs:ui_test.category_stats' as any)}:`);
       Object.entries(report.categories).forEach(([category, stats]) => {
         console.log(
           `${category}: ${stats.passed}/${stats.total} (${((stats.passed / stats.total) * 100).toFixed(1)}%)`
@@ -647,7 +651,7 @@ class UIInteractionTester {
 
       return report;
     } catch (error) {
-      console.error('❌ UI测试运行失败:', error);
+      console.error(`❌ ${i18next.t('logs:ui_test.run_failed' as any)}:`, error);
       throw error;
     }
   }

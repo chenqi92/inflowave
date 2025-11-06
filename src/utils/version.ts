@@ -1,6 +1,7 @@
 /**
  * 应用版本信息工具
  */
+import i18n from 'i18next';
 import packageJson from '../../package.json';
 
 // 从package.json中获取版本号
@@ -8,7 +9,7 @@ export const getAppVersion = (): string => {
   try {
     return packageJson.version || '0.1.3';
   } catch (error) {
-    console.warn('无法获取应用版本:', error);
+    console.warn(i18n.t('logs:version.get_failed'), error);
     return '0.1.3'; // 默认版本，与package.json保持一致
   }
 };

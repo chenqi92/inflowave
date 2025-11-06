@@ -1,0 +1,58 @@
+{
+  "tauri": {
+    "description": "Tauri utility functions unit tests",
+    "safe_invoke": {
+      "should_succeed": "should successfully invoke Tauri command",
+      "should_handle_error": "should handle Tauri invoke error",
+      "should_handle_no_params": "should handle invocation without parameters",
+      "should_handle_complex_params": "should handle complex parameter objects",
+      "should_handle_empty_string": "should handle empty string result",
+      "should_handle_null": "should handle null result",
+      "should_handle_array": "should handle array result",
+      "should_handle_timeout": "should handle timeout error",
+      "should_handle_network_error": "should handle network error",
+      "should_handle_permission_error": "should handle permission error"
+    },
+    "environment": {
+      "should_return_true_in_tauri": "should return true in Tauri environment",
+      "should_return_false_in_browser": "should return false in non-Tauri environment",
+      "should_return_false_in_browser_env": "should return false in browser environment"
+    },
+    "error_handling": {
+      "title": "Error Handling",
+      "should_handle_string_error": "should correctly handle string error",
+      "should_handle_object_error": "should correctly handle object error",
+      "should_handle_undefined_error": "should correctly handle undefined error"
+    },
+    "performance": {
+      "title": "Performance Tests",
+      "should_complete_in_time": "should complete invocation in reasonable time",
+      "should_complete_within_100ms": "should complete within 100ms",
+      "should_support_concurrent": "should support concurrent invocations"
+    },
+    "edge_cases": {
+      "title": "Edge Cases",
+      "should_handle_large_params": "should handle very large parameter objects",
+      "should_handle_special_chars": "should handle special characters",
+      "unicode_test": "test Chinese characters 🚀 emoji",
+      "should_handle_circular_ref": "should handle circular references",
+      "should_not_cause_infinite_loop": "this should not cause infinite loop or error"
+    }
+  },
+  "sql_type_detector": {
+    "description": "SQL type detector utility tests",
+    "display_info": {
+      "query_result_title": "Query Result",
+      "write_result_title": "Write Result",
+      "delete_result_title": "Delete Result"
+    },
+    "result_stats": {
+      "query_row_count": "Query row count",
+      "query_execution_time": "Query time",
+      "write_row_count": "Write row count",
+      "write_execution_time": "Write time",
+      "delete_row_count": "Delete row count",
+      "delete_execution_time": "Delete time"
+    }
+  }
+}

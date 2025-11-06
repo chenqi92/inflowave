@@ -2,6 +2,7 @@
  * Tauri 环境检测和兼容性工具
  */
 
+import i18n from 'i18next';
 import type { TauriCommandMap } from '@/types/tauri';
 
 // 扩展 Window 接口以包含 Tauri 特定的属性
@@ -154,7 +155,7 @@ export async function safeTauriInvoke<T = any>(
 
     return result;
   } catch (error) {
-    console.error(`❌ Tauri invoke error for command "${command}":`, error);
+    console.error(i18n.t('logs:tauri.invoke_error', { command }), error);
     // 只有在 Tauri API 调用失败时才抛出错误，不再使用模拟数据
     throw error;
   }
@@ -173,7 +174,7 @@ export const safeTauriInvokeOptional = async <T = any>(
     const result = await invoke<T>(command, args);
     return result;
   } catch (error) {
-    console.error(`❌ Tauri invoke error for command "${command}":`, error);
+    console.error(i18n.t('logs:tauri.invoke_error', { command }), error);
     // 对于可选调用，返回 null 而不是抛出错误
     return null;
   }
@@ -192,7 +193,7 @@ export const safeTauriInvokeVoid = async (
     // 对于 void 命令，不检查返回值
     return;
   } catch (error) {
-    console.error(`❌ Tauri invoke error for command "${command}":`, error);
+    console.error(i18n.t('logs:tauri.invoke_error', { command }), error);
     throw error;
   }
 };
@@ -202,8 +203,8 @@ export const safeTauriListen = async <T = any>(
   event: string,
   handler: (event: { payload: T }) => void
 ): Promise<() => void> => {
-  console.log(`🎧 尝试设置事件监听器: "${event}"`);
-  console.log(`🔍 Tauri环境检查:`, {
+  console.log(i18n.t('logs:tauri.event_listener_setup', { event }));
+  console.log(i18n.t('logs:tauri.environment_check'), {
     isTauri: isTauriEnvironment(),
     hasWindow: typeof window !== 'undefined',
     hasTauriGlobal: typeof window !== 'undefined' && window.__TAURI__ !== undefined,
@@ -214,20 +215,15 @@ export const safeTauriListen = async <T = any>(
 
   // 强制尝试设置事件监听器，即使环境检测失败
   try {
-    console.log(`📡 正在导入 Tauri 事件 API...`);
     const { listen } = await import('@tauri-apps/api/event');
-    console.log(`✅ Tauri 事件 API 导入成功，设置监听器: "${event}"`);
+    console.log(i18n.t('logs:tauri.api_import_success'));
     const unlisten = await listen<T>(event, handler);
-    console.log(`🎯 事件监听器 "${event}" 设置成功`);
     return unlisten;
   } catch (error) {
-    console.error(`❌ Tauri event listener error for event "${event}":`, error);
+    console.error(i18n.t('logs:tauri.invoke_error', { command: event }), error);
 
     // 如果不在 Tauri 环境中，返回空函数
     if (!isTauriEnvironment()) {
-      console.warn(
-        `⚠️ Tauri event listener "${event}" failed, likely in browser environment`
-      );
       return () => {};
     }
 
@@ -260,7 +256,7 @@ export const getEnvironmentInfo = () => {
 // 显示环境警告 - 桌面应用专用，无需警告
 export const showEnvironmentWarning = () => {
   // 桌面应用专用，无需显示浏览器环境警告
-  console.log('🖥️ 桌面应用环境已初始化');
+  console.log(i18n.t('logs:system.initialized'));
 };
 
 // 初始化环境检测 - 桌面应用专用

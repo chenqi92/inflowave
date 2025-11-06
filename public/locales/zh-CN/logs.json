@@ -1,0 +1,64 @@
+{
+  "system": {
+    "initialized": "系统已初始化",
+    "starting": "正在启动...",
+    "ready": "系统就绪",
+    "shutdown": "正在关闭..."
+  },
+  "tauri": {
+    "invoke_error": "Tauri调用错误: {{command}}",
+    "event_listener_setup": "设置事件监听器: {{event}}",
+    "environment_check": "Tauri环境检查",
+    "api_import_success": "Tauri API导入成功"
+  },
+  "performance": {
+    "metric_recorded": "性能指标: {{name}}: {{value}}ms",
+    "observer_error": "性能观察器错误",
+    "import_failed": "导入性能数据失败"
+  },
+  "theme": {
+    "save_failed": "保存主题配置失败",
+    "load_failed": "加载主题配置失败",
+    "import_failed": "导入主题配置失败",
+    "preset_save_failed": "保存主题预设失败",
+    "preset_load_failed": "加载主题预设失败"
+  },
+  "version": {
+    "get_failed": "无法获取应用版本"
+  },
+  "sql": {
+    "format_failed": "SQL格式化失败，返回原始SQL"
+  },
+  "shortcut": {
+    "import_failed": "导入快捷键配置失败",
+    "save_failed": "保存快捷键配置失败",
+    "load_failed": "加载快捷键配置失败"
+  },
+  "refresh": {
+    "listener_error": "刷新监听器错误"
+  },
+  "i18n": {
+    "initialized": "i18next初始化成功，语言: {{language}}",
+    "preload_completed": "智能预加载完成: {{successful}}/{{total}} 语言已加载",
+    "preload_failed": "智能预加载失败",
+    "updates_available": "语言资源更新可用",
+    "check_updates_failed": "检查更新失败",
+    "init_failed": "i18next初始化失败"
+  },
+  "ui_test": {
+    "starting": "开始运行InfloWave UI交互测试...",
+    "testing_toolbar": "测试工具栏按钮功能...",
+    "testing_user_menu": "测试用户菜单功能...",
+    "testing_shortcuts": "测试键盘快捷键...",
+    "testing_forms": "测试表单交互...",
+    "testing_modals": "测试模态框和对话框...",
+    "testing_navigation": "测试页面导航...",
+    "report_summary": "UI测试报告摘要",
+    "total_tests": "总测试数: {{count}}",
+    "passed_tests": "通过测试: {{count}}",
+    "failed_tests": "失败测试: {{count}}",
+    "success_rate": "成功率: {{rate}}%",
+    "category_stats": "分类统计",
+    "run_failed": "UI测试运行失败"
+  }
+}

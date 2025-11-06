@@ -1,0 +1,58 @@
+{
+  "tauri": {
+    "description": "Tauri工具函数单元测试",
+    "safe_invoke": {
+      "should_succeed": "应该成功调用Tauri命令",
+      "should_handle_error": "应该处理Tauri调用错误",
+      "should_handle_no_params": "应该处理无参数的调用",
+      "should_handle_complex_params": "应该处理复杂参数对象",
+      "should_handle_empty_string": "应该处理空字符串结果",
+      "should_handle_null": "应该处理null结果",
+      "should_handle_array": "应该处理数组结果",
+      "should_handle_timeout": "应该处理超时错误",
+      "should_handle_network_error": "应该处理网络错误",
+      "should_handle_permission_error": "应该处理权限错误"
+    },
+    "environment": {
+      "should_return_true_in_tauri": "应该在Tauri环境中返回true",
+      "should_return_false_in_browser": "应该在非Tauri环境中返回false",
+      "should_return_false_in_browser_env": "应该在浏览器环境中返回false"
+    },
+    "error_handling": {
+      "title": "错误处理",
+      "should_handle_string_error": "应该正确处理字符串错误",
+      "should_handle_object_error": "应该正确处理对象错误",
+      "should_handle_undefined_error": "应该正确处理未定义错误"
+    },
+    "performance": {
+      "title": "性能测试",
+      "should_complete_in_time": "应该在合理时间内完成调用",
+      "should_complete_within_100ms": "应该在100ms内完成",
+      "should_support_concurrent": "应该支持并发调用"
+    },
+    "edge_cases": {
+      "title": "边界情况",
+      "should_handle_large_params": "应该处理非常大的参数对象",
+      "should_handle_special_chars": "应该处理特殊字符",
+      "unicode_test": "测试中文字符 🚀 emoji",
+      "should_handle_circular_ref": "应该处理循环引用",
+      "should_not_cause_infinite_loop": "这应该不会导致无限循环或错误"
+    }
+  },
+  "sql_type_detector": {
+    "description": "SQL类型检测工具测试",
+    "display_info": {
+      "query_result_title": "查询结果",
+      "write_result_title": "写入结果",
+      "delete_result_title": "删除结果"
+    },
+    "result_stats": {
+      "query_row_count": "查询行数",
+      "query_execution_time": "查询时间",
+      "write_row_count": "写入行数",
+      "write_execution_time": "写入时间",
+      "delete_row_count": "删除行数",
+      "delete_execution_time": "删除时间"
+    }
+  }
+}

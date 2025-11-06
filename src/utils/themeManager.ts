@@ -2,6 +2,7 @@
  * 主题管理工具
  */
 
+import i18n from 'i18next';
 import type {
   ThemeConfig,
   ThemePreset,
@@ -140,7 +141,7 @@ export class ThemeManager {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.config));
     } catch (error) {
-      console.error('保存主题配置失败:', error);
+      console.error(i18n.t('logs:theme.save_failed'), error);
     }
   }
 
@@ -156,7 +157,7 @@ export class ThemeManager {
         this.applyConfig();
       }
     } catch (error) {
-      console.error('加载主题配置失败:', error);
+      console.error(i18n.t('logs:theme.load_failed'), error);
     }
   }
 
@@ -186,7 +187,7 @@ export class ThemeManager {
       }
       return false;
     } catch (error) {
-      console.error('导入主题配置失败:', error);
+      console.error(i18n.t('logs:theme.import_failed'), error);
       return false;
     }
   }
@@ -256,7 +257,7 @@ export class ThemeManager {
         JSON.stringify(customPresets)
       );
     } catch (error) {
-      console.error('保存主题预设失败:', error);
+      console.error(i18n.t('logs:theme.preset_save_failed'), error);
     }
   }
 
@@ -277,7 +278,7 @@ export class ThemeManager {
         });
       }
     } catch (error) {
-      console.error('加载主题预设失败:', error);
+      console.error(i18n.t('logs:theme.preset_load_failed'), error);
     }
   }
 
@@ -288,8 +289,8 @@ export class ThemeManager {
     const builtinPresets: ThemePreset[] = [
       {
         id: 'default-light',
-        name: '默认浅色',
-        description: '默认的浅色主题',
+        name: i18n.t('utils:theme.presets.default_light.name'),
+        description: i18n.t('utils:theme.presets.default_light.description'),
         config: {
           mode: 'light',
           colorScheme: 'default',
@@ -300,8 +301,8 @@ export class ThemeManager {
       },
       {
         id: 'default-dark',
-        name: '默认深色',
-        description: '默认的深色主题',
+        name: i18n.t('utils:theme.presets.default_dark.name'),
+        description: i18n.t('utils:theme.presets.default_dark.description'),
         config: {
           mode: 'dark',
           colorScheme: 'default',
@@ -312,8 +313,8 @@ export class ThemeManager {
       },
       {
         id: 'minimal',
-        name: '极简风格',
-        description: '简约的黑白主题',
+        name: i18n.t('utils:theme.presets.minimal.name'),
+        description: i18n.t('utils:theme.presets.minimal.description'),
         config: {
           mode: 'light',
           colorScheme: 'shadcn',
@@ -324,8 +325,8 @@ export class ThemeManager {
       },
       {
         id: 'modern',
-        name: '现代风格',
-        description: '现代化的设计',
+        name: i18n.t('utils:theme.presets.modern.name'),
+        description: i18n.t('utils:theme.presets.modern.description'),
         config: {
           mode: 'dark',
           colorScheme: 'zinc',
@@ -336,8 +337,8 @@ export class ThemeManager {
       },
       {
         id: 'nature',
-        name: '自然风格',
-        description: '清新的绿色主题',
+        name: i18n.t('utils:theme.presets.nature.name'),
+        description: i18n.t('utils:theme.presets.nature.description'),
         config: {
           mode: 'light',
           colorScheme: 'emerald',

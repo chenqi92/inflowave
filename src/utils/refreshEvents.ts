@@ -1,4 +1,6 @@
 // Simple event system for triggering refreshes across components
+import i18n from 'i18next';
+
 type RefreshEventListener = () => void;
 
 class RefreshEventManager {
@@ -23,7 +25,7 @@ class RefreshEventManager {
       try {
         listener();
       } catch (error) {
-        console.error('Refresh listener error:', error);
+        console.error(i18n.t('logs:refresh.listener_error'), error);
       }
     });
   }

@@ -11,7 +11,7 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: mockInvoke,
 }));
 
-describe('tauri utils', () => {
+describe('Tauri工具函数单元测试', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -21,7 +21,7 @@ describe('tauri utils', () => {
   });
 
   describe('safeTauriInvoke', () => {
-    it('应该成功调用 Tauri 命令', async () => {
+    it('应该成功调用Tauri命令', async () => {
       const mockResult = { data: 'test' };
       mockInvoke.mockResolvedValue(mockResult);
 
@@ -31,7 +31,7 @@ describe('tauri utils', () => {
       expect(result).toEqual(mockResult);
     });
 
-    it('应该处理 Tauri 调用错误', async () => {
+    it('应该处理Tauri调用错误', async () => {
       const mockError = new Error('Tauri command failed');
       mockInvoke.mockRejectedValue(mockError);
 
@@ -73,7 +73,7 @@ describe('tauri utils', () => {
       expect(result).toBe('');
     });
 
-    it('应该处理 null 结果', async () => {
+    it('应该处理null结果', async () => {
       mockInvoke.mockResolvedValue(null);
 
       const result = await safeTauriInvoke('null_result_command');
@@ -113,7 +113,7 @@ describe('tauri utils', () => {
   });
 
   describe('isTauriEnvironment', () => {
-    it('应该在 Tauri 环境中返回 true', () => {
+    it('应该在Tauri环境中返回true', () => {
       // Mock window.__TAURI__
       Object.defineProperty(window, '__TAURI__', {
         value: {},
@@ -123,7 +123,7 @@ describe('tauri utils', () => {
       expect(isTauriEnvironment()).toBe(true);
     });
 
-    it('应该在非 Tauri 环境中返回 false', () => {
+    it('应该在非Tauri环境中返回false', () => {
       // Remove window.__TAURI__
       Object.defineProperty(window, '__TAURI__', {
         value: undefined,
@@ -133,7 +133,7 @@ describe('tauri utils', () => {
       expect(isTauriEnvironment()).toBe(false);
     });
 
-    it('应该在浏览器环境中返回 false', () => {
+    it('应该在浏览器环境中返回false', () => {
       // Mock browser environment
       delete (window as any).__TAURI__;
 

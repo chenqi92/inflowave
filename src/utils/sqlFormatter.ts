@@ -3,6 +3,8 @@
  * 支持不同类型的数据库SQL格式化
  */
 
+import i18n from 'i18next';
+
 export type DatabaseType = '1.x' | '2.x' | '3.x' | 'unknown';
 
 interface FormatOptions {
@@ -312,7 +314,7 @@ export function formatSQL(sql: string, databaseType?: DatabaseType, customOption
         return formatCommonSQL(sql, options);
     }
   } catch (error) {
-    console.warn('SQL格式化失败，返回原始SQL:', error);
+    console.warn(i18n.t('logs:sql.format_failed'), error);
     return sql;
   }
 }

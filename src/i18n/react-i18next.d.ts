@@ -20,6 +20,9 @@ declare module 'react-i18next' {
       settings: TranslationResource['settings'];
       errors: TranslationResource['errors'];
       dateTime: TranslationResource['dateTime'];
+      logs: TranslationResource['logs'];
+      tests: TranslationResource['tests'];
+      utils: TranslationResource['utils'];
     };
     
     // 返回对象类型
@@ -48,6 +51,9 @@ declare module 'i18next' {
       settings: TranslationResource['settings'];
       errors: TranslationResource['errors'];
       dateTime: TranslationResource['dateTime'];
+      logs: TranslationResource['logs'];
+      tests: TranslationResource['tests'];
+      utils: TranslationResource['utils'];
     };
   }
 }

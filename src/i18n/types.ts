@@ -210,4 +210,213 @@ export interface TranslationResource {
       daysAgo: string;
     };
   };
+  
+  // 日志消息
+  logs: {
+    system: {
+      initialized: string;
+      starting: string;
+      ready: string;
+      shutdown: string;
+    };
+    tauri: {
+      invoke_error: string;
+      event_listener_setup: string;
+      environment_check: string;
+      api_import_success: string;
+    };
+    performance: {
+      metric_recorded: string;
+      observer_error: string;
+      import_failed: string;
+    };
+    theme: {
+      save_failed: string;
+      load_failed: string;
+      import_failed: string;
+      preset_save_failed: string;
+      preset_load_failed: string;
+    };
+    version: {
+      get_failed: string;
+    };
+    sql: {
+      format_failed: string;
+    };
+    shortcut: {
+      import_failed: string;
+      save_failed: string;
+      load_failed: string;
+    };
+    refresh: {
+      listener_error: string;
+    };
+    i18n: {
+      initialized: string;
+      preload_completed: string;
+      preload_failed: string;
+      updates_available: string;
+      check_updates_failed: string;
+      init_failed: string;
+    };
+    ui_test: {
+      starting: string;
+      testing_toolbar: string;
+      testing_user_menu: string;
+      testing_shortcuts: string;
+      testing_forms: string;
+      testing_modals: string;
+      testing_navigation: string;
+      report_summary: string;
+      total_tests: string;
+      passed_tests: string;
+      failed_tests: string;
+      success_rate: string;
+      category_stats: string;
+      run_failed: string;
+    };
+  };
+  
+  // 测试描述
+  tests: {
+    tauri: {
+      description: string;
+      safe_invoke: {
+        should_succeed: string;
+        should_handle_error: string;
+        should_handle_no_params: string;
+        should_handle_complex_params: string;
+        should_handle_empty_string: string;
+        should_handle_null: string;
+        should_handle_array: string;
+        should_handle_timeout: string;
+        should_handle_network_error: string;
+        should_handle_permission_error: string;
+      };
+      environment: {
+        should_return_true_in_tauri: string;
+        should_return_false_in_browser: string;
+        should_return_false_in_browser_env: string;
+      };
+      error_handling: {
+        title: string;
+        should_handle_string_error: string;
+        should_handle_object_error: string;
+        should_handle_undefined_error: string;
+      };
+      performance: {
+        title: string;
+        should_complete_in_time: string;
+        should_complete_within_100ms: string;
+        should_support_concurrent: string;
+      };
+      edge_cases: {
+        title: string;
+        should_handle_large_params: string;
+        should_handle_special_chars: string;
+        unicode_test: string;
+        should_handle_circular_ref: string;
+        should_not_cause_infinite_loop: string;
+      };
+    };
+    sql_type_detector: {
+      description: string;
+      display_info: {
+        query_result_title: string;
+        write_result_title: string;
+        delete_result_title: string;
+      };
+      result_stats: {
+        query_row_count: string;
+        query_execution_time: string;
+        write_row_count: string;
+        write_execution_time: string;
+        delete_row_count: string;
+        delete_execution_time: string;
+      };
+    };
+  };
+  
+  // 工具函数文本
+  utils: {
+    version: {
+      default_version: string;
+      app_name: string;
+    };
+    theme: {
+      presets: {
+        default_light: {
+          name: string;
+          description: string;
+        };
+        default_dark: {
+          name: string;
+          description: string;
+        };
+        minimal: {
+          name: string;
+          description: string;
+        };
+        modern: {
+          name: string;
+          description: string;
+        };
+        nature: {
+          name: string;
+          description: string;
+        };
+      };
+    };
+    sql: {
+      display_info: {
+        query_result: string;
+        query_description: string;
+        write_result: string;
+        write_description: string;
+        update_result: string;
+        update_description: string;
+        delete_result: string;
+        delete_description: string;
+        ddl_result: string;
+        ddl_description: string;
+        permission_result: string;
+        permission_description: string;
+        transaction_result: string;
+        transaction_description: string;
+        other_result: string;
+        other_description: string;
+        unknown_result: string;
+        unknown_description: string;
+      };
+      stats_labels: {
+        query_row_count: string;
+        query_time: string;
+        query_columns: string;
+        write_row_count: string;
+        write_time: string;
+        write_columns: string;
+        update_row_count: string;
+        update_time: string;
+        update_columns: string;
+        delete_row_count: string;
+        delete_time: string;
+        delete_columns: string;
+        ddl_row_count: string;
+        ddl_time: string;
+        ddl_columns: string;
+        permission_row_count: string;
+        permission_time: string;
+        permission_columns: string;
+        transaction_row_count: string;
+        transaction_time: string;
+        transaction_columns: string;
+        other_row_count: string;
+        other_time: string;
+        other_columns: string;
+        unknown_row_count: string;
+        unknown_time: string;
+        unknown_columns: string;
+      };
+    };
+  };
 }
