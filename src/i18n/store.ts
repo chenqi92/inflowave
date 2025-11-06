@@ -168,15 +168,18 @@ export const useI18nStore = create<I18nState>((set, get) => ({
         }
       }
 
-      // 更新原生菜单语言
-      if (typeof window !== 'undefined') {
-        try {
-          const { safeTauriInvoke } = await import('@/utils/tauri');
-          await safeTauriInvoke('update_menu_language', { language });
-          console.log(`✅ [I18nStore] 菜单语言已更新: ${language}`);
-        } catch (error) {
-          console.warn('⚠️ [I18nStore] 更新菜单语言失败:', error);
-        }
+      // 更新原生菜单语言（延迟执行以减少闪烁）
+      if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+        // 使用 setTimeout 延迟菜单更新，让 UI 先完成切换
+        setTimeout(async () => {
+          try {
+            const { safeTauriInvoke } = await import('@/utils/tauri');
+            await safeTauriInvoke('update_menu_language', { language });
+            console.log(`✅ [I18nStore] 菜单语言已更新: ${language}`);
+          } catch (error) {
+            console.warn('⚠️ [I18nStore] 更新菜单语言失败:', error);
+          }
+        }, 100); // 延迟 100ms
       }
 
       console.log(`✅ [I18nStore] 语言切换成功: ${language} (${switchTime}ms)`);

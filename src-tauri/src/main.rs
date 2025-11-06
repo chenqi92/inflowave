@@ -1422,31 +1422,7 @@ async fn main() {
                 warn!("无法获取主窗口，跳过响应式大小设置");
             }
 
-            // 创建并设置原生菜单（默认使用中文）
-            match create_native_menu(app.handle(), "zh-CN") {
-                Ok(menu) => {
-                    info!("菜单创建成功，正在设置为应用菜单...");
-                    if let Err(e) = app.set_menu(menu) {
-                        error!("设置菜单失败: {}", e);
-                    } else {
-                        info!("应用菜单设置成功");
-                    }
-                }
-                Err(e) => {
-                    error!("创建菜单失败: {}", e);
-                }
-            }
-
-            // 设置菜单事件处理器
-            let app_handle = app.handle().clone();
-            info!("🎛️ 正在设置菜单事件处理器...");
-            app.on_menu_event(move |_app, event| {
-                info!("🎯 菜单事件处理器被调用，事件ID: {}", event.id().as_ref());
-                handle_menu_event(&app_handle, event);
-            });
-            info!("✅ 菜单事件处理器设置完成");
-
-            // Initialize encryption service
+            // Initialize encryption service (需要在设置加载之前初始化)
             let encryption_service = create_encryption_service()
                 .expect("Failed to create encryption service");
 
@@ -1507,7 +1483,36 @@ async fn main() {
                     }
                 }
             };
+
+            // 获取语言设置用于创建菜单
+            let menu_language = app_settings.general.language.clone();
+            info!("📋 使用语言创建菜单: {}", menu_language);
+
             app.manage(commands::settings::SettingsStorage::new(app_settings));
+
+            // 创建并设置原生菜单（使用设置中的语言）
+            match create_native_menu(app.handle(), &menu_language) {
+                Ok(menu) => {
+                    info!("菜单创建成功，正在设置为应用菜单...");
+                    if let Err(e) = app.set_menu(menu) {
+                        error!("设置菜单失败: {}", e);
+                    } else {
+                        info!("应用菜单设置成功");
+                    }
+                }
+                Err(e) => {
+                    error!("创建菜单失败: {}", e);
+                }
+            }
+
+            // 设置菜单事件处理器
+            let app_handle = app.handle().clone();
+            info!("🎛️ 正在设置菜单事件处理器...");
+            app.on_menu_event(move |_app, event| {
+                info!("🎯 菜单事件处理器被调用，事件ID: {}", event.id().as_ref());
+                handle_menu_event(&app_handle, event);
+            });
+            info!("✅ 菜单事件处理器设置完成");
 
             // Initialize dashboard storage
             app.manage(commands::dashboard::DashboardStorage::new(std::collections::HashMap::new()));

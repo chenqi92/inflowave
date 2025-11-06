@@ -105,7 +105,9 @@ impl Default for AppSettings {
         Self {
             general: GeneralSettings {
                 theme: "system".to_string(),
-                language: "zh-CN".to_string(),
+                // 默认语言设置为 en-US，与前端系统检测保持一致
+                // 用户可以在设置中切换为中文
+                language: "en-US".to_string(),
                 auto_save: true,
                 auto_connect: false,
                 startup_connection: None,
@@ -679,20 +681,38 @@ pub async fn update_menu_language(
 ) -> Result<(), String> {
     info!("更新菜单语言: {}", language);
 
-    // 重新创建菜单
-    let menu = crate::create_native_menu(&app, &language)
-        .map_err(|e| {
-            error!("创建菜单失败: {}", e);
-            format!("创建菜单失败: {}", e)
-        })?;
+    // 在后台线程中执行菜单更新，避免阻塞 UI
+    let app_clone = app.clone();
+    let language_clone = language.clone();
 
-    // 设置新菜单
-    app.set_menu(menu)
-        .map_err(|e| {
-            error!("设置菜单失败: {}", e);
-            format!("设置菜单失败: {}", e)
-        })?;
+    tokio::task::spawn_blocking(move || {
+        // 添加微小延迟，让前端 UI 先完成渲染
+        // 这样可以减少视觉上的不协调感
+        std::thread::sleep(std::time::Duration::from_millis(50));
 
-    info!("菜单语言更新成功");
-    Ok(())
+        // 重新创建菜单
+        let menu = crate::create_native_menu(&app_clone, &language_clone)
+            .map_err(|e| {
+                error!("创建菜单失败: {}", e);
+                format!("创建菜单失败: {}", e)
+            })?;
+
+        // 设置新菜单
+        // 注意：在 Windows 上，set_menu 会导致菜单短暂消失再出现
+        // 这是 Tauri/Windows 原生菜单 API 的限制
+        // 菜单必须先移除再添加，无法"就地更新"文本
+        app_clone.set_menu(menu)
+            .map_err(|e| {
+                error!("设置菜单失败: {}", e);
+                format!("设置菜单失败: {}", e)
+            })?;
+
+        info!("菜单语言更新成功");
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|e| {
+        error!("菜单更新任务失败: {}", e);
+        format!("菜单更新任务失败: {}", e)
+    })?
 }

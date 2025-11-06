@@ -15,10 +15,10 @@ default-run = "InfloWave"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2.0", features = ["codegen"] }
+tauri-build = { version = "2", features = ["codegen"] }
 
 [dependencies]
-tauri = { version = "2.0", features = [
+tauri = { version = "2", features = [
     "tray-icon",
     "devtools"
 ] }
@@ -86,7 +86,7 @@ cocoa = "0.25"
 
 # Linux平台特定依赖 - 启用原生菜单支持
 [target.'cfg(target_os = "linux")'.dependencies]
-tauri = { version = "2.0", features = ["linux-libxdo"] }
+tauri = { version = "2", features = ["linux-libxdo"] }
 
 [dev-dependencies]
 tempfile = "3.8"
@@ -115,13 +115,13 @@ influxdb-v3 = ["arrow-flight", "arrow", "arrow-schema", "tonic", "prost"]
 default = ["influxdb-v2", "iotdb-v1", "iotdb-v2", "iotdb-rest"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-shell = "2.0"
-tauri-plugin-dialog = "2.0"
-tauri-plugin-fs = "2.0"
-tauri-plugin-os = "2.0"
-tauri-plugin-notification = "2.0"
-tauri-plugin-global-shortcut = "2.0"
-tauri-plugin-clipboard-manager = "2.0"
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-os = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-clipboard-manager = "2"
 
 # 构建配置优化
 [profile.dev]

@@ -130,13 +130,28 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
       // 初始化 store
       await initI18nStore();
 
-      // 如果指定了默认语言，切换到默认语言
-      // 注意：这里不检查 currentLanguage，因为 currentLanguage 会在 store 初始化时从 localStorage 恢复
-      // 只有在明确指定了 defaultLanguage 时才切换
-      if (defaultLanguage) {
+      // 🔧 优先从后端加载语言设置
+      let targetLanguage = defaultLanguage;
+
+      try {
+        // 尝试从 Tauri 后端获取语言设置
+        if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+          const { safeTauriInvoke } = await import('@/utils/tauri');
+          const appSettings = await safeTauriInvoke<any>('get_app_settings');
+          if (appSettings?.general?.language) {
+            targetLanguage = appSettings.general.language;
+            console.log('✅ [I18nProvider] 从后端加载语言设置:', targetLanguage);
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ [I18nProvider] 从后端加载语言设置失败，使用默认语言:', error);
+      }
+
+      // 如果指定了目标语言，切换到目标语言
+      if (targetLanguage) {
         const { currentLanguage: detectedLanguage } = useI18nStore.getState();
-        if (defaultLanguage !== detectedLanguage) {
-          await setLanguage(defaultLanguage);
+        if (targetLanguage !== detectedLanguage) {
+          await setLanguage(targetLanguage);
         }
       }
 
@@ -146,7 +161,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
       console.error('❌ [I18nProvider] 初始化失败:', error);
       setInitError(error as Error);
     }
-  }, [defaultLanguage, setLanguage]); // 移除 currentLanguage 依赖
+  }, [defaultLanguage, setLanguage]);
 
   // 组件挂载时初始化（只执行一次）
   useEffect(() => {
