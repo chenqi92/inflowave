@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import type { KeyboardShortcut } from '@/types';
 import { useUserPreferencesStore, type UserPreferences } from '@/stores/userPreferencesStore';
+import { useSettingsTranslation } from '@/hooks/useTranslation';
 
 // 获取所有系统快捷键的函数
 const getAllSystemShortcuts = (): KeyboardShortcut[] => {
@@ -285,6 +286,8 @@ interface UserPreferencesComponentProps {
 const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   onSave,
 }) => {
+  const { t } = useSettingsTranslation();
+
   // 🔧 使用 userPreferencesStore 替代本地状态
   const {
     preferences: storePreferences,
@@ -297,7 +300,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     null
   );
   const [editingKeys, setEditingKeys] = useState<string[]>([]);
-   
+
   const [fontSaveTimeout, setFontSaveTimeout] = useState<NodeJS.Timeout | null>(null);
 
   const form = useForm<UserPreferences>({
@@ -500,7 +503,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   // 🔧 使用 store 的 loading 状态
   if (storeLoading || !storePreferences) {
     return (
-      <div className='flex items-center justify-center p-8'>加载中...</div>
+      <div className='flex items-center justify-center p-8'>{t('loading_text')}</div>
     );
   }
 
@@ -514,8 +517,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
               <div className='flex items-center gap-3 mb-4'>
                 <Bell className='w-6 h-6 text-blue-600' />
                 <div>
-                  <h2 className='text-2xl font-bold'>通知设置</h2>
-                  <p className='text-muted-foreground'>管理各类提醒和通知</p>
+                  <h2 className='text-2xl font-bold'>{t('notification_settings_title')}</h2>
+                  <p className='text-muted-foreground'>{t('notification_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>

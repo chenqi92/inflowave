@@ -89,7 +89,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
     if (visible) {
       form.reset(config);
     }
-  }, [config, visible, form]);
+  }, [visible, form]); // 移除 config 依赖，避免 config 变化时重置表单
 
   // 保存设置
   const saveSettings = async (values: AppConfig) => {
@@ -103,10 +103,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
         setTheme(values.theme as 'light' | 'dark' | 'system');
       }
 
-      // 应用语言设置
-      if (values.language && values.language !== config.language) {
-        await switchLanguage(values.language);
-      }
+      // 语言设置已经在 LanguageSelector 中处理，这里不需要再次切换
 
       // 保存到后端
       try {
@@ -349,16 +346,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
 
                 <div className='space-y-2'>
                   <LanguageSelector
-                    value={form.watch('language') || config.language}
-                    onValueChange={async (value) => {
-                      form.setValue('language', value);
-                      // 立即切换语言
-                      try {
-                        await switchLanguage(value);
-                      } catch (error) {
-                        console.error('Language switch failed:', error);
-                      }
-                    }}
                     showProgress={true}
                     showNativeName={true}
                     showFlag={true}

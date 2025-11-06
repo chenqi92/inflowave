@@ -44,6 +44,7 @@ import { useUserPreferencesStore, type LoggingSettings } from '@/stores/userPref
 import { logger, LogLevel } from '@/utils/logger';
 import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
+import { useSettingsTranslation } from '@/hooks/useTranslation';
 
 interface LogFileInfo {
   name: string;
@@ -54,6 +55,7 @@ interface LogFileInfo {
 }
 
 const LoggingSettingsComponent: React.FC = () => {
+  const { t } = useSettingsTranslation();
   const [loading, setLoading] = useState(false);
   const { preferences, updateLogging } = useUserPreferencesStore();
   const [logFiles, setLogFiles] = useState<LogFileInfo[]>([]);
@@ -78,7 +80,7 @@ const LoggingSettingsComponent: React.FC = () => {
       const total = files.reduce((sum, file) => sum + file.size, 0);
       setTotalSize(total);
     } catch (error) {
-      console.error('加载日志文件列表失败:', error);
+      console.error(t('logging_settings.load_failed'), error);
     }
   };
 
@@ -97,10 +99,10 @@ const LoggingSettingsComponent: React.FC = () => {
       const logLevel = stringToLogLevel(values.level);
       logger.setLevel(logLevel);
       
-      showMessage.success('日志设置已保存');
+      showMessage.success(t('logging_settings.settings_saved'));
     } catch (error) {
-      console.error('保存日志设置失败:', error);
-      showMessage.error('保存日志设置失败');
+      console.error(t('logging_settings.settings_save_failed'), error);
+      showMessage.error(t('logging_settings.settings_save_failed'));
     } finally {
       setLoading(false);
     }
@@ -130,7 +132,7 @@ const LoggingSettingsComponent: React.FC = () => {
       max_file_size_mb: 10,
       max_files: 5,
     });
-    showMessage.success('已重置为默认值');
+    showMessage.success(t('logging_settings.reset_success'));
   };
 
   // 清理旧日志文件
@@ -138,17 +140,17 @@ const LoggingSettingsComponent: React.FC = () => {
     try {
       const maxFiles = form.getValues('max_files');
       const deletedCount = await invoke<number>('cleanup_old_log_files', { keepCount: maxFiles });
-      toast.success(`已清理 ${deletedCount} 个旧日志文件`);
+      toast.success(t('logging_settings.cleanup_success', { count: deletedCount }));
       await loadLogFiles();
     } catch (error) {
-      console.error('清理日志文件失败:', error);
-      toast.error('清理日志文件失败');
+      console.error(t('logging_settings.cleanup_failed'), error);
+      toast.error(t('logging_settings.cleanup_failed'));
     }
   };
 
   // 删除所有日志文件
   const handleDeleteAllLogs = async () => {
-    if (!confirm('确定要删除所有日志文件吗？此操作不可恢复。')) {
+    if (!confirm(t('logging_settings.delete_all_confirm'))) {
       return;
     }
 
@@ -156,11 +158,11 @@ const LoggingSettingsComponent: React.FC = () => {
       for (const file of logFiles) {
         await invoke('delete_log_file', { path: file.path });
       }
-      toast.success('已删除所有日志文件');
+      toast.success(t('logging_settings.delete_all_success'));
       await loadLogFiles();
     } catch (error) {
-      console.error('删除日志文件失败:', error);
-      toast.error('删除日志文件失败');
+      console.error(t('logging_settings.delete_all_failed'), error);
+      toast.error(t('logging_settings.delete_all_failed'));
     }
   };
 
@@ -177,10 +179,10 @@ const LoggingSettingsComponent: React.FC = () => {
   const handleOpenLogFolder = async () => {
     try {
       await invoke('open_log_folder');
-      showMessage.success('已打开日志文件夹');
+      showMessage.success(t('logging_settings.log_folder_opened'));
     } catch (error) {
-      console.error('打开日志文件夹失败:', error);
-      showMessage.error('打开日志文件夹失败');
+      console.error(t('logging_settings.log_folder_open_failed'), error);
+      showMessage.error(t('logging_settings.log_folder_open_failed'));
     }
   };
 
@@ -193,9 +195,9 @@ const LoggingSettingsComponent: React.FC = () => {
         <div className="flex items-center gap-3 mb-4">
           <FileText className="w-6 h-6 text-blue-600" />
           <div>
-            <Title className="text-2xl font-bold">日志设置</Title>
+            <Title className="text-2xl font-bold">{t('logging_settings.title')}</Title>
             <Text className="text-muted-foreground">
-              配置应用程序的日志级别和文件存储
+              {t('logging_settings.description')}
             </Text>
           </div>
         </div>
@@ -207,12 +209,12 @@ const LoggingSettingsComponent: React.FC = () => {
           <Info className="h-4 w-4" />
           <AlertDescription>
             <div className="space-y-2">
-              <p className="font-medium">日志级别说明：</p>
+              <p className="font-medium">{t('logging_settings.log_level_info')}</p>
               <ul className="list-disc list-inside space-y-1 text-sm">
-                <li><strong>ERROR</strong>: 仅显示错误信息（生产环境推荐）</li>
-                <li><strong>WARN</strong>: 显示警告和错误信息</li>
-                <li><strong>INFO</strong>: 显示一般信息、警告和错误（默认）</li>
-                <li><strong>DEBUG</strong>: 显示所有日志，包括调试信息（开发调试用）</li>
+                <li><strong>{t('logging_settings.level_error')}</strong>: {t('logging_settings.level_error_desc')}</li>
+                <li><strong>{t('logging_settings.level_warn')}</strong>: {t('logging_settings.level_warn_desc')}</li>
+                <li><strong>{t('logging_settings.level_info')}</strong>: {t('logging_settings.level_info_desc')}</li>
+                <li><strong>{t('logging_settings.level_debug')}</strong>: {t('logging_settings.level_debug_desc')}</li>
               </ul>
             </div>
           </AlertDescription>
@@ -221,9 +223,9 @@ const LoggingSettingsComponent: React.FC = () => {
         {/* 日志级别选择 */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">控制台日志</CardTitle>
+            <CardTitle className="text-lg">{t('logging_settings.console_logging')}</CardTitle>
             <CardDescription>
-              控制在浏览器控制台中显示的日志级别
+              {t('logging_settings.console_logging_desc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -232,48 +234,48 @@ const LoggingSettingsComponent: React.FC = () => {
               name="level"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>日志级别</FormLabel>
+                  <FormLabel>{t('logging_settings.log_level')}</FormLabel>
                   <Select
                     value={field.value}
                     onValueChange={field.onChange}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="选择日志级别" />
+                        <SelectValue placeholder={t('logging_settings.select_log_level')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="ERROR">
                         <div className="flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-red-500" />
-                          <span>ERROR - 仅错误</span>
+                          <span>{t('logging_settings.level_error')} - {t('logging_settings.error_only')}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="WARN">
                         <div className="flex items-center gap-2">
                           <AlertCircle className="w-4 h-4 text-yellow-500" />
-                          <span>WARN - 警告及以上</span>
+                          <span>{t('logging_settings.level_warn')} - {t('logging_settings.warn_and_above')}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="INFO">
                         <div className="flex items-center gap-2">
                           <Info className="w-4 h-4 text-blue-500" />
-                          <span>INFO - 信息及以上（推荐）</span>
+                          <span>{t('logging_settings.level_info')} - {t('logging_settings.info_and_above')}</span>
                         </div>
                       </SelectItem>
                       <SelectItem value="DEBUG">
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="w-4 h-4 text-green-500" />
-                          <span>DEBUG - 所有日志</span>
+                          <span>{t('logging_settings.level_debug')} - {t('logging_settings.all_logs')}</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    当前级别: <Badge variant="outline">{currentLevel}</Badge>
+                    {t('logging_settings.current_level')}: <Badge variant="outline">{currentLevel}</Badge>
                     {currentLevel === 'DEBUG' && (
                       <span className="text-yellow-600 ml-2">
-                        ⚠️ DEBUG 级别会产生大量日志，可能影响性能
+                        {t('logging_settings.debug_warning')}
                       </span>
                     )}
                   </FormDescription>
@@ -286,9 +288,9 @@ const LoggingSettingsComponent: React.FC = () => {
         {/* 文件日志设置 */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">文件日志</CardTitle>
+            <CardTitle className="text-lg">{t('logging_settings.file_logging')}</CardTitle>
             <CardDescription>
-              将日志保存到文件，便于问题排查和分析
+              {t('logging_settings.file_logging_desc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -298,9 +300,9 @@ const LoggingSettingsComponent: React.FC = () => {
               render={({ field }) => (
                 <FormItem className="flex items-center justify-between rounded-lg border p-4">
                   <div className="space-y-0.5">
-                    <FormLabel className="text-base">启用文件日志</FormLabel>
+                    <FormLabel className="text-base">{t('logging_settings.enable_file_logging')}</FormLabel>
                     <FormDescription>
-                      将日志保存到 logs 文件夹
+                      {t('logging_settings.enable_file_logging_desc')}
                     </FormDescription>
                   </div>
                   <FormControl>
@@ -318,7 +320,7 @@ const LoggingSettingsComponent: React.FC = () => {
               name="max_file_size_mb"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>单个文件最大大小 (MB)</FormLabel>
+                  <FormLabel>{t('logging_settings.max_file_size')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -329,7 +331,7 @@ const LoggingSettingsComponent: React.FC = () => {
                     />
                   </FormControl>
                   <FormDescription>
-                    超过此大小后会自动创建新的日志文件
+                    {t('logging_settings.max_file_size_desc')}
                   </FormDescription>
                 </FormItem>
               )}
@@ -340,7 +342,7 @@ const LoggingSettingsComponent: React.FC = () => {
               name="max_files"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>保留文件数量</FormLabel>
+                  <FormLabel>{t('logging_settings.max_files')}</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -351,7 +353,7 @@ const LoggingSettingsComponent: React.FC = () => {
                     />
                   </FormControl>
                   <FormDescription>
-                    最多保留的历史日志文件数量，超过后自动删除最旧的文件
+                    {t('logging_settings.max_files_desc')}
                   </FormDescription>
                 </FormItem>
               )}
@@ -364,7 +366,7 @@ const LoggingSettingsComponent: React.FC = () => {
               className="w-full"
             >
               <FolderOpen className="w-4 h-4 mr-2" />
-              打开日志文件夹
+              {t('logging_settings.open_log_folder')}
             </Button>
           </CardContent>
         </Card>
@@ -374,21 +376,21 @@ const LoggingSettingsComponent: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5" />
-              日志文件管理
+              {t('logging_settings.log_file_management')}
             </CardTitle>
             <CardDescription>
-              查看和管理日志文件
+              {t('logging_settings.log_file_management_desc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* 统计信息 */}
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div>
-                <div className="text-sm text-muted-foreground">日志文件数量</div>
+                <div className="text-sm text-muted-foreground">{t('logging_settings.log_file_count')}</div>
                 <div className="text-2xl font-bold">{logFiles.length}</div>
               </div>
               <div>
-                <div className="text-sm text-muted-foreground">总大小</div>
+                <div className="text-sm text-muted-foreground">{t('logging_settings.total_size')}</div>
                 <div className="text-2xl font-bold">{formatFileSize(totalSize)}</div>
               </div>
             </div>
@@ -402,7 +404,7 @@ const LoggingSettingsComponent: React.FC = () => {
                 className="flex-1"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                刷新列表
+                {t('logging_settings.refresh_list')}
               </Button>
               <Button
                 type="button"
@@ -410,7 +412,7 @@ const LoggingSettingsComponent: React.FC = () => {
                 onClick={handleCleanupOldLogs}
                 className="flex-1"
               >
-                清理旧文件
+                {t('logging_settings.cleanup_old_files')}
               </Button>
               <Button
                 type="button"
@@ -418,7 +420,7 @@ const LoggingSettingsComponent: React.FC = () => {
                 onClick={handleDeleteAllLogs}
                 className="flex-1"
               >
-                删除全部
+                {t('logging_settings.delete_all')}
               </Button>
             </div>
 
@@ -443,15 +445,15 @@ const LoggingSettingsComponent: React.FC = () => {
                       onClick={async () => {
                         try {
                           await invoke('delete_log_file', { path: file.path });
-                          toast.success('文件已删除');
+                          toast.success(t('logging_settings.file_deleted'));
                           await loadLogFiles();
                         } catch (error) {
-                          console.error('删除文件失败:', error);
-                          toast.error('删除文件失败');
+                          console.error(t('logging_settings.delete_failed'), error);
+                          toast.error(t('logging_settings.delete_failed'));
                         }
                       }}
                     >
-                      删除
+                      {t('logging_settings.delete')}
                     </Button>
                   </div>
                 ))}
@@ -469,11 +471,11 @@ const LoggingSettingsComponent: React.FC = () => {
             disabled={loading}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
-            重置为默认
+            {t('controller_settings.reset_to_default')}
           </Button>
           <Button type="submit" disabled={loading}>
             <Save className="w-4 h-4 mr-2" />
-            保存设置
+            {t('controller_settings.save_settings')}
           </Button>
         </div>
       </form>

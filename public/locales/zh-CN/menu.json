@@ -16,7 +16,8 @@
     "visualization_description": "数据图表和仪表板",
     "monitoring_description": "性能监控和诊断",
     "history_description": "查询历史记录",
-    "extensions_description": "插件和集成"
+    "extensions_description": "插件和集成",
+    "unknown_function": "未知功能类型"
   },
   "context_menu": {
     "refresh_connection": "刷新连接",

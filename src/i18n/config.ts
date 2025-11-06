@@ -10,8 +10,8 @@ import { TranslationLoader } from './translation-loader';
 import { ResourceManager, type ResourceManagerConfig } from './resource-manager';
 import type { LanguageDetectionConfig, LoaderConfig } from './types';
 
-// 支持的语言列表
-export const SUPPORTED_LANGUAGES = ['zh-CN', 'en-US'] as const;
+// 支持的语言列表（包含基础语言代码以支持 fallback）
+export const SUPPORTED_LANGUAGES = ['zh-CN', 'en-US', 'zh', 'en'] as const;
 
 // 默认语言
 export const DEFAULT_LANGUAGE = 'zh-CN';

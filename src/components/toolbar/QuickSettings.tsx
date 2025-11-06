@@ -89,10 +89,10 @@ const QuickSettings: React.FC = () => {
           variant='ghost'
           size='sm'
           className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1 relative'
-          title='快速设置'
+          title={t('quick_settings')}
         >
           <Shield className='w-4 h-4' />
-          <span className='text-xs'>安全设置</span>
+          <span className='text-xs'>{t('quick_settings_panel.title')}</span>
           {dangerousOpsCount > 0 && (
             <Badge
               variant='destructive'
@@ -188,11 +188,11 @@ const QuickSettings: React.FC = () => {
                 <div className='flex items-center gap-1.5'>
                   <ShieldAlert className='w-3.5 h-3.5 text-orange-600' />
                   <label className='text-sm font-medium cursor-pointer'>
-                    允许危险操作
+                    {t('quick_settings_panel.allow_dangerous_operations')}
                   </label>
                 </div>
                 <p className='text-xs text-muted-foreground'>
-                  允许 DROP DATABASE/MEASUREMENT 等特别危险的操作
+                  {t('quick_settings_panel.allow_dangerous_operations_description')}
                 </p>
               </div>
               <Switch
@@ -338,8 +338,8 @@ const QuickSettings: React.FC = () => {
           {/* 底部提示 */}
           <div className='pt-2 border-t'>
             <p className='text-xs text-muted-foreground text-center'>
-              更多设置请前往{' '}
-              <span className='text-primary font-medium'>偏好设置</span> 面板
+              {t('quick_settings_panel.more_settings_hint')}{' '}
+              <span className='text-primary font-medium'>{t('quick_settings_panel.preferences_panel')}</span> {tCommon('panel')}
             </p>
           </div>
         </div>

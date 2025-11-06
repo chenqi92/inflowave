@@ -38,8 +38,11 @@ import {
   useQueryControllerSettings,
   type CombinedSettings,
 } from '@/hooks/useQueryControllerSettings';
+import { useSettingsTranslation } from '@/hooks/useTranslation';
 
 const ControllerSettings: React.FC = () => {
+  const { t } = useSettingsTranslation();
+  
   // 使用共享的设置管理 hook
   const {
     settings,
@@ -64,7 +67,7 @@ const ControllerSettings: React.FC = () => {
         controller: values.controller,
         query: values.query,
       });
-      showMessage.success('设置已保存');
+      showMessage.success(t('controller_settings.settings_saved'));
     } catch (error) {
       console.error('保存设置失败:', error);
       // 错误消息已在 hook 中显示
@@ -91,8 +94,8 @@ const ControllerSettings: React.FC = () => {
         <div className='flex items-center gap-3'>
           <Shield className='w-6 h-6 text-blue-600' />
           <div>
-            <h2 className='text-2xl font-bold'>查询设置</h2>
-            <p className='text-muted-foreground'>管理查询执行和安全控制</p>
+            <h2 className='text-2xl font-bold'>{t('controller_settings.title')}</h2>
+            <p className='text-muted-foreground'>{t('controller_settings.description')}</p>
           </div>
         </div>
 
@@ -102,8 +105,8 @@ const ControllerSettings: React.FC = () => {
             <Alert className='border-amber-200 bg-amber-50'>
               <AlertTriangle className='h-4 w-4 text-amber-600' />
               <AlertDescription className='text-amber-800'>
-                <strong>安全提醒：</strong>
-                启用DELETE和DROP语句可能会导致数据丢失。请谨慎操作，建议在生产环境中保持禁用状态。
+                <strong>{t('controller_settings.security_warning')}</strong>
+                {t('controller_settings.security_warning_message')}
               </AlertDescription>
             </Alert>
             {/* 语句权限控制 */}
@@ -111,10 +114,10 @@ const ControllerSettings: React.FC = () => {
               <div className='p-6 pb-4'>
                 <Title level={3} className='flex items-center gap-2 mb-2'>
                   <Database className='w-5 h-5' />
-                  语句权限控制
+                  {t('controller_settings.statement_permissions')}
                 </Title>
                 <Text type='secondary' className='text-sm'>
-                  控制哪些类型的SQL语句可以被执行
+                  {t('controller_settings.statement_permissions_description')}
                 </Text>
               </div>
               <div className='p-6 pt-0 space-y-6'>
@@ -127,21 +130,21 @@ const ControllerSettings: React.FC = () => {
                       <div className='space-y-0.5'>
                         <FormLabel className='text-base flex items-center gap-2'>
                           <Trash2 className='w-4 h-4' />
-                          允许DELETE语句
+                          {t('controller_settings.allow_delete_statements')}
                           {field.value ? (
                             <Badge variant='destructive' className='ml-2'>
                               <Unlock className='w-3 h-3 mr-1' />
-                              已启用
+                              {t('controller_settings.enabled')}
                             </Badge>
                           ) : (
                             <Badge variant='secondary' className='ml-2'>
                               <Lock className='w-3 h-3 mr-1' />
-                              已禁用
+                              {t('controller_settings.disabled')}
                             </Badge>
                           )}
                         </FormLabel>
                         <FormDescription>
-                          允许执行DELETE FROM语句删除数据
+                          {t('controller_settings.allow_delete_statements_description')}
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -163,21 +166,21 @@ const ControllerSettings: React.FC = () => {
                       <div className='space-y-0.5'>
                         <FormLabel className='text-base flex items-center gap-2'>
                           <Database className='w-4 h-4' />
-                          允许DROP语句
+                          {t('controller_settings.allow_drop_statements')}
                           {field.value ? (
                             <Badge variant='destructive' className='ml-2'>
                               <Unlock className='w-3 h-3 mr-1' />
-                              已启用
+                              {t('controller_settings.enabled')}
                             </Badge>
                           ) : (
                             <Badge variant='secondary' className='ml-2'>
                               <Lock className='w-3 h-3 mr-1' />
-                              已禁用
+                              {t('controller_settings.disabled')}
                             </Badge>
                           )}
                         </FormLabel>
                         <FormDescription>
-                          允许执行DROP DATABASE、DROP MEASUREMENT等语句
+                          {t('controller_settings.allow_drop_statements_description')}
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -199,21 +202,21 @@ const ControllerSettings: React.FC = () => {
                       <div className='space-y-0.5'>
                         <FormLabel className='text-base flex items-center gap-2'>
                           <AlertTriangle className='w-4 h-4' />
-                          允许危险操作
+                          {t('controller_settings.allow_dangerous_operations')}
                           {field.value ? (
                             <Badge variant='destructive' className='ml-2'>
                               <Unlock className='w-3 h-3 mr-1' />
-                              已启用
+                              {t('controller_settings.enabled')}
                             </Badge>
                           ) : (
                             <Badge variant='secondary' className='ml-2'>
                               <Lock className='w-3 h-3 mr-1' />
-                              已禁用
+                              {t('controller_settings.disabled')}
                             </Badge>
                           )}
                         </FormLabel>
                         <FormDescription>
-                          允许执行可能导致数据丢失的危险操作
+                          {t('controller_settings.allow_dangerous_operations_description')}
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -233,10 +236,10 @@ const ControllerSettings: React.FC = () => {
               <div className='p-6 pb-4'>
                 <Title level={3} className='flex items-center gap-2 mb-2'>
                   <Shield className='w-5 h-5' />
-                  安全确认设置
+                  {t('controller_settings.security_confirmation')}
                 </Title>
                 <Text type='secondary' className='text-sm'>
-                  为危险操作添加额外的确认步骤
+                  {t('controller_settings.security_confirmation_description')}
                 </Text>
               </div>
               <div className='p-6 pt-0 space-y-6'>
@@ -248,10 +251,10 @@ const ControllerSettings: React.FC = () => {
                     <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
                       <div className='space-y-0.5'>
                         <FormLabel className='text-base'>
-                          DELETE操作需要确认
+                          {t('controller_settings.require_confirmation_for_delete')}
                         </FormLabel>
                         <FormDescription>
-                          执行DELETE语句前显示确认对话框
+                          {t('controller_settings.require_confirmation_for_delete_description')}
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -273,10 +276,10 @@ const ControllerSettings: React.FC = () => {
                     <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
                       <div className='space-y-0.5'>
                         <FormLabel className='text-base'>
-                          DROP操作需要确认
+                          {t('controller_settings.require_confirmation_for_drop')}
                         </FormLabel>
                         <FormDescription>
-                          执行DROP语句前显示确认对话框
+                          {t('controller_settings.require_confirmation_for_drop_description')}
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -297,10 +300,10 @@ const ControllerSettings: React.FC = () => {
               <div className='p-6 pb-4'>
                 <Title level={3} className='flex items-center gap-2 mb-2'>
                   <Zap className='w-5 h-5' />
-                  查询性能优化
+                  {t('controller_settings.query_performance')}
                 </Title>
                 <Text type='secondary' className='text-sm'>
-                  配置查询执行的性能优化选项
+                  {t('controller_settings.query_performance_description')}
                 </Text>
               </div>
               <div className='p-6 pt-0 space-y-6'>
@@ -313,19 +316,19 @@ const ControllerSettings: React.FC = () => {
                       <div className='space-y-0.5'>
                         <FormLabel className='text-base flex items-center gap-2'>
                           <Layers className='w-4 h-4' />
-                          启用懒加载模式
+                          {t('controller_settings.enable_lazy_loading')}
                           {field.value ? (
                             <Badge variant='default' className='ml-2'>
-                              已启用
+                              {t('controller_settings.enabled')}
                             </Badge>
                           ) : (
                             <Badge variant='secondary' className='ml-2'>
-                              已禁用
+                              {t('controller_settings.disabled')}
                             </Badge>
                           )}
                         </FormLabel>
                         <FormDescription>
-                          点击"全部"时使用懒加载模式，分批加载数据以减轻数据库压力。禁用后将一次性加载所有数据（可能导致性能问题）
+                          {t('controller_settings.enable_lazy_loading_description')}
                         </FormDescription>
                       </div>
                       <FormControl>
@@ -346,10 +349,10 @@ const ControllerSettings: React.FC = () => {
                     <FormItem className='rounded-lg border p-4'>
                       <div className='space-y-2'>
                         <FormLabel className='text-base'>
-                          懒加载批次大小
+                          {t('controller_settings.lazy_loading_batch_size')}
                         </FormLabel>
                         <FormDescription>
-                          每次加载的数据行数，范围：100-10000（推荐：500-1000）
+                          {t('controller_settings.lazy_loading_batch_size_description')}
                         </FormDescription>
                         <div className='flex items-center gap-4'>
                           <FormControl>
@@ -386,7 +389,7 @@ const ControllerSettings: React.FC = () => {
                             />
                           </FormControl>
                           <Text type='secondary' className='text-sm'>
-                            条/批次
+                            {t('controller_settings.batch_size_unit')}
                           </Text>
                         </div>
                       </div>
@@ -403,7 +406,7 @@ const ControllerSettings: React.FC = () => {
       <div className='flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky'>
         <Button type='button' variant='outline' size='sm' onClick={handleResetSettings}>
           <RefreshCw className='w-4 h-4 mr-2' />
-          重置为默认
+          {t('controller_settings.reset_to_default')}
         </Button>
 
         <Button
@@ -412,7 +415,7 @@ const ControllerSettings: React.FC = () => {
           disabled={loading}
         >
           <Save className='w-4 h-4 mr-2' />
-          保存设置
+          {t('controller_settings.save_settings')}
         </Button>
       </div>
     </>

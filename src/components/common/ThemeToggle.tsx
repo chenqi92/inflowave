@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { useSettingsTranslation } from '@/hooks/useTranslation';
 
 interface ThemeToggleProps {
   variant?: 'default' | 'ghost' | 'outline';
@@ -23,6 +24,7 @@ export function ThemeToggle({
   className = '',
 }: ThemeToggleProps) {
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { t } = useSettingsTranslation();
 
   const getCurrentIcon = () => {
     if (theme === 'system') {
@@ -38,14 +40,14 @@ export function ThemeToggle({
   const getThemeLabel = (themeValue: string) => {
     switch (themeValue) {
       case 'light':
-        return '浅色模式';
+        return t('theme_toggle.light_mode');
       case 'dark':
-        return '深色模式';
+        return t('theme_toggle.dark_mode');
       case 'system':
       case 'auto':
-        return '跟随系统';
+        return t('theme_toggle.system_mode');
       default:
-        return '主题';
+        return t('theme');
     }
   };
 
@@ -56,7 +58,7 @@ export function ThemeToggle({
           variant={variant}
           size={size}
           className={`gap-2 ${className}`}
-          title='切换主题'
+          title={t('theme_toggle.toggle_theme')}
         >
           {getCurrentIcon()}
           {showLabel && <span className='text-xs'>{getThemeLabel(theme)}</span>}
@@ -65,17 +67,17 @@ export function ThemeToggle({
       <DropdownMenuContent align='end'>
         <DropdownMenuItem onClick={() => setTheme('light')}>
           <Sun className='mr-2 h-4 w-4' />
-          <span>浅色模式</span>
+          <span>{t('theme_toggle.light_mode')}</span>
           {theme === 'light' && <span className='ml-auto'>✓</span>}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('dark')}>
           <Moon className='mr-2 h-4 w-4' />
-          <span>深色模式</span>
+          <span>{t('theme_toggle.dark_mode')}</span>
           {theme === 'dark' && <span className='ml-auto'>✓</span>}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => setTheme('system')}>
           <Monitor className='mr-2 h-4 w-4' />
-          <span>跟随系统</span>
+          <span>{t('theme_toggle.system_mode')}</span>
           {theme === 'system' && <span className='ml-auto'>✓</span>}
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -90,6 +92,7 @@ export function SimpleThemeToggle({
   className = '',
 }: Omit<ThemeToggleProps, 'showLabel'>) {
   const { resolvedTheme, setTheme } = useTheme();
+  const { t } = useSettingsTranslation();
 
   const toggleTheme = () => {
     setTheme(resolvedTheme === 'dark' ? 'light' : 'dark');
@@ -101,7 +104,7 @@ export function SimpleThemeToggle({
       size={size}
       onClick={toggleTheme}
       className={className}
-      title={`切换到${resolvedTheme === 'dark' ? '浅色' : '深色'}模式`}
+      title={resolvedTheme === 'dark' ? t('theme_toggle.switch_to_light') : t('theme_toggle.switch_to_dark')}
     >
       {resolvedTheme === 'dark' ? (
         <Sun className='h-4 w-4' />

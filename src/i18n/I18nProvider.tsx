@@ -123,27 +123,32 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
   const initializeI18n = useCallback(async () => {
     try {
       console.log('🚀 [I18nProvider] 开始初始化国际化系统');
-      
+
       // 初始化 i18next
       await initI18n();
-      
+
       // 初始化 store
       await initI18nStore();
-      
-      // 如果指定了默认语言且与当前语言不同，切换到默认语言
-      if (defaultLanguage && defaultLanguage !== currentLanguage) {
-        await setLanguage(defaultLanguage);
+
+      // 如果指定了默认语言，切换到默认语言
+      // 注意：这里不检查 currentLanguage，因为 currentLanguage 会在 store 初始化时从 localStorage 恢复
+      // 只有在明确指定了 defaultLanguage 时才切换
+      if (defaultLanguage) {
+        const { currentLanguage: detectedLanguage } = useI18nStore.getState();
+        if (defaultLanguage !== detectedLanguage) {
+          await setLanguage(defaultLanguage);
+        }
       }
-      
+
       setIsInitialized(true);
       console.log('✅ [I18nProvider] 国际化系统初始化完成');
     } catch (error) {
       console.error('❌ [I18nProvider] 初始化失败:', error);
       setInitError(error as Error);
     }
-  }, [defaultLanguage, currentLanguage, setLanguage]);
+  }, [defaultLanguage, setLanguage]); // 移除 currentLanguage 依赖
 
-  // 组件挂载时初始化
+  // 组件挂载时初始化（只执行一次）
   useEffect(() => {
     initializeI18n();
   }, [initializeI18n]);

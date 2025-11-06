@@ -156,7 +156,18 @@ export const useI18nStore = create<I18nState>((set, get) => ({
         document.documentElement.lang = language;
         document.documentElement.dir = languageInfo.direction;
       }
-      
+
+      // 同步更新 AppStore 的 config.language
+      if (typeof window !== 'undefined') {
+        try {
+          const { useAppStore } = await import('@/store/app');
+          const { setLanguage: setAppLanguage } = useAppStore.getState();
+          setAppLanguage(language);
+        } catch (error) {
+          console.warn('⚠️ [I18nStore] 同步 AppStore 语言失败:', error);
+        }
+      }
+
       console.log(`✅ [I18nStore] 语言切换成功: ${language} (${switchTime}ms)`);
     } catch (error) {
       const switchTime = Date.now() - startTime;

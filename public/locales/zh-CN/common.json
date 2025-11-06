@@ -77,5 +77,6 @@
   "search_placeholder": "搜索...",
   "enter_chart_title": "输入图表标题",
   "select_database": "选择数据库",
-  "click_new_to_create_first_chart": "点击\"新建\"创建您的第一个图表"
+  "click_new_to_create_first_chart": "点击\"新建\"创建您的第一个图表",
+  "panel": "面板"
 }

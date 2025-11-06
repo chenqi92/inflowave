@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui';
 import type { FunctionType } from './RightFunctionBar';
 import NotificationPanel from '@/components/notifications/NotificationPanel';
+import { useMenuTranslation } from '@/hooks/useTranslation';
 
 // 懒加载面板适配的功能组件
 // 直接导入页面组件并创建面板适配版本
@@ -45,20 +46,22 @@ interface RightFunctionPanelProps {
   className?: string;
 }
 
-// 功能标题映射
-const functionTitles: Record<FunctionType, string> = {
-  notifications: '消息通知',
-  visualization: '数据可视化',
-  monitoring: '性能监控',
-  history: '查询历史',
-  extensions: '扩展管理',
-};
-
 const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
   selectedFunction,
   onClose,
   className = '',
 }) => {
+  const { t } = useMenuTranslation();
+  
+  // 功能标题映射
+  const functionTitles: Record<FunctionType, string> = {
+    notifications: t('right_panel.notifications'),
+    visualization: t('right_panel.visualization'),
+    monitoring: t('right_panel.monitoring'),
+    history: t('right_panel.history'),
+    extensions: t('right_panel.extensions'),
+  };
+  
   if (!selectedFunction) {
     return null;
   }
@@ -79,7 +82,7 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
         return (
           <div className="p-6">
             <div className="text-center text-muted-foreground">
-              <p>未知功能类型</p>
+              <p>{t('right_panel.unknown_function')}</p>
             </div>
           </div>
         );
