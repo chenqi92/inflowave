@@ -320,6 +320,7 @@
     "time_ago_just_now": "Just now",
     "time_ago_unknown": "Unknown",
     "settings_saved": "Settings saved",
+    "save_settings_button": "Save Settings",
     "settings_save_failed": "Failed to save settings",
     "load_failed": "Failed to load settings",
     "notification_settings_title": "Notification Settings",
@@ -355,6 +356,7 @@
     "font_size_large": "Large",
     "font_size_extra_large": "Extra Large",
     "font_family_label": "Font Family",
+    "font_import_success": "Font imported successfully, please check the font selector",
     "keyboard_navigation_label": "Keyboard Navigation",
     "keyboard_navigation_desc": "Enable keyboard navigation support",
     "workspace_settings_title": "Workspace Settings",
@@ -397,11 +399,21 @@
     "last_check_label": "Last Check Time",
     "checking_text": "Checking...",
     "check_update_button": "Check for Updates",
+    "check_update_failed": "Failed to check for updates",
     "new_version_text": "New version {{version}} available",
     "already_latest_text": "Already up to date",
+    "current_version_label": "Current version",
     "version_skipped_badge": "Skipped",
     "skipped_versions_title": "Skipped Versions",
     "skipped_versions_desc_full": "List of versions you chose to skip",
-    "clear_all_skipped": "Clear All Skipped Versions"
+    "clear_all_skipped": "Clear All Skipped Versions",
+    "clear_skipped_success": "Skipped versions cleared",
+    "clear_skipped_failed": "Failed to clear",
+    "check_interval_hourly": "Every hour",
+    "check_interval_6hours": "Every 6 hours",
+    "check_interval_12hours": "Every 12 hours",
+    "check_interval_daily": "Daily",
+    "check_interval_3days": "Every 3 days",
+    "check_interval_weekly": "Weekly"
   }
 }

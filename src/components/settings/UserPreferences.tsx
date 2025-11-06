@@ -529,8 +529,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>启用通知</FormLabel>
-                          <FormDescription>开启或关闭所有通知</FormDescription>
+                          <FormLabel>{t('enable_notifications_label')}</FormLabel>
+                          <FormDescription>{t('enable_notifications_desc')}</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -548,8 +548,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>桌面通知</FormLabel>
-                          <FormDescription>显示系统桌面通知</FormDescription>
+                          <FormLabel>{t('desktop_notifications_label')}</FormLabel>
+                          <FormDescription>{t('desktop_notifications_desc')}</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -569,8 +569,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>声音提醒</FormLabel>
-                          <FormDescription>播放通知声音</FormDescription>
+                          <FormLabel>{t('sound_notifications_label')}</FormLabel>
+                          <FormDescription>{t('sound_notifications_desc')}</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -587,25 +587,25 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     name='notifications.position'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>通知位置</FormLabel>
+                        <FormLabel>{t('notification_position_label')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className='h-9'>
-                              <SelectValue placeholder='选择通知位置' />
+                              <SelectValue placeholder={t('notification_position_placeholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value='topLeft'>左上角</SelectItem>
-                            <SelectItem value='topCenter'>顶部居中</SelectItem>
-                            <SelectItem value='topRight'>右上角</SelectItem>
-                            <SelectItem value='bottomLeft'>左下角</SelectItem>
+                            <SelectItem value='topLeft'>{t('notification_position_top_left')}</SelectItem>
+                            <SelectItem value='topCenter'>{t('notification_position_top_center')}</SelectItem>
+                            <SelectItem value='topRight'>{t('notification_position_top_right')}</SelectItem>
+                            <SelectItem value='bottomLeft'>{t('notification_position_bottom_left')}</SelectItem>
                             <SelectItem value='bottomCenter'>
-                              底部居中
+                              {t('notification_position_bottom_center')}
                             </SelectItem>
-                            <SelectItem value='bottomRight'>右下角</SelectItem>
+                            <SelectItem value='bottomRight'>{t('notification_position_bottom_right')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
@@ -620,8 +620,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>查询完成通知</FormLabel>
-                          <FormDescription>查询执行完成时通知</FormDescription>
+                          <FormLabel>{t('query_completion_notification')}</FormLabel>
+                          <FormDescription>{t('query_completion_notification_desc')}</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -639,8 +639,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>连接状态通知</FormLabel>
-                          <FormDescription>连接状态变化时通知</FormDescription>
+                          <FormLabel>{t('connection_status_notification')}</FormLabel>
+                          <FormDescription>{t('connection_status_notification_desc')}</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -660,8 +660,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
               <div className='flex items-center gap-3 mb-4'>
                 <Eye className='w-6 h-6 text-blue-600' />
                 <div>
-                  <h2 className='text-2xl font-bold'>无障碍设置</h2>
-                  <p className='text-muted-foreground'>优化界面可访问性</p>
+                  <h2 className='text-2xl font-bold'>{t('accessibility_settings_title')}</h2>
+                  <p className='text-muted-foreground'>{t('accessibility_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -672,8 +672,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>高对比度</FormLabel>
-                          <FormDescription>启用高对比度模式</FormDescription>
+                          <FormLabel>{t('high_contrast_label')}</FormLabel>
+                          <FormDescription>{t('high_contrast_desc')}</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -691,8 +691,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>减少动画</FormLabel>
-                          <FormDescription>减少界面动画效果</FormDescription>
+                          <FormLabel>{t('reduced_motion_label')}</FormLabel>
+                          <FormDescription>{t('reduced_motion_desc')}</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -711,21 +711,21 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     name='accessibility.font_size'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>字体大小</FormLabel>
+                        <FormLabel>{t('font_size_label')}</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger className='h-9'>
-                              <SelectValue placeholder='选择字体大小' />
+                              <SelectValue placeholder={t('font_size_placeholder')} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value='small'>小</SelectItem>
-                            <SelectItem value='medium'>中</SelectItem>
-                            <SelectItem value='large'>大</SelectItem>
-                            <SelectItem value='extraLarge'>特大</SelectItem>
+                            <SelectItem value='small'>{t('font_size_small')}</SelectItem>
+                            <SelectItem value='medium'>{t('font_size_medium')}</SelectItem>
+                            <SelectItem value='large'>{t('font_size_large')}</SelectItem>
+                            <SelectItem value='extraLarge'>{t('font_size_extra_large')}</SelectItem>
                           </SelectContent>
                         </Select>
                       </FormItem>
@@ -737,7 +737,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     name='accessibility.font_family'
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>字体系列</FormLabel>
+                        <FormLabel>{t('font_family_label')}</FormLabel>
                         <FormControl>
                           <CustomFontSelector
                             value={field.value}
@@ -765,7 +765,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='mt-6'>
                   <CustomFontImport onFontImported={() => {
                     // 字体导入后可以刷新字体列表
-                    showMessage.success('字体导入成功，请在字体选择器中查看');
+                    showMessage.success(t('font_import_success') || '字体导入成功，请在字体选择器中查看');
                   }} />
                 </div>
 
@@ -776,8 +776,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>键盘导航</FormLabel>
-                          <FormDescription>启用键盘导航支持</FormDescription>
+                          <FormLabel>{t('keyboard_navigation_label')}</FormLabel>
+                          <FormDescription>{t('keyboard_navigation_desc')}</FormDescription>
                         </div>
                         <FormControl>
                           <Switch
@@ -797,8 +797,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
               <div className='flex items-center gap-3 mb-4'>
                 <Layout className='w-6 h-6 text-blue-600' />
                 <div>
-                  <h2 className='text-2xl font-bold'>工作区设置</h2>
-                  <p className='text-muted-foreground'>自定义工作区布局</p>
+                  <h2 className='text-2xl font-bold'>{t('workspace_settings_title')}</h2>
+                  <p className='text-muted-foreground'>{t('workspace_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -811,10 +811,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                       const currentValue = field.value || 'comfortable';
                       const validValues = ['compact', 'comfortable', 'spacious', 'minimal'];
                       const safeValue = validValues.includes(currentValue) ? currentValue : 'comfortable';
-                      
+
                       return (
                         <FormItem>
-                          <FormLabel>布局模式</FormLabel>
+                          <FormLabel>{t('layout_mode_label')}</FormLabel>
                           <Select
                             onValueChange={(value) => {
                               console.log('布局模式选择变更:', value);
@@ -827,23 +827,23 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                               <SelectTrigger className='h-9'>
                                 <SelectValue
                                   placeholder={safeValue ?
-                                    (safeValue === 'compact' ? '紧凑布局' :
-                                     safeValue === 'comfortable' ? '舒适布局' :
-                                     safeValue === 'spacious' ? '宽松布局' :
-                                     safeValue === 'minimal' ? '极简布局' : '选择布局模式')
-                                    : '选择布局模式'}
+                                    (safeValue === 'compact' ? t('layout_mode_compact') :
+                                     safeValue === 'comfortable' ? t('layout_mode_comfortable') :
+                                     safeValue === 'spacious' ? t('layout_mode_spacious') :
+                                     safeValue === 'minimal' ? t('layout_mode_minimal') : t('layout_mode_placeholder'))
+                                    : t('layout_mode_placeholder')}
                                 />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value='compact'>紧凑布局</SelectItem>
-                              <SelectItem value='comfortable'>舒适布局</SelectItem>
-                              <SelectItem value='spacious'>宽松布局</SelectItem>
-                              <SelectItem value='minimal'>极简布局</SelectItem>
+                              <SelectItem value='compact'>{t('layout_mode_compact')}</SelectItem>
+                              <SelectItem value='comfortable'>{t('layout_mode_comfortable')}</SelectItem>
+                              <SelectItem value='spacious'>{t('layout_mode_spacious')}</SelectItem>
+                              <SelectItem value='minimal'>{t('layout_mode_minimal')}</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            选择工作区的视觉布局风格 (当前: {safeValue})
+                            {t('layout_mode_desc')} (当前: {safeValue})
                           </FormDescription>
                         </FormItem>
                       );
@@ -856,9 +856,9 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>启动时恢复标签页</FormLabel>
+                          <FormLabel>{t('restore_tabs_label')}</FormLabel>
                           <FormDescription>
-                            重新打开上次的标签页
+                            {t('restore_tabs_desc')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -879,9 +879,9 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>固定常用查询</FormLabel>
+                          <FormLabel>{t('pinned_queries_label')}</FormLabel>
                           <FormDescription>
-                            在侧边栏显示常用查询
+                            {t('pinned_queries_desc')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -900,9 +900,9 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                     render={({ field }) => (
                       <FormItem className='flex items-center justify-between'>
                         <div className='space-y-0.5'>
-                          <FormLabel>显示最近文件</FormLabel>
+                          <FormLabel>{t('recent_files_label')}</FormLabel>
                           <FormDescription>
-                            在菜单中显示最近文件
+                            {t('recent_files_desc')}
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -924,8 +924,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='flex items-center gap-3'>
                   <Keyboard className='w-6 h-6 text-blue-600' />
                   <div>
-                    <h2 className='text-2xl font-bold'>键盘快捷键</h2>
-                    <p className='text-muted-foreground'>自定义快捷键设置</p>
+                    <h2 className='text-2xl font-bold'>{t('keyboard_shortcuts_title')}</h2>
+                    <p className='text-muted-foreground'>{t('keyboard_shortcuts_desc')}</p>
                   </div>
                 </div>
                 <Button
@@ -934,7 +934,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                   size='sm'
                   onClick={loadDefaultShortcuts}
                 >
-                  重置为默认
+                  {t('reset_shortcuts')}
                 </Button>
               </div>
               <div>
@@ -994,7 +994,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                                           ))
                                         ) : (
                                           <span className='text-xs text-muted-foreground'>
-                                            按下快捷键...
+                                            {t('press_keys')}
                                           </span>
                                         )}
                                       </div>
@@ -1005,14 +1005,14 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                                         }
                                         disabled={editingKeys.length === 0}
                                       >
-                                        保存
+                                        {t('save_shortcut')}
                                       </Button>
                                       <Button
                                         size='sm'
                                         variant='outline'
                                         onClick={cancelEditingShortcut}
                                       >
-                                        取消
+                                        {t('cancel_shortcut')}
                                       </Button>
                                     </div>
                                   ) : (
@@ -1041,7 +1041,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                                   onClick={() => startEditingShortcut(shortcut)}
                                 >
                                   <Edit className='w-3 h-3 mr-1' />
-                                  编辑
+                                  {t('edit_shortcut')}
                                 </Button>
                               )}
                             </div>
@@ -1061,7 +1061,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       <div className='flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky'>
         <Button type='button' variant='outline' size='sm' onClick={() => form.reset()}>
           <RefreshCw className='w-4 h-4 mr-2' />
-          重置为默认
+          {t('reset_shortcuts')}
         </Button>
         <Button
           size='sm'
@@ -1074,7 +1074,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
           disabled={loading}
         >
           <Settings className='w-4 h-4 mr-2' />
-          保存设置
+          {t('save_settings_button') || '保存设置'}
         </Button>
       </div>
     </>

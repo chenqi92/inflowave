@@ -180,11 +180,27 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
   };
 
   // 格式化时间
-  const formatTime = (date: Date) => {
-    return formatDistanceToNow(new Date(date), {
-      addSuffix: true,
-      locale: zhCN,
-    });
+  const formatTime = (date: Date | string | undefined | null) => {
+    if (!date) {
+      return 'N/A';
+    }
+
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+      // 检查日期是否有效
+      if (isNaN(dateObj.getTime())) {
+        return 'Invalid Date';
+      }
+
+      return formatDistanceToNow(dateObj, {
+        addSuffix: true,
+        locale: zhCN,
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error, date);
+      return 'Invalid Date';
+    }
   };
 
   // 格式化持续时间

@@ -129,13 +129,29 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
   };
 
   // 格式化时间
-  const formatTime = (date: Date) => {
-    return new Intl.DateTimeFormat('zh-CN', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date(date));
+  const formatTime = (date: Date | string | undefined | null) => {
+    if (!date) {
+      return 'N/A';
+    }
+
+    try {
+      const dateObj = typeof date === 'string' ? new Date(date) : date;
+
+      // 检查日期是否有效
+      if (isNaN(dateObj.getTime())) {
+        return 'Invalid Date';
+      }
+
+      return new Intl.DateTimeFormat('zh-CN', {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(dateObj);
+    } catch (error) {
+      console.error('Error formatting date:', error, date);
+      return 'Invalid Date';
+    }
   };
 
   // 格式化持续时间

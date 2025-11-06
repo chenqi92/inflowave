@@ -30,8 +30,10 @@ import {UpdaterSettings, UpdateInfo} from '@/types/updater';
 import {updaterService} from '@/services/updaterService';
 import {ReleaseNotesManager} from './ReleaseNotesManager';
 import {toast} from 'sonner';
+import {useSettingsTranslation} from '@/hooks/useTranslation';
 
 export const UpdateSettings: React.FC = () => {
+    const { t } = useSettingsTranslation();
     const [settings, setSettings] = useState<UpdaterSettings | null>(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -48,7 +50,7 @@ export const UpdateSettings: React.FC = () => {
             setSettings(currentSettings);
         } catch (error) {
             console.error('Failed to load settings:', error);
-            toast.error('加载设置失败');
+            toast.error(t('load_failed'));
         } finally {
             setLoading(false);
         }
@@ -59,10 +61,10 @@ export const UpdateSettings: React.FC = () => {
         try {
             await updaterService.updateSettings(newSettings);
             setSettings(newSettings);
-            toast.success('设置已保存');
+            toast.success(t('settings_saved'));
         } catch (error) {
             console.error('Failed to save settings:', error);
-            toast.error('保存设置失败');
+            toast.error(t('settings_save_failed'));
         } finally {
             setSaving(false);
         }
@@ -83,15 +85,15 @@ export const UpdateSettings: React.FC = () => {
             setLastUpdateInfo(updateInfo);
 
             if (updateInfo.available && !updateInfo.is_skipped) {
-                toast.success(`发现新版本 ${updateInfo.latest_version}`);
+                toast.success(t('new_version_text', { version: updateInfo.latest_version }));
             } else if (updateInfo.is_skipped) {
-                toast.info(`版本 ${updateInfo.latest_version} 已被跳过`);
+                toast.info(`${t('version_skipped_badge')} ${updateInfo.latest_version}`);
             } else {
-                toast.success('当前已是最新版本');
+                toast.success(t('already_latest_text'));
             }
         } catch (error) {
             console.error('Failed to check for updates:', error);
-            toast.error('检查更新失败');
+            toast.error(t('check_update_failed') || '检查更新失败');
         } finally {
             setChecking(false);
         }
@@ -103,10 +105,10 @@ export const UpdateSettings: React.FC = () => {
         try {
             const newSettings = {...settings, skipped_versions: []};
             await saveSettings(newSettings);
-            toast.success('已清除跳过的版本');
+            toast.success(t('clear_skipped_success') || '已清除跳过的版本');
         } catch (error) {
             console.error('Failed to clear skipped versions:', error);
-            toast.error('清除失败');
+            toast.error(t('clear_skipped_failed') || '清除失败');
         }
     };
 
@@ -119,16 +121,16 @@ export const UpdateSettings: React.FC = () => {
             const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
             if (diffHours >= 24) {
-                return `${Math.floor(diffHours / 24)} 天前`;
+                return t('time_ago_days', { count: Math.floor(diffHours / 24) });
             } else if (diffHours >= 1) {
-                return `${diffHours} 小时前`;
+                return t('time_ago_hours', { count: diffHours });
             } else if (diffMinutes >= 1) {
-                return `${diffMinutes} 分钟前`;
+                return t('time_ago_minutes', { count: diffMinutes });
             } else {
-                return '刚刚';
+                return t('time_ago_just_now');
             }
         } catch {
-            return '未知';
+            return t('time_ago_unknown');
         }
     };
 
@@ -138,9 +140,9 @@ export const UpdateSettings: React.FC = () => {
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                         <Settings className="w-5 h-5"/>
-                        <span>更新设置</span>
+                        <span>{t('update_settings_title')}</span>
                     </CardTitle>
-                    <CardDescription>正在加载设置...</CardDescription>
+                    <CardDescription>{t('update_settings_loading')}</CardDescription>
                 </CardHeader>
             </Card>
         );
@@ -152,9 +154,9 @@ export const UpdateSettings: React.FC = () => {
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                         <AlertTriangle className="w-5 h-5 text-red-500"/>
-                        <span>更新设置</span>
+                        <span>{t('update_settings_title')}</span>
                     </CardTitle>
-                    <CardDescription>设置加载失败</CardDescription>
+                    <CardDescription>{t('update_settings_load_failed')}</CardDescription>
                 </CardHeader>
             </Card>
         );
@@ -167,19 +169,19 @@ export const UpdateSettings: React.FC = () => {
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                         <Settings className="w-5 h-5"/>
-                        <span>自动更新设置</span>
+                        <span>{t('auto_update_settings_title')}</span>
                     </CardTitle>
                     <CardDescription>
-                        配置应用程序的自动更新行为
+                        {t('auto_update_settings_desc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     {/* 自动检查 */}
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                            <Label className="text-base">自动检查更新</Label>
+                            <Label className="text-base">{t('auto_check_label')}</Label>
                             <p className="text-sm text-muted-foreground">
-                                定期检查新版本并通知您
+                                {t('auto_check_desc')}
                             </p>
                         </div>
                         <Switch
@@ -195,7 +197,7 @@ export const UpdateSettings: React.FC = () => {
                     <div className="space-y-3">
                         <div className="flex items-center space-x-2">
                             <Clock className="w-4 h-4"/>
-                            <Label className="text-base">检查间隔</Label>
+                            <Label className="text-base">{t('check_interval_label')}</Label>
                         </div>
                         <Select
                             value={settings.check_interval.toString()}
@@ -206,12 +208,12 @@ export const UpdateSettings: React.FC = () => {
                                 <SelectValue/>
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="1">每小时</SelectItem>
-                                <SelectItem value="6">每 6 小时</SelectItem>
-                                <SelectItem value="12">每 12 小时</SelectItem>
-                                <SelectItem value="24">每天</SelectItem>
-                                <SelectItem value="72">每 3 天</SelectItem>
-                                <SelectItem value="168">每周</SelectItem>
+                                <SelectItem value="1">{t('check_interval_hourly') || '每小时'}</SelectItem>
+                                <SelectItem value="6">{t('check_interval_6hours') || '每 6 小时'}</SelectItem>
+                                <SelectItem value="12">{t('check_interval_12hours') || '每 12 小时'}</SelectItem>
+                                <SelectItem value="24">{t('check_interval_daily') || '每天'}</SelectItem>
+                                <SelectItem value="72">{t('check_interval_3days') || '每 3 天'}</SelectItem>
+                                <SelectItem value="168">{t('check_interval_weekly') || '每周'}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -223,10 +225,10 @@ export const UpdateSettings: React.FC = () => {
                         <div className="space-y-1">
                             <div className="flex items-center space-x-2">
                                 <Bell className="w-4 h-4"/>
-                                <Label className="text-base">更新通知</Label>
+                                <Label className="text-base">{t('update_notification_label')}</Label>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                发现新版本时显示通知
+                                {t('update_notification_desc')}
                             </p>
                         </div>
                         <Switch
@@ -241,9 +243,9 @@ export const UpdateSettings: React.FC = () => {
                     {/* 包含预发布版本 */}
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                            <Label className="text-base">包含预发布版本</Label>
+                            <Label className="text-base">{t('include_prerelease_label')}</Label>
                             <p className="text-sm text-muted-foreground">
-                                检查 Beta 和 RC 版本
+                                {t('include_prerelease_desc')}
                             </p>
                         </div>
                         <Switch
@@ -260,16 +262,16 @@ export const UpdateSettings: React.FC = () => {
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                         <RefreshCw className="w-5 h-5"/>
-                        <span>立即检查更新</span>
+                        <span>{t('check_now_title')}</span>
                     </CardTitle>
                     <CardDescription>
-                        手动检查是否有新版本可用
+                        {t('check_now_desc')}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">
-                            <p className="text-sm font-medium">上次检查时间</p>
+                            <p className="text-sm font-medium">{t('last_check_label')}</p>
                             <p className="text-sm text-muted-foreground">
                                 {formatLastCheck(settings.last_check)}
                             </p>
@@ -283,12 +285,12 @@ export const UpdateSettings: React.FC = () => {
                             {checking ? (
                                 <>
                                     <RefreshCw className="w-4 h-4 mr-2 animate-spin"/>
-                                    检查中...
+                                    {t('checking_text')}
                                 </>
                             ) : (
                                 <>
                                     <RefreshCw className="w-4 h-4 mr-2"/>
-                                    检查更新
+                                    {t('check_update_button')}
                                 </>
                             )}
                         </Button>
@@ -305,16 +307,16 @@ export const UpdateSettings: React.FC = () => {
                                 <div className="flex-1 space-y-1">
                                     <p className="text-sm font-medium">
                                         {lastUpdateInfo.available
-                                            ? `新版本 ${lastUpdateInfo.latest_version} 可用`
-                                            : '当前已是最新版本'
+                                            ? t('new_version_text', { version: lastUpdateInfo.latest_version })
+                                            : t('already_latest_text')
                                         }
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                        当前版本: {lastUpdateInfo.current_version}
+                                        {t('current_version_label') || '当前版本'}: {lastUpdateInfo.current_version}
                                     </p>
                                     {lastUpdateInfo.is_skipped && (
                                         <Badge variant="secondary" className="text-xs">
-                                            已跳过
+                                            {t('version_skipped_badge')}
                                         </Badge>
                                     )}
                                 </div>
@@ -330,10 +332,10 @@ export const UpdateSettings: React.FC = () => {
                     <CardHeader>
                         <CardTitle className="flex items-center space-x-2">
                             <X className="w-5 h-5"/>
-                            <span>跳过的版本</span>
+                            <span>{t('skipped_versions_title')}</span>
                         </CardTitle>
                         <CardDescription>
-                            您选择跳过的版本列表
+                            {t('skipped_versions_desc_full')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -351,7 +353,7 @@ export const UpdateSettings: React.FC = () => {
                             disabled={saving}
                             className="w-full"
                         >
-                            清除所有跳过的版本
+                            {t('clear_all_skipped')}
                         </Button>
                     </CardContent>
                 </Card>
