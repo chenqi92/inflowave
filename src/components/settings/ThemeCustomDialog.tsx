@@ -44,6 +44,7 @@ import { colorSchemes } from '@/types/theme';
 import type { ThemeMode, ColorScheme, FontSize, BorderRadius, ThemePreset } from '@/types/theme';
 import { showMessage } from '@/utils/message';
 import { saveAs } from 'file-saver';
+import { useSettingsTranslation } from '@/hooks/useTranslation';
 
 /**
  * 组件属性
@@ -62,6 +63,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
   open,
   onClose,
 }) => {
+  const { t } = useSettingsTranslation();
   const { theme, setTheme, colorScheme, setColorScheme } = useTheme();
   const [currentTab, setCurrentTab] = useState('appearance');
   const [presets, setPresets] = useState<ThemePreset[]>([]);
@@ -77,27 +79,27 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
 
   // 主题模式选项
   const themeModes: { value: ThemeMode; label: string; icon: any }[] = [
-    { value: 'light', label: '浅色模式', icon: Sun },
-    { value: 'dark', label: '深色模式', icon: Moon },
-    { value: 'system', label: '跟随系统', icon: Monitor },
+    { value: 'light', label: t('theme_mode_light') || '浅色模式', icon: Sun },
+    { value: 'dark', label: t('theme_mode_dark') || '深色模式', icon: Moon },
+    { value: 'system', label: t('theme_mode_system') || '跟随系统', icon: Monitor },
   ];
 
   // 字体大小选项
   const fontSizes: { value: FontSize; label: string; size: string }[] = [
-    { value: 'xs', label: '极小', size: '12px' },
-    { value: 'sm', label: '小', size: '14px' },
-    { value: 'base', label: '标准', size: '16px' },
-    { value: 'lg', label: '大', size: '18px' },
-    { value: 'xl', label: '极大', size: '20px' },
+    { value: 'xs', label: t('font_size_xs') || '极小', size: '12px' },
+    { value: 'sm', label: t('font_size_sm') || '小', size: '14px' },
+    { value: 'base', label: t('font_size_base') || '标准', size: '16px' },
+    { value: 'lg', label: t('font_size_lg') || '大', size: '18px' },
+    { value: 'xl', label: t('font_size_xl') || '极大', size: '20px' },
   ];
 
   // 圆角大小选项
   const borderRadiuses: { value: BorderRadius; label: string }[] = [
-    { value: 'none', label: '无圆角' },
-    { value: 'sm', label: '小圆角' },
-    { value: 'md', label: '中圆角' },
-    { value: 'lg', label: '大圆角' },
-    { value: 'xl', label: '超大圆角' },
+    { value: 'none', label: t('border_radius_none') || '无圆角' },
+    { value: 'sm', label: t('border_radius_sm') || '小圆角' },
+    { value: 'md', label: t('border_radius_md') || '中圆角' },
+    { value: 'lg', label: t('border_radius_lg') || '大圆角' },
+    { value: 'xl', label: t('border_radius_xl') || '超大圆角' },
   ];
 
   // 处理主题模式变化
@@ -115,13 +117,13 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
   // 处理字体大小变化
   const handleFontSizeChange = (size: FontSize) => {
     themeManager.setFontSize(size);
-    showMessage.success('字体大小已更新');
+    showMessage.success(t('font_size_updated') || '字体大小已更新');
   };
 
   // 处理圆角大小变化
   const handleBorderRadiusChange = (radius: BorderRadius) => {
     themeManager.setBorderRadius(radius);
-    showMessage.success('圆角大小已更新');
+    showMessage.success(t('border_radius_updated') || '圆角大小已更新');
   };
 
   // 应用预设
@@ -132,7 +134,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
         setTheme(preset.config.mode);
         setColorScheme(preset.config.colorScheme);
         setSelectedPreset(presetId);
-        showMessage.success(`已应用预设：${preset.name}`);
+        showMessage.success(t('preset_applied', { name: preset.name }) || `已应用预设：${preset.name}`);
       }
     }
   };
@@ -140,7 +142,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
   // 保存为预设
   const handleSavePreset = () => {
     if (!presetName.trim()) {
-      showMessage.error('请输入预设名称');
+      showMessage.error(t('preset_name_required') || '请输入预设名称');
       return;
     }
 
@@ -148,7 +150,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
     const preset: ThemePreset = {
       id: `custom-${Date.now()}`,
       name: presetName,
-      description: '自定义主题预设',
+      description: t('custom_theme_preset') || '自定义主题预设',
       config,
       builtin: false,
     };
@@ -156,43 +158,43 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
     themeManager.addPreset(preset);
     setPresets(themeManager.getAllPresets());
     setPresetName('');
-    showMessage.success('预设已保存');
+    showMessage.success(t('preset_saved') || '预设已保存');
   };
 
   // 删除预设
   const handleDeletePreset = (presetId: string) => {
-    if (confirm('确定要删除此预设吗？')) {
+    if (confirm(t('confirm_delete_preset') || '确定要删除此预设吗？')) {
       if (themeManager.deletePreset(presetId)) {
         setPresets(themeManager.getAllPresets());
         if (selectedPreset === presetId) {
           setSelectedPreset(null);
         }
-        showMessage.success('预设已删除');
+        showMessage.success(t('preset_deleted') || '预设已删除');
       } else {
-        showMessage.error('无法删除内置预设');
+        showMessage.error(t('cannot_delete_builtin') || '无法删除内置预设');
       }
     }
   };
 
   // 重置主题
   const handleReset = () => {
-    if (confirm('确定要重置主题到默认设置吗？')) {
+    if (confirm(t('confirm_reset_theme') || '确定要重置主题到默认设置吗？')) {
       themeManager.reset();
       const config = themeManager.getConfig();
       setTheme(config.mode);
       setColorScheme(config.colorScheme);
-      showMessage.success('主题已重置');
+      showMessage.success(t('theme_reset') || '主题已重置');
     }
   };
 
   // 导出主题
   const handleExport = () => {
-    const data = themeManager.export('我的主题', '自定义主题配置');
+    const data = themeManager.export(t('my_theme') || '我的主题', t('custom_theme_config') || '自定义主题配置');
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: 'application/json',
     });
     saveAs(blob, `inflowave-theme-${Date.now()}.json`);
-    showMessage.success('主题配置已导出');
+    showMessage.success(t('theme_exported') || '主题配置已导出');
   };
 
   // 导入主题
@@ -213,12 +215,12 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
             const config = themeManager.getConfig();
             setTheme(config.mode);
             setColorScheme(config.colorScheme);
-            showMessage.success('主题配置已导入');
+            showMessage.success(t('theme_imported') || '主题配置已导入');
           } else {
-            showMessage.error('导入失败');
+            showMessage.error(t('import_failed') || '导入失败');
           }
         } catch (error) {
-          showMessage.error('文件格式错误');
+          showMessage.error(t('file_format_error') || '文件格式错误');
         }
       };
       reader.readAsText(file);

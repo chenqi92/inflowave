@@ -33,247 +33,248 @@ import { useUserPreferencesStore, type UserPreferences } from '@/stores/userPref
 import { useSettingsTranslation } from '@/hooks/useTranslation';
 
 // 获取所有系统快捷键的函数
-const getAllSystemShortcuts = (): KeyboardShortcut[] => {
+// 创建快捷键工厂函数，接受翻译函数作为参数
+const createSystemShortcuts = (t: (key: string) => string): KeyboardShortcut[] => {
   return [
     // 导航快捷键
     {
       id: 'nav_dashboard',
-      name: '打开仪表板',
-      description: '切换到仪表板页面',
+      name: t('shortcut_nav_dashboard'),
+      description: t('shortcut_nav_dashboard_desc'),
       keys: ['Ctrl', '1'],
-      category: '导航',
+      category: t('shortcut_category_navigation'),
       enabled: true,
     },
     {
       id: 'nav_connections',
-      name: '打开连接管理',
-      description: '切换到连接管理页面',
+      name: t('shortcut_nav_connections'),
+      description: t('shortcut_nav_connections_desc'),
       keys: ['Ctrl', '2'],
-      category: '导航',
+      category: t('shortcut_category_navigation'),
       enabled: true,
     },
     {
       id: 'nav_query',
-      name: '打开数据查询',
-      description: '切换到数据查询页面',
+      name: t('shortcut_nav_query'),
+      description: t('shortcut_nav_query_desc'),
       keys: ['Ctrl', '3'],
-      category: '导航',
+      category: t('shortcut_category_navigation'),
       enabled: true,
     },
     {
       id: 'nav_database',
-      name: '打开数据库管理',
-      description: '切换到数据库管理页面',
+      name: t('shortcut_nav_database'),
+      description: t('shortcut_nav_database_desc'),
       keys: ['Ctrl', '4'],
-      category: '导航',
+      category: t('shortcut_category_navigation'),
       enabled: true,
     },
     {
       id: 'nav_visualization',
-      name: '打开数据可视化',
-      description: '切换到数据可视化页面',
+      name: t('shortcut_nav_visualization'),
+      description: t('shortcut_nav_visualization_desc'),
       keys: ['Ctrl', '5'],
-      category: '导航',
+      category: t('shortcut_category_navigation'),
       enabled: true,
     },
     {
       id: 'nav_performance',
-      name: '打开性能监控',
-      description: '切换到性能监控页面',
+      name: t('shortcut_nav_performance'),
+      description: t('shortcut_nav_performance_desc'),
       keys: ['Ctrl', '6'],
-      category: '导航',
+      category: t('shortcut_category_navigation'),
       enabled: true,
     },
     {
       id: 'nav_settings',
-      name: '打开应用设置',
-      description: '切换到应用设置页面',
+      name: t('shortcut_nav_settings'),
+      description: t('shortcut_nav_settings_desc'),
       keys: ['Ctrl', '7'],
-      category: '导航',
+      category: t('shortcut_category_navigation'),
       enabled: true,
     },
 
     // 文件操作快捷键
     {
       id: 'file_new_query',
-      name: '新建查询',
-      description: '创建新的SQL查询',
+      name: t('shortcut_file_new_query'),
+      description: t('shortcut_file_new_query_desc'),
       keys: ['Ctrl', 'N'],
-      category: '文件',
+      category: t('shortcut_category_file'),
       enabled: true,
     },
     {
       id: 'file_new_connection',
-      name: '新建连接',
-      description: '创建新的数据库连接',
+      name: t('shortcut_file_new_connection'),
+      description: t('shortcut_file_new_connection_desc'),
       keys: ['Ctrl', 'Shift', 'N'],
-      category: '文件',
+      category: t('shortcut_category_file'),
       enabled: true,
     },
     {
       id: 'file_save_query',
-      name: '保存查询',
-      description: '保存当前查询',
+      name: t('shortcut_file_save_query'),
+      description: t('shortcut_file_save_query_desc'),
       keys: ['Ctrl', 'S'],
-      category: '文件',
+      category: t('shortcut_category_file'),
       enabled: true,
     },
     {
       id: 'file_open_query',
-      name: '打开查询',
-      description: '打开已保存的查询',
+      name: t('shortcut_file_open_query'),
+      description: t('shortcut_file_open_query_desc'),
       keys: ['Ctrl', 'O'],
-      category: '文件',
+      category: t('shortcut_category_file'),
       enabled: true,
     },
 
     // 查询操作快捷键
     {
       id: 'query_execute',
-      name: '执行查询',
-      description: '执行当前查询',
+      name: t('shortcut_query_execute'),
+      description: t('shortcut_query_execute_desc'),
       keys: ['Ctrl', 'Enter'],
-      category: '查询',
+      category: t('shortcut_category_query'),
       enabled: true,
     },
     {
       id: 'query_stop',
-      name: '停止查询',
-      description: '停止正在执行的查询',
+      name: t('shortcut_query_stop'),
+      description: t('shortcut_query_stop_desc'),
       keys: ['Ctrl', 'Shift', 'C'],
-      category: '查询',
+      category: t('shortcut_category_query'),
       enabled: true,
     },
     {
       id: 'query_format',
-      name: '格式化查询',
-      description: '格式化SQL查询代码',
+      name: t('shortcut_query_format'),
+      description: t('shortcut_query_format_desc'),
       keys: ['Ctrl', 'L'],
-      category: '查询',
+      category: t('shortcut_category_query'),
       enabled: true,
     },
 
     // 编辑操作快捷键
     {
       id: 'edit_copy_line',
-      name: '复制当前行',
-      description: '复制光标所在行',
+      name: t('shortcut_edit_copy_line'),
+      description: t('shortcut_edit_copy_line_desc'),
       keys: ['Ctrl', 'D'],
-      category: '编辑',
+      category: t('shortcut_category_edit'),
       enabled: true,
     },
     {
       id: 'edit_toggle_comment',
-      name: '切换注释',
-      description: '注释/取消注释选中行',
+      name: t('shortcut_edit_toggle_comment'),
+      description: t('shortcut_edit_toggle_comment_desc'),
       keys: ['Ctrl', '/'],
-      category: '编辑',
+      category: t('shortcut_category_edit'),
       enabled: true,
     },
 
     // 搜索快捷键
     {
       id: 'search_global',
-      name: '全局搜索',
-      description: '打开全局搜索',
+      name: t('shortcut_search_global'),
+      description: t('shortcut_search_global_desc'),
       keys: ['Ctrl', 'Shift', 'P'],
-      category: '搜索',
+      category: t('shortcut_category_search'),
       enabled: true,
     },
 
     // 工具快捷键
     {
       id: 'tools_shortcuts',
-      name: '显示快捷键帮助',
-      description: '显示所有快捷键',
+      name: t('shortcut_tools_shortcuts'),
+      description: t('shortcut_tools_shortcuts_desc'),
       keys: ['Ctrl', 'K'],
-      category: '工具',
+      category: t('shortcut_category_tools'),
       enabled: true,
     },
     {
       id: 'tools_dev_tools',
-      name: '切换开发者工具',
-      description: '打开/关闭开发者工具',
+      name: t('shortcut_tools_dev_tools'),
+      description: t('shortcut_tools_dev_tools_desc'),
       keys: ['F12'],
-      category: '工具',
+      category: t('shortcut_category_tools'),
       enabled: true,
     },
 
     // 界面操作快捷键
     {
       id: 'layout_toggle_sidebar',
-      name: '切换侧边栏',
-      description: '显示/隐藏侧边栏',
+      name: t('shortcut_layout_toggle_sidebar'),
+      description: t('shortcut_layout_toggle_sidebar_desc'),
       keys: ['Ctrl', 'B'],
-      category: '界面',
+      category: t('shortcut_category_layout'),
       enabled: true,
     },
     {
       id: 'layout_refresh',
-      name: '刷新页面',
-      description: '刷新当前页面',
+      name: t('shortcut_layout_refresh'),
+      description: t('shortcut_layout_refresh_desc'),
       keys: ['F5'],
-      category: '界面',
+      category: t('shortcut_category_layout'),
       enabled: true,
     },
 
     // 视图操作快捷键
     {
       id: 'view_zoom_in',
-      name: '放大',
-      description: '放大界面',
+      name: t('shortcut_view_zoom_in'),
+      description: t('shortcut_view_zoom_in_desc'),
       keys: ['Ctrl', '+'],
-      category: '视图',
+      category: t('shortcut_category_view'),
       enabled: true,
     },
     {
       id: 'view_zoom_out',
-      name: '缩小',
-      description: '缩小界面',
+      name: t('shortcut_view_zoom_out'),
+      description: t('shortcut_view_zoom_out_desc'),
       keys: ['Ctrl', '-'],
-      category: '视图',
+      category: t('shortcut_category_view'),
       enabled: true,
     },
     {
       id: 'view_reset_zoom',
-      name: '重置缩放',
-      description: '重置界面缩放',
+      name: t('shortcut_view_reset_zoom'),
+      description: t('shortcut_view_reset_zoom_desc'),
       keys: ['Ctrl', '0'],
-      category: '视图',
+      category: t('shortcut_category_view'),
       enabled: true,
     },
 
     // 数据库操作快捷键
     {
       id: 'db_refresh',
-      name: '刷新数据库结构',
-      description: '刷新数据库树结构',
+      name: t('shortcut_db_refresh'),
+      description: t('shortcut_db_refresh_desc'),
       keys: ['F5'],
-      category: '数据库',
+      category: t('shortcut_category_database'),
       enabled: true,
     },
     {
       id: 'db_delete',
-      name: '删除选中项',
-      description: '删除选中的数据库项',
+      name: t('shortcut_db_delete'),
+      description: t('shortcut_db_delete_desc'),
       keys: ['Delete'],
-      category: '数据库',
+      category: t('shortcut_category_database'),
       enabled: true,
     },
     {
       id: 'db_rename',
-      name: '重命名选中项',
-      description: '重命名选中的数据库项',
+      name: t('shortcut_db_rename'),
+      description: t('shortcut_db_rename_desc'),
       keys: ['F2'],
-      category: '数据库',
+      category: t('shortcut_category_database'),
       enabled: true,
     },
     {
       id: 'db_new_table',
-      name: '创建新表',
-      description: '创建新的数据表',
+      name: t('shortcut_db_new_table'),
+      description: t('shortcut_db_new_table_desc'),
       keys: ['Ctrl', 'T'],
-      category: '数据库',
+      category: t('shortcut_category_database'),
       enabled: true,
     },
   ];
@@ -305,7 +306,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
   const form = useForm<UserPreferences>({
     defaultValues: {
-      shortcuts: getAllSystemShortcuts(),
+      shortcuts: createSystemShortcuts(t),
       notifications: {
         enabled: true,
         query_completion: true,
@@ -350,7 +351,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
         shortcuts:
           storePreferences.shortcuts && storePreferences.shortcuts.length > 0
             ? storePreferences.shortcuts
-            : getAllSystemShortcuts(),
+            : createSystemShortcuts(t),
       };
 
       console.log('从 store 加载的偏好数据:', preferences);
@@ -390,12 +391,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       // 🔧 使用 store 的乐观更新，立即生效
       await updatePreferences(values as Partial<UserPreferences>);
 
-      showMessage.success('偏好设置已保存');
+      showMessage.success(t('preferences_saved') || '偏好设置已保存');
       onSave?.(values);
     } catch (error) {
       // 🔧 store 会自动回滚，只需显示错误
       console.error('保存用户偏好失败:', error);
-      showMessage.error('保存用户偏好失败');
+      showMessage.error(t('preferences_save_failed') || '保存用户偏好失败');
     } finally {
       setLoading(false);
     }
@@ -404,12 +405,12 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   // 加载默认快捷键
   const loadDefaultShortcuts = async () => {
     try {
-      const shortcuts = getAllSystemShortcuts();
+      const shortcuts = createSystemShortcuts(t);
       form.setValue('shortcuts', shortcuts);
-      showMessage.success('已重置为默认快捷键');
+      showMessage.success(t('shortcuts_reset_success') || '已重置为默认快捷键');
     } catch (error) {
       console.error('加载默认快捷键失败:', error);
-      showMessage.error('加载默认快捷键失败');
+      showMessage.error(t('shortcuts_reset_failed') || '加载默认快捷键失败');
     }
   };
 
@@ -436,7 +437,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     setEditingShortcutId(null);
     setEditingKeys([]);
 
-    showMessage.success('快捷键已更新');
+    showMessage.success(t('shortcut_updated') || '快捷键已更新');
   };
 
   // 切换快捷键启用状态

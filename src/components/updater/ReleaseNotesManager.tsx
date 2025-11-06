@@ -19,8 +19,10 @@ import {ReleaseNotesViewer} from './ReleaseNotesViewer';
 import {releaseNotesService} from '@/services/releaseNotesService';
 import {updaterService} from '@/services/updaterService';
 import {toast} from 'sonner';
+import {useSettingsTranslation} from '@/hooks/useTranslation';
 
 export const ReleaseNotesManager: React.FC = () => {
+    const { t } = useSettingsTranslation();
     const [availableVersions, setAvailableVersions] = useState<string[]>([]);
     const [selectedVersion, setSelectedVersion] = useState<string>('');
     const [loading, setLoading] = useState(true);
@@ -42,7 +44,7 @@ export const ReleaseNotesManager: React.FC = () => {
             }
         } catch (error) {
             console.error('Failed to load available versions:', error);
-            toast.error('加载版本列表失败');
+            toast.error(t('release_notes_load_failed') || '加载版本列表失败');
         } finally {
             setLoading(false);
         }
@@ -54,10 +56,10 @@ export const ReleaseNotesManager: React.FC = () => {
             // 清除缓存并重新加载
             releaseNotesService.clearCache();
             await loadAvailableVersions();
-            toast.success('发布说明已刷新');
+            toast.success(t('release_notes_refreshed') || '发布说明已刷新');
         } catch (error) {
             console.error('Failed to refresh release notes:', error);
-            toast.error('刷新失败');
+            toast.error(t('refresh_failed') || '刷新失败');
         } finally {
             setRefreshing(false);
         }
@@ -67,17 +69,17 @@ export const ReleaseNotesManager: React.FC = () => {
         try {
             const updateInfo = await updaterService.manualCheck();
             if (updateInfo.available && !updateInfo.is_skipped) {
-                toast.success(`发现新版本 ${updateInfo.latest_version}`);
+                toast.success(t('new_version_found', { version: updateInfo.latest_version }) || `发现新版本 ${updateInfo.latest_version}`);
                 // 如果有新版本且不在列表中，添加到列表
                 if (!availableVersions.includes(updateInfo.latest_version)) {
                     setAvailableVersions(prev => [updateInfo.latest_version, ...prev]);
                 }
             } else {
-                toast.success('当前已是最新版本');
+                toast.success(t('already_latest_text') || '当前已是最新版本');
             }
         } catch (error) {
             console.error('Failed to check for updates:', error);
-            toast.error('检查更新失败');
+            toast.error(t('check_update_failed') || '检查更新失败');
         }
     };
 
@@ -91,14 +93,14 @@ export const ReleaseNotesManager: React.FC = () => {
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                         <BookOpen className="w-5 h-5"/>
-                        <span>发布说明</span>
+                        <span>{t('release_notes_title') || '发布说明'}</span>
                     </CardTitle>
-                    <CardDescription>查看各版本的更新内容和新特性</CardDescription>
+                    <CardDescription>{t('release_notes_desc') || '查看各版本的更新内容和新特性'}</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center justify-center p-8">
                         <Loader2 className="w-6 h-6 animate-spin mr-2"/>
-                        <span className="text-sm text-muted-foreground">加载中...</span>
+                        <span className="text-sm text-muted-foreground">{t('loading') || '加载中...'}</span>
                     </div>
                 </CardContent>
             </Card>
@@ -112,27 +114,27 @@ export const ReleaseNotesManager: React.FC = () => {
                 <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
                         <BookOpen className="w-5 h-5"/>
-                        <span>发布说明</span>
+                        <span>{t('release_notes_title') || '发布说明'}</span>
                     </CardTitle>
                     <CardDescription>
-                        查看各版本的更新内容、新特性和错误修复
+                        {t('release_notes_desc_full') || '查看各版本的更新内容、新特性和错误修复'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium">当前版本:</span>
+                                <span className="text-sm font-medium">{t('current_version_label') || '当前版本'}:</span>
                                 <Badge variant="outline">
                                     v{getCurrentVersion()}
                                 </Badge>
                             </div>
                             <Separator orientation="vertical" className="h-6"/>
                             <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium">查看版本:</span>
+                                <span className="text-sm font-medium">{t('view_version_label') || '查看版本'}:</span>
                                 <Select value={selectedVersion} onValueChange={setSelectedVersion}>
                                     <SelectTrigger className="w-32">
-                                        <SelectValue placeholder="选择版本"/>
+                                        <SelectValue placeholder={t('select_version_placeholder') || '选择版本'}/>
                                     </SelectTrigger>
                                     <SelectContent>
                                         {availableVersions.map((version) => (
@@ -153,7 +155,7 @@ export const ReleaseNotesManager: React.FC = () => {
                                 disabled={refreshing}
                             >
                                 <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`}/>
-                                刷新
+                                {t('refresh_button') || '刷新'}
                             </Button>
                             <Button
                                 variant="outline"
@@ -161,7 +163,7 @@ export const ReleaseNotesManager: React.FC = () => {
                                 onClick={handleCheckUpdates}
                             >
                                 <Download className="w-4 h-4 mr-2"/>
-                                检查更新
+                                {t('check_update_button') || '检查更新'}
                             </Button>
                             <Button
                                 variant="outline"
@@ -198,11 +200,10 @@ export const ReleaseNotesManager: React.FC = () => {
                         <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5"/>
                         <div className="flex-1">
                             <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                                关于发布说明
+                                {t('about_release_notes') || '关于发布说明'}
                             </h4>
                             <p className="text-xs text-blue-700 dark:text-blue-300">
-                                发布说明展示了每个版本的新功能、改进和错误修复。建议在更新前查看相关说明以了解变更内容。
-                                如果本地没有找到特定版本的说明，系统会尝试从 GitHub 获取官方发布信息。
+                                {t('release_notes_help_text') || '发布说明展示了每个版本的新功能、改进和错误修复。建议在更新前查看相关说明以了解变更内容。如果本地没有找到特定版本的说明，系统会尝试从 GitHub 获取官方发布信息。'}
                             </p>
                         </div>
                     </div>

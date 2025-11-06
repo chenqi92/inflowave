@@ -2,6 +2,7 @@ import * as React from 'react';
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { themeColors, getThemeColorOptions } from '@/lib/theme-colors';
+import { useSettingsTranslation } from '@/hooks/useTranslation';
 
 interface ThemeColorSelectorProps {
   value: string;
@@ -110,6 +111,7 @@ export function ThemeColorSelectorWithPreview({
   onChange,
   className,
 }: ThemeColorSelectorProps) {
+  const { t } = useSettingsTranslation();
   const colorOptions = getThemeColorOptions();
   const selectedColor = themeColors[value];
 
@@ -135,7 +137,7 @@ export function ThemeColorSelectorWithPreview({
                 color: `hsl(${selectedColor.primaryForeground})`,
               }}
             >
-              主色
+              {t('color_primary') || '主色'}
             </div>
             <div
               className='p-2 rounded text-center'
@@ -144,7 +146,7 @@ export function ThemeColorSelectorWithPreview({
                 color: `hsl(${selectedColor.secondaryForeground})`,
               }}
             >
-              次要
+              {t('color_secondary') || '次要'}
             </div>
             <div
               className='p-2 rounded text-center'
@@ -153,7 +155,7 @@ export function ThemeColorSelectorWithPreview({
                 color: `hsl(${selectedColor.accentForeground})`,
               }}
             >
-              强调
+              {t('color_accent') || '强调'}
             </div>
           </div>
         </div>
