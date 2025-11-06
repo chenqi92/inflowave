@@ -189,10 +189,10 @@
       <div class="loading-container" id="loading-screen">
         <div class="loading-brand">
           <div class="loading-logo">InfloWave</div>
-          <div class="loading-tagline">现代化时序数据库管理工具</div>
+          <div class="loading-tagline" id="loading-tagline">现代化时序数据库管理工具</div>
         </div>
         <div class="loading-spinner"></div>
-        <div class="loading-text" id="loading-text">正在启动应用程序...</div>
+        <div class="loading-text" id="loading-text">正在初始化...</div>
       </div>
     </div>
     <!-- Portal for glide-data-grid overlay editor -->
@@ -201,58 +201,172 @@
     
     <!-- Remove loading screen when app is ready -->
     <script>
-      // ✅ 优化：移除假进度，直接响应真实的启动完成事件
+      // ============================================================================
+      // 语言检测和国际化支持
+      // ============================================================================
+
+      /**
+       * 检测用户语言偏好
+       * 优先级：localStorage > 浏览器语言 > 默认语言
+       */
+      function detectLanguage() {
+        try {
+          // 1. 从 localStorage 读取保存的语言偏好
+          const stored = localStorage.getItem('i18nextLng');
+          if (stored) {
+            const normalized = normalizeLanguageCode(stored);
+            if (normalized === 'zh-CN' || normalized === 'en-US') {
+              return normalized;
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to read language from localStorage:', error);
+        }
+
+        // 2. 检测浏览器语言
+        if (navigator.language) {
+          const normalized = normalizeLanguageCode(navigator.language);
+          if (normalized === 'zh-CN' || normalized === 'en-US') {
+            return normalized;
+          }
+        }
+
+        // 3. 默认使用中文
+        return 'zh-CN';
+      }
+
+      /**
+       * 标准化语言代码
+       */
+      function normalizeLanguageCode(code) {
+        if (!code) return 'zh-CN';
+        const lower = code.toLowerCase().trim();
+
+        // 中文变体
+        if (lower.startsWith('zh')) return 'zh-CN';
+        // 英文变体
+        if (lower.startsWith('en')) return 'en-US';
+
+        return 'zh-CN';
+      }
+
+      // 检测当前语言
+      const currentLanguage = detectLanguage();
+      console.log('🌐 Detected language:', currentLanguage);
+
+      // ============================================================================
+      // 加载阶段文案（支持多语言）
+      // ============================================================================
+
+      const loadingMessages = {
+        'zh-CN': {
+          tagline: '现代化时序数据库管理工具',
+          initializing: '正在初始化...',
+          loadingConfig: '加载配置...',
+          loadingPreferences: '加载用户偏好...',
+          initializingServices: '初始化服务...',
+          ready: '准备就绪',
+          startupError: '应用程序启动时发生错误，请刷新页面重试',
+          initError: '应用程序初始化失败，请检查网络连接并刷新页面',
+          timeoutError: '应用程序启动超时，可能存在问题',
+          retryButton: '重新加载'
+        },
+        'en-US': {
+          tagline: 'Modern Time-Series Database Management Tool',
+          initializing: 'Initializing...',
+          loadingConfig: 'Loading configuration...',
+          loadingPreferences: 'Loading preferences...',
+          initializingServices: 'Initializing services...',
+          ready: 'Ready',
+          startupError: 'Application startup error, please refresh the page',
+          initError: 'Application initialization failed, please check network connection',
+          timeoutError: 'Application startup timeout, there may be a problem',
+          retryButton: 'Reload'
+        }
+      };
+
+      // 获取当前语言的文案
+      const messages = loadingMessages[currentLanguage] || loadingMessages['zh-CN'];
+
+      // 设置初始文案
+      (function setInitialText() {
+        const tagline = document.getElementById('loading-tagline');
+        const loadingText = document.getElementById('loading-text');
+
+        if (tagline) {
+          tagline.textContent = messages.tagline;
+        }
+        if (loadingText) {
+          loadingText.textContent = messages.initializing;
+        }
+      })();
+
+      /**
+       * 更新加载文案
+       */
+      function updateLoadingText(stage) {
+        const loadingText = document.getElementById('loading-text');
+        if (loadingText && messages[stage]) {
+          loadingText.textContent = messages[stage];
+        }
+      }
+
+      // ============================================================================
+      // 应用启动状态管理
+      // ============================================================================
+
       let hasAppStarted = false;
 
-      // Listen for app ready signal
+      // 监听加载阶段事件
+      window.addEventListener('app-loading-stage', function(event) {
+        if (!hasAppStarted && event.detail && event.detail.stage) {
+          updateLoadingText(event.detail.stage);
+          console.log('📍 Loading stage:', event.detail.stage);
+        }
+      });
+
+      // 监听应用就绪事件
       window.addEventListener('app-ready', function() {
         hasAppStarted = true;
-        const loadingText = document.getElementById('loading-text');
-        if (loadingText) {
-          loadingText.textContent = '启动完成';
-        }
+        updateLoadingText('ready');
 
         const loadingScreen = document.getElementById('loading-screen');
         if (loadingScreen) {
-          // 立即开始淡出动画，不再延迟
+          // 立即开始淡出动画
           loadingScreen.classList.add('fade-out');
           setTimeout(() => {
             loadingScreen.style.display = 'none';
           }, 400);
         }
+
+        console.log('✅ Application ready');
       });
 
-      // 错误处理和fallback机制
-      
-      // 监听错误事件
-      window.addEventListener('error', function(event) {
-        console.error('启动错误:', event.error);
-        showStartupError('应用程序启动时发生错误，请刷新页面重试');
-      });
-      
-      window.addEventListener('unhandledrejection', function(event) {
-        console.error('未处理的Promise拒绝:', event.reason);
-        showStartupError('应用程序初始化失败，请检查网络连接并刷新页面');
-      });
-      
+      // ============================================================================
+      // 错误处理
+      // ============================================================================
+
+      /**
+       * 显示启动错误
+       */
       function showStartupError(message) {
         const loadingText = document.getElementById('loading-text');
         if (loadingText && !hasAppStarted) {
           loadingText.textContent = message;
           loadingText.style.color = '#ef4444';
-          
+
           // 停止spinner动画
           const spinner = document.querySelector('.loading-spinner');
           if (spinner) {
             spinner.style.display = 'none';
           }
-          
+
           // 添加重试按钮
           setTimeout(() => {
             const loadingContainer = document.querySelector('.loading-container');
-            if (loadingContainer) {
+            if (loadingContainer && !loadingContainer.querySelector('button')) {
               const retryButton = document.createElement('button');
-              retryButton.textContent = '重新加载';
+              retryButton.textContent = messages.retryButton;
               retryButton.style.cssText = `
                 margin-top: 20px;
                 padding: 10px 20px;
@@ -260,9 +374,16 @@
                 color: white;
                 border: none;
                 border-radius: 6px;
-                cursor: default;
+                cursor: pointer;
                 font-size: 14px;
+                transition: background 0.2s;
               `;
+              retryButton.onmouseover = () => {
+                retryButton.style.background = '#2563eb';
+              };
+              retryButton.onmouseout = () => {
+                retryButton.style.background = '#3b82f6';
+              };
               retryButton.onclick = () => window.location.reload();
               loadingContainer.appendChild(retryButton);
             }
@@ -270,30 +391,31 @@
         }
       }
 
-      // ✅ 优化：缩短超时时间，桌面应用启动应该很快
-      // 如果3秒后还没启动完成，显示错误
-      setTimeout(() => {
-        const loadingScreen = document.getElementById('loading-screen');
-        if (loadingScreen && loadingScreen.style.display !== 'none' && !hasAppStarted) {
-          showStartupError('应用程序启动超时，可能存在问题');
-        }
-      }, 3000); // 3秒超时（桌面应用应该更快）
+      // 监听错误事件
+      window.addEventListener('error', function(event) {
+        console.error('启动错误:', event.error);
+        showStartupError(messages.startupError);
+      });
 
-      // 如果2秒后还没收到 app-ready 事件，强制移除加载屏幕
-      // 这是最后的保险措施，避免用户一直看到加载屏幕
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('未处理的Promise拒绝:', event.reason);
+        showStartupError(messages.initError);
+      });
+
+      // ============================================================================
+      // 超时保护机制
+      // ============================================================================
+
+      // 如果10秒后还没启动完成，显示错误（给予充足的启动时间）
       setTimeout(() => {
         if (!hasAppStarted) {
           const loadingScreen = document.getElementById('loading-screen');
           if (loadingScreen && loadingScreen.style.display !== 'none') {
-            console.warn('应用启动超过2秒，强制移除加载屏幕');
-            hasAppStarted = true;
-            loadingScreen.classList.add('fade-out');
-            setTimeout(() => {
-              loadingScreen.style.display = 'none';
-            }, 400);
+            console.warn('⚠️ 应用启动超过10秒，显示超时错误');
+            showStartupError(messages.timeoutError);
           }
         }
-      }, 2000); // 2秒后强制移除loading
+      }, 10000); // 10秒超时保护
       
       // 字体加载检测
       if ('fonts' in document) {

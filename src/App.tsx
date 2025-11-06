@@ -472,11 +472,21 @@ const App: React.FC = () => {
       try {
         logger.debug('InfloWave 启动中...');
 
+        // 📍 阶段1: 初始化环境
+        window.dispatchEvent(new CustomEvent('app-loading-stage', {
+          detail: { stage: 'initializing' }
+        }));
+
         // 初始化环境检测
         initializeEnvironment();
 
         // 初始化上下文菜单禁用器（生产环境）
         initializeContextMenuDisabler();
+
+        // 📍 阶段2: 加载用户偏好
+        window.dispatchEvent(new CustomEvent('app-loading-stage', {
+          detail: { stage: 'loadingPreferences' }
+        }));
 
         // 🔧 加载用户偏好设置（优先级高，影响UI显示）
         try {
@@ -486,10 +496,20 @@ const App: React.FC = () => {
           logger.warn('用户偏好设置加载失败，使用默认值:', prefError);
         }
 
+        // 📍 阶段3: 加载配置
+        window.dispatchEvent(new CustomEvent('app-loading-stage', {
+          detail: { stage: 'loadingConfig' }
+        }));
+
         // ✅ 优化：应用配置加载改为非阻塞后台加载
         safeTauriInvoke<any>('get_app_config')
           .then(() => logger.debug('应用配置加载成功'))
           .catch(err => logger.warn('应用配置加载失败，使用默认配置:', err));
+
+        // 📍 阶段4: 初始化服务
+        window.dispatchEvent(new CustomEvent('app-loading-stage', {
+          detail: { stage: 'initializingServices' }
+        }));
 
         // ✅ 优化：连接服务初始化改为非阻塞后台加载
         // 后端已在 main.rs 中异步加载连接配置，前端延迟加载不影响启动速度
@@ -536,6 +556,7 @@ const App: React.FC = () => {
           });
         }
 
+        // 📍 最终阶段: 应用就绪
         window.dispatchEvent(new CustomEvent('app-ready'));
         logger.info('应用启动完成，窗口标题已设置，已发送ready信号');
 
