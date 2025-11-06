@@ -20,7 +20,7 @@ import {
   Badge,
 } from '@/components/ui';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useTranslation, useCommonTranslation } from '@/hooks/useTranslation';
 import { Globe, Check, Loader2 } from 'lucide-react';
 import type { LanguageInfo } from '@/i18n/types';
 
@@ -61,46 +61,46 @@ const LanguageItem: React.FC<LanguageItemProps> = ({
   compact = false,
 }) => {
   return (
-    <div className={`flex items-center gap-2 ${compact ? 'py-1' : 'py-2'}`}>
+    <div className={`flex items-center gap-2 ${compact ? 'py-0.5' : 'py-1'}`}>
       {/* 国旗图标 */}
       {showFlag && language.flag && (
-        <span className="text-lg" role="img" aria-label={`${language.name} flag`}>
+        <span className="text-base" role="img" aria-label={`${language.name} flag`}>
           {language.flag}
         </span>
       )}
-      
+
       {/* 语言名称 */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`font-medium ${compact ? 'text-sm' : 'text-base'}`}>
+          <span className={`font-medium ${compact ? 'text-xs' : 'text-sm'}`}>
             {language.name}
           </span>
-          {isSelected && <Check className="w-4 h-4 text-green-600" />}
+          {isSelected && <Check className="w-3.5 h-3.5 text-green-600" />}
         </div>
         
         {/* 本地名称 */}
         {showNativeName && language.nativeName !== language.name && (
-          <div className={`text-muted-foreground ${compact ? 'text-xs' : 'text-sm'}`}>
+          <div className={`text-muted-foreground ${compact ? 'text-[10px]' : 'text-xs'}`}>
             {language.nativeName}
           </div>
         )}
       </div>
-      
+
       {/* 翻译进度 */}
       {showProgress && (
         <div className="flex items-center gap-1">
-          <Badge 
+          <Badge
             variant={language.progress >= 90 ? 'default' : language.progress >= 70 ? 'secondary' : 'outline'}
-            className="text-xs"
+            className="text-[10px] px-1.5 py-0"
           >
             {language.progress}%
           </Badge>
         </div>
       )}
-      
+
       {/* 禁用状态指示 */}
       {!language.enabled && (
-        <Badge variant="outline" className="text-xs">
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
           Disabled
         </Badge>
       )}
@@ -123,6 +123,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   className = '',
 }) => {
   const { t } = useTranslation('settings');
+  const { t: tCommon } = useCommonTranslation();
   const {
     currentLanguage,
     availableLanguages,
@@ -182,7 +183,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             {isLoading ? (
               <div className="flex items-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Loading...</span>
+                <span>{tCommon('loading')}</span>
               </div>
             ) : selectedLanguageInfo ? (
               <LanguageItem
@@ -200,10 +201,10 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         
         <SelectContent>
           {enabledLanguages.map((language) => (
-            <SelectItem 
-              key={language.code} 
+            <SelectItem
+              key={language.code}
               value={language.code}
-              className="cursor-pointer"
+              className="cursor-pointer h-9"
             >
               <LanguageItem
                 language={language}
@@ -211,7 +212,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
                 showNativeName={showNativeName}
                 showFlag={showFlag}
                 isSelected={language.code === selectedLanguage}
-                compact={false}
+                compact={true}
               />
             </SelectItem>
           ))}

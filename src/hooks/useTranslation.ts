@@ -157,72 +157,32 @@ export const useTranslation = (namespace?: string): UseTranslationReturn => {
 
   // 翻译函数实现
   const t = useCallback((
-    key: string, 
+    key: string,
     options: TranslationOptions = {}
   ): string => {
     try {
-      // 构建完整的键名（包含命名空间）
-      const fullKey = namespace ? `${namespace}.${key}` : key;
-      
+      // 如果有命名空间，使用 i18next 的 ns 选项
+      const translationOptions = namespace
+        ? { ...options, ns: namespace }
+        : options;
+
       // 首先尝试使用 i18next 的翻译
-      const i18nextResult = storeT(fullKey, options);
-      
-      // 如果 i18next 返回的是键名本身，说明翻译不存在，使用自定义逻辑
-      if (i18nextResult === fullKey || i18nextResult === key) {
-        // 尝试从加载的资源中获取翻译
-        let translation = getNestedValue(currentResources, fullKey);
-        
-        // 如果没有找到完整键名，尝试不带命名空间的键名
-        if (!translation && namespace) {
-          translation = getNestedValue(currentResources, key);
-        }
-        
-        // 处理复数形式
-        if (!translation && options.count !== undefined) {
-          translation = handlePlural(
-            fullKey, 
-            options.count, 
-            currentResources, 
-            currentLanguage
-          );
-          
-          // 如果还是没找到，尝试不带命名空间的键名
-          if (!translation && namespace) {
-            translation = handlePlural(
-              key, 
-              options.count, 
-              currentResources, 
-              currentLanguage
-            );
-          }
-        }
-        
-        // 如果找到了翻译
-        if (translation && typeof translation === 'string') {
-          // 处理插值
-          if (options.interpolation) {
-            translation = interpolateString(translation, options.interpolation);
-          }
-          
-          // 处理计数插值
-          if (options.count !== undefined) {
-            translation = translation.replace(/\{\{count\}\}/g, String(options.count));
-          }
-          
-          return translation;
-        }
-        
-        // 记录缺失的翻译键
-        logMissingKey(fullKey, currentLanguage, options.context);
-        
-        // 返回默认值或键名
-        return options.defaultValue || key;
+      const i18nextResult = storeT(key, translationOptions);
+
+      // 如果 i18next 返回的是键名本身，说明翻译不存在
+      // 直接返回键名，不再使用自定义的资源查找逻辑
+      // 因为 i18next 应该已经处理了所有的翻译查找
+      if (i18nextResult !== key) {
+        return i18nextResult;
       }
-      
-      return i18nextResult;
+
+      // 如果 i18next 找不到翻译，记录缺失的键并返回默认值或键名
+      const fullKey = namespace ? `${namespace}:${key}` : key;
+      logMissingKey(fullKey, currentLanguage, options.context);
+      return options.defaultValue || key;
     } catch (error) {
       console.error(`❌ [useTranslation] 翻译处理失败: ${key}`, error);
-      
+
       // 返回默认值或键名
       return options.defaultValue || key;
     }
@@ -278,6 +238,20 @@ export const useErrorTranslation = () => {
  */
 export const useSettingsTranslation = () => {
   return useTranslation('settings');
+};
+
+/**
+ * 菜单翻译 Hook
+ */
+export const useMenuTranslation = () => {
+  return useTranslation('menu');
+};
+
+/**
+ * 可视化翻译 Hook
+ */
+export const useVisualizationTranslation = () => {
+  return useTranslation('visualization');
 };
 
 // ============================================================================

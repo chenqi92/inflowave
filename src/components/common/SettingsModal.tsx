@@ -350,7 +350,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 <div className='space-y-2'>
                   <LanguageSelector
                     value={form.watch('language') || config.language}
-                    onValueChange={value => form.setValue('language', value)}
+                    onValueChange={async (value) => {
+                      form.setValue('language', value);
+                      // 立即切换语言
+                      try {
+                        await switchLanguage(value);
+                      } catch (error) {
+                        console.error('Language switch failed:', error);
+                      }
+                    }}
                     showProgress={true}
                     showNativeName={true}
                     showFlag={true}

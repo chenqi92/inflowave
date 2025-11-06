@@ -155,5 +155,22 @@
   "text_direction": "Text Direction",
   "ltr": "Left to Right",
   "rtl": "Right to Left",
-  "region": "Region"
+  "region": "Region",
+  "quick_settings": "Quick Settings",
+  "quick_settings_description": "Quickly toggle common query and security settings",
+  "statement_permissions": "Statement Permissions",
+  "delete_statement": "DELETE Statement",
+  "delete_statement_description": "Allow execution of data deletion statements",
+  "drop_statement": "DROP Statement",
+  "drop_statement_description": "Allow execution of table/database deletion statements",
+  "safety_mode": "Safe Mode",
+  "warning_mode": "Warning",
+  "danger_mode": "Danger",
+  "query_settings_title": "Query Settings",
+  "lazy_load_mode": "Lazy Load Mode",
+  "lazy_load_description": "Delay loading for large datasets to improve performance",
+  "lazy_load_threshold": "Lazy Load Threshold",
+  "lazy_load_threshold_description": "Enable lazy loading when exceeding this number of rows",
+  "rows": "rows",
+  "show_confirmation_dialog": "Show confirmation dialog before execution"
 }

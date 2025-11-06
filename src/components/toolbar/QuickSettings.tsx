@@ -20,6 +20,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useQueryControllerSettings } from '@/hooks/useQueryControllerSettings';
+import { useSettingsTranslation, useCommonTranslation } from '@/hooks/useTranslation';
 import { cn } from '@/lib/utils';
 
 /**
@@ -32,6 +33,8 @@ import { cn } from '@/lib/utils';
  */
 const QuickSettings: React.FC = () => {
   const [open, setOpen] = useState(false);
+  const { t } = useSettingsTranslation();
+  const { t: tCommon } = useCommonTranslation();
   const {
     settings,
     loading,
@@ -105,7 +108,7 @@ const QuickSettings: React.FC = () => {
           {/* 标题和安全状态 */}
           <div className='space-y-2'>
             <div className='flex items-center justify-between'>
-              <h4 className='font-semibold text-sm'>快速设置</h4>
+              <h4 className='font-semibold text-sm'>{t('quick_settings')}</h4>
               <div
                 className={cn(
                   'flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium',
@@ -116,13 +119,13 @@ const QuickSettings: React.FC = () => {
                 )}
               >
                 <SafetyIcon className='w-3.5 h-3.5' />
-                {safetyLevel === 'safe' && '安全模式'}
-                {safetyLevel === 'warning' && '警告'}
-                {safetyLevel === 'danger' && '危险'}
+                {safetyLevel === 'safe' && t('safety_mode')}
+                {safetyLevel === 'warning' && t('warning_mode')}
+                {safetyLevel === 'danger' && t('danger_mode')}
               </div>
             </div>
             <p className='text-xs text-muted-foreground'>
-              快速切换常用的查询和安全设置
+              {t('quick_settings_description')}
             </p>
           </div>
 
@@ -132,7 +135,7 @@ const QuickSettings: React.FC = () => {
           <div className='space-y-3'>
             <div className='flex items-center gap-2'>
               <Database className='w-4 h-4 text-muted-foreground' />
-              <span className='text-sm font-medium'>语句权限</span>
+              <span className='text-sm font-medium'>{t('statement_permissions')}</span>
             </div>
 
             {/* DELETE 语句 */}
@@ -141,11 +144,11 @@ const QuickSettings: React.FC = () => {
                 <div className='flex items-center gap-1.5'>
                   <Trash2 className='w-3.5 h-3.5 text-red-500' />
                   <label className='text-sm font-medium cursor-pointer'>
-                    DELETE 语句
+                    {t('delete_statement')}
                   </label>
                 </div>
                 <p className='text-xs text-muted-foreground'>
-                  允许执行删除数据的语句
+                  {t('delete_statement_description')}
                 </p>
               </div>
               <Switch
@@ -163,11 +166,11 @@ const QuickSettings: React.FC = () => {
                 <div className='flex items-center gap-1.5'>
                   <Database className='w-3.5 h-3.5 text-red-600' />
                   <label className='text-sm font-medium cursor-pointer'>
-                    DROP 语句
+                    {t('drop_statement')}
                   </label>
                 </div>
                 <p className='text-xs text-muted-foreground'>
-                  允许删除数据库/表结构
+                  {t('drop_statement_description')}
                 </p>
               </div>
               <Switch
@@ -208,17 +211,17 @@ const QuickSettings: React.FC = () => {
           <div className='space-y-3'>
             <div className='flex items-center gap-2'>
               <AlertTriangle className='w-4 h-4 text-muted-foreground' />
-              <span className='text-sm font-medium'>安全确认</span>
+              <span className='text-sm font-medium'>{t('security')}</span>
             </div>
 
             {/* DELETE 确认 */}
             <div className='flex items-center justify-between pl-6'>
               <div className='space-y-0.5'>
                 <label className='text-sm font-medium cursor-pointer'>
-                  DELETE 操作确认
+                  {t('delete_statement')} {tCommon('confirm')}
                 </label>
                 <p className='text-xs text-muted-foreground'>
-                  执行前显示确认对话框
+                  {t('show_confirmation_dialog')}
                 </p>
               </div>
               <Switch
@@ -238,10 +241,10 @@ const QuickSettings: React.FC = () => {
             <div className='flex items-center justify-between pl-6'>
               <div className='space-y-0.5'>
                 <label className='text-sm font-medium cursor-pointer'>
-                  DROP 操作确认
+                  {t('drop_statement')} {tCommon('confirm')}
                 </label>
                 <p className='text-xs text-muted-foreground'>
-                  执行前显示确认对话框
+                  {t('show_confirmation_dialog')}
                 </p>
               </div>
               <Switch
@@ -262,7 +265,7 @@ const QuickSettings: React.FC = () => {
           <div className='space-y-3'>
             <div className='flex items-center gap-2'>
               <Zap className='w-4 h-4 text-muted-foreground' />
-              <span className='text-sm font-medium'>查询优化</span>
+              <span className='text-sm font-medium'>{t('query_settings_title')}</span>
             </div>
 
             {/* 懒加载模式 */}
@@ -271,11 +274,11 @@ const QuickSettings: React.FC = () => {
                 <div className='flex items-center gap-1.5'>
                   <CheckCircle2 className='w-3.5 h-3.5 text-green-500' />
                   <label className='text-sm font-medium cursor-pointer'>
-                    懒加载模式
+                    {t('lazy_load_mode')}
                   </label>
                 </div>
                 <p className='text-xs text-muted-foreground'>
-                  分批加载大量数据，提升性能
+                  {t('lazy_load_description')}
                 </p>
               </div>
               <Switch
@@ -289,7 +292,7 @@ const QuickSettings: React.FC = () => {
 
             {/* 懒加载批次大小 */}
             <div className='pl-6 space-y-2'>
-              <label className='text-sm font-medium'>批次大小</label>
+              <label className='text-sm font-medium'>{t('lazy_load_threshold')}</label>
               <div className='flex items-center gap-2'>
                 <Input
                   type='number'
@@ -323,11 +326,11 @@ const QuickSettings: React.FC = () => {
                   className='h-8 text-sm'
                 />
                 <span className='text-xs text-muted-foreground whitespace-nowrap'>
-                  条/批次
+                  {t('rows')}
                 </span>
               </div>
               <p className='text-xs text-muted-foreground'>
-                每批加载的数据行数 (100-10000)
+                {t('lazy_load_threshold_description')}
               </p>
             </div>
           </div>

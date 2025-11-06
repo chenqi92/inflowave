@@ -5,7 +5,7 @@ import {Card, CardContent} from '@/components/ui/card';
 import {Separator} from '@/components/ui';
 import {Badge} from '@/components/ui';
 import {cn} from '@/lib/utils';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useMenuTranslation } from '@/hooks/useTranslation';
 import {
     ChevronRight,
     Database,
@@ -68,7 +68,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     const [menuItems, setMenuItems] = useState<ContextMenuItem[]>([]);
     const [submenuOpen, setSubmenuOpen] = useState<string | null>(null);
     const [submenuPosition, setSubmenuPosition] = useState({x: 0, y: 0});
-    const { t } = useTranslation();
+    const { t } = useMenuTranslation();
 
     // 根据目标类型生成菜单项
     const generateMenuItems = (target: any): ContextMenuItem[] => {
@@ -79,7 +79,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 return [
                     {
                         id: 'refresh_connection',
-                        label: t('menu.context_menu.refresh_connection'),
+                        label: t('context_menu.refresh_connection'),
                         icon: <RefreshCw className="w-4 h-4"/>,
                         action: {type: 'refresh_connection'}
                     },
@@ -89,7 +89,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'connection_properties',
-                        label: t('menu.context_menu.connection_properties'),
+                        label: t('context_menu.connection_properties'),
                         icon: <Info className="w-4 h-4"/>,
                         action: {type: 'connection_properties'}
                     },
@@ -99,7 +99,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'disconnect',
-                        label: t('menu.context_menu.disconnect'),
+                        label: t('context_menu.disconnect'),
                         icon: <Unplug className="w-4 h-4"/>,
                         action: {type: 'disconnect'},
                         danger: true
@@ -110,7 +110,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 return [
                     {
                         id: 'refresh_database',
-                        label: t('menu.context_menu.refresh_database'),
+                        label: t('context_menu.refresh_database'),
                         icon: <RefreshCw className="w-4 h-4"/>,
                         action: {type: 'refresh_database'}
                     },
@@ -120,13 +120,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'create_measurement',
-                        label: t('menu.context_menu.create_measurement'),
+                        label: t('context_menu.create_measurement'),
                         icon: <Plus className="w-4 h-4"/>,
                         action: {type: 'create_measurement'}
                     },
                     {
                         id: 'database_info',
-                        label: t('menu.context_menu.database_info'),
+                        label: t('context_menu.database_info'),
                         icon: <Info className="w-4 h-4"/>,
                         action: {type: 'database_info'}
                     },
@@ -136,7 +136,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'export_database',
-                        label: t('menu.context_menu.export_database'),
+                        label: t('context_menu.export_database'),
                         icon: <FileDown className="w-4 h-4"/>,
                         action: {type: 'export_database'}
                     },
@@ -146,7 +146,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'drop_database',
-                        label: t('menu.context_menu.drop_database'),
+                        label: t('context_menu.drop_database'),
                         icon: <Trash2 className="w-4 h-4"/>,
                         action: {type: 'drop_database'},
                         danger: true
@@ -157,13 +157,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 return [
                     {
                         id: 'query_table',
-                        label: t('menu.context_menu.query_data'),
+                        label: t('context_menu.query_data'),
                         icon: <Search className="w-4 h-4"/>,
                         action: {type: 'query_table'}
                     },
                     {
                         id: 'table_designer',
-                        label: t('menu.context_menu.table_designer'),
+                        label: t('context_menu.table_designer'),
                         icon: <Settings className="w-4 h-4"/>,
                         action: {type: 'table_designer'}
                     },
@@ -173,23 +173,23 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'table_info',
-                        label: t('menu.context_menu.table_info'),
+                        label: t('context_menu.table_info'),
                         icon: <Info className="w-4 h-4"/>,
                         action: {type: 'table_info'}
                     },
                     {
                         id: 'export_table',
-                        label: t('menu.context_menu.export_data'),
+                        label: t('context_menu.export_data'),
                         icon: <FileDown className="w-4 h-4"/>,
                         children: [
                             {
                                 id: 'export_csv',
-                                label: t('menu.context_menu.export_as_csv'),
+                                label: t('context_menu.export_as_csv'),
                                 action: {type: 'export_table', format: 'csv'}
                             },
                             {
                                 id: 'export_json',
-                                label: t('menu.context_menu.export_as_json'),
+                                label: t('context_menu.export_as_json'),
                                 action: {type: 'export_table', format: 'json'}
                             }
                         ]
@@ -200,7 +200,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'drop_table',
-                        label: t('menu.context_menu.drop_table'),
+                        label: t('context_menu.drop_table'),
                         icon: <Trash2 className="w-4 h-4"/>,
                         action: {type: 'drop_table'},
                         danger: true
@@ -211,13 +211,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 return [
                     {
                         id: 'copy_field_name',
-                        label: t('menu.context_menu.copy_field_name'),
+                        label: t('context_menu.copy_field_name'),
                         icon: <Copy className="w-4 h-4"/>,
                         action: {type: 'copy_field_name'}
                     },
                     {
                         id: 'field_stats',
-                        label: t('menu.context_menu.field_stats'),
+                        label: t('context_menu.field_stats'),
                         icon: <BarChart className="w-4 h-4"/>,
                         action: {type: 'field_stats'}
                     }
@@ -228,19 +228,19 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 return [
                     {
                         id: isConnected ? 'disconnect' : 'connect',
-                        label: isConnected ? t('menu.context_menu.disconnect') : t('menu.context_menu.connect'),
+                        label: isConnected ? t('context_menu.disconnect') : t('context_menu.connect'),
                         icon: isConnected ? <Unplug className="w-4 h-4"/> : <Database className="w-4 h-4"/>,
                         action: {type: isConnected ? 'disconnect' : 'connect'}
                     },
                     {
                         id: 'test_connection',
-                        label: t('menu.context_menu.test_connection'),
+                        label: t('context_menu.test_connection'),
                         icon: <Search className="w-4 h-4"/>,
                         action: {type: 'test_connection'}
                     },
                     {
                         id: 'refresh_status',
-                        label: t('menu.context_menu.refresh_status'),
+                        label: t('context_menu.refresh_status'),
                         icon: <RefreshCw className="w-4 h-4"/>,
                         action: {type: 'refresh_status'}
                     },
@@ -250,13 +250,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'edit_connection',
-                        label: t('menu.context_menu.edit_connection'),
+                        label: t('context_menu.edit_connection'),
                         icon: <Edit className="w-4 h-4"/>,
                         action: {type: 'edit_connection'}
                     },
                     {
                         id: 'duplicate_connection',
-                        label: t('menu.context_menu.duplicate_connection'),
+                        label: t('context_menu.duplicate_connection'),
                         icon: <Copy className="w-4 h-4"/>,
                         action: {type: 'duplicate_connection'}
                     },
@@ -266,19 +266,19 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'copy_connection_string',
-                        label: t('menu.context_menu.copy_connection_string'),
+                        label: t('context_menu.copy_connection_string'),
                         icon: <Copy className="w-4 h-4"/>,
                         action: {type: 'copy_connection_string'}
                     },
                     {
                         id: 'copy_connection_info',
-                        label: t('menu.context_menu.copy_connection_info'),
+                        label: t('context_menu.copy_connection_info'),
                         icon: <Copy className="w-4 h-4"/>,
                         action: {type: 'copy_connection_info'}
                     },
                     {
                         id: 'view_pool_stats',
-                        label: t('menu.context_menu.view_pool_stats'),
+                        label: t('context_menu.view_pool_stats'),
                         icon: <BarChart className="w-4 h-4"/>,
                         action: {type: 'view_pool_stats'}
                     },
@@ -288,7 +288,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'delete_connection',
-                        label: t('menu.context_menu.delete_connection'),
+                        label: t('context_menu.delete_connection'),
                         icon: <Trash2 className="w-4 h-4"/>,
                         action: {type: 'delete_connection'},
                         danger: true
@@ -299,13 +299,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 return [
                     {
                         id: 'show_measurements',
-                        label: t('menu.context_menu.show_measurements'),
+                        label: t('context_menu.show_measurements'),
                         icon: <Table className="w-4 h-4"/>,
                         action: {type: 'showMeasurements', database: target.name}
                     },
                     {
                         id: 'create_measurement',
-                        label: t('menu.context_menu.create_measurement'),
+                        label: t('context_menu.create_measurement'),
                         icon: <Plus className="w-4 h-4"/>,
                         action: {type: 'createMeasurement', database: target.name}
                     },
@@ -315,13 +315,13 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'database_info',
-                        label: t('menu.context_menu.database_info'),
+                        label: t('context_menu.database_info'),
                         icon: <Info className="w-4 h-4"/>,
                         action: {type: 'showDatabaseInfo', database: target.name}
                     },
                     {
                         id: 'database_stats',
-                        label: t('menu.context_menu.show_database_stats'),
+                        label: t('context_menu.show_database_stats'),
                         icon: <BarChart className="w-4 h-4"/>,
                         action: {type: 'showDatabaseStats', database: target.name}
                     },
@@ -331,7 +331,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'export_database',
-                        label: t('menu.context_menu.export_database_structure'),
+                        label: t('context_menu.export_database_structure'),
                         icon: <FileDown className="w-4 h-4"/>,
                         action: {type: 'exportDatabaseStructure', database: target.name}
                     },
@@ -341,7 +341,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'delete_database',
-                        label: t('menu.context_menu.delete_database'),
+                        label: t('context_menu.delete_database'),
                         icon: <Trash2 className="w-4 h-4"/>,
                         action: {type: 'deleteDatabase', database: target.name},
                         danger: true
@@ -352,7 +352,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 return [
                     {
                         id: 'preview_data',
-                        label: t('menu.context_menu.preview_data'),
+                        label: t('context_menu.preview_data'),
                         icon: <Eye className="w-4 h-4"/>,
                         action: {
                             type: 'previewData',
@@ -365,24 +365,24 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'query_group',
-                        label: t('menu.context_menu.query_operations'),
+                        label: t('context_menu.query_operations'),
                         type: 'group',
                         children: [
                             {
                                 id: 'select_all',
-                                label: t('menu.context_menu.query_all_data'),
+                                label: t('context_menu.query_all_data'),
                                 icon: <Search className="w-4 h-4"/>,
                                 action: {type: 'generateSQL', sqlType: 'select_all'}
                             },
                             {
                                 id: 'select_recent',
-                                label: t('menu.context_menu.query_recent_data'),
+                                label: t('context_menu.query_recent_data'),
                                 icon: <Clock className="w-4 h-4"/>,
                                 action: {type: 'generateSQL', sqlType: 'time_series'}
                             },
                             {
                                 id: 'count_records',
-                                label: t('menu.context_menu.count_records'),
+                                label: t('context_menu.count_records'),
                                 icon: <Hash className="w-4 h-4"/>,
                                 action: {type: 'generateSQL', sqlType: 'count_records'}
                             }
@@ -394,24 +394,24 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'structure_group',
-                        label: t('menu.context_menu.structure_info'),
+                        label: t('context_menu.structure_info'),
                         type: 'group',
                         children: [
                             {
                                 id: 'show_fields',
-                                label: t('menu.context_menu.show_fields'),
+                                label: t('context_menu.show_fields'),
                                 icon: <Hash className="w-4 h-4"/>,
                                 action: {type: 'showFields', database: target.database, measurement: target.name}
                             },
                             {
                                 id: 'show_tags',
-                                label: t('menu.context_menu.show_tag_keys'),
+                                label: t('context_menu.show_tag_keys'),
                                 icon: <Tag className="w-4 h-4"/>,
                                 action: {type: 'showTagKeys', database: target.database, measurement: target.name}
                             },
                             {
                                 id: 'show_series',
-                                label: t('menu.context_menu.show_series'),
+                                label: t('context_menu.show_series'),
                                 icon: <TrendingUp className="w-4 h-4"/>,
                                 action: {type: 'showSeries', database: target.database, measurement: target.name}
                             }
@@ -423,24 +423,24 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'export_measurement',
-                        label: t('menu.context_menu.export_measurement'),
+                        label: t('context_menu.export_measurement'),
                         icon: <FileDown className="w-4 h-4"/>,
                         children: [
                             {
                                 id: 'export_csv',
-                                label: t('menu.context_menu.export_as_csv'),
+                                label: t('context_menu.export_as_csv'),
                                 action: {type: 'exportData', format: 'csv', measurement: target.name}
                             },
                             {
                                 id: 'export_json',
-                                label: t('menu.context_menu.export_as_json'),
+                                label: t('context_menu.export_as_json'),
                                 action: {type: 'exportData', format: 'json', measurement: target.name}
                             }
                         ]
                     },
                     {
                         id: 'visualize_data',
-                        label: t('menu.context_menu.visualize_data'),
+                        label: t('context_menu.visualize_data'),
                         icon: <BarChart className="w-4 h-4"/>,
                         action: {type: 'createChart', database: target.database, measurement: target.name}
                     },
@@ -450,7 +450,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                     },
                     {
                         id: 'delete_measurement',
-                        label: t('menu.context_menu.delete_measurement'),
+                        label: t('context_menu.delete_measurement'),
                         icon: <Trash2 className="w-4 h-4"/>,
                         action: {type: 'deleteMeasurement', database: target.database, measurement: target.name},
                         danger: true

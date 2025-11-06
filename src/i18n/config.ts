@@ -65,7 +65,7 @@ const i18nConfig = {
   
   // 命名空间
   defaultNS: 'common',
-  ns: ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'dateTime'],
+  ns: ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'dateTime', 'menu', 'visualization'],
   
   // 插值配置
   interpolation: {

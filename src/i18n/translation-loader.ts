@@ -3,6 +3,7 @@
  * 负责加载、缓存和管理语言资源文件
  */
 
+import i18next from 'i18next';
 import type { LoaderConfig } from './types';
 import { CacheManager } from './cache-manager';
 import { performanceMonitor } from './performance-monitor';
@@ -65,6 +66,14 @@ export class TranslationLoader {
       if (cached) {
         console.log(`📦 [TranslationLoader] Cache hit for ${language}`);
         performanceMonitor.recordCacheHit(language);
+
+        // 将缓存的资源添加到 i18next
+        if (i18next.isInitialized) {
+          for (const [namespace, translations] of Object.entries(cached)) {
+            i18next.addResourceBundle(language, namespace, translations, true, true);
+          }
+        }
+
         return cached;
       } else {
         performanceMonitor.recordCacheMiss(language);
@@ -87,13 +96,21 @@ export class TranslationLoader {
     try {
       const resource = await loadPromise;
       const loadTime = Date.now() - startTime;
-      
+
       // 记录加载性能
       performanceMonitor.recordLoad(language, loadTime, true);
-      
+
       // 缓存结果到高级缓存管理器
       if (this.config.enableCaching) {
         this.cacheManager.set(cacheKey, resource);
+      }
+
+      // 将资源添加到 i18next
+      if (i18next.isInitialized) {
+        for (const [namespace, translations] of Object.entries(resource)) {
+          i18next.addResourceBundle(language, namespace, translations, true, true);
+        }
+        console.log(`✅ [TranslationLoader] Added resources to i18next for ${language}`);
       }
 
       return resource;
@@ -159,7 +176,7 @@ export class TranslationLoader {
    * 加载单个语言的所有命名空间资源
    */
   private async loadLanguageResources(language: string): Promise<LanguageResource> {
-    const namespaces = ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'dateTime', 'menu'];
+    const namespaces = ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'dateTime', 'menu', 'visualization'];
     const resources: LanguageResource = {};
 
     // 并行加载所有命名空间

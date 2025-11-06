@@ -8,7 +8,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { useNotificationStore } from '@/store/notifications';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useMenuTranslation } from '@/hooks/useTranslation';
 
 export type FunctionType = 'notifications' | 'visualization' | 'monitoring' | 'extensions' | 'history';
 
@@ -31,33 +31,33 @@ const RightFunctionBar: React.FC<RightFunctionBarProps> = ({
   className = '',
 }) => {
   const { unreadCount } = useNotificationStore();
-  const { t } = useTranslation();
+  const { t } = useMenuTranslation();
 
   // Generate function items with translations
   const functionItems: FunctionItem[] = [
     {
       key: 'notifications',
       icon: <Bell className="w-4 h-4" />,
-      label: t('menu.right_panel.notifications'),
-      description: t('menu.right_panel.notifications_description'),
+      label: t('right_panel.notifications'),
+      description: t('right_panel.notifications_description'),
     },
     {
       key: 'visualization',
       icon: <BarChart className="w-4 h-4" />,
-      label: t('menu.right_panel.visualization'),
-      description: t('menu.right_panel.visualization_description'),
+      label: t('right_panel.visualization'),
+      description: t('right_panel.visualization_description'),
     },
     {
       key: 'monitoring',
       icon: <Activity className="w-4 h-4" />,
-      label: t('menu.right_panel.monitoring'),
-      description: t('menu.right_panel.monitoring_description'),
+      label: t('right_panel.monitoring'),
+      description: t('right_panel.monitoring_description'),
     },
     {
       key: 'history',
       icon: <History className="w-4 h-4" />,
-      label: t('menu.right_panel.history'),
-      description: t('menu.right_panel.history_description'),
+      label: t('right_panel.history'),
+      description: t('right_panel.history_description'),
     },
     // 扩展管理功能暂时隐藏
     // {

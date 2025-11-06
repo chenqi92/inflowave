@@ -15,7 +15,7 @@ import {
   TimeRange,
 } from '@/components/common/TimeRangeSelector';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useMenuTranslation } from '@/hooks/useTranslation';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -50,7 +50,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
-  const { t } = useTranslation();
+  const { t } = useMenuTranslation();
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(
     currentTimeRange
       ? {
@@ -109,7 +109,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
                 InfloWave
               </span>
               <span className='text-xs text-muted-foreground -mt-1'>
-                {t('menu.toolbar.time_series_database_tool')}
+                {t('toolbar.time_series_database_tool')}
               </span>
             </div>
           </div>
@@ -124,10 +124,10 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
             onViewChange?.('query');
             onCreateQueryTab?.();
           }}
-          title={t('menu.toolbar.new_query')}
+          title={t('toolbar.new_query')}
         >
           <FilePlus className='w-4 h-4' />
-          <span className='text-xs'>{t('menu.toolbar.new_query')}</span>
+          <span className='text-xs'>{t('toolbar.new_query')}</span>
         </Button>
 
         <div className='w-px h-6 bg-border mx-3' />
@@ -159,11 +159,11 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           size='sm'
           className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
           onClick={() => setSettingsVisible(true)}
-          title={t('menu.toolbar.app_settings')}
+          title={t('toolbar.app_settings')}
 
         >
           <Settings className='w-4 h-4' />
-          <span className='text-xs'>{t('menu.toolbar.settings')}</span>
+          <span className='text-xs'>{t('toolbar.settings')}</span>
         </Button>
       </div>
 

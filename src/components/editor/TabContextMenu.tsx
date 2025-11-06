@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useMenuTranslation } from '@/hooks/useTranslation';
 import {
   X,
   Save,
@@ -57,13 +57,13 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
   onDuplicateTab,
 }) => {
   const [isClosing, setIsClosing] = useState(false);
-  const { t } = useTranslation();
+  const { t } = useMenuTranslation();
 
   // 生成菜单项
   const menuItems: ContextMenuItem[] = [
     {
       id: 'save',
-      label: t('menu.tab_menu.save_as'),
+      label: t('tab_menu.save_as'),
       icon: <Save className="w-4 h-4" />,
       action: () => {
         onSaveTab(targetTab.id);
@@ -72,7 +72,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'duplicate',
-      label: t('menu.tab_menu.duplicate_tab'),
+      label: t('tab_menu.duplicate_tab'),
       icon: <Copy className="w-4 h-4" />,
       action: () => {
         onDuplicateTab(targetTab.id);
@@ -87,7 +87,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'close',
-      label: t('menu.tab_menu.close'),
+      label: t('tab_menu.close'),
       icon: <X className="w-4 h-4" />,
       action: () => {
         onCloseTab(targetTab.id);
@@ -96,7 +96,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'close-others',
-      label: t('menu.tab_menu.close_other_tabs'),
+      label: t('tab_menu.close_other_tabs'),
       icon: <FileText className="w-4 h-4" />,
       action: () => {
         onCloseOtherTabs(targetTab.id);
@@ -106,7 +106,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'close-left',
-      label: t('menu.tab_menu.close_left_tabs'),
+      label: t('tab_menu.close_left_tabs'),
       icon: <ArrowLeft className="w-4 h-4" />,
       action: () => {
         onCloseLeftTabs(targetTab.id);
@@ -116,7 +116,7 @@ const TabContextMenu: React.FC<TabContextMenuProps> = ({
     },
     {
       id: 'close-right',
-      label: t('menu.tab_menu.close_right_tabs'),
+      label: t('tab_menu.close_right_tabs'),
       icon: <ArrowRight className="w-4 h-4" />,
       action: () => {
         onCloseRightTabs(targetTab.id);
