@@ -56,6 +56,7 @@ import {
 import { useQueryHistoryData } from '@/hooks/useQueryHistory';
 import { writeToClipboard } from '@/utils/clipboard';
 import { showMessage } from '@/utils/message';
+import { useTranslation } from '@/hooks/useTranslation';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
@@ -83,6 +84,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
   onExecuteQuery,
   defaultTab = 'history',
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'history' | 'favorites'>(defaultTab);
   const [searchText, setSearchText] = useState('');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('all');
@@ -207,7 +209,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
               ) : (
                 <XCircle className="w-3 h-3 mr-1" />
               )}
-              {item.success ? '成功' : '失败'}
+              {item.success ? t('success') : t('failed')}
             </Badge>
           </div>
 
@@ -223,8 +225,8 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
               <Clock className="w-3 h-3" />
               <span>{formatTime(item.executedAt)}</span>
             </div>
-            <span>耗时: {formatDuration(item.duration)}</span>
-            <span>行数: {item.rowCount}</span>
+            <span>{t('duration')}: {formatDuration(item.duration)}</span>
+            <span>{t('rows')}: {item.rowCount}</span>
           </div>
 
           {/* 错误信息 */}
@@ -411,10 +413,10 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">所有时间</SelectItem>
-                    <SelectItem value="today">今天</SelectItem>
-                    <SelectItem value="week">最近一周</SelectItem>
-                    <SelectItem value="month">最近一月</SelectItem>
+                    <SelectItem value="all">{t('all_time')}</SelectItem>
+                    <SelectItem value="today">{t('today')}</SelectItem>
+                    <SelectItem value="week">{t('last_week')}</SelectItem>
+                    <SelectItem value="month">{t('last_month')}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -423,9 +425,9 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">所有状态</SelectItem>
-                    <SelectItem value="success">成功</SelectItem>
-                    <SelectItem value="error">失败</SelectItem>
+                    <SelectItem value="all">{t('all_status')}</SelectItem>
+                    <SelectItem value="success">{t('success')}</SelectItem>
+                    <SelectItem value="error">{t('failed')}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -434,9 +436,9 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="time">时间</SelectItem>
-                    <SelectItem value="duration">耗时</SelectItem>
-                    <SelectItem value="rows">行数</SelectItem>
+                    <SelectItem value="time">{t('time')}</SelectItem>
+                    <SelectItem value="duration">{t('duration')}</SelectItem>
+                    <SelectItem value="rows">{t('rows')}</SelectItem>
                   </SelectContent>
                 </Select>
 
@@ -493,9 +495,9 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
             <ScrollArea className="h-full pr-4">
               <EmptyLoading
                 loading={loading}
-                loadingTip="加载中..."
+                loadingTip={t('loading')}
                 isEmpty={filteredHistory.length === 0}
-                emptyTip={searchText || selectedDatabase !== 'all' ? '没有匹配的历史记录' : '暂无历史记录'}
+                emptyTip={searchText || selectedDatabase !== 'all' ? t('no_matching_history') : t('no_history_records')}
               >
                 <div className="space-y-2">
                   {filteredHistory.map(renderHistoryItem)}
@@ -508,9 +510,9 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
             <ScrollArea className="h-full pr-4">
               <EmptyLoading
                 loading={loading}
-                loadingTip="加载中..."
+                loadingTip={t('loading')}
                 isEmpty={favoriteQueries.length === 0}
-                emptyTip={searchText || selectedDatabase !== 'all' ? '没有匹配的收藏查询' : '暂无收藏查询'}
+                emptyTip={searchText || selectedDatabase !== 'all' ? t('no_matching_favorites') : t('no_favorite_queries')}
               >
                 <div className="space-y-2">
                   {favoriteQueries.map(renderFavoriteItem)}

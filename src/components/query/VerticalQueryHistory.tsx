@@ -40,6 +40,7 @@ import { useQueryHistoryData } from '@/hooks/useQueryHistory';
 import { useTabOperations } from '@/stores/tabStore';
 import { writeToClipboard } from '@/utils/clipboard';
 import { showMessage } from '@/utils/message';
+import { useTranslation } from '@/hooks/useTranslation';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
 
 interface VerticalQueryHistoryProps {
@@ -49,6 +50,7 @@ interface VerticalQueryHistoryProps {
 export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
   className = '',
 }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'history' | 'saved'>('history');
   const [searchText, setSearchText] = useState('');
   const [selectedDatabase, setSelectedDatabase] = useState('');
@@ -101,7 +103,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
       await writeToClipboard(query);
       showMessage.success('查询已复制到剪贴板');
     } catch (error) {
-      showMessage.error('复制失败');
+      showMessage.error(t('copy_failed'));
     }
   };
 
@@ -380,14 +382,14 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
             >
               <History className="w-4 h-4 mr-2" />
-              历史 ({filteredHistoryItems.length})
+              {t('history_tab')} ({filteredHistoryItems.length})
             </TabsTrigger>
             <TabsTrigger
               value="saved"
               className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
             >
               <Book className="w-4 h-4 mr-2" />
-              保存 ({filteredSavedQueries.length})
+              {t('saved_tab')} ({filteredSavedQueries.length})
             </TabsTrigger>
           </TabsList>
 
@@ -404,7 +406,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <History className="w-8 h-8 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      {searchText || selectedDatabase ? '没有匹配的历史记录' : '暂无查询历史'}
+                      {searchText || selectedDatabase ? t('no_matching_history') : t('no_history')}
                     </p>
                   </div>
                 )}
@@ -425,7 +427,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
                   <div className="flex flex-col items-center justify-center py-8 text-center">
                     <Book className="w-8 h-8 text-muted-foreground mb-2" />
                     <p className="text-sm text-muted-foreground">
-                      {searchText || selectedDatabase ? '没有匹配的保存查询' : '暂无保存的查询'}
+                      {searchText || selectedDatabase ? t('no_matching_saved') : t('no_saved_queries')}
                     </p>
                   </div>
                 )}
