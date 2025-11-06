@@ -20,6 +20,7 @@ export interface TranslationOptions {
   context?: string;       // 上下文
   defaultValue?: string;  // 默认值
   interpolation?: Record<string, any>; // 插值变量
+  [key: string]: any;     // 允许任意插值属性
 }
 
 // 数字格式化选项

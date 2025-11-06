@@ -483,10 +483,10 @@ export function applyThemeColors(colorScheme: string, isDark: boolean = false) {
 }
 
 // 获取主题颜色列表
-export function getThemeColorOptions() {
+export function getThemeColorOptions(t?: (key: string) => string) {
   return Object.values(themeColors).map(color => ({
     value: color.name,
-    label: color.label,
+    label: t ? t(`theme_style_${color.name}`) : color.label,
     primary: color.primary,
   }));
 }

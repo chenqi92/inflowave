@@ -15,7 +15,8 @@ export function ThemeColorSelector({
   onChange,
   className,
 }: ThemeColorSelectorProps) {
-  const colorOptions = getThemeColorOptions();
+  const { t } = useSettingsTranslation();
+  const colorOptions = getThemeColorOptions(t);
 
   return (
     <div className={cn('grid grid-cols-6 gap-2', className)}>
@@ -70,7 +71,8 @@ export function SimpleThemeColorSelector({
   onChange,
   className,
 }: ThemeColorSelectorProps) {
-  const colorOptions = getThemeColorOptions();
+  const { t } = useSettingsTranslation();
+  const colorOptions = getThemeColorOptions(t);
 
   return (
     <div className={cn('flex gap-2 flex-wrap', className)}>
@@ -112,7 +114,7 @@ export function ThemeColorSelectorWithPreview({
   className,
 }: ThemeColorSelectorProps) {
   const { t } = useSettingsTranslation();
-  const colorOptions = getThemeColorOptions();
+  const colorOptions = getThemeColorOptions(t);
   const selectedColor = themeColors[value];
 
   return (
@@ -125,7 +127,7 @@ export function ThemeColorSelectorWithPreview({
               className='w-6 h-6 rounded-full border-2 border-white shadow-sm'
               style={{ backgroundColor: `hsl(${selectedColor.primary})` }}
             />
-            <span className='font-medium'>{selectedColor.label}</span>
+            <span className='font-medium'>{t(`theme_style_${value}`) || selectedColor.label}</span>
           </div>
 
           {/* 颜色组合预览 */}

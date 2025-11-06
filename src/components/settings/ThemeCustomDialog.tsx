@@ -235,18 +235,18 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Palette className="w-5 h-5" />
-            主题自定义
+            {t('theme_customization') || '主题自定义'}
           </DialogTitle>
           <DialogDescription>
-            自定义应用外观，打造专属主题
+            {t('theme_customization_desc') || '自定义应用外观，打造专属主题'}
           </DialogDescription>
         </DialogHeader>
 
         <Tabs value={currentTab} onValueChange={setCurrentTab} className="flex-1 min-h-0 flex flex-col">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="appearance">外观设置</TabsTrigger>
-            <TabsTrigger value="presets">主题预设</TabsTrigger>
-            <TabsTrigger value="advanced">高级设置</TabsTrigger>
+            <TabsTrigger value="appearance">{t('appearance_settings') || '外观设置'}</TabsTrigger>
+            <TabsTrigger value="presets">{t('theme_presets') || '主题预设'}</TabsTrigger>
+            <TabsTrigger value="advanced">{t('advanced_settings') || '高级设置'}</TabsTrigger>
           </TabsList>
 
           {/* 外观设置 */}
@@ -256,7 +256,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                 {/* 主题模式 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">主题模式</CardTitle>
+                    <CardTitle className="text-base">{t('theme_mode') || '主题模式'}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 gap-4">
@@ -289,7 +289,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                 {/* 颜色方案 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">颜色方案</CardTitle>
+                    <CardTitle className="text-base">{t('color_scheme') || '颜色方案'}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-4 gap-4">
@@ -310,7 +310,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                               className="w-full h-12 rounded mb-2"
                               style={{ background: scheme.primaryColor }}
                             />
-                            <div className="text-sm font-medium">{scheme.label}</div>
+                            <div className="text-sm font-medium">{t(`theme_style_${scheme.id}`) || scheme.label}</div>
                             <div className="text-xs text-muted-foreground mt-1">
                               {scheme.description}
                             </div>
@@ -329,7 +329,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Type className="w-4 h-4" />
-                      字体大小
+                      {t('font_size') || '字体大小'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -353,7 +353,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                   <CardHeader>
                     <CardTitle className="text-base flex items-center gap-2">
                       <Circle className="w-4 h-4" />
-                      圆角大小
+                      {t('border_radius') || '圆角大小'}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -381,18 +381,18 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                 {/* 保存当前配置为预设 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">保存为预设</CardTitle>
+                    <CardTitle className="text-base">{t('save_as_preset') || '保存为预设'}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex gap-2">
                       <Input
-                        placeholder="输入预设名称"
+                        placeholder={t('preset_name_placeholder') || '输入预设名称'}
                         value={presetName}
                         onChange={(e) => setPresetName(e.target.value)}
                       />
                       <Button onClick={handleSavePreset}>
                         <Save className="w-4 h-4 mr-2" />
-                        保存
+                        {t('save') || '保存'}
                       </Button>
                     </div>
                   </CardContent>
@@ -401,7 +401,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                 {/* 预设列表 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">可用预设</CardTitle>
+                    <CardTitle className="text-base">{t('available_presets') || '可用预设'}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4">
@@ -426,7 +426,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                               </div>
                               {preset.builtin && (
                                 <Badge variant="secondary" className="text-xs">
-                                  内置
+                                  {t('builtin') || '内置'}
                                 </Badge>
                               )}
                             </div>
@@ -439,7 +439,7 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                                 className="flex-1"
                               >
                                 <Eye className="w-4 h-4 mr-2" />
-                                应用
+                                {t('apply') || '应用'}
                               </Button>
                               {!preset.builtin && (
                                 <Button
@@ -468,23 +468,23 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                 {/* 导入导出 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">导入/导出</CardTitle>
+                    <CardTitle className="text-base">{t('import_export') || '导入/导出'}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <div>
-                        <Label className="mb-2 block">导出主题配置</Label>
+                        <Label className="mb-2 block">{t('export_theme_config') || '导出主题配置'}</Label>
                         <Button variant="outline" onClick={handleExport} className="w-full">
                           <Download className="w-4 h-4 mr-2" />
-                          导出为 JSON 文件
+                          {t('export_as_json') || '导出为 JSON 文件'}
                         </Button>
                       </div>
 
                       <div>
-                        <Label className="mb-2 block">导入主题配置</Label>
+                        <Label className="mb-2 block">{t('import_theme_config') || '导入主题配置'}</Label>
                         <Button variant="outline" onClick={handleImport} className="w-full">
                           <Upload className="w-4 h-4 mr-2" />
-                          从 JSON 文件导入
+                          {t('import_from_json') || '从 JSON 文件导入'}
                         </Button>
                       </div>
                     </div>
@@ -494,16 +494,16 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                 {/* 重置 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-base">重置主题</CardTitle>
+                    <CardTitle className="text-base">{t('reset_theme') || '重置主题'}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       <p className="text-sm text-muted-foreground">
-                        将所有主题设置重置为默认值
+                        {t('reset_theme_desc') || '将所有主题设置重置为默认值'}
                       </p>
                       <Button variant="destructive" onClick={handleReset} className="w-full">
                         <RotateCcw className="w-4 h-4 mr-2" />
-                        重置到默认设置
+                        {t('reset_to_default') || '重置到默认设置'}
                       </Button>
                     </div>
                   </CardContent>

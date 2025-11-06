@@ -11,6 +11,7 @@ import { openExternalLink, openIssueReport, openDocumentation } from '@/utils/ex
 import AboutDialog from '@/components/common/AboutDialog';
 import SettingsModal from '@/components/common/SettingsModal';
 import SampleQueriesModal from '@/components/common/SampleQueriesModal';
+import { useSettingsTranslation } from '@/hooks/useTranslation';
 
 import { logger } from '@/utils/logger';
 interface NativeMenuHandlerProps {
@@ -25,12 +26,13 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   onGlobalSearch,
 }) => {
   const navigate = useNavigate();
-  const { 
-    activeConnectionId, 
-    connections, 
-    connectionStatuses, 
+  const { t } = useSettingsTranslation();
+  const {
+    activeConnectionId,
+    connections,
+    connectionStatuses,
     getConnectionStatus,
-    isConnectionConnected 
+    isConnectionConnected
   } = useConnectionStore();
   const { settings, updateTheme } = useSettingsStore();
   const { setColorScheme, setTheme } = useTheme();
@@ -110,30 +112,12 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const handleThemeChange = (themeName: string) => {
     logger.render('切换风格:', themeName);
 
-    // 风格名称映射
-    const themeLabels: Record<string, string> = {
-      'default': '默认蓝色',
-      'shadcn': '极简黑',
-      'zinc': '锌灰色',
-      'slate': '石板灰',
-      'indigo': '靛蓝色',
-      'emerald': '翡翠绿',
-      'blue': '经典蓝',
-      'green': '自然绿色',
-      'red': '活力红色',
-      'orange': '温暖橙色',
-      'purple': '优雅紫色',
-      'rose': '浪漫玫瑰',
-      'yellow': '明亮黄色',
-      'violet': '神秘紫罗兰'
-    };
-
     // 设置颜色方案
     setColorScheme(themeName);
 
-    // 显示成功消息
-    const themeLabel = themeLabels[themeName] || themeName;
-    showMessage.success(`已切换到${themeLabel}风格`);
+    // 显示成功消息 - 使用 i18n
+    const themeLabel = t(`theme_style_${themeName}`) || themeName;
+    showMessage.success(t('common:success') + ': ' + themeLabel);
   };
 
   // 模式切换处理函数

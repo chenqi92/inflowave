@@ -162,7 +162,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
         try {
           const { useAppStore } = await import('@/store/app');
           const { setLanguage: setAppLanguage } = useAppStore.getState();
-          setAppLanguage(language);
+          setAppLanguage(language as any);
         } catch (error) {
           console.warn('⚠️ [I18nStore] 同步 AppStore 语言失败:', error);
         }

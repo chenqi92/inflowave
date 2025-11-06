@@ -16,8 +16,9 @@ import {
 } from 'lucide-react';
 import { useNotificationStore, type NotificationItem } from '@/store/notifications';
 import { formatDistanceToNow } from 'date-fns';
-import { zhCN } from 'date-fns/locale';
+import { zhCN, enUS } from 'date-fns/locale';
 import { notify } from '@/hooks/useAppNotifications';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface NotificationPanelProps {
   onClose: () => void;
@@ -63,6 +64,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
   onClose,
   className = '',
 }) => {
+  const { t, i18n } = useTranslation();
   const {
     notifications,
     unreadCount,
@@ -72,7 +74,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
     clearAllNotifications,
   } = useNotificationStore();
 
-
+  const locale = i18n.language === 'zh-CN' ? zhCN : enUS;
 
   const handleNotificationClick = (notification: NotificationItem) => {
     if (!notification.read) {
@@ -92,10 +94,10 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
 
     try {
       await navigator.clipboard.writeText(content);
-      notify.general.success('复制成功', '消息内容已复制到剪贴板');
+      notify.general.success(t('copy_success'), t('copy_success_desc'));
     } catch (error) {
-      console.error('复制失败:', error);
-      notify.general.error('复制失败', '无法访问剪贴板');
+      console.error(t('copy_failed'), error);
+      notify.general.error(t('copy_failed'), t('copy_failed_desc'));
     }
   };
 
@@ -104,7 +106,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       {/* 面板头部 */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 dark:bg-muted/20">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold">消息中心</h3>
+          <h3 className="font-semibold">{t('notification_center')}</h3>
           {unreadCount > 0 && (
             <Badge variant="destructive" className="text-xs">
               {unreadCount}
@@ -119,7 +121,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
               size="sm"
               className="h-8 w-8 p-0 hover:bg-accent"
               onClick={markAllAsRead}
-              title="全部标记为已读"
+              title={t('mark_all_as_read')}
             >
               <CheckCheck className="w-4 h-4" />
             </Button>
@@ -132,7 +134,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
               size="sm"
               className="h-8 w-8 p-0 hover:bg-accent"
               onClick={clearAllNotifications}
-              title="清空所有通知"
+              title={t('clear_all_notifications')}
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -144,7 +146,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
             size="sm"
             className="h-8 w-8 p-0 hover:bg-accent"
             onClick={onClose}
-            title="关闭面板"
+            title={t('close_panel')}
           >
             <X className="w-4 h-4" />
           </Button>
@@ -156,9 +158,9 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
         {notifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground dark:text-muted-foreground">
             <Bell className="w-12 h-12 mb-4 opacity-50 dark:opacity-40" />
-            <p className="text-lg font-medium mb-2 dark:text-muted-foreground">暂无通知</p>
+            <p className="text-lg font-medium mb-2 dark:text-muted-foreground">{t('no_notifications')}</p>
             <p className="text-sm text-center dark:text-muted-foreground">
-              软件启动后的所有消息通知将显示在这里
+              {t('no_notifications_desc')}
             </p>
           </div>
         ) : (
@@ -202,7 +204,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                             size="sm"
                             className="h-6 w-6 p-0 hover:bg-accent flex-shrink-0"
                             onClick={(e) => handleCopyNotification(notification, e)}
-                            title="复制消息内容"
+                            title={t('copy_message')}
                           >
                             <Copy className="w-3 h-3" />
                           </Button>
@@ -213,7 +215,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                             size="sm"
                             className="h-6 w-6 p-0 hover:bg-accent flex-shrink-0"
                             onClick={(e) => handleRemoveNotification(notification.id, e)}
-                            title="删除通知"
+                            title={t('delete_notification')}
                           >
                             <X className="w-3 h-3" />
                           </Button>
@@ -234,7 +236,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
                         <span>
                           {formatDistanceToNow(new Date(notification.timestamp), {
                             addSuffix: true,
-                            locale: zhCN,
+                            locale,
                           })}
                         </span>
                         {notification.source && (

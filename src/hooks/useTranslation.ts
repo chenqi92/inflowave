@@ -22,6 +22,9 @@ export interface UseTranslationReturn {
   language: string;
   isLoading: boolean;
   ready: boolean;
+  i18n: {
+    language: string;
+  };
 }
 
 export interface TranslationInterpolation {
@@ -198,6 +201,9 @@ export const useTranslation = (namespace?: string): UseTranslationReturn => {
     language: currentLanguage,
     isLoading,
     ready,
+    i18n: {
+      language: currentLanguage,
+    },
   };
 };
 

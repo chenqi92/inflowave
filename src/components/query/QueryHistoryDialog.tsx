@@ -150,7 +150,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
   const handleCopyQuery = async (query: string) => {
     const success = await writeToClipboard(query);
     if (success) {
-      showMessage.success('查询已复制到剪贴板');
+      showMessage.success(t('query_copied'));
     }
   };
 
@@ -261,7 +261,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
               className="h-7 text-xs"
             >
               <Play className="w-3 h-3 mr-1" />
-              重新执行
+              {t('re_execute')}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -272,7 +272,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleCopyQuery(item.query)}>
                   <Copy className="w-4 h-4 mr-2" />
-                  复制查询
+                  {t('copy_query')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -280,7 +280,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
                   className="text-destructive"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  删除
+                  {t('delete')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -339,7 +339,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
               className="h-7 text-xs"
             >
               <Play className="w-3 h-3 mr-1" />
-              执行
+              {t('execute')}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -350,11 +350,11 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleToggleFavorite(query.id)}>
                   <Star className="w-4 h-4 mr-2" />
-                  取消收藏
+                  {t('unfavorite')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleCopyQuery(query.query)}>
                   <Copy className="w-4 h-4 mr-2" />
-                  复制查询
+                  {t('copy_query')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -362,7 +362,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
                   className="text-destructive"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  删除
+                  {t('delete')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -378,10 +378,10 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="w-5 h-5" />
-            查询历史管理
+            {t('query_history_management')}
           </DialogTitle>
           <DialogDescription>
-            查看和管理您的查询历史记录和收藏查询
+            {t('query_history_desc')}
           </DialogDescription>
         </DialogHeader>
 
@@ -390,7 +390,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
           {/* 搜索和刷新 */}
           <div className="flex items-center gap-2">
             <SearchInput
-              placeholder="搜索查询..."
+              placeholder={t('search_query')}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
               onClear={() => setSearchText('')}
@@ -410,10 +410,10 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
           <div className="flex items-center gap-2 flex-wrap">
             <Select value={selectedDatabase} onValueChange={setSelectedDatabase}>
               <SelectTrigger className="w-40">
-                <SelectValue placeholder="所有数据库" />
+                <SelectValue placeholder={t('all_databases')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">所有数据库</SelectItem>
+                <SelectItem value="all">{t('all_databases')}</SelectItem>
                 {uniqueDatabases.map((db) => (
                   <SelectItem key={db} value={db}>
                     {db}
@@ -474,19 +474,19 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {sortOrder === 'asc' ? '升序' : '降序'}
+                      {sortOrder === 'asc' ? t('ascending') : t('descending')}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
 
                 <Popconfirm
-                  title="确认清空"
-                  description="确定要清空所有历史记录吗？此操作不可恢复。"
+                  title={t('confirm_clear')}
+                  description={t('confirm_clear_history')}
                   onConfirm={handleClearHistory}
                 >
                   <Button variant="outline" size="sm" className="text-destructive">
                     <Trash2 className="w-4 h-4 mr-1" />
-                    清空历史
+                    {t('clear_history')}
                   </Button>
                 </Popconfirm>
               </>
@@ -499,11 +499,11 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="history" className="gap-2">
               <History className="w-4 h-4" />
-              历史记录 ({filteredHistory.length})
+              {t('query_history')} ({filteredHistory.length})
             </TabsTrigger>
             <TabsTrigger value="favorites" className="gap-2">
               <Bookmark className="w-4 h-4" />
-              收藏查询 ({favoriteQueries.length})
+              {t('saved_queries')} ({favoriteQueries.length})
             </TabsTrigger>
           </TabsList>
 

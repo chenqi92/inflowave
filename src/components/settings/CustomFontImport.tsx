@@ -8,12 +8,14 @@ import { Upload, FileText, CheckCircle, XCircle, Info, HelpCircle } from 'lucide
 import { Button, Card } from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { useSettingsTranslation } from '@/hooks/useTranslation';
 
 interface CustomFontImportProps {
   onFontImported?: () => void;
 }
 
 const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) => {
+  const { t } = useSettingsTranslation();
   const [importing, setImporting] = useState(false);
 
   const handleImportFont = async () => {
@@ -22,7 +24,7 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
 
       // 使用 Tauri 文件对话框选择字体文件
       const { open } = await import('@tauri-apps/plugin-dialog');
-      
+
       const selected = await open({
         multiple: true,
         filters: [{
@@ -37,24 +39,24 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
       }
 
       const files = Array.isArray(selected) ? selected : [selected];
-      
+
       // 导入字体文件
       const result = await safeTauriInvoke<{ success: number; failed: number }>('import_custom_fonts', {
         fontPaths: files
       });
 
       if (result.success > 0) {
-        showMessage.success(`成功导入 ${result.success} 个字体文件`);
+        showMessage.success(t('font_import_success', { count: result.success }));
         onFontImported?.();
       }
 
       if (result.failed > 0) {
-        showMessage.warning(`${result.failed} 个文件导入失败`);
+        showMessage.warning(t('font_import_failed', { count: result.failed }));
       }
 
     } catch (error) {
-      console.error('导入字体失败:', error);
-      showMessage.error('导入字体失败');
+      console.error(t('font_import_error'), error);
+      showMessage.error(t('font_import_error'));
     } finally {
       setImporting(false);
     }
@@ -67,9 +69,9 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
           <Upload className="w-5 h-5 text-primary" />
         </div>
         <div className="flex-1">
-          <h3 className="text-base font-semibold mb-1">导入自定义字体</h3>
+          <h3 className="text-base font-semibold mb-1">{t('import_custom_font_title')}</h3>
           <p className="text-sm text-muted-foreground">
-            导入您喜欢的字体文件，在应用中使用
+            {t('import_custom_font_desc')}
           </p>
         </div>
       </div>
@@ -78,11 +80,11 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
         <div className="flex items-start gap-2 text-sm text-muted-foreground">
           <Info className="w-4 h-4 mt-0.5 shrink-0" />
           <div className="space-y-1">
-            <p>支持的字体格式：</p>
+            <p>{t('supported_formats')}</p>
             <ul className="list-disc list-inside space-y-0.5 ml-2">
-              <li>TrueType 字体（.ttf）</li>
-              <li>OpenType 字体（.otf）</li>
-              <li>Web 字体（.woff, .woff2）</li>
+              <li>{t('truetype_font')}</li>
+              <li>{t('opentype_font')}</li>
+              <li>{t('web_font')}</li>
             </ul>
           </div>
         </div>
@@ -90,11 +92,11 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
         <div className="flex items-start gap-2 text-sm text-muted-foreground">
           <HelpCircle className="w-4 h-4 mt-0.5 shrink-0" />
           <div className="space-y-1">
-            <p>如何获取字体：</p>
+            <p>{t('how_to_get_fonts')}</p>
             <ul className="list-disc list-inside space-y-0.5 ml-2">
               <li>
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   onClick={(e) => {
                     e.preventDefault();
                     import('@/utils/externalLinks').then(({ openExternalLink }) => {
@@ -106,13 +108,13 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
                   }}
                   className="text-primary hover:underline"
                 >
-                  Google Fonts
+                  {t('google_fonts')}
                 </a>
-                {' '}（免费、开源）
+                {' '}{t('google_fonts_desc')}
               </li>
               <li>
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   onClick={(e) => {
                     e.preventDefault();
                     import('@/utils/externalLinks').then(({ openExternalLink }) => {
@@ -124,11 +126,11 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
                   }}
                   className="text-primary hover:underline"
                 >
-                  GitHub Fonts
+                  {t('github_fonts')}
                 </a>
-                {' '}（开源字体集合）
+                {' '}{t('github_fonts_desc')}
               </li>
-              <li>系统已安装的字体文件</li>
+              <li>{t('system_fonts')}</li>
             </ul>
           </div>
         </div>
@@ -142,12 +144,12 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
             {importing ? (
               <>
                 <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                导入中...
+                {t('importing')}
               </>
             ) : (
               <>
                 <Upload className="w-4 h-4 mr-2" />
-                选择字体文件
+                {t('select_font_file')}
               </>
             )}
           </Button>
@@ -156,14 +158,14 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
         <div className="bg-muted/50 rounded-lg p-3 space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <FileText className="w-4 h-4" />
-            <span>导入步骤</span>
+            <span>{t('import_steps')}</span>
           </div>
           <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground ml-2">
-            <li>点击"选择字体文件"按钮</li>
-            <li>选择一个或多个字体文件</li>
-            <li>等待导入完成</li>
-            <li>在字体选择器中找到新导入的字体</li>
-            <li>选择并应用到应用界面</li>
+            <li>{t('import_step_1')}</li>
+            <li>{t('import_step_2')}</li>
+            <li>{t('import_step_3')}</li>
+            <li>{t('import_step_4')}</li>
+            <li>{t('import_step_5')}</li>
           </ol>
         </div>
 
@@ -171,10 +173,9 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
           <div className="flex items-start gap-2">
             <Info className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
             <div className="text-sm text-blue-900 dark:text-blue-100">
-              <p className="font-medium mb-1">提示</p>
+              <p className="font-medium mb-1">{t('import_tip_title')}</p>
               <p className="text-blue-700 dark:text-blue-300">
-                导入的字体文件会保存在应用数据目录中，重启应用后仍然可用。
-                如需删除已导入的字体，请在字体选择器中右键点击字体名称。
+                {t('import_tip_desc')}
               </p>
             </div>
           </div>

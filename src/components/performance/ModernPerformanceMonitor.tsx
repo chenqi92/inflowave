@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Lightbulb,
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   LineChart,
   Line,
@@ -90,6 +91,8 @@ const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#6366f1'];
 export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> = ({
   className = ''
 }) => {
+  const { t } = useTranslation();
+
   // 状态管理
   const [selectedDataSource, setSelectedDataSource] = useState<string | null>(null);
   const [metricsData, setMetricsData] = useState<PerformanceMetrics[]>([]);
@@ -281,13 +284,13 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
         distribution[m.healthScore as keyof typeof distribution]++;
       }
     });
-    
+
     return [
-      { name: '健康', value: distribution.good, color: CHART_COLORS.success },
-      { name: '警告', value: distribution.warning, color: CHART_COLORS.warning },
-      { name: '严重', value: distribution.critical, color: CHART_COLORS.danger },
+      { name: t('healthy'), value: distribution.good, color: CHART_COLORS.success },
+      { name: t('warning'), value: distribution.warning, color: CHART_COLORS.warning },
+      { name: t('critical'), value: distribution.critical, color: CHART_COLORS.danger },
     ].filter(item => item.value > 0);
-  }, [metricsData]);
+  }, [metricsData, t]);
 
 
 
@@ -307,7 +310,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                     onCheckedChange={setAutoRefresh}
                   />
                   <Label htmlFor="auto-refresh" className="text-sm">
-                    自动刷新
+                    {t('auto_refresh')}
                   </Label>
                 </div>
                 <div className="flex items-center gap-2">
@@ -329,13 +332,13 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="1h">1小时</SelectItem>
-                      <SelectItem value="6h">6小时</SelectItem>
-                      <SelectItem value="24h">24小时</SelectItem>
+                      <SelectItem value="1h">{t('time_range_1h')}</SelectItem>
+                      <SelectItem value="6h">{t('time_range_6h')}</SelectItem>
+                      <SelectItem value="24h">{t('time_range_24h')}</SelectItem>
                     </SelectContent>
                   </Select>
                   <Badge variant="outline" className="text-xs">
-                    {overallStats.activeConnections}/{overallStats.totalConnections} 活跃
+                    {overallStats.activeConnections}/{overallStats.totalConnections} {t('active')}
                   </Badge>
                 </div>
               </div>
@@ -359,14 +362,14 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
               <Database className={`${layout.isNarrow ? 'w-8 h-8' : 'w-12 h-12'} mx-auto mb-4 text-muted-foreground/50`} />
               {!layout.isNarrow && (
                 <>
-                  <h3 className="text-lg font-medium mb-2">暂无数据源</h3>
+                  <h3 className="text-lg font-medium mb-2">{t('no_datasource')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    请在左侧数据源树中打开数据库以查看性能监控
+                    {t('no_datasource_desc')}
                   </p>
                 </>
               )}
               {layout.isNarrow && (
-                <p className="text-xs text-muted-foreground">暂无数据</p>
+                <p className="text-xs text-muted-foreground">{t('no_data')}</p>
               )}
             </div>
           ) : (
