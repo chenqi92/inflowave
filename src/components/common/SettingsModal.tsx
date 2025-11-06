@@ -568,6 +568,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
       label: tSettings('config_management'),
       children: (
         <div className='space-y-6'>
+          {/* 标准标题格式 */}
+          <div className='flex items-center gap-3 mb-4'>
+            <Database className='w-6 h-6 text-blue-600' />
+            <div>
+              <h2 className='text-2xl font-bold'>{tSettings('config_management')}</h2>
+              <p className='text-muted-foreground'>
+                {tSettings('config_management_description')}
+              </p>
+            </div>
+          </div>
+
           <div>
             <h4 className='text-sm font-medium mb-3'>{tSettings('config_backup_restore')}</h4>
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>

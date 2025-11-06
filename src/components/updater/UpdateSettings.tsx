@@ -19,8 +19,6 @@ import {
 import {
     Settings,
     Download,
-    Bell,
-    Clock,
     RefreshCw,
     AlertTriangle,
     CheckCircle,
@@ -164,6 +162,15 @@ export const UpdateSettings: React.FC = () => {
 
     return (
         <div className="space-y-6">
+            {/* Standard section header */}
+            <div className="flex items-center gap-3 mb-4">
+                <Download className="w-6 h-6 text-blue-600" />
+                <div>
+                    <h2 className="text-2xl font-bold">{t('update_settings.title')}</h2>
+                    <p className="text-muted-foreground">{t('update_settings.description')}</p>
+                </div>
+            </div>
+
             {/* 基本设置 */}
             <Card>
                 <CardHeader>
@@ -176,70 +183,6 @@ export const UpdateSettings: React.FC = () => {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    {/* 自动检查 */}
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                            <Label className="text-base">{t('auto_check_label')}</Label>
-                            <p className="text-sm text-muted-foreground">
-                                {t('auto_check_desc')}
-                            </p>
-                        </div>
-                        <Switch
-                            checked={settings.auto_check}
-                            onCheckedChange={(checked) => handleSettingChange('auto_check', checked)}
-                            disabled={saving}
-                        />
-                    </div>
-
-                    <Separator/>
-
-                    {/* 检查间隔 */}
-                    <div className="space-y-3">
-                        <div className="flex items-center space-x-2">
-                            <Clock className="w-4 h-4"/>
-                            <Label className="text-base">{t('check_interval_label')}</Label>
-                        </div>
-                        <Select
-                            value={settings.check_interval.toString()}
-                            onValueChange={(value) => handleSettingChange('check_interval', parseInt(value))}
-                            disabled={!settings.auto_check || saving}
-                        >
-                            <SelectTrigger className="w-full h-9">
-                                <SelectValue/>
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="1">{t('check_interval_hourly') || '每小时'}</SelectItem>
-                                <SelectItem value="6">{t('check_interval_6hours') || '每 6 小时'}</SelectItem>
-                                <SelectItem value="12">{t('check_interval_12hours') || '每 12 小时'}</SelectItem>
-                                <SelectItem value="24">{t('check_interval_daily') || '每天'}</SelectItem>
-                                <SelectItem value="72">{t('check_interval_3days') || '每 3 天'}</SelectItem>
-                                <SelectItem value="168">{t('check_interval_weekly') || '每周'}</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <Separator/>
-
-                    {/* 通知设置 */}
-                    <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                            <div className="flex items-center space-x-2">
-                                <Bell className="w-4 h-4"/>
-                                <Label className="text-base">{t('update_notification_label')}</Label>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                                {t('update_notification_desc')}
-                            </p>
-                        </div>
-                        <Switch
-                            checked={settings.notify_on_update}
-                            onCheckedChange={(checked) => handleSettingChange('notify_on_update', checked)}
-                            disabled={saving}
-                        />
-                    </div>
-
-                    <Separator/>
-
                     {/* 包含预发布版本 */}
                     <div className="flex items-center justify-between">
                         <div className="space-y-1">

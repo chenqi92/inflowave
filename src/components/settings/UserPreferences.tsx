@@ -27,6 +27,7 @@ import {
   Keyboard,
   Eye,
   RefreshCw,
+  User,
 } from 'lucide-react';
 import type { KeyboardShortcut } from '@/types';
 import { useUserPreferencesStore, type UserPreferences } from '@/stores/userPreferencesStore';
@@ -511,15 +512,24 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   return (
     <>
       <div className='space-y-6 settings-content'>
+        {/* 主标题 */}
+        <div className='flex items-center gap-3 mb-4'>
+          <User className='w-6 h-6 text-blue-600' />
+          <div>
+            <h2 className='text-2xl font-bold'>{t('user_preferences')}</h2>
+            <p className='text-muted-foreground'>{t('user_preferences_description')}</p>
+          </div>
+        </div>
+
         <Form {...form}>
           <div className='space-y-6'>
             {/* 通知设置 */}
             <div>
               <div className='flex items-center gap-3 mb-4'>
-                <Bell className='w-6 h-6 text-blue-600' />
+                <Bell className='w-5 h-5 text-blue-600' />
                 <div>
-                  <h2 className='text-2xl font-bold'>{t('notification_settings_title')}</h2>
-                  <p className='text-muted-foreground'>{t('notification_settings_desc')}</p>
+                  <h3 className='text-lg font-semibold'>{t('notification_settings_title')}</h3>
+                  <p className='text-sm text-muted-foreground'>{t('notification_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -659,10 +669,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             {/* 无障碍设置 */}
             <div>
               <div className='flex items-center gap-3 mb-4'>
-                <Eye className='w-6 h-6 text-blue-600' />
+                <Eye className='w-5 h-5 text-blue-600' />
                 <div>
-                  <h2 className='text-2xl font-bold'>{t('accessibility_settings_title')}</h2>
-                  <p className='text-muted-foreground'>{t('accessibility_settings_desc')}</p>
+                  <h3 className='text-lg font-semibold'>{t('accessibility_settings_title')}</h3>
+                  <p className='text-sm text-muted-foreground'>{t('accessibility_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -796,10 +806,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             {/* 工作区设置 */}
             <div>
               <div className='flex items-center gap-3 mb-4'>
-                <Layout className='w-6 h-6 text-blue-600' />
+                <Layout className='w-5 h-5 text-blue-600' />
                 <div>
-                  <h2 className='text-2xl font-bold'>{t('workspace_settings_title')}</h2>
-                  <p className='text-muted-foreground'>{t('workspace_settings_desc')}</p>
+                  <h3 className='text-lg font-semibold'>{t('workspace_settings_title')}</h3>
+                  <p className='text-sm text-muted-foreground'>{t('workspace_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -923,10 +933,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             <div>
               <div className='flex items-center justify-between mb-4'>
                 <div className='flex items-center gap-3'>
-                  <Keyboard className='w-6 h-6 text-blue-600' />
+                  <Keyboard className='w-5 h-5 text-blue-600' />
                   <div>
-                    <h2 className='text-2xl font-bold'>{t('keyboard_shortcuts_title')}</h2>
-                    <p className='text-muted-foreground'>{t('keyboard_shortcuts_desc')}</p>
+                    <h3 className='text-lg font-semibold'>{t('keyboard_shortcuts_title')}</h3>
+                    <p className='text-sm text-muted-foreground'>{t('keyboard_shortcuts_desc')}</p>
                   </div>
                 </div>
                 <Button

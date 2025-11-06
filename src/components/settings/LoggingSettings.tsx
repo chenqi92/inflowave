@@ -193,12 +193,12 @@ const LoggingSettingsComponent: React.FC = () => {
       <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
         {/* 标题 */}
         <div className="flex items-center gap-3 mb-4">
-          <FileText className="w-5 h-5 text-blue-600" />
+          <FileText className="w-6 h-6 text-blue-600" />
           <div>
-            <Title className="text-lg font-semibold">{t('logging_settings.title')}</Title>
-            <Text className="text-sm text-muted-foreground">
+            <h2 className="text-2xl font-bold">{t('logging_settings.title')}</h2>
+            <p className="text-muted-foreground">
               {t('logging_settings.description')}
-            </Text>
+            </p>
           </div>
         </div>
 

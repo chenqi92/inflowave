@@ -14,11 +14,6 @@ import {
   Badge,
   Title,
   Text,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   Input,
 } from '@/components/ui';
 import { showMessage } from '@/utils/message';
