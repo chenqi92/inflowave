@@ -168,6 +168,17 @@ export const useI18nStore = create<I18nState>((set, get) => ({
         }
       }
 
+      // 更新原生菜单语言
+      if (typeof window !== 'undefined') {
+        try {
+          const { safeTauriInvoke } = await import('@/utils/tauri');
+          await safeTauriInvoke('update_menu_language', { language });
+          console.log(`✅ [I18nStore] 菜单语言已更新: ${language}`);
+        } catch (error) {
+          console.warn('⚠️ [I18nStore] 更新菜单语言失败:', error);
+        }
+      }
+
       console.log(`✅ [I18nStore] 语言切换成功: ${language} (${switchTime}ms)`);
     } catch (error) {
       const switchTime = Date.now() - startTime;

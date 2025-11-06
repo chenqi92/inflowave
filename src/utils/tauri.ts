@@ -70,6 +70,7 @@ const VOID_COMMANDS = new Set([
   'update_controller_settings',
   'update_monitoring_settings',
   'export_settings',
+  'update_menu_language',
 
   // Query history
   'delete_query_history',

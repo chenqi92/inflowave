@@ -125,141 +125,446 @@ fn get_available_memory() -> u64 {
     system.available_memory()
 }
 
-// 创建原生菜单 - 完整的专业化菜单，支持跨平台
-fn create_native_menu(app: &tauri::AppHandle) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
-    info!("为平台创建原生菜单: {}", std::env::consts::OS);
+// 菜单文本结构
+struct MenuTexts {
+    // 菜单标题
+    file: &'static str,
+    edit: &'static str,
+    view: &'static str,
+    database: &'static str,
+    query: &'static str,
+    tools: &'static str,
+    help: &'static str,
+
+    // 文件菜单
+    new_query: &'static str,
+    open_file: &'static str,
+    save: &'static str,
+    save_as: &'static str,
+    import_data: &'static str,
+    export_data: &'static str,
+    quit: &'static str,
+
+    // 编辑菜单
+    undo: &'static str,
+    redo: &'static str,
+    cut: &'static str,
+    copy: &'static str,
+    paste: &'static str,
+    find: &'static str,
+    replace: &'static str,
+    global_search: &'static str,
+
+    // 查看菜单
+    view_datasource: &'static str,
+    view_query: &'static str,
+    view_visualization: &'static str,
+    view_performance: &'static str,
+    toggle_sidebar: &'static str,
+    toggle_statusbar: &'static str,
+    fullscreen: &'static str,
+    zoom_in: &'static str,
+    zoom_out: &'static str,
+    zoom_reset: &'static str,
+
+    // 数据库菜单
+    new_connection: &'static str,
+    edit_connection: &'static str,
+    test_connection: &'static str,
+    delete_connection: &'static str,
+    refresh_structure: &'static str,
+    database_info: &'static str,
+    database_stats: &'static str,
+    import_structure: &'static str,
+    export_structure: &'static str,
+
+    // 查询菜单
+    execute_query: &'static str,
+    stop_query: &'static str,
+    execute_selection: &'static str,
+    query_history: &'static str,
+    save_query: &'static str,
+    query_favorites: &'static str,
+    query_plan: &'static str,
+    explain_query: &'static str,
+    format_query: &'static str,
+
+    // 工具菜单
+    console: &'static str,
+    query_performance: &'static str,
+    extensions: &'static str,
+    preferences: &'static str,
+    style_settings: &'static str,
+    mode_settings: &'static str,
+    language_settings: &'static str,
+
+    // 风格子菜单
+    theme_default: &'static str,
+    theme_shadcn: &'static str,
+    theme_slate: &'static str,
+    theme_indigo: &'static str,
+    theme_emerald: &'static str,
+    theme_blue: &'static str,
+    theme_green: &'static str,
+    theme_red: &'static str,
+    theme_orange: &'static str,
+    theme_purple: &'static str,
+    theme_rose: &'static str,
+    theme_yellow: &'static str,
+    theme_violet: &'static str,
+
+    // 模式子菜单
+    mode_light: &'static str,
+    mode_dark: &'static str,
+    mode_system: &'static str,
+
+    // 语言子菜单
+    lang_chinese: &'static str,
+    lang_english: &'static str,
+
+    // 帮助菜单
+    user_manual: &'static str,
+    shortcuts_help: &'static str,
+    sample_queries: &'static str,
+    api_docs: &'static str,
+    influxdb_docs: &'static str,
+    check_updates: &'static str,
+    report_issue: &'static str,
+    about: &'static str,
+}
+
+// 中文菜单文本
+const ZH_CN: MenuTexts = MenuTexts {
+    file: "文件",
+    edit: "编辑",
+    view: "查看",
+    database: "数据库",
+    query: "查询",
+    tools: "工具",
+    help: "帮助",
+
+    new_query: "新建查询",
+    open_file: "打开文件",
+    save: "保存",
+    save_as: "另存为",
+    import_data: "导入数据",
+    export_data: "导出数据",
+    quit: "退出",
+
+    undo: "撤销",
+    redo: "重做",
+    cut: "剪切",
+    copy: "复制",
+    paste: "粘贴",
+    find: "查找",
+    replace: "替换",
+    global_search: "全局搜索",
+
+    view_datasource: "数据源管理",
+    view_query: "查询编辑器",
+    view_visualization: "数据可视化",
+    view_performance: "性能监控",
+    toggle_sidebar: "切换侧边栏",
+    toggle_statusbar: "切换状态栏",
+    fullscreen: "全屏模式",
+    zoom_in: "放大",
+    zoom_out: "缩小",
+    zoom_reset: "重置缩放",
+
+    new_connection: "新建连接",
+    edit_connection: "编辑连接",
+    test_connection: "测试连接",
+    delete_connection: "删除连接",
+    refresh_structure: "刷新数据库结构",
+    database_info: "查看数据库信息",
+    database_stats: "数据库统计",
+    import_structure: "导入数据库结构",
+    export_structure: "导出数据库结构",
+
+    execute_query: "执行查询",
+    stop_query: "停止查询",
+    execute_selection: "执行选中",
+    query_history: "查询历史",
+    save_query: "保存查询",
+    query_favorites: "查询收藏夹",
+    query_plan: "查询计划",
+    explain_query: "解释查询",
+    format_query: "格式化查询",
+
+    console: "控制台",
+    query_performance: "查询性能分析",
+    extensions: "扩展管理",
+    preferences: "首选项",
+    style_settings: "风格设置",
+    mode_settings: "模式设置",
+    language_settings: "语言设置",
+
+    theme_default: "默认蓝色",
+    theme_shadcn: "极简黑",
+    theme_slate: "石板灰",
+    theme_indigo: "靛蓝色",
+    theme_emerald: "翡翠绿",
+    theme_blue: "经典蓝",
+    theme_green: "自然绿色",
+    theme_red: "活力红色",
+    theme_orange: "温暖橙色",
+    theme_purple: "优雅紫色",
+    theme_rose: "浪漫玫瑰",
+    theme_yellow: "明亮黄色",
+    theme_violet: "神秘紫罗兰",
+
+    mode_light: "浅色模式",
+    mode_dark: "深色模式",
+    mode_system: "跟随系统",
+
+    lang_chinese: "中文",
+    lang_english: "English",
+
+    user_manual: "用户手册",
+    shortcuts_help: "键盘快捷键",
+    sample_queries: "示例查询",
+    api_docs: "API文档",
+    influxdb_docs: "InfluxDB文档",
+    check_updates: "检查更新",
+    report_issue: "反馈问题",
+    about: "关于InfloWave",
+};
+
+// 英文菜单文本
+const EN_US: MenuTexts = MenuTexts {
+    file: "File",
+    edit: "Edit",
+    view: "View",
+    database: "Database",
+    query: "Query",
+    tools: "Tools",
+    help: "Help",
+
+    new_query: "New Query",
+    open_file: "Open File",
+    save: "Save",
+    save_as: "Save As",
+    import_data: "Import Data",
+    export_data: "Export Data",
+    quit: "Quit",
+
+    undo: "Undo",
+    redo: "Redo",
+    cut: "Cut",
+    copy: "Copy",
+    paste: "Paste",
+    find: "Find",
+    replace: "Replace",
+    global_search: "Global Search",
+
+    view_datasource: "Data Source Manager",
+    view_query: "Query Editor",
+    view_visualization: "Data Visualization",
+    view_performance: "Performance Monitor",
+    toggle_sidebar: "Toggle Sidebar",
+    toggle_statusbar: "Toggle Status Bar",
+    fullscreen: "Full Screen",
+    zoom_in: "Zoom In",
+    zoom_out: "Zoom Out",
+    zoom_reset: "Reset Zoom",
+
+    new_connection: "New Connection",
+    edit_connection: "Edit Connection",
+    test_connection: "Test Connection",
+    delete_connection: "Delete Connection",
+    refresh_structure: "Refresh Database Structure",
+    database_info: "View Database Info",
+    database_stats: "Database Statistics",
+    import_structure: "Import Database Structure",
+    export_structure: "Export Database Structure",
+
+    execute_query: "Execute Query",
+    stop_query: "Stop Query",
+    execute_selection: "Execute Selection",
+    query_history: "Query History",
+    save_query: "Save Query",
+    query_favorites: "Query Favorites",
+    query_plan: "Query Plan",
+    explain_query: "Explain Query",
+    format_query: "Format Query",
+
+    console: "Console",
+    query_performance: "Query Performance Analysis",
+    extensions: "Extensions Manager",
+    preferences: "Preferences",
+    style_settings: "Style Settings",
+    mode_settings: "Mode Settings",
+    language_settings: "Language Settings",
+
+    theme_default: "Default Blue",
+    theme_shadcn: "Minimalist Black",
+    theme_slate: "Slate Gray",
+    theme_indigo: "Indigo",
+    theme_emerald: "Emerald Green",
+    theme_blue: "Classic Blue",
+    theme_green: "Natural Green",
+    theme_red: "Vibrant Red",
+    theme_orange: "Warm Orange",
+    theme_purple: "Elegant Purple",
+    theme_rose: "Romantic Rose",
+    theme_yellow: "Bright Yellow",
+    theme_violet: "Mysterious Violet",
+
+    mode_light: "Light Mode",
+    mode_dark: "Dark Mode",
+    mode_system: "Follow System",
+
+    lang_chinese: "中文",
+    lang_english: "English",
+
+    user_manual: "User Manual",
+    shortcuts_help: "Keyboard Shortcuts",
+    sample_queries: "Sample Queries",
+    api_docs: "API Documentation",
+    influxdb_docs: "InfluxDB Documentation",
+    check_updates: "Check for Updates",
+    report_issue: "Report Issue",
+    about: "About InfloWave",
+};
+
+// 创建原生菜单 - 完整的专业化菜单，支持跨平台和多语言
+pub fn create_native_menu(app: &tauri::AppHandle, lang: &str) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
+    info!("为平台创建原生菜单: {}, 语言: {}", std::env::consts::OS, lang);
+
+    // 根据语言选择文本
+    let texts = if lang == "en-US" { &EN_US } else { &ZH_CN };
+
     // 文件菜单 - 使用平台特定的快捷键
     let cmd_key = if cfg!(target_os = "macos") { "Cmd" } else { "Ctrl" };
-    let file_menu = SubmenuBuilder::new(app, "文件")
-        .text("new_query", &format!("新建查询\t{}+N", cmd_key))
-        .text("open_file", &format!("打开文件\t{}+O", cmd_key))
-        .text("save", &format!("保存\t{}+S", cmd_key))
-        .text("save_as", &format!("另存为\t{}+Shift+S", cmd_key))
+    let file_menu = SubmenuBuilder::new(app, texts.file)
+        .text("new_query", &format!("{}\t{}+N", texts.new_query, cmd_key))
+        .text("open_file", &format!("{}\t{}+O", texts.open_file, cmd_key))
+        .text("save", &format!("{}\t{}+S", texts.save, cmd_key))
+        .text("save_as", &format!("{}\t{}+Shift+S", texts.save_as, cmd_key))
         .separator()
-        .text("import_data", "导入数据")
-        .text("export_data", "导出数据")
+        .text("import_data", texts.import_data)
+        .text("export_data", texts.export_data)
         .separator()
-        .text("quit", &format!("退出\t{}+Q", cmd_key))
+        .text("quit", &format!("{}\t{}+Q", texts.quit, cmd_key))
         .build()?;
 
     // 编辑菜单 - 使用平台特定的快捷键
-    let edit_menu = SubmenuBuilder::new(app, "编辑")
-        .text("undo", &format!("撤销\t{}+Z", cmd_key))
-        .text("redo", &format!("重做\t{}+Y", cmd_key))
+    let edit_menu = SubmenuBuilder::new(app, texts.edit)
+        .text("undo", &format!("{}\t{}+Z", texts.undo, cmd_key))
+        .text("redo", &format!("{}\t{}+Y", texts.redo, cmd_key))
         .separator()
-        .text("cut", &format!("剪切\t{}+X", cmd_key))
-        .text("copy", &format!("复制\t{}+C", cmd_key))
-        .text("paste", &format!("粘贴\t{}+V", cmd_key))
+        .text("cut", &format!("{}\t{}+X", texts.cut, cmd_key))
+        .text("copy", &format!("{}\t{}+C", texts.copy, cmd_key))
+        .text("paste", &format!("{}\t{}+V", texts.paste, cmd_key))
         .separator()
-        .text("find", &format!("查找\t{}+F", cmd_key))
-        .text("replace", &format!("替换\t{}+H", cmd_key))
-        .text("global_search", &format!("全局搜索\t{}+Shift+F", cmd_key))
+        .text("find", &format!("{}\t{}+F", texts.find, cmd_key))
+        .text("replace", &format!("{}\t{}+H", texts.replace, cmd_key))
+        .text("global_search", &format!("{}\t{}+Shift+F", texts.global_search, cmd_key))
         .build()?;
 
     // 查看菜单 - 使用平台特定的快捷键
-    let view_menu = SubmenuBuilder::new(app, "查看")
-        .text("view_datasource", &format!("数据源管理\t{}+1", cmd_key))
-        .text("view_query", &format!("查询编辑器\t{}+2", cmd_key))
-        .text("view_visualization", &format!("数据可视化\t{}+3", cmd_key))
-        .text("view_performance", &format!("性能监控\t{}+4", cmd_key))
+    let view_menu = SubmenuBuilder::new(app, texts.view)
+        .text("view_datasource", &format!("{}\t{}+1", texts.view_datasource, cmd_key))
+        .text("view_query", &format!("{}\t{}+2", texts.view_query, cmd_key))
+        .text("view_visualization", &format!("{}\t{}+3", texts.view_visualization, cmd_key))
+        .text("view_performance", &format!("{}\t{}+4", texts.view_performance, cmd_key))
         .separator()
-        .text("toggle_sidebar", &format!("切换侧边栏\t{}+B", cmd_key))
-        .text("toggle_statusbar", "切换状态栏")
-        .text("fullscreen", "全屏模式\tF11")
+        .text("toggle_sidebar", &format!("{}\t{}+B", texts.toggle_sidebar, cmd_key))
+        .text("toggle_statusbar", texts.toggle_statusbar)
+        .text("fullscreen", &format!("{}\tF11", texts.fullscreen))
         .separator()
-        .text("zoom_in", &format!("放大\t{}+=", cmd_key))
-        .text("zoom_out", &format!("缩小\t{}-", cmd_key))
-        .text("zoom_reset", &format!("重置缩放\t{}+0", cmd_key))
+        .text("zoom_in", &format!("{}\t{}+=", texts.zoom_in, cmd_key))
+        .text("zoom_out", &format!("{}\t{}-", texts.zoom_out, cmd_key))
+        .text("zoom_reset", &format!("{}\t{}+0", texts.zoom_reset, cmd_key))
         .build()?;
 
     // 数据库菜单 - 使用平台特定的快捷键
-    let database_menu = SubmenuBuilder::new(app, "数据库")
-        .text("new_connection", &format!("新建连接\t{}+Shift+N", cmd_key))
-        .text("edit_connection", "编辑连接")
-        .text("test_connection", &format!("测试连接\t{}+T", cmd_key))
-        .text("delete_connection", "删除连接")
+    let database_menu = SubmenuBuilder::new(app, texts.database)
+        .text("new_connection", &format!("{}\t{}+Shift+N", texts.new_connection, cmd_key))
+        .text("edit_connection", texts.edit_connection)
+        .text("test_connection", &format!("{}\t{}+T", texts.test_connection, cmd_key))
+        .text("delete_connection", texts.delete_connection)
         .separator()
-        .text("refresh_structure", "刷新数据库结构\tF5")
-        .text("database_info", "查看数据库信息")
-        .text("database_stats", "数据库统计")
+        .text("refresh_structure", &format!("{}\tF5", texts.refresh_structure))
+        .text("database_info", texts.database_info)
+        .text("database_stats", texts.database_stats)
         .separator()
-        .text("import_structure", "导入数据库结构")
-        .text("export_structure", "导出数据库结构")
+        .text("import_structure", texts.import_structure)
+        .text("export_structure", texts.export_structure)
         .build()?;
 
     // 查询菜单 - 使用平台特定的快捷键
-    let query_menu = SubmenuBuilder::new(app, "查询")
-        .text("execute_query", "执行查询\tF5")
-        .text("stop_query", &format!("停止查询\t{}+F2", cmd_key))
-        .text("execute_selection", &format!("执行选中\t{}+Enter", cmd_key))
+    let query_menu = SubmenuBuilder::new(app, texts.query)
+        .text("execute_query", &format!("{}\tF5", texts.execute_query))
+        .text("stop_query", &format!("{}\t{}+F2", texts.stop_query, cmd_key))
+        .text("execute_selection", &format!("{}\t{}+Enter", texts.execute_selection, cmd_key))
         .separator()
-        .text("query_history", &format!("查询历史\t{}+H", cmd_key))
-        .text("save_query", "保存查询")
-        .text("query_favorites", "查询收藏夹")
+        .text("query_history", &format!("{}\t{}+H", texts.query_history, cmd_key))
+        .text("save_query", texts.save_query)
+        .text("query_favorites", texts.query_favorites)
         .separator()
-        .text("query_plan", "查询计划")
-        .text("explain_query", "解释查询")
-        .text("format_query", &format!("格式化查询\t{}+Alt+L", cmd_key))
+        .text("query_plan", texts.query_plan)
+        .text("explain_query", texts.explain_query)
+        .text("format_query", &format!("{}\t{}+Alt+L", texts.format_query, cmd_key))
         .build()?;
 
 
 
     // 风格设置子菜单 - 恢复风格切换功能
-    let style_submenu = SubmenuBuilder::new(app, "风格设置")
-        .text("theme_default", "默认蓝色")
-        .text("theme_shadcn", "极简黑")
-        .text("theme_zinc", "锌灰色")
-        .text("theme_slate", "石板灰")
-        .text("theme_indigo", "靛蓝色")
-        .text("theme_emerald", "翡翠绿")
-        .text("theme_blue", "经典蓝")
-        .text("theme_green", "自然绿色")
-        .text("theme_red", "活力红色")
-        .text("theme_orange", "温暖橙色")
-        .text("theme_purple", "优雅紫色")
-        .text("theme_rose", "浪漫玫瑰")
-        .text("theme_yellow", "明亮黄色")
-        .text("theme_violet", "神秘紫罗兰")
+    let style_submenu = SubmenuBuilder::new(app, texts.style_settings)
+        .text("theme_default", texts.theme_default)
+        .text("theme_shadcn", texts.theme_shadcn)
+        .text("theme_slate", texts.theme_slate)
+        .text("theme_indigo", texts.theme_indigo)
+        .text("theme_emerald", texts.theme_emerald)
+        .text("theme_blue", texts.theme_blue)
+        .text("theme_green", texts.theme_green)
+        .text("theme_red", texts.theme_red)
+        .text("theme_orange", texts.theme_orange)
+        .text("theme_purple", texts.theme_purple)
+        .text("theme_rose", texts.theme_rose)
+        .text("theme_yellow", texts.theme_yellow)
+        .text("theme_violet", texts.theme_violet)
         .build()?;
 
     // 模式切换子菜单
-    let mode_submenu = SubmenuBuilder::new(app, "模式切换")
-        .text("mode_system", "跟随系统")
-        .text("mode_light", "浅色模式")
-        .text("mode_dark", "深色模式")
+    let mode_submenu = SubmenuBuilder::new(app, texts.mode_settings)
+        .text("mode_system", texts.mode_system)
+        .text("mode_light", texts.mode_light)
+        .text("mode_dark", texts.mode_dark)
         .build()?;
 
     // 语言设置子菜单
-    let language_submenu = SubmenuBuilder::new(app, "语言设置")
-        .text("lang_chinese", "中文")
-        .text("lang_english", "English")
+    let language_submenu = SubmenuBuilder::new(app, texts.language_settings)
+        .text("lang_chinese", texts.lang_chinese)
+        .text("lang_english", texts.lang_english)
         .build()?;
 
     // 工具菜单 - 使用平台特定的快捷键
-    let tools_menu = SubmenuBuilder::new(app, "工具")
-        .text("console", &format!("控制台\t{}+`", cmd_key))
-        .text("query_performance", "查询性能分析")
+    let tools_menu = SubmenuBuilder::new(app, texts.tools)
+        .text("console", &format!("{}\t{}+`", texts.console, cmd_key))
+        .text("query_performance", texts.query_performance)
         .separator()
-        .text("extensions", "扩展管理")
+        .text("extensions", texts.extensions)
         .item(&style_submenu)
         .item(&mode_submenu)
         .item(&language_submenu)
         .separator()
-        .text("preferences", &format!("首选项\t{},", cmd_key))
+        .text("preferences", &format!("{}\t{},", texts.preferences, cmd_key))
         .build()?;
 
     // 帮助菜单 - 使用平台特定的快捷键
-    let help_menu = SubmenuBuilder::new(app, "帮助")
-        .text("user_manual", "用户手册\tF1")
-        .text("shortcuts_help", &format!("键盘快捷键\t{}/", cmd_key))
+    let help_menu = SubmenuBuilder::new(app, texts.help)
+        .text("user_manual", &format!("{}\tF1", texts.user_manual))
+        .text("shortcuts_help", &format!("{}\t{}/", texts.shortcuts_help, cmd_key))
         .separator()
-        .text("sample_queries", "示例查询")
-        .text("api_docs", "API文档")
-        .text("influxdb_docs", "InfluxDB文档")
+        .text("sample_queries", texts.sample_queries)
+        .text("api_docs", texts.api_docs)
+        .text("influxdb_docs", texts.influxdb_docs)
         .separator()
-        .text("check_updates", "检查更新")
-        .text("report_issue", "反馈问题")
-        .text("about", "关于InfloWave")
+        .text("check_updates", texts.check_updates)
+        .text("report_issue", texts.report_issue)
+        .text("about", texts.about)
         .build()?;
 
     MenuBuilder::new(app)
@@ -907,6 +1212,7 @@ async fn main() {
             export_settings,
             import_settings,
             get_settings_schema,
+            update_menu_language,
 
             // Context menu and SQL generation
             generate_smart_sql,
@@ -1116,8 +1422,8 @@ async fn main() {
                 warn!("无法获取主窗口，跳过响应式大小设置");
             }
 
-            // 创建并设置原生菜单
-            match create_native_menu(app.handle()) {
+            // 创建并设置原生菜单（默认使用中文）
+            match create_native_menu(app.handle(), "zh-CN") {
                 Ok(menu) => {
                     info!("菜单创建成功，正在设置为应用菜单...");
                     if let Err(e) = app.set_menu(menu) {

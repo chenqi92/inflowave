@@ -662,11 +662,37 @@ pub async fn get_monitoring_settings(
     settings_storage: State<'_, SettingsStorage>,
 ) -> Result<MonitoringSettings, String> {
     debug!("获取监控设置");
-    
+
     let settings = settings_storage.lock().map_err(|e| {
         error!("获取设置存储锁失败: {}", e);
         "存储访问失败".to_string()
     })?;
 
     Ok(settings.monitoring.clone())
+}
+
+/// 更新应用菜单语言
+#[tauri::command]
+pub async fn update_menu_language(
+    app: tauri::AppHandle,
+    language: String,
+) -> Result<(), String> {
+    info!("更新菜单语言: {}", language);
+
+    // 重新创建菜单
+    let menu = crate::create_native_menu(&app, &language)
+        .map_err(|e| {
+            error!("创建菜单失败: {}", e);
+            format!("创建菜单失败: {}", e)
+        })?;
+
+    // 设置新菜单
+    app.set_menu(menu)
+        .map_err(|e| {
+            error!("设置菜单失败: {}", e);
+            format!("设置菜单失败: {}", e)
+        })?;
+
+    info!("菜单语言更新成功");
+    Ok(())
 }
