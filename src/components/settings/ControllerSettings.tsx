@@ -55,28 +55,16 @@ const ControllerSettings: React.FC = () => {
     form.reset(settings);
   }, [settings, form]);
 
-  // 保存设置
-  const saveSettings = async (values: CombinedSettings) => {
+  // 即时保存设置
+  const saveSettingImmediately = async (values: CombinedSettings) => {
     try {
       await updateSettings({
         controller: values.controller,
         query: values.query,
       });
-      showMessage.success(t('controller_settings.settings_saved'));
     } catch (error) {
       console.error('保存设置失败:', error);
-      // 错误消息已在 hook 中显示
-    }
-  };
-
-  // 重置设置
-  const handleResetSettings = async () => {
-    try {
-      await resetToDefaults();
-      // 成功消息已在 hook 中显示
-    } catch (error) {
-      console.error('重置设置失败:', error);
-      // 错误消息已在 hook 中显示
+      showMessage.error(t('controller_settings.save_failed'));
     }
   };
 
@@ -145,7 +133,11 @@ const ControllerSettings: React.FC = () => {
                       <FormControl>
                         <Switch
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onCheckedChange={(value) => {
+                            field.onChange(value);
+                            const updatedValues = form.getValues();
+                            saveSettingImmediately(updatedValues);
+                          }}
                         />
                       </FormControl>
                     </FormItem>
@@ -181,7 +173,11 @@ const ControllerSettings: React.FC = () => {
                       <FormControl>
                         <Switch
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onCheckedChange={(value) => {
+                            field.onChange(value);
+                            const updatedValues = form.getValues();
+                            saveSettingImmediately(updatedValues);
+                          }}
                         />
                       </FormControl>
                     </FormItem>
@@ -217,7 +213,11 @@ const ControllerSettings: React.FC = () => {
                       <FormControl>
                         <Switch
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onCheckedChange={(value) => {
+                            field.onChange(value);
+                            const updatedValues = form.getValues();
+                            saveSettingImmediately(updatedValues);
+                          }}
                         />
                       </FormControl>
                     </FormItem>
@@ -255,7 +255,11 @@ const ControllerSettings: React.FC = () => {
                       <FormControl>
                         <Switch
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onCheckedChange={(value) => {
+                            field.onChange(value);
+                            const updatedValues = form.getValues();
+                            saveSettingImmediately(updatedValues);
+                          }}
                           disabled={!watchedValues.controller?.allow_delete_statements}
                         />
                       </FormControl>
@@ -280,7 +284,11 @@ const ControllerSettings: React.FC = () => {
                       <FormControl>
                         <Switch
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onCheckedChange={(value) => {
+                            field.onChange(value);
+                            const updatedValues = form.getValues();
+                            saveSettingImmediately(updatedValues);
+                          }}
                           disabled={!watchedValues.controller?.allow_drop_statements}
                         />
                       </FormControl>
@@ -329,7 +337,11 @@ const ControllerSettings: React.FC = () => {
                       <FormControl>
                         <Switch
                           checked={field.value}
-                          onCheckedChange={field.onChange}
+                          onCheckedChange={(value) => {
+                            field.onChange(value);
+                            const updatedValues = form.getValues();
+                            saveSettingImmediately(updatedValues);
+                          }}
                         />
                       </FormControl>
                     </FormItem>
@@ -378,6 +390,9 @@ const ControllerSettings: React.FC = () => {
                                 } else if (value > 10000) {
                                   field.onChange(10000);
                                 }
+                                // 保存设置
+                                const updatedValues = form.getValues();
+                                saveSettingImmediately(updatedValues);
                               }}
                               disabled={!watchedValues.query?.enable_lazy_loading}
                               className='w-[200px]'
@@ -395,23 +410,6 @@ const ControllerSettings: React.FC = () => {
             </div>
           </div>
         </Form>
-      </div>
-
-      {/* 操作按钮 - 固定在底部 */}
-      <div className='flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky'>
-        <Button type='button' variant='outline' size='sm' onClick={handleResetSettings}>
-          <RefreshCw className='w-4 h-4 mr-2' />
-          {t('controller_settings.reset_to_default')}
-        </Button>
-
-        <Button
-          size='sm'
-          onClick={form.handleSubmit(saveSettings)}
-          disabled={loading}
-        >
-          <Save className='w-4 h-4 mr-2' />
-          {t('controller_settings.save_settings')}
-        </Button>
       </div>
     </>
   );

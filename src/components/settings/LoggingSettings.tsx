@@ -89,25 +89,6 @@ const LoggingSettingsComponent: React.FC = () => {
     loadLogFiles();
   }, []);
 
-  // 保存日志设置
-  const saveSettings = async (values: LoggingSettings) => {
-    setLoading(true);
-    try {
-      await updateLogging(values);
-      
-      // 立即更新 logger 配置
-      const logLevel = stringToLogLevel(values.level);
-      logger.setLevel(logLevel);
-      
-      showMessage.success(t('logging_settings.settings_saved'));
-    } catch (error) {
-      console.error(t('logging_settings.settings_save_failed'), error);
-      showMessage.error(t('logging_settings.settings_save_failed'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // 字符串转 LogLevel
   const stringToLogLevel = (level: string): LogLevel => {
     switch (level.toUpperCase()) {
@@ -124,15 +105,21 @@ const LoggingSettingsComponent: React.FC = () => {
     }
   };
 
-  // 重置为默认值
-  const handleReset = () => {
-    form.reset({
-      level: 'INFO',
-      enable_file_logging: true,
-      max_file_size_mb: 10,
-      max_files: 5,
-    });
-    showMessage.success(t('logging_settings.reset_success'));
+  // 即时保存日志设置
+  const saveSettingImmediately = async (values: LoggingSettings) => {
+    setLoading(true);
+    try {
+      await updateLogging(values);
+
+      // 立即更新 logger 配置
+      const logLevel = stringToLogLevel(values.level);
+      logger.setLevel(logLevel);
+    } catch (error) {
+      console.error(t('logging_settings.settings_save_failed'), error);
+      showMessage.error(t('logging_settings.settings_save_failed'));
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 清理旧日志文件
@@ -190,7 +177,7 @@ const LoggingSettingsComponent: React.FC = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(saveSettings)} className="space-y-6">
+      <div className="space-y-6">
         {/* 标题 */}
         <div className="flex items-center gap-3 mb-4">
           <FileText className="w-6 h-6 text-blue-600" />
@@ -237,7 +224,11 @@ const LoggingSettingsComponent: React.FC = () => {
                   <FormLabel>{t('logging_settings.log_level')}</FormLabel>
                   <Select
                     value={field.value}
-                    onValueChange={field.onChange}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      const updatedValues = form.getValues();
+                      saveSettingImmediately(updatedValues);
+                    }}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -308,7 +299,11 @@ const LoggingSettingsComponent: React.FC = () => {
                   <FormControl>
                     <Switch
                       checked={field.value}
-                      onCheckedChange={field.onChange}
+                      onCheckedChange={(value) => {
+                        field.onChange(value);
+                        const updatedValues = form.getValues();
+                        saveSettingImmediately(updatedValues);
+                      }}
                     />
                   </FormControl>
                 </FormItem>
@@ -328,6 +323,10 @@ const LoggingSettingsComponent: React.FC = () => {
                       max={100}
                       {...field}
                       onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      onBlur={() => {
+                        const updatedValues = form.getValues();
+                        saveSettingImmediately(updatedValues);
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
@@ -350,6 +349,10 @@ const LoggingSettingsComponent: React.FC = () => {
                       max={20}
                       {...field}
                       onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      onBlur={() => {
+                        const updatedValues = form.getValues();
+                        saveSettingImmediately(updatedValues);
+                      }}
                     />
                   </FormControl>
                   <FormDescription>
@@ -461,24 +464,7 @@ const LoggingSettingsComponent: React.FC = () => {
             )}
           </CardContent>
         </Card>
-
-        {/* 操作按钮 */}
-        <div className="flex justify-end gap-2 pt-4 border-t">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleReset}
-            disabled={loading}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            {t('controller_settings.reset_to_default')}
-          </Button>
-          <Button type="submit" disabled={loading}>
-            <Save className="w-4 h-4 mr-2" />
-            {t('controller_settings.save_settings')}
-          </Button>
-        </div>
-      </form>
+      </div>
     </Form>
   );
 };

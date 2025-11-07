@@ -392,7 +392,6 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       // 🔧 使用 store 的乐观更新，立即生效
       await updatePreferences(values as Partial<UserPreferences>);
 
-      showMessage.success(t('preferences_saved') || '偏好设置已保存');
       onSave?.(values);
     } catch (error) {
       // 🔧 store 会自动回滚，只需显示错误
@@ -401,6 +400,22 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  // 即时保存单个字段
+  const saveFieldImmediately = async (fieldName: string, value: any) => {
+    const currentValues = form.getValues();
+    const updatedValues = { ...currentValues };
+
+    // 处理嵌套字段（如 notifications.enabled）
+    const keys = fieldName.split('.');
+    let target: any = updatedValues;
+    for (let i = 0; i < keys.length - 1; i++) {
+      target = target[keys[i]];
+    }
+    target[keys[keys.length - 1]] = value;
+
+    await savePreferences(updatedValues);
   };
 
   // 加载默认快捷键
@@ -546,7 +561,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         <FormControl>
                           <Switch
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(value) => {
+                              field.onChange(value);
+                              saveFieldImmediately('notifications.enabled', value);
+                            }}
                           />
                         </FormControl>
                       </FormItem>
@@ -565,7 +583,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         <FormControl>
                           <Switch
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(value) => {
+                              field.onChange(value);
+                              saveFieldImmediately('notifications.desktop', value);
+                            }}
                           />
                         </FormControl>
                       </FormItem>
@@ -586,7 +607,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                         <FormControl>
                           <Switch
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(value) => {
+                              field.onChange(value);
+                              saveFieldImmediately('notifications.sound', value);
+                            }}
                           />
                         </FormControl>
                       </FormItem>
@@ -600,7 +624,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                       <FormItem>
                         <FormLabel>{t('notification_position_label')}</FormLabel>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            saveFieldImmediately('notifications.position', value);
+                          }}
                           value={field.value}
                         >
                           <FormControl>
@@ -1068,26 +1095,6 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
         </Form>
       </div>
 
-      {/* 保存按钮 - 固定在底部 */}
-      <div className='flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky'>
-        <Button type='button' variant='outline' size='sm' onClick={() => form.reset()}>
-          <RefreshCw className='w-4 h-4 mr-2' />
-          {t('reset_shortcuts')}
-        </Button>
-        <Button
-          size='sm'
-          onClick={async () => {
-            console.log('保存按钮被点击');
-            const formData = form.getValues();
-            console.log('当前表单数据:', formData);
-            await savePreferences(formData);
-          }}
-          disabled={loading}
-        >
-          <Settings className='w-4 h-4 mr-2' />
-          {t('save_settings_button') || '保存设置'}
-        </Button>
-      </div>
     </>
   );
 };

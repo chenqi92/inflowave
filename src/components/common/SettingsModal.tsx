@@ -99,36 +99,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
     localStorage.setItem('settings-menu-panel-size', size.toString());
   };
 
-  // 初始化表单值
-  useEffect(() => {
-    if (visible) {
-      form.reset(config);
-    }
-  }, [visible, form]); // 移除 config 依赖，避免 config 变化时重置表单
-
-  // 保存设置
-  const saveSettings = async (values: AppConfig) => {
-    setLoading(true);
+  // 即时保存单个设置项
+  const saveSettingImmediately = async (key: keyof AppConfig, value: any) => {
     try {
+      const updatedConfig = { ...config, [key]: value };
+
       // 更新本地状态
-      setConfig(values);
-
-      // 应用主题设置 - 使用新的主题系统
-      if (values.theme) {
-        setTheme(values.theme as 'light' | 'dark' | 'system');
-      }
-
-      // 语言设置已经在 LanguageSelector 中处理，这里不需要再次切换
+      setConfig(updatedConfig);
 
       // 保存到后端
       try {
-        // 构建符合后端期望的设置结构
         const appSettings = {
           general: {
-            theme: values.theme || 'system',
-            language: values.language || 'zh-CN',
-            auto_save: values.autoSave || false,
-            auto_connect: values.autoConnect || false,
+            theme: updatedConfig.theme || 'system',
+            language: updatedConfig.language || 'zh-CN',
+            auto_save: updatedConfig.autoSave || false,
+            auto_connect: updatedConfig.autoConnect || false,
             startup_connection: null,
           },
           editor: {
@@ -150,7 +136,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
             default_chart_type: 'line',
             refresh_interval: 5000,
             max_data_points: 1000,
-            color_scheme: values.colorScheme || 'default',
+            color_scheme: updatedConfig.colorScheme || 'default',
           },
           security: {
             encrypt_connections: true,
@@ -171,49 +157,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
         });
       } catch (saveError) {
         console.warn('保存配置到后端失败:', saveError);
-        // 如果后端不支持保存配置，只保存到前端状态
-        console.info('仅保存到前端状态，后端配置保存功能暂未实现');
-      }
-
-      showMessage.success(tCommon('success'));
-    } catch (saveError) {
-      showMessage.error(`${tCommon('error')}: ${saveError}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 重置设置
-  const handleResetSettings = async () => {
-    try {
-      if (isBrowserEnvironment()) {
-        // 浏览器环境：只重置前端配置
-        resetConfig();
-        setTimeout(() => {
-          const latestConfig = useAppStore.getState().config;
-          form.reset(latestConfig);
-        }, 0);
-        showMessage.success(tSettings('reset_to_default'));
-      } else {
-        // Tauri 环境：调用后端重置命令
-        const defaultSettings = await safeTauriInvoke('reset_all_settings');
-        if (defaultSettings) {
-          // 更新前端配置
-          setConfig(defaultSettings);
-          form.reset(defaultSettings);
-
-          // 触发全局刷新事件
-          window.dispatchEvent(new CustomEvent('refresh-connections'));
-          // 🔧 已移除 userPreferencesUpdated 事件派发，现在使用 userPreferencesStore 统一管理
-
-          showMessage.success(tSettings('reset_all_config'));
-        }
       }
     } catch (error) {
-      console.error('重置配置失败:', error);
+      console.error('保存设置失败:', error);
       showMessage.error(`${tCommon('error')}: ${error}`);
     }
   };
+
+
 
   // 导出配置
   const exportSettings = async () => {
@@ -297,7 +248,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
       if (importedSettings) {
         // 更新应用配置
         setConfig(importedSettings);
-        form.reset(importedSettings);
 
         // 刷新连接列表（因为后端已经处理了连接配置的导入）
         try {
@@ -327,7 +277,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
       icon: <Settings className='w-4 h-4' />,
       label: tSettings('general'),
       children: (
-        <form onSubmit={form.handleSubmit((data) => saveSettings(data as AppConfig))} className='space-y-6 settings-content'>
+        <div className='space-y-6 settings-content'>
           <div>
             <div className='flex items-center gap-3 mb-4'>
               <Monitor className='w-6 h-6 text-blue-600' />
@@ -344,9 +294,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                   <Label htmlFor='theme'>{tSettings('theme')}</Label>
                   <Select
                     value={theme}
-                    onValueChange={value =>
-                      setTheme(value as 'light' | 'dark' | 'system')
-                    }
+                    onValueChange={value => {
+                      const newTheme = value as 'light' | 'dark' | 'system';
+                      setTheme(newTheme);
+                      saveSettingImmediately('theme', newTheme);
+                    }}
                   >
                     <SelectTrigger className='h-9'>
                       <SelectValue placeholder={tSettings('select_theme')} />
@@ -378,27 +330,30 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 </div>
                 <ThemeColorSelectorWithPreview
                   value={colorScheme}
-                  onChange={setColorScheme}
+                  onChange={(value) => {
+                    setColorScheme(value);
+                    saveSettingImmediately('colorScheme', value);
+                  }}
                 />
               </div>
 
               <div className='grid grid-cols-2 gap-4'>
                 <div className='flex items-center space-x-2'>
                   <Switch
-                    checked={form.watch('autoSave') ?? config.autoSave}
-                    onCheckedChange={checked =>
-                      form.setValue('autoSave', checked)
-                    }
+                    checked={config.autoSave ?? false}
+                    onCheckedChange={checked => {
+                      saveSettingImmediately('autoSave', checked);
+                    }}
                   />
                   <Label htmlFor='autoSave'>{tSettings('auto_save')}</Label>
                 </div>
 
                 <div className='flex items-center space-x-2'>
                   <Switch
-                    checked={form.watch('autoConnect') ?? config.autoConnect}
-                    onCheckedChange={checked =>
-                      form.setValue('autoConnect', checked)
-                    }
+                    checked={config.autoConnect ?? false}
+                    onCheckedChange={checked => {
+                      saveSettingImmediately('autoConnect', checked);
+                    }}
                   />
                   <Label htmlFor='autoConnect'>{tSettings('auto_connect')}</Label>
                 </div>
@@ -407,16 +362,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               <div className='grid grid-cols-2 gap-4'>
                 <div className='flex items-center space-x-2'>
                   <Switch
-                    checked={form.watch('showInternalDatabases') ?? config.showInternalDatabases}
+                    checked={config.showInternalDatabases ?? false}
                     onCheckedChange={checked => {
-                      form.setValue('showInternalDatabases', checked);
-
-                      // 立即保存设置并刷新数据库列表
-                      const currentConfig = form.getValues();
-                      const updatedConfig = { ...currentConfig, showInternalDatabases: checked };
-
-                      // 保存设置
-                      saveSettings(updatedConfig as AppConfig).then(() => {
+                      saveSettingImmediately('showInternalDatabases', checked).then(() => {
                         // 触发数据库列表刷新
                         dataExplorerRefresh.trigger();
 
@@ -429,8 +377,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                       }).catch(error => {
                         console.error('保存设置失败:', error);
                         showMessage.error(tSettings('save_settings_failed'));
-                        // 回滚设置
-                        form.setValue('showInternalDatabases', !checked);
                       });
                     }}
                   />
@@ -448,8 +394,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 <div className='space-y-2'>
                   <Label htmlFor='logLevel'>{tSettings('log_level')}</Label>
                   <Select
-                    value={form.watch('logLevel') || config.logLevel}
-                    onValueChange={value => form.setValue('logLevel', value)}
+                    value={config.logLevel || 'info'}
+                    onValueChange={value => {
+                      saveSettingImmediately('logLevel', value);
+                    }}
                   >
                     <SelectTrigger className='h-9'>
                       <SelectValue placeholder={tSettings('select_log_level')} />
@@ -490,9 +438,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                   </div>
                   <Switch
                     checked={config.autoSave || false}
-                    onCheckedChange={checked =>
-                      form.setValue('autoSave', checked)
-                    }
+                    onCheckedChange={checked => {
+                      saveSettingImmediately('autoSave', checked);
+                    }}
                   />
                 </div>
 
@@ -505,9 +453,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                   </div>
                   <Switch
                     checked={config.autoConnect || false}
-                    onCheckedChange={checked =>
-                      form.setValue('autoConnect', checked)
-                    }
+                    onCheckedChange={checked => {
+                      saveSettingImmediately('autoConnect', checked);
+                    }}
                   />
                 </div>
               </div>
@@ -546,23 +494,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               </div>
             </div>
           </div>
-
-          <div className='flex justify-end gap-2 pt-4 pb-4 border-t bg-background sticky'>
-            <Button
-              type='button'
-              variant='outline'
-              size='sm'
-              onClick={handleResetSettings}
-            >
-              <RefreshCw className='w-4 h-4 mr-2' />
-              {tSettings('reset_to_default')}
-            </Button>
-            <Button type='submit' size='sm' disabled={loading}>
-              <Save className='w-4 h-4 mr-2' />
-              {tSettings('save_settings')}
-            </Button>
-          </div>
-        </form>
+        </div>
       ),
     },
     {
@@ -596,7 +528,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
 
           <div>
             <h4 className='text-sm font-medium mb-3'>{tSettings('config_backup_restore')}</h4>
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
               <Button
                 variant='outline'
                 onClick={exportSettings}
@@ -613,14 +545,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 <FileUp className='w-4 h-4 mr-2' />
                 {tSettings('import_config')}
               </Button>
-              <Button
-                variant='outline'
-                onClick={handleResetSettings}
-                className='w-full justify-start'
-              >
-                <RefreshCw className='w-4 h-4 mr-2' />
-                {tSettings('reset_all_config')}
-              </Button>
             </div>
             <Alert className='mt-4'>
               <Info className='h-4 w-4' />
@@ -628,8 +552,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 <h5 className='font-medium'>{tSettings('config_description')}</h5>
                 <p className='text-sm text-muted-foreground mt-1'>
                   • <strong>{tSettings('export_config')}</strong>：{tSettings('export_config_description')}<br/>
-                  • <strong>{tSettings('import_config')}</strong>：{tSettings('import_config_description')}<br/>
-                  • <strong>{tSettings('reset_config')}</strong>：{tSettings('reset_config_description')}
+                  • <strong>{tSettings('import_config')}</strong>：{tSettings('import_config_description')}
                 </p>
               </div>
             </Alert>
@@ -684,24 +607,13 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               </div>
             </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+            <div className='grid grid-cols-1 gap-3'>
               <Button
                 onClick={() => setUserGuideVisible(true)}
                 className='w-full justify-start'
               >
                 <Info className='w-4 h-4 mr-2' />
                 {tSettings('view_user_guide')}
-              </Button>
-              <Button
-                variant='outline'
-                onClick={() => {
-                  resetNoticeSettings();
-                  showMessage.success(tSettings('guide_settings_reset'));
-                }}
-                className='w-full justify-start'
-              >
-                <RefreshCw className='w-4 h-4 mr-2' />
-                {tSettings('reset_guide_settings')}
               </Button>
             </div>
           </div>
@@ -876,7 +788,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                         value={item.key}
                         className='h-full mt-0 px-6 py-4 data-[state=inactive]:hidden overflow-y-auto'
                       >
-                        <div className='max-w-3xl pb-12'>{item.children}</div>
+                        <div className='max-w-3xl pb-4'>{item.children}</div>
                       </TabsContent>
                     ))}
                   </div>
