@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { EditorTab } from '@/components/editor/TabManager';
+import { i18n } from '@/i18n';
 
 interface TabState {
   tabs: EditorTab[];
@@ -300,7 +301,7 @@ export const useTabOperations = () => {
 
     const newTab: EditorTab = {
       id: tabId,
-      title: `查询-${tabNumber}`,
+      title: i18n.t('query:query_tab_title', { number: tabNumber }),
       content,
       type: 'query',
       modified: hasContent, // 只有有内容时才标记为已修改
@@ -426,7 +427,7 @@ export const useTabOperations = () => {
     // 如果不存在，创建新tab
     const newTab: EditorTab = {
       id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      title: tableName,
+      title: i18n.t('query:data_browser_tab_title', { table: tableName, database }),
       content: '',
       type: 'data-browser',
       modified: false,

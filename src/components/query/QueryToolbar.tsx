@@ -5,6 +5,7 @@ import { PlayCircle, Save, Wand2 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { showMessage } from '@/utils/message';
+import { useTranslation } from '@/hooks/useTranslation';
 import TimeRangeSelector, { TimeRange } from '@/components/common/TimeRangeSelector';
 
 interface QueryToolbarProps {
@@ -36,6 +37,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
 }) => {
   const { connections, connectionStatuses, connectedConnectionIds } = useConnectionStore();
   const { openedDatabasesList } = useOpenedDatabasesStore();
+  const { t } = useTranslation('query');
 
   // 获取已连接的数据源列表
   const connectedConnections = connections.filter(conn => 
@@ -106,10 +108,10 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
         onClick={onSaveQuery}
         disabled={disabled}
         className="h-6 px-1.5 flex items-center gap-1"
-        title="保存到工作区 (Ctrl+S)"
+        title={t('save_to_workspace')}
       >
         <Save className="w-3 h-3" />
-        <span className="text-xs">保存</span>
+        <span className="text-xs">{t('save_button')}</span>
       </Button>
 
       {/* 分隔线 */}
@@ -125,8 +127,8 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
           <SelectValue
             placeholder={
               connectedConnections.length === 0
-                ? '请先连接数据源'
-                : '选择数据源'
+                ? t('please_connect_first')
+                : t('select_datasource')
             }
           />
         </SelectTrigger>
@@ -200,14 +202,14 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
           className="h-6 px-1.5 flex items-center gap-1"
           title={
             !selectedConnectionId
-              ? '执行查询 (需要选择数据源)'
+              ? t('execute_need_datasource')
               : !selectedDatabase
-              ? '执行查询 (需要选择数据库)'
-              : '执行查询 (Ctrl+Enter)'
+              ? t('execute_need_database')
+              : t('execute_query_tooltip')
           }
         >
           <PlayCircle className="w-3 h-3" />
-          <span className="text-xs">{loading ? '执行中...' : '执行'}</span>
+          <span className="text-xs">{loading ? t('executing') : t('execute_button')}</span>
         </Button>
 
         {/* 美化SQL按钮 */}
@@ -217,10 +219,10 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
           onClick={onFormatSQL}
           disabled={disabled}
           className="h-6 px-1.5 flex items-center gap-1"
-          title="格式化SQL代码"
+          title={t('beautify_sql')}
         >
           <Wand2 className="w-3 h-3" />
-          <span className="text-xs">美化</span>
+          <span className="text-xs">{t('beautify_button')}</span>
         </Button>
       </div>
 

@@ -32,6 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   ChevronLeft,
   ChevronRight,
@@ -196,6 +197,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   const [containerHeight, setContainerHeight] = useState(600);
   // 列宽管理：存储用户自定义的列宽
   const [columnWidths, setColumnWidths] = useState<Map<string, number>>(new Map());
+  const { t } = useTranslation('query');
 
   // 动态计算容器高度
   useEffect(() => {
@@ -966,31 +968,35 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           <div className="flex items-center justify-between px-4 py-3 border-t bg-background">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <span>
-                显示 {paginationInfo.start} - {paginationInfo.end} 条，共 {paginationInfo.total} 条
+                {t('showing_records', {
+                  start: paginationInfo.start,
+                  end: paginationInfo.end,
+                  total: paginationInfo.total
+                })}
               </span>
               {paginationInfo.showSizeChanger && (
                 <>
                   <span className="mx-2">|</span>
-                  <span>每页</span>
+                  <span>{t('per_page')}</span>
                   <Select
                     key={`pagesize-${paginationInfo.pageSize}-${paginationInfo.pageSizeOptions.join('-')}`}
                     value={paginationInfo.pageSize === -1 ? 'all' : String(paginationInfo.pageSize)}
                     onValueChange={handlePageSizeChange}
                   >
                     <SelectTrigger className="h-8 w-24">
-                      <SelectValue placeholder="选择">
-                        {paginationInfo.pageSize === -1 ? '全部' : String(paginationInfo.pageSize)}
+                      <SelectValue placeholder={t('select_datasource')}>
+                        {paginationInfo.pageSize === -1 ? t('all_records') : String(paginationInfo.pageSize)}
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {paginationInfo.pageSizeOptions.map(option => (
                         <SelectItem key={option} value={option}>
-                          {option === 'all' ? '全部' : option}
+                          {option === 'all' ? t('all_records') : option}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <span>条</span>
+                  <span>{t('records')}</span>
                 </>
               )}
             </div>
@@ -1013,7 +1019,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <span className="mx-2 text-sm">
-                第 {paginationInfo.current} / {paginationInfo.totalPages} 页
+                {t('page_info', { current: paginationInfo.current, total: paginationInfo.totalPages })}
               </span>
               <Button
                 variant="outline"

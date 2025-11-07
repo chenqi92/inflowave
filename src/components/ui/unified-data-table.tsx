@@ -26,6 +26,7 @@ import {
     SearchInput,
 } from '@/components/ui';
 import { Spin } from '@/components/ui/spin';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
     Filter,
     Download,
@@ -1272,6 +1273,8 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
     onPageChange,
     onPageSizeChange
 }) => {
+    const { t } = useTranslation('query');
+
     // 动态生成分页选项，包含"全部"选项
     const pageSizeOptions = useMemo(() => {
         const options = ['500', '1000', '2000', '5000'];
@@ -1288,8 +1291,8 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
 
     // 统一的显示文本逻辑 - 不再区分虚拟化和非虚拟化
     const displayText = pageSize === -1
-        ? `显示全部 ${totalCount} 条`
-        : `显示 ${startIndex}-${endIndex} 条，共 ${totalCount} 条`;
+        ? t('showing_records', { start: 1, end: totalCount, total: totalCount })
+        : t('showing_records', { start: startIndex, end: endIndex, total: totalCount });
 
     return (
         <div className="flex items-center justify-between px-4 py-3 border-t bg-background">
@@ -1304,12 +1307,12 @@ const PaginationControls: React.FC<PaginationControlsProps> = memo(({
                     <SelectContent>
                         {pageSizeOptions.map(option => (
                             <SelectItem key={option} value={option}>
-                                {option === 'all' ? '全部' : option}
+                                {option === 'all' ? t('all_records') : option}
                             </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
-                <span className="text-sm text-muted-foreground">条/页</span>
+                <span className="text-sm text-muted-foreground">{t('records')}/{t('per_page')}</span>
 
                 {pageSize !== -1 && (
                     <div className="flex items-center gap-1">
@@ -1376,6 +1379,8 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
     isLoadingMore = false,
     totalCount
 }) => {
+    const { t } = useTranslation('query');
+
     // 简化的状态管理
     const [searchText, setSearchText] = useState('');
     const [filters, setFilters] = useState<FilterConfig[]>([]);
@@ -2054,7 +2059,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                         {loading ? (
                             <div className="flex items-center justify-center h-32">
                                 <Spin />
-                                <span className="ml-2">加载中...</span>
+                                <span className="ml-2">{t('loading')}</span>
                             </div>
                         ) : data.length > 0 ? (
                             shouldUseVirtualization ? (
