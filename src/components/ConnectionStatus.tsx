@@ -26,6 +26,7 @@ import { Progress } from '@/components/ui';
 import { Alert, AlertDescription } from '@/components/ui';
 import { Separator } from '@/components/ui';
 import { toast } from 'sonner';
+import { useConnectionsTranslation } from '@/hooks/useTranslation';
 import logger from '@/utils/logger';
 
 export interface ConnectionStatusProps {
@@ -37,6 +38,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   showDetails = false,
   autoStart = true,
 }) => {
+  const { t } = useConnectionsTranslation();
   const [connectionState, setConnectionState] = useState<ConnectionState>({
     isConnected: false,
     isReconnecting: false,
@@ -73,7 +75,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
       updateStats();
     } catch (error) {
       logger.error('Failed to start connection monitoring:', error);
-      toast.error('连接监控启动失败');
+      toast.error(t('monitoringStartFailed'));
     }
   };
 
@@ -89,9 +91,9 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 
     // 显示连接状态变化的通知
     if (state.isConnected && state.lastSuccessful) {
-      toast.success('连接已恢复');
+      toast.success(t('recovered'));
     } else if (!state.isConnected && state.lastError) {
-      toast.error(`连接失败: ${state.lastError}`);
+      toast.error(t('connection_failed_error', { error: state.lastError }));
     }
   };
 
@@ -102,19 +104,19 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 
   const handleForceReconnect = async () => {
     try {
-      toast.info('正在强制重连...');
+      toast.info(t('forceReconnecting'));
       await connectionResilienceService.forceReconnect();
     } catch (error) {
-      toast.error('强制重连失败');
+      toast.error(t('forceReconnectFailed'));
     }
   };
 
   const handleCheckConnection = async () => {
     try {
       const isConnected = await connectionResilienceService.checkConnection();
-      toast.success(isConnected ? '连接正常' : '连接异常');
+      toast.success(isConnected ? t('connection_normal') : t('connectionAbnormal'));
     } catch (error) {
-      toast.error('连接检查失败');
+      toast.error(t('checkFailed'));
     }
   };
 
@@ -130,11 +132,11 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 
   const getStatusText = () => {
     if (connectionState.isReconnecting) {
-      return '重连中';
+      return t('reconnecting');
     } else if (connectionState.isConnected) {
-      return '已连接';
+      return t('connected');
     } else {
-      return '连接断开';
+      return t('disconnected');
     }
   };
 
@@ -159,7 +161,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   };
 
   const formatTimestamp = (timestamp: number | null) => {
-    if (!timestamp) return '从未';
+    if (!timestamp) return t('never');
     return new Date(timestamp).toLocaleString();
   };
 
@@ -185,17 +187,17 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
           <div>
             <CardTitle className='flex items-center gap-2'>
               <Activity className='h-5 w-5' />
-              连接状态
+              {t('connectionStatus')}
               {getStatusIcon()}
             </CardTitle>
             <CardDescription>
-              {getStatusText()} | 连续失败:{' '}
-              {connectionState.consecutiveFailures} 次
+              {getStatusText()} | {t('consecutiveFailures')}:{' '}
+              {connectionState.consecutiveFailures} {t('times')}
             </CardDescription>
           </div>
           <div className='flex items-center gap-2'>
             <Badge variant={getBadgeVariant()}>{getStatusText()}</Badge>
-            {isMonitoring && <Badge variant='outline'>监控中</Badge>}
+            {isMonitoring && <Badge variant='outline'>{t('monitoring')}</Badge>}
           </div>
         </div>
       </CardHeader>
@@ -212,9 +214,9 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
           <Alert>
             <RefreshCw className='h-4 w-4 animate-spin' />
             <AlertDescription>
-              正在尝试重新连接...
+              {t('reconnectAttempting')}
               {connectionState.consecutiveFailures > 0 &&
-                `(第 ${connectionState.consecutiveFailures} 次重试)`}
+                `(${connectionState.consecutiveFailures} ${t('retryAttempt')})`}
             </AlertDescription>
           </Alert>
         )}
@@ -225,7 +227,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
             variant={isMonitoring ? 'destructive' : 'default'}
             onClick={isMonitoring ? stopMonitoring : startMonitoring}
           >
-            {isMonitoring ? '停止监控' : '开始监控'}
+            {isMonitoring ? t('stopMonitoring') : t('startMonitoring')}
           </Button>
 
           <Button
@@ -235,7 +237,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
             disabled={connectionState.isReconnecting}
           >
             <CheckCircle className='h-4 w-4 mr-1' />
-            检查连接
+            {t('checkConnection')}
           </Button>
 
           <Button
@@ -245,7 +247,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
             disabled={connectionState.isReconnecting}
           >
             <RefreshCw className='h-4 w-4 mr-1' />
-            强制重连
+            {t('forceReconnect')}
           </Button>
         </div>
 
@@ -253,38 +255,38 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
 
         <div className='grid grid-cols-2 gap-4'>
           <div>
-            <h4 className='text-sm font-medium mb-2'>连接统计</h4>
+            <h4 className='text-sm font-medium mb-2'>{t('statistics')}</h4>
             <div className='space-y-2 text-sm'>
               <div className='flex justify-between'>
-                <span>总尝试次数:</span>
+                <span>{t('totalAttempts')}:</span>
                 <span>{stats.totalAttempts}</span>
               </div>
               <div className='flex justify-between'>
-                <span>成功率:</span>
+                <span>{t('successRate')}:</span>
                 <span>{stats.successRate.toFixed(1)}%</span>
               </div>
               <div className='flex justify-between'>
-                <span>平均延迟:</span>
+                <span>{t('averageLatency')}:</span>
                 <span>{formatLatency(stats.averageLatency)}</span>
               </div>
               <div className='flex justify-between'>
-                <span>最后成功:</span>
+                <span>{t('lastSuccessful')}:</span>
                 <span>{formatTimestamp(stats.lastSuccessful)}</span>
               </div>
             </div>
           </div>
 
           <div>
-            <h4 className='text-sm font-medium mb-2'>成功率趋势</h4>
+            <h4 className='text-sm font-medium mb-2'>{t('successRateTrend')}</h4>
             <div className='space-y-2'>
               <div className='flex items-center gap-2'>
                 <TrendingUp className='h-4 w-4' />
                 <span className='text-sm'>
                   {stats.successRate > 80
-                    ? '良好'
+                    ? t('good')
                     : stats.successRate > 50
-                      ? '一般'
-                      : '较差'}
+                      ? t('fair')
+                      : t('poor')}
                 </span>
               </div>
               <Progress value={stats.successRate} className='h-2' />
@@ -296,7 +298,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
           <>
             <Separator />
             <div>
-              <h4 className='text-sm font-medium mb-3'>最近连接记录</h4>
+              <h4 className='text-sm font-medium mb-3'>{t('recentRecords')}</h4>
               <div className='space-y-1 max-h-32 overflow-y-auto'>
                 {connectionState.attempts
                   .slice(-10)
@@ -312,7 +314,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
                         ) : (
                           <AlertTriangle className='h-3 w-3 text-red-500' />
                         )}
-                        <span>{attempt.success ? '成功' : '失败'}</span>
+                        <span>{attempt.success ? t('success') : t('failed')}</span>
                       </div>
                       <div className='flex items-center gap-2 text-muted-foreground'>
                         {attempt.latency && (

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { Separator } from '@/components/ui';
 import { toast } from 'sonner';
+import { useEmbeddedServerTranslation } from '@/hooks/useTranslation';
 import logger from '@/utils/logger';
 
 export interface EmbeddedServerStatusProps {
@@ -18,6 +19,7 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
   showDetails = false,
   autoInit = true,
 }) => {
+  const { t } = useEmbeddedServerTranslation();
   const [serverPort, setServerPort] = useState<number | null>(null);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
@@ -47,9 +49,9 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
       await checkStatus();
       setError(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '初始化嵌入式服务器服务失败';
+      const errorMessage = err instanceof Error ? err.message : t('initFailed');
       setError(errorMessage);
-      logger.error('初始化嵌入式服务器服务失败:', err);
+      logger.error(t('initFailed'), err);
     } finally {
       setLoading(false);
     }
@@ -61,7 +63,7 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
       setServerPort(embeddedServerService.getServerPort());
       setIsRunning(embeddedServerService.getIsRunning());
     } catch (err) {
-      logger.error('检查嵌入式服务器状态失败:', err);
+      logger.error(t('checkStatusFailed'), err);
     }
   };
 
@@ -86,9 +88,9 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
       setServerPort(port);
       setIsRunning(true);
       setError(null);
-      toast.success(`嵌入式服务器已启动，端口: ${port}`);
+      toast.success(t('started', { port }));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '启动嵌入式服务器失败';
+      const errorMessage = err instanceof Error ? err.message : t('startFailed');
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -103,9 +105,9 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
       setServerPort(null);
       setIsRunning(false);
       setError(null);
-      toast.success('嵌入式服务器已停止');
+      toast.success(t('stopped'));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '停止嵌入式服务器失败';
+      const errorMessage = err instanceof Error ? err.message : t('stopFailed');
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -120,9 +122,9 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
       setServerPort(port);
       setIsRunning(true);
       setError(null);
-      toast.success(`嵌入式服务器已重启，端口: ${port}`);
+      toast.success(t('restarted', { port }));
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '重启嵌入式服务器失败';
+      const errorMessage = err instanceof Error ? err.message : t('restartFailed');
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -147,9 +149,9 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
   };
 
   const getStatusText = () => {
-    if (loading) return '处理中';
-    if (isRunning) return '运行中';
-    return '已停止';
+    if (loading) return t('processing');
+    if (isRunning) return t('running');
+    return t('stopped');
   };
 
   if (!showDetails) {
@@ -157,7 +159,7 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         {isRunning ? <Server className="h-4 w-4" /> : <ServerOff className="h-4 w-4" />}
-        <span>服务器: {serverPort || '未启动'}</span>
+        <span>{t('server')}: {serverPort || t('notStarted')}</span>
         <div className="flex items-center gap-1">
           <div className={`w-2 h-2 rounded-full ${getStatusColor()}`} />
           <span>{getStatusText()}</span>
@@ -172,15 +174,15 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="flex items-center gap-2">
-              嵌入式服务器
+              {t('title')}
               {getStatusIcon()}
             </CardTitle>
             <CardDescription>
-              {isRunning ? `运行在端口: ${serverPort}` : '服务器未运行'}
+              {isRunning ? t('runningOnPort', { port: serverPort }) : t('serverNotRunning')}
             </CardDescription>
           </div>
           <Badge variant={isRunning ? 'default' : 'destructive'}>
-            {isRunning ? '运行中' : '已停止'}
+            {isRunning ? t('running') : t('stopped')}
           </Badge>
         </div>
       </CardHeader>
@@ -192,7 +194,7 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
             <AlertDescription className="flex items-center justify-between">
               <span>{error}</span>
               <Button size="sm" variant="outline" onClick={initializeService}>
-                重试
+                {t('retry')}
               </Button>
             </AlertDescription>
           </Alert>
@@ -202,22 +204,22 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
           {!isRunning ? (
             <Button size="sm" onClick={handleStartServer} disabled={loading}>
               {loading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Server className="h-4 w-4 mr-2" />}
-              启动服务器
+              {t('startServer')}
             </Button>
           ) : (
             <>
               <Button size="sm" variant="outline" onClick={handleStopServer} disabled={loading}>
                 <ServerOff className="h-4 w-4 mr-2" />
-                停止服务器
+                {t('stopServer')}
               </Button>
               <Button size="sm" variant="outline" onClick={handleRestartServer} disabled={loading}>
                 <RefreshCw className="h-4 w-4 mr-2" />
-                重启服务器
+                {t('restartServer')}
               </Button>
             </>
           )}
           <Button size="sm" variant="outline" onClick={checkStatus} disabled={loading}>
-            刷新状态
+            {t('refreshStatus')}
           </Button>
         </div>
 
@@ -225,19 +227,19 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
           <>
             <Separator />
             <div className="space-y-2">
-              <h4 className="text-sm font-medium">服务器信息</h4>
+              <h4 className="text-sm font-medium">{t('serverInfo')}</h4>
               <div className="bg-muted p-3 rounded text-sm">
                 <div className="flex justify-between">
-                  <span>端口:</span>
+                  <span>{t('port')}:</span>
                   <span className="font-mono">{serverPort}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>URL:</span>
+                  <span>{t('url')}:</span>
                   <span className="font-mono">http://localhost:{serverPort}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>状态:</span>
-                  <span className="text-green-600">运行中</span>
+                  <span>{t('status')}:</span>
+                  <span className="text-green-600">{t('running')}</span>
                 </div>
               </div>
             </div>

@@ -16,5 +16,18 @@
   "checkConflicts": "检查冲突",
   "conflictCheckFailed": "检查端口冲突失败",
   "resolveConflict": "解决冲突",
-  "statistics": "端口统计"
+  "statistics": "端口统计",
+  "portChanged": "端口已更改: {{oldPort}} → {{newPort}}",
+  "portConflict": "端口冲突: {{port}} (服务: {{service}})",
+  "healthCheckFailedPort": "健康检查失败: 端口 {{port}} - {{error}}",
+  "healthCheckPassed": "健康检查通过",
+  "conflictsFound": "发现 {{count}} 个端口冲突",
+  "retry": "重试",
+  "healthy": "健康",
+  "unhealthy": "异常",
+  "checking": "检查中",
+  "connected": "已连接",
+  "disconnected": "未连接",
+  "available": "可用",
+  "unavailable": "不可用"
 }

@@ -16,5 +16,18 @@
   "checkConflicts": "Check Conflicts",
   "conflictCheckFailed": "Failed to check port conflicts",
   "resolveConflict": "Resolve Conflict",
-  "statistics": "Port Statistics"
+  "statistics": "Port Statistics",
+  "portChanged": "Port changed: {{oldPort}} → {{newPort}}",
+  "portConflict": "Port conflict: {{port}} (service: {{service}})",
+  "healthCheckFailedPort": "Health check failed: Port {{port}} - {{error}}",
+  "healthCheckPassed": "Health check passed",
+  "conflictsFound": "Found {{count}} port conflicts",
+  "retry": "Retry",
+  "healthy": "Healthy",
+  "unhealthy": "Unhealthy",
+  "checking": "Checking",
+  "connected": "Connected",
+  "disconnected": "Disconnected",
+  "available": "Available",
+  "unavailable": "Unavailable"
 }
