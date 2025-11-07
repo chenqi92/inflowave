@@ -3,6 +3,7 @@ import * as PopoverPrimitive from '@radix-ui/react-popover';
 import { cn } from '@/lib/utils';
 import { Button } from './button';
 import { AlertTriangle } from 'lucide-react';
+import logger from '@/utils/logger';
 
 interface PopconfirmProps {
   title?: React.ReactNode;
@@ -54,7 +55,7 @@ const Popconfirm = React.forwardRef<HTMLDivElement, PopconfirmProps>(
           await onConfirm();
           setActualOpen?.(false);
         } catch (error) {
-          console.error('Popconfirm confirm error:', error);
+          logger.error('Popconfirm confirm error:', error);
         } finally {
           setLoading(false);
         }

@@ -13,6 +13,7 @@ import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
 import { foldGutter, indentOnInput, bracketMatching, foldKeymap, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { lintKeymap } from '@codemirror/lint';
+import logger from '@/utils/logger';
 
 /**
  * Preset configuration options
@@ -172,7 +173,7 @@ export function basicPreset(options: PresetOptions = {}): Extension[] {
   extensions.push(
     EditorView.domEventHandlers({
       paste: (event: ClipboardEvent, view: EditorView) => {
-        console.log('📋 [Clipboard] DOM paste event triggered', {
+        logger.info('📋 [Clipboard] DOM paste event triggered', {
           hasClipboardData: !!event.clipboardData,
           types: event.clipboardData?.types,
         });
@@ -181,14 +182,14 @@ export function basicPreset(options: PresetOptions = {}): Extension[] {
         const clipboardText = event.clipboardData?.getData('text/plain');
 
         if (clipboardText) {
-          console.log('📋 [Clipboard] Got text from clipboard event:', clipboardText.length, 'chars');
+          logger.info('📋 [Clipboard] Got text from clipboard event:', clipboardText.length, 'chars');
           // Let CodeMirror handle the paste naturally
           // Don't prevent default - this allows native paste to work
-          console.log('✅ [Clipboard] Allowing native paste');
+          logger.debug('✅ [Clipboard] Allowing native paste');
           return false; // Let CodeMirror handle it
         }
 
-        console.log('⚠️ [Clipboard] No data in clipboard event');
+        logger.debug('⚠️ [Clipboard] No data in clipboard event');
         return false; // Let CodeMirror try to handle it
       },
     })
@@ -220,7 +221,7 @@ function createClipboardKeybindings(): KeyBinding[] {
 
         // Use Tauri's native clipboard API
         writeText(text).catch(err => {
-          console.error('❌ [Clipboard] Copy failed:', err);
+          logger.error('❌ [Clipboard] Copy failed:', err);
         });
 
         return true;
@@ -247,7 +248,7 @@ function createClipboardKeybindings(): KeyBinding[] {
             selection: { anchor: selection.from },
           });
         }).catch(err => {
-          console.error('❌ [Clipboard] Cut failed:', err);
+          logger.error('❌ [Clipboard] Cut failed:', err);
         });
 
         return true;
@@ -259,7 +260,7 @@ function createClipboardKeybindings(): KeyBinding[] {
     {
       key: 'Mod-v',
       run: (view) => {
-        console.log('📋 [Clipboard] Paste keybinding triggered - using native paste');
+        logger.info('📋 [Clipboard] Paste keybinding triggered - using native paste');
         // Return false to let CodeMirror's default paste handler work
         // This will use the browser's native clipboard API
         return false;
@@ -311,7 +312,7 @@ function createVSCodeKeybindings(onExecute?: () => void, onFormat?: () => void) 
     key: 'Mod-/',
     run: (view: EditorView) => {
       // This will be implemented with language-specific comment support
-      console.log('Toggle line comment');
+      logger.info('Toggle line comment');
       return true;
     },
   },
@@ -319,14 +320,14 @@ function createVSCodeKeybindings(onExecute?: () => void, onFormat?: () => void) 
   {
     key: 'Alt-ArrowUp',
     run: (view: EditorView) => {
-      console.log('Move line up');
+      logger.info('Move line up');
       return true;
     },
   },
   {
     key: 'Alt-ArrowDown',
     run: (view: EditorView) => {
-      console.log('Move line down');
+      logger.info('Move line down');
       return true;
     },
   },

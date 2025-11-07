@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { QueryResult, QueryRequest, QueryValidationResult } from '@/types';
 import { QueryAPI } from '@/services/api';
+import logger from '@/utils/logger';
 
 export interface QueryHistoryItem {
   id: string;
@@ -236,7 +237,7 @@ export const useQueryStore = create<QueryState>()(
           set({ validationResult: result });
           return result;
         } catch (error) {
-          console.error('查询验证失败:', error);
+          logger.error('查询验证失败:', error);
           throw error;
         }
       },
@@ -252,7 +253,7 @@ export const useQueryStore = create<QueryState>()(
 
           return formatted;
         } catch (error) {
-          console.error('查询格式化失败:', error);
+          logger.error('查询格式化失败:', error);
           throw error;
         }
       },
@@ -267,7 +268,7 @@ export const useQueryStore = create<QueryState>()(
           set({ suggestions });
           return suggestions;
         } catch (error) {
-          console.error('获取查询建议失败:', error);
+          logger.error('获取查询建议失败:', error);
           set({ suggestions: [] });
           return [];
         }

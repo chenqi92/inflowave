@@ -5,6 +5,7 @@
 
 import type { LanguageResource } from './translation-loader';
 import { performanceMonitor } from './performance-monitor';
+import logger from '@/utils/logger';
 
 export interface PreloadStrategy {
   name: string;
@@ -75,7 +76,7 @@ export class SmartPreloader {
       context
     );
 
-    console.log(`🚀 [Preloader] Starting smart preload for languages:`, languagesToPreload);
+    logger.info(`🚀 [Preloader] Starting smart preload for languages:`, languagesToPreload);
 
     // 延迟预加载，避免影响首次加载性能
     await this.delay(this.config.preloadDelay);
@@ -128,7 +129,7 @@ export class SmartPreloader {
       this.loading.delete(language);
 
       const loadTime = Date.now() - startTime;
-      console.log(`✅ [Preloader] Preloaded ${language} in ${loadTime}ms`);
+      logger.debug(`✅ [Preloader] Preloaded ${language} in ${loadTime}ms`);
 
       // 记录预加载性能
       performanceMonitor.recordPreload(language, loadTime, true);
@@ -141,7 +142,7 @@ export class SmartPreloader {
     } catch (error) {
       this.loading.delete(language);
       const loadTime = Date.now() - startTime;
-      console.warn(`❌ [Preloader] Failed to preload ${language}:`, error);
+      logger.warn(`❌ [Preloader] Failed to preload ${language}:`, error);
 
       // 记录预加载失败
       performanceMonitor.recordPreload(language, loadTime, false);
@@ -311,7 +312,7 @@ export class SmartPreloader {
         return JSON.parse(stored);
       }
     } catch (error) {
-      console.warn('Failed to load user preferences:', error);
+      logger.warn('Failed to load user preferences:', error);
     }
     return [];
   }
@@ -377,7 +378,7 @@ export class SmartPreloader {
     try {
       localStorage.setItem('i18n-recent-languages', JSON.stringify(this.recentLanguages));
     } catch (error) {
-      console.warn('Failed to save recent languages:', error);
+      logger.warn('Failed to save recent languages:', error);
     }
   }
 

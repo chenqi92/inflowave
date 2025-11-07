@@ -57,7 +57,7 @@ const MainLayout: React.FC = () => {
     const params = new URLSearchParams(window.location.search);
     const detachedTabParam = params.get('detached_tab');
 
-    console.log('🔍 检查URL参数:', {
+    logger.debug('🔍 检查URL参数:', {
       hasDetachedTabParam: !!detachedTabParam,
       paramLength: detachedTabParam?.length || 0,
       fullUrl: window.location.href,
@@ -66,10 +66,10 @@ const MainLayout: React.FC = () => {
     if (detachedTabParam) {
       try {
         const decodedParam = decodeURIComponent(detachedTabParam);
-        console.log('📦 解码后的参数:', decodedParam.substring(0, 200));
+        logger.debug('📦 解码后的参数:', decodedParam.substring(0, 200));
 
         const tab = JSON.parse(decodedParam);
-        console.log('✅ 成功解析detached tab:', {
+        logger.debug('✅ 成功解析detached tab:', {
           tabId: tab.id,
           tabTitle: tab.title,
           tabType: tab.type,
@@ -77,7 +77,7 @@ const MainLayout: React.FC = () => {
 
         setDetachedTab(tab);
       } catch (error) {
-        console.error('❌ 解析分离tab参数失败:', error);
+        logger.error('❌ 解析分离tab参数失败:', error);
         setDetachedTabError(`解析失败: ${error}`);
       }
     }
@@ -190,7 +190,7 @@ const MainLayout: React.FC = () => {
 
   // 🔧 如果是分离窗口,直接显示DetachedTabWindow
   if (detachedTab) {
-    console.log('🪟 渲染DetachedTabWindow组件');
+    logger.debug('🪟 渲染DetachedTabWindow组件');
     return (
       <DetachedTabWindow
         tab={detachedTab}
@@ -200,7 +200,7 @@ const MainLayout: React.FC = () => {
             const window = getCurrentWindow();
             await window.close();
           } catch (error) {
-            console.error('关闭窗口失败:', error);
+            logger.error('关闭窗口失败:', error);
           }
         }}
       />
