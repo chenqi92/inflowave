@@ -577,24 +577,6 @@ const App: React.FC = () => {
         window.dispatchEvent(new CustomEvent('app-ready'));
         logger.info('应用启动完成，窗口标题已设置，已发送ready信号');
 
-        // 在开发模式下加载测试工具
-        if ((import.meta as any).env?.DEV) {
-          try {
-            // 加载主测试工具
-            import('./utils/masterTestRunner').then(
-              ({ masterTestRunner: _testRunner }) => {
-                logger.debug('🧪 测试工具已加载');
-                logger.debug('使用以下命令运行测试:');
-                logger.debug('- runCompleteTests() // 运行完整测试套件');
-                logger.debug('- quickHealthCheck() // 快速健康检查');
-                logger.debug('- runUITests() // 运行UI测试');
-                logger.debug('- runFeatureTests() // 运行功能测试');
-              }
-            );
-          } catch (error) {
-            logger.warn('测试工具加载失败:', error);
-          }
-        }
       }
     };
 

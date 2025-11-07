@@ -18,7 +18,6 @@ import {
 import {ReleaseNotesViewer} from './ReleaseNotesViewer';
 import {releaseNotesService} from '@/services/releaseNotesService';
 import {updaterService} from '@/services/updaterService';
-import logger from '@/utils/logger';
 import {toast} from 'sonner';
 import {useSettingsTranslation} from '@/hooks/useTranslation';
 import logger from '@/utils/logger';
