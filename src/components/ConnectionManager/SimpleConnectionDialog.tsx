@@ -474,17 +474,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     }
   }, [isEditing, connection?.id, formData.database, fetchRetentionPolicies]);
 
-  // 当数据库类型变化时，更新 activeTab
+  // 当数据库类型变化时，更新 activeTab（仅在 dbType 变化时触发）
   useEffect(() => {
     const isObjectStorage = formData.dbType === 'object-storage';
-    if (isObjectStorage) {
-      // 对象存储默认选中高级配置
+    if (isObjectStorage && activeTab === 'server') {
+      // 对象存储默认选中高级配置（仅当当前在服务器配置时）
       setActiveTab('advanced');
-    } else if (activeTab === 'advanced' && !isObjectStorage) {
-      // 从对象存储切换到其他类型时，切换到服务器配置
+    } else if (!isObjectStorage && activeTab === 'advanced') {
+      // 从对象存储切换到其他类型时，切换到服务器配置（仅当当前在高级配置时）
       setActiveTab('server');
     }
-  }, [formData.dbType, activeTab]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.dbType]);
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
