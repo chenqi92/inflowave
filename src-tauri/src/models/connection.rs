@@ -14,6 +14,8 @@ pub enum DatabaseType {
     Prometheus,
     #[serde(rename = "elasticsearch")]
     Elasticsearch,
+    #[serde(rename = "object-storage")]
+    ObjectStorage,
 }
 
 /// 数据库版本（通用）
@@ -420,6 +422,7 @@ impl ConnectionConfig {
             DatabaseType::IoTDB => 6667,
             DatabaseType::Prometheus => 9090,
             DatabaseType::Elasticsearch => 9200,
+            DatabaseType::ObjectStorage => 443, // HTTPS 默认端口
         }
     }
 
@@ -436,6 +439,7 @@ impl ConnectionConfig {
             DatabaseType::IoTDB => "SQL".to_string(),
             DatabaseType::Prometheus => "PromQL".to_string(),
             DatabaseType::Elasticsearch => "Query DSL".to_string(),
+            DatabaseType::ObjectStorage => "S3 API".to_string(),
         }
     }
 }

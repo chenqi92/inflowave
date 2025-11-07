@@ -124,8 +124,7 @@ function getDatabaseTypeLabel(databaseType: DatabaseType): string {
     iotdb: 'IoTDB',
     prometheus: 'Prometheus',
     elasticsearch: 'Elasticsearch',
-    s3: 'S3',
-    minio: 'MinIO',
+    'object-storage': 'Object Storage',
   };
   return labels[databaseType] || databaseType;
 }

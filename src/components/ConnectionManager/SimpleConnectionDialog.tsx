@@ -81,8 +81,11 @@ interface FormData {
   enableRedirection: boolean;
   maxRetryCount: number;
   retryIntervalMs: number;
-  // S3/MinIO 特有配置
+  // 对象存储特有配置
+  objectStorageProvider: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos';
   s3Endpoint: string;
+  s3InternalEndpoint: string;
+  s3ExternalEndpoint: string;
   s3Region: string;
   s3AccessKey: string;
   s3SecretKey: string;
@@ -103,16 +106,14 @@ const renderDatabaseTypeOption = (dbType: string) => {
   const dbTypeMap: Record<string, string> = {
     'influxdb': 'InfluxDB',
     'iotdb': 'IoTDB',
-    's3': 'S3',
-    'minio': 'MinIO'
+    'object-storage': 'S3'
   };
 
   const getDisplayName = (type: string) => {
     switch(type) {
       case 'influxdb': return 'InfluxDB';
       case 'iotdb': return 'Apache IoTDB';
-      case 's3': return 'Amazon S3';
-      case 'minio': return 'MinIO';
+      case 'object-storage': return '对象存储 (S3/OSS)';
       default: return type;
     }
   };
@@ -125,6 +126,37 @@ const renderDatabaseTypeOption = (dbType: string) => {
         className="w-4 h-4"
       />
       <span>{getDisplayName(dbType)}</span>
+    </div>
+  );
+};
+
+// 渲染对象存储服务商选项
+const renderObjectStorageProviderOption = (provider: string) => {
+  const providerMap: Record<string, string> = {
+    's3': 'S3',
+    'minio': 'MinIO',
+    'aliyun-oss': 'AliyunOSS',
+    'tencent-cos': 'TencentCOS'
+  };
+
+  const getDisplayName = (type: string) => {
+    switch(type) {
+      case 's3': return 'Amazon S3';
+      case 'minio': return 'MinIO';
+      case 'aliyun-oss': return '阿里云 OSS';
+      case 'tencent-cos': return '腾讯云 COS';
+      default: return type;
+    }
+  };
+
+  return (
+    <div className='flex items-center gap-2'>
+      <img
+        src={getDatabaseBrandIcon(providerMap[provider] || 'Generic')}
+        alt={`${provider} icon`}
+        className="w-4 h-4"
+      />
+      <span>{getDisplayName(provider)}</span>
     </div>
   );
 };
@@ -192,6 +224,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState<string>('server');
 
   // 添加取消控制器
   const [testAbortController, setTestAbortController] =
@@ -274,8 +307,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       enableRedirection: true,
       maxRetryCount: 3,
       retryIntervalMs: 1000,
-      // S3/MinIO 默认配置
+      // 对象存储默认配置
+      objectStorageProvider: 's3' as const,
       s3Endpoint: '',
+      s3InternalEndpoint: '',
+      s3ExternalEndpoint: '',
       s3Region: 'us-east-1',
       s3AccessKey: '',
       s3SecretKey: '',
@@ -332,8 +368,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           maxRetryCount: connection.driverConfig?.iotdb?.maxRetryCount || 3,
           retryIntervalMs:
             connection.driverConfig?.iotdb?.retryIntervalMs || 1000,
-          // S3/MinIO 配置
+          // 对象存储配置
+          objectStorageProvider: connection.driverConfig?.s3?.provider || 's3',
           s3Endpoint: connection.driverConfig?.s3?.endpoint || '',
+          s3InternalEndpoint: connection.driverConfig?.s3?.internalEndpoint || '',
+          s3ExternalEndpoint: connection.driverConfig?.s3?.externalEndpoint || '',
           s3Region: connection.driverConfig?.s3?.region || 'us-east-1',
           s3AccessKey: connection.driverConfig?.s3?.accessKey || '',
           s3SecretKey: connection.driverConfig?.s3?.secretKey || '',
@@ -377,8 +416,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           enableRedirection: true,
           maxRetryCount: 3,
           retryIntervalMs: 1000,
-          // S3/MinIO 默认配置
+          // 对象存储默认配置
+          objectStorageProvider: 's3',
           s3Endpoint: '',
+          s3InternalEndpoint: '',
+          s3ExternalEndpoint: '',
           s3Region: 'us-east-1',
           s3AccessKey: '',
           s3SecretKey: '',
@@ -431,6 +473,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       fetchRetentionPolicies(connection.id, formData.database);
     }
   }, [isEditing, connection?.id, formData.database, fetchRetentionPolicies]);
+
+  // 当数据库类型变化时，更新 activeTab
+  useEffect(() => {
+    const isObjectStorage = formData.dbType === 'object-storage';
+    if (isObjectStorage) {
+      // 对象存储默认选中高级配置
+      setActiveTab('advanced');
+    } else if (activeTab === 'advanced' && !isObjectStorage) {
+      // 从对象存储切换到其他类型时，切换到服务器配置
+      setActiveTab('server');
+    }
+  }, [formData.dbType, activeTab]);
 
   const handleInputChange = (field: keyof FormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -500,6 +554,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       }
       if (formData.retryIntervalMs < 100 || formData.retryIntervalMs > 10000) {
         newErrors.retryIntervalMs = t('connections.validation.retry_interval_range');
+      }
+    }
+
+    // 对象存储特有验证
+    if (formData.dbType === 'object-storage') {
+      if (!formData.s3Endpoint.trim()) {
+        newErrors.s3Endpoint = 'Endpoint 不能为空';
+      }
+      if (!formData.s3Region.trim()) {
+        newErrors.s3Region = 'Region 不能为空';
+      }
+      if (!formData.s3AccessKey.trim()) {
+        newErrors.s3AccessKey = 'Access Key 不能为空';
+      }
+      if (!formData.s3SecretKey.trim()) {
+        newErrors.s3SecretKey = 'Secret Key 不能为空';
       }
     }
 
@@ -816,6 +886,21 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   retryIntervalMs: formData.retryIntervalMs,
                 },
               }
+            : formData.dbType === 'object-storage'
+            ? {
+                s3: {
+                  provider: formData.objectStorageProvider,
+                  endpoint: formData.s3Endpoint,
+                  internalEndpoint: formData.s3InternalEndpoint || undefined,
+                  externalEndpoint: formData.s3ExternalEndpoint || undefined,
+                  region: formData.s3Region,
+                  accessKey: formData.s3AccessKey,
+                  secretKey: formData.s3SecretKey,
+                  useSSL: formData.s3UseSSL,
+                  pathStyle: formData.s3PathStyle,
+                  sessionToken: formData.s3SessionToken || undefined,
+                },
+              }
             : undefined,
         proxyConfig: formData.proxyEnabled
           ? {
@@ -930,6 +1015,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 } else if (value === 'iotdb') {
                   handleInputChange('port', 6667);
                   handleInputChange('version', '1.x'); // IoTDB 只有一个版本
+                } else if (value === 'object-storage') {
+                  // 默认选择 S3
+                  handleInputChange('objectStorageProvider', 's3');
+                  handleInputChange('port', 443);
+                  handleInputChange('s3Endpoint', 's3.amazonaws.com');
+                  handleInputChange('s3Region', 'us-east-1');
+                  handleInputChange('s3UseSSL', true);
+                  handleInputChange('s3PathStyle', false);
                 }
               }}
             >
@@ -944,6 +1037,9 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </SelectItem>
                 <SelectItem value='iotdb'>
                   {renderDatabaseTypeOption('iotdb')}
+                </SelectItem>
+                <SelectItem value='object-storage'>
+                  {renderDatabaseTypeOption('object-storage')}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -997,12 +1093,80 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             </div>
           </div>
         )}
+
+        {/* 对象存储服务商选择器 */}
+        {formData.dbType === 'object-storage' && (
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              服务商<span className='text-destructive'>*</span>:
+            </Label>
+            <div className='flex-1'>
+              <Select
+                value={formData.objectStorageProvider}
+                onValueChange={value => {
+                  handleInputChange('objectStorageProvider', value);
+                  // 根据服务商设置默认配置
+                  if (value === 's3') {
+                    handleInputChange('port', 443);
+                    handleInputChange('s3Endpoint', 's3.amazonaws.com');
+                    handleInputChange('s3Region', 'us-east-1');
+                    handleInputChange('s3UseSSL', true);
+                    handleInputChange('s3PathStyle', false);
+                  } else if (value === 'minio') {
+                    handleInputChange('port', 9000);
+                    handleInputChange('s3Endpoint', 'localhost');
+                    handleInputChange('s3Region', 'us-east-1');
+                    handleInputChange('s3UseSSL', false);
+                    handleInputChange('s3PathStyle', true);
+                  } else if (value === 'aliyun-oss') {
+                    handleInputChange('port', 443);
+                    handleInputChange('s3Endpoint', 'oss-cn-hangzhou.aliyuncs.com');
+                    handleInputChange('s3Region', 'oss-cn-hangzhou');
+                    handleInputChange('s3UseSSL', true);
+                    handleInputChange('s3PathStyle', false);
+                  } else if (value === 'tencent-cos') {
+                    handleInputChange('port', 443);
+                    handleInputChange('s3Endpoint', 'cos.ap-beijing.myqcloud.com');
+                    handleInputChange('s3Region', 'ap-beijing');
+                    handleInputChange('s3UseSSL', true);
+                    handleInputChange('s3PathStyle', false);
+                  }
+                }}
+              >
+                <SelectTrigger className='h-9'>
+                  <SelectValue placeholder='选择服务商'>
+                    {formData.objectStorageProvider && renderObjectStorageProviderOption(formData.objectStorageProvider)}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value='s3'>
+                    {renderObjectStorageProviderOption('s3')}
+                  </SelectItem>
+                  <SelectItem value='minio'>
+                    {renderObjectStorageProviderOption('minio')}
+                  </SelectItem>
+                  <SelectItem value='aliyun-oss'>
+                    {renderObjectStorageProviderOption('aliyun-oss')}
+                  </SelectItem>
+                  <SelectItem value='tencent-cos'>
+                    {renderObjectStorageProviderOption('tencent-cos')}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className='text-xs text-muted-foreground mt-1'>
+                选择对象存储服务提供商
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tab 配置区域 */}
-      <Tabs defaultValue='server' className='w-full'>
-        <TabsList className='grid w-full grid-cols-3'>
-          <TabsTrigger value='server'>服务器配置</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
+        <TabsList className={`grid w-full ${formData.dbType === 'object-storage' ? 'grid-cols-2' : 'grid-cols-3'}`}>
+          {formData.dbType !== 'object-storage' && (
+            <TabsTrigger value='server'>服务器配置</TabsTrigger>
+          )}
           <TabsTrigger value='advanced'>高级配置</TabsTrigger>
           <TabsTrigger value='proxy'>代理配置</TabsTrigger>
         </TabsList>
@@ -1661,60 +1825,329 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             </div>
           )}
 
-          {/* 查询语言和SSL配置 - 同一行 */}
-          <div className='flex items-start gap-4'>
-            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              默认查询语言:
-            </Label>
-            <div className='flex-1 flex gap-4 items-start'>
-              <div className='flex-1'>
-                <Select
-                  value={formData.defaultQueryLanguage}
-                  onValueChange={value =>
-                    handleInputChange('defaultQueryLanguage', value)
-                  }
-                >
-                  <SelectTrigger className='h-9'>
-                    <SelectValue placeholder='选择查询语言' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formData.dbType === 'influxdb' && (
-                      <>
-                        <SelectItem value='InfluxQL'>InfluxQL</SelectItem>
-                        <SelectItem value='Flux'>Flux</SelectItem>
-                        {formData.version === '3.x' && (
-                          <SelectItem value='SQL'>SQL</SelectItem>
-                        )}
-                      </>
-                    )}
-                    {formData.dbType === 'iotdb' && (
-                      <SelectItem value='SQL'>SQL</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+          {/* 对象存储特定配置 */}
+          {formData.dbType === 'object-storage' && (
+            <div className='space-y-6'>
+              <div className='text-lg font-medium text-foreground border-b pb-2'>
+                {formData.objectStorageProvider === 's3' && 'Amazon S3 配置'}
+                {formData.objectStorageProvider === 'minio' && 'MinIO 配置'}
+                {formData.objectStorageProvider === 'aliyun-oss' && '阿里云 OSS 配置'}
+                {formData.objectStorageProvider === 'tencent-cos' && '腾讯云 COS 配置'}
+                {!formData.objectStorageProvider && '对象存储配置'}
               </div>
-              <div className='flex-1 flex items-start gap-2'>
-                <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                  启用SSL:
-                </Label>
-                <div className='flex-1'>
-                  <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                    <Switch
-                      id='ssl-switch'
-                      checked={formData.ssl}
-                      onCheckedChange={checked => handleInputChange('ssl', checked)}
+
+              {/* 基本连接配置 */}
+              <div className='space-y-4'>
+                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
+                  连接配置
+                </h4>
+
+                {/* Endpoint */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    Endpoint<span className='text-destructive'>*</span>:
+                  </Label>
+                  <div className='flex-1'>
+                    <Input
+                      placeholder={
+                        formData.objectStorageProvider === 's3' ? 's3.amazonaws.com' :
+                        formData.objectStorageProvider === 'minio' ? 'localhost:9000' :
+                        formData.objectStorageProvider === 'aliyun-oss' ? 'oss-cn-hangzhou.aliyuncs.com' :
+                        formData.objectStorageProvider === 'tencent-cos' ? 'cos.ap-beijing.myqcloud.com' :
+                        '服务端点地址'
+                      }
+                      value={formData.s3Endpoint}
+                      onChange={e => handleInputChange('s3Endpoint', e.target.value)}
+                      autoCapitalize='off'
+                      autoCorrect='off'
+                      className='h-9'
                     />
-                    <Label
-                      htmlFor='ssl-switch'
-                      className='text-sm font-medium cursor-pointer'
-                    >
-                      {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
+                    <div className='text-xs text-muted-foreground mt-1'>
+                      {formData.objectStorageProvider === 's3' && 'S3 服务端点，例如: s3.amazonaws.com 或 s3.us-west-2.amazonaws.com'}
+                      {formData.objectStorageProvider === 'minio' && 'MinIO 服务端点，例如: localhost:9000'}
+                      {formData.objectStorageProvider === 'aliyun-oss' && '阿里云 OSS Endpoint，例如: oss-cn-hangzhou.aliyuncs.com'}
+                      {formData.objectStorageProvider === 'tencent-cos' && '腾讯云 COS Endpoint，例如: cos.ap-beijing.myqcloud.com'}
+                      {!formData.objectStorageProvider && '对象存储服务端点地址'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 内网 Endpoint (可选) */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    内网 Endpoint:
+                  </Label>
+                  <div className='flex-1'>
+                    <Input
+                      placeholder='内网访问地址（可选）'
+                      value={formData.s3InternalEndpoint}
+                      onChange={e => handleInputChange('s3InternalEndpoint', e.target.value)}
+                      autoCapitalize='off'
+                      autoCorrect='off'
+                      className='h-9'
+                    />
+                    <div className='text-xs text-muted-foreground mt-1'>
+                      内网环境访问的端点，用于提高内网访问速度（可选）
+                    </div>
+                  </div>
+                </div>
+
+                {/* 外网 Endpoint (可选) */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    外网 Endpoint:
+                  </Label>
+                  <div className='flex-1'>
+                    <Input
+                      placeholder='外网访问地址（可选）'
+                      value={formData.s3ExternalEndpoint}
+                      onChange={e => handleInputChange('s3ExternalEndpoint', e.target.value)}
+                      autoCapitalize='off'
+                      autoCorrect='off'
+                      className='h-9'
+                    />
+                    <div className='text-xs text-muted-foreground mt-1'>
+                      外网环境访问的端点，用于外部访问（可选）
+                    </div>
+                  </div>
+                </div>
+
+                {/* Region */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    Region<span className='text-destructive'>*</span>:
+                  </Label>
+                  <div className='flex-1'>
+                    <Input
+                      placeholder={
+                        formData.objectStorageProvider === 's3' ? 'us-east-1' :
+                        formData.objectStorageProvider === 'minio' ? 'us-east-1' :
+                        formData.objectStorageProvider === 'aliyun-oss' ? 'oss-cn-hangzhou' :
+                        formData.objectStorageProvider === 'tencent-cos' ? 'ap-beijing' :
+                        '区域代码'
+                      }
+                      value={formData.s3Region}
+                      onChange={e => handleInputChange('s3Region', e.target.value)}
+                      autoCapitalize='off'
+                      autoCorrect='off'
+                      className='h-9'
+                    />
+                    <div className='text-xs text-muted-foreground mt-1'>
+                      {formData.objectStorageProvider === 's3' && 'AWS 区域，例如: us-east-1, us-west-2, ap-southeast-1'}
+                      {formData.objectStorageProvider === 'minio' && 'MinIO 区域设置，通常使用 us-east-1'}
+                      {formData.objectStorageProvider === 'aliyun-oss' && '阿里云区域，例如: oss-cn-hangzhou, oss-cn-beijing'}
+                      {formData.objectStorageProvider === 'tencent-cos' && '腾讯云区域，例如: ap-beijing, ap-shanghai, ap-guangzhou'}
+                      {!formData.objectStorageProvider && '对象存储服务区域'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 认证配置 */}
+              <div className='space-y-4'>
+                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
+                  认证配置
+                </h4>
+
+                {/* Access Key */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    Access Key<span className='text-destructive'>*</span>:
+                  </Label>
+                  <div className='flex-1'>
+                    <Input
+                      placeholder={
+                        formData.objectStorageProvider === 'aliyun-oss' ? 'AccessKey ID' :
+                        formData.objectStorageProvider === 'tencent-cos' ? 'SecretId' :
+                        'Access Key ID'
+                      }
+                      value={formData.s3AccessKey}
+                      onChange={e => handleInputChange('s3AccessKey', e.target.value)}
+                      autoCapitalize='off'
+                      autoCorrect='off'
+                      className='h-9'
+                    />
+                    <div className='text-xs text-muted-foreground mt-1'>
+                      {formData.objectStorageProvider === 'aliyun-oss' && '阿里云 AccessKey ID'}
+                      {formData.objectStorageProvider === 'tencent-cos' && '腾讯云 SecretId'}
+                      {(formData.objectStorageProvider === 's3' || formData.objectStorageProvider === 'minio') && 'AWS Access Key ID 或 MinIO Access Key'}
+                      {!formData.objectStorageProvider && '访问密钥 ID'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Secret Key */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    Secret Key<span className='text-destructive'>*</span>:
+                  </Label>
+                  <div className='flex-1'>
+                    <Input
+                      type='password'
+                      placeholder={
+                        formData.objectStorageProvider === 'aliyun-oss' ? 'AccessKey Secret' :
+                        formData.objectStorageProvider === 'tencent-cos' ? 'SecretKey' :
+                        'Secret Access Key'
+                      }
+                      value={formData.s3SecretKey}
+                      onChange={e => handleInputChange('s3SecretKey', e.target.value)}
+                      autoCapitalize='off'
+                      autoCorrect='off'
+                      className='h-9'
+                    />
+                    <div className='text-xs text-muted-foreground mt-1'>
+                      {formData.objectStorageProvider === 'aliyun-oss' && '阿里云 AccessKey Secret'}
+                      {formData.objectStorageProvider === 'tencent-cos' && '腾讯云 SecretKey'}
+                      {(formData.objectStorageProvider === 's3' || formData.objectStorageProvider === 'minio') && 'AWS Secret Access Key 或 MinIO Secret Key'}
+                      {!formData.objectStorageProvider && '访问密钥'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Session Token (可选,仅S3) */}
+                {formData.objectStorageProvider === 's3' && (
+                  <div className='flex items-start gap-4'>
+                    <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                      Session Token:
                     </Label>
+                    <div className='flex-1'>
+                      <Input
+                        type='password'
+                        placeholder='临时凭证的 Session Token (可选)'
+                        value={formData.s3SessionToken}
+                        onChange={e => handleInputChange('s3SessionToken', e.target.value)}
+                        autoCapitalize='off'
+                        autoCorrect='off'
+                        className='h-9'
+                      />
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        使用临时安全凭证(STS)时需要提供
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* 高级配置 */}
+              <div className='space-y-4'>
+                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
+                  高级配置
+                </h4>
+
+                {/* 使用SSL和路径样式 - 同一行 */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    SSL/路径样式:
+                  </Label>
+                  <div className='flex-1 flex gap-4 items-start'>
+                    <div className='flex-1'>
+                      <Label className='text-sm font-medium text-foreground mb-2 block'>
+                        使用 SSL:
+                      </Label>
+                      <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                        <Switch
+                          id='s3-ssl-switch'
+                          checked={formData.s3UseSSL}
+                          onCheckedChange={checked =>
+                            handleInputChange('s3UseSSL', checked)
+                          }
+                        />
+                        <Label
+                          htmlFor='s3-ssl-switch'
+                          className='text-sm font-medium cursor-pointer'
+                        >
+                          {formData.s3UseSSL ? 'HTTPS' : 'HTTP'}
+                        </Label>
+                      </div>
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        生产环境建议启用 SSL (HTTPS)
+                      </div>
+                    </div>
+                    <div className='flex-1'>
+                      <Label className='text-sm font-medium text-foreground mb-2 block'>
+                        路径样式:
+                      </Label>
+                      <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                        <Switch
+                          id='s3-path-style-switch'
+                          checked={formData.s3PathStyle}
+                          onCheckedChange={checked =>
+                            handleInputChange('s3PathStyle', checked)
+                          }
+                        />
+                        <Label
+                          htmlFor='s3-path-style-switch'
+                          className='text-sm font-medium cursor-pointer'
+                        >
+                          {formData.s3PathStyle ? 'Path Style' : 'Virtual Hosted'}
+                        </Label>
+                      </div>
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        {formData.objectStorageProvider === 'minio' ? 'MinIO 通常使用 Path Style' : 'S3/OSS/COS 通常使用 Virtual Hosted'}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+
+          {/* 查询语言和SSL配置 - 同一行（对象存储不显示） */}
+          {formData.dbType !== 'object-storage' && (
+            <div className='flex items-start gap-4'>
+              <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                默认查询语言:
+              </Label>
+              <div className='flex-1 flex gap-4 items-start'>
+                <div className='flex-1'>
+                  <Select
+                    value={formData.defaultQueryLanguage}
+                    onValueChange={value =>
+                      handleInputChange('defaultQueryLanguage', value)
+                    }
+                  >
+                    <SelectTrigger className='h-9'>
+                      <SelectValue placeholder='选择查询语言' />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formData.dbType === 'influxdb' && (
+                        <>
+                          <SelectItem value='InfluxQL'>InfluxQL</SelectItem>
+                          <SelectItem value='Flux'>Flux</SelectItem>
+                          {formData.version === '3.x' && (
+                            <SelectItem value='SQL'>SQL</SelectItem>
+                          )}
+                        </>
+                      )}
+                      {formData.dbType === 'iotdb' && (
+                        <SelectItem value='SQL'>SQL</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className='flex-1 flex items-start gap-2'>
+                  <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                    启用SSL:
+                  </Label>
+                  <div className='flex-1'>
+                    <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                      <Switch
+                        id='ssl-switch'
+                        checked={formData.ssl}
+                        onCheckedChange={checked => handleInputChange('ssl', checked)}
+                      />
+                      <Label
+                        htmlFor='ssl-switch'
+                        className='text-sm font-medium cursor-pointer'
+                      >
+                        {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         {/* 代理配置 Tab */}
@@ -1729,7 +2162,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 启用代理
               </Label>
               <p className='text-xs text-muted-foreground mt-1'>
-                启用后将通过代理服务器连接到InfluxDB
+                {formData.dbType === 'object-storage'
+                  ? '启用后将通过代理服务器访问对象存储服务'
+                  : formData.dbType === 'iotdb'
+                  ? '启用后将通过代理服务器连接到 IoTDB'
+                  : '启用后将通过代理服务器连接到 InfluxDB'
+                }
               </p>
             </div>
             <Switch

@@ -6,7 +6,10 @@
  */
 
 // 基础类型定义
-export type DatabaseType = 'influxdb' | 'iotdb' | 'prometheus' | 'elasticsearch' | 's3' | 'minio';
+export type DatabaseType = 'influxdb' | 'iotdb' | 'prometheus' | 'elasticsearch' | 'object-storage';
+
+// 对象存储服务商类型
+export type ObjectStorageProvider = 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos';
 export type QueryLanguage = 'influxql' | 'flux' | 'sql' | 'iotdb-sql' | 'promql';
 
 // 验证结果接口

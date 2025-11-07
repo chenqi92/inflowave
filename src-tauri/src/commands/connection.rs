@@ -333,6 +333,12 @@ pub async fn get_connection_info(
                             Some(serde_json::json!({
                                 "type": "elasticsearch"
                             }))
+                        },
+                        crate::models::DatabaseType::ObjectStorage => {
+                            // ObjectStorage: 获取服务器信息
+                            Some(serde_json::json!({
+                                "type": "object-storage"
+                            }))
                         }
                     }
                 },

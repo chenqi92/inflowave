@@ -781,6 +781,15 @@ pub async fn export_database_metadata(
                 "message": "Elasticsearch metadata export not yet implemented",
                 "exportedAt": chrono::Utc::now().to_rfc3339()
             })
+        },
+        crate::models::DatabaseType::ObjectStorage => {
+            // ObjectStorage: 暂不支持元数据导出
+            serde_json::json!({
+                "bucket": database,
+                "type": "ObjectStorage",
+                "message": "Object storage metadata export not yet implemented",
+                "exportedAt": chrono::Utc::now().to_rfc3339()
+            })
         }
     };
 
@@ -890,6 +899,13 @@ pub async fn get_table_statistics(
             serde_json::json!({
                 "table": table,
                 "type": "Elasticsearch",
+                "message": "Statistics not yet implemented"
+            })
+        },
+        crate::models::DatabaseType::ObjectStorage => {
+            serde_json::json!({
+                "object": table,
+                "type": "ObjectStorage",
                 "message": "Statistics not yet implemented"
             })
         }

@@ -102,8 +102,7 @@ const DATABASE_ICONS: Record<DatabaseType, React.ReactElement> = {
   iotdb: <TreePine className="w-4 h-4 text-green-500" />,
   prometheus: <BarChartIcon className="w-4 h-4 text-orange-500" />,
   elasticsearch: <Search className="w-4 h-4 text-purple-500" />,
-  s3: <Database className="w-4 h-4 text-yellow-500" />,
-  minio: <Database className="w-4 h-4 text-red-500" />,
+  'object-storage': <Database className="w-4 h-4 text-yellow-500" />,
 };
 
 // 颜色主题

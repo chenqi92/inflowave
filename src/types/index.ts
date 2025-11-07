@@ -70,7 +70,10 @@ export interface DatabaseDriverConfig {
   };
   iotdb?: IoTDBConfig;
   s3?: {
+    provider?: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos'; // 对象存储服务商
     endpoint?: string; // 自定义端点（用于MinIO等S3兼容服务）
+    internalEndpoint?: string; // 内网端点（用于内网读写）
+    externalEndpoint?: string; // 外网端点（用于外网访问）
     region?: string; // AWS区域
     accessKey: string;
     secretKey: string;

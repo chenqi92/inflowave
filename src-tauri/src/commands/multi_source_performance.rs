@@ -311,6 +311,9 @@ async fn get_real_performance_metrics(
         DatabaseType::Elasticsearch => {
             ("Elasticsearch".to_string(), None)
         },
+        DatabaseType::ObjectStorage => {
+            ("ObjectStorage".to_string(), None)
+        },
     };
 
     // 基础指标
@@ -445,6 +448,11 @@ async fn test_connection_latency(
             info!("Elasticsearch 健康检查");
             // 暂未实现
         }
+        DatabaseType::ObjectStorage => {
+            // 对象存储的健康检查
+            info!("ObjectStorage 健康检查");
+            // 暂未实现
+        }
     }
 
     Ok(())
@@ -543,6 +551,13 @@ async fn get_database_specific_metrics(
             database_size = 50 * 1024 * 1024; // 50MB 估算
             table_count = 20;
             record_count = 20000;
+        }
+        DatabaseType::ObjectStorage => {
+            // 对象存储的指标获取
+            info!("获取 ObjectStorage 指标");
+            database_size = 100 * 1024 * 1024; // 100MB 估算
+            table_count = 0; // 对象存储没有表的概念
+            record_count = 0; // 对象存储没有记录的概念
         }
     }
 
