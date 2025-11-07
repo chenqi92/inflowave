@@ -81,6 +81,14 @@ interface FormData {
   enableRedirection: boolean;
   maxRetryCount: number;
   retryIntervalMs: number;
+  // S3/MinIO 特有配置
+  s3Endpoint: string;
+  s3Region: string;
+  s3AccessKey: string;
+  s3SecretKey: string;
+  s3UseSSL: boolean;
+  s3PathStyle: boolean;
+  s3SessionToken: string;
   // 代理配置
   proxyEnabled: boolean;
   proxyHost: string;
@@ -94,7 +102,19 @@ interface FormData {
 const renderDatabaseTypeOption = (dbType: string) => {
   const dbTypeMap: Record<string, string> = {
     'influxdb': 'InfluxDB',
-    'iotdb': 'IoTDB'
+    'iotdb': 'IoTDB',
+    's3': 'S3',
+    'minio': 'MinIO'
+  };
+
+  const getDisplayName = (type: string) => {
+    switch(type) {
+      case 'influxdb': return 'InfluxDB';
+      case 'iotdb': return 'Apache IoTDB';
+      case 's3': return 'Amazon S3';
+      case 'minio': return 'MinIO';
+      default: return type;
+    }
   };
 
   return (
@@ -104,9 +124,7 @@ const renderDatabaseTypeOption = (dbType: string) => {
         alt={`${dbType} icon`}
         className="w-4 h-4"
       />
-      <span>
-        {dbType === 'influxdb' ? 'InfluxDB' : 'Apache IoTDB'}
-      </span>
+      <span>{getDisplayName(dbType)}</span>
     </div>
   );
 };
@@ -125,8 +143,18 @@ const renderVersionOption = (version: string, dbType: string) => {
         default:
           return getDatabaseBrandIcon('InfluxDB');
       }
+    } else if (dbType === 's3' || dbType === 'minio') {
+      return getDatabaseBrandIcon(dbType === 's3' ? 'S3' : 'MinIO');
     }
     return getDatabaseBrandIcon('IoTDB');
+  };
+
+  const getVersionDisplay = () => {
+    if (dbType === 'influxdb') return `InfluxDB ${version}`;
+    if (dbType === 'iotdb') return 'Apache IoTDB';
+    if (dbType === 's3') return 'Amazon S3';
+    if (dbType === 'minio') return 'MinIO';
+    return version;
   };
 
   return (
@@ -137,7 +165,7 @@ const renderVersionOption = (version: string, dbType: string) => {
         className="w-4 h-4"
       />
       <span className='font-medium'>
-        {dbType === 'influxdb' ? `InfluxDB ${version}` : 'Apache IoTDB'}
+        {getVersionDisplay()}
       </span>
     </div>
   );
@@ -246,6 +274,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       enableRedirection: true,
       maxRetryCount: 3,
       retryIntervalMs: 1000,
+      // S3/MinIO 默认配置
+      s3Endpoint: '',
+      s3Region: 'us-east-1',
+      s3AccessKey: '',
+      s3SecretKey: '',
+      s3UseSSL: true,
+      s3PathStyle: true,
+      s3SessionToken: '',
       proxyEnabled: false,
       proxyHost: '127.0.0.1',
       proxyPort: 8080,
@@ -296,6 +332,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           maxRetryCount: connection.driverConfig?.iotdb?.maxRetryCount || 3,
           retryIntervalMs:
             connection.driverConfig?.iotdb?.retryIntervalMs || 1000,
+          // S3/MinIO 配置
+          s3Endpoint: connection.driverConfig?.s3?.endpoint || '',
+          s3Region: connection.driverConfig?.s3?.region || 'us-east-1',
+          s3AccessKey: connection.driverConfig?.s3?.accessKey || '',
+          s3SecretKey: connection.driverConfig?.s3?.secretKey || '',
+          s3UseSSL: connection.driverConfig?.s3?.useSSL ?? true,
+          s3PathStyle: connection.driverConfig?.s3?.pathStyle ?? true,
+          s3SessionToken: connection.driverConfig?.s3?.sessionToken || '',
           proxyEnabled: connection.proxyConfig?.enabled || false,
           proxyHost: connection.proxyConfig?.host || '127.0.0.1',
           proxyPort: connection.proxyConfig?.port || 8080,
@@ -333,6 +377,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           enableRedirection: true,
           maxRetryCount: 3,
           retryIntervalMs: 1000,
+          // S3/MinIO 默认配置
+          s3Endpoint: '',
+          s3Region: 'us-east-1',
+          s3AccessKey: '',
+          s3SecretKey: '',
+          s3UseSSL: true,
+          s3PathStyle: true,
+          s3SessionToken: '',
           proxyEnabled: false,
           proxyHost: '127.0.0.1',
           proxyPort: 8080,

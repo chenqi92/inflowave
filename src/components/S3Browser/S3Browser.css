@@ -1,0 +1,155 @@
+.s3-browser {
+  @apply flex flex-col h-full bg-background;
+}
+
+.s3-browser .toolbar {
+  @apply flex items-center gap-2 p-2 border-b bg-muted/30;
+}
+
+.s3-browser .breadcrumbs {
+  @apply flex items-center gap-1 px-2 py-1 text-sm border-b bg-muted/10;
+}
+
+.s3-browser .statusbar {
+  @apply flex justify-between items-center px-2 py-1 text-xs border-t bg-muted/10;
+}
+
+/* 文件列表样式 */
+.s3-browser table {
+  @apply w-full;
+}
+
+.s3-browser thead {
+  @apply sticky top-0 bg-background z-10;
+}
+
+.s3-browser tbody tr {
+  @apply border-b transition-colors;
+}
+
+.s3-browser tbody tr:hover {
+  @apply bg-muted/50;
+}
+
+.s3-browser td,
+.s3-browser th {
+  @apply p-2 text-left;
+}
+
+/* 网格视图样式 */
+.s3-browser .grid-item {
+  @apply flex flex-col items-center p-4 rounded-lg cursor-pointer transition-all;
+}
+
+.s3-browser .grid-item:hover {
+  @apply bg-muted/50 scale-105;
+}
+
+.s3-browser .grid-item.selected {
+  @apply bg-primary/10 ring-2 ring-primary;
+}
+
+/* 文件图标样式 */
+.s3-browser .file-icon {
+  @apply w-12 h-12 mb-2;
+}
+
+.s3-browser .file-icon-small {
+  @apply w-4 h-4;
+}
+
+/* 文件夹样式 */
+.s3-browser .folder {
+  @apply text-blue-500;
+}
+
+/* 加载状态 */
+.s3-browser.loading {
+  @apply opacity-50 pointer-events-none;
+}
+
+/* 拖放区域 */
+.s3-browser .drop-zone {
+  @apply border-2 border-dashed border-primary/50 rounded-lg p-8 text-center;
+}
+
+.s3-browser .drop-zone.active {
+  @apply bg-primary/10 border-primary;
+}
+
+/* 文件选择器 */
+.s3-browser .file-selector {
+  @apply absolute inset-0 opacity-0 cursor-pointer;
+}
+
+/* 右键菜单 */
+.s3-browser .context-menu {
+  @apply absolute z-50 bg-popover border rounded-md shadow-md p-1 min-w-[150px];
+}
+
+.s3-browser .context-menu-item {
+  @apply flex items-center gap-2 px-2 py-1.5 text-sm rounded cursor-pointer transition-colors;
+}
+
+.s3-browser .context-menu-item:hover {
+  @apply bg-muted;
+}
+
+.s3-browser .context-menu-separator {
+  @apply h-px bg-border my-1;
+}
+
+/* 文件预览 */
+.s3-browser .file-preview {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/80;
+}
+
+.s3-browser .file-preview-content {
+  @apply max-w-4xl max-h-[90vh] bg-background rounded-lg overflow-auto;
+}
+
+/* 上传进度 */
+.s3-browser .upload-progress {
+  @apply fixed bottom-4 right-4 bg-background border rounded-lg shadow-lg p-4 min-w-[300px];
+}
+
+.s3-browser .upload-progress-item {
+  @apply flex items-center gap-2 py-2;
+}
+
+.s3-browser .upload-progress-bar {
+  @apply h-2 bg-muted rounded-full overflow-hidden;
+}
+
+.s3-browser .upload-progress-fill {
+  @apply h-full bg-primary transition-all;
+}
+
+/* 批量操作栏 */
+.s3-browser .bulk-actions {
+  @apply flex items-center gap-2 p-2 bg-primary/10 border-t;
+}
+
+/* 空状态 */
+.s3-browser .empty-state {
+  @apply flex flex-col items-center justify-center h-full text-muted-foreground;
+}
+
+.s3-browser .empty-state-icon {
+  @apply w-24 h-24 mb-4 opacity-50;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .s3-browser .grid {
+    @apply grid-cols-3;
+  }
+
+  .s3-browser .toolbar {
+    @apply flex-wrap;
+  }
+
+  .s3-browser .file-name {
+    @apply max-w-[100px] truncate;
+  }
+}

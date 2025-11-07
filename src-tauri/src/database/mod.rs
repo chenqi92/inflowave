@@ -13,3 +13,6 @@ pub mod influxdb;
 pub mod influxdb_client;
 
 // pub use client::InfluxClient; // 旧的客户端，保留以兼容现有代码
+
+// S3/MinIO 支持
+pub mod s3_client;

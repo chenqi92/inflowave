@@ -12,7 +12,7 @@ export interface EditorTab {
   id: string;
   title: string;
   content: string;
-  type: 'query' | 'table' | 'database' | 'data-browser';
+  type: 'query' | 'table' | 'database' | 'data-browser' | 's3-browser';
   modified: boolean;
   saved: boolean; // 是否已保存到工作区
   filePath?: string; // 外部文件路径（另存为功能）

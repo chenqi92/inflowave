@@ -288,7 +288,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     const [queryResults, setQueryResults] = useState<QueryResult[]>([]);
     const [executedQueries, setExecutedQueries] = useState<string[]>([]);
     const [executionTime, setExecutionTime] = useState<number>(0);
-    const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser'>('query');
+    const [activeTabType, setActiveTabType] = useState<'query' | 'table' | 'database' | 'data-browser' | 's3-browser'>('query');
 
     const [expandedDatabases, setExpandedDatabases] = useState<string[]>([]);
 

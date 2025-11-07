@@ -60,7 +60,7 @@ import {
   Search,
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
-import type { QueryResult } from '@/types';
+import type { QueryResult, DatabaseType } from '@/types';
 
 // 图表类型配置
 const CHART_TYPES = {
@@ -97,12 +97,14 @@ const CHART_TYPES = {
 } as const;
 
 // 数据库图标映射
-const DATABASE_ICONS = {
+const DATABASE_ICONS: Record<DatabaseType, React.ReactElement> = {
   influxdb: <Database className="w-4 h-4 text-blue-500" />,
   iotdb: <TreePine className="w-4 h-4 text-green-500" />,
   prometheus: <BarChartIcon className="w-4 h-4 text-orange-500" />,
   elasticsearch: <Search className="w-4 h-4 text-purple-500" />,
-} as const;
+  s3: <Database className="w-4 h-4 text-yellow-500" />,
+  minio: <Database className="w-4 h-4 text-red-500" />,
+};
 
 // 颜色主题
 const CHART_COLORS = [

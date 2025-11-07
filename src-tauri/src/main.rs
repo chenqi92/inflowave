@@ -34,6 +34,7 @@ use commands::iotdb::*;
 use commands::influxdb2::*;
 use commands::database_detection::*;
 use commands::multi_source_performance::*;
+use commands::s3::*;
 
 // Updater commands
 use updater::*;
@@ -1369,6 +1370,28 @@ async fn main() {
             commands::window::close_detached_window,
             commands::window::get_all_windows,
             commands::window::reattach_tab,
+
+            // S3/MinIO operations
+            s3_connect,
+            s3_disconnect,
+            s3_test_connection,
+            s3_list_buckets,
+            s3_create_bucket,
+            s3_delete_bucket,
+            s3_list_objects,
+            s3_upload_object,
+            s3_download_object,
+            s3_delete_object,
+            s3_delete_objects,
+            s3_copy_object,
+            s3_move_object,
+            s3_create_folder,
+            s3_get_object_metadata,
+            s3_generate_presigned_url,
+            s3_search_objects,
+            s3_upload_file,
+            s3_download_file,
+            s3_get_bucket_stats,
         ])
         .setup(|app| {
             info!("Application setup started");
@@ -1560,6 +1583,12 @@ async fn main() {
 
             // Initialize workspace storage
             app.manage(commands::workspace::WorkspaceStorage::new(commands::workspace::WorkspaceData::default()));
+
+            // Initialize S3 client manager
+            let s3_manager = std::sync::Arc::new(tokio::sync::Mutex::new(
+                database::s3_client::S3ClientManager::new()
+            ));
+            app.manage(s3_manager);
 
             // Initialize logging system first
             if let Err(e) = utils::logger::init_logger(app.handle()) {

@@ -11,7 +11,10 @@ import type {
 } from './database/base';
 import { PerformanceBottleneck } from '@services/analyticsService.ts';
 
-// 数据库类型 - 扩展支持多种数据库
+// 导入S3相关类型
+export * from './s3';
+
+// 数据库类型 - 直接使用base中的定义
 export type DatabaseType = BaseDatabaseType;
 
 // InfluxDB 版本
@@ -66,6 +69,16 @@ export interface DatabaseDriverConfig {
     defaultQueryLanguage?: 'influxql' | 'flux';
   };
   iotdb?: IoTDBConfig;
+  s3?: {
+    endpoint?: string; // 自定义端点（用于MinIO等S3兼容服务）
+    region?: string; // AWS区域
+    accessKey: string;
+    secretKey: string;
+    useSSL?: boolean; // 是否使用SSL
+    pathStyle?: boolean; // 是否使用path-style URLs
+    sessionToken?: string; // 临时凭证
+    signatureVersion?: 'v2' | 'v4'; // 签名版本
+  };
   // 为未来的数据库类型预留空间
   prometheus?: Record<string, any>;
   elasticsearch?: Record<string, any>;

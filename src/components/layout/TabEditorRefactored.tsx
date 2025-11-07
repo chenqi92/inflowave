@@ -25,6 +25,7 @@ import { useTabStore, useCurrentTab, useTabOperations } from '@/stores/tabStore'
 import { QueryToolbar } from '@/components/query/QueryToolbar';
 import DataExportDialog from '@/components/common/DataExportDialog';
 import TableDataBrowser from '@/components/query/TableDataBrowser';
+import S3Browser from '@/components/S3Browser';
 
 
 import type { QueryResult } from '@/types';
@@ -36,7 +37,7 @@ interface TabEditorProps {
     queries: string[],
     executionTime: number
   ) => void;
-  onActiveTabTypeChange?: (tabType: 'query' | 'table' | 'database' | 'data-browser') => void;
+  onActiveTabTypeChange?: (tabType: 'query' | 'table' | 'database' | 'data-browser' | 's3-browser') => void;
   expandedDatabases?: string[];
   currentTimeRange?: TimeRange;
 }
@@ -44,6 +45,7 @@ interface TabEditorProps {
 export interface TabEditorRef {
   executeQueryWithContent: (query: string, database: string) => void;
   createDataBrowserTab: (connectionId: string, database: string, tableName: string) => void;
+  createS3BrowserTab: (connectionId: string, connectionName: string) => void;
   createNewTab: (type?: 'query' | 'table' | 'database') => void;
   createQueryTabWithDatabase: (database: string, query?: string, connectionId?: string) => void;
   createAndExecuteQuery: (query: string, database: string, connectionId?: string) => Promise<void>;
@@ -321,6 +323,27 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       onBatchQueryResults?.([], [], 0);
     }, [createDataBrowserTab, onQueryResult, onBatchQueryResults]);
 
+    // 创建S3浏览器标签
+    const handleCreateS3BrowserTab = useCallback((connectionId: string, connectionName: string) => {
+      const tabId = `s3-${connectionId}-${Date.now()}`;
+      const newTab: EditorTab = {
+        id: tabId,
+        title: `S3: ${connectionName}`,
+        content: '',
+        type: 's3-browser',
+        modified: false,
+        saved: false,
+        connectionId,
+      };
+
+      setTabs([...tabs, newTab]);
+      setActiveKey(tabId);
+
+      // 清空查询结果
+      onQueryResult?.(null);
+      onBatchQueryResults?.([], [], 0);
+    }, [tabs, setTabs, setActiveKey, onQueryResult, onBatchQueryResults]);
+
     // 创建带数据库选择的查询标签页
     const createQueryTabWithDatabase = useCallback((database: string, query?: string, connectionId?: string) => {
       const newTab = createQueryTab(database, query, connectionId);
@@ -364,12 +387,13 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       () => ({
         executeQueryWithContent,
         createDataBrowserTab: handleCreateDataBrowserTab,
+        createS3BrowserTab: handleCreateS3BrowserTab,
         createNewTab,
         createQueryTabWithDatabase,
         createAndExecuteQuery,
         setSelectedDatabase,
       }),
-      [executeQueryWithContent, handleCreateDataBrowserTab, createNewTab, createQueryTabWithDatabase, createAndExecuteQuery, setSelectedDatabase]
+      [executeQueryWithContent, handleCreateDataBrowserTab, handleCreateS3BrowserTab, createNewTab, createQueryTabWithDatabase, createAndExecuteQuery, setSelectedDatabase]
     );
 
     // 监听活跃标签类型变化
@@ -433,6 +457,11 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                     connectionId={currentTab.connectionId!}
                     database={currentTab.database!}
                     tableName={currentTab.tableName!}
+                  />
+                ) : currentTab.type === 's3-browser' ? (
+                  <S3Browser
+                    connectionId={currentTab.connectionId!}
+                    connectionName={currentTab.title}
                   />
                 ) : (
                   <div className="h-full flex flex-col overflow-hidden">

@@ -128,3 +128,5 @@ pnpm-lock.yaml
 # Database testing tools (not for version control)
 /database-tools/
 .kiro
+.claude
+.mcp.json

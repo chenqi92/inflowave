@@ -332,3 +332,7 @@ export class FormatUtils {
     return `${allButLast}${lastSeparator}${last}`;
   }
 }
+
+// 导出便捷函数
+export const formatBytes = FormatUtils.formatFileSize.bind(FormatUtils);
+export const formatDate = FormatUtils.formatTime.bind(FormatUtils);
