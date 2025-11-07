@@ -4,7 +4,7 @@
  * Provides a centralized event system for editor-related events
  * Supports: onRun, onFormat, onCompletion, onDialectChange
  */
-
+import logger from '@/utils/logger';
 export type EditorEventType = 
   | 'run'
   | 'format'

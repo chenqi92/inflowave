@@ -1,4 +1,5 @@
-// 文档加载器 - 用于加载用户文档
+import logger from '@/utils/logger';
+// 文档加载器 - 用于加载用户文档、
 export interface DocumentInfo {
   filename: string;
   title: string;

@@ -1201,7 +1201,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       });
     } catch (error) {
       logger.error('获取表结构失败:', error);
-      showMessage.error('获取表结构失败');
+      showMessage.error(tBrowser('getTableStructureFailed'));
     }
   }, [connectionId, database, tableName, dbType, detectedType]);
 
@@ -1376,14 +1376,6 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     }
                   });
 
-                  logger.debug('🔧 [IoTDB] 数据映射:', {
-                    行索引: index,
-                    原始数据: row,
-                    原始数据长度: row.length,
-                    映射后数据: record,
-                    列名: validColumns,
-                    映射说明: '跳过第0列(表名)，从第1列开始映射字段数据'
-                  });
                 } else {
                   // 非IoTDB的正常处理
                   try {
@@ -1421,25 +1413,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               }
             );
 
-          logger.debug('🔧 [TableDataBrowser] 数据格式化完成:', {
-            格式化数据长度: formattedData.length,
-            格式化数据样本: formattedData.slice(0, 2)
-          });
-
           // 存储原始数据
           setRawData(formattedData);
           // 直接设置数据，排序将通过 useMemo 处理
           setData(formattedData);
 
-          logger.debug('🔧 [TableDataBrowser] 数据设置完成');
         } catch (formatError) {
-          logger.error('🔧 [TableDataBrowser] 数据格式化失败:', formatError);
-          logger.error('🔧 [TableDataBrowser] 格式化错误详情:', {
-            error: formatError,
-            values: values?.slice(0, 2),
-            validColumns,
-            resultColumns
-          });
           setRawData([]);
           setData([]);
         }
@@ -1462,8 +1441,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }, 100);
       }
     } catch (error) {
-      logger.error('加载数据失败:', error);
-      showMessage.error('加载数据失败');
+      logger.error(tBrowser('loadDataFailed'), error);
+      showMessage.error(tBrowser('loadDataFailed'));
       setData([]);
     } finally {
       setLoading(false);
@@ -1529,7 +1508,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       }
     } catch (error) {
       logger.error('应用过滤器失败:', error);
-      showMessage.error('应用过滤器失败');
+      showMessage.error(tBrowser('applyFilterFailed'));
       setData([]);
     } finally {
       setLoading(false);
@@ -1765,8 +1744,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
         // 提示用户已启用懒加载
         if (totalCount > INITIAL_BATCH_SIZE) {
-          toast.info(`已加载前 ${INITIAL_BATCH_SIZE.toLocaleString()} 行数据，滚动到底部将自动加载更多`, {
-            duration: 3000,
+          toast.info(tBrowser('loadedInitialRows', { count: INITIAL_BATCH_SIZE }), {
+            duration: 3000
           });
         }
       } else {
@@ -1775,8 +1754,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         loadDataWithPagination(1, -1);
 
         if (totalCount > 10000) {
-          toast.warning(`正在加载 ${totalCount.toLocaleString()} 行数据，可能需要较长时间`, {
-            duration: 5000,
+          toast.warning(tBrowser('loadingManyRows', { count: totalCount }), {
+            duration: 5000
           });
         }
       }
@@ -2274,7 +2253,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           t('copy_rows_success', { count: selectedRows.size, format: format.toUpperCase() })
         );
       } else {
-        showMessage.error('复制失败');
+        showMessage.error(tBrowser('copyFailed'));
       }
     },
     [selectedRows, data, columnOrder, selectedColumns]
@@ -2289,9 +2268,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       const success = await copyToClipboard(value);
 
       if (success) {
-        showMessage.success('已复制单元格内容');
+        showMessage.success(tBrowser('cellContentCopied'));
       } else {
-        showMessage.error('复制失败');
+        showMessage.error(tBrowser('copyFailed'));
       }
     },
     [data]
@@ -2375,27 +2354,19 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           }
 
           default:
-            toast.error('不支持的复制格式');
+            toast.error(tBrowser('unsupportedCopyFormat'));
             return;
         }
 
         // 复制到剪贴板
         await navigator.clipboard.writeText(textToCopy);
 
-        const formatNames: Record<CopyFormat, string> = {
-          text: '文本',
-          insert: 'INSERT 语句',
-          markdown: 'Markdown',
-          json: 'JSON',
-          csv: 'CSV'
-        };
-
-        toast.success(`已复制为 ${formatNames[format]}`, {
-          description: `已复制 ${rowsToCopy.length} 行数据`
+        toast.success(tBrowser('copiedAs', { format: tBrowser(`copyFormats.${format}`) }), {
+          description: tBrowser('copiedRows', { count: rowsToCopy.length })
         });
       } catch (error) {
         logger.error('复制数据失败:', error);
-        toast.error('复制数据失败');
+        toast.error(tBrowser('copyFailed'));
       }
     },
     [columnOrder, selectedColumns, tableName]
@@ -2504,7 +2475,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   // 导出数据
   const exportData = async (options: ExportOptions) => {
     if (data.length === 0) {
-      showMessage.warning('没有可导出的数据');
+      showMessage.warning(tBrowser('noDataToExport'));
       return;
     }
 
@@ -2546,13 +2517,13 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       if (success) {
         showMessage.success(
-          `数据已导出为 ${options.format.toUpperCase()} 格式`
+          tBrowser('exportSuccess', { filename: `${tableName}.${options.format}` })
         );
         setShowExportDialog(false);
       }
     } catch (error) {
       logger.error('导出数据失败:', error);
-      showMessage.error('导出数据失败');
+      showMessage.error(tBrowser('exportDataFailed'));
     }
   };
 
@@ -2574,7 +2545,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           <div className="flex flex-col items-center gap-3">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             <div className="text-sm text-muted-foreground">
-              {data.length > 0 ? '正在刷新数据...' : '正在加载数据...'}
+              {data.length > 0 ? tBrowser('refreshingData') : tBrowser('loadingData')}
             </div>
           </div>
         </div>

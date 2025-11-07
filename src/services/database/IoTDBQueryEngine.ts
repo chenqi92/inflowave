@@ -6,8 +6,8 @@
 
 import { QueryEngineBase } from './QueryEngineBase';
 import { safeTauriInvoke } from '@/utils/tauri';
-import type { 
 import logger from '@/utils/logger';
+import type { 
   QueryOperation,
   QueryParams,
   FieldInfo,

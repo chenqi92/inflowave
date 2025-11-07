@@ -10,5 +10,22 @@
   "filterQueryGenerated": "筛选查询已生成",
   "aggregateQueryGenerated": "聚合查询已生成",
   "creatingColumnChart": "正在创建列图表...",
-  "exportingColumnData": "正在导出列数据..."
+  "exportingColumnData": "正在导出列数据...",
+  "unhandledAction": "未处理的上下文菜单操作",
+  "featureInDevelopment": "功能 \"{{action}}\" 开发中...",
+  "unsupportedSqlType": "不支持的 SQL 类型: {{sqlType}}",
+  "sqlGenerated": "SQL 已生成: {{description}}",
+  "fieldsCount": "获取到 {{count}} 个字段",
+  "tagKeysCount": "获取到 {{count}} 个标签键",
+  "tagValuesCount": "获取到 {{count}} 个标签值",
+  "dataExported": "数据已导出: {{result}}",
+  "deleteMeasurementConfirm": "确定要删除测量 \"{{measurement}}\" 吗？此操作不可撤销！",
+  "measurementDeleted": "测量 \"{{measurement}}\" 已删除",
+  "deleteDatabaseConfirm": "确定要删除数据库 \"{{database}}\" 吗？此操作将删除所有数据且不可撤销！",
+  "databaseDeleted": "数据库 \"{{database}}\" 已删除",
+  "databaseInfoFetched": "数据库 \"{{database}}\" 信息已获取",
+  "databaseStatsFetched": "数据库 \"{{database}}\" 统计信息已获取",
+  "databaseExportInDevelopment": "数据库 \"{{database}}\" 结构导出功能开发中...",
+  "filterDescription": "筛选 {{column}} {{operator}} {{value}}",
+  "aggregateDescription": "{{func}} 聚合查询: {{column}}"
 }

@@ -3,8 +3,8 @@
  */
 
 import i18n from 'i18next';
-import type {
 import logger from '@/utils/logger';
+import type {
   ThemeConfig,
   ThemePreset,
   ThemeExportData,

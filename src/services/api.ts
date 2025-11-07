@@ -502,3 +502,6 @@ export class SettingsAPI {
     return safeTauriInvoke<void>('import_settings', { filePath });
   }
 }
+
+// 导出工作区API
+export { WorkspaceAPI } from './workspace';

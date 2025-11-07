@@ -3,10 +3,9 @@
  * 
  * 管理所有支持的数据库类型及其特征配置
  */
-
-import type { 
 import logger from '@/utils/logger';
-  DatabaseType, 
+import type { 
+  DatabaseType,
   DatabaseFeatures, 
   DatabaseRegistryEntry,
   DatabaseLevel,

@@ -1,0 +1,2 @@
+export { WorkspaceDialog } from './WorkspaceDialog';
+

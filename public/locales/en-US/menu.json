@@ -1,10 +1,33 @@
 {
   "toolbar": {
     "new_query": "New Query",
+    "workspace": "Workspace",
     "theme_toggle": "Theme Toggle",
     "settings": "Settings",
     "app_settings": "Application Settings",
     "time_series_database_tool": "Time Series Database Management Tool"
+  },
+  "workspace": {
+    "title": "Workspace",
+    "description": "Manage saved query tabs",
+    "no_tabs": "No saved queries in workspace",
+    "select_tabs": "Please select tabs to restore",
+    "restore_selected": "Restore Selected",
+    "delete_selected": "Delete Selected",
+    "clear_all": "Clear All",
+    "tab_count": "{{count}} tabs total",
+    "created_at": "Created",
+    "updated_at": "Updated",
+    "restore_success": "Restored {{count}} tabs",
+    "delete_success": "Deleted {{count}} tabs",
+    "clear_confirm": "Are you sure you want to clear the workspace? This will delete all saved query tabs.",
+    "delete_confirm": "Are you sure you want to delete the selected {{count}} tabs?",
+    "select_all": "Select All",
+    "deselect_all": "Deselect All",
+    "load_failed": "Failed to load workspace",
+    "delete_failed": "Failed to delete",
+    "clear_failed": "Failed to clear",
+    "restore_tabs": "Restore tabs from workspace"
   },
   "right_panel": {
     "notifications": "Notifications",

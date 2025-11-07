@@ -6,6 +6,7 @@ import {
   Database,
   Settings,
   FilePlus,
+  FolderOpen,
 } from 'lucide-react';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
@@ -16,6 +17,11 @@ import {
 } from '@/components/common/TimeRangeSelector';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 import { useMenuTranslation } from '@/hooks/useTranslation';
+import { WorkspaceDialog } from '@/components/workspace/WorkspaceDialog';
+import { WorkspaceTab } from '@/services/workspace';
+import { useTabStore } from '@/stores/tabStore';
+import type { EditorTab } from '@/components/editor/TabManager';
+import logger from '@/utils/logger';
 
 interface MainToolbarProps {
   onViewChange?: (view: string) => void;
@@ -50,7 +56,9 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   } = useConnectionStore();
   const navigate = useNavigate();
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [workspaceVisible, setWorkspaceVisible] = useState(false);
   const { t } = useMenuTranslation();
+  const { addTab, setActiveKey } = useTabStore();
   const [selectedTimeRange, setSelectedTimeRange] = useState<TimeRange | null>(
     currentTimeRange
       ? {
@@ -96,6 +104,33 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
     onViewChange?.('query-history');
   }, [onViewChange]);
 
+  // 处理从工作区恢复标签页
+  const handleRestoreTabs = useCallback((workspaceTabs: WorkspaceTab[]) => {
+    logger.info(t('workspace.restore_tabs'), workspaceTabs.length);
+
+    workspaceTabs.forEach(wsTab => {
+      // 转换WorkspaceTab为EditorTab
+      const editorTab: EditorTab = {
+        id: wsTab.id,
+        title: wsTab.title,
+        content: wsTab.content,
+        type: wsTab.tab_type as 'query' | 'table' | 'database' | 'data-browser',
+        modified: false,
+        saved: true,
+        database: wsTab.database,
+        connectionId: wsTab.connection_id,
+        tableName: wsTab.table_name,
+      };
+
+      addTab(editorTab);
+    });
+
+    // 激活最后一个恢复的标签页
+    if (workspaceTabs.length > 0) {
+      setActiveKey(workspaceTabs[workspaceTabs.length - 1].id);
+    }
+  }, [addTab, setActiveKey, t]);
+
   return (
     <div className='datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent'>
       {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
@@ -128,6 +163,18 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         >
           <FilePlus className='w-4 h-4' />
           <span className='text-xs whitespace-nowrap'>{t('toolbar.new_query')}</span>
+        </Button>
+
+        {/* 工作区按钮 */}
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-10 min-w-14 px-2 py-1 flex flex-col items-center justify-center gap-1'
+          onClick={() => setWorkspaceVisible(true)}
+          title={t('toolbar.workspace')}
+        >
+          <FolderOpen className='w-4 h-4' />
+          <span className='text-xs whitespace-nowrap'>{t('toolbar.workspace')}</span>
         </Button>
 
         <div className='w-px h-6 bg-border mx-3' />
@@ -171,6 +218,13 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
       <SettingsModal
         visible={settingsVisible}
         onClose={() => setSettingsVisible(false)}
+      />
+
+      {/* 工作区对话框 */}
+      <WorkspaceDialog
+        visible={workspaceVisible}
+        onClose={() => setWorkspaceVisible(false)}
+        onRestoreTabs={handleRestoreTabs}
       />
     </div>
   );

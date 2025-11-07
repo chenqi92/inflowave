@@ -10,5 +10,22 @@
   "filterQueryGenerated": "Filter query generated",
   "aggregateQueryGenerated": "Aggregate query generated",
   "creatingColumnChart": "Creating column chart...",
-  "exportingColumnData": "Exporting column data..."
+  "exportingColumnData": "Exporting column data...",
+  "unhandledAction": "Unhandled context menu action",
+  "featureInDevelopment": "Feature \"{{action}}\" is in development...",
+  "unsupportedSqlType": "Unsupported SQL type: {{sqlType}}",
+  "sqlGenerated": "SQL generated: {{description}}",
+  "fieldsCount": "Retrieved {{count}} fields",
+  "tagKeysCount": "Retrieved {{count}} tag keys",
+  "tagValuesCount": "Retrieved {{count}} tag values",
+  "dataExported": "Data exported: {{result}}",
+  "deleteMeasurementConfirm": "Are you sure you want to delete measurement \"{{measurement}}\"? This operation cannot be undone!",
+  "measurementDeleted": "Measurement \"{{measurement}}\" has been deleted",
+  "deleteDatabaseConfirm": "Are you sure you want to delete database \"{{database}}\"? This will delete all data and cannot be undone!",
+  "databaseDeleted": "Database \"{{database}}\" has been deleted",
+  "databaseInfoFetched": "Database \"{{database}}\" information retrieved",
+  "databaseStatsFetched": "Database \"{{database}}\" statistics retrieved",
+  "databaseExportInDevelopment": "Database \"{{database}}\" structure export feature in development...",
+  "filterDescription": "Filter {{column}} {{operator}} {{value}}",
+  "aggregateDescription": "{{func}} aggregation query: {{column}}"
 }
