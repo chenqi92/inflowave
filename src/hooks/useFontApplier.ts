@@ -20,16 +20,20 @@ const fontFamilyMap: Record<string, string> = {
   'source-sans-pro': '"Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   nunito: '"Nunito", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   poppins: '"Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  montserrat: '"Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  // 新增现代无衬线字体
+  'be-vietnam-pro': '"Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  'dm-sans': '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   'fira-sans': '"Fira Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  lexend: '"Lexend", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  manrope: '"Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  montserrat: '"Montserrat", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   'noto-sans': '"Noto Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  outfit: '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  'plus-jakarta-sans': '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  'space-grotesk': '"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   ubuntu: '"Ubuntu", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
   'work-sans': '"Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  'dm-sans': '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  'plus-jakarta-sans': '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  manrope: '"Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  'space-grotesk': '"Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-  
+
   // 等宽字体
   'jetbrains-mono': '"JetBrains Mono", "Consolas", "Monaco", "Courier New", monospace',
   'fira-code': '"Fira Code", "Consolas", "Monaco", "Courier New", monospace',

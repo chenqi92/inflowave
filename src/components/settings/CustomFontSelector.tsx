@@ -51,7 +51,98 @@ const fontOptions: FontOption[] = [
     fontFamily: '"Poppins", sans-serif',
     category: 'modern'
   },
-  
+  // 新增现代无衬线字体
+  {
+    value: 'be-vietnam-pro',
+    name: 'Be Vietnam Pro',
+    fontFamily: '"Be Vietnam Pro", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'dm-sans',
+    name: 'DM Sans',
+    fontFamily: '"DM Sans", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'fira-sans',
+    name: 'Fira Sans',
+    fontFamily: '"Fira Sans", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'lato',
+    name: 'Lato',
+    fontFamily: '"Lato", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'lexend',
+    name: 'Lexend',
+    fontFamily: '"Lexend", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'manrope',
+    name: 'Manrope',
+    fontFamily: '"Manrope", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'montserrat',
+    name: 'Montserrat',
+    fontFamily: '"Montserrat", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'noto-sans',
+    name: 'Noto Sans',
+    fontFamily: '"Noto Sans", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'nunito',
+    name: 'Nunito',
+    fontFamily: '"Nunito", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'outfit',
+    name: 'Outfit',
+    fontFamily: '"Outfit", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'plus-jakarta-sans',
+    name: 'Plus Jakarta Sans',
+    fontFamily: '"Plus Jakarta Sans", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'source-sans-pro',
+    name: 'Source Sans Pro',
+    fontFamily: '"Source Sans Pro", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'space-grotesk',
+    name: 'Space Grotesk',
+    fontFamily: '"Space Grotesk", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'ubuntu',
+    name: 'Ubuntu',
+    fontFamily: '"Ubuntu", sans-serif',
+    category: 'modern'
+  },
+  {
+    value: 'work-sans',
+    name: 'Work Sans',
+    fontFamily: '"Work Sans", sans-serif',
+    category: 'modern'
+  },
+
   // 经典系统字体 - 这些是操作系统自带的
   {
     value: 'georgia',
@@ -119,6 +210,25 @@ const fontOptions: FontOption[] = [
     value: 'courier',
     name: 'Courier New',
     fontFamily: '"Courier New", Courier, monospace',
+    category: 'mono'
+  },
+  // 新增等宽字体
+  {
+    value: 'inconsolata',
+    name: 'Inconsolata',
+    fontFamily: '"Inconsolata", monospace',
+    category: 'mono'
+  },
+  {
+    value: 'roboto-mono',
+    name: 'Roboto Mono',
+    fontFamily: '"Roboto Mono", monospace',
+    category: 'mono'
+  },
+  {
+    value: 'ubuntu-mono',
+    name: 'Ubuntu Mono',
+    fontFamily: '"Ubuntu Mono", monospace',
     category: 'mono'
   }
 ];
