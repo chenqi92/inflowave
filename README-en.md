@@ -45,24 +45,24 @@ Visit the [Releases page](https://github.com/chenqi92/inflowave/releases/latest)
 ### 🔍 How to Choose the Right Version
 
 #### Windows Users
-- **Recommended**: 📥 **[InfloWave_0.7.9_x64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.7.9/InfloWave_0.7.9_x64.msi)** 
+- **Recommended**: 📥 **[InfloWave_0.8.0_x64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.0/InfloWave_0.8.0_x64.msi)** 
   - ✅ For Windows 10/11 (64-bit systems)
   - ✅ Supports most modern Windows systems
   - ✅ MSI format, simple and reliable installation
 
-- **Legacy**: 📥 **[InfloWave_0.7.9_x86.msi](https://github.com/chenqi92/inflowave/releases/download/v0.7.9/InfloWave_0.7.9_x86.msi)**
+- **Legacy**: 📥 **[InfloWave_0.8.0_x86.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.0/InfloWave_0.8.0_x86.msi)**
   - ✅ For older 32-bit Windows systems
   - ⚠️ Use only if 64-bit version doesn't work
 
 **Portable Versions (No Installation Required)**
 
-- **64-bit Portable**: 📥 **[InfloWave-x64-portable-0.7.9.exe](https://github.com/chenqi92/inflowave/releases/download/v0.7.9/InfloWave-x64-portable-0.7.9.exe)**
+- **64-bit Portable**: 📥 **[InfloWave-x64-portable-0.8.0.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.0/InfloWave-x64-portable-0.8.0.exe)**
   - ✅ Green software, no installation needed
   - ✅ Doesn't write to registry, leaves no traces
   - ✅ Portable, can be run from USB drive
   - ✅ For Windows 10/11 (64-bit)
 
-- **32-bit Portable**: 📥 **[InfloWave-x86-portable-0.7.9.exe](https://github.com/chenqi92/inflowave/releases/download/v0.7.9/InfloWave-x86-portable-0.7.9.exe)**
+- **32-bit Portable**: 📥 **[InfloWave-x86-portable-0.8.0.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.0/InfloWave-x86-portable-0.8.0.exe)**
   - ✅ Green software, no installation needed
   - ✅ Better compatibility, supports older systems
   - ✅ For Windows 7/8/10/11 (32-bit/64-bit)
@@ -74,14 +74,14 @@ Visit the [Releases page](https://github.com/chenqi92/inflowave/releases/latest)
 - 💻 Check the "Processor" or "Chip" information
 
 **Apple Silicon Mac (M1/M2/M3/M4 chips)**
-- 📥 **[InfloWave_0.7.9_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.7.9/InfloWave_0.7.9_aarch64.dmg)**
+- 📥 **[InfloWave_0.8.0_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.8.0/InfloWave_0.8.0_aarch64.dmg)**
   - ✅ Macs released after November 2020
   - ✅ Optimal performance with native support
   - ✅ Lower power consumption
   - ⚠️ **Will NOT run on Intel Macs**
 
 **Intel Mac (Intel processors)**
-- 📥 **[InfloWave_0.7.9_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.7.9/InfloWave_0.7.9_x64.dmg)**
+- 📥 **[InfloWave_0.8.0_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.8.0/InfloWave_0.8.0_x64.dmg)**
   - ✅ Macs released before 2020
   - ✅ Compatible with macOS 10.15 or higher
   - ⚠️ Not compatible with Apple Silicon chips
@@ -92,24 +92,24 @@ Visit the [Releases page](https://github.com/chenqi92/inflowave/releases/latest)
 - Run command: `cat /etc/os-release` or `lsb_release -a`
 
 **Debian/Ubuntu Family (Recommended)**
-- 📥 **[InfloWave_0.7.9_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.7.9/InfloWave_0.7.9_amd64.deb)**
+- 📥 **[InfloWave_0.8.0_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.8.0/InfloWave_0.8.0_amd64.deb)**
   - ✅ Ubuntu 18.04+, Debian 10+
   - ✅ Better system integration, supports auto-updates
-  - 📋 Install command: `sudo dpkg -i InfloWave_0.7.9_amd64.deb`
+  - 📋 Install command: `sudo dpkg -i InfloWave_0.8.0_amd64.deb`
   - 🔧 Fix dependencies: `sudo apt-get install -f`
 
 **Universal Linux (Works Everywhere)**
-- 📥 **[InfloWave_0.7.9_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.7.9/InfloWave_0.7.9_amd64.AppImage)**
+- 📥 **[InfloWave_0.8.0_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.8.0/InfloWave_0.8.0_amd64.AppImage)**
   - ✅ Works on most x64 Linux distributions
   - ✅ No installation required, run directly
   - ✅ Portable version, doesn't affect system
-  - 📋 Usage: `chmod +x InfloWave_0.7.9_amd64.AppImage && ./InfloWave_0.7.9_amd64.AppImage`
+  - 📋 Usage: `chmod +x InfloWave_0.8.0_amd64.AppImage && ./InfloWave_0.8.0_amd64.AppImage`
 
 **RPM Family (CentOS/RHEL/Fedora)**
-- 📥 **[InfloWave-0.7.9-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.7.9/InfloWave-0.7.9-1.x86_64.rpm)**
+- 📥 **[InfloWave-0.8.0-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.8.0/InfloWave-0.8.0-1.x86_64.rpm)**
   - ✅ CentOS 7+, RHEL 7+, Fedora 30+
-  - 📋 Install command: `sudo rpm -i InfloWave-0.7.9-1.x86_64.rpm`
-  - 📋 Or use: `sudo dnf install InfloWave-0.7.9-1.x86_64.rpm`
+  - 📋 Install command: `sudo rpm -i InfloWave-0.8.0-1.x86_64.rpm`
+  - 📋 Or use: `sudo dnf install InfloWave-0.8.0-1.x86_64.rpm`
 
 ### 📝 Detailed Installation Steps
 
