@@ -344,16 +344,35 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
   // 根据快捷键 ID 更新翻译文本
   const updateShortcutTranslations = useCallback((shortcuts: KeyboardShortcut[]): KeyboardShortcut[] => {
+    // ID 前缀到分类名称的映射
+    const categoryMapping: Record<string, string> = {
+      'nav': 'navigation',
+      'file': 'file',
+      'query': 'query',
+      'edit': 'edit',
+      'search': 'search',
+      'tools': 'tools',
+      'layout': 'layout',
+      'view': 'view',
+      'db': 'database',
+      'window': 'window',
+      'general': 'general',
+      'developer': 'developer',
+    };
+
     return shortcuts.map(shortcut => {
       // 根据 ID 获取对应的翻译键
       const idParts = shortcut.id.split('_');
-      const category = idParts[0]; // nav, file, edit, etc.
+      const categoryPrefix = idParts[0]; // nav, file, edit, db, etc.
       const action = idParts.slice(1).join('_'); // dashboard, new_query, etc.
 
+      // 获取完整的分类名称
+      const fullCategoryName = categoryMapping[categoryPrefix] || categoryPrefix;
+
       // 构建翻译键
-      const nameKey = `shortcut_${category}_${action}`;
-      const descKey = `shortcut_${category}_${action}_desc`;
-      const categoryKey = `shortcut_category_${category}`;
+      const nameKey = `shortcut_${categoryPrefix}_${action}`;
+      const descKey = `shortcut_${categoryPrefix}_${action}_desc`;
+      const categoryKey = `shortcut_category_${fullCategoryName}`;
 
       // 尝试获取翻译，如果不存在则保留原值
       const translatedName = t(nameKey);
