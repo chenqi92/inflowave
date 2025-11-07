@@ -68,10 +68,11 @@ interface SortableColumnItemProps {
   column: string;
   isSelected: boolean;
   onToggle: (column: string) => void;
+  t: (key: string) => string;
 }
 
 const SortableColumnItem: React.FC<SortableColumnItemProps> = memo(
-  ({ column, isSelected, onToggle }) => {
+  ({ column, isSelected, onToggle, t }) => {
     const { attributes, listeners, setNodeRef, transform, transition } =
       useSortable({ id: column });
 
@@ -113,7 +114,7 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = memo(
           </span>
           {column === 'time' && (
             <Badge variant='secondary' className='text-xs ml-2 flex-shrink-0'>
-              时间
+              {t('time_column')}
             </Badge>
           )}
           {column === '#' && (
@@ -144,6 +145,7 @@ interface FilterEditorProps {
   onRemove: () => void;
   onApply: () => void;
   availableOperators: { value: FilterOperator; label: string }[];
+  t: (key: string) => string;
 }
 
 const FilterEditor: React.FC<FilterEditorProps> = ({
@@ -152,6 +154,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
   onRemove,
   onApply,
   availableOperators,
+  t,
 }) => {
   const handleOperatorChange = (operator: FilterOperator) => {
     onUpdate({ ...filter, operator, value: '', value2: undefined });
@@ -208,7 +211,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
                 onChange={date =>
                   handleValueChange(date ? date.toISOString() : '')
                 }
-                placeholder='开始时间'
+                placeholder={t('start_time')}
                 showTime
                 size='small'
                 className='w-32'
@@ -219,7 +222,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
                 onChange={date =>
                   handleValue2Change(date ? date.toISOString() : '')
                 }
-                placeholder='结束时间'
+                placeholder={t('end_time')}
                 showTime
                 size='small'
                 className='w-32'
@@ -231,7 +234,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
           <DatePicker
             value={filter.value ? new Date(filter.value) : undefined}
             onChange={date => handleValueChange(date ? date.toISOString() : '')}
-            placeholder='选择时间'
+            placeholder={t('select_time')}
             showTime
             size='small'
             className='w-32'
@@ -681,7 +684,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           ];
         case 'time':
           return [
-            { value: 'time_range', label: '时间范围' },
+            { value: 'time_range', label: t('time_range') },
             { value: 'equals', label: '等于' },
             { value: 'gt', label: '晚于' },
             { value: 'lt', label: '早于' },
@@ -693,7 +696,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           ];
       }
     },
-    []
+    [t]
   );
 
   // 处理拖拽结束
@@ -2608,7 +2611,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               </Button>
             </div>
             <div className='text-xs text-muted-foreground mb-3'>
-              拖拽调整顺序，勾选显示列
+              {t('drag_to_reorder')}
             </div>
             <DndContext
               sensors={sensors}
@@ -2628,6 +2631,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                         column={column}
                         isSelected={selectedColumns.includes(column)}
                         onToggle={handleColumnToggle}
+                        t={t}
                       />
                     ))}
                 </div>
@@ -2692,6 +2696,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     onRemove={() => removeFilter(index)}
                     onApply={applyFilters}
                     availableOperators={getAvailableOperators(filter.dataType)}
+                    t={t}
                   />
                 ))}
               </div>

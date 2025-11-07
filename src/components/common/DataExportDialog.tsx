@@ -39,6 +39,7 @@ import {
 import { safeTauriInvoke } from '@/utils/tauri';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type { DataExportResult, Connection, QueryResult } from '@/types';
+import { useDataTranslation } from '@/hooks/useTranslation';
 
 interface DataExportDialogProps {
   open: boolean;
@@ -79,6 +80,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
   defaultFilename,
   onSuccess,
 }) => {
+  const { t } = useDataTranslation();
   const hasQueryResult = !!queryResult;
 
   const form = useForm<FormData>({
@@ -133,7 +135,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       if (success) {
         return {
           success: true,
-          message: '导出成功',
+          message: t('export.export_success'),
           filePath: `${filename}.${format}`,
           recordCount: queryResult.data?.length || 0,
           fileSize: 0,
@@ -231,7 +233,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       const values = form.getValues();
 
       if (!values.format || !values.filename) {
-        showMessage.error('请填写必要信息');
+        showMessage.error(t('export.please_fill_required'));
         return;
       }
 
@@ -245,7 +247,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         result = await exportFromQueryResult(queryResult, values);
       } else {
         // 从数据库查询导出 - 暂时显示开发中提示
-        showMessage.warning('数据库查询导出功能开发中，请使用查询结果导出');
+        showMessage.warning(t('export.db_export_in_development'));
         setLoading(false);
         return;
       }
@@ -253,20 +255,20 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       setExportResult(result);
 
       if (result.success) {
-        showMessage.success('数据导出成功');
+        showMessage.success(t('export.export_success'));
         onSuccess?.(result);
         if (hasQueryResult) {
           onClose(); // 查询结果导出成功后自动关闭
         }
       } else {
-        showMessage.error('数据导出失败');
+        showMessage.error(t('export.export_failed'));
       }
     } catch (error) {
       console.error('导出失败:', error);
-      showMessage.error(`导出失败: ${error}`);
+      showMessage.error(t('export.export_failed_with_error', { error: String(error) }));
       setExportResult({
         success: false,
-        message: `导出失败: ${error}`,
+        message: t('export.export_failed_with_error', { error: String(error) }),
         filePath: '',
         recordCount: 0,
         fileSize: 0,
@@ -305,33 +307,33 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
             name='format'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>导出格式</FormLabel>
+                <FormLabel>{t('export.export_format')}</FormLabel>
                 <Select
                   onValueChange={field.onChange}
                   defaultValue={field.value}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder='选择导出格式' />
+                      <SelectValue placeholder={t('export.select_format')} />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
                     <SelectItem value='csv'>
                       <div className='flex items-center gap-2'>
                         <FileText className='w-4 h-4' />
-                        CSV 格式
+                        {t('export.csv_format')}
                       </div>
                     </SelectItem>
                     <SelectItem value='json'>
                       <div className='flex items-center gap-2'>
                         <Code className='w-4 h-4' />
-                        JSON 格式
+                        {t('export.json_format')}
                       </div>
                     </SelectItem>
                     <SelectItem value='excel'>
                       <div className='flex items-center gap-2'>
                         <FileSpreadsheet className='w-4 h-4' />
-                        Excel 格式
+                        {t('export.excel_format')}
                       </div>
                     </SelectItem>
                   </SelectContent>
@@ -346,9 +348,9 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
             name='filename'
             render={({ field }) => (
               <FormItem>
-                <FormLabel>文件名</FormLabel>
+                <FormLabel>{t('export.filename')}</FormLabel>
                 <FormControl>
-                  <Input placeholder='请输入文件名（不含扩展名）' {...field} />
+                  <Input placeholder={t('export.filename_placeholder')} {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -362,9 +364,9 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           render={({ field }) => (
             <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
               <div className='space-y-0.5'>
-                <FormLabel className='text-base'>包含表头</FormLabel>
+                <FormLabel className='text-base'>{t('export.include_headers')}</FormLabel>
                 <div className='text-sm text-muted-foreground'>
-                  在导出文件中包含列标题
+                  {t('export.include_headers_desc')}
                 </div>
               </div>
               <FormControl>
@@ -382,17 +384,17 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
           name='options.delimiter'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>分隔符 (仅CSV格式)</FormLabel>
+              <FormLabel>{t('export.delimiter')}</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder='选择分隔符' />
+                    <SelectValue placeholder={t('export.select_delimiter')} />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value=','>逗号 (,)</SelectItem>
-                  <SelectItem value=';'>分号 (;)</SelectItem>
-                  <SelectItem value='\t'>制表符 (\t)</SelectItem>
+                  <SelectItem value=','>{t('export.delimiter_comma')}</SelectItem>
+                  <SelectItem value=';'>{t('export.delimiter_semicolon')}</SelectItem>
+                  <SelectItem value='\t'>{t('export.delimiter_tab')}</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -420,27 +422,26 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={open => !open && onClose()}>
-      <DialogContent className='max-w-4xl h-[90vh] p-0 flex flex-col gap-0'>
+      <DialogContent className='max-w-4xl h-[90vh] p-0 flex flex-col gap-0 overflow-hidden'>
         <DialogHeader className='px-6 py-4 border-b shrink-0'>
           <DialogTitle>
-            {hasQueryResult ? '导出查询结果' : '数据导出'}
+            {hasQueryResult ? t('export.dialog_title_query_result') : t('export.dialog_title')}
           </DialogTitle>
           <DialogDescription>
-            {hasQueryResult ? '将查询结果导出为 CSV、JSON 或 Excel 格式' : '选择数据源和导出格式'}
+            {hasQueryResult ? t('export.dialog_description_query_result') : t('export.dialog_description')}
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-y-auto px-6 py-4 space-y-6'>
+        <div className='flex-1 overflow-y-auto px-6 py-4 space-y-6 min-h-0'>
           {hasQueryResult && queryResult ? (
             // 查询结果导出模式
             <div>
               <Alert className='mb-4'>
                 <CheckCircle className='w-4 h-4' />
                 <div>
-                  <div className='font-medium'>准备导出查询结果</div>
+                  <div className='font-medium'>{t('export.prepare_export_query_result')}</div>
                   <div className='text-sm text-muted-foreground'>
-                    共 {queryResult.data?.length || 0}{' '}
-                    条记录，选择导出格式和文件名
+                    {t('export.records_count', { count: queryResult.data?.length || 0 })}
                   </div>
                 </div>
               </Alert>
@@ -452,9 +453,9 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
               <Alert className='mb-4'>
                 <Info className='w-4 h-4' />
                 <div>
-                  <div className='font-medium'>数据库查询导出</div>
+                  <div className='font-medium'>{t('export.db_query_export')}</div>
                   <div className='text-sm text-muted-foreground'>
-                    配置连接信息和查询语句，然后导出数据
+                    {t('export.db_query_export_desc')}
                   </div>
                 </div>
               </Alert>
@@ -478,7 +479,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
               )}
               <div>
                 <div className='font-medium'>
-                  {exportResult.success ? '导出成功' : '导出失败'}
+                  {exportResult.success ? t('export.export_result_success') : t('export.export_result_failed')}
                 </div>
                 <div className='text-sm text-muted-foreground'>
                   {exportResult.message}
@@ -489,9 +490,9 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         </div>
 
         {/* 底部按钮 - 固定在底部 */}
-        <div className='flex justify-end gap-2 px-6 py-4 border-t shrink-0'>
+        <div className='flex justify-end gap-2 px-6 py-4 border-t shrink-0 bg-background'>
           <Button variant='outline' onClick={onClose}>
-            取消
+            {t('export.cancel_button')}
           </Button>
           {!hasQueryResult && (
             <Button
@@ -500,12 +501,12 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
               onClick={estimateExportSize}
             >
               <Info className='w-4 h-4 mr-2' />
-              预估大小
+              {t('export.estimate_size')}
             </Button>
           )}
           <Button disabled={loading || !canExport()} onClick={executeExport}>
             <Download className='w-4 h-4 mr-2' />
-            {loading ? '导出中...' : '开始导出'}
+            {loading ? t('export.exporting') : t('export.export_button')}
           </Button>
         </div>
       </DialogContent>

@@ -15,15 +15,16 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui';
-import { 
-  FileText, 
-  Table, 
-  FileSpreadsheet, 
-  Code, 
+import {
+  FileText,
+  Table,
+  FileSpreadsheet,
+  Code,
   Hash,
   Download,
   Info
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // 生成带时间戳的文件名
 const generateTimestampedFilename = (tableName: string, extension: string): string => {
@@ -62,11 +63,11 @@ interface ExportOptionsDialogProps {
   columnCount?: number;
 }
 
-const EXPORT_FORMATS: ExportFormat[] = [
+const getExportFormats = (t: (key: string) => string): ExportFormat[] => [
   {
     id: 'csv',
     name: 'CSV',
-    description: '逗号分隔值文件，兼容性最好',
+    description: t('csv_description'),
     icon: <FileText className="w-4 h-4" />,
     extension: '.csv',
     mimeType: 'text/csv'
@@ -74,7 +75,7 @@ const EXPORT_FORMATS: ExportFormat[] = [
   {
     id: 'tsv',
     name: 'TSV',
-    description: '制表符分隔值文件，适合包含逗号的数据',
+    description: t('tsv_description'),
     icon: <FileText className="w-4 h-4" />,
     extension: '.tsv',
     mimeType: 'text/tab-separated-values'
@@ -82,7 +83,7 @@ const EXPORT_FORMATS: ExportFormat[] = [
   {
     id: 'excel',
     name: 'Excel',
-    description: 'Excel工作簿文件，支持格式化',
+    description: t('excel_description'),
     icon: <FileSpreadsheet className="w-4 h-4" />,
     extension: '.xlsx',
     mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -90,7 +91,7 @@ const EXPORT_FORMATS: ExportFormat[] = [
   {
     id: 'json',
     name: 'JSON',
-    description: 'JavaScript对象表示法，适合程序处理',
+    description: t('json_description'),
     icon: <Code className="w-4 h-4" />,
     extension: '.json',
     mimeType: 'application/json'
@@ -98,7 +99,7 @@ const EXPORT_FORMATS: ExportFormat[] = [
   {
     id: 'markdown',
     name: 'Markdown',
-    description: 'Markdown表格格式，适合文档',
+    description: t('markdown_description'),
     icon: <Hash className="w-4 h-4" />,
     extension: '.md',
     mimeType: 'text/markdown'
@@ -106,7 +107,7 @@ const EXPORT_FORMATS: ExportFormat[] = [
   {
     id: 'sql',
     name: 'SQL INSERT',
-    description: 'SQL插入语句，可直接执行',
+    description: t('sql_description'),
     icon: <Table className="w-4 h-4" />,
     extension: '.sql',
     mimeType: 'text/sql'
@@ -121,6 +122,8 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
   rowCount = 0,
   columnCount = 0
 }) => {
+  const { t } = useTranslation('query');
+  const EXPORT_FORMATS = getExportFormats(t);
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat['id']>('csv');
   const [includeHeaders, setIncludeHeaders] = useState(true);
   const [customDelimiter, setCustomDelimiter] = useState('');
@@ -134,7 +137,7 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
     const extension = EXPORT_FORMATS.find(f => f.id === selectedFormat)?.extension || '.csv';
     const timestampedFilename = generateTimestampedFilename(defaultTableName, extension);
     setFilename(timestampedFilename);
-  }, [defaultTableName, selectedFormat]);
+  }, [defaultTableName, selectedFormat, EXPORT_FORMATS]);
 
   const selectedFormatInfo = EXPORT_FORMATS.find(f => f.id === selectedFormat);
 
@@ -174,31 +177,31 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl h-[90vh] p-0 flex flex-col gap-0 overflow-hidden">
+        <DialogHeader className="px-6 py-4 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Download className="w-5 h-5" />
-            导出数据
+            {t('export_data')}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6 min-h-0">
           {/* 数据统计 */}
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Info className="w-4 h-4" />
-                数据统计
+                {t('data_statistics')}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="flex gap-4 text-sm">
                 <div className="flex items-center gap-1">
-                  <span className="text-muted-foreground">行数:</span>
+                  <span className="text-muted-foreground">{t('row_count')}:</span>
                   <Badge variant="secondary">{rowCount.toLocaleString()}</Badge>
                 </div>
                 <div className="flex items-center gap-1">
-                  <span className="text-muted-foreground">列数:</span>
+                  <span className="text-muted-foreground">{t('column_count')}:</span>
                   <Badge variant="secondary">{columnCount}</Badge>
                 </div>
               </div>
@@ -207,7 +210,7 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
 
           {/* 格式选择 */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">导出格式</Label>
+            <Label className="text-sm font-medium">{t('export_format')}</Label>
             <div className="grid grid-cols-2 gap-3">
               {EXPORT_FORMATS.map((format) => (
                 <Card
@@ -242,8 +245,8 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
 
           {/* 选项配置 */}
           <div className="space-y-4">
-            <Label className="text-sm font-medium">导出选项</Label>
-            
+            <Label className="text-sm font-medium">{t('export_options')}</Label>
+
             {/* 包含表头 */}
             <div className="flex items-center space-x-2">
               <Checkbox
@@ -252,7 +255,7 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
                 onCheckedChange={(checked) => setIncludeHeaders(checked === true)}
               />
               <Label htmlFor="includeHeaders" className="text-sm">
-                包含表头
+                {t('include_headers')}
               </Label>
             </div>
 
@@ -260,13 +263,13 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
             {selectedFormat === 'csv' && (
               <div className="space-y-2">
                 <Label htmlFor="delimiter" className="text-sm">
-                  自定义分隔符 (可选，默认为逗号)
+                  {t('custom_delimiter')}
                 </Label>
                 <Input
                   id="delimiter"
                   value={customDelimiter}
                   onChange={(e) => setCustomDelimiter(e.target.value)}
-                  placeholder="例如: ; | |"
+                  placeholder={t('custom_delimiter_placeholder')}
                   className="w-32"
                 />
               </div>
@@ -276,13 +279,13 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
             {selectedFormat === 'sql' && (
               <div className="space-y-2">
                 <Label htmlFor="tableName" className="text-sm">
-                  目标表名
+                  {t('target_table_name')}
                 </Label>
                 <Input
                   id="tableName"
                   value={tableName}
                   onChange={(e) => setTableName(e.target.value)}
-                  placeholder="输入表名"
+                  placeholder={t('enter_table_name')}
                 />
               </div>
             )}
@@ -290,7 +293,7 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
             {/* 自定义文件名 */}
             <div className="space-y-2">
               <Label htmlFor="filename" className="text-sm">
-                文件名 (可选)
+                {t('filename_optional')}
               </Label>
               <Input
                 id="filename"
@@ -299,19 +302,19 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
                 placeholder={generateDefaultFilename()}
               />
               <p className="text-xs text-muted-foreground">
-                留空将使用默认文件名: {generateDefaultFilename()}
+                {t('default_filename_hint', { filename: generateDefaultFilename() })}
               </p>
             </div>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="px-6 py-4 border-t shrink-0 bg-background">
           <Button variant="outline" onClick={onClose}>
-            取消
+            {t('cancel')}
           </Button>
           <Button onClick={handleExport} className="flex items-center gap-2">
             <Download className="w-4 h-4" />
-            导出 {selectedFormatInfo?.name}
+            {t('export_format_name', { format: selectedFormatInfo?.name })}
           </Button>
         </DialogFooter>
       </DialogContent>

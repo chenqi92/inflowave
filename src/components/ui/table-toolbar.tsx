@@ -98,7 +98,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                         {icon || <TableIcon className="w-5 h-5 text-blue-600" />}
                         <CardTitle className="text-lg">{title}</CardTitle>
                         <Badge variant="outline" className="text-xs">
-                            {t('rows_count', { count: rowCount.toLocaleString() })}
+                            {t('rows_count', { count: rowCount })}
                         </Badge>
                     </div>
                     <div className="flex items-center gap-2">
