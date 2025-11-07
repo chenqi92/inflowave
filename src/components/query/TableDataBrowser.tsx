@@ -30,7 +30,7 @@ import {
   type DataSourceType,
 } from '@/components/ui/glide-data-table';
 import { TableToolbar, type CopyFormat } from '@/components/ui/table-toolbar';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useTranslation, useDataBrowserTranslation } from '@/hooks/useTranslation';
 import {
   DndContext,
   closestCenter,
@@ -108,9 +108,9 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = memo(
           <span
             className={`flex-1 text-sm truncate ${column === '#' ? 'cursor-default' : 'cursor-pointer'}`}
             onClick={handleToggle}
-            title={column === '#' ? '序号' : column}
+            title={column === '#' ? t('rowNumber') : column}
           >
-            {column === '#' ? '序号' : column}
+            {column === '#' ? t('rowNumber') : column}
           </span>
           {column === 'time' && (
             <Badge variant='secondary' className='text-xs ml-2 flex-shrink-0'>
@@ -119,7 +119,7 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = memo(
           )}
           {column === '#' && (
             <Badge variant='outline' className='text-xs ml-2 flex-shrink-0'>
-              必选
+              {t('required')}
             </Badge>
           )}
         </div>
@@ -127,7 +127,7 @@ const SortableColumnItem: React.FC<SortableColumnItemProps> = memo(
           {...attributes}
           {...listeners}
           className='text-xs text-muted-foreground ml-2 cursor-move p-1 flex-shrink-0'
-          title='拖拽排序'
+          title={t('dragToSort')}
         >
           ⋮⋮
         </div>
@@ -176,7 +176,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
             <div className='flex items-center gap-1'>
               <Input
                 type='number'
-                placeholder='最小值'
+                placeholder={t('minValue')}
                 value={filter.value}
                 onChange={e => handleValueChange(e.target.value)}
                 className='w-16 h-7 text-xs'
@@ -184,7 +184,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
               <span className='text-xs text-muted-foreground'>-</span>
               <Input
                 type='number'
-                placeholder='最大值'
+                placeholder={t('maxValue')}
                 value={filter.value2 || ''}
                 onChange={e => handleValue2Change(e.target.value)}
                 className='w-16 h-7 text-xs'
@@ -195,7 +195,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
         return (
           <Input
             type='number'
-            placeholder='数值'
+            placeholder={t('numericValue')}
             value={filter.value}
             onChange={e => handleValueChange(e.target.value)}
             className='w-20 h-7 text-xs'
@@ -244,7 +244,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
       default:
         return (
           <Input
-            placeholder='输入值'
+            placeholder={t('enterValue')}
             value={filter.value}
             onChange={e => handleValueChange(e.target.value)}
             className='w-24 h-7 text-xs'
@@ -285,9 +285,9 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
         size='sm'
         onClick={onApply}
         className='h-7 px-2 text-xs flex-shrink-0'
-        title='应用过滤器'
+        title={t('applyFilter')}
       >
-        应用
+        {t('apply')}
       </Button>
 
       <Button
@@ -295,7 +295,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
         size='sm'
         onClick={onRemove}
         className='h-6 w-6 p-0 text-muted-foreground hover:text-destructive flex-shrink-0'
-        title='删除过滤器'
+        title={t('deleteFilter')}
       >
         ×
       </Button>
@@ -467,6 +467,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   tableName,
 }) => {
   const { t } = useTranslation('query');
+  const { t: tBrowser } = useDataBrowserTranslation();
 
   // 🔧 获取当前 tab 的信息，用于管理 loading 状态
   const { tabs, updateTab } = useTabStore();
@@ -665,38 +666,38 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       switch (dataType) {
         case 'string':
           return [
-            { value: 'equals', label: '等于' },
-            { value: 'not_equals', label: '不等于' },
-            { value: 'contains', label: '包含' },
-            { value: 'not_contains', label: '不包含' },
-            { value: 'starts_with', label: '开始于' },
-            { value: 'ends_with', label: '结束于' },
+            { value: 'equals', label: tBrowser('filterOperators.equals') },
+            { value: 'not_equals', label: tBrowser('filterOperators.not_equals') },
+            { value: 'contains', label: tBrowser('filterOperators.contains') },
+            { value: 'not_contains', label: tBrowser('filterOperators.not_contains') },
+            { value: 'starts_with', label: tBrowser('filterOperators.starts_with') },
+            { value: 'ends_with', label: tBrowser('filterOperators.ends_with') },
           ];
         case 'number':
           return [
-            { value: 'equals', label: '等于' },
-            { value: 'not_equals', label: '不等于' },
-            { value: 'gt', label: '大于' },
-            { value: 'gte', label: '大于等于' },
-            { value: 'lt', label: '小于' },
-            { value: 'lte', label: '小于等于' },
-            { value: 'between', label: '介于' },
+            { value: 'equals', label: tBrowser('filterOperators.equals') },
+            { value: 'not_equals', label: tBrowser('filterOperators.not_equals') },
+            { value: 'gt', label: tBrowser('filterOperators.gt') },
+            { value: 'gte', label: tBrowser('filterOperators.gte') },
+            { value: 'lt', label: tBrowser('filterOperators.lt') },
+            { value: 'lte', label: tBrowser('filterOperators.lte') },
+            { value: 'between', label: tBrowser('filterOperators.between') },
           ];
         case 'time':
           return [
             { value: 'time_range', label: t('time_range') },
-            { value: 'equals', label: '等于' },
-            { value: 'gt', label: '晚于' },
-            { value: 'lt', label: '早于' },
+            { value: 'equals', label: tBrowser('filterOperators.equals') },
+            { value: 'gt', label: tBrowser('filterOperators.after') },
+            { value: 'lt', label: tBrowser('filterOperators.before') },
           ];
         default:
           return [
-            { value: 'equals', label: '等于' },
-            { value: 'not_equals', label: '不等于' },
+            { value: 'equals', label: tBrowser('filterOperators.equals') },
+            { value: 'not_equals', label: tBrowser('filterOperators.not_equals') },
           ];
       }
     },
-    [t]
+    [t, tBrowser]
   );
 
   // 处理拖拽结束
@@ -2030,7 +2031,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     } finally {
       setIsLoadingMore(false);
     }
-  }, [pageSize, querySettings.enable_lazy_loading, querySettings.lazy_loading_batch_size, loading, isLoadingMore, data.length, prefetchedData, generateBaseQueryWithPagination, connectionId, database]);
+  }, [pageSize, querySettings.enable_lazy_loading, querySettings.lazy_loading_batch_size, loading, isLoadingMore, prefetchedData, lastLoadTime, data.length, generateBaseQueryWithPagination, connectionId, database]);
 
   // 行点击处理函数
   const handleRowClick = useCallback(
@@ -2631,7 +2632,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                         column={column}
                         isSelected={selectedColumns.includes(column)}
                         onToggle={handleColumnToggle}
-                        t={t}
+                        t={tBrowser}
                       />
                     ))}
                 </div>
@@ -2696,7 +2697,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     onRemove={() => removeFilter(index)}
                     onApply={applyFilters}
                     availableOperators={getAvailableOperators(filter.dataType)}
-                    t={t}
+                    t={tBrowser}
                   />
                 ))}
               </div>
