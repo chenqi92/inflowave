@@ -1,0 +1,97 @@
+{
+  "page_title": "Data Write",
+  "page_description": "Write time-series data to InfluxDB",
+  "select_database": "Select Database",
+  "no_connection": "Please connect to InfluxDB first. Select and activate a connection in the connection management page before writing data.",
+  "no_database_selected": "Please select a database first. Choose the target database before starting the import.",
+  
+  "tabs": {
+    "single": "Single Write",
+    "batch": "Batch Write",
+    "import": "File Import"
+  },
+  
+  "single_write": {
+    "measurement": "Measurement",
+    "measurement_placeholder": "e.g.: temperature",
+    "measurement_required": "Please enter measurement name",
+    "timestamp": "Timestamp (leave empty to use current time)",
+    "timestamp_placeholder": "Select timestamp",
+    "tags": "Tags",
+    "tag_key": "Tag Key",
+    "tag_value": "Tag Value",
+    "add_tag": "Add Tag",
+    "fields": "Fields",
+    "field_key": "Field Key",
+    "field_value": "Field Value",
+    "add_field": "Add Field",
+    "write_now": "Write Now",
+    "add_to_batch": "Add to Batch",
+    "write_success": "Data written successfully",
+    "write_failed": "Data write failed",
+    "added_to_batch": "Added to batch"
+  },
+  
+  "batch_write": {
+    "title": "Batch Write",
+    "format_label": "Format",
+    "format_example": "Example",
+    "line_protocol_label": "Line Protocol Data",
+    "line_protocol_required": "Please enter Line Protocol data",
+    "line_protocol_placeholder": "temperature,host=server01,region=us-west value=23.5,status=\"ok\"\ncpu_usage,host=server01,cpu=cpu0 usage_percent=85.2\nmemory,host=server01 used_bytes=8589934592,available_bytes=4294967296",
+    "parse_and_add": "Parse and Add to Batch",
+    "batch_data_points": "Batch Data Points",
+    "clear": "Clear",
+    "batch_write": "Batch Write",
+    "parse_success": "Parsed successfully, added {{count}} data points",
+    "parse_failed": "Parse failed",
+    "parse_no_data": "No valid data points parsed",
+    "write_success": "Batch write successful, wrote {{count}} data points",
+    "write_failed": "Batch write failed: {{count}} errors",
+    "no_data_points": "No data points yet, please add data points to batch"
+  },
+  
+  "table": {
+    "measurement": "Measurement",
+    "tags": "Tags",
+    "fields": "Fields",
+    "timestamp": "Timestamp",
+    "actions": "Actions"
+  },
+  
+  "import": {
+    "title": "File Import",
+    "description": "Import CSV and JSON format data files, automatically map fields and batch write to database",
+    "import_file": "Import File",
+    "import_success": "Data imported successfully",
+    "import_failed": "Data import failed",
+    "csv_format": "CSV Format",
+    "csv_features": {
+      "header": "First row as header",
+      "delimiter": "Comma-separated data",
+      "timestamp": "Timestamp field support",
+      "auto_type": "Auto type inference"
+    },
+    "json_format": "JSON Format",
+    "json_features": {
+      "array": "Object array format",
+      "row": "One object per row",
+      "nested": "Nested field support",
+      "flexible": "Flexible data structure"
+    },
+    "field_mapping": "Field Mapping",
+    "mapping_features": {
+      "auto": "Auto field mapping",
+      "tags_fields": "Tags and fields support",
+      "time_recognition": "Time field recognition",
+      "type_conversion": "Data type conversion"
+    }
+  },
+  
+  "messages": {
+    "load_databases_failed": "Failed to load database list",
+    "write_success": "Data written successfully",
+    "write_failed": "Data write failed"
+  }
+}
+

@@ -260,6 +260,13 @@ export const useVisualizationTranslation = () => {
   return useTranslation('visualization');
 };
 
+/**
+ * 数据管理翻译 Hook
+ */
+export const useDataTranslation = () => {
+  return useTranslation('data');
+};
+
 // ============================================================================
 // 高级翻译工具
 // ============================================================================

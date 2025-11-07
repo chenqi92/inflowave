@@ -40,6 +40,7 @@ import {useConnectionStore} from '@/store/connection';
 import ImportDialog from '@/components/common/ImportDialog';
 import type {DataPoint, BatchWriteRequest, WriteResult} from '@/types';
 import dayjs from 'dayjs';
+import {useDataTranslation} from '@/hooks/useTranslation';
 
 interface DataPointForm extends Omit<DataPoint, 'timestamp'> {
     timestamp?: dayjs.Dayjs;
@@ -56,6 +57,7 @@ interface FieldField {
 }
 
 const DataWrite: React.FC = () => {
+    const {t} = useDataTranslation();
     const {activeConnectionId} = useConnectionStore();
     const [loading, setLoading] = useState(false);
     const [databases, setDatabases] = useState<string[]>([]);
@@ -109,7 +111,7 @@ const DataWrite: React.FC = () => {
                 setSelectedDatabase(dbList[0]);
             }
         } catch (error) {
-            showMessage.error(`加载数据库列表失败: ${error}`);
+            showMessage.error(t('messages.load_databases_failed'));
         }
     };
 

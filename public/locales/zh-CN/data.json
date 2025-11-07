@@ -1,0 +1,97 @@
+{
+  "page_title": "数据写入",
+  "page_description": "向 InfluxDB 写入时序数据",
+  "select_database": "选择数据库",
+  "no_connection": "请先连接到 InfluxDB。在连接管理页面选择一个连接并激活后，才能写入数据。",
+  "no_database_selected": "请先选择数据库。在开始导入之前，请先选择要导入数据的目标数据库。",
+  
+  "tabs": {
+    "single": "单点写入",
+    "batch": "批量写入",
+    "import": "文件导入"
+  },
+  
+  "single_write": {
+    "measurement": "测量名称",
+    "measurement_placeholder": "例如: temperature",
+    "measurement_required": "请输入测量名称",
+    "timestamp": "时间戳 (留空则使用当前时间)",
+    "timestamp_placeholder": "选择时间戳",
+    "tags": "标签 (Tags)",
+    "tag_key": "标签键",
+    "tag_value": "标签值",
+    "add_tag": "添加标签",
+    "fields": "字段 (Fields)",
+    "field_key": "字段键",
+    "field_value": "字段值",
+    "add_field": "添加字段",
+    "write_now": "立即写入",
+    "add_to_batch": "添加到批次",
+    "write_success": "数据写入成功",
+    "write_failed": "数据写入失败",
+    "added_to_batch": "已添加到批次"
+  },
+  
+  "batch_write": {
+    "title": "批量写入",
+    "format_label": "格式",
+    "format_example": "示例",
+    "line_protocol_label": "Line Protocol 数据",
+    "line_protocol_required": "请输入 Line Protocol 数据",
+    "line_protocol_placeholder": "temperature,host=server01,region=us-west value=23.5,status=\"ok\"\ncpu_usage,host=server01,cpu=cpu0 usage_percent=85.2\nmemory,host=server01 used_bytes=8589934592,available_bytes=4294967296",
+    "parse_and_add": "解析并添加到批次",
+    "batch_data_points": "批次数据点",
+    "clear": "清空",
+    "batch_write": "批量写入",
+    "parse_success": "解析成功，添加了 {{count}} 个数据点",
+    "parse_failed": "解析失败",
+    "parse_no_data": "未能解析出有效的数据点",
+    "write_success": "批量写入成功，写入 {{count}} 个数据点",
+    "write_failed": "批量写入失败: {{count}} 个错误",
+    "no_data_points": "暂无数据点，请添加数据点到批次"
+  },
+  
+  "table": {
+    "measurement": "测量",
+    "tags": "标签",
+    "fields": "字段",
+    "timestamp": "时间戳",
+    "actions": "操作"
+  },
+  
+  "import": {
+    "title": "文件导入",
+    "description": "支持导入 CSV 和 JSON 格式的数据文件，自动映射字段并批量写入数据库",
+    "import_file": "导入文件",
+    "import_success": "数据导入成功",
+    "import_failed": "数据导入失败",
+    "csv_format": "CSV 格式",
+    "csv_features": {
+      "header": "第一行为表头",
+      "delimiter": "数据用逗号分隔",
+      "timestamp": "支持时间戳字段",
+      "auto_type": "自动推断数据类型"
+    },
+    "json_format": "JSON 格式",
+    "json_features": {
+      "array": "对象数组格式",
+      "row": "每个对象一行数据",
+      "nested": "支持嵌套字段",
+      "flexible": "灵活的数据结构"
+    },
+    "field_mapping": "字段映射",
+    "mapping_features": {
+      "auto": "自动字段映射",
+      "tags_fields": "支持标签和字段",
+      "time_recognition": "时间字段识别",
+      "type_conversion": "数据类型转换"
+    }
+  },
+  
+  "messages": {
+    "load_databases_failed": "获取数据库列表失败",
+    "write_success": "数据写入成功",
+    "write_failed": "数据写入失败"
+  }
+}
+

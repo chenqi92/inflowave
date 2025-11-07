@@ -198,14 +198,14 @@ export class ResourceManager {
    */
   async checkIntegrity(language?: string): Promise<ResourceIntegrityInfo[]> {
     if (language) {
-      const namespaces = ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'visualization', 'dateTime', 'menu'];
+      const namespaces = ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'visualization', 'dateTime', 'menu', 'logs', 'tests', 'utils', 'data'];
       const results: ResourceIntegrityInfo[] = [];
-      
+
       for (const namespace of namespaces) {
         const info = await this.loader.checkResourceIntegrity(language, namespace);
         results.push(info);
       }
-      
+
       return results;
     } else {
       return this.loader.checkAllResourceIntegrity();

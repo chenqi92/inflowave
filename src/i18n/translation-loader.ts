@@ -176,7 +176,7 @@ export class TranslationLoader {
    * 加载单个语言的所有命名空间资源
    */
   private async loadLanguageResources(language: string): Promise<LanguageResource> {
-    const namespaces = ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'dateTime', 'menu', 'visualization'];
+    const namespaces = ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'dateTime', 'menu', 'visualization', 'logs', 'tests', 'utils', 'data'];
     const resources: LanguageResource = {};
 
     // 并行加载所有命名空间
@@ -363,7 +363,7 @@ export class TranslationLoader {
    * 批量检查所有语言包完整性
    */
   async checkAllResourceIntegrity(): Promise<ResourceIntegrityInfo[]> {
-    const namespaces = ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'visualization', 'dateTime', 'menu'];
+    const namespaces = ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'visualization', 'dateTime', 'menu', 'logs', 'tests', 'utils', 'data'];
     const languages = ['zh-CN', 'en-US'];
     const results: ResourceIntegrityInfo[] = [];
 
