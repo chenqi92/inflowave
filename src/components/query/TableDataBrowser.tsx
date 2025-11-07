@@ -30,6 +30,7 @@ import {
   type DataSourceType,
 } from '@/components/ui/glide-data-table';
 import { TableToolbar, type CopyFormat } from '@/components/ui/table-toolbar';
+import { useTranslation } from '@/hooks/useTranslation';
 import {
   DndContext,
   closestCenter,
@@ -462,6 +463,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   database,
   tableName,
 }) => {
+  const { t } = useTranslation('query');
+
   // 🔧 获取当前 tab 的信息，用于管理 loading 状态
   const { tabs, updateTab } = useTabStore();
   const currentTab = useMemo(() =>
@@ -2236,9 +2239,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       const success = await copyToClipboard(text);
       if (success) {
-        showMessage.success(`已复制行数据 (${format.toUpperCase()} 格式)`);
+        showMessage.success(t('copy_row_success', { format: format.toUpperCase() }));
       } else {
-        showMessage.error('复制失败');
+        showMessage.error(t('copy_failed'));
       }
     },
     [data, columnOrder, selectedColumns]
@@ -2247,7 +2250,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const handleCopySelectedRows = useCallback(
     async (format: 'text' | 'json' | 'csv' = 'text') => {
       if (selectedRows.size === 0) {
-        showMessage.warning('请先选择要复制的行');
+        showMessage.warning(t('please_select_rows'));
         return;
       }
 
@@ -2264,7 +2267,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       const success = await copyToClipboard(text);
       if (success) {
         showMessage.success(
-          `已复制 ${selectedRows.size} 行数据 (${format.toUpperCase()} 格式)`
+          t('copy_rows_success', { count: selectedRows.size, format: format.toUpperCase() })
         );
       } else {
         showMessage.error('复制失败');
@@ -2591,7 +2594,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         columnSelectorContent={
           <div className='p-3'>
             <div className='flex items-center justify-between mb-3'>
-              <span className='text-sm font-medium'>列显示设置</span>
+              <span className='text-sm font-medium'>{t('column_display_settings')}</span>
               <Button
                 variant='ghost'
                 size='sm'
@@ -2600,8 +2603,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               >
                 {selectedColumns.length ===
                 columns.filter(col => col !== '#').length
-                  ? '取消全选'
-                  : '全选'}
+                  ? t('deselect_all')
+                  : t('select_all')}
               </Button>
             </div>
             <div className='text-xs text-muted-foreground mb-3'>
@@ -2813,7 +2816,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           onClick={e => e.stopPropagation()}
         >
           <div className='px-3 py-2 text-xs text-muted-foreground border-b'>
-            已选择 {contextMenu.selectedRows.length} 行
+            {t('selected_rows_count', { count: contextMenu.selectedRows.length })}
           </div>
           <button
             className='w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2'
@@ -2860,7 +2863,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             }}
           >
             <CheckSquare className='w-4 h-4' />
-            全选
+            {t('select_all')}
           </button>
           <button
             className='w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2'

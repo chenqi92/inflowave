@@ -33,6 +33,7 @@ import {
     FileSpreadsheet,
     Database,
 } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export type CopyFormat = 'text' | 'insert' | 'markdown' | 'json' | 'csv';
 
@@ -79,13 +80,15 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     onColumnSelectorClick,
     columnSelectorContent
 }) => {
+    const { t } = useTranslation('query');
+
     // 复制格式名称映射
     const formatNames: Record<CopyFormat, string> = {
-        text: '文本',
-        insert: 'INSERT',
-        markdown: 'Markdown',
-        json: 'JSON',
-        csv: 'CSV'
+        text: t('copy_format_text'),
+        insert: t('copy_format_insert'),
+        markdown: t('copy_format_markdown'),
+        json: t('copy_format_json'),
+        csv: t('copy_format_csv')
     };
     return (
         <Card className={`flex-shrink-0 border-0 border-b rounded-none bg-background ${className || ''}`}>
@@ -95,7 +98,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                         {icon || <TableIcon className="w-5 h-5 text-blue-600" />}
                         <CardTitle className="text-lg">{title}</CardTitle>
                         <Badge variant="outline" className="text-xs">
-                            {rowCount.toLocaleString()} 行
+                            {t('rows_count', { count: rowCount.toLocaleString() })}
                         </Badge>
                     </div>
                     <div className="flex items-center gap-2">
@@ -113,7 +116,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                         <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent>刷新数据</TooltipContent>
+                                <TooltipContent>{t('refresh_data')}</TooltipContent>
                             </Tooltip>
                         )}
 
@@ -138,24 +141,24 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                     >
                                         <DropdownMenuRadioItem value="text">
                                             <FileText className="w-4 h-4 mr-2" />
-                                            文本
+                                            {t('copy_format_text')}
                                         </DropdownMenuRadioItem>
                                         <DropdownMenuRadioItem value="insert">
                                             <Database className="w-4 h-4 mr-2" />
-                                            INSERT 语句
+                                            {t('copy_format_insert')}
                                         </DropdownMenuRadioItem>
                                         <DropdownMenuRadioItem value="markdown">
                                             <FileText className="w-4 h-4 mr-2" />
-                                            Markdown
+                                            {t('copy_format_markdown')}
                                         </DropdownMenuRadioItem>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuRadioItem value="json">
                                             <Code className="w-4 h-4 mr-2" />
-                                            JSON
+                                            {t('copy_format_json')}
                                         </DropdownMenuRadioItem>
                                         <DropdownMenuRadioItem value="csv">
                                             <FileSpreadsheet className="w-4 h-4 mr-2" />
-                                            CSV
+                                            {t('copy_format_csv')}
                                         </DropdownMenuRadioItem>
                                     </DropdownMenuRadioGroup>
                                 </DropdownMenuContent>
@@ -179,14 +182,14 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                 {onQuickExportCSV && (
                                     <DropdownMenuItem onClick={onQuickExportCSV}>
                                         <FileText className="w-4 h-4 mr-2" />
-                                        快速导出 CSV
+                                        {t('quick_export_csv')}
                                     </DropdownMenuItem>
                                 )}
                                 {onQuickExportCSV && onAdvancedExport && <DropdownMenuSeparator />}
                                 {onAdvancedExport && (
                                     <DropdownMenuItem onClick={onAdvancedExport}>
                                         <Settings className="w-4 h-4 mr-2" />
-                                        高级导出选项
+                                        {t('advanced_export')}
                                     </DropdownMenuItem>
                                 )}
                             </DropdownMenuContent>
@@ -203,7 +206,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                         onClick={onColumnSelectorClick}
                                     >
                                         <span className="text-xs">
-                                            列 ({selectedColumnsCount}/{totalColumnsCount})
+                                            {t('columns_selector', { selected: selectedColumnsCount, total: totalColumnsCount })}
                                         </span>
                                     </Button>
                                 </DropdownMenuTrigger>
