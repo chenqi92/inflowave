@@ -61,7 +61,7 @@ export function ThemeToggle({
           title={t('theme_toggle.toggle_theme')}
         >
           {getCurrentIcon()}
-          {showLabel && <span className='text-xs'>{getThemeLabel(theme)}</span>}
+          {showLabel && <span className='text-xs whitespace-nowrap'>{getThemeLabel(theme)}</span>}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>

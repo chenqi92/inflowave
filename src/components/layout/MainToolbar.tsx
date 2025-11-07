@@ -119,7 +119,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         <Button
           variant='ghost'
           size='sm'
-          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+          className='h-10 min-w-14 px-2 py-1 flex flex-col items-center justify-center gap-1'
           onClick={() => {
             onViewChange?.('query');
             onCreateQueryTab?.();
@@ -127,7 +127,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           title={t('toolbar.new_query')}
         >
           <FilePlus className='w-4 h-4' />
-          <span className='text-xs'>{t('toolbar.new_query')}</span>
+          <span className='text-xs whitespace-nowrap'>{t('toolbar.new_query')}</span>
         </Button>
 
         <div className='w-px h-6 bg-border mx-3' />
@@ -147,7 +147,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           variant='ghost'
           size='sm'
           showLabel={true}
-          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+          className='h-10 min-w-14 px-2 py-1 flex flex-col items-center justify-center gap-1'
         />
 
         {/* 快速设置 - 安全和查询设置 */}
@@ -157,13 +157,13 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         <Button
           variant='ghost'
           size='sm'
-          className='h-10 w-14 p-1 flex flex-col items-center justify-center gap-1'
+          className='h-10 min-w-14 px-2 py-1 flex flex-col items-center justify-center gap-1'
           onClick={() => setSettingsVisible(true)}
           title={t('toolbar.app_settings')}
 
         >
           <Settings className='w-4 h-4' />
-          <span className='text-xs'>{t('toolbar.settings')}</span>
+          <span className='text-xs whitespace-nowrap'>{t('toolbar.settings')}</span>
         </Button>
       </div>
 

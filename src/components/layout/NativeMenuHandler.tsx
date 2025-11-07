@@ -140,22 +140,22 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   };
 
   // 语言切换处理函数
-  const handleLanguageChange = (locale: string, label: string) => {
+  const handleLanguageChange = async (locale: string, label: string) => {
     logger.debug('🌐 切换语言:', locale, label);
 
-    // 保存语言设置到localStorage
-    localStorage.setItem('app-language', locale);
+    try {
+      // 使用 i18n store 的语言切换功能
+      const { useI18nStore } = await import('@/i18n/store');
+      const { setLanguage } = useI18nStore.getState();
 
-    // 触发语言切换事件，让应用其他部分知道语言已切换
-    document.dispatchEvent(new CustomEvent('language-change', {
-      detail: { locale, label }
-    }));
+      await setLanguage(locale);
 
-    // 显示成功消息
-    showMessage.success(`语言已切换到 ${label}`);
-
-    // 可以在这里添加国际化库的切换逻辑
-    // 例如: i18n.changeLanguage(locale);
+      // 显示成功消息
+      showMessage.success(`语言已切换到 ${label}`);
+    } catch (error) {
+      logger.error('语言切换失败:', error);
+      showMessage.error('语言切换失败');
+    }
   };
 
 

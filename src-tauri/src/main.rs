@@ -428,6 +428,7 @@ const EN_US: MenuTexts = MenuTexts {
 };
 
 // 创建原生菜单 - 完整的专业化菜单，支持跨平台和多语言
+// 注意：这个函数需要是 public 的，因为它会被 commands/system.rs 调用
 pub fn create_native_menu(app: &tauri::AppHandle, lang: &str) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
     info!("为平台创建原生菜单: {}, 语言: {}", std::env::consts::OS, lang);
 
