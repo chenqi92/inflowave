@@ -32,6 +32,7 @@ import {
 import type { KeyboardShortcut } from '@/types';
 import { useUserPreferencesStore, type UserPreferences } from '@/stores/userPreferencesStore';
 import { useSettingsTranslation } from '@/hooks/useTranslation';
+import i18n from 'i18next';
 
 // 获取所有系统快捷键的函数
 // 创建快捷键工厂函数，接受翻译函数作为参数
@@ -341,18 +342,49 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
     },
   });
 
+  // 根据快捷键 ID 更新翻译文本
+  const updateShortcutTranslations = useCallback((shortcuts: KeyboardShortcut[]): KeyboardShortcut[] => {
+    return shortcuts.map(shortcut => {
+      // 根据 ID 获取对应的翻译键
+      const idParts = shortcut.id.split('_');
+      const category = idParts[0]; // nav, file, edit, etc.
+      const action = idParts.slice(1).join('_'); // dashboard, new_query, etc.
+
+      // 构建翻译键
+      const nameKey = `shortcut_${category}_${action}`;
+      const descKey = `shortcut_${category}_${action}_desc`;
+      const categoryKey = `shortcut_category_${category}`;
+
+      // 尝试获取翻译，如果不存在则保留原值
+      const translatedName = t(nameKey);
+      const translatedDesc = t(descKey);
+      const translatedCategory = t(categoryKey);
+
+      return {
+        ...shortcut,
+        name: translatedName !== nameKey ? translatedName : shortcut.name,
+        description: translatedDesc !== descKey ? translatedDesc : shortcut.description,
+        category: translatedCategory !== categoryKey ? translatedCategory : shortcut.category,
+      };
+    });
+  }, [t]);
+
   // 🔧 加载用户偏好（从 store 读取）
   const loadPreferences = useCallback(() => {
     console.log('从 store 加载用户偏好');
 
     if (storePreferences) {
-      // 确保快捷键数据完整
+      // 确保快捷键数据完整，并更新翻译
+      let shortcuts = storePreferences.shortcuts && storePreferences.shortcuts.length > 0
+        ? storePreferences.shortcuts
+        : createSystemShortcuts(t);
+
+      // 更新快捷键的翻译文本
+      shortcuts = updateShortcutTranslations(shortcuts);
+
       const preferences = {
         ...storePreferences,
-        shortcuts:
-          storePreferences.shortcuts && storePreferences.shortcuts.length > 0
-            ? storePreferences.shortcuts
-            : createSystemShortcuts(t),
+        shortcuts,
       };
 
       console.log('从 store 加载的偏好数据:', preferences);
@@ -364,7 +396,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
         console.log('form.reset完成，当前表单值:', form.getValues());
       }, 100);
     }
-  }, [storePreferences, form]);
+  }, [storePreferences, form, t, updateShortcutTranslations]);
 
   // 防抖的字体保存函数
   const debouncedFontSave = useCallback((values: UserPreferences) => {
@@ -501,6 +533,26 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   useEffect(() => {
     loadPreferences();
   }, [loadPreferences]);
+
+  // 🔧 监听语言变化，更新快捷键翻译
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      console.log('语言已切换，更新快捷键翻译');
+      const currentShortcuts = form.getValues('shortcuts');
+      if (currentShortcuts && currentShortcuts.length > 0) {
+        const updatedShortcuts = updateShortcutTranslations(currentShortcuts);
+        form.setValue('shortcuts', updatedShortcuts);
+      }
+    };
+
+    // 监听 i18n 的语言变化事件
+    i18n.on('languageChanged', handleLanguageChange);
+
+    // 清理监听器
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, [form, updateShortcutTranslations]);
 
   // 清理超时
   useEffect(() => {
