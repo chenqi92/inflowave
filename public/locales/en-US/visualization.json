@@ -62,5 +62,17 @@
   "line_style": "Line Style",
   "fill_color": "Fill Color",
   "stroke_color": "Stroke Color",
-  "search_charts": "Search charts..."
+  "search_charts": "Search charts...",
+  "needConnection": "Database Connection Required",
+  "newChart": "New Chart",
+  "createNewChart": "Create New Chart",
+  "enterChartTitle": "Enter chart title",
+  "enterInfluxQL": "Enter InfluxQL query statement",
+  "fillCompleteInfo": "Please fill in complete chart information",
+  "chartCreated": "Chart created successfully",
+  "chartRefreshed": "Chart refreshed",
+  "chartDeleted": "Chart deleted",
+  "chartNotFound": "Chart not found",
+  "editChart": "Edit Chart",
+  "deleteChart": "Delete Chart"
 }

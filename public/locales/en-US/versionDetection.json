@@ -1,0 +1,14 @@
+{
+  "detecting": "Detecting database version...",
+  "failed": "Version detection failed",
+  "success": "Version detection successful",
+  "databaseType": "Database Type",
+  "detectionType": "Detection Type",
+  "supportedFeatures": "Supported Features",
+  "compatibilityWarning": "Version Compatibility Warning",
+  "detectionTime": "Detection Time",
+  "triedMethods": "Tried Methods",
+  "majorVersion": "Major Version",
+  "minorVersion": "Minor Version",
+  "patchVersion": "Patch Version"
+}

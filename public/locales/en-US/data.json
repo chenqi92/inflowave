@@ -65,6 +65,19 @@
     "import_file": "Import File",
     "import_success": "Data imported successfully",
     "import_failed": "Data import failed",
+    "dropZoneText": "Click or drag files to this area",
+    "parsing": "Parsing...",
+    "measurementName": "Measurement Name",
+    "batchSize": "Batch Size",
+    "skipErrors": "Skip Error Rows",
+    "sourceField": "Source Field",
+    "targetField": "Target Field",
+    "fieldType": "Field Type",
+    "timeField": "Time",
+    "tagField": "Tag",
+    "field": "Field",
+    "measurementExample": "e.g.: temperature",
+    "fileEmpty": "File is empty",
     "csv_format": "CSV Format",
     "csv_features": {
       "header": "First row as header",
@@ -91,7 +104,17 @@
   "messages": {
     "load_databases_failed": "Failed to load database list",
     "write_success": "Data written successfully",
-    "write_failed": "Data write failed"
+    "write_failed": "Data write failed",
+    "enterMeasurement": "Please enter measurement name",
+    "dataPointAdded": "Data point added to batch",
+    "dataPointDeleted": "Data point deleted",
+    "allDataPointsCleared": "All data points cleared",
+    "selectConnectionAndDatabase": "Please select connection and database first",
+    "noValidDataPoints": "No valid data points could be parsed",
+    "enterMeasurementName": "Enter measurement name",
+    "selectDataFormat": "Select data format",
+    "enterTargetFieldName": "Enter target field name",
+    "selectOrEnterMeasurement": "Select or enter measurement name"
   },
 
   "export": {

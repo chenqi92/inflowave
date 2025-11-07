@@ -1,0 +1,6 @@
+{
+  "stopped": "Embedded server stopped",
+  "initFailed": "Failed to initialize embedded server service",
+  "startFailed": "Failed to start embedded server",
+  "stopFailed": "Failed to stop embedded server"
+}

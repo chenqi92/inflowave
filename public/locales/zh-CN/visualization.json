@@ -62,5 +62,17 @@
   "line_style": "线型",
   "fill_color": "填充颜色",
   "stroke_color": "描边颜色",
-  "search_charts": "搜索图表..."
+  "search_charts": "搜索图表...",
+  "needConnection": "需要连接数据库",
+  "newChart": "新建图表",
+  "createNewChart": "创建新图表",
+  "enterChartTitle": "输入图表标题",
+  "enterInfluxQL": "输入 InfluxQL 查询语句",
+  "fillCompleteInfo": "请填写完整的图表信息",
+  "chartCreated": "图表创建成功",
+  "chartRefreshed": "图表已刷新",
+  "chartDeleted": "图表已删除",
+  "chartNotFound": "图表不存在",
+  "editChart": "编辑图表",
+  "deleteChart": "删除图表"
 }

@@ -1,0 +1,14 @@
+{
+  "detecting": "正在检测数据库版本...",
+  "failed": "版本检测失败",
+  "success": "版本检测成功",
+  "databaseType": "数据库类型",
+  "detectionType": "检测类型",
+  "supportedFeatures": "支持的功能",
+  "compatibilityWarning": "版本兼容性警告",
+  "detectionTime": "检测时间",
+  "triedMethods": "尝试方法",
+  "majorVersion": "主版本",
+  "minorVersion": "次版本",
+  "patchVersion": "补丁版本"
+}

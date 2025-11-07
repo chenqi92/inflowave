@@ -1,0 +1,11 @@
+{
+  "unknown": "Unknown",
+  "unknownState": "Unknown State",
+  "healthy": "Healthy",
+  "unhealthy": "Unhealthy",
+  "checking": "Checking",
+  "connected": "Connected",
+  "disconnected": "Disconnected",
+  "available": "Available",
+  "unavailable": "Unavailable"
+}

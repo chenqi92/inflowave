@@ -1,0 +1,11 @@
+{
+  "unsupportedCopyFormat": "不支持的复制格式",
+  "copyFailed": "复制数据失败",
+  "getTableStructureFailed": "获取表结构失败",
+  "loadDataFailed": "加载数据失败",
+  "applyFilterFailed": "应用过滤器失败",
+  "cellContentCopied": "已复制单元格内容",
+  "minValue": "最小值",
+  "maxValue": "最大值",
+  "enterValue": "输入值"
+}

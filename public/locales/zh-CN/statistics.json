@@ -1,0 +1,8 @@
+{
+  "firstRecord": "首条记录",
+  "lastRecord": "末条记录",
+  "dataSpan": "数据跨度",
+  "estimatedSize": "估算大小",
+  "retentionPolicy": "保留策略",
+  "noData": "暂无统计信息"
+}

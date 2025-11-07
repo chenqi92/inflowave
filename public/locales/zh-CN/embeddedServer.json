@@ -1,0 +1,6 @@
+{
+  "stopped": "嵌入式服务器已停止",
+  "initFailed": "初始化嵌入式服务器服务失败",
+  "startFailed": "启动嵌入式服务器失败",
+  "stopFailed": "停止嵌入式服务器失败"
+}

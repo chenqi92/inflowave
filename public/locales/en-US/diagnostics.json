@@ -1,0 +1,17 @@
+{
+  "searchBottlenecks": "Search bottlenecks...",
+  "selectSeverity": "Severity",
+  "selectType": "Type",
+  "selectStatus": "Status",
+  "activeBottlenecks": "Active Bottlenecks",
+  "criticalBottlenecks": "Critical Bottlenecks",
+  "highRiskBottlenecks": "High Risk Bottlenecks",
+  "overallImpact": "Overall Impact",
+  "cpuUsage": "CPU Usage",
+  "memoryUsage": "Memory Usage",
+  "diskIO": "Disk I/O",
+  "networkIO": "Network I/O",
+  "totalLockWaits": "Total Lock Waits",
+  "averageWaitTime": "Average Wait Time",
+  "maxWaitTime": "Max Wait Time"
+}

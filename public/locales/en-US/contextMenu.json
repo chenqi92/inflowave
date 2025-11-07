@@ -1,0 +1,14 @@
+{
+  "seriesInfoFetched": "Series information fetched",
+  "navigatingToVisualization": "Navigating to visualization page...",
+  "executingQuery": "Executing query...",
+  "formattingQuery": "Formatting query...",
+  "templateInserted": "Template inserted",
+  "explainQueryInDevelopment": "Query explanation feature in development...",
+  "savingQuery": "Saving query...",
+  "commentToggled": "Comment toggled",
+  "filterQueryGenerated": "Filter query generated",
+  "aggregateQueryGenerated": "Aggregate query generated",
+  "creatingColumnChart": "Creating column chart...",
+  "exportingColumnData": "Exporting column data..."
+}

@@ -1,0 +1,13 @@
+{
+  "title": "键盘快捷键",
+  "shortcut": "快捷键",
+  "cannotCustomize": "此快捷键不可自定义",
+  "updated": "快捷键已更新",
+  "reset": "快捷键已重置",
+  "allReset": "所有快捷键已重置",
+  "exported": "快捷键配置已导出",
+  "imported": "快捷键配置已导入",
+  "search": "搜索快捷键...",
+  "selectCategory": "选择类别",
+  "pressKeys": "按下快捷键"
+}

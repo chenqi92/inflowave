@@ -1,0 +1,8 @@
+{
+  "firstRecord": "First Record",
+  "lastRecord": "Last Record",
+  "dataSpan": "Data Span",
+  "estimatedSize": "Estimated Size",
+  "retentionPolicy": "Retention Policy",
+  "noData": "No statistics available"
+}

@@ -65,6 +65,19 @@
     "import_file": "导入文件",
     "import_success": "数据导入成功",
     "import_failed": "数据导入失败",
+    "dropZoneText": "点击或拖拽文件到此区域",
+    "parsing": "解析中...",
+    "measurementName": "测量名称",
+    "batchSize": "批量大小",
+    "skipErrors": "跳过错误行",
+    "sourceField": "源字段",
+    "targetField": "目标字段",
+    "fieldType": "字段类型",
+    "timeField": "时间",
+    "tagField": "标签",
+    "field": "字段",
+    "measurementExample": "例如: temperature",
+    "fileEmpty": "文件为空",
     "csv_format": "CSV 格式",
     "csv_features": {
       "header": "第一行为表头",
@@ -91,7 +104,17 @@
   "messages": {
     "load_databases_failed": "获取数据库列表失败",
     "write_success": "数据写入成功",
-    "write_failed": "数据写入失败"
+    "write_failed": "数据写入失败",
+    "enterMeasurement": "请输入测量名称",
+    "dataPointAdded": "数据点已添加到批次",
+    "dataPointDeleted": "数据点已删除",
+    "allDataPointsCleared": "已清空所有数据点",
+    "selectConnectionAndDatabase": "请先选择连接和数据库",
+    "noValidDataPoints": "未能解析出有效的数据点",
+    "enterMeasurementName": "输入测量名称",
+    "selectDataFormat": "选择数据格式",
+    "enterTargetFieldName": "输入目标字段名",
+    "selectOrEnterMeasurement": "选择或输入测量名称"
   },
 
   "export": {

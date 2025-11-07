@@ -1,0 +1,6 @@
+{
+  "noData": "没有数据可导出",
+  "failed": "导出数据失败",
+  "defaultFilename": "export",
+  "customValuePlaceholder": "留空或输入自定义值"
+}

@@ -1,0 +1,12 @@
+{
+  "category": {
+    "system": "System Fonts",
+    "modern": "Modern Sans-serif Fonts",
+    "classic": "Classic Fonts",
+    "mono": "Monospace Fonts"
+  },
+  "systemDefault": "System Default",
+  "selectFamily": "Select Font Family",
+  "loadingFailed": "Font loading failed",
+  "loading": "Loading font..."
+}

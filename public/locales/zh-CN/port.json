@@ -1,0 +1,20 @@
+{
+  "label": "端口",
+  "status": "端口状态",
+  "currentPort": "当前端口",
+  "statusLabel": "状态",
+  "serviceReinitialized": "端口发现服务已重新初始化",
+  "reinitializationFailed": "重新初始化失败",
+  "conflictResolved": "端口冲突已解决",
+  "conflictResolutionFailed": "端口冲突解决失败",
+  "healthCheck": "健康检查",
+  "healthCheckFailed": "健康检查失败",
+  "refreshStats": "刷新统计",
+  "statsRefreshed": "端口统计信息已刷新",
+  "statsRefreshFailed": "刷新统计信息失败",
+  "noConflicts": "没有发现端口冲突",
+  "checkConflicts": "检查冲突",
+  "conflictCheckFailed": "检查端口冲突失败",
+  "resolveConflict": "解决冲突",
+  "statistics": "端口统计"
+}

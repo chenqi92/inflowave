@@ -1,0 +1,6 @@
+{
+  "noData": "No data to export",
+  "failed": "Failed to export data",
+  "defaultFilename": "export",
+  "customValuePlaceholder": "Leave blank or enter custom value"
+}

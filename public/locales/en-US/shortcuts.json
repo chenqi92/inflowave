@@ -1,0 +1,13 @@
+{
+  "title": "Keyboard Shortcuts",
+  "shortcut": "Shortcut",
+  "cannotCustomize": "This shortcut cannot be customized",
+  "updated": "Shortcut updated",
+  "reset": "Shortcut reset",
+  "allReset": "All shortcuts reset",
+  "exported": "Shortcut configuration exported",
+  "imported": "Shortcut configuration imported",
+  "search": "Search shortcuts...",
+  "selectCategory": "Select category",
+  "pressKeys": "Press keys"
+}

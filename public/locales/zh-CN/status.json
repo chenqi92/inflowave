@@ -1,0 +1,11 @@
+{
+  "unknown": "未知",
+  "unknownState": "未知状态",
+  "healthy": "健康",
+  "unhealthy": "异常",
+  "checking": "检查中",
+  "connected": "已连接",
+  "disconnected": "未连接",
+  "available": "可用",
+  "unavailable": "不可用"
+}

@@ -268,6 +268,188 @@ export const useDataTranslation = () => {
   return useTranslation('data');
 };
 
+/**
+ * 连接管理翻译 Hook
+ */
+export const useConnectionsTranslation = () => {
+  return useTranslation('connections');
+};
+
+/**
+ * 查询翻译 Hook
+ */
+export const useQueryTranslation = () => {
+  return useTranslation('query');
+};
+
+/**
+ * 更新器翻译 Hook
+ */
+export const useUpdaterTranslation = () => {
+  return useTranslation('updater');
+};
+
+/**
+ * 仪表板翻译 Hook
+ */
+export const useDashboardTranslation = () => {
+  return useTranslation('dashboard');
+};
+
+/**
+ * 图表翻译 Hook
+ */
+export const useChartTranslation = () => {
+  return useTranslation('chart');
+};
+
+/**
+ * 标签页翻译 Hook
+ */
+export const useTabsTranslation = () => {
+  return useTranslation('tabs');
+};
+
+/**
+ * 端口状态翻译 Hook
+ */
+export const usePortTranslation = () => {
+  return useTranslation('port');
+};
+
+/**
+ * 嵌入式服务器翻译 Hook
+ */
+export const useEmbeddedServerTranslation = () => {
+  return useTranslation('embeddedServer');
+};
+
+/**
+ * 数据浏览器翻译 Hook
+ */
+export const useDataBrowserTranslation = () => {
+  return useTranslation('dataBrowser');
+};
+
+/**
+ * 上下文菜单翻译 Hook
+ */
+export const useContextMenuTranslation = () => {
+  return useTranslation('contextMenu');
+};
+
+/**
+ * 快捷键翻译 Hook
+ */
+export const useShortcutsTranslation = () => {
+  return useTranslation('shortcuts');
+};
+
+/**
+ * 用户引导翻译 Hook
+ */
+export const useUserGuideTranslation = () => {
+  return useTranslation('userGuide');
+};
+
+/**
+ * 版本检测翻译 Hook
+ */
+export const useVersionDetectionTranslation = () => {
+  return useTranslation('versionDetection');
+};
+
+/**
+ * 保留策略翻译 Hook
+ */
+export const useRetentionPolicyTranslation = () => {
+  return useTranslation('retentionPolicy');
+};
+
+/**
+ * 统计翻译 Hook
+ */
+export const useStatisticsTranslation = () => {
+  return useTranslation('statistics');
+};
+
+/**
+ * 导出翻译 Hook
+ */
+export const useExportTranslation = () => {
+  return useTranslation('export');
+};
+
+/**
+ * 状态翻译 Hook
+ */
+export const useStatusTranslation = () => {
+  return useTranslation('status');
+};
+
+/**
+ * 字体翻译 Hook
+ */
+export const useFontTranslation = () => {
+  return useTranslation('font');
+};
+
+/**
+ * 主题翻译 Hook
+ */
+export const useThemeTranslation = () => {
+  return useTranslation('theme');
+};
+
+/**
+ * 数据类型翻译 Hook
+ */
+export const useDataTypeTranslation = () => {
+  return useTranslation('dataType');
+};
+
+/**
+ * 项目类型翻译 Hook
+ */
+export const useItemTypeTranslation = () => {
+  return useTranslation('itemType');
+};
+
+/**
+ * 图表类型翻译 Hook
+ */
+export const useChartTypeTranslation = () => {
+  return useTranslation('chartType');
+};
+
+/**
+ * 过滤器翻译 Hook
+ */
+export const useFilterTranslation = () => {
+  return useTranslation('filter');
+};
+
+/**
+ * 扩展翻译 Hook
+ */
+export const useExtensionTranslation = () => {
+  return useTranslation('extension');
+};
+
+/**
+ * 诊断翻译 Hook
+ */
+export const useDiagnosticsTranslation = () => {
+  return useTranslation('diagnostics');
+};
+
+/**
+ * 全局搜索翻译 Hook
+ */
+export const useGlobalSearchTranslation = () => {
+  return useTranslation('globalSearch');
+};
+
 // ============================================================================
 // 高级翻译工具
 // ============================================================================

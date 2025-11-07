@@ -1,0 +1,11 @@
+{
+  "description": "保留策略说明",
+  "name": "策略名称",
+  "enterName": "请输入策略名称",
+  "timeFormatDescription": "时间格式说明",
+  "durationFormat": "持续时间格式",
+  "examples": "示例",
+  "selectDuration": "选择保留时间",
+  "selectShardDuration": "选择分片组持续时间",
+  "replicationFactor": "副本数"
+}

@@ -1,0 +1,12 @@
+{
+  "category": {
+    "system": "系统字体",
+    "modern": "现代无衬线字体",
+    "classic": "经典字体",
+    "mono": "等宽字体"
+  },
+  "systemDefault": "系统默认",
+  "selectFamily": "选择字体系列",
+  "loadingFailed": "字体加载失败",
+  "loading": "正在加载字体..."
+}

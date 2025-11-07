@@ -1,0 +1,10 @@
+{
+  "unsavedTabs": "Unsaved Query Tabs",
+  "unsavedTabsDescription": "You have {{count}} unsaved query tabs. Would you like to save these tabs before closing the application?",
+  "saveHint": "Choose \"Save\": These tabs will be restored on next startup",
+  "discardHint": "Choose \"Don't Save\": These tabs will be permanently discarded",
+  "detachToNewWindow": "Detach to New Window",
+  "detachHint": "Continue dragging to detach tab to separate window",
+  "reattach": "Reattach",
+  "reattachHint": "Drag here to reattach to main window"
+}

@@ -1,0 +1,20 @@
+{
+  "label": "Port",
+  "status": "Port Status",
+  "currentPort": "Current Port",
+  "statusLabel": "Status",
+  "serviceReinitialized": "Port discovery service has been reinitialized",
+  "reinitializationFailed": "Reinitialization failed",
+  "conflictResolved": "Port conflict resolved",
+  "conflictResolutionFailed": "Failed to resolve port conflict",
+  "healthCheck": "Health Check",
+  "healthCheckFailed": "Health check failed",
+  "refreshStats": "Refresh Statistics",
+  "statsRefreshed": "Port statistics refreshed",
+  "statsRefreshFailed": "Failed to refresh statistics",
+  "noConflicts": "No port conflicts detected",
+  "checkConflicts": "Check Conflicts",
+  "conflictCheckFailed": "Failed to check port conflicts",
+  "resolveConflict": "Resolve Conflict",
+  "statistics": "Port Statistics"
+}

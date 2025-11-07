@@ -1,0 +1,11 @@
+{
+  "unsupportedCopyFormat": "Unsupported copy format",
+  "copyFailed": "Failed to copy data",
+  "getTableStructureFailed": "Failed to get table structure",
+  "loadDataFailed": "Failed to load data",
+  "applyFilterFailed": "Failed to apply filter",
+  "cellContentCopied": "Cell content copied",
+  "minValue": "Min Value",
+  "maxValue": "Max Value",
+  "enterValue": "Enter value"
+}

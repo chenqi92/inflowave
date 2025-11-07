@@ -1,0 +1,14 @@
+{
+  "seriesInfoFetched": "序列信息已获取",
+  "navigatingToVisualization": "正在跳转到可视化页面...",
+  "executingQuery": "正在执行查询...",
+  "formattingQuery": "正在格式化查询...",
+  "templateInserted": "模板已插入",
+  "explainQueryInDevelopment": "查询解释功能开发中...",
+  "savingQuery": "正在保存查询...",
+  "commentToggled": "已切换注释",
+  "filterQueryGenerated": "筛选查询已生成",
+  "aggregateQueryGenerated": "聚合查询已生成",
+  "creatingColumnChart": "正在创建列图表...",
+  "exportingColumnData": "正在导出列数据..."
+}

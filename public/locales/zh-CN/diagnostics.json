@@ -1,0 +1,17 @@
+{
+  "searchBottlenecks": "搜索瓶颈...",
+  "selectSeverity": "严重程度",
+  "selectType": "类型",
+  "selectStatus": "状态",
+  "activeBottlenecks": "活跃瓶颈",
+  "criticalBottlenecks": "严重瓶颈",
+  "highRiskBottlenecks": "高危瓶颈",
+  "overallImpact": "总体影响",
+  "cpuUsage": "CPU使用率",
+  "memoryUsage": "内存使用率",
+  "diskIO": "磁盘I/O",
+  "networkIO": "网络I/O",
+  "totalLockWaits": "总锁等待数",
+  "averageWaitTime": "平均等待时间",
+  "maxWaitTime": "最大等待时间"
+}

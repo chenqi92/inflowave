@@ -1,0 +1,13 @@
+{
+  "enterIntegrationName": "Enter integration name",
+  "selectIntegrationType": "Select integration type",
+  "apiEndpointExample": "https://api.example.com",
+  "selectAuthType": "Select authentication type",
+  "enterWebhookName": "Enter Webhook name",
+  "webhookUrlExample": "https://hooks.example.com/webhook",
+  "selectEventToListen": "Select event to listen",
+  "secretKeyPlaceholder": "Secret key for signature verification",
+  "enterRuleName": "Enter rule name",
+  "ruleDescriptionPlaceholder": "Describe the purpose of this automation rule",
+  "selectTriggerType": "Select trigger type"
+}

@@ -1,0 +1,13 @@
+{
+  "enterIntegrationName": "输入集成名称",
+  "selectIntegrationType": "选择集成类型",
+  "apiEndpointExample": "https://api.example.com",
+  "selectAuthType": "选择认证类型",
+  "enterWebhookName": "输入 Webhook 名称",
+  "webhookUrlExample": "https://hooks.example.com/webhook",
+  "selectEventToListen": "选择要监听的事件",
+  "secretKeyPlaceholder": "用于签名验证的密钥",
+  "enterRuleName": "输入规则名称",
+  "ruleDescriptionPlaceholder": "描述这个自动化规则的用途",
+  "selectTriggerType": "选择触发器类型"
+}

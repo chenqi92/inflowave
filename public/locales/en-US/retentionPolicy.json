@@ -1,0 +1,11 @@
+{
+  "description": "Retention Policy Description",
+  "name": "Policy Name",
+  "enterName": "Please enter policy name",
+  "timeFormatDescription": "Time Format Description",
+  "durationFormat": "Duration Format",
+  "examples": "Examples",
+  "selectDuration": "Select retention duration",
+  "selectShardDuration": "Select shard group duration",
+  "replicationFactor": "Replication Factor"
+}
