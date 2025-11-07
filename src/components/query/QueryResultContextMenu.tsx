@@ -9,6 +9,7 @@ import {
 } from '@/components/ui';
 import {showMessage} from '@/utils/message';
 import {writeToClipboard} from '@/utils/clipboard';
+import {useMenuTranslation} from '@/hooks/useTranslation';
 import {
     Copy,
     BarChart,
@@ -37,6 +38,8 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                                                                            rowData,
                                                                            onAction,
                                                                        }) => {
+    const {t} = useMenuTranslation();
+
     // 处理菜单点击
     const handleMenuClick = async (action: string) => {
         try {
@@ -45,7 +48,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                     // 复制单元格内容
                     if (selectedData !== undefined) {
                         await writeToClipboard(String(selectedData), {
-                            successMessage: '已复制单元格内容',
+                            successMessage: t('query_result_menu.copied_cell_content'),
                         });
                     }
                     break;
@@ -54,7 +57,9 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                     // 复制整行数据
                     if (rowData) {
                         const rowText = Object.values(rowData).join('\t');
-                        await writeToClipboard(rowText, {successMessage: '已复制行数据'});
+                        await writeToClipboard(rowText, {
+                            successMessage: t('query_result_menu.copied_row_data')
+                        });
                     }
                     break;
 
@@ -62,7 +67,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                     // 复制列名
                     if (columnName) {
                         await writeToClipboard(columnName, {
-                            successMessage: `已复制列名: ${columnName}`,
+                            successMessage: t('query_result_menu.copied_column_name', {name: columnName}),
                         });
                     }
                     break;
@@ -71,7 +76,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                     // 复制为 JSON 格式
                     if (rowData) {
                         await writeToClipboard(JSON.stringify(rowData, null, 2), {
-                            successMessage: '已复制为 JSON 格式',
+                            successMessage: t('query_result_menu.copied_as_json'),
                         });
                     }
                     break;
@@ -81,7 +86,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                     if (rowData) {
                         const csvText = Object.values(rowData).join(',');
                         await writeToClipboard(csvText, {
-                            successMessage: '已复制为 CSV 格式',
+                            successMessage: t('query_result_menu.copied_as_csv'),
                         });
                     }
                     break;
@@ -89,55 +94,61 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                 case 'filter_by_value':
                     // 按值过滤
                     if (selectedData !== undefined && columnName) {
-                        showMessage.success(`正在按 ${columnName} = ${selectedData} 过滤`);
+                        showMessage.success(t('query_result_menu.filtering_by_value', {
+                            column: columnName,
+                            value: selectedData
+                        }));
                     }
                     break;
 
                 case 'filter_not_equal':
                     // 按值排除
                     if (selectedData !== undefined && columnName) {
-                        showMessage.success(`正在按 ${columnName} != ${selectedData} 过滤`);
+                        showMessage.success(t('query_result_menu.filtering_not_equal', {
+                            column: columnName,
+                            value: selectedData
+                        }));
                     }
                     break;
 
                 case 'sort_asc':
                     // 升序排序
                     if (columnName) {
-                        showMessage.success(`正在按 ${columnName} 升序排序`);
+                        showMessage.success(t('query_result_menu.sorting_asc', {column: columnName}));
                     }
                     break;
 
                 case 'sort_desc':
                     // 降序排序
                     if (columnName) {
-                        showMessage.success(`正在按 ${columnName} 降序排序`);
+                        showMessage.success(t('query_result_menu.sorting_desc', {column: columnName}));
                     }
                     break;
 
                 case 'export_results':
                     // 导出查询结果
-                    showMessage.success('正在导出查询结果');
+                    showMessage.success(t('query_result_menu.exporting_results'));
                     break;
 
                 case 'visualize_data':
                     // 数据可视化
-                    showMessage.success('正在创建数据可视化');
+                    showMessage.success(t('query_result_menu.creating_visualization'));
                     break;
 
                 case 'edit_query':
                     // 编辑查询
-                    showMessage.success('正在编辑查询');
+                    showMessage.success(t('query_result_menu.editing_query'));
                     break;
 
                 case 'view_details':
                     // 查看详细信息
                     if (rowData) {
-                        showMessage.success('正在查看详细信息');
+                        showMessage.success(t('query_result_menu.viewing_details'));
                     }
                     break;
 
                 default:
-                    console.warn('未处理的菜单动作:', action);
+                    console.warn(t('query_result_menu.unhandled_action'), action);
                     break;
             }
 
@@ -146,8 +157,8 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                 onAction(action, {selectedData, columnName, rowData});
             }
         } catch (error) {
-            console.error('执行菜单动作失败:', error);
-            showMessage.error(`操作失败: ${error}`);
+            console.error(t('query_result_menu.action_failed'), error);
+            showMessage.error(t('query_result_menu.operation_failed', {error: String(error)}));
         }
     };
 
@@ -159,104 +170,104 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                 </div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
-                <DropdownMenuLabel>复制操作</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('query_result_menu.copy_actions')}</DropdownMenuLabel>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('copy_cell')}
                     disabled={selectedData === undefined}
                 >
                     <Copy className='w-4 h-4 mr-2'/>
-                    复制单元格
+                    {t('query_result_menu.copy_cell')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('copy_row')}
                     disabled={!rowData}
                 >
                     <Copy className='w-4 h-4 mr-2'/>
-                    复制整行
+                    {t('query_result_menu.copy_row')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('copy_column')}
                     disabled={!columnName}
                 >
                     <Copy className='w-4 h-4 mr-2'/>
-                    复制列名
+                    {t('query_result_menu.copy_column_name')}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator/>
 
-                <DropdownMenuLabel>格式化复制</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('query_result_menu.format_copy')}</DropdownMenuLabel>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('copy_as_json')}
                     disabled={!rowData}
                 >
                     <FileText className='w-4 h-4 mr-2'/>
-                    复制为 JSON
+                    {t('query_result_menu.copy_as_json')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('copy_as_csv')}
                     disabled={!rowData}
                 >
                     <Table className='w-4 h-4 mr-2'/>
-                    复制为 CSV
+                    {t('query_result_menu.copy_as_csv')}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator/>
 
-                <DropdownMenuLabel>过滤操作</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('query_result_menu.filter_actions')}</DropdownMenuLabel>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('filter_by_value')}
                     disabled={selectedData === undefined || !columnName}
                 >
                     <Filter className='w-4 h-4 mr-2'/>
-                    按此值过滤
+                    {t('query_result_menu.filter_by_this_value')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('filter_not_equal')}
                     disabled={selectedData === undefined || !columnName}
                 >
                     <Filter className='w-4 h-4 mr-2'/>
-                    排除此值
+                    {t('query_result_menu.exclude_this_value')}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator/>
 
-                <DropdownMenuLabel>排序操作</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('query_result_menu.sort_actions')}</DropdownMenuLabel>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('sort_asc')}
                     disabled={!columnName}
                 >
                     <ArrowUp className='w-4 h-4 mr-2'/>
-                    升序排序
+                    {t('query_result_menu.sort_ascending')}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('sort_desc')}
                     disabled={!columnName}
                 >
                     <ArrowDown className='w-4 h-4 mr-2'/>
-                    降序排序
+                    {t('query_result_menu.sort_descending')}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator />
+                <DropdownMenuSeparator/>
 
-                <DropdownMenuLabel>其他操作</DropdownMenuLabel>
+                <DropdownMenuLabel>{t('query_result_menu.other_actions')}</DropdownMenuLabel>
                 <DropdownMenuItem
                     onClick={() => handleMenuClick('view_details')}
                     disabled={!rowData}
                 >
                     <Eye className='w-4 h-4 mr-2'/>
-                    查看详情
+                    {t('query_result_menu.view_details')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleMenuClick('visualize_data')}>
                     <BarChart className='w-4 h-4 mr-2'/>
-                    数据可视化
+                    {t('query_result_menu.visualize_data')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleMenuClick('export_results')}>
                     <FileDown className='w-4 h-4 mr-2'/>
-                    导出结果
+                    {t('query_result_menu.export_results')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleMenuClick('edit_query')}>
                     <Edit className='w-4 h-4 mr-2'/>
-                    编辑查询
+                    {t('query_result_menu.edit_query')}
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
