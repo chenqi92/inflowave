@@ -35,6 +35,7 @@ import {
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 // 性能指标类型
 interface PerformanceMetrics {
@@ -149,7 +150,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
       setMetricsData(result);
       generateMockData();
     } catch (error) {
-      console.error('获取性能数据失败:', error);
+      logger.error('获取性能数据失败:', error);
       showMessage.error(`获取性能数据失败: ${error}`);
       generateMockData(); // 即使失败也生成模拟数据用于展示
     } finally {

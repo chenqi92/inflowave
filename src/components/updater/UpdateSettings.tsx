@@ -29,6 +29,7 @@ import {updaterService} from '@/services/updaterService';
 import {ReleaseNotesManager} from './ReleaseNotesManager';
 import {toast} from 'sonner';
 import {useSettingsTranslation} from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 export const UpdateSettings: React.FC = () => {
     const { t } = useSettingsTranslation();
@@ -47,7 +48,7 @@ export const UpdateSettings: React.FC = () => {
             const currentSettings = await updaterService.getSettings();
             setSettings(currentSettings);
         } catch (error) {
-            console.error('Failed to load settings:', error);
+            logger.error('Failed to load settings:', error);
             toast.error(t('load_failed'));
         } finally {
             setLoading(false);
@@ -61,7 +62,7 @@ export const UpdateSettings: React.FC = () => {
             setSettings(newSettings);
             toast.success(t('settings_saved'));
         } catch (error) {
-            console.error('Failed to save settings:', error);
+            logger.error('Failed to save settings:', error);
             toast.error(t('settings_save_failed'));
         } finally {
             setSaving(false);
@@ -90,7 +91,7 @@ export const UpdateSettings: React.FC = () => {
                 toast.success(t('already_latest_text'));
             }
         } catch (error) {
-            console.error('Failed to check for updates:', error);
+            logger.error('Failed to check for updates:', error);
             toast.error(t('check_update_failed') || '检查更新失败');
         } finally {
             setChecking(false);
@@ -105,7 +106,7 @@ export const UpdateSettings: React.FC = () => {
             await saveSettings(newSettings);
             toast.success(t('clear_skipped_success') || '已清除跳过的版本');
         } catch (error) {
-            console.error('Failed to clear skipped versions:', error);
+            logger.error('Failed to clear skipped versions:', error);
             toast.error(t('clear_skipped_failed') || '清除失败');
         }
     };

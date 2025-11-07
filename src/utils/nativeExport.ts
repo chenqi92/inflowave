@@ -7,6 +7,7 @@ import { safeTauriInvoke, safeTauriInvokeOptional } from '@/utils/tauri';
 import { convertToCSV, convertToJSON, convertToExcel, convertToTSV, convertToMarkdown, convertToSQL, getFileExtension, getMimeType } from './export';
 import { getFileOperationError, formatErrorMessage } from '@/utils/userFriendlyErrors';
 import type { QueryResult } from '@/types';
+import logger from '@/utils/logger';
 
 export interface NativeExportOptions {
   format: 'csv' | 'json' | 'excel' | 'xlsx' | 'tsv' | 'markdown' | 'sql';
@@ -88,7 +89,7 @@ export const exportWithNativeDialog = async (
     const filters = getFileFilters(options.format);
 
     // 调试日志
-    console.log('导出参数调试:', {
+    logger.info('导出参数调试:', {
       originalDefaultFilename: options.defaultFilename,
       generatedDefaultFilename: defaultFilename,
       defaultPath,
@@ -104,7 +105,7 @@ export const exportWithNativeDialog = async (
       }
     };
 
-    console.log('Tauri调用参数 (包装格式):', tauriParams);
+    logger.info('Tauri调用参数 (包装格式):', tauriParams);
 
     // 显示原生文件保存对话框 - 使用safeTauriInvokeOptional允许null返回值
     const dialogResult = await safeTauriInvokeOptional<{ path?: string; name?: string }>(
@@ -165,7 +166,7 @@ export const exportWithNativeDialog = async (
 
     return true;
   } catch (error) {
-    console.error('原生导出失败:', error);
+    logger.error('原生导出失败:', error);
     const friendlyError = getFileOperationError(String(error), 'save');
     throw new Error(formatErrorMessage(friendlyError));
   }
@@ -226,7 +227,7 @@ export const exportToPath = async (
       });
     }
   } catch (error) {
-    console.error('导出到指定路径失败:', error);
+    logger.error('导出到指定路径失败:', error);
     const friendlyError = getFileOperationError(String(error), 'write');
     throw new Error(formatErrorMessage(friendlyError));
   }
@@ -260,7 +261,7 @@ export const quickExport = async (
     
     return fullPath;
   } catch (error) {
-    console.error('快速导出失败:', error);
+    logger.error('快速导出失败:', error);
     throw new Error(`快速导出失败: ${error}`);
   }
 };
@@ -289,7 +290,7 @@ export const batchExport = async (
         exportedFiles.push(`${baseFilename}.${getFileExtension(format).slice(1)}`);
       }
     } catch (error) {
-      console.error(`导出 ${format} 格式失败:`, error);
+      logger.error(`导出 ${format} 格式失败:`, error);
       // 继续导出其他格式
     }
   }

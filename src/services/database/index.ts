@@ -32,6 +32,7 @@ import { DatabaseRegistry } from './DatabaseRegistry';
 import { QueryEngineFactory } from './QueryEngineFactory';
 import { DataSourceNodeBuilder } from './DataSourceNodeBuilder';
 import type { DatabaseType } from '@/types';
+import logger from '@/utils/logger';
 
 // 查询引擎
 export { QueryEngineBase } from './QueryEngineBase';
@@ -42,7 +43,7 @@ export { default as IoTDBQueryEngine } from './IoTDBQueryEngine';
  * 初始化数据库服务
  */
 export function initializeDatabaseServices(): void {
-  console.log('🚀 初始化数据库服务...');
+  logger.info('🚀 初始化数据库服务...');
   
   try {
     // 初始化数据库注册表
@@ -50,25 +51,25 @@ export function initializeDatabaseServices(): void {
 
     // 验证注册的数据库类型
     const supportedTypes = DatabaseRegistry.getInstance().getSupportedTypes();
-    console.log('📋 支持的数据库类型:', supportedTypes);
+    logger.info('📋 支持的数据库类型:', supportedTypes);
 
     // 验证每个数据库类型的配置
     for (const dbType of supportedTypes) {
       try {
         const features = DatabaseRegistry.getInstance().getFeatures(dbType);
-        console.log(`✅ ${dbType} 配置验证通过:`, {
+        logger.debug(`✅ ${dbType} 配置验证通过:`, {
           levels: features.hierarchy.levels.length,
           languages: features.queryCapabilities.languages.length,
           versions: Object.keys(features.versionFeatures).length
         });
       } catch (error) {
-        console.error(`❌ ${dbType} 配置验证失败:`, error);
+        logger.error(`❌ ${dbType} 配置验证失败:`, error);
       }
     }
     
-    console.log('✅ 数据库服务初始化完成');
+    logger.debug('✅ 数据库服务初始化完成');
   } catch (error) {
-    console.error('❌ 数据库服务初始化失败:', error);
+    logger.error('❌ 数据库服务初始化失败:', error);
     throw error;
   }
 }
@@ -109,13 +110,13 @@ export function getDatabaseServiceStatus(): {
  * 清理数据库服务
  */
 export async function cleanupDatabaseServices(): Promise<void> {
-  console.log('🧹 清理数据库服务...');
+  logger.info('🧹 清理数据库服务...');
   
   try {
     await QueryEngineFactory.cleanup();
-    console.log('✅ 数据库服务清理完成');
+    logger.debug('✅ 数据库服务清理完成');
   } catch (error) {
-    console.error('❌ 数据库服务清理失败:', error);
+    logger.error('❌ 数据库服务清理失败:', error);
     throw error;
   }
 }

@@ -39,6 +39,7 @@ import {
   DialogTitle,
 } from '@/components/ui';
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 interface ImportDialogProps {
   open: boolean;
@@ -99,7 +100,7 @@ const ImportDialog: React.FC<ImportDialogProps> = ({
       );
       setMeasurements(measurementList);
     } catch (error) {
-      console.error('加载测量列表失败:', error);
+      logger.error('加载测量列表失败:', error);
     }
   }, [connectionId, database]);
 

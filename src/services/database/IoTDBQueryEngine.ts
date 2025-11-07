@@ -7,6 +7,7 @@
 import { QueryEngineBase } from './QueryEngineBase';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { 
+import logger from '@/utils/logger';
   QueryOperation,
   QueryParams,
   FieldInfo,
@@ -386,7 +387,7 @@ export class IoTDBQueryEngine extends QueryEngineBase {
       await this.executeQuery(connectionId, query);
       return true;
     } catch (error) {
-      console.error(`❌ [${this.dbType}] IoTDB 连接测试失败:`, error);
+      logger.error(`❌ [${this.dbType}] IoTDB 连接测试失败:`, error);
       return false;
     }
   }

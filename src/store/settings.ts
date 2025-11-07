@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { SettingsAPI } from '@/services/api';
+import logger from '@/utils/logger';
 
 export interface ThemeConfig {
   mode: 'light' | 'dark' | 'auto';
@@ -302,7 +303,7 @@ export const useSettingsStore = create<SettingsState>()(
           });
         } catch (error) {
           set({ isLoading: false });
-          console.warn('加载用户设置失败，使用默认设置:', error);
+          logger.warn('加载用户设置失败，使用默认设置:', error);
         }
       },
 

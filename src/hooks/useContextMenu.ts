@@ -4,6 +4,7 @@ import { useConnectionStore } from '@/store/connection';
 import { useSmartSql } from './useSmartSql';
 import { toast } from 'sonner';
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 export interface ContextMenuState {
   visible: boolean;
@@ -186,7 +187,7 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
           break;
           
         default:
-          console.warn('未处理的上下文菜单操作:', action);
+          logger.warn('未处理的上下文菜单操作:', action);
           toast.info(`功能 "${action}" 开发中...`);
       }
       

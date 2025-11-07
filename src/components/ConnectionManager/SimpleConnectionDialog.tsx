@@ -43,6 +43,7 @@ import { showMessage } from '@/utils/message';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useTranslation } from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -459,7 +460,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         setAvailableRetentionPolicies(policyNames);
       }
     } catch (error) {
-      console.warn('获取保留策略失败:', error);
+      logger.warn('获取保留策略失败:', error);
       // 失败时不显示错误，只是不提供建议
       setAvailableRetentionPolicies([]);
     } finally {
@@ -664,7 +665,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         await handleVersionChangeDetection(versionResult.value);
       }
     } catch (error) {
-      console.error('测试连接失败:', error);
+      logger.error('测试连接失败:', error);
       const errorMessage = String(error).replace('Error: ', '');
 
       if (abortController.signal.aborted) {
@@ -808,7 +809,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             await editConnection(updatedConfig);
             showMessage.success('连接版本信息已自动更新');
           } catch (error) {
-            console.error('更新版本信息失败:', error);
+            logger.error('更新版本信息失败:', error);
             showMessage.error('更新版本信息失败');
           }
         }
@@ -830,13 +831,13 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   // 检测版本并保存（已废弃，保留用于兼容性）
   const detectVersionAndSave = async () => {
     // 不再使用，直接在测试连接时检测版本
-    console.warn('detectVersionAndSave is deprecated, version detection is now done during connection test');
+    logger.warn('detectVersionAndSave is deprecated, version detection is now done during connection test');
   };
 
   // 确认版本信息并保存连接（已废弃，保留用于兼容性）
   const handleVersionConfirm = async (versionInfo: DatabaseVersionInfo) => {
     // 不再使用
-    console.warn('handleVersionConfirm is deprecated');
+    logger.warn('handleVersionConfirm is deprecated');
   };
 
   // 保存连接
@@ -928,20 +929,20 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
       if (isEditing) {
         // 编辑现有连接
-        console.log('📝 编辑现有连接:', connection?.id);
+        logger.info('📝 编辑现有连接:', connection?.id);
         const configData = buildConfigData();
         await editConnection(configData);
         onSuccess(configData);
       } else {
         // 创建新连接
-        console.log('➕ 创建新连接:', formData.name);
+        logger.info('➕ 创建新连接:', formData.name);
         const configData = buildConfigData();
         const id = await createConnection(configData);
         const finalConfigData = { ...configData, id };
         onSuccess(finalConfigData);
       }
     } catch (error) {
-      console.error('保存连接失败:', error);
+      logger.error('保存连接失败:', error);
       const errorMessage = String(error).replace('Error: ', '');
       setTestResult({
         success: false,

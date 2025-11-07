@@ -26,6 +26,7 @@ import {UpdateInfo, PlatformInfo, UpdateStatus} from '@/types/updater';
 import {updaterService} from '@/services/updaterService';
 import {ReleaseNotesViewer} from './ReleaseNotesViewer';
 import {toast} from 'sonner';
+import logger from '@/utils/logger';
 
 interface UpdateNotificationProps {
     open: boolean;
@@ -54,7 +55,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
                 setIsBuiltinSupported(supported);
                 setPlatformInfo(platform);
             }).catch(error => {
-                console.error('获取平台信息失败:', error);
+                logger.error('获取平台信息失败:', error);
                 setIsBuiltinSupported(false);
                 setPlatformInfo(null);
             });
@@ -121,19 +122,19 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
             } catch (error) {
                 setIsUpdating(false);
                 setUpdateStatus(null);
-                console.error('内置更新失败:', error);
+                logger.error('内置更新失败:', error);
                 toast.error(`内置更新失败: ${error}`);
-                
+
                 // 降级到外部下载
-                console.log('降级到外部下载');
-                updaterService.openDownloadPage(downloadUrl).catch(console.error);
+                logger.info('降级到外部下载');
+                updaterService.openDownloadPage(downloadUrl).catch(err => logger.error('Failed to open download page:', err));
                 onOpenChange(false);
                 toast.success('下载页面已打开，请按照说明完成更新');
             }
         } else {
             // 使用外部下载方式
-            console.log('Opening download URL:', downloadUrl);
-            updaterService.openDownloadPage(downloadUrl).catch(console.error);
+            logger.info('Opening download URL:', downloadUrl);
+            updaterService.openDownloadPage(downloadUrl).catch(err => logger.error('Failed to open download page:', err));
             onOpenChange(false);
             toast.success('下载页面已打开，请按照说明完成更新');
         }
@@ -146,7 +147,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
             toast.success(`已跳过版本 ${updateInfo.latest_version}`);
             onOpenChange(false);
         } catch (error) {
-            console.error('Failed to skip version:', error);
+            logger.error('Failed to skip version:', error);
             toast.error('跳过版本失败');
         } finally {
             setIsSkipping(false);
@@ -219,7 +220,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
                                 maxHeight="350px"
                                 showTitle={false}
                                 showMetadata={false}
-                                onExternalLink={(url) => updaterService.openDownloadPage(url).catch(console.error)}
+                                onExternalLink={(url) => updaterService.openDownloadPage(url).catch(err => logger.error('Failed to open external link:', err))}
                             />
                         </div>
                     </div>
@@ -310,8 +311,8 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
                                     toast.error('无法获取详情链接');
                                     return;
                                 }
-                                console.log('Opening detail URL:', detailUrl);
-                                updaterService.openDownloadPage(detailUrl).catch(console.error);
+                                logger.info('Opening detail URL:', detailUrl);
+                                updaterService.openDownloadPage(detailUrl).catch(err => logger.error('Failed to open detail page:', err));
                             }}
                             disabled={isUpdating}
                             className="flex-1"

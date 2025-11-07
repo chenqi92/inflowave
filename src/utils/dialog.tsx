@@ -13,6 +13,7 @@ import {
 } from '@/components/ui';
 import { Button } from '@/components/ui';
 import { Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import logger from '@/utils/logger';
 
 interface DialogConfig {
   title?: React.ReactNode;
@@ -171,7 +172,7 @@ export const DialogManager: React.FC = () => {
         await dialogState.config.onConfirm();
         closeDialog(true);
       } catch (err) {
-        console.error('Dialog onConfirm error:', err);
+        logger.error('Dialog onConfirm error:', err);
         // 不关闭对话框，让用户处理错误
       }
     } else {

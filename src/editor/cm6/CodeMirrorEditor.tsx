@@ -14,6 +14,7 @@ import { editorEvents } from './eventBus';
 import { editorTelemetry } from './telemetry';
 import { cn } from '@/lib/utils';
 import { getCurrentStatement, getAllStatements } from './sqlUtils';
+import logger from '@/utils/logger';
 
 export interface CodeMirrorEditorProps {
   /** Initial document content */
@@ -214,21 +215,21 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
               editorEvents.blur();
             },
             copy: (event: ClipboardEvent) => {
-              console.log('📋 [CodeMirror] copy event triggered', {
+              logger.info('📋 [CodeMirror] copy event triggered', {
                 hasClipboardData: !!event.clipboardData,
                 defaultPrevented: event.defaultPrevented,
               });
               return false; // Let CodeMirror handle it
             },
             cut: (event: ClipboardEvent) => {
-              console.log('✂️ [CodeMirror] cut event triggered', {
+              logger.debug('✂️ [CodeMirror] cut event triggered', {
                 hasClipboardData: !!event.clipboardData,
                 defaultPrevented: event.defaultPrevented,
               });
               return false; // Let CodeMirror handle it
             },
             paste: (event: ClipboardEvent) => {
-              console.log('📌 [CodeMirror] paste event triggered', {
+              logger.info('📌 [CodeMirror] paste event triggered', {
                 hasClipboardData: !!event.clipboardData,
                 defaultPrevented: event.defaultPrevented,
               });
@@ -238,7 +239,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
               const isClipboard = (event.ctrlKey || event.metaKey) &&
                                  ['c', 'v', 'x'].includes(event.key.toLowerCase());
               if (isClipboard) {
-                console.log('⌨️ [CodeMirror] keydown event', {
+                logger.debug('⌨️ [CodeMirror] keydown event', {
                   key: event.key,
                   ctrl: event.ctrlKey,
                   meta: event.metaKey,

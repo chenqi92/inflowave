@@ -8,6 +8,7 @@ import { FileText, Trash2, Download, RefreshCw } from 'lucide-react';
 import { invoke } from '@tauri-apps/api/core';
 import { consoleLogger } from '@/utils/consoleLogger';
 import { showMessage } from '@/utils/message';
+import logger from '@/utils/logger';
 
 /**
  * 日志查看器组件
@@ -39,7 +40,7 @@ export const LogViewer: React.FC = () => {
       
       setFrontendLogs(logText || '暂无前端日志');
     } catch (error) {
-      console.error('加载前端日志失败:', error);
+      logger.error('加载前端日志失败:', error);
       showMessage.error('加载前端日志失败');
     }
   };
@@ -51,7 +52,7 @@ export const LogViewer: React.FC = () => {
       const logs = await invoke<string>('read_backend_logs');
       setBackendLogs(logs || '暂无后端日志');
     } catch (error) {
-      console.error('加载后端日志失败:', error);
+      logger.error('加载后端日志失败:', error);
       showMessage.error('加载后端日志失败');
       setBackendLogs('加载失败');
     } finally {
@@ -73,7 +74,7 @@ export const LogViewer: React.FC = () => {
       setBackendLogs('');
       showMessage.success('后端日志已清空');
     } catch (error) {
-      console.error('清空后端日志失败:', error);
+      logger.error('清空后端日志失败:', error);
       showMessage.error('清空后端日志失败');
     }
   };

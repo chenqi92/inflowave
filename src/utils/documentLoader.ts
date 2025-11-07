@@ -86,7 +86,7 @@ export const loadDocumentContent = async (
     }
     return await response.text();
   } catch (error) {
-    console.warn(`Failed to load document: ${filename}`, error);
+    logger.warn(`Failed to load document: ${filename}`, error);
 
     // 返回错误提示内容
     return `# 文档加载失败
@@ -131,7 +131,7 @@ export const loadAllDocuments = async () => {
         description: docInfo.description,
       });
     } catch (error) {
-      console.error(`Failed to load document: ${docInfo.filename}`, error);
+      logger.error(`Failed to load document: ${docInfo.filename}`, error);
       // 即使加载失败也添加一个占位符
       documents.push({
         id: docInfo.filename,

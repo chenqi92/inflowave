@@ -1,5 +1,6 @@
 import { safeTauriInvoke } from '@/utils/tauri';
 import { QueryContext, QueryExecutionResult, RoutingStrategy } from '../index';
+import logger from '@/utils/logger';
 
 export interface RouteCandidate {
   connectionId: string;
@@ -172,7 +173,7 @@ export class QueryRouter {
       return strategy;
     } catch (error) {
       this.routingStatistics.failedRoutes++;
-      console.error('Failed to determine routing:', error);
+      logger.error('Failed to determine routing:', error);
 
       // 返回默认路由
       return {
@@ -568,7 +569,7 @@ export class QueryRouter {
         candidate.load = health.load;
       }
     } catch (error) {
-      console.error(`Health check failed for ${connectionId}:`, error);
+      logger.error(`Health check failed for ${connectionId}:`, error);
 
       // 记录失败
       const existingHealth = this.healthStatus.get(connectionId);

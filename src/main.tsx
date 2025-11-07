@@ -12,6 +12,7 @@ import App from './App';
 import { TooltipProvider } from '@/components/ui';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { I18nProvider } from '@/i18n';
+import logger from '@/utils/logger';
 
 import './styles/index.css';
 import './styles/font-preview.css';
@@ -62,10 +63,10 @@ const root = ReactDOM.createRoot(document.getElementById('root')!);
 const isDevelopment = import.meta.env.DEV;
 
 if (isDevelopment) {
-  console.log('🔧 开发环境：禁用 React StrictMode 以避免 DOM 操作冲突');
+  logger.info('🔧 开发环境：禁用 React StrictMode 以避免 DOM 操作冲突');
   root.render(<AppWrapper />);
 } else {
-  console.log('🚀 生产环境：启用 React StrictMode');
+  logger.info('🚀 生产环境：启用 React StrictMode');
   root.render(
     <React.StrictMode>
       <AppWrapper />

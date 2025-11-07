@@ -6,6 +6,7 @@ import { BaseMenuHandler } from './BaseMenuHandler';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import type { ContextMenuAction } from '@/types/contextMenu';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
+import logger from '@/utils/logger';
 
 export class OrganizationMenuHandler extends BaseMenuHandler {
   async handle(action: ContextMenuAction, node: TreeNodeData): Promise<void> {
@@ -37,7 +38,7 @@ export class OrganizationMenuHandler extends BaseMenuHandler {
         break;
 
       default:
-        console.warn(`未处理的组织菜单动作: ${action}`);
+        logger.warn(`未处理的组织菜单动作: ${action}`);
     }
   }
 

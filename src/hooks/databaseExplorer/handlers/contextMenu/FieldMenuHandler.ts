@@ -5,6 +5,7 @@
 import { BaseMenuHandler } from './BaseMenuHandler';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import type { ContextMenuAction } from '@/types/contextMenu';
+import logger from '@/utils/logger';
 
 export class FieldMenuHandler extends BaseMenuHandler {
   async handle(action: ContextMenuAction, node: TreeNodeData): Promise<void> {
@@ -40,7 +41,7 @@ export class FieldMenuHandler extends BaseMenuHandler {
         break;
 
       default:
-        console.warn(`未处理的字段菜单动作: ${action}`);
+        logger.warn(`未处理的字段菜单动作: ${action}`);
     }
   }
 
@@ -235,7 +236,7 @@ export class TagMenuHandler extends BaseMenuHandler {
         break;
 
       default:
-        console.warn(`未处理的标签菜单动作: ${action}`);
+        logger.warn(`未处理的标签菜单动作: ${action}`);
     }
   }
 

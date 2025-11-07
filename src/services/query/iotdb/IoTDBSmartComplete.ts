@@ -11,6 +11,7 @@ import {
   DatabaseConnection,
   SmartSuggestion
 } from '../../../types/database/base';
+import logger from '@/utils/logger';
 
 /**
  * IoTDB 智能补全实现
@@ -53,7 +54,7 @@ export class IoTDBSmartComplete extends SmartComplete {
         const storageGroups = await this.getStorageGroups(connection);
         suggestions.push(...this.createTableSuggestions(storageGroups, currentWord));
       } catch (error) {
-        console.warn('Failed to get storage groups:', error);
+        logger.warn('Failed to get storage groups:', error);
       }
     }
 
@@ -63,7 +64,7 @@ export class IoTDBSmartComplete extends SmartComplete {
         const devices = await this.getDevices(connection, context);
         suggestions.push(...this.createTableSuggestions(devices, currentWord));
       } catch (error) {
-        console.warn('Failed to get devices:', error);
+        logger.warn('Failed to get devices:', error);
       }
     }
 
@@ -73,7 +74,7 @@ export class IoTDBSmartComplete extends SmartComplete {
         const timeseries = await this.getTimeseries(connection, context);
         suggestions.push(...this.createColumnSuggestions(timeseries, currentWord));
       } catch (error) {
-        console.warn('Failed to get timeseries:', error);
+        logger.warn('Failed to get timeseries:', error);
       }
     }
 
@@ -265,7 +266,7 @@ export class IoTDBSmartComplete extends SmartComplete {
       });
       return storageGroups;
     } catch (error) {
-      console.warn('获取存储组失败，使用默认值:', error);
+      logger.warn('获取存储组失败，使用默认值:', error);
       return ['root.sg1', 'root.sg2', 'root.vehicle', 'root.factory'];
     }
   }
@@ -279,7 +280,7 @@ export class IoTDBSmartComplete extends SmartComplete {
       });
       return devices;
     } catch (error) {
-      console.warn('获取设备失败，使用默认值:', error);
+      logger.warn('获取设备失败，使用默认值:', error);
       return ['root.sg1.d1', 'root.sg1.d2', 'root.sg2.d1', 'root.vehicle.d1'];
     }
   }
@@ -294,7 +295,7 @@ export class IoTDBSmartComplete extends SmartComplete {
       });
       return timeseries;
     } catch (error) {
-      console.warn('获取时间序列失败，使用默认值:', error);
+      logger.warn('获取时间序列失败，使用默认值:', error);
       return [
         'root.sg1.d1.s1', 'root.sg1.d1.s2', 'root.sg1.d2.s1',
         'root.sg2.d1.temperature', 'root.sg2.d1.humidity',

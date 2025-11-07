@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { ConnectionConfig } from '@/types';
+import logger from '@/utils/logger';
 
 interface UseDatabaseExplorerCacheProps {
     treeNodeCache: Record<string, any[]>;
@@ -32,10 +33,10 @@ export const useDatabaseExplorerCache = ({
                 newCache.delete(connectionId);
                 return newCache;
             });
-            console.log(`🗑️ 已清除连接 ${connectionId} 的数据库缓存`);
+            logger.debug(`🗑️ 已清除连接 ${connectionId} 的数据库缓存`);
         } else {
             setDatabasesCache(new Map());
-            console.log(`🗑️ 已清除所有数据库缓存`);
+            logger.debug(`🗑️ 已清除所有数据库缓存`);
         }
     }, [setDatabasesCache]);
 
@@ -47,11 +48,11 @@ export const useDatabaseExplorerCache = ({
             // 优先使用缓存，除非强制刷新
             if (!forceRefresh && treeNodeCache[connection_id]) {
                 const cachedNodes = treeNodeCache[connection_id];
-                console.log(`✅ 使用缓存的树节点数据，连接: ${connection_id}，节点数量: ${cachedNodes.length}`);
+                logger.debug(`✅ 使用缓存的树节点数据，连接: ${connection_id}，节点数量: ${cachedNodes.length}`);
                 return cachedNodes;
             }
 
-            console.log(`🔍 开始加载连接 ${connection_id} 的树节点数据...`);
+            logger.debug(`🔍 开始加载连接 ${connection_id} 的树节点数据...`);
             try {
                 // 首先验证连接是否在后端存在
                 const backendConnections =
@@ -61,7 +62,7 @@ export const useDatabaseExplorerCache = ({
                 );
 
                 if (!backendConnection) {
-                    console.warn(
+                    logger.warn(
                         `⚠️ 连接 ${connection_id} 在后端不存在，尝试重新创建...`
                     );
 
@@ -79,16 +80,16 @@ export const useDatabaseExplorerCache = ({
                                 'create_connection',
                                 { config: connectionWithTimestamp }
                             );
-                            console.log(`✨ 连接已重新创建，新ID: ${newConnectionId}`);
+                            logger.info(`✨ 连接已重新创建，新ID: ${newConnectionId}`);
 
                             // 如果ID发生变化，需要同步到前端存储
                             if (newConnectionId !== connection_id) {
                                 const newConnection = { ...connection, id: newConnectionId };
                                 addConnection(newConnection);
-                                console.log(`🔄 前端连接ID已更新: ${connection_id} -> ${newConnectionId}`);
+                                logger.info(`🔄 前端连接ID已更新: ${connection_id} -> ${newConnectionId}`);
                             }
                         } catch (createError) {
-                            console.error('❌ 重新创建连接失败:', createError);
+                            logger.error('❌ 重新创建连接失败:', createError);
                             throw createError;
                         }
                     } else {
@@ -101,7 +102,7 @@ export const useDatabaseExplorerCache = ({
                     connectionId: connection_id,
                 });
 
-                console.log(`✅ 成功加载树节点数据，节点数量: ${treeNodes?.length || 0}`);
+                logger.debug(`✅ 成功加载树节点数据，节点数量: ${treeNodes?.length || 0}`);
 
                 // 更新缓存
                 setTreeNodeCache((prev) => ({
@@ -111,7 +112,7 @@ export const useDatabaseExplorerCache = ({
 
                 return treeNodes || [];
             } catch (error) {
-                console.error(`❌ 加载树节点数据失败:`, error);
+                logger.error(`❌ 加载树节点数据失败:`, error);
                 throw error;
             }
         },

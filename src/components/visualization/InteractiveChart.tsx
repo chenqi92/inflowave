@@ -30,6 +30,7 @@ import { useVisualizationStore } from '@/store/visualization';
 import { FormatUtils } from '@/utils/format';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { QueryResult, ChartConfig } from '@/types';
+import logger from '@/utils/logger';
 
 interface InteractiveChartProps {
   config: ChartConfig;
@@ -123,7 +124,7 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
 
     const timer = setInterval(async () => {
       try {
-        console.log('🔄 自动刷新图表数据...');
+        logger.info('🔄 自动刷新图表数据...');
 
         // 触发数据刷新 - 重新执行查询
         if (config.query && config.connectionId) {
@@ -137,10 +138,10 @@ export const InteractiveChart: React.FC<InteractiveChartProps> = ({
             }
           }));
 
-          console.log('✅ 图表自动刷新请求已发送');
+          logger.debug('✅ 图表自动刷新请求已发送');
         }
       } catch (error) {
-        console.error('❌ 图表自动刷新失败:', error);
+        logger.error('❌ 图表自动刷新失败:', error);
       }
     }, refreshInterval);
 

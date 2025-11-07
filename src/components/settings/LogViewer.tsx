@@ -106,7 +106,7 @@ const LogViewer: React.FC = () => {
       await writeToClipboard(text);
       showMessage.success('日志已复制到剪贴板');
     } catch (error) {
-      console.error('复制失败:', error);
+      logger.error('复制失败:', error);
       showMessage.error('复制日志失败');
     }
   };
@@ -137,7 +137,7 @@ const LogViewer: React.FC = () => {
         showMessage.success(`已导出 ${logsToExport.length} 条日志到文本文件`);
       }
     } catch (error) {
-      console.error('导出失败:', error);
+      logger.error('导出失败:', error);
       showMessage.error(`导出失败: ${error}`);
     }
   };
@@ -173,7 +173,7 @@ const LogViewer: React.FC = () => {
         showMessage.success(`已导出 ${logsToExport.length} 条日志到JSON文件`);
       }
     } catch (error) {
-      console.error('导出失败:', error);
+      logger.error('导出失败:', error);
       showMessage.error(`导出失败: ${error}`);
     }
   };
@@ -212,7 +212,7 @@ const LogViewer: React.FC = () => {
         showMessage.success(`已导出 ${logsToExport.length} 条日志到CSV文件`);
       }
     } catch (error) {
-      console.error('导出失败:', error);
+      logger.error('导出失败:', error);
       showMessage.error(`导出失败: ${error}`);
     }
   };

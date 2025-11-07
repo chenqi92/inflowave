@@ -6,6 +6,7 @@
 
 import React from 'react';
 import i18n from 'i18next';
+import logger from '@/utils/logger';
 
 interface PerformanceMetric {
   name: string;
@@ -58,7 +59,7 @@ class PerformanceMonitor {
 
     // 记录到控制台（开发模式）
     if (import.meta.env.DEV) {
-      console.log(i18n.t('logs:performance.metric_recorded', { name, value }), metadata);
+      logger.info(i18n.t('logs:performance.metric_recorded', { name, value }), metadata);
     }
   }
 
@@ -207,7 +208,7 @@ class PerformanceMonitor {
       try {
         callback(metric);
       } catch (error) {
-        console.error(i18n.t('logs:performance.observer_error'), error);
+        logger.error(i18n.t('logs:performance.observer_error'), error);
       }
     });
   }
@@ -298,7 +299,7 @@ class PerformanceMonitor {
         this.metrics = parsed.metrics;
       }
     } catch (error) {
-      console.error(i18n.t('logs:performance.import_failed'), error);
+      logger.error(i18n.t('logs:performance.import_failed'), error);
     }
   }
 }

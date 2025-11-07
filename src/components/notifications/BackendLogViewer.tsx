@@ -5,6 +5,7 @@ import { RefreshCw, Download, Trash2, Pause, Play, Copy, ChevronsDown } from 'lu
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
+import logger from '@/utils/logger';
 
 interface BackendLogEntry {
   id: string;
@@ -91,7 +92,7 @@ const BackendLogViewer: React.FC<BackendLogViewerProps> = ({ className = '' }) =
       // 反转数组，使最新的日志在顶部
       setLogs(parsedLogs.reverse());
     } catch (error) {
-      console.error('加载后端日志失败:', error);
+      logger.error('加载后端日志失败:', error);
       setLogs([]);
     }
   };
@@ -121,7 +122,7 @@ const BackendLogViewer: React.FC<BackendLogViewerProps> = ({ className = '' }) =
       setSelectedLogs(new Set());
       showMessage.success('后端日志已清空');
     } catch (error) {
-      console.error('清空后端日志失败:', error);
+      logger.error('清空后端日志失败:', error);
       showMessage.error('清空后端日志失败');
     }
   };
@@ -137,7 +138,7 @@ const BackendLogViewer: React.FC<BackendLogViewerProps> = ({ className = '' }) =
       await writeToClipboard(text);
       showMessage.success(`已复制 ${logsToExport.length} 条日志到剪贴板`);
     } catch (error) {
-      console.error('复制日志失败:', error);
+      logger.error('复制日志失败:', error);
       showMessage.error('复制日志失败');
     }
   };
@@ -202,7 +203,7 @@ const BackendLogViewer: React.FC<BackendLogViewerProps> = ({ className = '' }) =
         showMessage.success(`已导出 ${logsToExport.length} 条日志`);
       }
     } catch (error) {
-      console.error('导出日志失败:', error);
+      logger.error('导出日志失败:', error);
       showMessage.error('导出日志失败');
     }
   };

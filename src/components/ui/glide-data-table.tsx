@@ -39,6 +39,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
 } from 'lucide-react';
+import logger from '@/utils/logger';
 
 // 获取 CSS 变量的实际颜色值
 const getCSSVariable = (variable: string, fallback: string = '#000000'): string => {
@@ -58,7 +59,7 @@ const getCSSVariable = (variable: string, fallback: string = '#000000'): string 
 
     return value;
   } catch (error) {
-    console.error('获取 CSS 变量失败:', variable, error);
+    logger.error('获取 CSS 变量失败:', variable, error);
     return fallback;
   }
 };
@@ -256,7 +257,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           }
         }
       } catch (error) {
-        console.warn('从 localStorage 加载列宽失败:', error);
+        logger.warn('从 localStorage 加载列宽失败:', error);
       }
     });
     if (widths.size > 0) {
@@ -358,7 +359,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
   // 调试：打印组件接收到的数据
   useEffect(() => {
-    console.log('🔍 GlideDataTable 接收到的数据:', {
+    logger.debug('🔍 GlideDataTable 接收到的数据:', {
       数据行数: data.length,
       列数: columns.length,
       列配置: columns.map(c => ({ key: c.key, title: c.title, width: c.width })),
@@ -408,7 +409,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     newSize: number,
     colIndex: number
   ) => {
-    console.log('📏 [GlideDataTable] 列宽调整完成:', {
+    logger.info('📏 [GlideDataTable] 列宽调整完成:', {
       列: column.id,
       新宽度: newSize,
       列索引: colIndex
@@ -419,7 +420,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       const key = `glide-table-column-width-${column.id}`;
       localStorage.setItem(key, String(newSize));
     } catch (error) {
-      console.warn('保存列宽到 localStorage 失败:', error);
+      logger.warn('保存列宽到 localStorage 失败:', error);
     }
   }, []);
 
@@ -437,7 +438,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const threshold = totalRows * 0.8;
 
     if (visibleEndRow >= threshold) {
-      console.log('🔧 [GlideDataTable] 触发懒加载:', {
+      logger.debug('🔧 [GlideDataTable] 触发懒加载:', {
         visibleEndRow,
         totalRows,
         threshold,
@@ -702,14 +703,14 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
       if (!isCopyShortcut) return;
 
-      console.log('🔍 [GlideDataTable] 检测到复制快捷键:', {
+      logger.debug('🔍 [GlideDataTable] 检测到复制快捷键:', {
         current: gridSelection.current,
         dataSourceType,
       });
 
       // 检查是否有选中的单元格
       if (!gridSelection.current) {
-        console.log('⚠️ [GlideDataTable] 没有选中任何内容');
+        logger.debug('⚠️ [GlideDataTable] 没有选中任何内容');
         return;
       }
 
@@ -725,7 +726,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         const startRow = range.y;
         const endRow = range.y + range.height - 1;
 
-        console.log('📊 [GlideDataTable] 选择区域:', { startCol, endCol, startRow, endRow });
+        logger.info('📊 [GlideDataTable] 选择区域:', { startCol, endCol, startRow, endRow });
 
         for (let row = startRow; row <= endRow; row++) {
           for (let col = startCol; col <= endCol; col++) {
@@ -738,17 +739,17 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       }
 
       if (selectedCells.length === 0) {
-        console.log('⚠️ [GlideDataTable] 选中的单元格列表为空');
+        logger.debug('⚠️ [GlideDataTable] 选中的单元格列表为空');
         return;
       }
 
-      console.log('✅ [GlideDataTable] 选中了', selectedCells.length, '个单元格', '复制格式:', copyFormat);
+      logger.debug('✅ [GlideDataTable] 选中了', selectedCells.length, '个单元格', '复制格式:', copyFormat);
 
       // 根据格式转换数据
       const convertedData = convertSelectedData(selectedCells, copyFormat);
 
       if (convertedData) {
-        console.log('📋 [GlideDataTable] 生成的数据:', convertedData.substring(0, 200));
+        logger.info('📋 [GlideDataTable] 生成的数据:', convertedData.substring(0, 200));
 
         // 阻止默认复制行为
         e.preventDefault();
@@ -769,7 +770,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
             description: `已复制 ${selectedCells.length} 个单元格的数据`,
           });
         }).catch(err => {
-          console.error('❌ [GlideDataTable] 复制失败:', err);
+          logger.error('❌ [GlideDataTable] 复制失败:', err);
           toast.error('复制失败', {
             description: '无法访问剪贴板',
           });
@@ -813,7 +814,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const end = pageSize === -1 ? total : Math.min(current * pageSize, total);
     const pageSizeOptions = pagination.pageSizeOptions || ['500', '1000', '2000', '5000', 'all'];
 
-    console.log('📊 [GlideDataTable] 分页信息:', {
+    logger.info('📊 [GlideDataTable] 分页信息:', {
       pageSize,
       pageSizeStr: pageSize === -1 ? 'all' : String(pageSize),
       pageSizeOptions,
@@ -892,7 +893,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
             </div>
           ) : (
             <>
-              {console.log('🎨 渲染 DataEditor:', {
+              {logger.info('🎨 渲染 DataEditor:', {
                 gridColumns数: gridColumns.length,
                 rows: processedData.length,
                 containerHeight,

@@ -1,4 +1,5 @@
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 export interface ConnectionPoolConfig {
   minConnections: number;
@@ -362,7 +363,7 @@ class ConnectionPool {
         this.stats.totalConnections--;
       }
     } catch (error) {
-      console.error('Failed to destroy connection:', error);
+      logger.error('Failed to destroy connection:', error);
     }
   }
 
@@ -397,7 +398,7 @@ class ConnectionPool {
       try {
         await this.createConnection();
       } catch (error) {
-        console.error(
+        logger.error(
           'Failed to create connection during health check:',
           error
         );

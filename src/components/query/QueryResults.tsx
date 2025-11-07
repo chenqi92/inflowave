@@ -70,6 +70,7 @@ import {
     type SQLStatementCategory
 } from '@/utils/sqlTypeDetector';
 import { useTranslation } from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 // 向后兼容的类型检测函数
 const detectQueryType = (query?: string): string => {
@@ -143,7 +144,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                 showMessage.success(t('results.export_success'));
             }
         } catch (error) {
-            console.error('导出失败:', error);
+            logger.error('导出失败:', error);
             showMessage.error(`${t('results.export_failed')}: ${error}`);
         }
     }, [result, executedQuery, t]);
@@ -267,7 +268,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
             return record;
         });
 
-        console.log('📊 QueryResults formatResultForAdvancedTable:', {
+        logger.info('📊 QueryResults formatResultForAdvancedTable:', {
             列数: columns.length,
             数据行数: dataSource.length,
             列配置: columns.map(c => ({ key: c.key, title: c.title, width: c.width })),
@@ -370,13 +371,13 @@ const QueryResults: React.FC<QueryResultsProps> = ({
 
     // 动态生成分页选项 - 根据数据量智能生成，以500为基础阶段
     const generatePaginationOptions = useCallback((totalRows: number) => {
-        console.log(`🔢 生成分页选项，总行数: ${totalRows}`);
+        logger.info(`🔢 生成分页选项，总行数: ${totalRows}`);
         const options: string[] = [];
 
         // 如果数据量小于等于500，只显示"全部"
         if (totalRows <= 500) {
             options.push('all');
-            console.log(`📄 数据量≤500，分页选项: [${options.join(', ')}]`);
+            logger.info(`📄 数据量≤500，分页选项: [${options.join(', ')}]`);
             return options;
         }
 
@@ -400,7 +401,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
         // 始终添加"全部"选项
         options.push('all');
 
-        console.log(`📊 最终分页选项: [${options.join(', ')}]`);
+        logger.info(`📊 最终分页选项: [${options.join(', ')}]`);
         return options;
     }, []);
 
@@ -415,7 +416,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
     const handlePageSizeChange = useCallback((size: string) => {
         startTransition(() => {
             const newSize = size === 'all' ? -1 : parseInt(size);
-            console.log(`📏 页面大小变更: ${pageSize} -> ${newSize} (原始值: ${size})`);
+            logger.info(`📏 页面大小变更: ${pageSize} -> ${newSize} (原始值: ${size})`);
             setPageSize(newSize);
             setCurrentPage(1);
         });
@@ -434,7 +435,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                 const firstOption = options[0];
                 const defaultSize = firstOption === 'all' ? -1 : parseInt(firstOption);
 
-                console.log(`📏 新查询结果，重置分页:`, {
+                logger.info(`📏 新查询结果，重置分页:`, {
                     实际数据量: actualDataLength,
                     默认大小: defaultSize,
                     默认大小字符串: firstOption,

@@ -55,6 +55,7 @@ import {
 import { useVisualizationStore } from '@/store/visualization';
 import { InteractiveChart } from './InteractiveChart';
 import type { Dashboard, ChartConfig, QueryResult, GridItem } from '@/types';
+import logger from '@/utils/logger';
 
 interface DashboardBuilderProps {
   dashboard?: Dashboard;
@@ -122,7 +123,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
   // 处理图表编辑
   React.useEffect(() => {
     if (selectedChart && dashboard?.widgets) {
-      console.log('🎨 开始编辑图表:', selectedChart);
+      logger.info('🎨 开始编辑图表:', selectedChart);
 
       // 找到选中的图表配置
       const chartToEdit = dashboard.widgets.find((widget: any) => widget.id === selectedChart);
@@ -141,7 +142,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
           },
         });
 
-        console.log('✅ 图表配置已加载到编辑器');
+        logger.debug('✅ 图表配置已加载到编辑器');
       }
     }
   }, [selectedChart, dashboard, form]);
@@ -243,7 +244,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
       setCurrentDashboard(dashboardData);
       onSave?.(dashboardData);
     } catch (error) {
-      console.error('保存仪表板失败:', error);
+      logger.error('保存仪表板失败:', error);
     }
   });
 
@@ -284,7 +285,7 @@ export const DashboardBuilder: React.FC<DashboardBuilderProps> = ({
                       size='sm'
                       variant='ghost'
                       onClick={() => {
-                        console.log('🖊️ 选择编辑图表:', chart.id);
+                        logger.debug('🖊️ 选择编辑图表:', chart.id);
                         setSelectedChart(chart.id);
 
                         // 滚动到编辑表单区域

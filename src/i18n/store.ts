@@ -19,11 +19,12 @@ import { performanceMonitor } from './performance-monitor';
 import { errorHandler } from './error-handler';
 import { fallbackManager } from './fallback-manager';
 import { devTools } from './dev-tools';
-import type { 
-  I18nState, 
-  LanguageInfo, 
-  TranslationOptions, 
-  I18nError 
+import logger from '@/utils/logger';
+import type {
+  I18nState,
+  LanguageInfo,
+  TranslationOptions,
+  I18nError
 } from './types';
 
 // ============================================================================
@@ -44,7 +45,7 @@ const restoreLanguageStates = (): Record<string, boolean> => {
       return JSON.parse(stored);
     }
   } catch (error) {
-    console.warn('⚠️ [I18nStore] 恢复语言状态失败:', error);
+    logger.warn('⚠️ [I18nStore] 恢复语言状态失败:', error);
   }
   return {};
 };
@@ -127,7 +128,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
       return;
     }
     
-    console.log(`🌐 [I18nStore] 切换语言: ${currentLanguage} -> ${language}`);
+    logger.info(`🌐 [I18nStore] 切换语言: ${currentLanguage} -> ${language}`);
     const startTime = Date.now();
     set({ isLoading: true });
     
@@ -164,7 +165,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
           const { setLanguage: setAppLanguage } = useAppStore.getState();
           setAppLanguage(language as any);
         } catch (error) {
-          console.warn('⚠️ [I18nStore] 同步 AppStore 语言失败:', error);
+          logger.warn('⚠️ [I18nStore] 同步 AppStore 语言失败:', error);
         }
       }
 
@@ -175,14 +176,14 @@ export const useI18nStore = create<I18nState>((set, get) => ({
           try {
             const { safeTauriInvoke } = await import('@/utils/tauri');
             await safeTauriInvoke('update_menu_language', { language });
-            console.log(`✅ [I18nStore] 菜单语言已更新: ${language}`);
+            logger.debug(`✅ [I18nStore] 菜单语言已更新: ${language}`);
           } catch (error) {
-            console.warn('⚠️ [I18nStore] 更新菜单语言失败:', error);
+            logger.warn('⚠️ [I18nStore] 更新菜单语言失败:', error);
           }
         }, 100); // 延迟 100ms
       }
 
-      console.log(`✅ [I18nStore] 语言切换成功: ${language} (${switchTime}ms)`);
+      logger.debug(`✅ [I18nStore] 语言切换成功: ${language} (${switchTime}ms)`);
     } catch (error) {
       const switchTime = Date.now() - startTime;
       performanceMonitor.recordSwitch(language, switchTime, false);
@@ -195,7 +196,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
         originalError: error as Error,
       });
       
-      console.error(`❌ [I18nStore] 语言切换失败:`, error);
+      logger.error(`❌ [I18nStore] 语言切换失败:`, error);
       set({ isLoading: false });
       throw error;
     }
@@ -212,7 +213,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
       return;
     }
     
-    console.log(`📦 [I18nStore] 加载语言资源: ${language}`);
+    logger.debug(`📦 [I18nStore] 加载语言资源: ${language}`);
     
     try {
       const resource = await translationLoader.loadLanguage(language);
@@ -224,9 +225,9 @@ export const useI18nStore = create<I18nState>((set, get) => ({
         },
       });
       
-      console.log(`✅ [I18nStore] 语言资源加载成功: ${language}`);
+      logger.debug(`✅ [I18nStore] 语言资源加载成功: ${language}`);
     } catch (error) {
-      console.error(`❌ [I18nStore] 语言资源加载失败: ${language}`, error);
+      logger.error(`❌ [I18nStore] 语言资源加载失败: ${language}`, error);
       throw error;
     }
   },
@@ -240,7 +241,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     // 检查是否已存在
     const exists = availableLanguages.some(lang => lang.code === languageInfo.code);
     if (exists) {
-      console.warn(`⚠️ [I18nStore] 语言已存在: ${languageInfo.code}`);
+      logger.warn(`⚠️ [I18nStore] 语言已存在: ${languageInfo.code}`);
       return;
     }
     
@@ -248,7 +249,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
       availableLanguages: [...availableLanguages, languageInfo],
     });
     
-    console.log(`➕ [I18nStore] 添加语言: ${languageInfo.code}`);
+    logger.info(`➕ [I18nStore] 添加语言: ${languageInfo.code}`);
   },
   
   removeLanguage: (languageCode: string) => {
@@ -256,7 +257,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     
     // 不能删除当前语言和回退语言
     if (languageCode === currentLanguage || languageCode === config.fallbackLanguage) {
-      console.warn(`⚠️ [I18nStore] 不能删除当前语言或回退语言: ${languageCode}`);
+      logger.warn(`⚠️ [I18nStore] 不能删除当前语言或回退语言: ${languageCode}`);
       return;
     }
     
@@ -267,7 +268,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     // 清除缓存的资源
     translationLoader.clearLanguageCache(languageCode);
     
-    console.log(`➖ [I18nStore] 删除语言: ${languageCode}`);
+    logger.info(`➖ [I18nStore] 删除语言: ${languageCode}`);
   },
   
   updateLanguageProgress: (languageCode: string, progress: number) => {
@@ -302,7 +303,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
       
       localStorage.setItem('i18n-language-states', JSON.stringify(languageStates));
     } catch (error) {
-      console.warn('⚠️ [I18nStore] 保存语言状态失败:', error);
+      logger.warn('⚠️ [I18nStore] 保存语言状态失败:', error);
     }
   },
   
@@ -317,7 +318,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     try {
       return format(date, formatStr || defaultFormat, { locale });
     } catch (error) {
-      console.error('❌ [I18nStore] 日期格式化失败:', error);
+      logger.error('❌ [I18nStore] 日期格式化失败:', error);
       return date.toLocaleDateString();
     }
   },
@@ -328,7 +329,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     try {
       return new Intl.NumberFormat(currentLanguage, options).format(num);
     } catch (error) {
-      console.error('❌ [I18nStore] 数字格式化失败:', error);
+      logger.error('❌ [I18nStore] 数字格式化失败:', error);
       return num.toString();
     }
   },
@@ -343,7 +344,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
         locale,
       });
     } catch (error) {
-      console.error('❌ [I18nStore] 相对时间格式化失败:', error);
+      logger.error('❌ [I18nStore] 相对时间格式化失败:', error);
       return date.toLocaleString();
     }
   },
@@ -371,7 +372,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
       
       return translation;
     } catch (error) {
-      console.error(`❌ [I18nStore] 翻译失败: ${key}`, error);
+      logger.error(`❌ [I18nStore] 翻译失败: ${key}`, error);
       
       // 记录错误
       errorHandler.handleError({
@@ -425,9 +426,9 @@ const saveLanguagePreference = async (language: string) => {
         await safeTauriInvoke('save_language_preference', { language });
       }
       
-      console.log(`💾 [I18nStore] 语言偏好已保存: ${language}`);
+      logger.info(`💾 [I18nStore] 语言偏好已保存: ${language}`);
   } catch (error) {
-    console.warn('⚠️ [I18nStore] 保存语言偏好失败:', error);
+    logger.warn('⚠️ [I18nStore] 保存语言偏好失败:', error);
   }
 };
 
@@ -510,13 +511,13 @@ export const initI18nStore = async (): Promise<void> => {
       try {
         await store.loadLanguageResource(lang);
       } catch (error) {
-        console.warn(`⚠️ [I18nStore] 预加载语言失败: ${lang}`, error);
+        logger.warn(`⚠️ [I18nStore] 预加载语言失败: ${lang}`, error);
       }
     }
     
-    console.log('✅ [I18nStore] 初始化完成');
+    logger.debug('✅ [I18nStore] 初始化完成');
   } catch (error) {
-    console.error('❌ [I18nStore] 初始化失败:', error);
+    logger.error('❌ [I18nStore] 初始化失败:', error);
     throw error;
   }
 };

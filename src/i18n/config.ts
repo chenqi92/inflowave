@@ -9,6 +9,7 @@ import { LanguageDetector } from './language-detector';
 import { TranslationLoader } from './translation-loader';
 import { ResourceManager, type ResourceManagerConfig } from './resource-manager';
 import type { LanguageDetectionConfig, LoaderConfig } from './types';
+import logger from '@/utils/logger';
 
 // 支持的语言列表（包含基础语言代码以支持 fallback）
 export const SUPPORTED_LANGUAGES = ['zh-CN', 'en-US', 'zh', 'en'] as const;
@@ -132,7 +133,7 @@ const initI18n = async () => {
       .use(initReactI18next)
       .init(i18nConfig);
     
-    console.log('i18next initialized successfully with language:', i18n.language);
+    logger.info('i18next initialized successfully with language:', i18n.language);
     
     // 智能预加载语言资源
     if (loaderConfig.enableLazyLoading) {
@@ -142,12 +143,12 @@ const initI18n = async () => {
         i18n.language
       ).then(results => {
         const successful = results.filter(r => r.success);
-        console.log(`✅ [i18n] Smart preload completed: ${successful.length}/${results.length} languages loaded`);
+        logger.debug(`✅ [i18n] Smart preload completed: ${successful.length}/${results.length} languages loaded`);
         
         // 记录当前语言使用
         resourceManager.recordLanguageUsage(i18n.language);
       }).catch(error => {
-        console.warn('⚠️ [i18n] Smart preload failed:', error);
+        logger.warn('⚠️ [i18n] Smart preload failed:', error);
       });
     }
     
@@ -156,7 +157,7 @@ const initI18n = async () => {
       resourceManager.checkForUpdates([...SUPPORTED_LANGUAGES]).then(updates => {
         const hasUpdates = updates.some(u => u.hasUpdate);
         if (hasUpdates) {
-          console.log('Language resource updates available:', updates);
+          logger.info('Language resource updates available:', updates);
           
           // 触发更新可用事件
           if (typeof window !== 'undefined') {
@@ -166,13 +167,13 @@ const initI18n = async () => {
           }
         }
       }).catch(error => {
-        console.warn('Failed to check for updates:', error);
+        logger.warn('Failed to check for updates:', error);
       });
     }
     
     return i18n;
   } catch (error) {
-    console.error('Failed to initialize i18next:', error);
+    logger.error('Failed to initialize i18next:', error);
     throw error;
   }
 };

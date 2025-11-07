@@ -3,6 +3,7 @@ import {useNavigate} from 'react-router-dom';
 import {useConnectionStore} from '@/store/connection';
 import {showMessage} from '@/utils/message';
 import {writeToClipboard} from '@/utils/clipboard';
+import logger from '@/utils/logger';
 
 interface KeyboardShortcut {
     key: string;
@@ -68,7 +69,7 @@ export const useKeyboardShortcuts = (
 
             // 如果是输入元素中的系统快捷键，完全不处理
             if (isInputElement && isSystemClipboard) {
-                console.log('🔍 [useKeyboardShortcuts] 跳过编辑器内的系统快捷键', {
+                logger.debug('🔍 [useKeyboardShortcuts] 跳过编辑器内的系统快捷键', {
                     key: keyboardEvent.key,
                     ctrl: keyboardEvent.ctrlKey,
                     meta: keyboardEvent.metaKey,

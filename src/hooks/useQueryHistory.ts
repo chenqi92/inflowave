@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
+import logger from '@/utils/logger';
 
 interface UseQueryHistoryOptions {
   autoLoad?: boolean;
@@ -30,15 +31,15 @@ export const useQueryHistory = (options: UseQueryHistoryOptions = {}) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('开始加载查询历史...');
+      logger.info('开始加载查询历史...');
       const history = await safeTauriInvoke<QueryHistoryItem[]>('get_query_history', {
         limit,
         offset
       });
-      console.log('查询历史加载成功:', history?.length || 0, '条记录');
+      logger.info('查询历史加载成功:', history?.length || 0, '条记录');
       setHistoryItems(history || []);
     } catch (error) {
-      console.error('加载查询历史失败:', error);
+      logger.error('加载查询历史失败:', error);
       setError(error as string);
       setHistoryItems([]);
       // 不显示错误通知，避免干扰用户体验
@@ -179,12 +180,12 @@ export const useSavedQueries = (options: UseQueryHistoryOptions = {}) => {
     setLoading(true);
     setError(null);
     try {
-      console.log('开始加载保存的查询...');
+      logger.info('开始加载保存的查询...');
       const queries = await safeTauriInvoke<SavedQuery[]>('get_saved_queries');
-      console.log('保存的查询加载成功:', queries?.length || 0, '条记录');
+      logger.info('保存的查询加载成功:', queries?.length || 0, '条记录');
       setSavedQueries(queries || []);
     } catch (error) {
-      console.error('加载保存的查询失败:', error);
+      logger.error('加载保存的查询失败:', error);
       setError(error as string);
       setSavedQueries([]);
       // 不显示错误通知，避免干扰用户体验

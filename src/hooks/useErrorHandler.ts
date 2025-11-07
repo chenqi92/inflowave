@@ -21,6 +21,7 @@ import {
   formatErrorMessage,
   type UserFriendlyError
 } from '@/utils/userFriendlyErrors';
+import logger from '@/utils/logger';
 
 export type ErrorContext = 
   | 'query'
@@ -146,7 +147,7 @@ export const useErrorHandler = () => {
     }
 
     // 记录原始错误到控制台
-    console.error(`[${context}] ${friendlyError.title}:`, error);
+    logger.error(`[${context}] ${friendlyError.title}:`, error);
 
     // 显示用户友好的错误通知
     if (showNotification) {

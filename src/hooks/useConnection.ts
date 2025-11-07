@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useConnectionStore } from '@/store/connection';
 import { ConnectionAPI } from '@/services/api';
 import { getDatabaseConnectionError, formatErrorMessage } from '@/utils/userFriendlyErrors';
+import logger from '@/utils/logger';
 import type {
   ConnectionConfig,
   ConnectionStatus,
@@ -141,7 +142,7 @@ export const useConnection = () => {
       try {
         await ConnectionAPI.deleteConnection(connectionId);
       } catch (err) {
-        console.warn('删除临时连接失败:', err);
+        logger.warn('删除临时连接失败:', err);
         // 不抛出错误，因为这是清理操作
       }
     },

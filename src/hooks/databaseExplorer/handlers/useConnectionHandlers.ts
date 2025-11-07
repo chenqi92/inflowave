@@ -3,6 +3,7 @@ import type { ConnectionConfig } from '@/types';
 import type { DataNode } from '@/types/databaseExplorer';
 import { showMessage } from '@/utils/message';
 import { log } from '@/utils/logger';
+import logger from '@/utils/logger';
 
 interface UseConnectionHandlersProps {
   getConnection: (id: string) => ConnectionConfig | undefined;
@@ -53,7 +54,7 @@ export const useConnectionHandlers = ({
       const connection = getConnection(connectionId);
       if (!connection) return;
 
-      console.log(`🚀 开始连接并加载数据库: ${connection.name}`);
+      logger.info(`🚀 开始连接并加载数据库: ${connection.name}`);
 
       // 清除之前的错误状态
       setConnectionErrors(prev => {
@@ -67,7 +68,7 @@ export const useConnectionHandlers = ({
 
       try {
         // 1. 建立连接
-        console.log(`🔗 建立连接: ${connection.name}`);
+        logger.info(`🔗 建立连接: ${connection.name}`);
         await connectToDatabase(connectionId);
 
         // 2. 清理缓存（但不关闭已打开的数据库）
@@ -77,7 +78,7 @@ export const useConnectionHandlers = ({
 
         // 3. 连接成功，显示成功消息
         showMessage.success(`已连接: ${connection.name}`);
-        console.log(`✅ 连接建立成功: ${connection.name}`);
+        logger.debug(`✅ 连接建立成功: ${connection.name}`);
 
         // 清除加载状态
         setConnectionLoadingStates(prev => {
@@ -86,7 +87,7 @@ export const useConnectionHandlers = ({
           return newMap;
         });
       } catch (error) {
-        console.error(`❌ 连接并加载数据库失败:`, error);
+        logger.error(`❌ 连接并加载数据库失败:`, error);
         const errorMessage = String(error);
 
         // 设置错误状态
@@ -129,7 +130,7 @@ export const useConnectionHandlers = ({
       const connection = getConnection(connectionId);
       if (!connection) return;
 
-      console.log(`📂 展开已连接的连接: ${connection.name}`);
+      logger.info(`📂 展开已连接的连接: ${connection.name}`);
 
       const connectionKey = `connection-${connectionId}`;
 
@@ -139,11 +140,11 @@ export const useConnectionHandlers = ({
       updateConnectionNodeDisplay(connectionId, true);
 
       try {
-        console.log(`📊 加载数据库列表: ${connection.name}`);
+        logger.info(`📊 加载数据库列表: ${connection.name}`);
         await buildCompleteTreeData(false); // 不强制刷新，让缓存机制决定
         showMessage.success(`已加载数据库列表: ${connection.name}`);
       } catch (error) {
-        console.error(`❌ 加载数据库列表失败:`, error);
+        logger.error(`❌ 加载数据库列表失败:`, error);
         showMessage.error(`加载数据库列表失败: ${error}`);
         return;
       } finally {
@@ -184,7 +185,7 @@ export const useConnectionHandlers = ({
 
       // 检查是否正在连接中
       if (currentStatus?.status === 'connecting') {
-        console.log(`⏳ 连接 ${connection.name} 正在连接中，跳过操作`);
+        logger.info(`⏳ 连接 ${connection.name} 正在连接中，跳过操作`);
         showMessage.warning(`连接 ${connection.name} 正在连接中，请稍候...`);
         return;
       }
@@ -208,7 +209,7 @@ export const useConnectionHandlers = ({
 
       const timeoutId = setTimeout(() => {
         abortController.abort();
-        console.warn(`⏰ 连接操作超时: ${connection.name}`);
+        logger.warn(`⏰ 连接操作超时: ${connection.name}`);
         showMessage.error(`连接操作超时: ${connection.name}`);
       }, timeoutMs);
 

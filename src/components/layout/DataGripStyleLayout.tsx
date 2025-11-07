@@ -26,6 +26,7 @@ import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
 import { useTabStore } from '@/stores/tabStore';
 import type {QueryResult} from '@/types';
 import { debounce } from 'lodash-es';
+import logger from '@/utils/logger';
 
 
 
@@ -56,15 +57,15 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         debounce(async (workspace: any) => {
             // 跳过初始化阶段的保存
             if (!isInitializedRef.current) {
-                console.log('⏭️ 跳过初始化阶段的工作区设置保存');
+                logger.debug('⏭️ 跳过初始化阶段的工作区设置保存');
                 return;
             }
 
             try {
                 await updateWorkspace(workspace);
-                console.log('✅ 工作区设置已保存');
+                logger.debug('✅ 工作区设置已保存');
             } catch (error) {
-                console.error('❌ 保存工作区设置失败:', error);
+                logger.error('❌ 保存工作区设置失败:', error);
             }
         }, 1000) // 1秒防抖，避免频繁保存
     ).current;
@@ -73,7 +74,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     useEffect(() => {
         const timer = setTimeout(() => {
             isInitializedRef.current = true;
-            console.log('✅ DataGripStyleLayout 初始化完成，启用工作区设置自动保存');
+            logger.debug('✅ DataGripStyleLayout 初始化完成，启用工作区设置自动保存');
         }, 2000); // 2秒后启用自动保存
 
         return () => clearTimeout(timer);
@@ -191,10 +192,10 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             preferences.workspace.panel_positions?.['right-panel'] !== rightPanelSize;
 
         if (hasChanges) {
-            console.log('工作区设置有变化，保存到用户偏好');
+            logger.info('工作区设置有变化，保存到用户偏好');
             debouncedUpdateWorkspaceSettings(updatedWorkspace);
         } else {
-            console.log('工作区设置无变化，跳过保存');
+            logger.info('工作区设置无变化，跳过保存');
         }
     }, [
         preferences,
@@ -295,7 +296,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     // 调试：监听 expandedDatabases 变化
     useEffect(() => {
         if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
-            console.log('🔄 DataGripStyleLayout expandedDatabases 变化:', {
+            logger.debug('🔄 DataGripStyleLayout expandedDatabases 变化:', {
                 expandedDatabases: JSON.stringify(expandedDatabases), // 显示具体内容
                 length: expandedDatabases.length,
                 timestamp: new Date().toISOString()
@@ -303,7 +304,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
             // 强制触发 TabEditor 的重新渲染
             if (tabEditorRef.current) {
-                console.log('🔄 强制更新 TabEditor 组件');
+                logger.info('🔄 强制更新 TabEditor 组件');
                 // 这里可以调用 TabEditor 的方法来强制更新
             }
         }
@@ -312,7 +313,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     // 智能视图切换：当在查询视图但没有展开数据库时，提示用户先展开数据库
     useEffect(() => {
         if (currentView === 'query' && expandedDatabases.length === 0) {
-            console.log('💡 检测到查询视图但没有展开数据库，建议切换到数据源视图');
+            logger.info('💡 检测到查询视图但没有展开数据库，建议切换到数据源视图');
             // 可以选择自动切换到数据源视图，或者显示提示
             // setCurrentView('datasource'); // 取消注释以启用自动切换
         }
@@ -320,7 +321,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
     // 🔧 调试：监控tabs数量变化
     useEffect(() => {
-        console.log('🔍 [DataGripStyleLayout] tabs数量变化:', {
+        logger.debug('🔍 [DataGripStyleLayout] tabs数量变化:', {
             tabsLength: tabs.length,
             activeTabType,
             bottomPanelCollapsed,
@@ -332,7 +333,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     // 🔧 当所有Tab关闭时，强制清空查询结果
     useEffect(() => {
         if (tabs.length === 0) {
-            console.log('🧹 [DataGripStyleLayout] 所有Tab已关闭，强制清空查询结果');
+            logger.debug('🧹 [DataGripStyleLayout] 所有Tab已关闭，强制清空查询结果');
             setQueryResult(null);
             setQueryResults([]);
             setExecutedQueries([]);
@@ -364,7 +365,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     useEffect(() => {
         const newView = getViewFromPath(location.pathname);
 
-        console.log('🔄 路径变化监听:', {
+        logger.info('🔄 路径变化监听:', {
             pathname: location.pathname,
             currentView,
             newView,
@@ -373,7 +374,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
         // 只有当视图真的不同时才更新，避免不必要的重渲染
         if (currentView !== newView) {
-            console.log(`✅ 更新视图: ${currentView} → ${newView}`);
+            logger.debug(`✅ 更新视图: ${currentView} → ${newView}`);
             setCurrentView(newView);
         }
 
@@ -414,7 +415,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 // 只有当路径对应的视图与偏好设置一致时才应用，避免冲突
                 if (expectedViewFromPath === 'datasource' && currentView !== layout) {
                     setCurrentView(layout);
-                    console.log('应用用户偏好布局:', layout);
+                    logger.info('应用用户偏好布局:', layout);
                 }
             }
         }
@@ -459,14 +460,14 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     // 监听菜单刷新事件
     useEffect(() => {
         const handleRefreshDatabaseTree = () => {
-            console.log('📥 DataGripStyleLayout收到刷新数据库树事件');
+            logger.info('📥 DataGripStyleLayout收到刷新数据库树事件');
             refreshDataExplorer();
         };
 
         const handleTableQuery = (event: Event) => {
             const customEvent = event as CustomEvent;
             const {query, database, tableName} = customEvent.detail;
-            console.log('📥 DataGripStyleLayout收到表查询事件:', {query, database, tableName});
+            logger.info('📥 DataGripStyleLayout收到表查询事件:', {query, database, tableName});
 
             // 切换到查询视图并执行查询
             setCurrentView('query');
@@ -487,7 +488,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
 
         // 监听打开日志查看器事件
         const handleOpenLogViewer = () => {
-            console.log('📥 DataGripStyleLayout收到打开日志查看器事件');
+            logger.info('📥 DataGripStyleLayout收到打开日志查看器事件');
             // 打开右侧面板的通知中心，并切换到日志标签页
             setSelectedFunction('notifications');
             setRightPanelCollapsed(false);

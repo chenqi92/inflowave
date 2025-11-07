@@ -45,6 +45,7 @@ import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 // 生成带时间戳的文件名
 const generateTimestampedFilename = (
@@ -152,14 +153,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   // 确定数据源类型
   const dataSourceType: DataSourceType = useMemo(() => {
     if (!currentConnection) {
-      console.log('⚠️ [EnhancedResultPanel] 没有当前连接，使用 generic');
+      logger.debug('⚠️ [EnhancedResultPanel] 没有当前连接，使用 generic');
       return 'generic';
     }
 
     const dbType = currentConnection.dbType;
     const version = currentConnection.version;
 
-    console.log('🔍 [EnhancedResultPanel] 当前连接信息:', {
+    logger.debug('🔍 [EnhancedResultPanel] 当前连接信息:', {
       dbType,
       version,
       connectionId: currentConnection.id,
@@ -167,26 +168,26 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     });
 
     if (dbType === 'iotdb') {
-      console.log('✅ [EnhancedResultPanel] 识别为 IoTDB');
+      logger.debug('✅ [EnhancedResultPanel] 识别为 IoTDB');
       return 'iotdb';
     }
 
     if (dbType === 'influxdb') {
       if (version === '1.x' || version?.includes('1.')) {
-        console.log('✅ [EnhancedResultPanel] 识别为 InfluxDB 1.x');
+        logger.debug('✅ [EnhancedResultPanel] 识别为 InfluxDB 1.x');
         return 'influxdb1';
       } else if (version === '2.x' || version?.includes('2.')) {
-        console.log('✅ [EnhancedResultPanel] 识别为 InfluxDB 2.x');
+        logger.debug('✅ [EnhancedResultPanel] 识别为 InfluxDB 2.x');
         return 'influxdb2';
       } else if (version === '3.x' || version?.includes('3.')) {
-        console.log('✅ [EnhancedResultPanel] 识别为 InfluxDB 3.x');
+        logger.debug('✅ [EnhancedResultPanel] 识别为 InfluxDB 3.x');
         return 'influxdb3';
       }
-      console.log('⚠️ [EnhancedResultPanel] InfluxDB 版本未知，默认使用 1.x');
+      logger.debug('⚠️ [EnhancedResultPanel] InfluxDB 版本未知，默认使用 1.x');
       return 'influxdb1'; // 默认
     }
 
-    console.log('⚠️ [EnhancedResultPanel] 未知数据库类型，使用 generic');
+    logger.debug('⚠️ [EnhancedResultPanel] 未知数据库类型，使用 generic');
     return 'generic';
   }, [currentConnection]);
 
@@ -272,7 +273,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     (size: string) => {
       startTransition(() => {
         const newSize = parseInt(size);
-        console.log(`📏 页面大小变更: ${pageSize} -> ${newSize}`);
+        logger.info(`📏 页面大小变更: ${pageSize} -> ${newSize}`);
         setPageSize(newSize);
         setCurrentPage(1);
       });
@@ -625,7 +626,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         generateTimestampedFilename(defaultTableName, options.format);
 
       // 调试日志
-      console.log('EnhancedResultPanel导出调试:', {
+      logger.info('EnhancedResultPanel导出调试:', {
         resultIndex,
         seriesName: series.name,
         defaultTableName,
@@ -650,7 +651,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         setShowExportDialog(false);
       }
     } catch (error) {
-      console.error('导出数据失败:', error);
+      logger.error('导出数据失败:', error);
       showMessage.error('导出数据失败');
     }
   };
@@ -746,7 +747,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         description: `已复制 ${rows.length} 行数据`
       });
     } catch (error) {
-      console.error('复制数据失败:', error);
+      logger.error('复制数据失败:', error);
       toast.error('复制数据失败');
     }
   }, []);
@@ -834,7 +835,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         setShowStatisticsExportDialog(false);
       }
     } catch (error) {
-      console.error('导出字段统计失败:', error);
+      logger.error('导出字段统计失败:', error);
       showMessage.error('导出字段统计失败');
     }
   };
@@ -1787,7 +1788,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       showMessage.success('图表已导出为 PNG 格式');
     } catch (error) {
-      console.error('导出图表失败:', error);
+      logger.error('导出图表失败:', error);
       showMessage.error(`导出图表失败: ${error}`);
     }
   }, []);

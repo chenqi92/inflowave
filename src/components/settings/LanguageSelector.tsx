@@ -23,6 +23,7 @@ import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { useTranslation, useCommonTranslation } from '@/hooks/useTranslation';
 import { Globe, Check, Loader2 } from 'lucide-react';
 import type { LanguageInfo } from '@/i18n/types';
+import logger from '@/utils/logger';
 
 // ============================================================================
 // 类型定义
@@ -149,7 +150,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       try {
         await switchLanguage(languageCode);
       } catch (error) {
-        console.error('Language switch failed:', error);
+        logger.error('Language switch failed:', error);
       }
     }
   };

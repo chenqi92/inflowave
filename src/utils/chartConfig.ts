@@ -1,3 +1,4 @@
+import logger from '@/utils/logger';
 /**
  * 图表配置工具
  * 为不同类型的图表生成ECharts配置
@@ -648,7 +649,7 @@ export const generatePieChart = (
 
   // 如果 currentData 仍然是 undefined，返回 null
   if (!currentData) {
-    console.warn('generatePieChart: currentData is undefined', { dataIndex, safeIndex, dataLength: data.length });
+    logger.warn('generatePieChart: currentData is undefined', { dataIndex, safeIndex, dataLength: data.length });
     return null;
   }
 
@@ -857,7 +858,7 @@ export const generateRadarChart = (
 
   // 如果 currentData 仍然是 undefined，返回 null
   if (!currentData) {
-    console.warn('generateRadarChart: currentData is undefined', { dataIndex, safeIndex, dataLength: data.length });
+    logger.warn('generateRadarChart: currentData is undefined', { dataIndex, safeIndex, dataLength: data.length });
     return null;
   }
 

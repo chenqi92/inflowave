@@ -4,6 +4,7 @@
  */
 
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 export interface ChartExportOptions {
   format: 'png' | 'svg' | 'pdf';
@@ -95,7 +96,7 @@ export const exportChart = async (options: ChartExportOptions): Promise<void> =>
       });
     }
 
-    console.log('图表已保存到:', dialogResult.path);
+    logger.info('图表已保存到:', dialogResult.path);
   } else {
     // 浏览器环境：使用传统下载方法
     if (format === 'svg') {
@@ -150,7 +151,7 @@ export const exportMultipleCharts = async (
         filename: chart.filename
       });
     } catch (error) {
-      console.error(`导出图表失败 (${chart.filename}):`, error);
+      logger.error(`导出图表失败 (${chart.filename}):`, error);
     }
   }
 };

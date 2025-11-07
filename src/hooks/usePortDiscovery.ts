@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { portDiscoveryService, type PortEvent, type PortInfo } from '@/services/portDiscovery';
 import { getPortDiscoveryError, formatErrorMessage } from '@/utils/userFriendlyErrors';
+import logger from '@/utils/logger';
 
 export interface UsePortDiscoveryOptions {
   autoStart?: boolean;
@@ -34,12 +35,12 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
       setIsInitialized(true);
       setError(null);
       
-      console.log(`Port discovery service initialized with port: ${port}`);
+      logger.info(`Port discovery service initialized with port: ${port}`);
     } catch (err) {
       const errorString = err instanceof Error ? err.message : 'Failed to initialize port discovery service';
       const friendlyError = getPortDiscoveryError(errorString);
       setError(formatErrorMessage(friendlyError));
-      console.error('Failed to initialize port discovery service:', err);
+      logger.error('Failed to initialize port discovery service:', err);
     }
   }, []);
 
@@ -76,7 +77,7 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
     try {
       return await portDiscoveryService.isPortAvailable(port);
     } catch (err) {
-      console.error('Failed to check port availability:', err);
+      logger.error('Failed to check port availability:', err);
       return false;
     }
   }, []);
@@ -92,7 +93,7 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
       const errorString = err instanceof Error ? err.message : 'Health check failed';
       const friendlyError = getPortDiscoveryError(errorString);
       setError(formatErrorMessage(friendlyError));
-      console.error('Health check failed:', err);
+      logger.error('Health check failed:', err);
       return false;
     }
   }, [serviceName]);
@@ -105,7 +106,7 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
       const errorString = err instanceof Error ? err.message : 'Failed to start health check loop';
       const friendlyError = getPortDiscoveryError(errorString);
       setError(formatErrorMessage(friendlyError));
-      console.error('Failed to start health check loop:', err);
+      logger.error('Failed to start health check loop:', err);
     }
   }, [serviceName]);
 
@@ -131,7 +132,7 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
       setPortStats(stats);
       return stats;
     } catch (err) {
-      console.error('Failed to get port stats:', err);
+      logger.error('Failed to get port stats:', err);
       return {};
     }
   }, []);
@@ -141,14 +142,14 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
     try {
       return await portDiscoveryService.checkPortConflicts();
     } catch (err) {
-      console.error('Failed to check port conflicts:', err);
+      logger.error('Failed to check port conflicts:', err);
       return [];
     }
   }, []);
 
   // 处理端口事件
   const handlePortEvent = useCallback((event: PortEvent) => {
-    console.log('Port event:', event);
+    logger.info('Port event:', event);
     
     switch (event.type) {
       case 'PortChanged':
@@ -228,7 +229,7 @@ export function usePortDiscovery(options: UsePortDiscoveryOptions = {}) {
   useEffect(() => {
     return () => {
       if (isInitialized) {
-        portDiscoveryService.cleanup().catch(console.error);
+        portDiscoveryService.cleanup().catch(err => logger.error('Failed to cleanup port discovery service:', err));
       }
     };
   }, [isInitialized]);

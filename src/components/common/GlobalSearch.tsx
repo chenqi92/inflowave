@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 interface SearchResult {
   id: string;
@@ -171,11 +172,11 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
                 });
               });
             } catch (error) {
-              console.debug('搜索测量失败:', error);
+              logger.debug('搜索测量失败:', error);
             }
           }
         } catch (error) {
-          console.debug('搜索数据库失败:', error);
+          logger.debug('搜索数据库失败:', error);
         }
       }
       
@@ -207,7 +208,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
       results.push(...matchingCommands);
       
     } catch (error) {
-      console.error('搜索失败:', error);
+      logger.error('搜索失败:', error);
     }
     
     return results.slice(0, 20); // 限制结果数量
@@ -253,7 +254,7 @@ const GlobalSearch: React.FC<GlobalSearchProps> = ({
       setResults(noResultsInfo);
       setSelectedIndex(0);
     } catch (error) {
-      console.error('搜索失败:', error);
+      logger.error('搜索失败:', error);
     } finally {
       setLoading(false);
     }

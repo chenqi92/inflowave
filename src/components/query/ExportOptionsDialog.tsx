@@ -25,6 +25,7 @@ import {
   Info
 } from 'lucide-react';
 import { useTranslation } from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 // 生成带时间戳的文件名
 const generateTimestampedFilename = (tableName: string, extension: string): string => {
@@ -158,7 +159,7 @@ const ExportOptionsDialog: React.FC<ExportOptionsDialogProps> = ({
     }
 
     // 调试日志
-    console.log('ExportOptionsDialog导出调试:', {
+    logger.info('ExportOptionsDialog导出调试:', {
       originalFilename: filename,
       finalFilename,
       defaultTableName,

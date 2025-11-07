@@ -4,6 +4,7 @@
  */
 
 import type { DatabaseType, DatabaseVersion } from '@/types';
+import logger from '@/utils/logger';
 
 // 当前支持的数据库类型（已实现默认配置的）
 type SupportedDatabaseType = 'influxdb' | 'iotdb';
@@ -74,7 +75,7 @@ function getEnvValue<T>(key: string, defaultValue: T, parser?: (value: string) =
     try {
       return parser(envValue);
     } catch {
-      console.warn(`Failed to parse environment variable ${key}: ${envValue}, using default`);
+      logger.warn(`Failed to parse environment variable ${key}: ${envValue}, using default`);
       return defaultValue;
     }
   }
@@ -155,7 +156,7 @@ export const DEFAULT_PERFORMANCE_CONFIG: DefaultPerformanceConfig = {
 export function createDefaultConnectionConfig(dbType: DatabaseType = 'influxdb') {
   // 检查是否为支持的数据库类型
   if (!isSupportedDatabaseType(dbType)) {
-    console.warn(`Unsupported database type: ${dbType}, falling back to influxdb`);
+    logger.warn(`Unsupported database type: ${dbType}, falling back to influxdb`);
     dbType = 'influxdb';
   }
 
@@ -207,7 +208,7 @@ export function getFilledConnectionConfig(config: any): any {
 
   // 检查是否为支持的数据库类型
   if (!isSupportedDatabaseType(dbType)) {
-    console.warn(`Unsupported database type: ${dbType}, falling back to influxdb`);
+    logger.warn(`Unsupported database type: ${dbType}, falling back to influxdb`);
     dbType = 'influxdb';
   }
 
@@ -254,7 +255,7 @@ export function getFilledConnectionConfig(config: any): any {
  */
 export function getDatabaseDefaults(dbType: DatabaseType) {
   if (!isSupportedDatabaseType(dbType)) {
-    console.warn(`Unsupported database type: ${dbType}, falling back to influxdb`);
+    logger.warn(`Unsupported database type: ${dbType}, falling back to influxdb`);
     return DATABASE_SPECIFIC_DEFAULTS.influxdb;
   }
   return DATABASE_SPECIFIC_DEFAULTS[dbType as SupportedDatabaseType];

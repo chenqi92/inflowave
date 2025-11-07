@@ -4,6 +4,7 @@
 
 import { safeTauriInvoke } from './tauri';
 import { showMessage } from './message';
+import logger from '@/utils/logger';
 
 export interface HealthCheckResult {
   system_monitoring: boolean;
@@ -17,11 +18,11 @@ export interface HealthCheckResult {
  */
 export async function performHealthCheck(): Promise<HealthCheckResult | null> {
   try {
-    console.log('🔍 开始执行性能监控健康检查...');
+    logger.debug('🔍 开始执行性能监控健康检查...');
     
     const result = await safeTauriInvoke<HealthCheckResult>('check_performance_monitoring_health');
     
-    console.log('✅ 健康检查完成:', result);
+    logger.debug('✅ 健康检查完成:', result);
     
     // 检查是否有警告
     // if (result.overflow_risk) {
@@ -34,7 +35,7 @@ export async function performHealthCheck(): Promise<HealthCheckResult | null> {
     
     return result;
   } catch (error) {
-    console.error('❌ 健康检查失败:', error);
+    logger.error('❌ 健康检查失败:', error);
     showMessage.error(`健康检查失败: ${error}`);
     return null;
   }
@@ -53,11 +54,11 @@ export class PerformanceHealthMonitor {
    */
   start(intervalMinutes: number = 30) {
     if (this.isRunning) {
-      console.warn('健康检查已在运行中');
+      logger.warn('健康检查已在运行中');
       return;
     }
 
-    console.log(`🚀 启动定期健康检查，间隔: ${intervalMinutes} 分钟`);
+    logger.info(`🚀 启动定期健康检查，间隔: ${intervalMinutes} 分钟`);
     
     this.isRunning = true;
     
@@ -80,7 +81,7 @@ export class PerformanceHealthMonitor {
     }
     
     this.isRunning = false;
-    console.log('🛑 已停止定期健康检查');
+    logger.info('🛑 已停止定期健康检查');
   }
 
   /**

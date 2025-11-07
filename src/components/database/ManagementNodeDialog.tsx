@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import logger from '@/utils/logger';
 
 interface ManagementNodeDialogProps {
     open: boolean;
@@ -80,7 +81,7 @@ export const ManagementNodeDialog: React.FC<ManagementNodeDialogProps> = ({
         
         setLoading(true);
         try {
-            console.log(`🔄 加载管理节点数据: ${nodeName} (${nodeType})`);
+            logger.info(`🔄 加载管理节点数据: ${nodeName} (${nodeType})`);
             
             const childNodes = await safeTauriInvoke('get_tree_children', {
                 connectionId,
@@ -88,7 +89,7 @@ export const ManagementNodeDialog: React.FC<ManagementNodeDialogProps> = ({
                 nodeType
             });
 
-            console.log(`✅ 成功加载管理节点数据: ${nodeName}`, childNodes);
+            logger.debug(`✅ 成功加载管理节点数据: ${nodeName}`, childNodes);
 
             // 转换数据格式
             const formattedItems: ManagementItem[] = childNodes.map((node: any, index: number) => ({
@@ -103,7 +104,7 @@ export const ManagementNodeDialog: React.FC<ManagementNodeDialogProps> = ({
             setItems(formattedItems);
             showMessage.success(`已加载 ${formattedItems.length} 个${getTitle()}项`);
         } catch (error) {
-            console.error(`❌ 加载管理节点数据失败: ${nodeName}`, error);
+            logger.error(`❌ 加载管理节点数据失败: ${nodeName}`, error);
             showMessage.error(`加载${getTitle()}失败: ${error}`);
             setItems([]);
         } finally {

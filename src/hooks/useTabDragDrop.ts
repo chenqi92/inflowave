@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { Window } from '@tauri-apps/api/window';
 import { showMessage } from '@/utils/message';
+import logger from '@/utils/logger';
 
 interface DraggedTab {
   id: string;
@@ -152,7 +153,7 @@ export const useTabDragDrop = () => {
         showMessage.success(`Tab "${tab.title}" 已分离到新窗口`);
       }
     } catch (error) {
-      console.error('分离tab失败:', error);
+      logger.error('分离tab失败:', error);
       showMessage.error('分离tab失败');
     }
   }, []);
@@ -174,7 +175,7 @@ export const useTabDragDrop = () => {
           showMessage.success(`Tab "${tab.title}" 已重新附加`);
         })
         .catch(error => {
-          console.error('重新附加tab失败:', error);
+          logger.error('重新附加tab失败:', error);
           showMessage.error('重新附加tab失败');
         });
     }
@@ -202,7 +203,7 @@ export const useTabDragDrop = () => {
         const tab: DraggedTab = JSON.parse(tabData);
         reattachTab(tab, onTabReattach);
       } catch (error) {
-        console.error('解析拖拽数据失败:', error);
+        logger.error('解析拖拽数据失败:', error);
       }
     }
   }, [reattachTab]);
@@ -222,7 +223,7 @@ export const useTabDragDrop = () => {
           setDetachedWindows(prev => prev.filter(w => w.id !== windowId));
         })
         .catch(error => {
-          console.error('关闭分离窗口失败:', error);
+          logger.error('关闭分离窗口失败:', error);
         });
     }
   }, [detachedWindows]);
@@ -235,7 +236,7 @@ export const useTabDragDrop = () => {
         try {
           await safeTauriInvoke('close_detached_window', { label: window.windowLabel });
         } catch (error) {
-          console.error('关闭分离窗口失败:', error);
+          logger.error('关闭分离窗口失败:', error);
         }
       }
     });
@@ -243,10 +244,10 @@ export const useTabDragDrop = () => {
     return () => {
       try {
         unlisten.then((fn: any) => fn()).catch((error: any) => {
-          console.debug('清理窗口监听器时出错:', error);
+          logger.debug('清理窗口监听器时出错:', error);
         });
       } catch (error) {
-        console.debug('清理窗口监听器时出错:', error);
+        logger.debug('清理窗口监听器时出错:', error);
       }
     };
   }, [detachedWindows]);

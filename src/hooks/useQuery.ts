@@ -1,6 +1,7 @@
 import {useState, useCallback, useRef} from 'react';
 import {useQueryStore} from '@/store/query';
 import type {QueryRequest, QueryResult, QueryValidationResult} from '@/types';
+import logger from '@/utils/logger';
 
 /**
  * 查询管理 Hook
@@ -133,7 +134,7 @@ export const useQuery = () => {
                 );
                 return result;
             } catch (err) {
-                console.warn('获取查询建议失败:', err);
+                logger.warn('获取查询建议失败:', err);
                 return [];
             }
         },

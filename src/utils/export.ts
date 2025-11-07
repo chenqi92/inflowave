@@ -2,6 +2,7 @@ import * as XLSX from 'xlsx';
 import type { QueryResult } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { getFileOperationError, formatErrorMessage } from '@/utils/userFriendlyErrors';
+import logger from '@/utils/logger';
 
 export interface ExportOptions {
   format: 'csv' | 'json' | 'excel' | 'xlsx' | 'tsv' | 'markdown' | 'sql';
@@ -407,7 +408,7 @@ export const downloadData = async (
         });
       }
 
-      console.log('文件已保存到:', dialogResult.path);
+      logger.info('文件已保存到:', dialogResult.path);
     } else {
       // 浏览器环境：使用传统方法
       const blob = new Blob([data], { type: mimeType });
@@ -424,7 +425,7 @@ export const downloadData = async (
       URL.revokeObjectURL(url);
     }
   } catch (error) {
-    console.error('下载文件失败:', error);
+    logger.error('下载文件失败:', error);
     const friendlyError = getFileOperationError(String(error), 'save');
     throw new Error(formatErrorMessage(friendlyError));
   }
@@ -556,7 +557,7 @@ export const exportQueryResult = async (
 
     await downloadData(data, filename, mimeType);
   } catch (error) {
-    console.error('导出失败:', error);
+    logger.error('导出失败:', error);
     throw error;
   }
 };

@@ -110,7 +110,7 @@ export class EditorEventBus {
         try {
           callback(event);
         } catch (error) {
-          console.error(`Error in event listener for ${type}:`, error);
+          logger.error(`Error in event listener for ${type}:`, error);
         }
       });
     }

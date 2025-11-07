@@ -12,6 +12,7 @@
 import { useCallback, useMemo } from 'react';
 import { useI18nStore } from '@/i18n/store';
 import type { TranslationOptions } from '@/i18n/types';
+import logger from '@/utils/logger';
 
 // ============================================================================
 // 类型定义
@@ -64,7 +65,7 @@ const interpolateString = (
   return template.replace(/\{\{(\w+)\}\}/g, (match, key) => {
     const value = values[key];
     if (value === undefined || value === null) {
-      console.warn(`⚠️ [useTranslation] 插值变量未找到: ${key}`);
+      logger.warn(`⚠️ [useTranslation] 插值变量未找到: ${key}`);
       return match; // 保留原始占位符
     }
     
@@ -124,7 +125,7 @@ const handlePlural = (
  */
 const logMissingKey = (key: string, language: string, context?: string) => {
   const contextInfo = context ? ` (context: ${context})` : '';
-  console.warn(
+  logger.warn(
     `⚠️ [useTranslation] 翻译键缺失: "${key}" for language "${language}"${contextInfo}`
   );
   
@@ -184,7 +185,7 @@ export const useTranslation = (namespace?: string): UseTranslationReturn => {
       logMissingKey(fullKey, currentLanguage, options.context);
       return options.defaultValue || key;
     } catch (error) {
-      console.error(`❌ [useTranslation] 翻译处理失败: ${key}`, error);
+      logger.error(`❌ [useTranslation] 翻译处理失败: ${key}`, error);
 
       // 返回默认值或键名
       return options.defaultValue || key;

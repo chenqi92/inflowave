@@ -28,6 +28,7 @@ import {
     Settings,
     Unplug,
 } from 'lucide-react';
+import logger from '@/utils/logger';
 
 export interface ContextMenuItem {
     id: string;
@@ -792,7 +793,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
                 document.removeEventListener('keydown', handleEscape);
             } catch (error) {
                 // 忽略清理事件监听器时的错误，避免 DOM 操作冲突
-                console.debug('清理事件监听器时出错:', error);
+                logger.debug('清理事件监听器时出错:', error);
             }
         };
     }, [open, onClose]);

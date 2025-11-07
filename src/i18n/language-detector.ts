@@ -4,6 +4,7 @@
  */
 
 import type { LanguageDetectionConfig } from './types';
+import logger from '@/utils/logger';
 
 export class LanguageDetector {
   private config: LanguageDetectionConfig;
@@ -83,7 +84,7 @@ export class LanguageDetector {
         return this.normalizeLanguageCode(stored);
       }
     } catch (error) {
-      console.warn('Failed to read language from localStorage:', error);
+      logger.warn('Failed to read language from localStorage:', error);
     }
 
     return null;
@@ -96,7 +97,7 @@ export class LanguageDetector {
     try {
       localStorage.setItem('i18nextLng', language);
     } catch (error) {
-      console.warn('Failed to save language to localStorage:', error);
+      logger.warn('Failed to save language to localStorage:', error);
     }
   }
 

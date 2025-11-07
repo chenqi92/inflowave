@@ -4,6 +4,7 @@
  */
 
 import type { LanguageResource } from './translation-loader';
+import logger from '@/utils/logger';
 
 export interface CacheEntry<T> {
   data: T;
@@ -188,7 +189,7 @@ export class CacheManager<T = LanguageResource> {
           const data = await loader(key);
           this.set(key, data);
         } catch (error) {
-          console.warn(`Failed to warmup cache for ${key}:`, error);
+          logger.warn(`Failed to warmup cache for ${key}:`, error);
         }
       }
     });
@@ -212,7 +213,7 @@ export class CacheManager<T = LanguageResource> {
       const jsonString = JSON.stringify(data);
       return new Blob([jsonString]).size;
     } catch (error) {
-      console.warn('Failed to estimate size:', error);
+      logger.warn('Failed to estimate size:', error);
       return 1024; // 默认 1KB
     }
   }

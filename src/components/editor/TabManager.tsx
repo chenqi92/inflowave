@@ -7,6 +7,7 @@ import { showMessage } from '@/utils/message';
 import TabContextMenu from './TabContextMenu';
 import SaveConfirmDialog from '../common/SaveConfirmDialog';
 import { getCurrentWindow } from '@tauri-apps/api/window';
+import logger from '@/utils/logger';
 
 export interface EditorTab {
   id: string;
@@ -355,7 +356,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
     onTabsChange(newTabs);
     onActiveKeyChange(newTab.id);
 
-    console.log(`✅ 创建查询标签页并选中数据库: ${database}`);
+    logger.debug(`✅ 创建查询标签页并选中数据库: ${database}`);
   }, [tabs, onTabsChange, onActiveKeyChange]);
 
   // 关闭标签
@@ -534,7 +535,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
 
           // 🔧 不要通过URL传递查询结果，避免URL过长导致页面无法加载
           // 查询结果会在独立窗口中通过localStorage恢复
-          console.log('📤 创建独立窗口，保存查询结果到localStorage');
+          logger.debug('📤 创建独立窗口，保存查询结果到localStorage');
 
           // 将查询结果保存到localStorage
           if (draggedTab.queryResult || (draggedTab.queryResults && draggedTab.queryResults.length > 0)) {
@@ -545,7 +546,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
               executionTime: draggedTab.executionTime,
             };
             localStorage.setItem(`detached-tab-query-${draggedTab.id}`, JSON.stringify(queryData));
-            console.log('💾 已保存查询结果到localStorage:', {
+            logger.info('💾 已保存查询结果到localStorage:', {
               tabId: draggedTab.id,
               hasQueryResult: !!queryData.queryResult,
               queryResultsCount: queryData.queryResults?.length || 0,
@@ -587,7 +588,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
 
           showMessage.success(`Tab "${draggedTab.title}" 已分离到新窗口`);
         } catch (error) {
-          console.error('创建分离窗口失败:', error);
+          logger.error('创建分离窗口失败:', error);
           showMessage.error('创建分离窗口失败');
         }
       }
@@ -640,7 +641,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
         showMessage.success(`Tab "${tab.title}" 已移回主窗口`);
       }
     } catch (error) {
-      console.error('处理拖拽回来的tab失败:', error);
+      logger.error('处理拖拽回来的tab失败:', error);
     }
   }, [tabs, onTabsChange, onActiveKeyChange]);
 
@@ -655,7 +656,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
       try {
         const currentWindow = getCurrentWindow();
         const unlisten = await currentWindow.listen('reattach-tab', (event: any) => {
-          console.log('📥 收到重新附加tab事件:', event.payload);
+          logger.info('📥 收到重新附加tab事件:', event.payload);
 
           const { tab } = event.payload;
           if (!tab) return;
@@ -664,7 +665,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
           const existingTab = tabs.find(t => t.id === tab.id);
           if (existingTab) {
             // 🔧 如果已存在，更新tab内容和查询结果
-            console.log('🔄 Tab已存在，更新内容和查询结果');
+            logger.debug('🔄 Tab已存在，更新内容和查询结果');
             const updatedTabs = tabs.map(t =>
               t.id === tab.id
                 ? {
@@ -703,7 +704,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
               executedQueries = queryData.executedQueries || [];
               executionTime = queryData.executionTime || 0;
 
-              console.log('✅ 从localStorage恢复查询结果:', {
+              logger.debug('✅ 从localStorage恢复查询结果:', {
                 tabId: tab.id,
                 hasQueryResult: !!queryResult,
                 queryResultsCount: queryResults.length,
@@ -713,11 +714,11 @@ export const TabManager: React.FC<TabManagerProps> = ({
               localStorage.removeItem(storageKey);
             }
           } catch (error) {
-            console.error('❌ 从localStorage恢复查询结果失败:', error);
+            logger.error('❌ 从localStorage恢复查询结果失败:', error);
           }
 
           // 🔧 添加tab到主窗口，包含查询结果
-          console.log('➕ 添加新Tab到主窗口');
+          logger.debug('➕ 添加新Tab到主窗口');
 
           const newTabs = [...tabs, {
             id: tab.id,
@@ -744,7 +745,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
 
         return unlisten;
       } catch (error) {
-        console.error('设置重新附加监听器失败:', error);
+        logger.error('设置重新附加监听器失败:', error);
       }
     };
 
@@ -885,7 +886,7 @@ export const useTabManager = (initialTabs: EditorTab[] = []) => {
 
   const handleTabContentChange = useCallback((tabId: string, content: string) => {
     // 这里可以添加额外的逻辑，比如自动保存等
-    console.log(`Tab ${tabId} content changed`);
+    logger.info(`Tab ${tabId} content changed`);
   }, []);
 
   return {

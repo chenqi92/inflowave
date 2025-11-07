@@ -60,6 +60,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
+import logger from '@/utils/logger';
 
 /**
  * 对话框属性
@@ -198,7 +199,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
         locale: zhCN,
       });
     } catch (error) {
-      console.error('Error formatting date:', error, date);
+      logger.error('Error formatting date:', error, date);
       return 'Invalid Date';
     }
   };

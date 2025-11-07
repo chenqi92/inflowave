@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useConnectionStore } from '@/store/connection';
 import { message } from '@/utils/message';
+import logger from '@/utils/logger';
 
 interface ConnectionRecoveryOptions {
   // 是否启用自动重连
@@ -39,7 +40,7 @@ export function useConnectionRecovery(options: ConnectionRecoveryOptions = {}) {
 
   // 检查失败的连接并尝试恢复
   const checkAndRecoverConnections = useCallback(async () => {
-    console.log('🔍 检查连接状态并尝试恢复...');
+    logger.debug('🔍 检查连接状态并尝试恢复...');
     
     const failedConnections = connections.filter(conn => {
       if (!conn.id) return false;
@@ -51,7 +52,7 @@ export function useConnectionRecovery(options: ConnectionRecoveryOptions = {}) {
       return;
     }
 
-    console.log(`🔄 发现 ${failedConnections.length} 个失败的连接，尝试恢复...`);
+    logger.info(`🔄 发现 ${failedConnections.length} 个失败的连接，尝试恢复...`);
 
     for (const connection of failedConnections) {
       if (!connection.id) continue;
@@ -59,7 +60,7 @@ export function useConnectionRecovery(options: ConnectionRecoveryOptions = {}) {
       const retryCount = retryCountRef.current[connection.id] || 0;
       
       if (retryCount >= maxAutoRetries) {
-        console.log(`⏭️ 连接 ${connection.name} 已达到最大重试次数，跳过自动重连`);
+        logger.debug(`⏭️ 连接 ${connection.name} 已达到最大重试次数，跳过自动重连`);
         continue;
       }
 
@@ -68,12 +69,12 @@ export function useConnectionRecovery(options: ConnectionRecoveryOptions = {}) {
         const testResult = await testConnection(connection.id);
         
         if (testResult) {
-          console.log(`✅ 连接 ${connection.name} 测试成功，尝试重连...`);
+          logger.debug(`✅ 连接 ${connection.name} 测试成功，尝试重连...`);
           
           const reconnectSuccess = await attemptReconnect(connection.id);
           
           if (reconnectSuccess) {
-            console.log(`🎉 连接 ${connection.name} 恢复成功`);
+            logger.info(`🎉 连接 ${connection.name} 恢复成功`);
             // 重置重试计数
             retryCountRef.current[connection.id] = 0;
             
@@ -81,15 +82,15 @@ export function useConnectionRecovery(options: ConnectionRecoveryOptions = {}) {
           } else {
             // 增加重试计数
             retryCountRef.current[connection.id] = retryCount + 1;
-            console.log(`❌ 连接 ${connection.name} 重连失败，重试次数: ${retryCount + 1}/${maxAutoRetries}`);
+            logger.debug(`❌ 连接 ${connection.name} 重连失败，重试次数: ${retryCount + 1}/${maxAutoRetries}`);
           }
         } else {
-          console.log(`❌ 连接 ${connection.name} 测试失败，数据源可能仍未恢复`);
+          logger.debug(`❌ 连接 ${connection.name} 测试失败，数据源可能仍未恢复`);
           // 增加重试计数
           retryCountRef.current[connection.id] = retryCount + 1;
         }
       } catch (error) {
-        console.error(`连接恢复检查失败 ${connection.name}:`, error);
+        logger.error(`连接恢复检查失败 ${connection.name}:`, error);
         retryCountRef.current[connection.id] = retryCount + 1;
       }
     }
@@ -97,13 +98,13 @@ export function useConnectionRecovery(options: ConnectionRecoveryOptions = {}) {
 
   // 手动触发所有连接的恢复检查
   const triggerRecoveryCheck = useCallback(async () => {
-    console.log('🔄 手动触发连接恢复检查...');
+    logger.info('🔄 手动触发连接恢复检查...');
     
     try {
       await checkAndRecoverConnections();
       message.info('连接恢复检查完成');
     } catch (error) {
-      console.error('连接恢复检查失败:', error);
+      logger.error('连接恢复检查失败:', error);
       message.error('连接恢复检查失败');
     }
   }, [checkAndRecoverConnections]);
@@ -127,14 +128,14 @@ export function useConnectionRecovery(options: ConnectionRecoveryOptions = {}) {
   useEffect(() => {
     if (!autoReconnect) return;
 
-    console.log(`🚀 启动连接恢复监控，检查间隔: ${checkInterval}ms`);
+    logger.info(`🚀 启动连接恢复监控，检查间隔: ${checkInterval}ms`);
     
     intervalRef.current = setInterval(checkAndRecoverConnections, checkInterval);
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
-        console.log('🛑 停止连接恢复监控');
+        logger.info('🛑 停止连接恢复监控');
       }
     };
   }, [autoReconnect, checkInterval, checkAndRecoverConnections]);
@@ -144,7 +145,7 @@ export function useConnectionRecovery(options: ConnectionRecoveryOptions = {}) {
     if (!checkOnFocus) return;
 
     const handleFocus = () => {
-      console.log('🔍 窗口获得焦点，检查连接状态...');
+      logger.debug('🔍 窗口获得焦点，检查连接状态...');
       checkAndRecoverConnections();
     };
 
@@ -157,7 +158,7 @@ export function useConnectionRecovery(options: ConnectionRecoveryOptions = {}) {
     if (!checkOnOnline) return;
 
     const handleOnline = () => {
-      console.log('🌐 网络恢复，检查连接状态...');
+      logger.info('🌐 网络恢复，检查连接状态...');
       // 网络恢复后稍等一下再检查，给服务器一些启动时间
       setTimeout(checkAndRecoverConnections, 2000);
     };

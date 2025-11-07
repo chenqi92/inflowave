@@ -5,6 +5,7 @@
 
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { Field, Tag, MeasurementInfo } from '@/types';
+import logger from '@/utils/logger';
 
 // 自动补全项类型
 export interface AutocompleteItem {
@@ -177,7 +178,7 @@ class AutocompleteService {
         await this.updateDatabaseSchema(connectionId, database);
       }
     } catch (error) {
-      console.error('Failed to update schema:', error);
+      logger.error('Failed to update schema:', error);
     }
   }
 
@@ -212,7 +213,7 @@ class AutocompleteService {
           });
           this.schemaCache.fields.set(key, fields);
         } catch (error) {
-          console.warn(`Failed to get fields for ${measurement.name}:`, error);
+          logger.warn(`Failed to get fields for ${measurement.name}:`, error);
         }
 
         // 获取标签
@@ -224,11 +225,11 @@ class AutocompleteService {
           });
           this.schemaCache.tags.set(key, tags);
         } catch (error) {
-          console.warn(`Failed to get tags for ${measurement.name}:`, error);
+          logger.warn(`Failed to get tags for ${measurement.name}:`, error);
         }
       }
     } catch (error) {
-      console.error('Failed to update database schema:', error);
+      logger.error('Failed to update database schema:', error);
     }
   }
 

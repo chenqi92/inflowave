@@ -7,6 +7,7 @@ import { Button } from '@/components/ui';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui';
 import { Separator } from '@/components/ui';
 import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 export interface EmbeddedServerStatusProps {
   showDetails?: boolean;
@@ -48,7 +49,7 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '初始化嵌入式服务器服务失败';
       setError(errorMessage);
-      console.error('初始化嵌入式服务器服务失败:', err);
+      logger.error('初始化嵌入式服务器服务失败:', err);
     } finally {
       setLoading(false);
     }
@@ -60,7 +61,7 @@ export const EmbeddedServerStatus: React.FC<EmbeddedServerStatusProps> = ({
       setServerPort(embeddedServerService.getServerPort());
       setIsRunning(embeddedServerService.getIsRunning());
     } catch (err) {
-      console.error('检查嵌入式服务器状态失败:', err);
+      logger.error('检查嵌入式服务器状态失败:', err);
     }
   };
 

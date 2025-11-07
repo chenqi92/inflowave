@@ -40,6 +40,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { exportWithNativeDialog } from '@/utils/nativeExport';
 import type { DataExportResult, Connection, QueryResult } from '@/types';
 import { useDataTranslation } from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 interface DataExportDialogProps {
   open: boolean;
@@ -213,7 +214,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
       const formats = (await safeTauriInvoke('get_export_formats')) as any[];
       setExportFormats(formats);
     } catch (error) {
-      console.error('加载导出格式失败:', error);
+      logger.error('加载导出格式失败:', error);
     }
   };
 
@@ -264,7 +265,7 @@ const DataExportDialog: React.FC<DataExportDialogProps> = ({
         showMessage.error(t('export.export_failed'));
       }
     } catch (error) {
-      console.error('导出失败:', error);
+      logger.error('导出失败:', error);
       showMessage.error(t('export.export_failed_with_error', { error: String(error) }));
       setExportResult({
         success: false,

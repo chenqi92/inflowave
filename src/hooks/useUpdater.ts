@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { UpdateInfo } from '@/types/updater';
 import { updaterService } from '@/services/updaterService';
+import logger from '@/utils/logger';
 
 interface UseUpdaterReturn {
   updateInfo: UpdateInfo | null;
@@ -34,7 +35,7 @@ export const useUpdater = (): UseUpdaterReturn => {
         setShowNotification(true);
       }
     } catch (error) {
-      console.error('Failed to check for updates:', error);
+      logger.error('Failed to check for updates:', error);
     } finally {
       setIsChecking(false);
     }
@@ -55,7 +56,7 @@ export const useUpdater = (): UseUpdaterReturn => {
       
       setShowNotification(false);
     } catch (error) {
-      console.error('Failed to skip version:', error);
+      logger.error('Failed to skip version:', error);
       throw error;
     }
   }, [updateInfo]);
@@ -97,7 +98,7 @@ export const useUpdater = (): UseUpdaterReturn => {
           await checkForUpdates();
         }
       } catch (error) {
-        console.error('Failed to initialize updater:', error);
+        logger.error('Failed to initialize updater:', error);
       }
     };
 

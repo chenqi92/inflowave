@@ -53,6 +53,7 @@ import type {
   WebhookConfig,
   AutomationRule,
 } from '@/types';
+import logger from '@/utils/logger';
 
 // Removed Typography and Input destructuring - using direct components
 
@@ -102,7 +103,7 @@ const ExtensionManager: React.FC = () => {
       const result = await safeTauriInvoke<Plugin[]>('get_installed_plugins');
       setPlugins(result || []);
     } catch (error) {
-      console.error('加载插件失败:', error);
+      logger.error('加载插件失败:', error);
     }
   };
 
@@ -113,7 +114,7 @@ const ExtensionManager: React.FC = () => {
       );
       setApiIntegrations(result || []);
     } catch (error) {
-      console.error('加载API集成失败:', error);
+      logger.error('加载API集成失败:', error);
     }
   };
 
@@ -122,7 +123,7 @@ const ExtensionManager: React.FC = () => {
       const result = await safeTauriInvoke<WebhookConfig[]>('get_webhooks');
       setWebhooks(result || []);
     } catch (error) {
-      console.error('加载Webhook失败:', error);
+      logger.error('加载Webhook失败:', error);
     }
   };
 
@@ -133,7 +134,7 @@ const ExtensionManager: React.FC = () => {
       );
       setAutomationRules(result || []);
     } catch (error) {
-      console.error('加载自动化规则失败:', error);
+      logger.error('加载自动化规则失败:', error);
     }
   };
 
@@ -147,7 +148,7 @@ const ExtensionManager: React.FC = () => {
       });
       loadPlugins();
     } catch (error) {
-      console.error('切换插件状态失败:', error);
+      logger.error('切换插件状态失败:', error);
       const friendlyError = getExtensionError(String(error), 'load');
       showMessage.error(formatErrorMessage(friendlyError));
     }
@@ -159,7 +160,7 @@ const ExtensionManager: React.FC = () => {
       showMessage.success('插件已卸载');
       loadPlugins();
     } catch (error) {
-      console.error('卸载插件失败:', error);
+      logger.error('卸载插件失败:', error);
       const friendlyError = getExtensionError(String(error), 'uninstall');
       showMessage.error(formatErrorMessage(friendlyError));
     }
@@ -187,7 +188,7 @@ const ExtensionManager: React.FC = () => {
       apiForm.reset();
       loadApiIntegrations();
     } catch (error) {
-      console.error('创建API集成失败:', error);
+      logger.error('创建API集成失败:', error);
       const friendlyError = getExtensionError(String(error), 'api');
       showMessage.error(formatErrorMessage(friendlyError));
     }
@@ -201,7 +202,7 @@ const ExtensionManager: React.FC = () => {
       });
       setTestModalOpen(true);
       // Store result for modal display
-      console.log('API 测试结果:', result);
+      logger.info('API 测试结果:', result);
     } catch (error) {
       showNotification.error({
         message: '测试失败',
@@ -224,7 +225,7 @@ const ExtensionManager: React.FC = () => {
       showMessage.success(`API集成已${enabled ? '启用' : '禁用'}`);
       loadApiIntegrations();
     } catch (error) {
-      console.error('切换API集成状态失败:', error);
+      logger.error('切换API集成状态失败:', error);
       showMessage.error('操作失败');
     }
   };
@@ -253,7 +254,7 @@ const ExtensionManager: React.FC = () => {
       webhookForm.reset();
       loadWebhooks();
     } catch (error) {
-      console.error('创建Webhook失败:', error);
+      logger.error('创建Webhook失败:', error);
       showMessage.error('创建失败');
     }
   };
@@ -264,7 +265,7 @@ const ExtensionManager: React.FC = () => {
       showMessage.success(`Webhook已${enabled ? '启用' : '禁用'}`);
       loadWebhooks();
     } catch (error) {
-      console.error('切换Webhook状态失败:', error);
+      logger.error('切换Webhook状态失败:', error);
       showMessage.error('操作失败');
     }
   };
@@ -292,7 +293,7 @@ const ExtensionManager: React.FC = () => {
       automationForm.reset();
       loadAutomationRules();
     } catch (error) {
-      console.error('创建自动化规则失败:', error);
+      logger.error('创建自动化规则失败:', error);
       showMessage.error('创建失败');
     }
   };
@@ -304,9 +305,9 @@ const ExtensionManager: React.FC = () => {
         context: {},
       });
       showMessage.success('自动化规则执行成功');
-      console.log('执行结果:', result);
+      logger.info('执行结果:', result);
     } catch (error) {
-      console.error('执行自动化规则失败:', error);
+      logger.error('执行自动化规则失败:', error);
       showMessage.error('执行失败');
     }
   };
@@ -317,7 +318,7 @@ const ExtensionManager: React.FC = () => {
       showMessage.success(`自动化规则已${enabled ? '启用' : '禁用'}`);
       loadAutomationRules();
     } catch (error) {
-      console.error('切换自动化规则状态失败:', error);
+      logger.error('切换自动化规则状态失败:', error);
       showMessage.error('操作失败');
     }
   };

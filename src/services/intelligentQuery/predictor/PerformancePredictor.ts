@@ -4,6 +4,7 @@ import {
     ExecutionStep,
     ResourceRequirements,
 } from '../index';
+import logger from '@/utils/logger';
 
 export interface PerformancePrediction {
     estimatedDuration: number;
@@ -213,7 +214,7 @@ export class PerformancePredictor {
 
             return result;
         } catch (error) {
-            console.error('Performance prediction failed:', error);
+            logger.error('Performance prediction failed:', error);
 
             // 返回保守估计
             return this.getConservativeEstimate(query, context);
@@ -313,7 +314,7 @@ export class PerformancePredictor {
             // 更新预测准确性
             await this.updatePredictionAccuracy(query, actualResult, context);
         } catch (error) {
-            console.error('Failed to update model:', error);
+            logger.error('Failed to update model:', error);
         }
     }
 

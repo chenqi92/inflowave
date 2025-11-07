@@ -37,6 +37,7 @@ import { useConnectionStore } from '@/store/connection';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 // 性能指标类型
 interface PerformanceMetrics {
@@ -158,7 +159,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
       const openedDataSourcesList = Array.from(openedDatabases);
 
       // 🔍 调试日志：查看打开的数据源列表
-      console.log('📊 [性能监控] 打开的数据源列表:', {
+      logger.debug('📊 [性能监控] 打开的数据源列表:', {
         count: openedDataSourcesList.length,
         list: openedDataSourcesList
       });
@@ -175,7 +176,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
       );
 
       // 🔍 调试日志：查看返回的性能数据
-      console.log('📊 [性能监控] 返回的性能数据:', {
+      logger.debug('📊 [性能监控] 返回的性能数据:', {
         count: result.length,
         data: result.map(m => ({
           connectionId: m.connectionId,
@@ -193,7 +194,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
         await fetchHistoryData(datasourceKey, timeRange);
       }
     } catch (error) {
-      console.error('获取性能数据失败:', error);
+      logger.error('获取性能数据失败:', error);
       showMessage.error(`获取性能数据失败: ${error}`);
     } finally {
       setLoading(false);
@@ -228,7 +229,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
 
       setHistoryData(formattedHistory);
     } catch (error) {
-      console.error('获取历史数据失败:', error);
+      logger.error('获取历史数据失败:', error);
       // 失败时不显示错误消息，保持当前数据
     }
   }, []);

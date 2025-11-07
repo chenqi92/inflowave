@@ -1,4 +1,5 @@
 import { safeTauriInvoke } from './tauri';
+import logger from '@/utils/logger';
 
 /**
  * 文件操作工具类
@@ -21,7 +22,7 @@ export class FileOperations {
         content,
       });
     } catch (error) {
-      console.error(`写入文件失败 ${path}:`, error);
+      logger.error(`写入文件失败 ${path}:`, error);
       throw error;
     }
   }
@@ -42,11 +43,11 @@ export class FileOperations {
         try {
           existingContent = await this.readFile(path);
         } catch (error) {
-          console.warn(`读取现有文件内容失败 ${path}:`, error);
+          logger.warn(`读取现有文件内容失败 ${path}:`, error);
           // 如果读取失败，继续使用空字符串
         }
       } else {
-        console.log('文件不存在，将创建新文件:', path);
+        logger.info('文件不存在，将创建新文件:', path);
       }
 
       // 追加新内容
@@ -58,7 +59,7 @@ export class FileOperations {
         content: newContent,
       });
     } catch (error) {
-      console.error(`追加文件失败 ${path}:`, error);
+      logger.error(`追加文件失败 ${path}:`, error);
       throw error;
     }
   }
@@ -73,7 +74,7 @@ export class FileOperations {
       const result = await safeTauriInvoke<string>('read_file_env', { path });
       return result || '';
     } catch (error) {
-      console.error(`读取文件失败 ${path}:`, error);
+      logger.error(`读取文件失败 ${path}:`, error);
       throw error;
     }
   }
@@ -86,7 +87,7 @@ export class FileOperations {
     try {
       await safeTauriInvoke('delete_file_env', { path });
     } catch (error) {
-      console.error(`删除文件失败 ${path}:`, error);
+      logger.error(`删除文件失败 ${path}:`, error);
       throw error;
     }
   }
@@ -101,7 +102,7 @@ export class FileOperations {
       const result = await safeTauriInvoke<boolean>('file_exists_env', { path });
       return result || false;
     } catch (error) {
-      console.error(`检查文件存在性失败 ${path}:`, error);
+      logger.error(`检查文件存在性失败 ${path}:`, error);
       return false;
     }
   }
@@ -114,7 +115,7 @@ export class FileOperations {
     try {
       await safeTauriInvoke('create_dir_env', { path });
     } catch (error) {
-      console.error(`创建目录失败 ${path}:`, error);
+      logger.error(`创建目录失败 ${path}:`, error);
       throw error;
     }
   }
@@ -151,7 +152,7 @@ export class FileOperations {
         }
       );
     } catch (error) {
-      console.error(`获取文件信息失败 ${path}:`, error);
+      logger.error(`获取文件信息失败 ${path}:`, error);
       throw error;
     }
   }

@@ -21,6 +21,7 @@ import {
   SmartSuggestion,
   QueryContext
 } from '../../../types/database/base';
+import logger from '@/utils/logger';
 
 /**
  * InfluxDB 查询引擎实现
@@ -107,7 +108,7 @@ export class InfluxDBQueryEngine extends QueryEngine {
           return query;
       }
     } catch (error) {
-      console.warn(`Failed to format ${language} query:`, error);
+      logger.warn(`Failed to format ${language} query:`, error);
       return query; // 格式化失败时返回原查询
     }
   }
@@ -156,7 +157,7 @@ export class InfluxDBQueryEngine extends QueryEngine {
     try {
       return await this.smartComplete.getSuggestions(connection, context);
     } catch (error) {
-      console.warn('Failed to get smart suggestions:', error);
+      logger.warn('Failed to get smart suggestions:', error);
       return [];
     }
   }

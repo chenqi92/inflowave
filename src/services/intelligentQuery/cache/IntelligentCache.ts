@@ -1,6 +1,7 @@
 import { safeTauriInvoke } from '@/utils/tauri';
 import { QueryAnalysis } from '../analyzer/QueryAnalyzer';
 import { Recommendation } from '../index';
+import logger from '@/utils/logger';
 
 export interface CacheEntry {
   key: string;
@@ -433,7 +434,7 @@ export class IntelligentCache {
     try {
       await safeTauriInvoke('save_cache_data', { data: cacheData });
     } catch (error) {
-      console.error('Failed to persist cache:', error);
+      logger.error('Failed to persist cache:', error);
     }
   }
 
@@ -464,7 +465,7 @@ export class IntelligentCache {
         }
       }
     } catch (error) {
-      console.error('Failed to restore cache:', error);
+      logger.error('Failed to restore cache:', error);
     }
   }
 

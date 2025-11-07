@@ -13,6 +13,7 @@ import {
   ERROR_MESSAGES,
 } from '@/types/error';
 import { errorLogger } from './errorLogger';
+import logger from '@/utils/logger';
 
 /**
  * 错误处理器类
@@ -288,7 +289,7 @@ class ErrorHandler {
         stack: details.stack,
       });
     } catch (logError) {
-      console.error('Failed to log error:', logError);
+      logger.error('Failed to log error:', logError);
     }
   }
 

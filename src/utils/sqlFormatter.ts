@@ -4,6 +4,7 @@
  */
 
 import i18n from 'i18next';
+import logger from '@/utils/logger';
 
 export type DatabaseType = '1.x' | '2.x' | '3.x' | 'unknown';
 
@@ -314,7 +315,7 @@ export function formatSQL(sql: string, databaseType?: DatabaseType, customOption
         return formatCommonSQL(sql, options);
     }
   } catch (error) {
-    console.warn(i18n.t('logs:sql.format_failed'), error);
+    logger.warn(i18n.t('logs:sql.format_failed'), error);
     return sql;
   }
 }

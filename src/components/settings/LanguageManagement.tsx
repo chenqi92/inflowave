@@ -42,6 +42,7 @@ import { useSettingsTranslation, useCommonTranslation } from '@/hooks/useTransla
 import { showMessage } from '@/utils/message';
 import { saveJsonFile } from '@/utils/nativeDownload';
 import type { LanguageInfo } from '@/i18n/types';
+import logger from '@/utils/logger';
 
 const LanguageManagement: React.FC = () => {
   const { t: tSettings } = useSettingsTranslation();
@@ -113,7 +114,7 @@ const LanguageManagement: React.FC = () => {
             resources[namespace] = await response.json();
           }
         } catch (error) {
-          console.warn(`Failed to load namespace ${namespace}:`, error);
+          logger.warn(`Failed to load namespace ${namespace}:`, error);
         }
       }
 
@@ -142,7 +143,7 @@ const LanguageManagement: React.FC = () => {
         showMessage.success(tSettings('language_pack_exported'));
       }
     } catch (error) {
-      console.error('Export language pack failed:', error);
+      logger.error('Export language pack failed:', error);
       showMessage.error(`${tCommon('error')}: ${error}`);
     }
   };
@@ -176,7 +177,7 @@ const LanguageManagement: React.FC = () => {
               resources[namespace] = await response.json();
             }
           } catch (error) {
-            console.warn(`Failed to load namespace ${namespace} for ${language.code}:`, error);
+            logger.warn(`Failed to load namespace ${namespace} for ${language.code}:`, error);
           }
         }
 
@@ -210,7 +211,7 @@ const LanguageManagement: React.FC = () => {
         showMessage.success(tSettings('language_pack_exported'));
       }
     } catch (error) {
-      console.error('Export all languages failed:', error);
+      logger.error('Export all languages failed:', error);
       showMessage.error(`${tCommon('error')}: ${error}`);
     }
   };
@@ -246,14 +247,14 @@ const LanguageManagement: React.FC = () => {
 
           showMessage.info('Language pack import feature is under development');
         } catch (error) {
-          console.error('Import language pack failed:', error);
+          logger.error('Import language pack failed:', error);
           showMessage.error(`${tCommon('error')}: ${error}`);
         }
       };
 
       input.click();
     } catch (error) {
-      console.error('Import language pack failed:', error);
+      logger.error('Import language pack failed:', error);
       showMessage.error(`${tCommon('error')}: ${error}`);
     }
   };

@@ -6,6 +6,7 @@
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 /**
  * 导出格式
@@ -270,7 +271,7 @@ export async function saveExportFile(
     toast.success(`文件已成功导出到: ${filePath}`);
     return true;
   } catch (error) {
-    console.error('导出文件失败:', error);
+    logger.error('导出文件失败:', error);
     toast.error(`导出失败: ${error}`);
     return false;
   }
@@ -298,7 +299,7 @@ export async function exportData(
     // 保存文件
     return await saveExportFile(content, config);
   } catch (error) {
-    console.error('导出数据失败:', error);
+    logger.error('导出数据失败:', error);
     toast.error(`导出失败: ${error}`);
     return false;
   }

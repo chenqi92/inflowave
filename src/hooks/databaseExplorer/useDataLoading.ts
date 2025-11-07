@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import type { TreeNode } from '@/types/tree';
+import logger from '@/utils/logger';
 
 interface UseDataLoadingProps {
     getTreeNodesWithCache: (connectionId: string, forceRefresh: boolean) => Promise<TreeNode[]>;
@@ -17,19 +18,19 @@ export const useDataLoading = ({
      */
     const loadDatabases = useCallback(
         async (connection_id: string, forceRefresh: boolean = false): Promise<string[]> => {
-            console.log(`📂 加载数据库列表: ${connection_id}, 强制刷新: ${forceRefresh}`);
+            logger.info(`📂 加载数据库列表: ${connection_id}, 强制刷新: ${forceRefresh}`);
 
             // 检查缓存
             if (!forceRefresh && databasesCache.has(connection_id)) {
                 const cached = databasesCache.get(connection_id)!;
-                console.log(`✅ 使用缓存的数据库列表: ${cached.length} 个数据库`);
+                logger.debug(`✅ 使用缓存的数据库列表: ${cached.length} 个数据库`);
                 return cached;
             }
 
             try {
                 // 使用统一的缓存方法获取树节点信息
                 const treeNodes = await getTreeNodesWithCache(connection_id, forceRefresh);
-                console.log(`🎯 获取树节点信息，节点数量: ${treeNodes.length}`);
+                logger.info(`🎯 获取树节点信息，节点数量: ${treeNodes.length}`);
 
                 // 过滤出数据库节点
                 const databases = treeNodes
@@ -39,14 +40,14 @@ export const useDataLoading = ({
                     })
                     .map(node => node.name || node.id);
 
-                console.log(`📁 数据库列表: ${databases.join(', ')}`);
+                logger.info(`📁 数据库列表: ${databases.join(', ')}`);
 
                 // 更新缓存
                 setDatabasesCache(prev => new Map(prev).set(connection_id, databases));
 
                 return databases;
             } catch (error) {
-                console.error(`❌ 加载数据库列表失败:`, error);
+                logger.error(`❌ 加载数据库列表失败:`, error);
                 throw error;
             }
         },
@@ -58,7 +59,7 @@ export const useDataLoading = ({
      */
     const loadTables = useCallback(
         async (connection_id: string, database: string): Promise<string[]> => {
-            console.log(`📊 加载表列表: ${connection_id}/${database}`);
+            logger.info(`📊 加载表列表: ${connection_id}/${database}`);
             // 这里应该调用后端API获取表列表
             // 暂时返回空数组
             return [];
@@ -67,7 +68,7 @@ export const useDataLoading = ({
             //     const result = await invoke('get_tables', { connection_id, database });
             //     return result;
             // } catch (error) {
-            //     console.error(`❌ 加载表列表失败:`, error);
+            //     logger.error(`❌ 加载表列表失败:`, error);
             //     throw error;
             // }
         },
@@ -86,7 +87,7 @@ export const useDataLoading = ({
             tags: string[];
             fields: Array<{ name: string; type: string }>;
         }> => {
-            console.log(`🏷️ 加载字段和标签: ${connection_id}/${database}/${table}`);
+            logger.debug(`🏷️ 加载字段和标签: ${connection_id}/${database}/${table}`);
             // 这里应该调用后端API获取字段和标签信息
             // 暂时返回空对象
             return {
@@ -98,7 +99,7 @@ export const useDataLoading = ({
             //     const result = await invoke('get_table_schema', { connection_id, database, table });
             //     return result;
             // } catch (error) {
-            //     console.error(`❌ 加载字段和标签失败:`, error);
+            //     logger.error(`❌ 加载字段和标签失败:`, error);
             //     throw error;
             // }
         },

@@ -6,6 +6,7 @@
 import { TranslationLoader, type LanguageResource, type ResourceIntegrityInfo, type LoaderStats } from './translation-loader';
 import { SmartPreloader, type PreloadResult } from './preloader';
 import type { LoaderConfig, LanguageInfo } from './types';
+import logger from '@/utils/logger';
 
 export interface ResourceVersion {
   language: string;
@@ -68,9 +69,9 @@ export class ResourceManager {
       // 设置参考键集合
       await this.setupReferenceKeys();
       
-      console.log('Resource manager initialized successfully');
+      logger.info('Resource manager initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize resource manager:', error);
+      logger.error('Failed to initialize resource manager:', error);
       throw error;
     }
   }
@@ -96,7 +97,7 @@ export class ResourceManager {
     availableLanguages: string[],
     currentLanguage: string
   ): Promise<PreloadResult[]> {
-    console.log(`🧠 [ResourceManager] Starting smart preload`);
+    logger.info(`🧠 [ResourceManager] Starting smart preload`);
     
     return this.preloader.startPreloading(
       availableLanguages,
@@ -142,7 +143,7 @@ export class ResourceManager {
           updateSize: hasUpdate ? await this.calculateUpdateSize(language) : 0,
         });
       } catch (error) {
-        console.error(`Failed to check updates for ${language}:`, error);
+        logger.error(`Failed to check updates for ${language}:`, error);
         updateInfos.push({
           language,
           hasUpdate: false,
@@ -171,10 +172,10 @@ export class ResourceManager {
         await this.saveVersionInfo();
       }
       
-      console.log(`Language ${language} updated successfully`);
+      logger.info(`Language ${language} updated successfully`);
       return true;
     } catch (error) {
-      console.error(`Failed to update language ${language}:`, error);
+      logger.error(`Failed to update language ${language}:`, error);
       return false;
     }
   }
@@ -243,7 +244,7 @@ export class ResourceManager {
     const languages = ['zh-CN', 'en-US'];
     languages.forEach(language => {
       this.loader.onHotUpdate(language, (resource) => {
-        console.log(`Hot reload triggered for ${language}`);
+        logger.info(`Hot reload triggered for ${language}`);
         // 触发自定义事件
         if (typeof window !== 'undefined') {
           window.dispatchEvent(new CustomEvent('i18n-hot-reload', {
@@ -265,7 +266,7 @@ export class ResourceManager {
         const issues = results.filter(r => !r.isComplete || r.missingKeys.length > 0);
         
         if (issues.length > 0) {
-          console.warn('Resource integrity issues found:', issues);
+          logger.warn('Resource integrity issues found:', issues);
           
           // 触发完整性问题事件
           if (typeof window !== 'undefined') {
@@ -275,7 +276,7 @@ export class ResourceManager {
           }
         }
       } catch (error) {
-        console.error('Integrity check failed:', error);
+        logger.error('Integrity check failed:', error);
       }
     }, 3600000); // 1小时
   }
@@ -290,7 +291,7 @@ export class ResourceManager {
       const keys = this.extractAllKeys(referenceResource);
       this.loader.setReferenceKeys(Array.from(keys));
     } catch (error) {
-      console.warn('Failed to setup reference keys:', error);
+      logger.warn('Failed to setup reference keys:', error);
     }
   }
 
@@ -329,7 +330,7 @@ export class ResourceManager {
         }
       }
     } catch (error) {
-      console.warn('Failed to load version info:', error);
+      logger.warn('Failed to load version info:', error);
     }
   }
 
@@ -354,7 +355,7 @@ export class ResourceManager {
         localStorage.setItem('i18n-versions', JSON.stringify(versions));
       }
     } catch (error) {
-      console.warn('Failed to save version info:', error);
+      logger.warn('Failed to save version info:', error);
     }
   }
 
@@ -381,7 +382,7 @@ export class ResourceManager {
       const jsonString = JSON.stringify(resource);
       return new Blob([jsonString]).size;
     } catch (error) {
-      console.warn(`Failed to calculate update size for ${language}:`, error);
+      logger.warn(`Failed to calculate update size for ${language}:`, error);
       return 0;
     }
   }

@@ -5,6 +5,7 @@
  */
 
 import { invoke } from '@tauri-apps/api/core';
+import logger from '@/utils/logger';
 
 export interface DatabaseVersionInfo {
   database_type: string;
@@ -69,7 +70,7 @@ export class DatabaseVersionDetectionService {
       
       return response.result;
     } catch (error) {
-      console.error('数据库版本检测失败:', error);
+      logger.error('数据库版本检测失败:', error);
       throw error;
     }
   }
@@ -82,7 +83,7 @@ export class DatabaseVersionDetectionService {
       const dbType: string = await invoke('quick_detect_database_type', { host, port });
       return dbType;
     } catch (error) {
-      console.error('快速数据库类型检测失败:', error);
+      logger.error('快速数据库类型检测失败:', error);
       return 'unknown';
     }
   }
@@ -95,7 +96,7 @@ export class DatabaseVersionDetectionService {
       const isValid: boolean = await invoke('validate_detected_connection', { request });
       return isValid;
     } catch (error) {
-      console.error('连接验证失败:', error);
+      logger.error('连接验证失败:', error);
       return false;
     }
   }
@@ -108,7 +109,7 @@ export class DatabaseVersionDetectionService {
       const types: string[] = await invoke('get_supported_database_types');
       return types;
     } catch (error) {
-      console.error('获取支持的数据库类型失败:', error);
+      logger.error('获取支持的数据库类型失败:', error);
       return [];
     }
   }
@@ -125,7 +126,7 @@ export class DatabaseVersionDetectionService {
       });
       return suggestions as ConnectionConfigSuggestions;
     } catch (error) {
-      console.error('生成连接配置建议失败:', error);
+      logger.error('生成连接配置建议失败:', error);
       throw error;
     }
   }

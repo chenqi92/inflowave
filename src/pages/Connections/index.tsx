@@ -9,6 +9,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
 import type { ConnectionConfig } from '@/types';
+import logger from '@/utils/logger';
 
 const Connections: React.FC = () => {
   const navigate = useNavigate();
@@ -30,12 +31,12 @@ const Connections: React.FC = () => {
   // 同步连接配置从后端到前端
   const syncConnectionsFromBackend = async () => {
     try {
-      console.log('🔄 开始同步连接配置从后端到前端');
+      logger.info('🔄 开始同步连接配置从后端到前端');
       const backendConnections =
         await safeTauriInvoke<ConnectionConfig[]>('get_connections');
 
       if (backendConnections && backendConnections.length > 0) {
-        console.log(`📥 从后端获取到 ${backendConnections.length} 个连接配置`);
+        logger.info(`📥 从后端获取到 ${backendConnections.length} 个连接配置`);
 
         // 对比前端和后端的连接，检查是否需要更新
         const currentConnections = connections;
@@ -58,7 +59,7 @@ const Connections: React.FC = () => {
         });
 
         if (hasIdDifference || hasContentDifference) {
-          console.log('🔄 检测到连接配置差异，开始同步');
+          logger.info('🔄 检测到连接配置差异，开始同步');
 
           // 保存当前状态
           const { activeConnectionId, connectionStatuses } = useConnectionStore.getState();
@@ -76,24 +77,24 @@ const Connections: React.FC = () => {
             useConnectionStore.getState().setActiveConnection(activeConnectionId);
           }
 
-          console.log(`✅ 成功同步 ${backendConnections.length} 个连接配置`);
+          logger.debug(`✅ 成功同步 ${backendConnections.length} 个连接配置`);
         } else {
-          console.log('✅ 连接配置已是最新，无需同步');
+          logger.debug('✅ 连接配置已是最新，无需同步');
         }
       } else if (connections.length > 0) {
         // 如果后端没有连接但前端有，将前端连接推送到后端
-        console.log('📤 后端无连接配置，尝试同步前端连接到后端');
+        logger.info('📤 后端无连接配置，尝试同步前端连接到后端');
         try {
           await syncConnectionsToBackend();
-          console.log('✅ 前端连接已同步到后端');
+          logger.debug('✅ 前端连接已同步到后端');
         } catch (syncError) {
-          console.warn('⚠️ 同步前端连接到后端失败:', syncError);
+          logger.warn('⚠️ 同步前端连接到后端失败:', syncError);
         }
       } else {
-        console.log('📭 前后端都没有连接配置');
+        logger.debug('📭 前后端都没有连接配置');
       }
     } catch (error) {
-      console.error('❌ 同步连接配置失败:', error);
+      logger.error('❌ 同步连接配置失败:', error);
       showMessage.error(t('errors.sync_connection_config_failed'));
     }
   };
@@ -110,7 +111,7 @@ const Connections: React.FC = () => {
 
       if (connectionList) {
         // 连接配置已通过 syncConnectionsFromBackend 同步，包括状态
-        console.log(`📋 连接列表加载完成: ${connectionList.length} 个连接`);
+        logger.info(`📋 连接列表加载完成: ${connectionList.length} 个连接`);
       }
     } catch (error) {
       showMessage.error(t('errors.load_connection_list_failed', { interpolation: { error } }));
@@ -140,7 +141,7 @@ const Connections: React.FC = () => {
   // 处理连接保存成功
   const handleConnectionSuccess = async (connection: ConnectionConfig) => {
     try {
-      console.log('💾 连接保存成功:', connection.name);
+      logger.info('💾 连接保存成功:', connection.name);
 
       if (editingConnection?.id) {
         // 更新现有连接
@@ -150,16 +151,16 @@ const Connections: React.FC = () => {
         // 注意：SimpleConnectionDialog 内部的 useConnection hook 已经处理了连接创建和添加到store
         // 这里只需要显示成功消息
         showMessage.success(t('connections.connection_created', { interpolation: { name: connection.name } }));
-        console.log('✅ 新连接已通过 useConnection hook 添加到前端状态:', connection.id);
+        logger.debug('✅ 新连接已通过 useConnection hook 添加到前端状态:', connection.id);
       }
 
       handleCloseDialog();
 
       // 不需要在这里强制刷新，因为DatabaseExplorer会监听连接配置变化自动刷新
-      console.log('✅ 连接保存完成，等待DatabaseExplorer自动刷新');
+      logger.debug('✅ 连接保存完成，等待DatabaseExplorer自动刷新');
 
     } catch (error) {
-      console.error('❌ 连接保存失败:', error);
+      logger.error('❌ 连接保存失败:', error);
       showMessage.error(t('connections.connection_save_failed', { interpolation: { error } }));
     }
   };

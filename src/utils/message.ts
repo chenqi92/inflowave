@@ -15,6 +15,7 @@ import {
   getNotificationSettings,
   isNotificationTypeEnabled
 } from '@/stores/userPreferencesStore';
+import logger from '@/utils/logger';
 
 // 消息类型定义
 export type MessageType = 'success' | 'error' | 'warning' | 'info' | 'loading';
@@ -67,7 +68,7 @@ const sendDesktopNotification = async (title: string, message: string, _icon?: s
             duration: 5000,
         });
     } catch (error) {
-        console.warn('发送桌面通知失败:', error);
+        logger.warn('发送桌面通知失败:', error);
     }
 };
 
@@ -571,7 +572,7 @@ export const specialMessage = {
             description: `已成功连接到 ${name}`,
             action: {
                 label: '查看',
-                onClick: () => console.log(`查看连接: ${name}`),
+                onClick: () => logger.debug(`查看连接: ${name}`),
             },
         });
 
@@ -591,7 +592,7 @@ export const specialMessage = {
             duration: 6,
             action: {
                 label: '重试',
-                onClick: () => console.log(`重试连接: ${name}`),
+                onClick: () => logger.debug(`重试连接: ${name}`),
             },
         });
 
@@ -610,7 +611,7 @@ export const specialMessage = {
             duration: 0, // 不自动关闭，替代 important
             action: {
                 label: '重连',
-                onClick: () => console.log(`重连: ${name}`),
+                onClick: () => logger.debug(`重连: ${name}`),
             },
         });
 
@@ -658,7 +659,7 @@ export const specialMessage = {
             description: `查询执行超过 ${timeout}s，已自动取消`,
             action: {
                 label: '优化查询',
-                onClick: () => console.log('打开查询优化建议'),
+                onClick: () => logger.debug('打开查询优化建议'),
             },
         });
 
@@ -679,7 +680,7 @@ export const specialMessage = {
                 : `已导出为 ${format.toUpperCase()} 格式`,
             action: {
                 label: '打开文件夹',
-                onClick: () => console.log('打开导出文件夹'),
+                onClick: () => logger.info('打开导出文件夹'),
             },
         }),
 
@@ -689,7 +690,7 @@ export const specialMessage = {
             description: error,
             action: {
                 label: '重试',
-                onClick: () => console.log('重试导出'),
+                onClick: () => logger.info('重试导出'),
             },
         }),
 
@@ -725,7 +726,7 @@ export const specialMessage = {
             description: `版本 ${version} 已发布`,
             action: {
                 label: '立即更新',
-                onClick: () => console.log('开始更新'),
+                onClick: () => logger.info('开始更新'),
             },
             cancel: {
                 label: '稍后提醒',
@@ -747,7 +748,7 @@ export const specialMessage = {
             duration: 0, // 不自动关闭，替代 important
             action: {
                 label: '报告问题',
-                onClick: () => console.log('打开问题报告'),
+                onClick: () => logger.debug('打开问题报告'),
             },
         });
 
@@ -772,7 +773,7 @@ export const specialMessage = {
             description: error,
             action: {
                 label: '查看详情',
-                onClick: () => console.log('查看导入错误详情'),
+                onClick: () => logger.info('查看导入错误详情'),
             },
         }),
 };

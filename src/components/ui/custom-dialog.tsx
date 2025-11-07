@@ -11,6 +11,7 @@ import {
   Label,
 } from '@/components/ui';
 import { AlertTriangle, Info, HelpCircle } from 'lucide-react';
+import logger from '@/utils/logger';
 
 interface DialogOptions {
   title?: string;
@@ -64,7 +65,7 @@ const CustomDialog: React.FC<CustomDialogProps> = ({
         await onConfirm?.();
       }
     } catch (error) {
-      console.error('Dialog confirm error:', error);
+      logger.error('Dialog confirm error:', error);
     } finally {
       setIsProcessing(false);
       onClose();

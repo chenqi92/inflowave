@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import * as echarts from 'echarts';
 import type { QueryResult, Series } from '@/types';
+import logger from '@/utils/logger';
 
 interface ChartConfig {
   type: 'line' | 'bar' | 'area' | 'pie' | 'scatter' | 'gauge' | 'heatmap';
@@ -153,7 +154,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
         // Convert null/undefined to string to satisfy ECharts type requirements
         return timeValue === null || timeValue === undefined ? '' : String(timeValue);
       } catch (error) {
-        console.error('处理X轴数据时发生错误:', error);
+        logger.error('处理X轴数据时发生错误:', error);
         return '';
       }
     });
@@ -381,7 +382,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
         try {
           chartInstance.current?.resize();
         } catch (error) {
-          console.error('图表尺寸调整失败:', error);
+          logger.error('图表尺寸调整失败:', error);
           const friendlyError = getUIInteractionError('chart', String(error), config.type);
           showMessage.error(formatErrorMessage(friendlyError));
         }
@@ -393,7 +394,7 @@ const AdvancedChart: React.FC<AdvancedChartProps> = ({
         window.removeEventListener('resize', handleResize);
       };
     } catch (error) {
-      console.error('图表初始化失败:', error);
+      logger.error('图表初始化失败:', error);
       const friendlyError = getUIInteractionError('chart', String(error), config.type);
       showMessage.error(formatErrorMessage(friendlyError));
     }

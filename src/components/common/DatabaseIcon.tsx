@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TreeNodeType } from '@/types/tree';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import logger from '@/utils/logger';
 
 export interface DatabaseIconProps {
   nodeType: TreeNodeType;
@@ -181,7 +182,7 @@ const SVGIcon: React.FC<{
           throw new Error(`Failed to load SVG: ${response.status}`);
         }
       } catch (error) {
-        console.warn(`Failed to load SVG: ${src}`, error);
+        logger.warn(`Failed to load SVG: ${src}`, error);
         setError(true);
         // 使用内联SVG作为回退
         setSvgContent(getInlineSVG(fallbackNodeType, fallbackDbType, size));
@@ -290,7 +291,7 @@ export const DatabaseIcon: React.FC<DatabaseIconProps> = ({
   // 调试日志：数据库节点的图标状态（仅在开发环境且状态变化时输出）
   // 注释掉以减少日志输出，需要时可以取消注释
   // if (nodeType === 'database' || nodeType === 'system_database') {
-  //   console.log(`🎨 [DatabaseIcon] 渲染数据库图标`, {
+  //   logger.info(`🎨 [DatabaseIcon] 渲染数据库图标`, {
   //     nodeType,
   //     isOpen,
   //     resolvedTheme,

@@ -19,6 +19,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { zhCN, enUS } from 'date-fns/locale';
 import { notify } from '@/hooks/useAppNotifications';
 import { useTranslation } from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 interface NotificationPanelProps {
   onClose: () => void;
@@ -96,7 +97,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
       await navigator.clipboard.writeText(content);
       notify.general.success(t('copy_success'), t('copy_success_desc'));
     } catch (error) {
-      console.error(t('copy_failed'), error);
+      logger.error(t('copy_failed'), error);
       notify.general.error(t('copy_failed'), t('copy_failed_desc'));
     }
   };

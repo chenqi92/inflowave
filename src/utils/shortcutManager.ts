@@ -4,6 +4,7 @@
 
 import i18n from 'i18next';
 import type {
+import logger from '@/utils/logger';
   ShortcutDefinition,
   ShortcutConfig,
   ShortcutConflict,
@@ -357,7 +358,7 @@ export class ShortcutManager {
       this.saveToStorage();
       return true;
     } catch (error) {
-      console.error(i18n.t('logs:shortcut.import_failed'), error);
+      logger.error(i18n.t('logs:shortcut.import_failed'), error);
       return false;
     }
   }
@@ -370,7 +371,7 @@ export class ShortcutManager {
       const data = this.export();
       localStorage.setItem(this.storageKey, JSON.stringify(data));
     } catch (error) {
-      console.error(i18n.t('logs:shortcut.save_failed'), error);
+      logger.error(i18n.t('logs:shortcut.save_failed'), error);
     }
   }
 
@@ -385,7 +386,7 @@ export class ShortcutManager {
         this.import(parsed);
       }
     } catch (error) {
-      console.error(i18n.t('logs:shortcut.load_failed'), error);
+      logger.error(i18n.t('logs:shortcut.load_failed'), error);
     }
   }
 }

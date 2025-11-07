@@ -15,6 +15,7 @@ import { FieldMenuHandler, TagMenuHandler } from './FieldMenuHandler';
 import { DeviceMenuHandler, TimeseriesMenuHandler, TemplateMenuHandler } from './IoTDBMenuHandler';
 import { OrganizationMenuHandler } from './OrganizationMenuHandler';
 import { BucketMenuHandler } from './BucketMenuHandler';
+import logger from '@/utils/logger';
 
 /**
  * 通用菜单处理器 - 处理简单的通用操作
@@ -56,7 +57,7 @@ class GenericMenuHandler extends BaseMenuHandler {
         break;
 
       default:
-        console.warn(`未处理的通用菜单动作: ${action}`);
+        logger.warn(`未处理的通用菜单动作: ${action}`);
     }
   }
 

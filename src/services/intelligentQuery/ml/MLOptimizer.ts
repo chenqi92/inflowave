@@ -1,5 +1,6 @@
 import { QueryAnalysis } from '../analyzer/QueryAnalyzer';
 import { QueryContext, OptimizationTechnique } from '../index';
+import logger from '@/utils/logger';
 
 export interface MLModel {
   id: string;
@@ -168,7 +169,7 @@ export class MLOptimizer {
         alternatives,
       };
     } catch (error) {
-      console.error('ML optimization failed:', error);
+      logger.error('ML optimization failed:', error);
 
       // 返回基础优化结果
       return {
@@ -188,7 +189,7 @@ export class MLOptimizer {
     const trainingData = data || this.trainingData;
 
     if (trainingData.length < 100) {
-      console.warn('Insufficient training data for ML models');
+      logger.warn('Insufficient training data for ML models');
       return;
     }
 
@@ -214,9 +215,9 @@ export class MLOptimizer {
       // 6. 模型选择和集成
       await this.updateEnsemble();
 
-      console.log('ML models trained successfully');
+      logger.info('ML models trained successfully');
     } catch (error) {
-      console.error('Model training failed:', error);
+      logger.error('Model training failed:', error);
     }
   }
 
@@ -399,7 +400,7 @@ export class MLOptimizer {
         alternatives: [],
       };
     } catch (error) {
-      console.error(`Prediction failed for model ${model.id}:`, error);
+      logger.error(`Prediction failed for model ${model.id}:`, error);
 
       return {
         optimizedQuery: originalQuery,
@@ -657,9 +658,9 @@ export class MLOptimizer {
         model.lastTrained = new Date();
         model.trainingData = trainSet.length;
 
-        console.log(`Model ${model.name} trained successfully`);
+        logger.info(`Model ${model.name} trained successfully`);
       } catch (error) {
-        console.error(`Training failed for model ${model.id}:`, error);
+        logger.error(`Training failed for model ${model.id}:`, error);
       }
     }
   }
@@ -690,11 +691,11 @@ export class MLOptimizer {
         const metrics = await this.modelEvaluator.evaluate(model, testSet);
         model.accuracy = metrics.accuracy;
 
-        console.log(
+        logger.info(
           `Model ${model.name} evaluation: accuracy=${metrics.accuracy}`
         );
       } catch (error) {
-        console.error(`Evaluation failed for model ${model.id}:`, error);
+        logger.error(`Evaluation failed for model ${model.id}:`, error);
       }
     }
   }

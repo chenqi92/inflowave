@@ -34,6 +34,7 @@ import {
   type CombinedSettings,
 } from '@/hooks/useQueryControllerSettings';
 import { useSettingsTranslation } from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 const ControllerSettings: React.FC = () => {
   const { t } = useSettingsTranslation();
@@ -63,7 +64,7 @@ const ControllerSettings: React.FC = () => {
         query: values.query,
       });
     } catch (error) {
-      console.error('保存设置失败:', error);
+      logger.error('保存设置失败:', error);
       showMessage.error(t('controller_settings.save_failed'));
     }
   };

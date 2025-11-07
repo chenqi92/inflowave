@@ -65,6 +65,7 @@ import { getAppVersion } from '@/utils/version';
 import { useTranslation, useSettingsTranslation, useCommonTranslation } from '@/hooks/useTranslation';
 import { useLanguageSwitcher } from '@/hooks/useLanguageSwitcher';
 import { LanguageSelector } from '@/components/settings/LanguageSelector';
+import logger from '@/utils/logger';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -156,10 +157,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           newSettings: appSettings,
         });
       } catch (saveError) {
-        console.warn('保存配置到后端失败:', saveError);
+        logger.warn('保存配置到后端失败:', saveError);
       }
     } catch (error) {
-      console.error('保存设置失败:', error);
+      logger.error('保存设置失败:', error);
       showMessage.error(`${tCommon('error')}: ${error}`);
     }
   };
@@ -225,7 +226,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
         showMessage.success(tSettings('export_config'));
       }
     } catch (error) {
-      console.error('导出配置失败:', error);
+      logger.error('导出配置失败:', error);
       if (String(error).includes('取消') || String(error).includes('cancel')) {
         showMessage.info(tCommon('cancel'));
       } else {
@@ -255,12 +256,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           window.dispatchEvent(new CustomEvent('refresh-connections'));
           showMessage.success(tSettings('import_config'));
         } catch (refreshError) {
-          console.warn('刷新连接列表失败:', refreshError);
+          logger.warn('刷新连接列表失败:', refreshError);
           showMessage.success(tSettings('import_config'));
         }
       }
     } catch (error) {
-      console.error('导入配置失败:', error);
+      logger.error('导入配置失败:', error);
       if (String(error).includes('取消') || String(error).includes('cancel')) {
         showMessage.info(tCommon('cancel'));
       } else {
@@ -375,7 +376,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                           showMessage.success(tSettings('internal_db_disabled'));
                         }
                       }).catch(error => {
-                        console.error('保存设置失败:', error);
+                        logger.error('保存设置失败:', error);
                         showMessage.error(tSettings('save_settings_failed'));
                       });
                     }}

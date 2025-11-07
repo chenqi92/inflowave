@@ -35,6 +35,7 @@ import { showMessage, showNotification } from '@/utils/message';
 import { Check, Eye, Inbox, CheckCircle, AlertCircle } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataWriteConfig, DataWriteResult, Connection } from '@/types';
+import logger from '@/utils/logger';
 
 interface DataWriteDialogProps {
   visible: boolean;
@@ -121,7 +122,7 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
       })) as string[];
       setDatabases(dbList);
     } catch (error) {
-      console.error('获取数据库列表失败:', error);
+      logger.error('获取数据库列表失败:', error);
       showMessage.error('获取数据库列表失败');
     }
   };

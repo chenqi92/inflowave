@@ -5,6 +5,7 @@
 
 import { useEffect } from 'react';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
+import logger from '@/utils/logger';
 
 // 字体映射表 - 将字体值映射到实际的 CSS font-family
 const fontFamilyMap: Record<string, string> = {
@@ -70,7 +71,7 @@ function applyFont(fontFamily: string, fontSize: string) {
   if (document.fonts && fontFamily !== 'system') {
     const fontName = actualFontFamily.split(',')[0].replace(/['"]/g, '').trim();
     document.fonts.load(`400 14px ${fontName}`).catch(() => {
-      console.warn(`字体 ${fontName} 加载失败，使用降级字体`);
+      logger.warn(`字体 ${fontName} 加载失败，使用降级字体`);
     });
   }
 }
@@ -87,7 +88,7 @@ export function useFontApplier() {
     // 应用字体
     applyFont(fontFamily, fontSize);
     
-    console.log('🎨 字体已应用:', {
+    logger.info('🎨 字体已应用:', {
       fontFamily,
       fontSize,
       actualFontFamily: fontFamilyMap[fontFamily] || fontFamilyMap.system,

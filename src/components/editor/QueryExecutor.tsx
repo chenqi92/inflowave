@@ -10,6 +10,7 @@ import { useQueryControllerSettings } from '@/hooks/useQueryControllerSettings';
 import type { QueryResult, QueryRequest } from '@/types';
 import type { EditorTab } from './TabManager';
 import type { TimeRange } from '@/components/common/TimeRangeSelector';
+import logger from '@/utils/logger';
 
 interface QueryExecutorProps {
   currentTab: EditorTab | null;
@@ -124,7 +125,7 @@ export const useQueryExecutor = ({
         });
 
         if (!confirmed) {
-          console.log('❌ 用户取消了 DELETE 操作');
+          logger.debug('❌ 用户取消了 DELETE 操作');
           return false;
         }
       }
@@ -152,7 +153,7 @@ export const useQueryExecutor = ({
         });
 
         if (!confirmed) {
-          console.log('❌ 用户取消了 DROP 操作');
+          logger.debug('❌ 用户取消了 DROP 操作');
           return false;
         }
       }
@@ -192,14 +193,14 @@ export const useQueryExecutor = ({
 
     // 如果使用了选中的文本，给用户一个提示
     if (selectedText) {
-      console.log('🎯 执行选中的SQL:', selectedText);
+      logger.info('🎯 执行选中的SQL:', selectedText);
     }
 
     setLoading(true);
     const startTime = Date.now();
 
     try {
-      console.log('🚀 开始执行查询:', {
+      logger.info('🚀 开始执行查询:', {
         connection_id: effectiveConnectionId,
         database: selectedDatabase,
         query: queryContent,
@@ -215,7 +216,7 @@ export const useQueryExecutor = ({
         return;
       }
 
-      console.log(`📝 解析到 ${statements.length} 条SQL语句`);
+      logger.info(`📝 解析到 ${statements.length} 条SQL语句`);
 
       const results: QueryResult[] = [];
       const executedQueries: string[] = [];
@@ -228,7 +229,7 @@ export const useQueryExecutor = ({
         // 为查询添加时间范围条件
         statement = addTimeRangeToQuery(statement, effectiveConnectionId);
 
-        console.log(`🔄 执行第 ${i + 1} 条语句:`, statement);
+        logger.info(`🔄 执行第 ${i + 1} 条语句:`, statement);
 
         // 检查是否需要确认危险操作
         const confirmed = await checkDangerousOperationConfirmation(statement);
@@ -250,12 +251,12 @@ export const useQueryExecutor = ({
             request,
           });
 
-          console.log(`✅ 第 ${i + 1} 条语句执行成功:`, result);
+          logger.debug(`✅ 第 ${i + 1} 条语句执行成功:`, result);
           
           results.push(result);
           executedQueries.push(statement);
         } catch (error) {
-          console.error(`❌ 第 ${i + 1} 条语句执行失败:`, error);
+          logger.error(`❌ 第 ${i + 1} 条语句执行失败:`, error);
           
           // 使用友好的错误处理
           const friendlyError = getInfluxDBQueryError(String(error));
@@ -284,7 +285,7 @@ export const useQueryExecutor = ({
       }, 0);
 
       const totalExecutionTime = Date.now() - startTime;
-      console.log(`🎉 批量查询完成，后端执行耗时: ${backendExecutionTime}ms，总耗时（含通信）: ${totalExecutionTime}ms`);
+      logger.info(`🎉 批量查询完成，后端执行耗时: ${backendExecutionTime}ms，总耗时（含通信）: ${totalExecutionTime}ms`);
 
       // 保存实际执行的查询
       setActualExecutedQueries(executedQueries);
@@ -333,7 +334,7 @@ export const useQueryExecutor = ({
       }
 
     } catch (error) {
-      console.error('❌ 查询执行异常:', error);
+      logger.error('❌ 查询执行异常:', error);
       showMessage.error(`查询执行失败: ${error}`);
       
       // 清空结果
@@ -373,7 +374,7 @@ export const useQueryExecutor = ({
     const tableMatch = query.match(/FROM\s+"([^"]+)"/i);
     const tableName = tableMatch ? tableMatch[1] : '未知表';
 
-    console.log('🚀 执行表双击查询:', {
+    logger.info('🚀 执行表双击查询:', {
       connection_id: effectiveConnectionId,
       database,
       query: query.trim(),
@@ -383,7 +384,7 @@ export const useQueryExecutor = ({
 
     // 确保数据库名称不为空
     if (!database || database.trim() === '') {
-      console.log('❌ 数据库名称为空:', { database });
+      logger.debug('❌ 数据库名称为空:', { database });
       showMessage.error('数据库名称为空，无法执行查询');
       return;
     }
@@ -406,12 +407,12 @@ export const useQueryExecutor = ({
         request,
       });
 
-      console.log('✅ 表查询执行成功:', result);
+      logger.debug('✅ 表查询执行成功:', result);
 
       // 🔧 保存查询结果到Tab对象（修复右键查询数据后切换Tab结果不显示的问题）
       // 使用最新的当前Tab，而不是闭包中的 currentTab
       if (onUpdateTab && latestCurrentTab) {
-        console.log('💾 保存查询结果到Tab对象:', {
+        logger.info('💾 保存查询结果到Tab对象:', {
           tabId: latestCurrentTab.id,
           tabTitle: latestCurrentTab.title,
           hasResult: !!result,
@@ -432,7 +433,7 @@ export const useQueryExecutor = ({
       );
 
     } catch (error) {
-      console.error('❌ 表查询执行失败:', error);
+      logger.error('❌ 表查询执行失败:', error);
       showMessage.error(`查询执行失败: ${error}`);
 
       // 清空结果
@@ -451,7 +452,7 @@ export const useQueryExecutor = ({
     }
 
     try {
-      console.log('🔍 直接调用后端获取建议...');
+      logger.debug('🔍 直接调用后端获取建议...');
       const suggestions = await safeTauriInvoke<string[]>(
         'get_query_suggestions',
         {
@@ -461,7 +462,7 @@ export const useQueryExecutor = ({
         }
       );
 
-      console.log('✅ 后端返回的建议:', suggestions);
+      logger.debug('✅ 后端返回的建议:', suggestions);
 
       if (suggestions && suggestions.length > 0) {
         showMessage.success(
@@ -471,7 +472,7 @@ export const useQueryExecutor = ({
         showMessage.warning('没有获取到任何建议，请检查数据库中是否有表数据');
       }
     } catch (error) {
-      console.error('⚠️ 测试智能提示失败:', error);
+      logger.error('⚠️ 测试智能提示失败:', error);
       showMessage.error(`测试失败: ${error}`);
     }
   }, [activeConnectionId, selectedDatabase]);

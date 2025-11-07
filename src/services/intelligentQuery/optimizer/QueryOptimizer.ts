@@ -1,4 +1,5 @@
 import MLOptimizer from '../ml/MLOptimizer';
+import logger from '@/utils/logger';
 
 export interface OptimizedQuery {
   query: string;
@@ -677,7 +678,7 @@ export class QueryOptimizer {
         improvement: Math.min(improvement, 70), // 限制ML优化的最大改进
       };
     } catch (error) {
-      console.error('ML optimization failed:', error);
+      logger.error('ML optimization failed:', error);
       return { query, techniques: [], improvement: 0 };
     }
   }

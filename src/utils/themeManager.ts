@@ -4,6 +4,7 @@
 
 import i18n from 'i18next';
 import type {
+import logger from '@/utils/logger';
   ThemeConfig,
   ThemePreset,
   ThemeExportData,
@@ -141,7 +142,7 @@ export class ThemeManager {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.config));
     } catch (error) {
-      console.error(i18n.t('logs:theme.save_failed'), error);
+      logger.error(i18n.t('logs:theme.save_failed'), error);
     }
   }
 
@@ -157,7 +158,7 @@ export class ThemeManager {
         this.applyConfig();
       }
     } catch (error) {
-      console.error(i18n.t('logs:theme.load_failed'), error);
+      logger.error(i18n.t('logs:theme.load_failed'), error);
     }
   }
 
@@ -187,7 +188,7 @@ export class ThemeManager {
       }
       return false;
     } catch (error) {
-      console.error(i18n.t('logs:theme.import_failed'), error);
+      logger.error(i18n.t('logs:theme.import_failed'), error);
       return false;
     }
   }
@@ -257,7 +258,7 @@ export class ThemeManager {
         JSON.stringify(customPresets)
       );
     } catch (error) {
-      console.error(i18n.t('logs:theme.preset_save_failed'), error);
+      logger.error(i18n.t('logs:theme.preset_save_failed'), error);
     }
   }
 
@@ -278,7 +279,7 @@ export class ThemeManager {
         });
       }
     } catch (error) {
-      console.error(i18n.t('logs:theme.preset_load_failed'), error);
+      logger.error(i18n.t('logs:theme.preset_load_failed'), error);
     }
   }
 

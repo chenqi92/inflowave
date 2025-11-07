@@ -8,6 +8,7 @@ import type { DatabaseType, DatabaseQueryEngine } from '@/types/database/feature
 import { databaseRegistry } from './DatabaseRegistry';
 import InfluxDBQueryEngine from './InfluxDBQueryEngine';
 import IoTDBQueryEngine from './IoTDBQueryEngine';
+import logger from '@/utils/logger';
 
 export class QueryEngineFactory {
   private static engines: Map<string, DatabaseQueryEngine> = new Map();
@@ -51,7 +52,7 @@ export class QueryEngineFactory {
     // 缓存引擎实例
     this.engines.set(engineKey, engine);
     
-    console.log(`🏭 创建查询引擎: ${dbType} v${version}`);
+    logger.info(`🏭 创建查询引擎: ${dbType} v${version}`);
     
     return engine;
   }
@@ -82,7 +83,7 @@ export class QueryEngineFactory {
    * 清理缓存的引擎实例
    */
   static async cleanup(): Promise<void> {
-    console.log('🧹 清理查询引擎缓存...');
+    logger.info('🧹 清理查询引擎缓存...');
     
     // 调用每个引擎的清理方法
     for (const [key, engine] of this.engines) {
@@ -90,15 +91,15 @@ export class QueryEngineFactory {
         if ('cleanup' in engine && typeof engine.cleanup === 'function') {
           await engine.cleanup();
         }
-        console.log(`✅ 清理引擎: ${key}`);
+        logger.debug(`✅ 清理引擎: ${key}`);
       } catch (error) {
-        console.error(`❌ 清理引擎失败: ${key}`, error);
+        logger.error(`❌ 清理引擎失败: ${key}`, error);
       }
     }
     
     // 清空缓存
     this.engines.clear();
-    console.log('🗑️ 查询引擎缓存已清空');
+    logger.debug('🗑️ 查询引擎缓存已清空');
   }
 
   /**
@@ -110,7 +111,7 @@ export class QueryEngineFactory {
     // 移除旧的引擎实例
     if (this.engines.has(engineKey)) {
       this.engines.delete(engineKey);
-      console.log(`🔄 重新加载查询引擎: ${engineKey}`);
+      logger.info(`🔄 重新加载查询引擎: ${engineKey}`);
     }
     
     // 创建新的引擎实例
@@ -276,7 +277,7 @@ export class QueryEngineFactory {
         }
       };
     } catch (error) {
-      console.error(`获取引擎能力信息失败: ${dbType} v${version}`, error);
+      logger.error(`获取引擎能力信息失败: ${dbType} v${version}`, error);
       return null;
     }
   }

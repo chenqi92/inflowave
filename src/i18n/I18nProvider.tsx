@@ -12,6 +12,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { useI18nStore, initI18nStore } from './store';
 import initI18n from './config';
 import type { I18nContextValue, I18nProviderProps, I18nError } from './types';
+import logger from '@/utils/logger';
 
 // ============================================================================
 // Context 定义
@@ -42,7 +43,7 @@ class I18nErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('❌ [I18nProvider] 错误边界捕获错误:', error, errorInfo);
+    logger.error('❌ [I18nProvider] 错误边界捕获错误:', error, errorInfo);
   }
 
   render() {
@@ -122,7 +123,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
 
   const initializeI18n = useCallback(async () => {
     try {
-      console.log('🚀 [I18nProvider] 开始初始化国际化系统');
+      logger.info('🚀 [I18nProvider] 开始初始化国际化系统');
 
       // 初始化 i18next
       await initI18n();
@@ -140,11 +141,11 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
           const appSettings = await safeTauriInvoke<any>('get_app_settings');
           if (appSettings?.general?.language) {
             targetLanguage = appSettings.general.language;
-            console.log('✅ [I18nProvider] 从后端加载语言设置:', targetLanguage);
+            logger.debug('✅ [I18nProvider] 从后端加载语言设置:', targetLanguage);
           }
         }
       } catch (error) {
-        console.warn('⚠️ [I18nProvider] 从后端加载语言设置失败，使用默认语言:', error);
+        logger.warn('⚠️ [I18nProvider] 从后端加载语言设置失败，使用默认语言:', error);
       }
 
       // 如果指定了目标语言，切换到目标语言
@@ -156,9 +157,9 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
       }
 
       setIsInitialized(true);
-      console.log('✅ [I18nProvider] 国际化系统初始化完成');
+      logger.debug('✅ [I18nProvider] 国际化系统初始化完成');
     } catch (error) {
-      console.error('❌ [I18nProvider] 初始化失败:', error);
+      logger.error('❌ [I18nProvider] 初始化失败:', error);
       setInitError(error as Error);
     }
   }, [defaultLanguage, setLanguage]);
@@ -173,7 +174,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
   // ============================================================================
 
   const handleError = useCallback((error: I18nError) => {
-    console.error('❌ [I18nProvider] 处理 I18n 错误:', error);
+    logger.error('❌ [I18nProvider] 处理 I18n 错误:', error);
     
     // 可以在这里添加错误上报逻辑
     // 例如：发送到错误监控服务
@@ -370,7 +371,7 @@ export const LanguageSwitcher: React.FC<{
       try {
         await setLanguage(newLanguage);
       } catch (error) {
-        console.error('语言切换失败:', error);
+        logger.error('语言切换失败:', error);
       }
     }
   };

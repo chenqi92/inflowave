@@ -18,6 +18,7 @@ import {releaseNotesService, ReleaseNote, VersionFeatures} from '@/services/rele
 import {toast} from 'sonner';
 import MarkdownRenderer from '@/components/common/MarkdownRenderer';
 import { openExternalLink } from '@/utils/externalLinks';
+import logger from '@/utils/logger';
 
 interface ReleaseNotesViewerProps {
     version: string;
@@ -61,7 +62,7 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
             setReleaseNote(note);
             setFeatures(versionFeatures);
         } catch (error) {
-            console.error('Failed to load release notes:', error);
+            logger.error('Failed to load release notes:', error);
             setError('加载发布说明失败');
             toast.error('加载发布说明失败');
         } finally {
@@ -106,7 +107,7 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
 
     const handleInternalLinkClick = (filename: string) => {
         // 处理内部文档链接点击（如果需要）
-        console.log('Internal link clicked:', filename);
+        logger.info('Internal link clicked:', filename);
     };
 
 

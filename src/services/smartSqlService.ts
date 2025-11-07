@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import logger from '@/utils/logger';
 
 export interface SqlGenerationRequest {
   sql_type: string;
@@ -56,7 +57,7 @@ export class SmartSqlService {
       const result = await invoke<SqlGenerationResult>('generate_smart_sql', { request });
       return result;
     } catch (error) {
-      console.error('Failed to generate smart SQL:', error);
+      logger.error('Failed to generate smart SQL:', error);
       throw new Error(`SQL 生成失败: ${error}`);
     }
   }
@@ -75,7 +76,7 @@ export class SmartSqlService {
       });
       return result;
     } catch (error) {
-      console.error('Failed to get database context menu:', error);
+      logger.error('Failed to get database context menu:', error);
       throw new Error(`获取数据库菜单失败: ${error}`);
     }
   }
@@ -96,7 +97,7 @@ export class SmartSqlService {
       });
       return result;
     } catch (error) {
-      console.error('Failed to get measurement context menu:', error);
+      logger.error('Failed to get measurement context menu:', error);
       throw new Error(`获取测量菜单失败: ${error}`);
     }
   }
@@ -121,7 +122,7 @@ export class SmartSqlService {
       });
       return result;
     } catch (error) {
-      console.error('Failed to get field context menu:', error);
+      logger.error('Failed to get field context menu:', error);
       throw new Error(`获取字段菜单失败: ${error}`);
     }
   }

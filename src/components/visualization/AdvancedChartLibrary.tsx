@@ -41,6 +41,7 @@ import {
   Legend,
 } from 'recharts';
 import type { ChartConfig as ShadcnChartConfig } from '@/components/ui';
+import logger from '@/utils/logger';
 
 // 图表类型定义 - 使用 Recharts 支持的图表类型
 export type ChartType =
@@ -328,7 +329,7 @@ const AdvancedChartLibrary: React.FC<AdvancedChartLibraryProps> = ({
       const link = document.createElement('a');
       link.download = `chart.${format}`;
       // 注意：实际实现需要使用 html2canvas 等库
-      console.log('导出功能需要集成 html2canvas 库');
+      logger.info('导出功能需要集成 html2canvas 库');
     }
   };
 

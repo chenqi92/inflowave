@@ -31,6 +31,7 @@ import {
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
+import logger from '@/utils/logger';
 
 interface ConnectionDetailDialogProps {
   open: boolean;
@@ -81,7 +82,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
 
       setInfo(result);
     } catch (err: any) {
-      console.error('加载连接信息失败:', err);
+      logger.error('加载连接信息失败:', err);
       setError(err.message || '加载连接信息失败');
       showMessage.error(`加载连接信息失败: ${err.message || '未知错误'}`);
     } finally {

@@ -4,6 +4,7 @@
  */
 
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 export interface NativeDownloadOptions {
   filename?: string;
@@ -48,7 +49,7 @@ export const saveTextFile = async (
 
     return true;
   } catch (error) {
-    console.error('保存文本文件失败:', error);
+    logger.error('保存文本文件失败:', error);
     throw new Error(`保存失败: ${error}`);
   }
 };
@@ -111,7 +112,7 @@ export const saveBinaryFile = async (
 
     return true;
   } catch (error) {
-    console.error('保存二进制文件失败:', error);
+    logger.error('保存二进制文件失败:', error);
     throw new Error(`保存失败: ${error}`);
   }
 };
@@ -156,7 +157,7 @@ export const saveImageFile = async (
 
     return true;
   } catch (error) {
-    console.error('保存图片文件失败:', error);
+    logger.error('保存图片文件失败:', error);
     throw new Error(`保存失败: ${error}`);
   }
 };
@@ -191,7 +192,7 @@ export const quickSave = async (
 
     return fullPath;
   } catch (error) {
-    console.error('快速保存失败:', error);
+    logger.error('快速保存失败:', error);
     throw new Error(`保存失败: ${error}`);
   }
 };

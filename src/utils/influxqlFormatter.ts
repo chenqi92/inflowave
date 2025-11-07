@@ -6,6 +6,7 @@
 
 import { InfluxQLFormatter as NewInfluxQLFormatter } from '../services/query/influxdb/InfluxQLFormatter';
 import { FormatOptions } from '../services/query/base/QueryFormatter';
+import logger from '@/utils/logger';
 
 // 保持向后兼容的接口
 export interface FormatterOptions {
@@ -81,7 +82,7 @@ class InfluxQLFormatter {
     try {
       return await this.newFormatter.format(query);
     } catch (error) {
-      console.error('Query formatting failed:', error);
+      logger.error('Query formatting failed:', error);
       return query; // 返回原始查询如果格式化失败
     }
   }

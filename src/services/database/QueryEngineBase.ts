@@ -5,6 +5,7 @@
  */
 
 import type { 
+import logger from '@/utils/logger';
   DatabaseQueryEngine,
   QueryOperation,
   QueryParams,
@@ -35,13 +36,13 @@ export abstract class QueryEngineBase implements DatabaseQueryEngine {
   // 版本适配方法 - 子类可以重写
   adaptQuery(query: string, targetVersion: string): string {
     // 默认实现：不做任何转换
-    console.log(`🔄 [${this.dbType}] 版本适配: ${this.version} -> ${targetVersion}`);
+    logger.info(`🔄 [${this.dbType}] 版本适配: ${this.version} -> ${targetVersion}`);
     return query;
   }
 
   adaptResponse(response: any, sourceVersion: string): any {
     // 默认实现：不做任何转换
-    console.log(`🔄 [${this.dbType}] 响应适配: ${sourceVersion} -> ${this.version}`);
+    logger.info(`🔄 [${this.dbType}] 响应适配: ${sourceVersion} -> ${this.version}`);
     return response;
   }
 
@@ -80,15 +81,15 @@ export abstract class QueryEngineBase implements DatabaseQueryEngine {
   }
 
   protected logQuery(query: string, params?: QueryParams): void {
-    console.log(`🔍 [${this.dbType}] 执行查询:`, query);
+    logger.debug(`🔍 [${this.dbType}] 执行查询:`, query);
     if (params) {
-      console.log(`📋 [${this.dbType}] 查询参数:`, params);
+      logger.debug(`📋 [${this.dbType}] 查询参数:`, params);
     }
   }
 
   protected logResult(result: any, executionTime?: number): void {
-    console.log(`✅ [${this.dbType}] 查询完成`, executionTime ? `(${executionTime}ms)` : '');
-    console.log(`📊 [${this.dbType}] 结果:`, result);
+    logger.debug(`✅ [${this.dbType}] 查询完成`, executionTime ? `(${executionTime}ms)` : '');
+    logger.debug(`📊 [${this.dbType}] 结果:`, result);
   }
 
   // 查询构建辅助方法
@@ -134,10 +135,10 @@ export abstract class QueryEngineBase implements DatabaseQueryEngine {
 
   // 错误处理
   protected handleQueryError(error: any, query: string, params?: QueryParams): never {
-    console.error(`❌ [${this.dbType}] 查询失败:`, error);
-    console.error(`🔍 [${this.dbType}] 失败查询:`, query);
+    logger.error(`❌ [${this.dbType}] 查询失败:`, error);
+    logger.error(`🔍 [${this.dbType}] 失败查询:`, query);
     if (params) {
-      console.error(`📋 [${this.dbType}] 查询参数:`, params);
+      logger.error(`📋 [${this.dbType}] 查询参数:`, params);
     }
     
     throw this.formatError(error, `${this.dbType} 查询失败`);
@@ -150,7 +151,7 @@ export abstract class QueryEngineBase implements DatabaseQueryEngine {
       await this.getDatabases(connectionId);
       return true;
     } catch (error) {
-      console.error(`❌ [${this.dbType}] 连接测试失败:`, error);
+      logger.error(`❌ [${this.dbType}] 连接测试失败:`, error);
       return false;
     }
   }
@@ -185,12 +186,12 @@ export abstract class QueryEngineBase implements DatabaseQueryEngine {
       const result = await operation();
       const executionTime = Date.now() - startTime;
       
-      console.log(`⏱️ [${this.dbType}] ${operationName} 执行时间: ${executionTime}ms`);
+      logger.debug(`⏱️ [${this.dbType}] ${operationName} 执行时间: ${executionTime}ms`);
       
       return { result, executionTime };
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      console.error(`⏱️ [${this.dbType}] ${operationName} 失败，执行时间: ${executionTime}ms`);
+      logger.error(`⏱️ [${this.dbType}] ${operationName} 失败，执行时间: ${executionTime}ms`);
       throw error;
     }
   }
@@ -231,9 +232,9 @@ export abstract class QueryEngineBase implements DatabaseQueryEngine {
     setTimeout(async () => {
       try {
         await this.executeQuery(connectionId, query, params);
-        console.log(`✅ [${this.dbType}] 异步查询 ${queryId} 完成`);
+        logger.debug(`✅ [${this.dbType}] 异步查询 ${queryId} 完成`);
       } catch (error) {
-        console.error(`❌ [${this.dbType}] 异步查询 ${queryId} 失败:`, error);
+        logger.error(`❌ [${this.dbType}] 异步查询 ${queryId} 失败:`, error);
       }
     }, 0);
     
@@ -253,7 +254,7 @@ export abstract class QueryEngineBase implements DatabaseQueryEngine {
   // 资源清理
   async cleanup(): Promise<void> {
     // 默认实现：无需清理
-    console.log(`🧹 [${this.dbType}] 查询引擎清理完成`);
+    logger.info(`🧹 [${this.dbType}] 查询引擎清理完成`);
   }
 }
 

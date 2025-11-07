@@ -11,6 +11,7 @@
 
 import { create } from 'zustand';
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 // ============================================================================
 // 类型定义
@@ -169,11 +170,11 @@ export const useUserPreferencesStore = create<UserPreferencesState>((set, get) =
     
     // 避免重复加载
     if (initialized) {
-      console.log('📦 [UserPreferencesStore] 已初始化，跳过重复加载');
+      logger.debug('📦 [UserPreferencesStore] 已初始化，跳过重复加载');
       return;
     }
     
-    console.log('📦 [UserPreferencesStore] 开始加载用户偏好');
+    logger.debug('📦 [UserPreferencesStore] 开始加载用户偏好');
     set({ loading: true, error: null });
     
     try {
@@ -206,9 +207,9 @@ export const useUserPreferencesStore = create<UserPreferencesState>((set, get) =
         initialized: true,
       });
       
-      console.log('✅ [UserPreferencesStore] 用户偏好加载成功:', mergedPreferences);
+      logger.debug('✅ [UserPreferencesStore] 用户偏好加载成功:', mergedPreferences);
     } catch (error) {
-      console.error('❌ [UserPreferencesStore] 加载用户偏好失败:', error);
+      logger.error('❌ [UserPreferencesStore] 加载用户偏好失败:', error);
       
       // 加载失败时使用默认值
       set({
@@ -236,16 +237,16 @@ export const useUserPreferencesStore = create<UserPreferencesState>((set, get) =
     };
     
     set({ preferences: newPreferences });
-    console.log('🔄 [UserPreferencesStore] 乐观更新偏好设置:', updates);
+    logger.info('🔄 [UserPreferencesStore] 乐观更新偏好设置:', updates);
     
     // 后台同步后端
     try {
       await safeTauriInvoke('update_user_preferences', {
         preferences: newPreferences,
       });
-      console.log('✅ [UserPreferencesStore] 偏好设置已同步到后端');
+      logger.debug('✅ [UserPreferencesStore] 偏好设置已同步到后端');
     } catch (error) {
-      console.error('❌ [UserPreferencesStore] 同步后端失败，回滚:', error);
+      logger.error('❌ [UserPreferencesStore] 同步后端失败，回滚:', error);
       
       // 回滚到旧状态
       set({
@@ -325,7 +326,7 @@ export const useUserPreferencesStore = create<UserPreferencesState>((set, get) =
   // 重置为默认值
   // ============================================================================
   resetToDefaults: async () => {
-    console.log('🔄 [UserPreferencesStore] 重置为默认值');
+    logger.info('🔄 [UserPreferencesStore] 重置为默认值');
     
     set({ preferences: defaultUserPreferences });
     
@@ -333,9 +334,9 @@ export const useUserPreferencesStore = create<UserPreferencesState>((set, get) =
       await safeTauriInvoke('update_user_preferences', {
         preferences: defaultUserPreferences,
       });
-      console.log('✅ [UserPreferencesStore] 已重置为默认值');
+      logger.debug('✅ [UserPreferencesStore] 已重置为默认值');
     } catch (error) {
-      console.error('❌ [UserPreferencesStore] 重置失败:', error);
+      logger.error('❌ [UserPreferencesStore] 重置失败:', error);
       set({ error: String(error) });
       throw error;
     }

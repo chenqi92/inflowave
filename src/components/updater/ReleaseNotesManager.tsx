@@ -18,8 +18,10 @@ import {
 import {ReleaseNotesViewer} from './ReleaseNotesViewer';
 import {releaseNotesService} from '@/services/releaseNotesService';
 import {updaterService} from '@/services/updaterService';
+import logger from '@/utils/logger';
 import {toast} from 'sonner';
 import {useSettingsTranslation} from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 export const ReleaseNotesManager: React.FC = () => {
     const { t } = useSettingsTranslation();
@@ -43,7 +45,7 @@ export const ReleaseNotesManager: React.FC = () => {
                 setSelectedVersion(versions[0]);
             }
         } catch (error) {
-            console.error('Failed to load available versions:', error);
+            logger.error('Failed to load available versions:', error);
             toast.error(t('release_notes_load_failed') || '加载版本列表失败');
         } finally {
             setLoading(false);
@@ -58,7 +60,7 @@ export const ReleaseNotesManager: React.FC = () => {
             await loadAvailableVersions();
             toast.success(t('release_notes_refreshed') || '发布说明已刷新');
         } catch (error) {
-            console.error('Failed to refresh release notes:', error);
+            logger.error('Failed to refresh release notes:', error);
             toast.error(t('refresh_failed') || '刷新失败');
         } finally {
             setRefreshing(false);
@@ -78,7 +80,7 @@ export const ReleaseNotesManager: React.FC = () => {
                 toast.success(t('already_latest_text') || '当前已是最新版本');
             }
         } catch (error) {
-            console.error('Failed to check for updates:', error);
+            logger.error('Failed to check for updates:', error);
             toast.error(t('check_update_failed') || '检查更新失败');
         }
     };
@@ -168,7 +170,7 @@ export const ReleaseNotesManager: React.FC = () => {
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => updaterService.openDownloadPage(`https://github.com/chenqi92/inflowave/releases`).catch(console.error)}
+                                onClick={() => updaterService.openDownloadPage(`https://github.com/chenqi92/inflowave/releases`).catch(err => logger.error('Failed to open download page:', err))}
                             >
                                 <ExternalLink className="w-4 h-4 mr-2"/>
                                 GitHub
@@ -187,7 +189,7 @@ export const ReleaseNotesManager: React.FC = () => {
                             maxHeight="400px"
                             showTitle={true}
                             showMetadata={true}
-                            onExternalLink={(url) => updaterService.openDownloadPage(url).catch(console.error)}
+                            onExternalLink={(url) => updaterService.openDownloadPage(url).catch(err => logger.error('Failed to open external link:', err))}
                         />
                     </CardContent>
                 </Card>

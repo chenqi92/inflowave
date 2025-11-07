@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { portDiscoveryService } from './portDiscovery';
 import { getSystemResourceError } from '@/utils/userFriendlyErrors';
+import logger from '@/utils/logger';
 
 export interface HealthCheckResult {
   component: string;
@@ -47,7 +48,7 @@ export class HealthCheckService {
         const status = await this.performHealthCheck();
         this.notifyListeners(status);
       } catch (error) {
-        console.error('Health check failed:', error);
+        logger.error('Health check failed:', error);
       }
     }, interval);
 
@@ -381,7 +382,7 @@ export class HealthCheckService {
       try {
         listener(status);
       } catch (error) {
-        console.error('Health check listener error:', error);
+        logger.error('Health check listener error:', error);
       }
     });
   }

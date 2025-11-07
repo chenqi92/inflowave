@@ -6,6 +6,7 @@
 
 import { InfluxDBSmartComplete as NewInfluxDBSmartComplete } from '../services/query/influxdb/InfluxDBSmartComplete';
 import type { SmartSuggestion as NewSmartSuggestion, DatabaseConnection, QueryContext } from '../types/database/base';
+import logger from '@/utils/logger';
 
 // 保持向后兼容的接口
 export interface SmartSuggestion {
@@ -80,7 +81,7 @@ class InfluxDBSmartCompleteEngine {
       // 转换结果格式
       return this.convertSuggestions(newSuggestions);
     } catch (error) {
-      console.error('Smart complete failed:', error);
+      logger.error('Smart complete failed:', error);
       return [];
     }
   }
@@ -137,7 +138,7 @@ class InfluxDBSmartCompleteEngine {
    */
   clearCache(): void {
     // 新的实现中缓存由后端管理，这里保持接口兼容
-    console.log('Cache cleared (compatibility method)');
+    logger.info('Cache cleared (compatibility method)');
   }
 }
 

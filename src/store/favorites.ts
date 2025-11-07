@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import logger from '@/utils/logger';
 
 export interface FavoriteItem {
   id: string;
@@ -45,7 +46,7 @@ export const useFavoritesStore = create<FavoritesState>()(
 
         // 检查是否已存在相同路径的收藏
         if (favorites.some(fav => fav.path === item.path)) {
-          console.warn('收藏项已存在:', item.path);
+          logger.warn('收藏项已存在:', item.path);
           return;
         }
 

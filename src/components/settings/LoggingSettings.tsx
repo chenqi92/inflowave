@@ -80,7 +80,7 @@ const LoggingSettingsComponent: React.FC = () => {
       const total = files.reduce((sum, file) => sum + file.size, 0);
       setTotalSize(total);
     } catch (error) {
-      console.error(t('logging_settings.load_failed'), error);
+      logger.error(t('logging_settings.load_failed'), error);
     }
   };
 
@@ -115,7 +115,7 @@ const LoggingSettingsComponent: React.FC = () => {
       const logLevel = stringToLogLevel(values.level);
       logger.setLevel(logLevel);
     } catch (error) {
-      console.error(t('logging_settings.settings_save_failed'), error);
+      logger.error(t('logging_settings.settings_save_failed'), error);
       showMessage.error(t('logging_settings.settings_save_failed'));
     } finally {
       setLoading(false);
@@ -130,7 +130,7 @@ const LoggingSettingsComponent: React.FC = () => {
       toast.success(t('logging_settings.cleanup_success', { count: deletedCount }));
       await loadLogFiles();
     } catch (error) {
-      console.error(t('logging_settings.cleanup_failed'), error);
+      logger.error(t('logging_settings.cleanup_failed'), error);
       toast.error(t('logging_settings.cleanup_failed'));
     }
   };
@@ -148,7 +148,7 @@ const LoggingSettingsComponent: React.FC = () => {
       toast.success(t('logging_settings.delete_all_success'));
       await loadLogFiles();
     } catch (error) {
-      console.error(t('logging_settings.delete_all_failed'), error);
+      logger.error(t('logging_settings.delete_all_failed'), error);
       toast.error(t('logging_settings.delete_all_failed'));
     }
   };
@@ -168,7 +168,7 @@ const LoggingSettingsComponent: React.FC = () => {
       await invoke('open_log_folder');
       showMessage.success(t('logging_settings.log_folder_opened'));
     } catch (error) {
-      console.error(t('logging_settings.log_folder_open_failed'), error);
+      logger.error(t('logging_settings.log_folder_open_failed'), error);
       showMessage.error(t('logging_settings.log_folder_open_failed'));
     }
   };
@@ -451,7 +451,7 @@ const LoggingSettingsComponent: React.FC = () => {
                           toast.success(t('logging_settings.file_deleted'));
                           await loadLogFiles();
                         } catch (error) {
-                          console.error(t('logging_settings.delete_failed'), error);
+                          logger.error(t('logging_settings.delete_failed'), error);
                           toast.error(t('logging_settings.delete_failed'));
                         }
                       }}

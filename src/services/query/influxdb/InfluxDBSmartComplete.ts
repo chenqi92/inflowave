@@ -11,6 +11,7 @@ import {
   DatabaseConnection,
   SmartSuggestion
 } from '../../../types/database/base';
+import logger from '@/utils/logger';
 
 /**
  * InfluxDB 智能补全实现
@@ -109,7 +110,7 @@ export class InfluxDBSmartComplete extends SmartComplete {
         const measurements = await this.getMeasurements(connection, context.database);
         suggestions.push(...this.createTableSuggestions(measurements, currentWord));
       } catch (error) {
-        console.warn('Failed to get measurements:', error);
+        logger.warn('Failed to get measurements:', error);
       }
     }
 
@@ -119,7 +120,7 @@ export class InfluxDBSmartComplete extends SmartComplete {
         const fields = await this.getFields(connection, context);
         suggestions.push(...this.createColumnSuggestions(fields, currentWord));
       } catch (error) {
-        console.warn('Failed to get fields:', error);
+        logger.warn('Failed to get fields:', error);
       }
     }
 
@@ -159,7 +160,7 @@ export class InfluxDBSmartComplete extends SmartComplete {
         const databases = await this.getDatabases(connection);
         suggestions.push(...this.createValueSuggestions(databases, currentWord));
       } catch (error) {
-        console.warn('Failed to get databases:', error);
+        logger.warn('Failed to get databases:', error);
       }
     }
 
@@ -286,7 +287,7 @@ export class InfluxDBSmartComplete extends SmartComplete {
       });
       return measurements;
     } catch (error) {
-      console.warn('获取测量失败，使用默认值:', error);
+      logger.warn('获取测量失败，使用默认值:', error);
       return ['cpu', 'memory', 'disk', 'network'];
     }
   }
@@ -299,7 +300,7 @@ export class InfluxDBSmartComplete extends SmartComplete {
       });
       return databases.map(db => db.name);
     } catch (error) {
-      console.warn('获取数据库失败，使用默认值:', error);
+      logger.warn('获取数据库失败，使用默认值:', error);
       return ['mydb', 'telegraf', '_internal'];
     }
   }
@@ -314,7 +315,7 @@ export class InfluxDBSmartComplete extends SmartComplete {
       });
       return fields.map(field => field.name);
     } catch (error) {
-      console.warn('获取字段失败，使用默认值:', error);
+      logger.warn('获取字段失败，使用默认值:', error);
       return ['time', 'value', 'usage_idle', 'usage_system', 'usage_user'];
     }
   }
@@ -329,7 +330,7 @@ export class InfluxDBSmartComplete extends SmartComplete {
       });
       return tags.map(tag => tag.name);
     } catch (error) {
-      console.warn('获取标签失败，使用默认值:', error);
+      logger.warn('获取标签失败，使用默认值:', error);
       return ['host', 'cpu', 'region', 'datacenter'];
     }
   }

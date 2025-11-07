@@ -33,6 +33,7 @@ import type { KeyboardShortcut } from '@/types';
 import { useUserPreferencesStore, type UserPreferences } from '@/stores/userPreferencesStore';
 import { useSettingsTranslation } from '@/hooks/useTranslation';
 import i18n from 'i18next';
+import logger from '@/utils/logger';
 
 // 获取所有系统快捷键的函数
 // 创建快捷键工厂函数，接受翻译函数作为参数
@@ -390,7 +391,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
   // 🔧 加载用户偏好（从 store 读取）
   const loadPreferences = useCallback(() => {
-    console.log('从 store 加载用户偏好');
+    logger.debug('从 store 加载用户偏好');
 
     if (storePreferences) {
       // 确保快捷键数据完整，并更新翻译
@@ -406,13 +407,13 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
         shortcuts,
       };
 
-      console.log('从 store 加载的偏好数据:', preferences);
+      logger.info('从 store 加载的偏好数据:', preferences);
       form.reset(preferences);
 
       // 确保布局字段被正确设置
       setTimeout(() => {
         form.setValue('workspace.layout', preferences.workspace?.layout || 'comfortable');
-        console.log('form.reset完成，当前表单值:', form.getValues());
+        logger.info('form.reset完成，当前表单值:', form.getValues());
       }, 100);
     }
   }, [storePreferences, form, t, updateShortcutTranslations]);
@@ -426,7 +427,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
     // 设置新的超时
     const timeout = setTimeout(() => {
-      console.log('防抖保存字体设置:', values.accessibility.font_family);
+      logger.info('防抖保存字体设置:', values.accessibility.font_family);
       savePreferences(values);
     }, 300); // 300ms 防抖
 
@@ -435,8 +436,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
 
   // 🔧 保存用户偏好（使用 store 的乐观更新）
   const savePreferences = async (values: UserPreferences) => {
-    console.log('保存用户偏好被调用，数据:', values);
-    console.log('通知设置:', values.notifications);
+    logger.debug('保存用户偏好被调用，数据:', values);
+    logger.debug('通知设置:', values.notifications);
 
     setLoading(true);
     try {
@@ -446,7 +447,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       onSave?.(values);
     } catch (error) {
       // 🔧 store 会自动回滚，只需显示错误
-      console.error('保存用户偏好失败:', error);
+      logger.error('保存用户偏好失败:', error);
       showMessage.error(t('preferences_save_failed') || '保存用户偏好失败');
     } finally {
       setLoading(false);
@@ -476,7 +477,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       form.setValue('shortcuts', shortcuts);
       showMessage.success(t('shortcuts_reset_success') || '已重置为默认快捷键');
     } catch (error) {
-      console.error('加载默认快捷键失败:', error);
+      logger.error('加载默认快捷键失败:', error);
       showMessage.error(t('shortcuts_reset_failed') || '加载默认快捷键失败');
     }
   };
@@ -556,7 +557,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   // 🔧 监听语言变化，更新快捷键翻译
   useEffect(() => {
     const handleLanguageChange = () => {
-      console.log('语言已切换，更新快捷键翻译');
+      logger.debug('语言已切换，更新快捷键翻译');
       const currentShortcuts = form.getValues('shortcuts');
       if (currentShortcuts && currentShortcuts.length > 0) {
         const updatedShortcuts = updateShortcutTranslations(currentShortcuts);
@@ -585,7 +586,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
   // 监听表单字段变化以调试布局字段问题
   const watchedLayout = form.watch('workspace.layout');
   useEffect(() => {
-    console.log('布局字段值变化:', watchedLayout);
+    logger.debug('布局字段值变化:', watchedLayout);
   }, [watchedLayout]);
 
   // 🔧 使用 store 的 loading 状态
@@ -926,7 +927,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                           <FormLabel>{t('layout_mode_label')}</FormLabel>
                           <Select
                             onValueChange={(value) => {
-                              console.log('布局模式选择变更:', value);
+                              logger.info('布局模式选择变更:', value);
                               field.onChange(value);
                             }}
                             value={safeValue}

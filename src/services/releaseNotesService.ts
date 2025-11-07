@@ -5,6 +5,7 @@
 
 import { safeTauriInvoke } from '@/utils/tauri';
 import { getAppVersion } from '@/utils/version';
+import logger from '@/utils/logger';
 
 export interface ReleaseNote {
   version: string;
@@ -58,7 +59,7 @@ class ReleaseNotesService {
 
       return null;
     } catch (error) {
-      console.error(`Failed to get release notes for version ${version}:`, error);
+      logger.error(`Failed to get release notes for version ${version}:`, error);
       return null;
     }
   }
@@ -106,10 +107,10 @@ class ReleaseNotesService {
         const defaultContent = await safeTauriInvoke<string>('read_release_notes_file', { 
           path: defaultFilePath 
         });
-        console.log(`未找到版本 ${version} 的发布说明，使用默认发布说明`);
+        logger.info(`未找到版本 ${version} 的发布说明，使用默认发布说明`);
         return defaultContent;
       } catch (defaultError) {
-        console.warn('未找到版本发布说明文件或默认文件:', error);
+        logger.warn('未找到版本发布说明文件或默认文件:', error);
         return null;
       }
     }
@@ -132,9 +133,9 @@ class ReleaseNotesService {
       );
 
       if (!response.ok) {
-        console.warn(`GitHub API请求失败，状态码: ${response.status}`);
+        logger.warn(`GitHub API请求失败，状态码: ${response.status}`);
         if (response.status === 403) {
-          console.warn('GitHub API访问频率受限，请稍后再试');
+          logger.warn('GitHub API访问频率受限，请稍后再试');
         }
         return null;
       }
@@ -148,7 +149,7 @@ class ReleaseNotesService {
         date: release.published_at ? new Date(release.published_at).toLocaleDateString('zh-CN') : undefined
       };
     } catch (error) {
-      console.error('Failed to fetch remote release notes:', error);
+      logger.error('Failed to fetch remote release notes:', error);
       return null;
     }
   }
@@ -203,7 +204,7 @@ class ReleaseNotesService {
 
       return this.extractFeatures(releaseNote.content);
     } catch (error) {
-      console.error('Failed to extract version features:', error);
+      logger.error('Failed to extract version features:', error);
       return null;
     }
   }
@@ -282,7 +283,7 @@ class ReleaseNotesService {
       // 如果都失败了，返回当前版本
       return [getAppVersion()];
     } catch (error) {
-      console.error('Failed to get available versions:', error);
+      logger.error('Failed to get available versions:', error);
       // 如果所有方法都失败，返回当前版本作为默认值
       return [getAppVersion()];
     }
@@ -305,9 +306,9 @@ class ReleaseNotesService {
       );
 
       if (!response.ok) {
-        console.warn(`GitHub API请求失败，状态码: ${response.status}`);
+        logger.warn(`GitHub API请求失败，状态码: ${response.status}`);
         if (response.status === 403) {
-          console.warn('GitHub API访问频率受限，请稍后再试');
+          logger.warn('GitHub API访问频率受限，请稍后再试');
         }
         return [];
       }
@@ -319,7 +320,7 @@ class ReleaseNotesService {
         .sort((a: string, b: string) => this.compareVersions(b, a))
         .slice(0, 10); // 最多返回10个版本
     } catch (error) {
-      console.error('Failed to fetch GitHub versions:', error);
+      logger.error('Failed to fetch GitHub versions:', error);
       return [];
     }
   }

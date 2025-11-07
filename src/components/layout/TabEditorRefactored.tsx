@@ -29,6 +29,7 @@ import S3Browser from '@/components/S3Browser';
 
 
 import type { QueryResult } from '@/types';
+import logger from '@/utils/logger';
 
 interface TabEditorProps {
   onQueryResult?: (result: QueryResult | null) => void;
@@ -94,7 +95,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
     // 🔧 立即同步更新 currentTabIdRef，不等待 useEffect
     // 这样可以确保在 EditorManager 同步内容之前，currentTabIdRef 已经是最新的
     if (activeKey && currentTabIdRef.current !== activeKey) {
-      console.log(`🔄 Tab切换（同步）: ${currentTabIdRef.current} -> ${activeKey}`);
+      logger.info(`🔄 Tab切换（同步）: ${currentTabIdRef.current} -> ${activeKey}`);
       currentTabIdRef.current = activeKey;
     }
 
@@ -105,12 +106,12 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       const isTabSwitch = activeKey !== previousActiveKeyRef.current;
 
       if (isTabSwitch) {
-        console.log(`🔄 检测到Tab切换: ${previousActiveKeyRef.current} -> ${activeKey}`);
+        logger.info(`🔄 检测到Tab切换: ${previousActiveKeyRef.current} -> ${activeKey}`);
         previousActiveKeyRef.current = activeKey;
 
         // 🔧 如果 activeKey 为空，说明所有Tab都已关闭
         if (!activeKey || activeKey === '') {
-          console.log(`📭 所有Tab已关闭，清空结果面板`);
+          logger.debug(`📭 所有Tab已关闭，清空结果面板`);
           onQueryResult?.(null);
           onBatchQueryResults?.([], [], 0);
           return;
@@ -121,7 +122,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
         const currentTab = currentTabs.find(t => t.id === activeKey);
 
         if (currentTab) {
-          console.log(`🔄 Tab切换，恢复查询结果:`, {
+          logger.info(`🔄 Tab切换，恢复查询结果:`, {
             tabId: currentTab.id,
             tabTitle: currentTab.title,
             tabType: currentTab.type,
@@ -135,7 +136,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
           if (currentTab.type === 'query') {
             if (currentTab.queryResults && currentTab.queryResults.length > 0) {
               // 恢复批量查询结果
-              console.log(`✅ 恢复Tab的查询结果到结果面板`);
+              logger.debug(`✅ 恢复Tab的查询结果到结果面板`);
               onBatchQueryResults?.(
                 currentTab.queryResults,
                 currentTab.executedQueries || [],
@@ -148,7 +149,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
               }
             } else if (currentTab.queryResult) {
               // 兼容旧的单个结果格式
-              console.log(`✅ 恢复Tab的单个查询结果到结果面板`);
+              logger.debug(`✅ 恢复Tab的单个查询结果到结果面板`);
               onQueryResult?.(currentTab.queryResult);
               onBatchQueryResults?.(
                 [currentTab.queryResult],
@@ -157,13 +158,13 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
               );
             } else {
               // 该Tab没有查询结果，清空结果面板
-              console.log(`📭 Tab没有查询结果，清空结果面板`);
+              logger.info(`📭 Tab没有查询结果，清空结果面板`);
               onQueryResult?.(null);
               onBatchQueryResults?.([], [], 0);
             }
           } else {
             // 非查询类型的Tab，清空查询结果
-            console.log(`📭 非查询Tab，清空结果面板`);
+            logger.info(`📭 非查询Tab，清空结果面板`);
             onQueryResult?.(null);
             onBatchQueryResults?.([], [], 0);
           }
@@ -184,7 +185,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
     const hasQueryResult = currentTab.queryResult;
 
     if (currentTab.type === 'query' && (hasQueryResults || hasQueryResult)) {
-      console.log('🔄 [TabEditorRefactored] 检测到新Tab有查询结果，立即恢复:', {
+      logger.info('🔄 [TabEditorRefactored] 检测到新Tab有查询结果，立即恢复:', {
         tabId: currentTab.id,
         hasQueryResults,
         hasQueryResult,
@@ -214,12 +215,12 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
     // 更新标签页内容的包装函数
     const handleTabContentChange = useCallback((tabId: string, content: string) => {
-      console.log(`📝 handleTabContentChange 被调用: tabId=${tabId}, currentTabIdRef=${currentTabIdRef.current}, activeKey=${activeKey}`);
+      logger.info(`📝 handleTabContentChange 被调用: tabId=${tabId}, currentTabIdRef=${currentTabIdRef.current}, activeKey=${activeKey}`);
 
       // 🔧 验证：只更新当前激活的Tab
       if (tabId !== currentTabIdRef.current) {
-        console.warn(`⚠️ 警告：尝试更新非当前Tab的内容！tabId=${tabId}, currentTabId=${currentTabIdRef.current}`);
-        console.warn(`⚠️ 这可能是闭包问题导致的！`);
+        logger.warn(`⚠️ 警告：尝试更新非当前Tab的内容！tabId=${tabId}, currentTabId=${currentTabIdRef.current}`);
+        logger.warn(`⚠️ 这可能是闭包问题导致的！`);
         // 🔧 使用正确的Tab ID
         updateTabContent(currentTabIdRef.current!, content);
       } else {
@@ -283,7 +284,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
           showMessage.success('SQL格式化完成');
         } catch (error) {
-          console.error('SQL格式化失败:', error);
+          logger.error('SQL格式化失败:', error);
           showMessage.error(`SQL格式化失败: ${error}`);
         }
       }
@@ -353,7 +354,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       onQueryResult?.(null);
       onBatchQueryResults?.([], [], 0);
 
-      console.log(`✅ 创建查询标签页并选中数据库: ${database}, connectionId: ${connectionId}`);
+      logger.debug(`✅ 创建查询标签页并选中数据库: ${database}, connectionId: ${connectionId}`);
     }, [createQueryTab, setSelectedDatabase, onQueryResult, onBatchQueryResults]);
 
     // 创建查询标签页并自动执行查询
@@ -366,16 +367,16 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       onQueryResult?.(null);
       onBatchQueryResults?.([], [], 0);
 
-      console.log(`✅ 创建查询标签页并准备执行查询: ${database}`);
+      logger.debug(`✅ 创建查询标签页并准备执行查询: ${database}`);
 
       // 等待一个短暂的延迟，确保标签页已经创建并激活
       setTimeout(async () => {
         try {
           // 执行查询
           await executeQueryWithContent(query, database);
-          console.log(`✅ 查询执行完成`);
+          logger.debug(`✅ 查询执行完成`);
         } catch (error) {
-          console.error('❌ 自动执行查询失败:', error);
+          logger.error('❌ 自动执行查询失败:', error);
           showMessage.error(`查询执行失败: ${error}`);
         }
       }, 100);
@@ -419,7 +420,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
       if (tabs.length > 0 && (!activeKey || !tabs.find(tab => tab.id === activeKey))) {
         const lastTab = tabs[tabs.length - 1];
         setActiveKey(lastTab.id);
-        console.log(`🔄 自动切换到标签页: ${lastTab.title}`);
+        logger.info(`🔄 自动切换到标签页: ${lastTab.title}`);
       }
     }, [tabs, activeKey, setActiveKey]);
 
@@ -494,7 +495,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                         onContentChange={(content) => {
                           // 🔧 使用ref中的当前Tab ID，避免闭包问题
                           const tabId = currentTabIdRef.current || currentTab.id;
-                          console.log(`📝 EditorManager onContentChange: tabId=${tabId}, currentTab.id=${currentTab.id}`);
+                          logger.info(`📝 EditorManager onContentChange: tabId=${tabId}, currentTab.id=${currentTab.id}`);
                           handleTabContentChange(tabId, content);
                         }}
                         onExecuteQuery={executeQuery}

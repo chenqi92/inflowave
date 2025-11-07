@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import logger from '@/utils/logger';
 
 interface FontStatus {
   loaded: boolean;
@@ -47,7 +48,7 @@ export const useFontLoader = (fontFamilies: string[]): FontStatus => {
         try {
           await Promise.race([fontReadyPromise, timeoutPromise]);
         } catch (timeoutError) {
-          console.warn('字体加载超时，继续检查已加载的字体');
+          logger.warn('字体加载超时，继续检查已加载的字体');
         }
 
         // 清除超时
@@ -82,7 +83,7 @@ export const useFontLoader = (fontFamilies: string[]): FontStatus => {
         setStatus({ loaded: allLoaded, error: false });
 
         // 打印调试信息
-        console.log('字体加载检查结果:', {
+        logger.info('字体加载检查结果:', {
           totalFonts: document.fonts.size,
           checkedFonts: fontFamilies,
           results: fontFamilies.map((font, index) => ({
@@ -94,7 +95,7 @@ export const useFontLoader = (fontFamilies: string[]): FontStatus => {
           threshold: Math.ceil(fontFamilies.length * 0.5)
         });
       } catch (error) {
-        console.error('字体加载检查失败:', error);
+        logger.error('字体加载检查失败:', error);
         // 如果检查失败，假设字体已加载（避免无限等待）
         setStatus({ loaded: true, error: false });
       }
@@ -120,7 +121,7 @@ export const useFontLoader = (fontFamilies: string[]): FontStatus => {
 
     // 设置一个备用超时，确保不会无限等待
     timeoutRef.current = setTimeout(() => {
-      console.log('字体加载备用超时，假设已加载完成');
+      logger.info('字体加载备用超时，假设已加载完成');
       setStatus({ loaded: true, error: false });
     }, 3000);
 

@@ -61,6 +61,7 @@ import {
 } from 'lucide-react';
 import { useConnectionStore } from '@/store/connection';
 import type { QueryResult, DatabaseType } from '@/types';
+import logger from '@/utils/logger';
 
 // 图表类型配置
 const CHART_TYPES = {
@@ -160,7 +161,7 @@ export const MultiDatabaseChart: React.FC<MultiDatabaseChartProps> = ({
           return parseGenericData(data);
       }
     } catch (error) {
-      console.error('解析数据失败:', error);
+      logger.error('解析数据失败:', error);
       return { fields: [], records: [], timeField: null };
     }
   }, [data, dbType]);

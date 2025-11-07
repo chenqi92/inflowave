@@ -74,6 +74,7 @@ import { showMessage } from '@/utils/message';
 import { SimpleCodeEditor } from '@/components/common/SimpleCodeEditor';
 import { useTheme } from '@/components/providers/ThemeProvider';
 import { dialog } from '@/utils/dialog';
+import logger from '@/utils/logger';
 
 const { Text, Paragraph } = Typography;
 
@@ -122,7 +123,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
         await intelligentQueryEngine.getQueryStats(activeConnectionId);
       setQueryStats(stats);
     } catch (error) {
-      console.error('获取查询统计失败:', error);
+      logger.error('获取查询统计失败:', error);
     }
   }, [activeConnectionId]);
 
@@ -172,7 +173,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
 
       showMessage.success('查询优化完成');
     } catch (error) {
-      console.error('查询优化失败:', error);
+      logger.error('查询优化失败:', error);
       showMessage.error('查询优化失败');
     } finally {
       setLoading(false);
@@ -196,7 +197,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
         );
       return recommendations;
     } catch (error) {
-      console.error('获取优化建议失败:', error);
+      logger.error('获取优化建议失败:', error);
       return [];
     }
   }, [activeConnectionId]);
@@ -207,7 +208,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
       await intelligentQueryEngine.clearCache();
       showMessage.success('缓存已清空');
     } catch (error) {
-      console.error('清空缓存失败:', error);
+      logger.error('清空缓存失败:', error);
       showMessage.error('清空缓存失败');
     }
   }, []);

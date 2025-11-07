@@ -3,6 +3,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { generateUniqueId } from '@/utils/idGenerator';
 import type { EditorTab } from './TabManager';
+import logger from '@/utils/logger';
 
 interface FileOperationsProps {
   tabs: EditorTab[];
@@ -48,7 +49,7 @@ export const useFileOperations = ({
 
       showMessage.success(`已保存到工作区: ${currentTab.title}`);
     } catch (error) {
-      console.error('保存到工作区失败:', error);
+      logger.error('保存到工作区失败:', error);
       showMessage.error(`保存失败: ${error}`);
     }
   }, [currentTab, tabs, onTabsChange]);
@@ -90,7 +91,7 @@ export const useFileOperations = ({
         showMessage.success(`文件已保存: ${dialogResult.path}`);
       }
     } catch (error) {
-      console.error('另存为失败:', error);
+      logger.error('另存为失败:', error);
       showMessage.error(`保存失败: ${error}`);
     }
   }, [currentTab, tabs, onTabsChange]);
@@ -135,7 +136,7 @@ export const useFileOperations = ({
         showMessage.success(`文件已打开: ${fileName}`);
       }
     } catch (error) {
-      console.error('打开文件失败:', error);
+      logger.error('打开文件失败:', error);
       showMessage.error(`打开文件失败: ${error}`);
     }
   }, [tabs, onTabsChange, onActiveKeyChange]);
@@ -170,7 +171,7 @@ export const useFileOperations = ({
         showMessage.success(`工作区已导出到: ${exportPath}`);
       }
     } catch (error) {
-      console.error('导出工作区失败:', error);
+      logger.error('导出工作区失败:', error);
       showMessage.error(`导出失败: ${error}`);
     }
   }, [tabs]);
@@ -209,7 +210,7 @@ export const useFileOperations = ({
         showMessage.success(`已导入 ${newTabs.length} 个工作区文件`);
       }
     } catch (error) {
-      console.error('导入工作区失败:', error);
+      logger.error('导入工作区失败:', error);
       showMessage.error(`导入失败: ${error}`);
     }
   }, [tabs, onTabsChange, onActiveKeyChange]);
@@ -244,9 +245,9 @@ export const useFileOperations = ({
       );
       onTabsChange(updatedTabs);
 
-      console.log(`自动保存完成: ${tab.title}`);
+      logger.info(`自动保存完成: ${tab.title}`);
     } catch (error) {
-      console.error('自动保存失败:', error);
+      logger.error('自动保存失败:', error);
     }
   }, [tabs, onTabsChange]);
 
@@ -285,7 +286,7 @@ export const useFileOperations = ({
 
       showMessage.success(`已保存 ${modifiedTabs.length} 个文件`);
     } catch (error) {
-      console.error('批量保存失败:', error);
+      logger.error('批量保存失败:', error);
       showMessage.error(`保存失败: ${error}`);
     }
   }, [tabs, onTabsChange]);

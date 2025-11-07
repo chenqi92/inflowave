@@ -31,6 +31,7 @@ import {
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { Loader2, Plus, Trash2, FileText, Upload, Download, X } from 'lucide-react';
+import logger from '@/utils/logger';
 
 // IoTDB 模板信息接口
 interface TemplateInfo {
@@ -99,7 +100,7 @@ export default function IoTDBTemplateDialog({
       });
       setTemplates(result);
     } catch (error: any) {
-      console.error('加载模板列表失败:', error);
+      logger.error('加载模板列表失败:', error);
       showMessage.error(`加载模板列表失败: ${error.message || error}`);
     } finally {
       setLoading(false);
@@ -117,7 +118,7 @@ export default function IoTDBTemplateDialog({
       });
       setTemplateInfo(result);
     } catch (error: any) {
-      console.error('加载模板详情失败:', error);
+      logger.error('加载模板详情失败:', error);
       showMessage.error(`加载模板详情失败: ${error.message || error}`);
     } finally {
       setLoadingInfo(false);
@@ -156,7 +157,7 @@ export default function IoTDBTemplateDialog({
       setCurrentMode('list');
       await loadTemplates();
     } catch (error: any) {
-      console.error('创建模板失败:', error);
+      logger.error('创建模板失败:', error);
       showMessage.error(`创建模板失败: ${error.message || error}`);
     } finally {
       setLoading(false);
@@ -187,7 +188,7 @@ export default function IoTDBTemplateDialog({
       setMountPath('');
       setCurrentMode('list');
     } catch (error: any) {
-      console.error('挂载模板失败:', error);
+      logger.error('挂载模板失败:', error);
       showMessage.error(`挂载模板失败: ${error.message || error}`);
     } finally {
       setLoading(false);
@@ -211,7 +212,7 @@ export default function IoTDBTemplateDialog({
 
       showMessage.success('模板卸载成功');
     } catch (error: any) {
-      console.error('卸载模板失败:', error);
+      logger.error('卸载模板失败:', error);
       showMessage.error(`卸载模板失败: ${error.message || error}`);
     } finally {
       setLoading(false);
@@ -236,7 +237,7 @@ export default function IoTDBTemplateDialog({
       setTemplateInfo(null);
       await loadTemplates();
     } catch (error: any) {
-      console.error('删除模板失败:', error);
+      logger.error('删除模板失败:', error);
       showMessage.error(`删除模板失败: ${error.message || error}`);
     } finally {
       setLoading(false);

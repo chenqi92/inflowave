@@ -4,6 +4,7 @@
  */
 
 import { isTauriEnvironment } from './tauri';
+import logger from '@/utils/logger';
 
 /**
  * 检查是否为生产环境
@@ -119,11 +120,11 @@ const disableTextSelection = (): void => {
 export const initializeContextMenuDisabler = (): void => {
   // 只在Tauri环境的生产版本中禁用
   if (!isTauriEnvironment() || !isProduction()) {
-    console.log('开发环境或浏览器环境：保留右键菜单和快捷键用于调试');
+    logger.info('开发环境或浏览器环境：保留右键菜单和快捷键用于调试');
     return;
   }
   
-  console.log('生产环境：禁用右键菜单和浏览器快捷键');
+  logger.info('生产环境：禁用右键菜单和浏览器快捷键');
   
   // 等待DOM加载完成
   if (document.readyState === 'loading') {
@@ -149,9 +150,9 @@ const setupDisablers = (): void => {
     // 可选：禁用文本选择（取消注释以启用）
     // disableTextSelection();
     
-    console.log('✅ 生产环境安全措施已启用：已禁用右键菜单和浏览器快捷键');
+    logger.debug('✅ 生产环境安全措施已启用：已禁用右键菜单和浏览器快捷键');
   } catch (error) {
-    console.error('❌ 设置上下文菜单禁用器失败:', error);
+    logger.error('❌ 设置上下文菜单禁用器失败:', error);
   }
 };
 
@@ -161,7 +162,7 @@ const setupDisablers = (): void => {
 export const removeContextMenuDisabler = (): void => {
   // 这个功能需要保存事件监听器的引用才能正确移除
   // 目前的实现不支持移除，如果需要可以重构
-  console.warn('移除上下文菜单禁用器功能尚未实现');
+  logger.warn('移除上下文菜单禁用器功能尚未实现');
 };
 
 /**

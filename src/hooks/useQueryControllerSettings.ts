@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import logger from '@/utils/logger';
 
 /**
  * 控制器设置接口
@@ -116,7 +117,7 @@ export function useQueryControllerSettings() {
       // 发射事件通知其他组件
       settingsEmitter.emit(newSettings);
     } catch (error) {
-      console.error('加载设置失败:', error);
+      logger.error('加载设置失败:', error);
       showMessage.error('加载设置失败');
       // 使用默认值
       setSettings(defaultSettings);
@@ -151,7 +152,7 @@ export function useQueryControllerSettings() {
           controllerSettings: newControllerSettings,
         });
       } catch (error) {
-        console.error('更新控制器设置失败:', error);
+        logger.error('更新控制器设置失败:', error);
         showMessage.error('更新设置失败');
         // 回滚
         setSettings(settings);
@@ -187,7 +188,7 @@ export function useQueryControllerSettings() {
           querySettings: newQuerySettings,
         });
       } catch (error) {
-        console.error('更新查询设置失败:', error);
+        logger.error('更新查询设置失败:', error);
         showMessage.error('更新设置失败');
         // 回滚
         setSettings(settings);
@@ -240,7 +241,7 @@ export function useQueryControllerSettings() {
 
         await Promise.all(promises);
       } catch (error) {
-        console.error('批量更新设置失败:', error);
+        logger.error('批量更新设置失败:', error);
         showMessage.error('更新设置失败');
         // 回滚
         setSettings(settings);
@@ -269,7 +270,7 @@ export function useQueryControllerSettings() {
       ]);
       showMessage.success('设置已重置为默认值');
     } catch (error) {
-      console.error('重置设置失败:', error);
+      logger.error('重置设置失败:', error);
       showMessage.error('重置设置失败');
       throw error;
     }

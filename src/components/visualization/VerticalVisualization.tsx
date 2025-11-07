@@ -52,6 +52,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { QueryResult } from '@/types';
+import logger from '@/utils/logger';
 
 interface ChartConfig {
   id: string;
@@ -111,7 +112,7 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
       });
       setDatabases(result || []);
     } catch (error) {
-      console.error('加载数据库列表失败:', error);
+      logger.error('加载数据库列表失败:', error);
     }
   };
 
@@ -127,7 +128,7 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
         setCharts([]);
       }
     } catch (error) {
-      console.error('加载图表配置失败:', error);
+      logger.error('加载图表配置失败:', error);
       setCharts([]);
     }
   };

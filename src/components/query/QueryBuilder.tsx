@@ -36,6 +36,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { SimpleCodeEditor } from '@/components/common/SimpleCodeEditor';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import logger from '@/utils/logger';
 
 interface QueryBuilderProps {
   open: boolean;
@@ -142,7 +143,7 @@ export const QueryBuilder: React.FC<QueryBuilderProps> = ({
       setFields(schema.fields || []);
       setTags(schema.tags || []);
     } catch (error) {
-      console.error('加载表结构失败:', error);
+      logger.error('加载表结构失败:', error);
       showMessage.error(`加载表结构失败: ${error}`);
     } finally {
       setLoading(false);

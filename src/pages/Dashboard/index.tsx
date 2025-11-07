@@ -27,6 +27,7 @@ import { useNavigate } from 'react-router-dom';
 import { useConnectionStore } from '@/store/connection';
 import DashboardManager from '@/components/dashboard/DashboardManager';
 import DataExportDialog from '@/components/common/DataExportDialog';
+import logger from '@/utils/logger';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -409,7 +410,7 @@ const Dashboard: React.FC = () => {
                 onOpenDashboard={dashboardId => {
                   setCurrentDashboard(dashboardId);
                   // 这里可以导航到仪表板详情页面
-                  console.log('打开仪表板:', dashboardId);
+                  logger.info('打开仪表板:', dashboardId);
                 }}
               />
             </div>
@@ -424,7 +425,7 @@ const Dashboard: React.FC = () => {
         connections={connections}
         currentConnection={activeConnectionId || undefined}
         onSuccess={result => {
-          console.log('导出成功:', result);
+          logger.info('导出成功:', result);
         }}
       />
         </div>

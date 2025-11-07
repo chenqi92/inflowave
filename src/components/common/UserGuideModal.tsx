@@ -13,6 +13,7 @@ import MarkdownRenderer from './MarkdownRenderer';
 import {useNoticeStore} from '@/store/notice';
 import {loadAllDocuments} from '@/utils/documentLoader';
 import '@/styles/user-guide.css';
+import logger from '@/utils/logger';
 
 interface UserGuideModalProps {
     isOpen: boolean;
@@ -47,7 +48,7 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
                 const loadedDocs = await loadAllDocuments();
                 setDocuments(loadedDocs);
             } catch (error) {
-                console.error('Failed to load user guide documents:', error);
+                logger.error('Failed to load user guide documents:', error);
             } finally {
                 setLoading(false);
             }

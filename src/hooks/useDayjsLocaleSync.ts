@@ -8,6 +8,7 @@
 import { useEffect } from 'react';
 import dayjs from 'dayjs';
 import { useI18nStore } from '@/i18n/store';
+import logger from '@/utils/logger';
 
 // Mapping of i18n language codes to dayjs locale codes
 const DAYJS_LOCALE_MAP: Record<string, string> = {
@@ -26,9 +27,9 @@ export const useDayjsLocaleSync = () => {
     
     try {
       dayjs.locale(dayjsLocale);
-      console.log(`📅 [DayjsSync] Dayjs locale synced to: ${dayjsLocale}`);
+      logger.info(`📅 [DayjsSync] Dayjs locale synced to: ${dayjsLocale}`);
     } catch (error) {
-      console.warn(`⚠️ [DayjsSync] Failed to set dayjs locale to ${dayjsLocale}:`, error);
+      logger.warn(`⚠️ [DayjsSync] Failed to set dayjs locale to ${dayjsLocale}:`, error);
     }
   }, [currentLanguage]);
 };

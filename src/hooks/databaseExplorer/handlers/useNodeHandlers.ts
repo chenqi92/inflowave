@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import type { ContextMenuPosition } from '@/types/databaseExplorer';
+import logger from '@/utils/logger';
 
 interface UseNodeHandlersProps {
     setContextMenuTarget: (target: TreeNodeData | null) => void;
@@ -25,7 +26,7 @@ export const useNodeHandlers = ({
     // ============================================================================
     const handleNodeSelect = useCallback((node: any) => {
         if (node) {
-            console.log('选中节点:', node);
+            logger.info('选中节点:', node);
         }
     }, []);
 

@@ -59,6 +59,7 @@ import type {
   S3BrowserViewConfig,
 } from '@/types/s3';
 import './S3Browser.css';
+import logger from '@/utils/logger';
 
 interface S3BrowserProps {
   connectionId: string;
@@ -274,7 +275,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         successCount++;
       } catch (error) {
         failCount++;
-        console.error(`Failed to upload ${file.name}:`, error);
+        logger.error(`Failed to upload ${file.name}:`, error);
       }
     }
 

@@ -19,6 +19,7 @@ import { useConnectionStore } from '@/store/connection';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import logger from '@/utils/logger';
 
 // 性能指标类型
 interface RealPerformanceMetrics {
@@ -128,7 +129,7 @@ export const MultiSourcePerformanceMonitor: React.FC<
 
       setMetricsData(result);
     } catch (error) {
-      console.error('获取性能数据失败:', error);
+      logger.error('获取性能数据失败:', error);
       showMessage.error(`获取性能数据失败: ${error}`);
     } finally {
       setLoading(false);
@@ -143,7 +144,7 @@ export const MultiSourcePerformanceMonitor: React.FC<
       );
       setConfig(result);
     } catch (error) {
-      console.error('获取配置失败:', error);
+      logger.error('获取配置失败:', error);
     }
   }, []);
 
@@ -157,7 +158,7 @@ export const MultiSourcePerformanceMonitor: React.FC<
         });
         setConfig(updatedConfig);
       } catch (error) {
-        console.error('更新配置失败:', error);
+        logger.error('更新配置失败:', error);
         showMessage.error(`更新配置失败: ${error}`);
       }
     },

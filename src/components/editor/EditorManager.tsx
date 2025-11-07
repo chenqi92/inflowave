@@ -130,14 +130,14 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
   // Handle editor content change
   const handleEditorChange = useCallback((value: string) => {
     if (isInternalChangeRef.current) {
-      console.log(`📝 EditorManager: 忽略内部变化（isInternalChangeRef=true）`);
+      logger.info(`📝 EditorManager: 忽略内部变化（isInternalChangeRef=true）`);
       return;
     }
 
     const content = value || '';
 
     if (content !== lastContentRef.current) {
-      console.log(`📝 EditorManager: 编辑器内容变化，调用onContentChange`, {
+      logger.info(`📝 EditorManager: 编辑器内容变化，调用onContentChange`, {
         tabId: currentTab?.id,
         tabTitle: currentTab?.title,
         contentLength: content.length,
@@ -272,7 +272,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
     const currentContent = editor.getValue();
 
     if (currentTab.content !== currentContent) {
-      console.log(`📝 EditorManager: 同步Tab内容到编辑器`, {
+      logger.info(`📝 EditorManager: 同步Tab内容到编辑器`, {
         tabId: currentTab.id,
         tabTitle: currentTab.title,
         contentLength: currentTab.content.length,

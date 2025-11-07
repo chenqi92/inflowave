@@ -5,6 +5,7 @@
 
 import { showMessage } from './message';
 import { writeText, readText } from '@tauri-apps/plugin-clipboard-manager';
+import logger from '@/utils/logger';
 
 export interface ClipboardOptions {
   showSuccess?: boolean;
@@ -37,7 +38,7 @@ export async function writeToClipboard(
     }
     return true;
   } catch (error) {
-    console.error('Tauri clipboard write failed:', error);
+    logger.error('Tauri clipboard write failed:', error);
     if (showError) {
       showMessage.error(`${errorMessage}: ${error}`);
     }
@@ -62,7 +63,7 @@ export async function readFromClipboard(
     const text = await readText();
     return text;
   } catch (error) {
-    console.error('Tauri clipboard read failed:', error);
+    logger.error('Tauri clipboard read failed:', error);
     if (showError) {
       showMessage.error(`${errorMessage}: ${error}`);
     }

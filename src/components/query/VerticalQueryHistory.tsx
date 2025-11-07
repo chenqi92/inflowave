@@ -42,6 +42,7 @@ import { writeToClipboard } from '@/utils/clipboard';
 import { showMessage } from '@/utils/message';
 import { useTranslation } from '@/hooks/useTranslation';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
+import logger from '@/utils/logger';
 
 interface VerticalQueryHistoryProps {
   className?: string;
@@ -149,7 +150,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
         minute: '2-digit',
       }).format(dateObj);
     } catch (error) {
-      console.error('Error formatting date:', error, date);
+      logger.error('Error formatting date:', error, date);
       return 'Invalid Date';
     }
   };

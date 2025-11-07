@@ -9,6 +9,7 @@ import { Button, Card } from '@/components/ui';
 import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useSettingsTranslation } from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 interface CustomFontImportProps {
   onFontImported?: () => void;
@@ -55,7 +56,7 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
       }
 
     } catch (error) {
-      console.error(t('font_import_error'), error);
+      logger.error(t('font_import_error'), error);
       showMessage.error(t('font_import_error'));
     } finally {
       setImporting(false);

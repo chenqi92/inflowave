@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
+import logger from '@/utils/logger';
 
 interface Plugin {
   id: string;
@@ -144,7 +145,7 @@ export const VerticalExtensionManager: React.FC<VerticalExtensionManagerProps> =
       const automationData = await safeTauriInvoke<AutomationRule[]>('get_automation_rules');
       setAutomationRules(automationData || []);
     } catch (error) {
-      console.error('加载扩展数据失败:', error);
+      logger.error('加载扩展数据失败:', error);
       showMessage.error('加载数据失败');
       // 设置空数组作为fallback
       setPlugins([]);

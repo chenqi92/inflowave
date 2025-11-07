@@ -25,6 +25,7 @@ import {
   ErrorIndicator,
 } from './NodeStatusIndicator';
 import { log } from '@/utils/logger';
+import logger from '@/utils/logger';
 
 export interface TreeNodeData {
   id: string;
@@ -235,7 +236,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   // 调试日志：数据库节点的状态（仅在开发环境且状态变化时输出）
   // 注释掉以减少日志输出，需要时可以取消注释
   // if (normalizedNodeType === 'database' || normalizedNodeType === 'system_database') {
-  //   console.log(`🎨 [TreeNodeRenderer] 渲染数据库节点: ${data.name}`, {
+  //   logger.info(`🎨 [TreeNodeRenderer] 渲染数据库节点: ${data.name}`, {
   //     nodeType: normalizedNodeType,
   //     isActivated,
   //     isOpen: item.isExpanded(),

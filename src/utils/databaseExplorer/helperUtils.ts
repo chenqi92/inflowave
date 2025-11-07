@@ -1,13 +1,14 @@
 import { showMessage } from '@/utils/message';
 import type { DataNode } from '@/types/databaseExplorer';
 import type { ConnectionConfig } from '@/types';
+import logger from '@/utils/logger';
 
 /**
  * 打开表设计器
  */
 export const openTableDesigner = (tableInfo: { connectionId: string; database: string; table: string }) => {
     try {
-        console.log('🔧 打开表设计器:', tableInfo);
+        logger.debug('🔧 打开表设计器:', tableInfo);
 
         // 创建表设计器标签页
         const newTab = {
@@ -29,7 +30,7 @@ export const openTableDesigner = (tableInfo: { connectionId: string; database: s
 
         showMessage.success(`已打开表设计器: ${tableInfo.table}`);
     } catch (error) {
-        console.error('❌ 打开表设计器失败:', error);
+        logger.error('❌ 打开表设计器失败:', error);
         showMessage.error(`打开表设计器失败: ${error}`);
     }
 };
@@ -39,7 +40,7 @@ export const openTableDesigner = (tableInfo: { connectionId: string; database: s
  */
 export const openDatabaseDesigner = (dbInfo: { connectionId: string; database: string }) => {
     try {
-        console.log('🗄️ 打开数据库设计器:', dbInfo);
+        logger.debug('🗄️ 打开数据库设计器:', dbInfo);
 
         // 创建数据库设计器标签页
         const newTab = {
@@ -60,7 +61,7 @@ export const openDatabaseDesigner = (dbInfo: { connectionId: string; database: s
 
         showMessage.success(`已打开数据库设计器: ${dbInfo.database}`);
     } catch (error) {
-        console.error('❌ 打开数据库设计器失败:', error);
+        logger.error('❌ 打开数据库设计器失败:', error);
         showMessage.error(`打开数据库设计器失败: ${error}`);
     }
 };

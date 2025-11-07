@@ -38,6 +38,7 @@ import { showMessage } from '@/utils/message';
 import { Plus, Edit, Trash2, Copy, BarChart, Eye } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import type { DashboardConfig } from '@/types';
+import logger from '@/utils/logger';
 
 interface DashboardManagerProps {
   onOpenDashboard: (dashboardId: string) => void;
@@ -63,7 +64,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       )) as DashboardConfig[];
       setDashboards(result);
     } catch (error) {
-      console.error('加载仪表板失败:', error);
+      logger.error('加载仪表板失败:', error);
       showMessage.error('加载仪表板失败');
     } finally {
       setLoading(false);
@@ -98,7 +99,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       // 自动打开新创建的仪表板
       onOpenDashboard(dashboardId);
     } catch (error) {
-      console.error('创建仪表板失败:', error);
+      logger.error('创建仪表板失败:', error);
       showMessage.error('创建仪表板失败');
     }
   };
@@ -132,7 +133,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       form.reset();
       loadDashboards();
     } catch (error) {
-      console.error('更新仪表板失败:', error);
+      logger.error('更新仪表板失败:', error);
       showMessage.error('更新仪表板失败');
     }
   };
@@ -144,7 +145,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       showMessage.success('仪表板删除成功');
       loadDashboards();
     } catch (error) {
-      console.error('删除仪表板失败:', error);
+      logger.error('删除仪表板失败:', error);
       showMessage.error('删除仪表板失败');
     }
   };
@@ -162,7 +163,7 @@ const DashboardManager: React.FC<DashboardManagerProps> = ({
       loadDashboards();
       onOpenDashboard(newDashboardId);
     } catch (error) {
-      console.error('复制仪表板失败:', error);
+      logger.error('复制仪表板失败:', error);
       showMessage.error('复制仪表板失败');
     }
   };

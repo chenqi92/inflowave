@@ -2,6 +2,7 @@ import React from 'react';
 import { Button, CardContent, Tooltip, TooltipContent, TooltipTrigger, Typography, ExpandableSearchInput } from '@/components/ui';
 import { Filter, RefreshCw, Plus } from 'lucide-react';
 import type { ConnectionConfig } from '@/types';
+import logger from '@/utils/logger';
 
 interface DatabaseExplorerHeaderProps {
     headerRef: React.RefObject<HTMLDivElement>;
@@ -46,7 +47,7 @@ export const DatabaseExplorerHeader: React.FC<DatabaseExplorerHeaderProps> = ({
                                 size='sm'
                                 onClick={() => {
                                     const newHideSystemNodes = !hideSystemNodes;
-                                    console.log(`🔄 按钮点击：过滤状态从 ${hideSystemNodes} 变为 ${newHideSystemNodes}`);
+                                    logger.info(`🔄 按钮点击：过滤状态从 ${hideSystemNodes} 变为 ${newHideSystemNodes}`);
                                     setHideSystemNodes(newHideSystemNodes);
                                 }}
                                 title={hideSystemNodes ? '显示系统节点' : '隐藏系统节点'}

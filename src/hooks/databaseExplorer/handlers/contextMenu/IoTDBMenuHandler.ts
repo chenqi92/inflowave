@@ -6,6 +6,7 @@
 import { BaseMenuHandler } from './BaseMenuHandler';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import type { ContextMenuAction } from '@/types/contextMenu';
+import logger from '@/utils/logger';
 
 /**
  * 设备节点菜单处理器
@@ -50,7 +51,7 @@ export class DeviceMenuHandler extends BaseMenuHandler {
         break;
 
       default:
-        console.warn(`未处理的设备菜单动作: ${action}`);
+        logger.warn(`未处理的设备菜单动作: ${action}`);
     }
   }
 
@@ -182,7 +183,7 @@ export class TimeseriesMenuHandler extends BaseMenuHandler {
         break;
 
       default:
-        console.warn(`未处理的时间序列菜单动作: ${action}`);
+        logger.warn(`未处理的时间序列菜单动作: ${action}`);
     }
   }
 
@@ -291,7 +292,7 @@ export class TemplateMenuHandler extends BaseMenuHandler {
         break;
 
       default:
-        console.warn(`未处理的模板菜单动作: ${action}`);
+        logger.warn(`未处理的模板菜单动作: ${action}`);
     }
   }
 

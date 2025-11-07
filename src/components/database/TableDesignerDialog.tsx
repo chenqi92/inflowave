@@ -28,6 +28,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import type { QueryResult } from '@/types';
+import logger from '@/utils/logger';
 
 interface TableDesignerDialogProps {
   open: boolean;
@@ -88,7 +89,7 @@ const TableDesignerDialog: React.FC<TableDesignerDialogProps> = ({
     setError(null);
 
     try {
-      console.log('🔍 获取表设计信息:', { connectionId, database, tableName });
+      logger.debug('🔍 获取表设计信息:', { connectionId, database, tableName });
 
       // 获取字段信息
       const fieldsQuery = `SHOW FIELD KEYS FROM "${tableName}"`;
@@ -177,10 +178,10 @@ const TableDesignerDialog: React.FC<TableDesignerDialogProps> = ({
       };
 
       setDesign(tableDesign);
-      console.log('✅ 表设计信息获取成功:', tableDesign);
+      logger.debug('✅ 表设计信息获取成功:', tableDesign);
 
     } catch (err) {
-      console.error('❌ 获取表设计信息失败:', err);
+      logger.error('❌ 获取表设计信息失败:', err);
       setError(`获取表设计信息失败: ${err}`);
       showMessage.error(`获取表设计信息失败: ${err}`);
     } finally {

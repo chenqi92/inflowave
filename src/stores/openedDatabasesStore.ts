@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import logger from '@/utils/logger';
 
 interface OpenedDatabasesState {
   openedDatabases: Set<string>;
@@ -35,7 +36,7 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
       const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
       // 始终打印日志，方便调试
-      console.log(`📂 [Store] 打开数据库: ${key}`, {
+      logger.info(`📂 [Store] 打开数据库: ${key}`, {
         before: Array.from(state.openedDatabases),
         after: Array.from(newOpenedDatabases),
         databasesList: newOpenedDatabasesList
@@ -58,7 +59,7 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
       const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
       // 始终打印日志，方便调试
-      console.log(`📁 [Store] 关闭数据库: ${key}`, {
+      logger.info(`📁 [Store] 关闭数据库: ${key}`, {
         wasDeleted,
         before: Array.from(state.openedDatabases),
         after: Array.from(newOpenedDatabases),
@@ -88,7 +89,7 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
       const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
       if (import.meta.env.DEV && import.meta.env.VITE_DEBUG_RENDERS === 'true') {
-        console.log(`📁 [Store] 关闭连接 ${connectionId} 的所有数据库:`, {
+        logger.debug(`📁 [Store] 关闭连接 ${connectionId} 的所有数据库:`, {
           closedDatabases,
           remaining: Array.from(newOpenedDatabases),
           databasesList: newOpenedDatabasesList
@@ -119,7 +120,7 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
       newOpenedDatabases.add(key);
       const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
-      console.log(`📂 [Store] 打开 Organization: ${key}`, {
+      logger.info(`📂 [Store] 打开 Organization: ${key}`, {
         before: Array.from(state.openedDatabases),
         after: Array.from(newOpenedDatabases),
       });
@@ -147,7 +148,7 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
 
       const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
-      console.log(`📁 [Store] 关闭 Organization: ${key}`, {
+      logger.info(`📁 [Store] 关闭 Organization: ${key}`, {
         wasDeleted,
         before: Array.from(state.openedDatabases),
         after: Array.from(newOpenedDatabases),
@@ -173,7 +174,7 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
       newOpenedDatabases.add(key);
       const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
-      console.log(`📂 [Store] 打开 Bucket: ${key}`, {
+      logger.info(`📂 [Store] 打开 Bucket: ${key}`, {
         before: Array.from(state.openedDatabases),
         after: Array.from(newOpenedDatabases),
       });
@@ -192,7 +193,7 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
       const wasDeleted = newOpenedDatabases.delete(key);
       const newOpenedDatabasesList = Array.from(newOpenedDatabases);
 
-      console.log(`📁 [Store] 关闭 Bucket: ${key}`, {
+      logger.info(`📁 [Store] 关闭 Bucket: ${key}`, {
         wasDeleted,
         before: Array.from(state.openedDatabases),
         after: Array.from(newOpenedDatabases),

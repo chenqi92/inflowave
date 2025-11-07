@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import logger from '@/utils/logger';
 
 export interface ServerConfig {
   enabled: boolean;
@@ -33,7 +34,7 @@ export class EmbeddedServerService {
       const unlisten = await listen<number>('embedded-server-started', (event) => {
         this.serverPort = event.payload;
         this.isRunning = true;
-        console.log(`嵌入式服务器已启动，端口: ${this.serverPort}`);
+        logger.info(`嵌入式服务器已启动，端口: ${this.serverPort}`);
       });
       
       this.listeners.push(unlisten);
@@ -41,9 +42,9 @@ export class EmbeddedServerService {
       // 检查当前状态
       await this.checkStatus();
       
-      console.log('嵌入式服务器服务已初始化');
+      logger.info('嵌入式服务器服务已初始化');
     } catch (error) {
-      console.error('初始化嵌入式服务器服务失败:', error);
+      logger.error('初始化嵌入式服务器服务失败:', error);
       throw error;
     }
   }
@@ -54,9 +55,9 @@ export class EmbeddedServerService {
   async initServer(config: ServerConfig): Promise<void> {
     try {
       await invoke('initEmbeddedServerCmd', { config });
-      console.log('嵌入式服务器已初始化');
+      logger.info('嵌入式服务器已初始化');
     } catch (error) {
-      console.error('初始化嵌入式服务器失败:', error);
+      logger.error('初始化嵌入式服务器失败:', error);
       throw error;
     }
   }
@@ -69,10 +70,10 @@ export class EmbeddedServerService {
       const port = await invoke<number>('startEmbeddedServerCmd');
       this.serverPort = port;
       this.isRunning = true;
-      console.log(`嵌入式服务器已启动，端口: ${port}`);
+      logger.info(`嵌入式服务器已启动，端口: ${port}`);
       return port;
     } catch (error) {
-      console.error('启动嵌入式服务器失败:', error);
+      logger.error('启动嵌入式服务器失败:', error);
       throw error;
     }
   }
@@ -85,9 +86,9 @@ export class EmbeddedServerService {
       await invoke('stopEmbeddedServerCmd');
       this.serverPort = null;
       this.isRunning = false;
-      console.log('嵌入式服务器已停止');
+      logger.info('嵌入式服务器已停止');
     } catch (error) {
-      console.error('停止嵌入式服务器失败:', error);
+      logger.error('停止嵌入式服务器失败:', error);
       throw error;
     }
   }
@@ -100,10 +101,10 @@ export class EmbeddedServerService {
       const port = await invoke<number>('restartEmbeddedServerCmd');
       this.serverPort = port;
       this.isRunning = true;
-      console.log(`嵌入式服务器已重启，端口: ${port}`);
+      logger.info(`嵌入式服务器已重启，端口: ${port}`);
       return port;
     } catch (error) {
-      console.error('重启嵌入式服务器失败:', error);
+      logger.error('重启嵌入式服务器失败:', error);
       throw error;
     }
   }
@@ -119,7 +120,7 @@ export class EmbeddedServerService {
       this.serverPort = port;
       this.isRunning = running;
     } catch (error) {
-      console.error('检查嵌入式服务器状态失败:', error);
+      logger.error('检查嵌入式服务器状态失败:', error);
     }
   }
 
@@ -158,9 +159,9 @@ export class EmbeddedServerService {
       }
       this.listeners = [];
       
-      console.log('嵌入式服务器服务已清理');
+      logger.info('嵌入式服务器服务已清理');
     } catch (error) {
-      console.error('清理嵌入式服务器服务失败:', error);
+      logger.error('清理嵌入式服务器服务失败:', error);
     }
   }
 }

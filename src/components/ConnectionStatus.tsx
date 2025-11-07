@@ -26,6 +26,7 @@ import { Progress } from '@/components/ui';
 import { Alert, AlertDescription } from '@/components/ui';
 import { Separator } from '@/components/ui';
 import { toast } from 'sonner';
+import logger from '@/utils/logger';
 
 export interface ConnectionStatusProps {
   showDetails?: boolean;
@@ -71,7 +72,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
       await connectionResilienceService.startMonitoring();
       updateStats();
     } catch (error) {
-      console.error('Failed to start connection monitoring:', error);
+      logger.error('Failed to start connection monitoring:', error);
       toast.error('连接监控启动失败');
     }
   };

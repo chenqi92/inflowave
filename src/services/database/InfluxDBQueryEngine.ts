@@ -1,12 +1,13 @@
 /**
  * InfluxDB 查询引擎实现
- * 
+ *
  * 实现 InfluxDB 特定的查询逻辑，支持 InfluxQL 和 Flux 查询语言
  */
 
 import { QueryEngineBase } from './QueryEngineBase';
 import { safeTauriInvoke } from '@/utils/tauri';
-import type { 
+import logger from '@/utils/logger';
+import type {
   QueryOperation,
   QueryParams,
   FieldInfo,
@@ -281,9 +282,9 @@ export class InfluxDBQueryEngine extends QueryEngineBase {
       const database = dbMatch ? dbMatch[1] : 'default';
       return `from(bucket: "${database}") |> range(start: -1h) |> group(columns: ["_measurement"]) |> distinct(column: "_measurement") |> yield()`;
     }
-    
+
     // 对于复杂查询，返回原查询并记录警告
-    console.warn('⚠️ InfluxQL 到 Flux 的自动转换可能不完整:', influxql);
+    logger.warn('⚠️ InfluxQL 到 Flux 的自动转换可能不完整:', influxql);
     return influxql;
   }
 
@@ -294,9 +295,9 @@ export class InfluxDBQueryEngine extends QueryEngineBase {
     if (flux.includes('buckets()')) {
       return 'SHOW DATABASES';
     }
-    
+
     // 对于复杂查询，返回原查询并记录警告
-    console.warn('⚠️ Flux 到 InfluxQL 的自动转换可能不完整:', flux);
+    logger.warn('⚠️ Flux 到 InfluxQL 的自动转换可能不完整:', flux);
     return flux;
   }
 

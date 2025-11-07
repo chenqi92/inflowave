@@ -12,6 +12,7 @@
 import { useCallback, useState, useMemo } from 'react';
 import { useI18nStore } from '@/i18n/store';
 import type { LanguageInfo } from '@/i18n/types';
+import logger from '@/utils/logger';
 
 // ============================================================================
 // 类型定义
@@ -186,12 +187,12 @@ export const useLanguageSwitcher = (): UseLanguageSwitcherReturn => {
 
     // 如果已经是当前语言，直接返回
     if (language === currentLanguage) {
-      console.log(`🌐 [useLanguageSwitcher] 已经是当前语言: ${language}`);
+      logger.info(`🌐 [useLanguageSwitcher] 已经是当前语言: ${language}`);
       config.onSuccess(language);
       return;
     }
 
-    console.log(`🌐 [useLanguageSwitcher] 开始切换语言: ${currentLanguage} -> ${language}`);
+    logger.info(`🌐 [useLanguageSwitcher] 开始切换语言: ${currentLanguage} -> ${language}`);
     
     // 设置切换状态
     setIsSwitching(true);
@@ -212,11 +213,11 @@ export const useLanguageSwitcher = (): UseLanguageSwitcherReturn => {
       // 等待切换完成或超时
       await Promise.race([switchPromise, timeoutPromise]);
 
-      console.log(`✅ [useLanguageSwitcher] 语言切换成功: ${language}`);
+      logger.debug(`✅ [useLanguageSwitcher] 语言切换成功: ${language}`);
       config.onSuccess(language);
 
     } catch (originalError) {
-      console.error(`❌ [useLanguageSwitcher] 语言切换失败:`, originalError);
+      logger.error(`❌ [useLanguageSwitcher] 语言切换失败:`, originalError);
       
       // 创建错误对象
       let errorCode: LanguageSwitchError['code'] = 'SWITCH_FAILED';
@@ -270,7 +271,7 @@ export const useLanguageSwitcher = (): UseLanguageSwitcherReturn => {
 
   const retry = useCallback(async (): Promise<void> => {
     if (lastAttemptedLanguage && error) {
-      console.log(`🔄 [useLanguageSwitcher] 重试切换语言: ${lastAttemptedLanguage}`);
+      logger.info(`🔄 [useLanguageSwitcher] 重试切换语言: ${lastAttemptedLanguage}`);
       await switchLanguage(lastAttemptedLanguage);
     }
   }, [lastAttemptedLanguage, error, switchLanguage]);

@@ -1,5 +1,6 @@
 import { QueryOptimizationResult, QueryContext } from '../index';
 import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 export interface OptimizationHistoryEntry {
   id: string;
@@ -756,7 +757,7 @@ export class OptimizationHistory {
         this.history = JSON.parse(data);
       }
     } catch (error) {
-      console.error('Failed to load optimization history:', error);
+      logger.error('Failed to load optimization history:', error);
     }
   }
 
@@ -770,7 +771,7 @@ export class OptimizationHistory {
       const data = JSON.stringify(this.history);
       await safeTauriInvoke('save_optimization_history', { data });
     } catch (error) {
-      console.error('Failed to save optimization history:', error);
+      logger.error('Failed to save optimization history:', error);
     }
   }
 
@@ -914,7 +915,7 @@ export class OptimizationHistory {
 
   private async convertToExcel(data: any[]): Promise<string> {
     try {
-      console.log('📊 开始转换为Excel格式');
+      logger.info('📊 开始转换为Excel格式');
 
       // 创建Excel工作簿数据结构
       const workbookData = {
@@ -939,17 +940,17 @@ export class OptimizationHistory {
 
       // 返回JSON格式的Excel数据结构
       // 在实际应用中，这里可以调用后端API生成真正的Excel文件
-      console.log('✅ Excel格式转换完成');
+      logger.debug('✅ Excel格式转换完成');
       return JSON.stringify(workbookData, null, 2);
     } catch (error) {
-      console.error('❌ Excel转换失败:', error);
+      logger.error('❌ Excel转换失败:', error);
       throw new Error(`Excel转换失败: ${error}`);
     }
   }
 
   private parseCSV(csvData: string): OptimizationHistoryEntry[] {
     try {
-      console.log('📄 开始解析CSV数据');
+      logger.info('📄 开始解析CSV数据');
 
       const lines = csvData.trim().split('\n');
       if (lines.length < 2) {
@@ -958,7 +959,7 @@ export class OptimizationHistory {
 
       // 解析标题行
       const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-      console.log('📋 CSV标题行:', headers);
+      logger.info('📋 CSV标题行:', headers);
 
       const entries: OptimizationHistoryEntry[] = [];
 
@@ -967,7 +968,7 @@ export class OptimizationHistory {
         const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
 
         if (values.length !== headers.length) {
-          console.warn(`⚠️ 第${i + 1}行数据列数不匹配，跳过`);
+          logger.warn(`⚠️ 第${i + 1}行数据列数不匹配，跳过`);
           continue;
         }
 
@@ -1058,10 +1059,10 @@ export class OptimizationHistory {
         entries.push(entry);
       }
 
-      console.log(`✅ CSV解析完成，共解析${entries.length}条记录`);
+      logger.debug(`✅ CSV解析完成，共解析${entries.length}条记录`);
       return entries;
     } catch (error) {
-      console.error('❌ CSV解析失败:', error);
+      logger.error('❌ CSV解析失败:', error);
       throw new Error(`CSV解析失败: ${error}`);
     }
   }

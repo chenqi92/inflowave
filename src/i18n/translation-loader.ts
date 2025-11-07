@@ -9,6 +9,7 @@ import { CacheManager } from './cache-manager';
 import { performanceMonitor } from './performance-monitor';
 import { errorHandler } from './error-handler';
 import { fallbackManager } from './fallback-manager';
+import logger from '@/utils/logger';
 
 export interface LanguageResource {
   [key: string]: string | LanguageResource;
@@ -64,7 +65,7 @@ export class TranslationLoader {
     if (this.config.enableCaching) {
       const cached = this.cacheManager.get(cacheKey);
       if (cached) {
-        console.log(`📦 [TranslationLoader] Cache hit for ${language}`);
+        logger.debug(`📦 [TranslationLoader] Cache hit for ${language}`);
         performanceMonitor.recordCacheHit(language);
 
         // 将缓存的资源添加到 i18next
@@ -83,12 +84,12 @@ export class TranslationLoader {
     // 检查是否正在加载
     const existingPromise = this.loadingPromises.get(cacheKey);
     if (existingPromise) {
-      console.log(`⏳ [TranslationLoader] Waiting for ongoing load of ${language}`);
+      logger.info(`⏳ [TranslationLoader] Waiting for ongoing load of ${language}`);
       return existingPromise;
     }
 
     // 开始加载
-    console.log(`🔄 [TranslationLoader] Loading ${language} from network`);
+    logger.info(`🔄 [TranslationLoader] Loading ${language} from network`);
     const startTime = Date.now();
     const loadPromise = this.loadLanguageResources(language);
     this.loadingPromises.set(cacheKey, loadPromise);
@@ -110,14 +111,14 @@ export class TranslationLoader {
         for (const [namespace, translations] of Object.entries(resource)) {
           i18next.addResourceBundle(language, namespace, translations, true, true);
         }
-        console.log(`✅ [TranslationLoader] Added resources to i18next for ${language}`);
+        logger.debug(`✅ [TranslationLoader] Added resources to i18next for ${language}`);
       }
 
       return resource;
     } catch (error) {
       const loadTime = Date.now() - startTime;
       performanceMonitor.recordLoad(language, loadTime, false);
-      console.error(`Failed to load language resources for ${language}:`, error);
+      logger.error(`Failed to load language resources for ${language}:`, error);
       throw error;
     } finally {
       this.loadingPromises.delete(cacheKey);
@@ -130,7 +131,7 @@ export class TranslationLoader {
   async preloadLanguages(languages: string[]): Promise<void> {
     const loadPromises = languages.map(lang => 
       this.loadLanguage(lang).catch(error => {
-        console.warn(`Failed to preload language ${lang}:`, error);
+        logger.warn(`Failed to preload language ${lang}:`, error);
         return null;
       })
     );
@@ -185,7 +186,7 @@ export class TranslationLoader {
         const resource = await this.loadNamespaceResource(language, namespace);
         return { namespace, resource };
       } catch (error) {
-        console.warn(`Failed to load namespace ${namespace} for language ${language}:`, error);
+        logger.warn(`Failed to load namespace ${namespace} for language ${language}:`, error);
         return { namespace, resource: {} };
       }
     });
@@ -230,7 +231,7 @@ export class TranslationLoader {
           // 验证资源格式
           const formatErrors = this.validateResourceFormat(resource);
           if (formatErrors.length > 0) {
-            console.warn(`Format issues in ${url}:`, formatErrors);
+            logger.warn(`Format issues in ${url}:`, formatErrors);
           }
           
           // 记录成功加载统计
@@ -343,7 +344,7 @@ export class TranslationLoader {
       this.integrityCache.set(cacheKey, integrityInfo);
       return integrityInfo;
     } catch (error) {
-      console.error(`Integrity check failed for ${language}:${namespace}:`, error);
+      logger.error(`Integrity check failed for ${language}:${namespace}:`, error);
       
       const errorInfo: ResourceIntegrityInfo = {
         language,
@@ -373,7 +374,7 @@ export class TranslationLoader {
           const info = await this.checkResourceIntegrity(language, namespace);
           results.push(info);
         } catch (error) {
-          console.error(`Failed to check integrity for ${language}:${namespace}:`, error);
+          logger.error(`Failed to check integrity for ${language}:${namespace}:`, error);
         }
       }
     }
@@ -442,7 +443,7 @@ export class TranslationLoader {
         try {
           callback(resource);
         } catch (error) {
-          console.error('Hot update listener error:', error);
+          logger.error('Hot update listener error:', error);
         }
       });
     }
@@ -476,19 +477,19 @@ export class TranslationLoader {
           const matches = path.match(/\/locales\/([^\/]+)\/([^\/]+)\.json$/);
           if (matches) {
             const [, language] = matches;
-            console.log(`Language resource changed: ${language}`);
+            logger.info(`Language resource changed: ${language}`);
             
             // 重新加载该语言资源
             this.reloadLanguage(language).then(resource => {
               this.triggerHotUpdate(language, resource);
             }).catch(error => {
-              console.error('Hot reload failed:', error);
+              logger.error('Hot reload failed:', error);
             });
           }
         }
       });
     } catch (error) {
-      console.warn('Failed to setup Tauri file watcher:', error);
+      logger.warn('Failed to setup Tauri file watcher:', error);
     }
   }
 
@@ -507,14 +508,14 @@ export class TranslationLoader {
               // 检查资源是否有更新
               const fresh = await this.loadLanguageResources(language);
               if (JSON.stringify(cached) !== JSON.stringify(fresh)) {
-                console.log(`Language resource updated: ${language}`);
+                logger.info(`Language resource updated: ${language}`);
                 this.cacheManager.set(language, fresh);
                 this.triggerHotUpdate(language, fresh);
               }
             }
           }
         } catch (error) {
-          console.warn('Polling watcher error:', error);
+          logger.warn('Polling watcher error:', error);
         }
       }, 30000);
     }

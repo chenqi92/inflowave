@@ -5,6 +5,7 @@
 import { BaseMenuHandler } from './BaseMenuHandler';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import type { ContextMenuAction } from '@/types/contextMenu';
+import logger from '@/utils/logger';
 
 export class DatabaseMenuHandler extends BaseMenuHandler {
   async handle(action: ContextMenuAction, node: TreeNodeData): Promise<void> {
@@ -52,7 +53,7 @@ export class DatabaseMenuHandler extends BaseMenuHandler {
         break;
 
       default:
-        console.warn(`未处理的数据库菜单动作: ${action}`);
+        logger.warn(`未处理的数据库菜单动作: ${action}`);
     }
   }
 

@@ -22,6 +22,7 @@ import {
     ArrowDown,
     FileDown,
 } from 'lucide-react';
+import logger from '@/utils/logger';
 
 interface QueryResultContextMenuProps {
     children: React.ReactNode;
@@ -148,7 +149,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                     break;
 
                 default:
-                    console.warn(t('query_result_menu.unhandled_action'), action);
+                    logger.warn(t('query_result_menu.unhandled_action'), action);
                     break;
             }
 
@@ -157,7 +158,7 @@ const QueryResultContextMenu: React.FC<QueryResultContextMenuProps> = ({
                 onAction(action, {selectedData, columnName, rowData});
             }
         } catch (error) {
-            console.error(t('query_result_menu.action_failed'), error);
+            logger.error(t('query_result_menu.action_failed'), error);
             showMessage.error(t('query_result_menu.operation_failed', {error: String(error)}));
         }
     };

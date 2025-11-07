@@ -38,6 +38,7 @@ import {
     Code,
     FileSpreadsheet,
 } from 'lucide-react';
+import logger from '@/utils/logger';
 
 // 自定义虚拟化表格组件
 interface CustomVirtualizedTableProps {
@@ -127,7 +128,7 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
         const shouldLog = false; // 完全禁用虚拟化状态调试，避免日志泛滥
 
         if (shouldLog) {
-            console.log('🎯 [CustomVirtualizedTable] 虚拟化状态:', {
+            logger.info('🎯 [CustomVirtualizedTable] 虚拟化状态:', {
                 totalRows: data.length,
                 containerHeight,
                 availableHeight: containerHeight - tableHeaderHeight,
@@ -175,7 +176,7 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
             const bottomSpacerHeight = Math.max(0, data.length - (actualEndIndex + 1)) * rowHeight;
             const expectedTotalHeight = topSpacerHeight + visibleRowsHeight + bottomSpacerHeight;
 
-            console.log('🔄 [垂直滚动条验证] 500行访问性检查:', {
+            logger.info('🔄 [垂直滚动条验证] 500行访问性检查:', {
                 // 垂直滚动范围精确性
                 scrollTop: newScrollTop,
                 scrollHeight: scrollElement.scrollHeight,
@@ -582,7 +583,7 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
             const bottomSpacerHeight = remainingRows > 0 ? remainingRows * rowHeight : 0;
             const totalCalculatedHeight = topSpacerHeight + visibleRowsHeight + bottomSpacerHeight;
 
-            console.log('📏 [Virtual Scrolling] 关键状态验证:', {
+            logger.info('📏 [Virtual Scrolling] 关键状态验证:', {
                 startIndex,
                 actualEndIndex,
                 remainingRows,
@@ -781,7 +782,7 @@ const CustomVirtualizedTable: React.FC<CustomVirtualizedTableProps> = ({
                 }
             `;
             document.head.appendChild(style);
-            console.log('🎨 [UnifiedDataTable] Row border styles applied to document head');
+            logger.info('🎨 [UnifiedDataTable] Row border styles applied to document head');
         }
     }, []);
 
@@ -1671,7 +1672,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                 updateAvailableHeight();
                 // 确保虚拟滚动在窗口大小变化后重新计算
                 if (data.length >= 500) {
-                    console.log('📐 [Window Resize] 窗口大小变化，重新计算虚拟滚动:', {
+                    logger.info('📐 [Window Resize] 窗口大小变化，重新计算虚拟滚动:', {
                         windowHeight: window.innerHeight,
                         dataLength: data.length,
                         timestamp: Date.now()
@@ -1708,7 +1709,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                     const heightDifference = Math.abs(actualScrollHeight - expectedHeight);
 
                     if (heightDifference > rowHeight) {
-                        console.warn('⚠️ [Scrollbar Range] 检测到滚动范围不准确:', {
+                        logger.warn('⚠️ [Scrollbar Range] 检测到滚动范围不准确:', {
                             expectedHeight,
                             actualScrollHeight,
                             heightDifference,
@@ -1800,7 +1801,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
     // 调试日志
     useEffect(() => {
-        console.log('🔧 [UnifiedDataTable] 数据处理状态:', {
+        logger.debug('🔧 [UnifiedDataTable] 数据处理状态:', {
             shouldUseVirtualization,
             pageSize,
             currentPage,
@@ -1819,7 +1820,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
         // 虚拟化专用调试
         if (shouldUseVirtualization) {
-            console.log('🎯 [UnifiedDataTable] 虚拟化配置:', {
+            logger.info('🎯 [UnifiedDataTable] 虚拟化配置:', {
                 processedDataSample: processedData.slice(0, 3),
                 visibleColumnsSample: visibleColumns.slice(0, 5),
                 virtuosoRefCurrent: !!virtuosoRef.current,
@@ -1841,7 +1842,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                            containerElement?.querySelector('[style*="overflow"]') ||
                                            containerElement?.firstElementChild;
 
-                    console.log('🔍 [TableVirtuoso] 实际状态检查:', {
+                    logger.debug('🔍 [TableVirtuoso] 实际状态检查:', {
                         hasVirtuosoHandle: !!virtuosoHandle,
                         hasContainer: !!containerElement,
                         hasVirtuosoElement: !!virtuosoElement,
@@ -1857,9 +1858,9 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
 
                     // 尝试使用 TableVirtuoso 的 API 方法
                     if (virtuosoHandle && typeof virtuosoHandle.scrollToIndex === 'function') {
-                        console.log('✅ [TableVirtuoso] API 方法可用，虚拟化应该正常工作');
+                        logger.debug('✅ [TableVirtuoso] API 方法可用，虚拟化应该正常工作');
                     } else {
-                        console.warn('⚠️ [TableVirtuoso] API 方法不可用，可能存在初始化问题');
+                        logger.warn('⚠️ [TableVirtuoso] API 方法不可用，可能存在初始化问题');
                     }
                 }, 1500);
             }

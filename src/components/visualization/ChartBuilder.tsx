@@ -61,6 +61,7 @@ import {
 } from 'recharts';
 import { useVisualizationStore } from '@/store/visualization';
 import type { QueryResult, FieldInfo } from '@/types';
+import logger from '@/utils/logger';
 
 // ChartBuilder 专用的配置接口
 interface ChartBuilderConfig {
@@ -253,7 +254,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
 
       setChartConfig(finalConfig);
     } catch (error) {
-      console.error('保存图表失败:', error);
+      logger.error('保存图表失败:', error);
     }
   };
 
@@ -268,7 +269,7 @@ export const ChartBuilder: React.FC<ChartBuilderProps> = ({
         successMessage: '图表配置已复制到剪贴板'
       });
     } catch (error) {
-      console.error('复制配置失败:', error);
+      logger.error('复制配置失败:', error);
     }
   };
 

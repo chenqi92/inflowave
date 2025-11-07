@@ -41,6 +41,7 @@ import ImportDialog from '@/components/common/ImportDialog';
 import type {DataPoint, BatchWriteRequest, WriteResult} from '@/types';
 import dayjs from 'dayjs';
 import {useDataTranslation} from '@/hooks/useTranslation';
+import logger from '@/utils/logger';
 
 interface DataPointForm extends Omit<DataPoint, 'timestamp'> {
     timestamp?: dayjs.Dayjs;
@@ -265,7 +266,7 @@ const DataWrite: React.FC = () => {
                 setDataPoints([]);
             } else {
                 showMessage.error(`批量写入失败: ${result.errors.length} 个错误`);
-                console.error('写入错误:', result.errors);
+                logger.error('写入错误:', result.errors);
             }
         } catch (error) {
             showMessage.error(`批量写入失败: ${error}`);
@@ -326,7 +327,7 @@ const DataWrite: React.FC = () => {
                     timestamp: dayjs(timestamp),
                 });
             } catch (error) {
-                console.error('解析行失败:', line, error);
+                logger.error('解析行失败:', line, error);
             }
         }
 

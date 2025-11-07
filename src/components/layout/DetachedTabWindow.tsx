@@ -19,6 +19,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import type { QueryResult } from '@/types';
 import { ArrowLeftToLine } from 'lucide-react';
+import logger from '@/utils/logger';
 
 interface DetachedTab {
   id: string;
@@ -48,7 +49,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   onClose,
 }) => {
   // 🔧 添加详细的初始化日志
-  console.log('🚀 DetachedTabWindow 组件渲染:', {
+  logger.debug('🚀 DetachedTabWindow 组件渲染:', {
     tabId: tab.id,
     tabTitle: tab.title,
     tabType: tab.type,
@@ -76,7 +77,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
   // 🔧 从localStorage恢复查询结果
   useEffect(() => {
-    console.log(`🪟 独立窗口初始化，尝试从localStorage恢复查询结果:`, {
+    logger.debug(`🪟 独立窗口初始化，尝试从localStorage恢复查询结果:`, {
       tabId: tab.id,
       tabTitle: tab.title,
     });
@@ -87,7 +88,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
       if (savedData) {
         const queryData = JSON.parse(savedData);
-        console.log('✅ 成功从localStorage恢复查询结果:', {
+        logger.debug('✅ 成功从localStorage恢复查询结果:', {
           hasQueryResult: !!queryData.queryResult,
           queryResultsCount: queryData.queryResults?.length || 0,
           executedQueriesCount: queryData.executedQueries?.length || 0,
@@ -100,12 +101,12 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
         // 清理localStorage
         localStorage.removeItem(storageKey);
-        console.log('🧹 已清理localStorage中的查询结果');
+        logger.debug('🧹 已清理localStorage中的查询结果');
       } else {
-        console.log('ℹ️ localStorage中没有保存的查询结果');
+        logger.debug('ℹ️ localStorage中没有保存的查询结果');
       }
     } catch (error) {
-      console.error('❌ 从localStorage恢复查询结果失败:', error);
+      logger.error('❌ 从localStorage恢复查询结果失败:', error);
     }
   }, [tab.id]);
 
@@ -144,7 +145,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   useEffect(() => {
     const connectionId = tab.connectionId || activeConnectionId;
 
-    console.log('🔍 初始化独立窗口的数据库状态:', {
+    logger.debug('🔍 初始化独立窗口的数据库状态:', {
       connectionId,
       tabDatabase: tab.database,
       currentSelectedDatabase: selectedDatabase,
@@ -157,17 +158,17 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
       const databaseKey = `${connectionId}/${tab.database}`;
 
       if (!openedDatabases.has(databaseKey)) {
-        console.log(`➕ 将数据库添加到openedDatabasesStore: ${databaseKey}`);
+        logger.info(`➕ 将数据库添加到openedDatabasesStore: ${databaseKey}`);
         openDatabase(connectionId, tab.database);
       } else {
-        console.log(`✅ 数据库已在openedDatabasesStore中: ${databaseKey}`);
+        logger.debug(`✅ 数据库已在openedDatabasesStore中: ${databaseKey}`);
       }
     }
   }, [tab.connectionId, tab.database, activeConnectionId]);
 
   // 🔧 自动设置数据库下拉框的值
   useEffect(() => {
-    console.log('🔍 检查数据库自动选择:', {
+    logger.debug('🔍 检查数据库自动选择:', {
       tabDatabase: tab.database,
       currentSelectedDatabase: selectedDatabase,
       availableDatabases: databases,
@@ -175,12 +176,12 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
 
     // 如果tab有指定的数据库，且该数据库在可用列表中，且当前未选择，则自动选择
     if (tab.database && databases.includes(tab.database) && selectedDatabase !== tab.database) {
-      console.log(`✅ 自动选择数据库: ${tab.database}`);
+      logger.debug(`✅ 自动选择数据库: ${tab.database}`);
       setSelectedDatabase(tab.database);
     }
     // 如果tab没有指定数据库，但有可用数据库且当前未选择，则选择第一个
     else if (!tab.database && databases.length > 0 && !selectedDatabase) {
-      console.log(`✅ 自动选择第一个数据库: ${databases[0]}`);
+      logger.debug(`✅ 自动选择第一个数据库: ${databases[0]}`);
       setSelectedDatabase(databases[0]);
     }
   }, [tab.database, databases, selectedDatabase]);
@@ -235,7 +236,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
       const currentWindow = getCurrentWindow();
       const windowLabel = currentWindow.label;
 
-      console.log('🔄 准备移回主窗口:', {
+      logger.info('🔄 准备移回主窗口:', {
         windowLabel,
         tabId: tab.id,
         tabTitle: tab.title,
@@ -250,7 +251,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
           executionTime: executionTime,
         };
         localStorage.setItem(`reattach-tab-query-${tab.id}`, JSON.stringify(queryData));
-        console.log('💾 已保存查询结果到localStorage供主窗口恢复:', {
+        logger.info('💾 已保存查询结果到localStorage供主窗口恢复:', {
           tabId: tab.id,
           hasQueryResult: !!queryData.queryResult,
           queryResultsCount: queryData.queryResults?.length || 0,
@@ -276,7 +277,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
         windowLabel: windowLabel,
       };
 
-      console.log('🔄 移回主窗口，tab数据:', {
+      logger.debug('🔄 移回主窗口，tab数据:', {
         tabId: tabData.id,
         windowLabel: tabData.windowLabel,
       });
@@ -284,12 +285,12 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
       // 🔧 通过Tauri命令通知主窗口，后端会关闭独立窗口
       await safeTauriInvoke('reattach_tab', { tab: tabData });
 
-      console.log('✅ 已发送reattach命令，等待后端关闭窗口');
+      logger.debug('✅ 已发送reattach命令，等待后端关闭窗口');
 
       // 🔧 不再在前端关闭窗口，由后端处理
       // 这样可以确保窗口在主窗口处理完reattach事件后才关闭
     } catch (error) {
-      console.error('❌ 移回主窗口失败:', error);
+      logger.error('❌ 移回主窗口失败:', error);
       showMessage.error('移回主窗口失败');
     }
   }, [tab, content, selectedDatabase, modified, queryResult, queryResults, executedQueries, executionTime]);
@@ -336,7 +337,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
   }, [modified, content, tab.id, onClose]);
 
   // 🔧 调试：打印渲染信息
-  console.log('🪟 DetachedTabWindow 准备渲染UI:', {
+  logger.debug('🪟 DetachedTabWindow 准备渲染UI:', {
     tabId: tab.id,
     tabTitle: tab.title,
     tabType: tab.type,
@@ -494,7 +495,7 @@ const DetachedTabWindow: React.FC<DetachedTabWindowProps> = ({
     </div>
     );
   } catch (error) {
-    console.error('❌ DetachedTabWindow 渲染错误:', error);
+    logger.error('❌ DetachedTabWindow 渲染错误:', error);
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center p-8">

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { EditorTab } from '@/components/editor/TabManager';
 import { i18n } from '@/i18n';
+import logger from '@/utils/logger';
 
 interface TabState {
   tabs: EditorTab[];
@@ -66,7 +67,7 @@ export const useTabStore = create<TabStore>()(
       setTabs: (tabs) => set({ tabs }),
       
       addTab: (tab) => {
-        console.log(`➕ [TabStore] 添加Tab:`, {
+        logger.info(`➕ [TabStore] 添加Tab:`, {
           id: tab.id,
           title: tab.title,
           type: tab.type,
@@ -97,7 +98,7 @@ export const useTabStore = create<TabStore>()(
       }),
       
       updateTab: (tabId, updates) => {
-        console.log(`🔄 [TabStore] 更新Tab:`, {
+        logger.info(`🔄 [TabStore] 更新Tab:`, {
           tabId,
           updates: {
             ...updates,
@@ -119,7 +120,7 @@ export const useTabStore = create<TabStore>()(
       
       // 内容更新
       updateTabContent: (tabId, content) => {
-        console.log(`📝 [TabStore] 更新Tab内容:`, {
+        logger.info(`📝 [TabStore] 更新Tab内容:`, {
           tabId,
           contentLength: content.length,
           contentPreview: content.substring(0, 50),
@@ -129,17 +130,17 @@ export const useTabStore = create<TabStore>()(
         const state = get();
         const targetTab = state.tabs.find(tab => tab.id === tabId);
         if (!targetTab) {
-          console.error(`❌ [TabStore] 找不到Tab: ${tabId}`);
+          logger.error(`❌ [TabStore] 找不到Tab: ${tabId}`);
           return;
         }
 
         // 检查内容是否真的改变了
         if (targetTab.content === content) {
-          console.log(`📝 [TabStore] 内容未改变，跳过更新`);
+          logger.info(`📝 [TabStore] 内容未改变，跳过更新`);
           return;
         }
 
-        console.log(`📝 [TabStore] 目标Tab信息:`, {
+        logger.info(`📝 [TabStore] 目标Tab信息:`, {
           id: targetTab.id,
           title: targetTab.title,
           type: targetTab.type,
@@ -194,11 +195,11 @@ export const useTabStore = create<TabStore>()(
                   : tab
               );
               set({ tabs: updatedTabs });
-              console.log(`已保存 ${unsavedQueryTabs.length} 个查询标签页`);
+              logger.info(`已保存 ${unsavedQueryTabs.length} 个查询标签页`);
               resolve(true);
             } else if (action === 'discard') {
               // 用户选择不保存，这些标签页将不会被持久化
-              console.log(`丢弃 ${unsavedQueryTabs.length} 个未保存的查询标签页`);
+              logger.info(`丢弃 ${unsavedQueryTabs.length} 个未保存的查询标签页`);
               resolve(true);
             } else {
               // 用户取消关闭
@@ -316,7 +317,7 @@ export const useTabOperations = () => {
 
   // 创建新的查询tab
   const createQueryTab = (database?: string, query?: string, connectionId?: string) => {
-    console.log(`🆕 [createQueryTab] 开始创建查询Tab:`, {
+    logger.info(`🆕 [createQueryTab] 开始创建查询Tab:`, {
       database,
       query: query?.substring(0, 50),
       connectionId,
@@ -352,7 +353,7 @@ export const useTabOperations = () => {
       connectionId, // 设置连接ID
     };
 
-    console.log(`🆕 [createQueryTab] 新Tab信息:`, {
+    logger.info(`🆕 [createQueryTab] 新Tab信息:`, {
       id: newTab.id,
       title: newTab.title,
       content: newTab.content,
@@ -361,7 +362,7 @@ export const useTabOperations = () => {
     addTab(newTab);
     setActiveKey(newTab.id); // 自动切换到新创建的标签页
 
-    console.log(`✅ [createQueryTab] Tab创建完成，当前Tab总数: ${tabs.length + 1}`);
+    logger.debug(`✅ [createQueryTab] Tab创建完成，当前Tab总数: ${tabs.length + 1}`);
     return newTab;
   };
 
@@ -443,7 +444,7 @@ export const useTabOperations = () => {
 
   // 创建数据浏览tab（如果已存在则切换并刷新）
   const createDataBrowserTab = (connectionId: string, database: string, tableName: string) => {
-    console.log(`🆕 [createDataBrowserTab] 开始创建数据浏览Tab:`, {
+    logger.info(`🆕 [createDataBrowserTab] 开始创建数据浏览Tab:`, {
       connectionId,
       database,
       tableName,
@@ -459,7 +460,7 @@ export const useTabOperations = () => {
     );
 
     if (existingTab) {
-      console.log(`ℹ️ [createDataBrowserTab] Tab已存在，切换并刷新:`, existingTab.id);
+      logger.debug(`ℹ️ [createDataBrowserTab] Tab已存在，切换并刷新:`, existingTab.id);
       // 如果tab已存在，切换到该tab并触发刷新
       setActiveKey(existingTab.id);
       refreshDataBrowserTab(existingTab.id);
@@ -486,7 +487,7 @@ export const useTabOperations = () => {
       isLoading: true, // 🔧 新创建的 tab 默认为 loading 状态
     };
 
-    console.log(`🆕 [createDataBrowserTab] 新Tab信息:`, {
+    logger.debug(`🆕 [createDataBrowserTab] 新Tab信息:`, {
       id: newTab.id,
       title: newTab.title,
       type: newTab.type,
@@ -495,7 +496,7 @@ export const useTabOperations = () => {
     addTab(newTab);
     setActiveKey(newTab.id); // 自动切换到新创建的数据浏览标签页
 
-    console.log(`✅ [createDataBrowserTab] Tab创建完成，当前Tab总数: ${tabs.length + 1}`);
+    logger.debug(`✅ [createDataBrowserTab] Tab创建完成，当前Tab总数: ${tabs.length + 1}`);
     return newTab;
   };
 

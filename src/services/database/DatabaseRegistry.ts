@@ -5,6 +5,7 @@
  */
 
 import type { 
+import logger from '@/utils/logger';
   DatabaseType, 
   DatabaseFeatures, 
   DatabaseRegistryEntry,
@@ -42,7 +43,7 @@ export class DatabaseRegistry {
     this.registerPrometheus();
 
     this.initialized = true;
-    console.log('🗃️ 数据库注册表初始化完成');
+    logger.debug('🗃️ 数据库注册表初始化完成');
   }
 
   /**
@@ -50,7 +51,7 @@ export class DatabaseRegistry {
    */
   register(entry: DatabaseRegistryEntry): void {
     this.entries.set(entry.type, entry);
-    console.log(`📝 注册数据库类型: ${entry.type}`);
+    logger.info(`📝 注册数据库类型: ${entry.type}`);
   }
 
   /**

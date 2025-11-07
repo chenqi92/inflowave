@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { AlertTriangle, FileText } from 'lucide-react';
 import type { EditorTab } from '@components/editor';
+import logger from '@/utils/logger';
 
 interface SaveConfirmDialogProps {
   open: boolean;
@@ -42,7 +43,7 @@ const SaveConfirmDialog: React.FC<SaveConfirmDialogProps> = ({
       await onSaveAll();
       onClose();
     } catch (error) {
-      console.error('保存失败:', error);
+      logger.error('保存失败:', error);
     } finally {
       setIsSaving(false);
     }

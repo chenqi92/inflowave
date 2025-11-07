@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useDatabaseStore } from '@/store/database';
+import logger from '@/utils/logger';
 import type {
   DatabaseInfo,
   MeasurementInfo,
@@ -397,7 +398,7 @@ export const useDatabase = (connectionId?: string) => {
   // 自动加载数据库列表
   useEffect(() => {
     if (connectionId && !databases[connectionId]) {
-      fetchDatabases(connectionId).catch(console.error);
+      fetchDatabases(connectionId).catch(logger.error);
     }
   }, [connectionId, databases, fetchDatabases]);
 
