@@ -69,6 +69,7 @@ import {
     type SQLStatementType,
     type SQLStatementCategory
 } from '@/utils/sqlTypeDetector';
+import { useTranslation } from '@/hooks/useTranslation';
 
 // 向后兼容的类型检测函数
 const detectQueryType = (query?: string): string => {
@@ -90,6 +91,8 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                                        executedQuery,
                                                        queryType,
                                                    }) => {
+    const { t } = useTranslation('query');
+
     // 检测SQL语句类型
     // 优先使用后端返回的 sql_type，其次使用传入的 queryType，最后才是前端检测
     const detectedQueryType = (
@@ -121,7 +124,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
     // 处理导出
     const handleExport = useCallback(async (config: ExportConfig) => {
         if (!result) {
-            showMessage.warning('没有数据可导出');
+            showMessage.warning(t('results.no_data_to_export'));
             return;
         }
 
@@ -137,18 +140,18 @@ const QueryResults: React.FC<QueryResultsProps> = ({
             );
 
             if (success) {
-                showMessage.success('数据导出成功');
+                showMessage.success(t('results.export_success'));
             }
         } catch (error) {
             console.error('导出失败:', error);
-            showMessage.error(`导出失败: ${error}`);
+            showMessage.error(`${t('results.export_failed')}: ${error}`);
         }
-    }, [result, executedQuery]);
+    }, [result, executedQuery, t]);
 
     // 快速导出 CSV
     const handleQuickExportCSV = useCallback(async () => {
         if (!result) {
-            showMessage.warning('没有数据可导出');
+            showMessage.warning(t('results.no_data_to_export'));
             return;
         }
 
@@ -156,7 +159,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
             format: 'csv',
             filename: `query_result_${Date.now()}`,
         });
-    }, [result, handleExport]);
+    }, [result, handleExport, t]);
 
     // 初始化右键菜单
     const {
@@ -167,7 +170,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
     } = useContextMenu({
         onSqlGenerated: (sql: string, description: string) => {
             // 可以在这里将生成的SQL传递给查询编辑器
-            showMessage.success(`SQL 已生成: ${description}`);
+            showMessage.success(`${t('results.sql_generated')}: ${description}`);
         },
         onActionExecuted: (_action: string) => {
             // Context menu action executed
@@ -492,7 +495,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                 </>
             ) : (
                 <div className="h-full flex items-center justify-center">
-                    <Empty description='暂无查询结果'/>
+                    <Empty description={t('results.no_results')}/>
                 </div>
             )}
         </div>
@@ -506,7 +509,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
             {JSON.stringify(result, null, 2)}
           </pre>
                 ) : (
-                    <Empty description='暂无查询结果'/>
+                    <Empty description={t('results.no_results')}/>
                 )}
             </div>
         </ScrollArea>
@@ -586,7 +589,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                         }}
                                     >
                                         <FileText className='w-4 h-4 mr-2'/>
-                                        CSV 格式
+                                        {t('results.export_csv')}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() => {
@@ -595,7 +598,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                         }}
                                     >
                                         <FileText className='w-4 h-4 mr-2'/>
-                                        JSON 格式
+                                        {t('results.export_json')}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() => {
@@ -604,7 +607,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                         }}
                                     >
                                         <FileText className='w-4 h-4 mr-2'/>
-                                        Excel 格式
+                                        {t('results.export_excel')}
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
@@ -613,28 +616,28 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                 <DialogTrigger asChild>
                                     <Button variant="outline" size="sm">
                                         <Info className='w-4 h-4 mr-2'/>
-                                        详情
+                                        {t('results.details')}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent>
                                     <DialogHeader>
-                                        <DialogTitle>查询结果详情</DialogTitle>
+                                        <DialogTitle>{t('results.details_title')}</DialogTitle>
                                     </DialogHeader>
                                     <div className="space-y-2">
                                         <div className="flex justify-between">
-                                            <span className="font-medium">总行数:</span>
+                                            <span className="font-medium">{t('results.total_rows')}:</span>
                                             <span>{stats?.totalRows}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="font-medium">列数:</span>
+                                            <span className="font-medium">{t('results.columns')}:</span>
                                             <span>{stats?.columns}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="font-medium">序列数:</span>
+                                            <span className="font-medium">{t('results.series_count')}:</span>
                                             <span>{stats?.seriesCount}</span>
                                         </div>
                                         <div className="flex justify-between">
-                                            <span className="font-medium">执行时间:</span>
+                                            <span className="font-medium">{t('results.execution_time_ms')}:</span>
                                             <span>{stats?.executionTime}ms</span>
                                         </div>
                                     </div>
@@ -648,7 +651,7 @@ const QueryResults: React.FC<QueryResultsProps> = ({
             <CardContent className="p-0 h-[calc(100%-5rem)]">
                 {loading ? (
                     <div className="h-full flex items-center justify-center">
-                        <Spin size='large' tip='执行查询中...'/>
+                        <Spin size='large' tip={t('results.executing_query')}/>
                     </div>
                 ) : (
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
@@ -661,16 +664,16 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                         <>
                                             <TabsTrigger value="table" className="flex items-center gap-2">
                                                 <Table className='w-4 h-4'/>
-                                                表格视图
+                                                {t('tabs.table_view')}
                                                 {stats && <Badge variant="secondary" className="ml-1">{stats.totalRows}</Badge>}
                                             </TabsTrigger>
                                             <TabsTrigger value="json" className="flex items-center gap-2">
                                                 <FileText className='w-4 h-4'/>
-                                                JSON 视图
+                                                {t('tabs.json_view')}
                                             </TabsTrigger>
                                             <TabsTrigger value="messages" className="flex items-center gap-2">
                                                 <MessageSquare className='w-4 h-4'/>
-                                                消息
+                                                {t('tabs.messages')}
                                                 {result?.messages && result.messages.length > 0 && (
                                                     <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
                                                 )}
@@ -681,15 +684,15 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                         <>
                                             <TabsTrigger value="aggregate" className="flex items-center gap-2">
                                                 <LayoutGrid className='w-4 h-4'/>
-                                                聚合统计
+                                                {t('tabs.aggregate_stats')}
                                             </TabsTrigger>
                                             <TabsTrigger value="json" className="flex items-center gap-2">
                                                 <FileText className='w-4 h-4'/>
-                                                JSON 视图
+                                                {t('tabs.json_view')}
                                             </TabsTrigger>
                                             <TabsTrigger value="messages" className="flex items-center gap-2">
                                                 <MessageSquare className='w-4 h-4'/>
-                                                消息
+                                                {t('tabs.messages')}
                                                 {result?.messages && result.messages.length > 0 && (
                                                     <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
                                                 )}
@@ -700,29 +703,29 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                         <>
                                             <TabsTrigger value="table" className="flex items-center gap-2">
                                                 <Table className='w-4 h-4'/>
-                                                表格视图
+                                                {t('tabs.table_view')}
                                                 {stats && <Badge variant="secondary" className="ml-1">{stats.totalRows}</Badge>}
                                             </TabsTrigger>
                                             {shouldShowExecutionPlan(detectedQueryType) && (
                                                 <TabsTrigger value="executionPlan" className="flex items-center gap-2">
                                                     <TrendingUp className='w-4 h-4'/>
-                                                    执行计划
+                                                    {t('tabs.execution_plan')}
                                                 </TabsTrigger>
                                             )}
                                             <TabsTrigger value="json" className="flex items-center gap-2">
                                                 <FileText className='w-4 h-4'/>
-                                                JSON 视图
+                                                {t('tabs.json_view')}
                                             </TabsTrigger>
                                             {/* 只有数据量>1且有数值列时才显示图表 */}
                                             {stats && stats.totalRows > 1 && isChartable(result!) && (
                                                 <TabsTrigger value="chart" className="flex items-center gap-2">
                                                     <BarChart className='w-4 h-4'/>
-                                                    图表视图
+                                                    {t('tabs.chart_view')}
                                                 </TabsTrigger>
                                             )}
                                             <TabsTrigger value="messages" className="flex items-center gap-2">
                                                 <MessageSquare className='w-4 h-4'/>
-                                                消息
+                                                {t('tabs.messages')}
                                                 {result?.messages && result.messages.length > 0 && (
                                                     <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
                                                 )}
@@ -737,15 +740,15 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                 <>
                                     <TabsTrigger value="status" className="flex items-center gap-2">
                                         <CheckCircle className='w-4 h-4'/>
-                                        执行状态
+                                        {t('tabs.execution_status')}
                                     </TabsTrigger>
                                     <TabsTrigger value="json" className="flex items-center gap-2">
                                         <FileText className='w-4 h-4'/>
-                                        JSON 视图
+                                        {t('tabs.json_view')}
                                     </TabsTrigger>
                                     <TabsTrigger value="messages" className="flex items-center gap-2">
                                         <MessageSquare className='w-4 h-4'/>
-                                        消息
+                                        {t('tabs.messages')}
                                         {result?.messages && result.messages.length > 0 && (
                                             <Badge variant="secondary" className="ml-1">{result.messages.length}</Badge>
                                         )}

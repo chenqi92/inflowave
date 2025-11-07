@@ -26,6 +26,7 @@ import { useTabStore } from './stores/tabStore';
 import UnsavedTabsDialog from './components/common/UnsavedTabsDialog';
 import type { EditorTab } from '@components/editor';
 import { logger, LogLevel } from './utils/logger';
+import { i18n } from '@/i18n';
 
 // 更新组件
 import { UpdateNotification } from '@components/updater';
@@ -413,6 +414,22 @@ const App: React.FC = () => {
     });
     window.dispatchEvent(event);
   };
+
+  // 监听语言变化，更新所有 tab 标题
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      const { updateAllTabTitles } = useTabStore.getState();
+      updateAllTabTitles();
+      logger.debug('语言已切换，已更新所有 tab 标题');
+    };
+
+    // 监听 i18n 语言变化事件
+    i18n.on('languageChanged', handleLanguageChange);
+
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, []);
 
   // 处理应用关闭事件
   useEffect(() => {

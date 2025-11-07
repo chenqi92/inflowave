@@ -20,6 +20,7 @@ import {
 import {Clock, Calendar, ChevronDown} from 'lucide-react';
 import {showMessage} from '@/utils/message';
 import dayjs from 'dayjs';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export interface TimeRange {
     label: string;
@@ -35,55 +36,16 @@ interface TimeRangeSelectorProps {
     className?: string;
 }
 
-const TIME_RANGES: TimeRange[] = [
-    {
-        label: '不限制时间',
-        value: 'none',
-        start: '',
-        end: '',
-    },
-    {
-        label: '最近1小时',
-        value: '1h',
-        start: 'now() - 1h',
-        end: 'now()',
-    },
-    {
-        label: '最近6小时',
-        value: '6h',
-        start: 'now() - 6h',
-        end: 'now()',
-    },
-    {
-        label: '最近12小时',
-        value: '12h',
-        start: 'now() - 12h',
-        end: 'now()',
-    },
-    {
-        label: '最近1天',
-        value: '1d',
-        start: 'now() - 1d',
-        end: 'now()',
-    },
-    {
-        label: '最近3天',
-        value: '3d',
-        start: 'now() - 3d',
-        end: 'now()',
-    },
-    {
-        label: '最近7天',
-        value: '7d',
-        start: 'now() - 7d',
-        end: 'now()',
-    },
-    {
-        label: '最近30天',
-        value: '30d',
-        start: 'now() - 30d',
-        end: 'now()',
-    },
+// 时间范围配置（不包含 label，label 将从翻译中获取）
+const TIME_RANGE_CONFIGS = [
+    { value: 'none', key: 'no_limit', start: '', end: '' },
+    { value: '1h', key: 'last_1_hour', start: 'now() - 1h', end: 'now()' },
+    { value: '6h', key: 'last_6_hours', start: 'now() - 6h', end: 'now()' },
+    { value: '12h', key: 'last_12_hours', start: 'now() - 12h', end: 'now()' },
+    { value: '1d', key: 'last_1_day', start: 'now() - 1d', end: 'now()' },
+    { value: '3d', key: 'last_3_days', start: 'now() - 3d', end: 'now()' },
+    { value: '7d', key: 'last_7_days', start: 'now() - 7d', end: 'now()' },
+    { value: '30d', key: 'last_30_days', start: 'now() - 30d', end: 'now()' },
 ];
 
 const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
@@ -92,6 +54,16 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                                                                  disabled = false,
                                                                  className = '',
                                                              }) => {
+    const { t } = useTranslation('query');
+
+    // 生成带翻译的时间范围列表
+    const TIME_RANGES: TimeRange[] = TIME_RANGE_CONFIGS.map(config => ({
+        label: t(`time_range.${config.key}`),
+        value: config.value,
+        start: config.start,
+        end: config.end,
+    }));
+
     // 使用外部传入的value，如果没有则使用默认值
     const selectedRange = value || TIME_RANGES[0];
 
@@ -146,12 +118,12 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
     const handleCustomSubmit = () => {
         if (!customStartDate || !customEndDate) {
-            showMessage.error('请选择开始时间和结束时间');
+            showMessage.error(t('time_range.error_select_time'));
             return;
         }
 
         if (customStartDate >= customEndDate) {
-            showMessage.error('开始时间必须早于结束时间');
+            showMessage.error(t('time_range.error_time_order'));
             return;
         }
 
@@ -165,7 +137,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
         // 直接调用onChange，不维护内部状态
         onChange?.(customRange);
         setShowCustomDialog(false);
-        showMessage.success('自定义时间范围已设置');
+        showMessage.success(t('time_range.success_set'));
     };
 
     const handleCustomCancel = () => {
@@ -206,10 +178,10 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                         <div className='px-3 py-2 text-xs font-medium text-muted-foreground border-b bg-muted/50'>
                             <div className="flex items-center gap-2">
                                 <Clock className="w-3 h-3" />
-                                时间范围筛选
+                                {t('time_range.filter_title')}
                             </div>
                             <div className="text-xs text-muted-foreground mt-1">
-                                选择后所有查询都会应用此筛选
+                                {t('time_range.filter_description')}
                             </div>
                         </div>
 
@@ -250,7 +222,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                             className='flex items-center gap-2 text-sm py-2 px-3 hover:bg-accent transition-colors duration-150'
                         >
                             <Calendar className='w-3 h-3 text-muted-foreground'/>
-                            <span className="flex-1">自定义时间范围...</span>
+                            <span className="flex-1">{t('time_range.custom')}</span>
                             <div className="text-xs text-muted-foreground">⚙️</div>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -260,22 +232,22 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                 <Dialog open={showCustomDialog} onOpenChange={setShowCustomDialog}>
                     <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
-                            <DialogTitle>自定义时间范围</DialogTitle>
+                            <DialogTitle>{t('time_range.custom_dialog_title')}</DialogTitle>
                             <DialogDescription>
-                                选择查询数据的时间范围，系统将自动转换为InfluxQL时间表达式。
+                                {t('time_range.custom_dialog_description')}
                             </DialogDescription>
                         </DialogHeader>
 
                         <div className='space-y-4 py-4'>
                             <div className='grid grid-cols-4 items-center gap-4'>
                                 <Label htmlFor='custom-start-date' className='text-right text-sm font-medium'>
-                                    开始时间
+                                    {t('time_range.start_time')}
                                 </Label>
                                 <div className='col-span-3'>
                                     <DatePicker
                                         value={customStartDate || undefined}
                                         onChange={(date) => setCustomStartDate(date)}
-                                        placeholder='选择开始时间'
+                                        placeholder={t('time_range.select_start_time')}
                                         showTime={true}
                                         format='YYYY-MM-DD HH:mm:ss'
                                         className='w-full'
@@ -285,13 +257,13 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
                             <div className='grid grid-cols-4 items-center gap-4'>
                                 <Label htmlFor='custom-end-date' className='text-right text-sm font-medium'>
-                                    结束时间
+                                    {t('time_range.end_time')}
                                 </Label>
                                 <div className='col-span-3'>
                                     <DatePicker
                                         value={customEndDate || undefined}
                                         onChange={(date) => setCustomEndDate(date)}
-                                        placeholder='选择结束时间'
+                                        placeholder={t('time_range.select_end_time')}
                                         showTime={true}
                                         format='YYYY-MM-DD HH:mm:ss'
                                         className='w-full'
@@ -303,7 +275,7 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
                             {customStartDate && customEndDate && (
                                 <div className='grid grid-cols-4 items-center gap-4'>
                                     <Label className='text-right text-sm font-medium text-muted-foreground'>
-                                        预览
+                                        {t('time_range.preview')}
                                     </Label>
                                     <div className='col-span-3 text-sm text-muted-foreground bg-muted p-2 rounded'>
                                         {generateTimeRangeLabel(customStartDate, customEndDate)}
@@ -314,10 +286,10 @@ const TimeRangeSelector: React.FC<TimeRangeSelectorProps> = ({
 
                         <DialogFooter>
                             <Button variant='outline' onClick={handleCustomCancel}>
-                                取消
+                                {t('time_range.cancel')}
                             </Button>
                             <Button onClick={handleCustomSubmit}>
-                                确定
+                                {t('time_range.confirm')}
                             </Button>
                         </DialogFooter>
                     </DialogContent>

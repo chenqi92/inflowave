@@ -91,5 +91,95 @@
   "per_page": "每页",
   "records": "条",
   "all_records": "全部",
-  "page_info": "第 {{current}} / {{total}} 页"
+  "page_info": "第 {{current}} / {{total}} 页",
+
+  "time_range": {
+    "no_limit": "不限制时间",
+    "last_1_hour": "最近1小时",
+    "last_6_hours": "最近6小时",
+    "last_12_hours": "最近12小时",
+    "last_1_day": "最近1天",
+    "last_3_days": "最近3天",
+    "last_7_days": "最近7天",
+    "last_30_days": "最近30天",
+    "custom": "自定义时间范围...",
+    "filter_title": "时间范围筛选",
+    "filter_description": "选择后所有查询都会应用此筛选",
+    "custom_dialog_title": "自定义时间范围",
+    "custom_dialog_description": "选择查询数据的时间范围，系统将自动转换为InfluxQL时间表达式。",
+    "start_time": "开始时间",
+    "end_time": "结束时间",
+    "preview": "预览",
+    "select_start_time": "选择开始时间",
+    "select_end_time": "选择结束时间",
+    "cancel": "取消",
+    "confirm": "确定",
+    "error_select_time": "请选择开始时间和结束时间",
+    "error_time_order": "开始时间必须早于结束时间",
+    "success_set": "自定义时间范围已设置"
+  },
+
+  "results": {
+    "title": "查询结果",
+    "no_results": "暂无查询结果",
+    "executing_query": "执行查询中...",
+    "export": "导出",
+    "clear": "清空",
+    "details": "详情",
+    "export_csv": "CSV 格式",
+    "export_json": "JSON 格式",
+    "export_excel": "Excel 格式",
+    "details_title": "查询结果详情",
+    "total_rows": "总行数",
+    "columns": "列数",
+    "series_count": "序列数",
+    "execution_time_ms": "执行时间",
+    "no_data_to_export": "没有数据可导出",
+    "export_success": "数据导出成功",
+    "export_failed": "导出失败",
+    "sql_generated": "SQL 已生成"
+  },
+
+  "tabs": {
+    "table_view": "表格视图",
+    "json_view": "JSON 视图",
+    "chart_view": "图表视图",
+    "messages": "消息",
+    "execution_plan": "执行计划",
+    "execution_status": "执行状态",
+    "aggregate_stats": "聚合统计"
+  },
+
+  "messages_tab": {
+    "no_messages": "暂无执行消息"
+  },
+
+  "status_card": {
+    "insert_success": "数据插入成功",
+    "update_success": "数据更新成功",
+    "delete_success": "数据删除成功",
+    "truncate_success": "表数据清空成功",
+    "create_success": "创建成功",
+    "drop_success": "删除成功",
+    "alter_success": "修改成功",
+    "execution_failed": "执行失败",
+    "insert_description": "成功插入 {{count}} 行数据，耗时 {{time}}",
+    "update_description": "成功更新 {{count}} 行数据，耗时 {{time}}",
+    "delete_description": "删除操作已成功执行，耗时 {{time}}",
+    "truncate_description": "成功清空表数据，耗时 {{time}}",
+    "operation_success": "操作成功，影响 {{count}} 行，耗时 {{time}}",
+    "operation_success_no_count": "操作已成功执行，耗时 {{time}}",
+    "affected_rows": "影响行数",
+    "execution_time": "执行时间",
+    "operation_type": "操作类型"
+  },
+
+  "aggregate_stats": {
+    "no_data": "未检测到聚合数据",
+    "count": "总计 (COUNT)",
+    "sum": "求和 (SUM)",
+    "avg": "平均值 (AVG)",
+    "max": "最大值 (MAX)",
+    "min": "最小值 (MIN)"
+  }
 }

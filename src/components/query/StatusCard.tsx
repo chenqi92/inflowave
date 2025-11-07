@@ -14,6 +14,7 @@ import {
 import { cn } from '@/lib/utils';
 import type { QueryResult, ExecutionStatistics } from '@/types';
 import type { SQLStatementType } from '@/utils/sqlTypeDetector';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface StatusCardProps {
   result: QueryResult;
@@ -43,12 +44,13 @@ const formatNumber = (num?: number): string => {
  */
 const getStatusConfig = (
   statementType: SQLStatementType,
-  hasError: boolean
+  hasError: boolean,
+  t: (key: string) => string
 ) => {
   if (hasError) {
     return {
       icon: XCircle,
-      title: '执行失败',
+      title: t('status_card.execution_failed'),
       borderColor: 'border-l-red-500',
       bgColor: 'bg-red-100 dark:bg-red-900/30',
       iconColor: 'text-red-600 dark:text-red-400',
@@ -62,7 +64,7 @@ const getStatusConfig = (
     case 'INSERT_SELECT':
       return {
         icon: CheckCircle,
-        title: '数据插入成功',
+        title: t('status_card.insert_success'),
         borderColor: 'border-l-green-500',
         bgColor: 'bg-green-100 dark:bg-green-900/30',
         iconColor: 'text-green-600 dark:text-green-400',
@@ -72,7 +74,7 @@ const getStatusConfig = (
     case 'UPDATE':
       return {
         icon: Edit,
-        title: '数据更新成功',
+        title: t('status_card.update_success'),
         borderColor: 'border-l-blue-500',
         bgColor: 'bg-blue-100 dark:bg-blue-900/30',
         iconColor: 'text-blue-600 dark:text-blue-400',
@@ -80,10 +82,19 @@ const getStatusConfig = (
         badgeVariant: 'default' as const,
       };
     case 'DELETE':
+      return {
+        icon: Trash2,
+        title: t('status_card.delete_success'),
+        borderColor: 'border-l-orange-500',
+        bgColor: 'bg-orange-100 dark:bg-orange-900/30',
+        iconColor: 'text-orange-600 dark:text-orange-400',
+        titleColor: 'text-orange-700 dark:text-orange-400',
+        badgeVariant: 'default' as const,
+      };
     case 'TRUNCATE':
       return {
         icon: Trash2,
-        title: '数据删除成功',
+        title: t('status_card.truncate_success'),
         borderColor: 'border-l-orange-500',
         bgColor: 'bg-orange-100 dark:bg-orange-900/30',
         iconColor: 'text-orange-600 dark:text-orange-400',
@@ -93,7 +104,7 @@ const getStatusConfig = (
     default:
       return {
         icon: Database,
-        title: '操作执行成功',
+        title: t('status_card.create_success'),
         borderColor: 'border-l-blue-500',
         bgColor: 'bg-blue-100 dark:bg-blue-900/30',
         iconColor: 'text-blue-600 dark:text-blue-400',
@@ -110,7 +121,8 @@ const getOperationDescription = (
   statementType: SQLStatementType,
   statistics?: ExecutionStatistics,
   rowCount?: number,
-  executionTime?: number
+  executionTime?: number,
+  t?: (key: string, params?: Record<string, unknown>) => string
 ): string => {
   const affectedRows = statistics?.affectedRows ||
                        statistics?.insertedRows ||
@@ -119,31 +131,33 @@ const getOperationDescription = (
                        rowCount;
   const time = formatExecutionTime(executionTime);
 
+  if (!t) {
+    // 如果没有翻译函数，返回默认文本
+    return `操作已成功执行，耗时 ${time}`;
+  }
+
   switch (statementType) {
     case 'INSERT':
     case 'INSERT_SELECT':
       if (affectedRows !== undefined && affectedRows !== null) {
-        return `成功插入 ${formatNumber(affectedRows)} 行数据，耗时 ${time}`;
+        return t('status_card.insert_description', { count: formatNumber(affectedRows), time });
       }
-      return `数据插入操作已执行，耗时 ${time}`;
+      return t('status_card.operation_success_no_count', { time });
     case 'UPDATE':
       if (affectedRows !== undefined && affectedRows !== null) {
-        return `成功更新 ${formatNumber(affectedRows)} 行数据，耗时 ${time}`;
+        return t('status_card.update_description', { count: formatNumber(affectedRows), time });
       }
-      return `数据更新操作已执行，耗时 ${time}`;
+      return t('status_card.operation_success_no_count', { time });
     case 'DELETE':
       // DELETE操作通常不返回具体删除的行数（InfluxDB特性）
-      if (affectedRows !== undefined && affectedRows !== null && affectedRows > 0) {
-        return `成功删除 ${formatNumber(affectedRows)} 行数据，耗时 ${time}`;
-      }
-      return `删除操作已成功执行，耗时 ${time}`;
+      return t('status_card.delete_description', { time });
     case 'TRUNCATE':
-      return `成功清空表数据，耗时 ${time}`;
+      return t('status_card.truncate_description', { time });
     default:
       if (affectedRows !== undefined && affectedRows !== null) {
-        return `操作成功，影响 ${formatNumber(affectedRows)} 行，耗时 ${time}`;
+        return t('status_card.operation_success', { count: formatNumber(affectedRows), time });
       }
-      return `操作已成功执行，耗时 ${time}`;
+      return t('status_card.operation_success_no_count', { time });
   }
 };
 
@@ -151,13 +165,14 @@ const getOperationDescription = (
  * 状态卡片组件
  * 用于展示 INSERT/UPDATE/DELETE 等操作的执行状态
  */
-export const StatusCard: React.FC<StatusCardProps> = ({ 
-  result, 
+export const StatusCard: React.FC<StatusCardProps> = ({
+  result,
   statementType,
-  className 
+  className
 }) => {
+  const { t } = useTranslation('query');
   const hasError = !!result.error;
-  const config = getStatusConfig(statementType, hasError);
+  const config = getStatusConfig(statementType, hasError, t);
   const Icon = config.icon;
 
   return (
@@ -177,16 +192,17 @@ export const StatusCard: React.FC<StatusCardProps> = ({
             {/* 状态信息 */}
             <div className="flex-1">
               <h3 className={cn('font-semibold', config.titleColor)}>
-                {hasError ? '执行失败' : config.title}
+                {config.title}
               </h3>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {hasError 
-                  ? result.error 
+                {hasError
+                  ? result.error
                   : getOperationDescription(
-                      statementType, 
-                      result.statistics, 
-                      result.rowCount, 
-                      result.executionTime
+                      statementType,
+                      result.statistics,
+                      result.rowCount,
+                      result.executionTime,
+                      t
                     )
                 }
               </p>
@@ -220,7 +236,7 @@ export const StatusCard: React.FC<StatusCardProps> = ({
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <Hash className="w-4 h-4" />
-                    影响行数
+                    {t('status_card.affected_rows')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -236,7 +252,7 @@ export const StatusCard: React.FC<StatusCardProps> = ({
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                   <Clock className="w-4 h-4" />
-                  执行时间
+                  {t('status_card.execution_time')}
                 </CardTitle>
               </CardHeader>
               <CardContent>

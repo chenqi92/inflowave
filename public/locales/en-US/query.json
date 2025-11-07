@@ -91,5 +91,95 @@
   "per_page": "Per page",
   "records": "records",
   "all_records": "All",
-  "page_info": "Page {{current}} / {{total}}"
+  "page_info": "Page {{current}} / {{total}}",
+
+  "time_range": {
+    "no_limit": "No time limit",
+    "last_1_hour": "Last 1 hour",
+    "last_6_hours": "Last 6 hours",
+    "last_12_hours": "Last 12 hours",
+    "last_1_day": "Last 1 day",
+    "last_3_days": "Last 3 days",
+    "last_7_days": "Last 7 days",
+    "last_30_days": "Last 30 days",
+    "custom": "Custom time range...",
+    "filter_title": "Time Range Filter",
+    "filter_description": "All queries will apply this filter after selection",
+    "custom_dialog_title": "Custom Time Range",
+    "custom_dialog_description": "Select the time range for querying data. The system will automatically convert it to InfluxQL time expressions.",
+    "start_time": "Start Time",
+    "end_time": "End Time",
+    "preview": "Preview",
+    "select_start_time": "Select start time",
+    "select_end_time": "Select end time",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "error_select_time": "Please select start time and end time",
+    "error_time_order": "Start time must be earlier than end time",
+    "success_set": "Custom time range has been set"
+  },
+
+  "results": {
+    "title": "Query Results",
+    "no_results": "No query results",
+    "executing_query": "Executing query...",
+    "export": "Export",
+    "clear": "Clear",
+    "details": "Details",
+    "export_csv": "CSV Format",
+    "export_json": "JSON Format",
+    "export_excel": "Excel Format",
+    "details_title": "Query Result Details",
+    "total_rows": "Total Rows",
+    "columns": "Columns",
+    "series_count": "Series Count",
+    "execution_time_ms": "Execution Time",
+    "no_data_to_export": "No data to export",
+    "export_success": "Data exported successfully",
+    "export_failed": "Export failed",
+    "sql_generated": "SQL generated"
+  },
+
+  "tabs": {
+    "table_view": "Table View",
+    "json_view": "JSON View",
+    "chart_view": "Chart View",
+    "messages": "Messages",
+    "execution_plan": "Execution Plan",
+    "execution_status": "Execution Status",
+    "aggregate_stats": "Aggregate Statistics"
+  },
+
+  "messages_tab": {
+    "no_messages": "No execution messages"
+  },
+
+  "status_card": {
+    "insert_success": "Data inserted successfully",
+    "update_success": "Data updated successfully",
+    "delete_success": "Data deleted successfully",
+    "truncate_success": "Table data cleared successfully",
+    "create_success": "Created successfully",
+    "drop_success": "Dropped successfully",
+    "alter_success": "Altered successfully",
+    "execution_failed": "Execution failed",
+    "insert_description": "Successfully inserted {{count}} rows, took {{time}}",
+    "update_description": "Successfully updated {{count}} rows, took {{time}}",
+    "delete_description": "Delete operation completed successfully, took {{time}}",
+    "truncate_description": "Successfully cleared table data, took {{time}}",
+    "operation_success": "Operation successful, {{count}} rows affected, took {{time}}",
+    "operation_success_no_count": "Operation completed successfully, took {{time}}",
+    "affected_rows": "Affected Rows",
+    "execution_time": "Execution Time",
+    "operation_type": "Operation Type"
+  },
+
+  "aggregate_stats": {
+    "no_data": "No aggregate data detected",
+    "count": "Count (COUNT)",
+    "sum": "Sum (SUM)",
+    "avg": "Average (AVG)",
+    "max": "Maximum (MAX)",
+    "min": "Minimum (MIN)"
+  }
 }

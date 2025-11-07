@@ -36,6 +36,9 @@ interface TabActions {
 
   // 应用关闭处理
   handleAppClose: () => Promise<boolean>;
+
+  // 语言切换时更新所有 tab 标题
+  updateAllTabTitles: () => void;
 }
 
 type TabStore = TabState & TabActions;
@@ -210,6 +213,39 @@ export const useTabStore = create<TabStore>()(
           window.addEventListener('unsaved-tabs-dialog-result', handleUserChoice as EventListener);
         });
       },
+
+      // 更新所有 tab 的标题（语言切换时调用）
+      updateAllTabTitles: () => {
+        if (!i18n.isInitialized) return;
+
+        set((state) => ({
+          tabs: state.tabs.map((tab) => {
+            // 只更新查询 tab 和数据浏览 tab 的标题
+            if (tab.type === 'query') {
+              // 从标题中提取数字（如 "查询-1" 或 "Query-1"）
+              const match = tab.title.match(/(\d+)$/);
+              if (match) {
+                const number = parseInt(match[1], 10);
+                return {
+                  ...tab,
+                  // @ts-expect-error - i18n.t() with interpolation parameters
+                  title: i18n.t('query:query_tab_title', { number }) as string,
+                };
+              }
+            } else if (tab.type === 'data-browser' && tab.tableName && tab.database) {
+              return {
+                ...tab,
+                // @ts-expect-error - i18n.t() with interpolation parameters
+                title: i18n.t('query:data_browser_tab_title', {
+                  table: tab.tableName,
+                  database: tab.database,
+                }) as string,
+              };
+            }
+            return tab;
+          }),
+        }));
+      },
     }),
     {
       name: 'tab-storage', // 存储键名
@@ -299,9 +335,15 @@ export const useTabOperations = () => {
     const content = query || '';
     const hasContent = content.trim().length > 0;
 
+    // 确保使用当前语言的翻译
+    const title = i18n.isInitialized
+      // @ts-expect-error - i18n.t() with interpolation parameters
+      ? (i18n.t('query:query_tab_title', { number: tabNumber }) as string)
+      : `Query-${tabNumber}`; // 如果 i18n 未初始化，使用默认英文
+
     const newTab: EditorTab = {
       id: tabId,
-      title: i18n.t('query:query_tab_title', { number: tabNumber }),
+      title,
       content,
       type: 'query',
       modified: hasContent, // 只有有内容时才标记为已修改
@@ -425,9 +467,15 @@ export const useTabOperations = () => {
     }
 
     // 如果不存在，创建新tab
+    // 确保使用当前语言的翻译
+    const title = i18n.isInitialized
+      // @ts-expect-error - i18n.t() with interpolation parameters
+      ? (i18n.t('query:data_browser_tab_title', { table: tableName, database }) as string)
+      : `${tableName} - ${database}`; // 如果 i18n 未初始化，使用简单格式
+
     const newTab: EditorTab = {
       id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      title: i18n.t('query:data_browser_tab_title', { table: tableName, database }),
+      title,
       content: '',
       type: 'data-browser',
       modified: false,

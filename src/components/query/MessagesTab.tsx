@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ExecutionMessage, MessageType } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface MessagesTabProps {
   messages?: ExecutionMessage[];
@@ -76,17 +77,19 @@ const formatTimestamp = (timestamp: Date): string => {
  * 消息 Tab 组件
  * 展示 SQL 执行过程中的消息、警告、错误信息
  */
-export const MessagesTab: React.FC<MessagesTabProps> = ({ 
-  messages = [], 
-  className 
+export const MessagesTab: React.FC<MessagesTabProps> = ({
+  messages = [],
+  className
 }) => {
+  const { t } = useTranslation('query');
+
   // 如果没有消息，显示空状态
   if (!messages || messages.length === 0) {
     return (
       <div className={cn('h-full flex items-center justify-center', className)}>
         <div className="text-center text-muted-foreground">
           <Info className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">暂无执行消息</p>
+          <p className="text-sm">{t('messages_tab.no_messages')}</p>
         </div>
       </div>
     );

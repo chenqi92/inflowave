@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { QueryResult, AggregationInfo } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface AggregateStatCardsProps {
   result: QueryResult;
@@ -77,10 +78,11 @@ const extractAggregations = (result: QueryResult): AggregationInfo | null => {
  * 聚合统计卡片组件
  * 用于展示聚合查询（COUNT/SUM/AVG/MAX/MIN）的结果
  */
-export const AggregateStatCards: React.FC<AggregateStatCardsProps> = ({ 
+export const AggregateStatCards: React.FC<AggregateStatCardsProps> = ({
   result,
-  className 
+  className
 }) => {
+  const { t } = useTranslation('query');
   const aggregations = useMemo(() => extractAggregations(result), [result]);
 
   if (!aggregations) {
@@ -88,7 +90,7 @@ export const AggregateStatCards: React.FC<AggregateStatCardsProps> = ({
       <div className={cn('h-full flex items-center justify-center', className)}>
         <div className="text-center text-muted-foreground">
           <Calculator className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">未检测到聚合数据</p>
+          <p className="text-sm">{t('aggregate_stats.no_data')}</p>
         </div>
       </div>
     );
@@ -100,7 +102,7 @@ export const AggregateStatCards: React.FC<AggregateStatCardsProps> = ({
   if (aggregations.count !== undefined) {
     cards.push({
       key: 'count',
-      title: '总计 (COUNT)',
+      title: t('aggregate_stats.count'),
       value: aggregations.count,
       icon: Hash,
       color: 'text-blue-600 dark:text-blue-400',
@@ -112,7 +114,7 @@ export const AggregateStatCards: React.FC<AggregateStatCardsProps> = ({
   if (aggregations.sum !== undefined) {
     cards.push({
       key: 'sum',
-      title: '求和 (SUM)',
+      title: t('aggregate_stats.sum'),
       value: aggregations.sum,
       icon: Plus,
       color: 'text-green-600 dark:text-green-400',
@@ -124,7 +126,7 @@ export const AggregateStatCards: React.FC<AggregateStatCardsProps> = ({
   if (aggregations.avg !== undefined) {
     cards.push({
       key: 'avg',
-      title: '平均值 (AVG)',
+      title: t('aggregate_stats.avg'),
       value: aggregations.avg,
       icon: BarChart3,
       color: 'text-purple-600 dark:text-purple-400',
@@ -136,7 +138,7 @@ export const AggregateStatCards: React.FC<AggregateStatCardsProps> = ({
   if (aggregations.max !== undefined) {
     cards.push({
       key: 'max',
-      title: '最大值 (MAX)',
+      title: t('aggregate_stats.max'),
       value: aggregations.max,
       icon: TrendingUp,
       color: 'text-orange-600 dark:text-orange-400',
@@ -148,7 +150,7 @@ export const AggregateStatCards: React.FC<AggregateStatCardsProps> = ({
   if (aggregations.min !== undefined) {
     cards.push({
       key: 'min',
-      title: '最小值 (MIN)',
+      title: t('aggregate_stats.min'),
       value: aggregations.min,
       icon: TrendingDown,
       color: 'text-cyan-600 dark:text-cyan-400',
