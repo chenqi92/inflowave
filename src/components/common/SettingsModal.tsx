@@ -21,6 +21,9 @@ import {
   Separator,
   CustomDialog,
   Label,
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
 } from '@/components/ui';
 import { useDialog } from '@/hooks/useDialog';
 import { showMessage } from '@/utils/message';
@@ -78,11 +81,23 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
   const { clearConnections } = useConnectionStore();
   const { resetNoticeSettings, browserModeNoticeDismissed } = useNoticeStore();
   const { theme, setTheme, colorScheme, setColorScheme } = useTheme();
-  
+
   // 国际化 hooks
   const { t: tSettings } = useSettingsTranslation();
   const { t: tCommon } = useCommonTranslation();
   const { switchLanguage } = useLanguageSwitcher();
+
+  // 菜单面板宽度状态（使用百分比）
+  const [menuPanelSize, setMenuPanelSize] = useState<number>(() => {
+    const saved = localStorage.getItem('settings-menu-panel-size');
+    return saved ? parseFloat(saved) : 20; // 默认 20%
+  });
+
+  // 保存菜单面板宽度
+  const handleMenuPanelResize = (size: number) => {
+    setMenuPanelSize(size);
+    localStorage.setItem('settings-menu-panel-size', size.toString());
+  };
 
   // 初始化表单值
   useEffect(() => {
@@ -821,32 +836,52 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               orientation='vertical'
               className='flex flex-1 h-full'
             >
-              <TabsList className='flex flex-col h-fit w-48 bg-muted/50 py-4 px-2 items-start justify-start shrink-0 rounded-none border-r space-y-1'>
-                {tabItems.map(item => (
-                  <TabsTrigger
-                    key={item.key}
-                    value={item.key}
-                    className='w-full justify-start p-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-sm h-auto'
-                  >
-                    <div className='flex items-center gap-2'>
-                      {item.icon}
-                      <span className='text-sm'>{item.label}</span>
-                    </div>
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+              <ResizablePanelGroup direction='horizontal' className='flex-1'>
+                {/* 左侧菜单面板 - 可调整大小 */}
+                <ResizablePanel
+                  defaultSize={menuPanelSize}
+                  minSize={15}
+                  maxSize={35}
+                  onResize={handleMenuPanelResize}
+                  className='overflow-hidden'
+                >
+                  <TabsList className='flex flex-col h-fit w-full bg-muted/50 py-4 px-2 items-start justify-start rounded-none space-y-1'>
+                    {tabItems.map(item => (
+                      <TabsTrigger
+                        key={item.key}
+                        value={item.key}
+                        className='w-full justify-start p-3 data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-sm h-auto overflow-hidden'
+                      >
+                        <div className='flex items-center gap-2 min-w-0'>
+                          <div className='shrink-0'>{item.icon}</div>
+                          <span className='text-sm truncate'>{item.label}</span>
+                        </div>
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </ResizablePanel>
 
-              <div className='flex-1 min-w-0 overflow-hidden'>
-                {tabItems.map(item => (
-                  <TabsContent
-                    key={item.key}
-                    value={item.key}
-                    className='h-full mt-0 px-6 py-4 data-[state=inactive]:hidden overflow-y-auto'
-                  >
-                    <div className='max-w-3xl pb-12'>{item.children}</div>
-                  </TabsContent>
-                ))}
-              </div>
+                {/* 可拖动的分割线 */}
+                <ResizableHandle
+                  withHandle
+                  className='w-1 bg-border hover:bg-primary/50 transition-colors cursor-col-resize'
+                />
+
+                {/* 右侧内容面板 */}
+                <ResizablePanel defaultSize={100 - menuPanelSize} minSize={50}>
+                  <div className='flex-1 min-w-0 overflow-hidden h-full'>
+                    {tabItems.map(item => (
+                      <TabsContent
+                        key={item.key}
+                        value={item.key}
+                        className='h-full mt-0 px-6 py-4 data-[state=inactive]:hidden overflow-y-auto'
+                      >
+                        <div className='max-w-3xl pb-12'>{item.children}</div>
+                      </TabsContent>
+                    ))}
+                  </div>
+                </ResizablePanel>
+              </ResizablePanelGroup>
             </Tabs>
           </div>
         </DialogContent>
