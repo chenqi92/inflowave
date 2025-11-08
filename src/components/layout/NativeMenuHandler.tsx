@@ -110,11 +110,19 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   }, []); // 移除依赖，只在组件挂载时设置一次监听器
 
   // 风格切换处理函数
-  const handleThemeChange = (themeName: string) => {
+  const handleThemeChange = async (themeName: string) => {
     logger.render('切换风格:', themeName);
 
     // 设置颜色方案
     setColorScheme(themeName);
+
+    // 重建菜单以更新勾选状态
+    try {
+      await safeTauriInvoke('rebuild_native_menu');
+      logger.debug('✅ 菜单已重建，勾选状态已更新');
+    } catch (error) {
+      logger.error('❌ 重建菜单失败:', error);
+    }
 
     // 显示成功消息 - 使用 i18n
     const themeLabel = t(`theme_style_${themeName}`) || themeName;
@@ -122,11 +130,19 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   };
 
   // 模式切换处理函数
-  const handleModeChange = (mode: 'system' | 'light' | 'dark') => {
+  const handleModeChange = async (mode: 'system' | 'light' | 'dark') => {
     logger.debug('🌓 切换模式:', mode);
 
     // 设置模式
     setTheme(mode);
+
+    // 重建菜单以更新勾选状态
+    try {
+      await safeTauriInvoke('rebuild_native_menu');
+      logger.debug('✅ 菜单已重建，勾选状态已更新');
+    } catch (error) {
+      logger.error('❌ 重建菜单失败:', error);
+    }
 
     // 显示成功消息
     const modeLabel = tMenu(`native.modeSwitch.${mode}`);
@@ -143,6 +159,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       const { setLanguage } = useI18nStore.getState();
 
       await setLanguage(locale);
+
+      // 重建菜单以更新勾选状态和语言
+      try {
+        await safeTauriInvoke('rebuild_native_menu');
+        logger.debug('✅ 菜单已重建，语言和勾选状态已更新');
+      } catch (error) {
+        logger.error('❌ 重建菜单失败:', error);
+      }
 
       // 显示成功消息
       showMessage.success(tMenu('native.languageSwitch.success', { label }));

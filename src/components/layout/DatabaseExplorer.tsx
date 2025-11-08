@@ -317,7 +317,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       // 关闭对话框
       handleCloseConnectionDialog();
 
-      // 注意：SimpleConnectionDialog 内部的 useConnection hook 已经调用了 addConnection
+      // 注意：RefactoredConnectionDialog 内部的 useConnection hook 已经调用了 addConnection
       // 这里不需要手动刷新，因为 useEffect 会监听 connections 变化自动重建树
       logger.info('连接保存完成，等待自动刷新数据源树');
     } catch (error) {

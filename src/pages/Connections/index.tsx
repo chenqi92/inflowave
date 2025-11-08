@@ -7,7 +7,7 @@ import ConnectionManager from '@/components/ConnectionManager';
 import { ConnectionRecovery } from '@/components/ConnectionRecovery';
 import { useTranslation } from '@/hooks/useTranslation';
 
-import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
+import RefactoredConnectionDialog from '@/components/ConnectionManager/RefactoredConnectionDialog';
 import type { ConnectionConfig } from '@/types';
 import logger from '@/utils/logger';
 
@@ -148,7 +148,7 @@ const Connections: React.FC = () => {
         showMessage.success(t('connections.connection_updated', { interpolation: { name: connection.name } }));
       } else {
         // 创建新连接
-        // 注意：SimpleConnectionDialog 内部的 useConnection hook 已经处理了连接创建和添加到store
+        // 注意：RefactoredConnectionDialog 内部的 useConnection hook 已经处理了连接创建和添加到store
         // 这里只需要显示成功消息
         showMessage.success(t('connections.connection_created', { interpolation: { name: connection.name } }));
         logger.debug('✅ 新连接已通过 useConnection hook 添加到前端状态:', connection.id);
@@ -201,7 +201,7 @@ const Connections: React.FC = () => {
       </div>
 
       {/* 连接配置对话框 */}
-      <SimpleConnectionDialog
+      <RefactoredConnectionDialog
         visible={isDialogVisible}
         connection={editingConnection || undefined}
         onCancel={handleCloseDialog}

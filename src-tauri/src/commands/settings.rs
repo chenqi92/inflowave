@@ -677,9 +677,19 @@ pub async fn get_monitoring_settings(
 #[tauri::command]
 pub async fn update_menu_language(
     app: tauri::AppHandle,
+    settings_storage: State<'_, SettingsStorage>,
     language: String,
 ) -> Result<(), String> {
     info!("更新菜单语言: {}", language);
+
+    // 获取当前设置并立即克隆
+    let settings_clone = {
+        let settings = settings_storage.lock().map_err(|e| {
+            error!("获取设置存储锁失败: {}", e);
+            "获取设置失败".to_string()
+        })?;
+        settings.clone()
+    }; // 锁在这里自动释放
 
     // 在后台线程中执行菜单更新，避免阻塞 UI
     let app_clone = app.clone();
@@ -691,7 +701,7 @@ pub async fn update_menu_language(
         std::thread::sleep(std::time::Duration::from_millis(50));
 
         // 重新创建菜单
-        let menu = crate::create_native_menu(&app_clone, &language_clone)
+        let menu = crate::create_native_menu(&app_clone, &language_clone, &settings_clone)
             .map_err(|e| {
                 error!("创建菜单失败: {}", e);
                 format!("创建菜单失败: {}", e)

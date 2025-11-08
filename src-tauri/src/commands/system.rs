@@ -937,3 +937,39 @@ pub async fn close_app(app: tauri::AppHandle) -> Result<(), String> {
     app.exit(0);
     Ok(())
 }
+
+/// 重建原生菜单 - 用于在设置更改后更新菜单状态
+#[tauri::command]
+pub async fn rebuild_native_menu(
+    app: AppHandle,
+    settings_storage: State<'_, crate::commands::settings::SettingsStorage>,
+) -> Result<(), String> {
+    debug!("重建原生菜单");
+
+    // 获取当前设置
+    let settings = settings_storage.lock().map_err(|e| {
+        error!("获取设置存储锁失败: {}", e);
+        "获取设置失败".to_string()
+    })?;
+
+    let language = settings.general.language.clone();
+    let settings_clone = settings.clone();
+    drop(settings); // 释放锁
+
+    // 重新创建菜单
+    match crate::create_native_menu(&app, &language, &settings_clone) {
+        Ok(menu) => {
+            info!("菜单重建成功，正在更新应用菜单...");
+            if let Err(e) = app.set_menu(menu) {
+                error!("更新菜单失败: {}", e);
+                return Err(format!("更新菜单失败: {}", e));
+            }
+            info!("应用菜单更新成功");
+            Ok(())
+        }
+        Err(e) => {
+            error!("重建菜单失败: {}", e);
+            Err(format!("重建菜单失败: {}", e))
+        }
+    }
+}

@@ -9,7 +9,7 @@ mod utils;
 mod config;
 mod updater;
 
-use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder}, LogicalSize, LogicalPosition};
+use tauri::{Manager, Emitter, menu::{MenuBuilder, SubmenuBuilder, CheckMenuItemBuilder}, LogicalSize, LogicalPosition};
 use log::{info, warn, error};
 
 // Tauri commands
@@ -430,7 +430,7 @@ const EN_US: MenuTexts = MenuTexts {
 
 // 创建原生菜单 - 完整的专业化菜单，支持跨平台和多语言
 // 注意：这个函数需要是 public 的，因为它会被 commands/system.rs 调用
-pub fn create_native_menu(app: &tauri::AppHandle, lang: &str) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
+pub fn create_native_menu(app: &tauri::AppHandle, lang: &str, settings: &commands::settings::AppSettings) -> Result<tauri::menu::Menu<tauri::Wry>, tauri::Error> {
     info!("为平台创建原生菜单: {}, 语言: {}", std::env::consts::OS, lang);
 
     // 根据语言选择文本
@@ -512,34 +512,112 @@ pub fn create_native_menu(app: &tauri::AppHandle, lang: &str) -> Result<tauri::m
 
 
 
-    // 风格设置子菜单 - 恢复风格切换功能
+    // 风格设置子菜单 - 使用 CheckMenuItemBuilder 显示当前选中的颜色方案
+    let current_color_scheme = &settings.visualization.color_scheme;
+
     let style_submenu = SubmenuBuilder::new(app, texts.style_settings)
-        .text("theme_default", texts.theme_default)
-        .text("theme_shadcn", texts.theme_shadcn)
-        .text("theme_slate", texts.theme_slate)
-        .text("theme_indigo", texts.theme_indigo)
-        .text("theme_emerald", texts.theme_emerald)
-        .text("theme_blue", texts.theme_blue)
-        .text("theme_green", texts.theme_green)
-        .text("theme_red", texts.theme_red)
-        .text("theme_orange", texts.theme_orange)
-        .text("theme_purple", texts.theme_purple)
-        .text("theme_rose", texts.theme_rose)
-        .text("theme_yellow", texts.theme_yellow)
-        .text("theme_violet", texts.theme_violet)
+        .item(&CheckMenuItemBuilder::new(texts.theme_default)
+            .id("theme_default")
+            .checked(current_color_scheme == "default")
+            .enabled(current_color_scheme != "default")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_shadcn)
+            .id("theme_shadcn")
+            .checked(current_color_scheme == "shadcn")
+            .enabled(current_color_scheme != "shadcn")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_slate)
+            .id("theme_slate")
+            .checked(current_color_scheme == "slate")
+            .enabled(current_color_scheme != "slate")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_indigo)
+            .id("theme_indigo")
+            .checked(current_color_scheme == "indigo")
+            .enabled(current_color_scheme != "indigo")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_emerald)
+            .id("theme_emerald")
+            .checked(current_color_scheme == "emerald")
+            .enabled(current_color_scheme != "emerald")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_blue)
+            .id("theme_blue")
+            .checked(current_color_scheme == "blue")
+            .enabled(current_color_scheme != "blue")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_green)
+            .id("theme_green")
+            .checked(current_color_scheme == "green")
+            .enabled(current_color_scheme != "green")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_red)
+            .id("theme_red")
+            .checked(current_color_scheme == "red")
+            .enabled(current_color_scheme != "red")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_orange)
+            .id("theme_orange")
+            .checked(current_color_scheme == "orange")
+            .enabled(current_color_scheme != "orange")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_purple)
+            .id("theme_purple")
+            .checked(current_color_scheme == "purple")
+            .enabled(current_color_scheme != "purple")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_rose)
+            .id("theme_rose")
+            .checked(current_color_scheme == "rose")
+            .enabled(current_color_scheme != "rose")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_yellow)
+            .id("theme_yellow")
+            .checked(current_color_scheme == "yellow")
+            .enabled(current_color_scheme != "yellow")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.theme_violet)
+            .id("theme_violet")
+            .checked(current_color_scheme == "violet")
+            .enabled(current_color_scheme != "violet")
+            .build(app)?)
         .build()?;
 
-    // 模式切换子菜单
+    // 模式切换子菜单 - 使用 CheckMenuItemBuilder 显示当前选中的主题模式
+    let current_theme = &settings.general.theme;
+
     let mode_submenu = SubmenuBuilder::new(app, texts.mode_settings)
-        .text("mode_system", texts.mode_system)
-        .text("mode_light", texts.mode_light)
-        .text("mode_dark", texts.mode_dark)
+        .item(&CheckMenuItemBuilder::new(texts.mode_system)
+            .id("mode_system")
+            .checked(current_theme == "system")
+            .enabled(current_theme != "system")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.mode_light)
+            .id("mode_light")
+            .checked(current_theme == "light")
+            .enabled(current_theme != "light")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.mode_dark)
+            .id("mode_dark")
+            .checked(current_theme == "dark")
+            .enabled(current_theme != "dark")
+            .build(app)?)
         .build()?;
 
-    // 语言设置子菜单
+    // 语言设置子菜单 - 使用 CheckMenuItemBuilder 显示当前选中的语言
+    let current_language = &settings.general.language;
+
     let language_submenu = SubmenuBuilder::new(app, texts.language_settings)
-        .text("lang_chinese", texts.lang_chinese)
-        .text("lang_english", texts.lang_english)
+        .item(&CheckMenuItemBuilder::new(texts.lang_chinese)
+            .id("lang_chinese")
+            .checked(current_language == "zh-CN")
+            .enabled(current_language != "zh-CN")
+            .build(app)?)
+        .item(&CheckMenuItemBuilder::new(texts.lang_english)
+            .id("lang_english")
+            .checked(current_language == "en-US")
+            .enabled(current_language != "en-US")
+            .build(app)?)
         .build()?;
 
     // 工具菜单 - 使用平台特定的快捷键
@@ -1165,6 +1243,7 @@ async fn main() {
             get_file_info,
             show_message_dialog,
             close_app,
+            rebuild_native_menu,
             // Environment-aware file operations
             write_file_env,
             read_file_env,
@@ -1512,10 +1591,8 @@ async fn main() {
             let menu_language = app_settings.general.language.clone();
             info!("📋 使用语言创建菜单: {}", menu_language);
 
-            app.manage(commands::settings::SettingsStorage::new(app_settings));
-
-            // 创建并设置原生菜单（使用设置中的语言）
-            match create_native_menu(app.handle(), &menu_language) {
+            // 创建并设置原生菜单（使用设置中的语言和当前设置状态）
+            match create_native_menu(app.handle(), &menu_language, &app_settings) {
                 Ok(menu) => {
                     info!("菜单创建成功，正在设置为应用菜单...");
                     if let Err(e) = app.set_menu(menu) {
@@ -1528,6 +1605,9 @@ async fn main() {
                     error!("创建菜单失败: {}", e);
                 }
             }
+
+            // 在设置菜单后再管理设置存储
+            app.manage(commands::settings::SettingsStorage::new(app_settings));
 
             // 设置菜单事件处理器
             let app_handle = app.handle().clone();

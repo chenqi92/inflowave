@@ -5,7 +5,7 @@ import CreateDatabaseDialog from '@/components/database/CreateDatabaseDialog';
 import DatabaseInfoDialog from '@/components/database/DatabaseInfoDialog';
 import ConnectionDetailDialog from '@/components/database/ConnectionDetailDialog';
 import RetentionPolicyDialog from '@/components/common/RetentionPolicyDialog';
-import { SimpleConnectionDialog } from '@/components/ConnectionManager/SimpleConnectionDialog';
+import RefactoredConnectionDialog from '@/components/ConnectionManager/RefactoredConnectionDialog';
 import { ManagementNodeDialog } from '@/components/database/ManagementNodeDialog';
 import IoTDBTemplateDialog from '@/components/database/IoTDBTemplateDialog';
 import QueryBuilder from '@/components/query/QueryBuilder';
@@ -160,7 +160,7 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
             />
 
             {/* 连接配置对话框 */}
-            <SimpleConnectionDialog
+            <RefactoredConnectionDialog
                 visible={isConnectionDialogVisible}
                 connection={editingConnection || undefined}
                 onCancel={handleCloseConnectionDialog}
