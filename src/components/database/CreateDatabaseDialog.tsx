@@ -23,6 +23,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { useConnectionStore } from '@/store/connection';
 import type { ConnectionConfig } from '@/types';
+import { useDatabaseExplorerTranslation } from '@/hooks/useTranslation';
 
 interface CreateDatabaseDialogProps {
   open: boolean;
@@ -47,6 +48,7 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
   connectionId: propConnectionId,
   metadata,
 }) => {
+  const { t: tExplorer } = useDatabaseExplorerTranslation();
   const { activeConnectionId, getConnection } = useConnectionStore();
   const [loading, setLoading] = useState(false);
   const form = useForm<CreateDatabaseForm>();
@@ -72,12 +74,12 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
   const dialogInfo = useMemo(() => {
     if (!connection) {
       return {
-        title: '创建数据库',
-        description: '请先选择一个连接',
-        placeholder: '例如: my_database',
-        nameLabel: '数据库名称',
+        title: tExplorer('createDatabase.title'),
+        description: tExplorer('createDatabase.descriptionNoConnection'),
+        placeholder: tExplorer('createDatabase.placeholderGeneric'),
+        nameLabel: tExplorer('createDatabase.labelDatabase'),
         canCreate: false,
-        errorMessage: '请先选择一个连接',
+        errorMessage: tExplorer('createDatabase.errorNoConnection'),
       };
     }
 
@@ -87,62 +89,62 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
     if (dbType === 'influxdb') {
       if (version.includes('2.') || version.includes('2x')) {
         return {
-          title: '创建存储桶 (Bucket)',
-          description: '在 InfluxDB 2.x 中创建一个新的存储桶',
-          placeholder: '例如: sensor_data',
-          nameLabel: '存储桶名称',
+          title: tExplorer('createDatabase.titleBucket'),
+          description: tExplorer('createDatabase.descriptionInfluxDB2'),
+          placeholder: tExplorer('createDatabase.placeholderSensorData'),
+          nameLabel: tExplorer('createDatabase.labelBucket'),
           canCreate: true,
           errorMessage: null,
         };
       } else if (version.includes('3.') || version.includes('3x')) {
         return {
-          title: '创建数据库',
-          description: 'InfluxDB 3.x 暂不支持通过此界面创建数据库',
+          title: tExplorer('createDatabase.title'),
+          description: tExplorer('createDatabase.descriptionInfluxDB3'),
           placeholder: '',
-          nameLabel: '数据库名称',
+          nameLabel: tExplorer('createDatabase.labelDatabase'),
           canCreate: false,
-          errorMessage: 'InfluxDB 3.x 暂不支持通过此界面创建数据库，请使用命令行工具或 API',
+          errorMessage: tExplorer('createDatabase.errorInfluxDB3'),
         };
       } else {
         // InfluxDB 1.x
         return {
-          title: '创建数据库',
-          description: '创建一个新的 InfluxDB 数据库',
-          placeholder: '例如: sensor_data',
-          nameLabel: '数据库名称',
+          title: tExplorer('createDatabase.title'),
+          description: tExplorer('createDatabase.descriptionInfluxDB1'),
+          placeholder: tExplorer('createDatabase.placeholderSensorData'),
+          nameLabel: tExplorer('createDatabase.labelDatabase'),
           canCreate: true,
           errorMessage: null,
         };
       }
     } else if (dbType === 'iotdb') {
       return {
-        title: '创建存储组 (Storage Group)',
-        description: '在 IoTDB 中创建一个新的存储组',
-        placeholder: '例如: sensor_data (将创建为 root.sensor_data)',
-        nameLabel: '存储组名称',
+        title: tExplorer('createDatabase.titleStorageGroup'),
+        description: tExplorer('createDatabase.descriptionIoTDB'),
+        placeholder: tExplorer('createDatabase.placeholderIoTDB'),
+        nameLabel: tExplorer('createDatabase.labelStorageGroup'),
         canCreate: true,
         errorMessage: null,
       };
     }
 
     return {
-      title: '创建数据库',
-      description: '创建一个新的数据库',
-      placeholder: '例如: my_database',
-      nameLabel: '数据库名称',
+      title: tExplorer('createDatabase.title'),
+      description: tExplorer('createDatabase.descriptionGeneric'),
+      placeholder: tExplorer('createDatabase.placeholderGeneric'),
+      nameLabel: tExplorer('createDatabase.labelDatabase'),
       canCreate: true,
       errorMessage: null,
     };
-  }, [connection]);
+  }, [connection, tExplorer]);
 
   const handleSubmit = async (values: CreateDatabaseForm) => {
     if (!effectiveConnectionId) {
-      showMessage.error('请先选择一个连接');
+      showMessage.error(tExplorer('createDatabase.errorNoConnection'));
       return;
     }
 
     if (!dialogInfo.canCreate) {
-      showMessage.error(dialogInfo.errorMessage || '当前数据库类型不支持创建');
+      showMessage.error(dialogInfo.errorMessage || tExplorer('createDatabase.errorNotSupported'));
       return;
     }
 
@@ -154,7 +156,7 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
         // 获取组织信息
         const organizationName = metadata?.organization;
         if (!organizationName) {
-          showMessage.error('缺少组织信息，无法创建存储桶');
+          showMessage.error(tExplorer('createDatabase.errorNoOrganization'));
           return;
         }
 
@@ -191,7 +193,7 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
           },
         });
 
-        showMessage.success('存储桶创建成功');
+        showMessage.success(tExplorer('createDatabase.successBucket'));
       } else {
         // 其他数据库类型使用通用的 create_database 命令
         await safeTauriInvoke('create_database', {
@@ -200,8 +202,8 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
         });
 
         const successMessage = connection?.dbType === 'iotdb'
-          ? '存储组创建成功'
-          : '数据库创建成功';
+          ? tExplorer('createDatabase.successStorageGroup')
+          : tExplorer('createDatabase.successDatabase');
 
         showMessage.success(successMessage);
       }
@@ -213,10 +215,10 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
       }
     } catch (error) {
       const errorMessage = connection?.dbType === 'iotdb'
-        ? '创建存储组失败'
+        ? tExplorer('createDatabase.failedStorageGroup')
         : isInfluxDB2x
-          ? '创建存储桶失败'
-          : '创建数据库失败';
+          ? tExplorer('createDatabase.failedBucket')
+          : tExplorer('createDatabase.failedDatabase');
 
       showMessage.error(`${errorMessage}: ${error}`);
     } finally {
@@ -262,10 +264,10 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
                 control={form.control}
                 name="name"
                 rules={{
-                  required: `请输入${dialogInfo.nameLabel}`,
+                  required: tExplorer('createDatabase.errorNameRequired', { label: dialogInfo.nameLabel }),
                   pattern: {
                     value: /^[a-zA-Z_][a-zA-Z0-9_]*$/,
-                    message: '名称只能包含字母、数字和下划线，且不能以数字开头',
+                    message: tExplorer('createDatabase.errorNamePattern'),
                   },
                 }}
                 render={({ field }) => (
@@ -287,10 +289,10 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>描述（可选）</FormLabel>
+                    <FormLabel>{tExplorer('createDatabase.labelDescription')}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="用途说明..."
+                        placeholder={tExplorer('createDatabase.placeholderDescription')}
                         rows={3}
                         {...field}
                       />
@@ -307,16 +309,16 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
                   name="retentionPeriod"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>保留策略（可选）</FormLabel>
+                      <FormLabel>{tExplorer('createDatabase.labelRetentionPolicy')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="例如: 30d, 7d, 24h, 0 (永久保留)"
+                          placeholder={tExplorer('createDatabase.placeholderRetentionPolicy')}
                           {...field}
                         />
                       </FormControl>
                       <FormMessage />
                       <p className="text-xs text-muted-foreground">
-                        格式: 数字+单位 (d=天, h=小时, m=分钟, s=秒)，0 表示永久保留
+                        {tExplorer('createDatabase.retentionPolicyHelp')}
                       </p>
                     </FormItem>
                   )}
@@ -330,10 +332,10 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
                   onClick={handleClose}
                   disabled={loading}
                 >
-                  取消
+                  {tExplorer('createDatabase.buttonCancel')}
                 </Button>
                 <Button type="submit" disabled={loading}>
-                  {loading ? '创建中...' : '创建'}
+                  {loading ? tExplorer('createDatabase.buttonCreating') : tExplorer('createDatabase.buttonCreate')}
                 </Button>
               </DialogFooter>
             </form>
@@ -347,7 +349,7 @@ const CreateDatabaseDialog: React.FC<CreateDatabaseDialogProps> = ({
               variant="outline"
               onClick={handleClose}
             >
-              关闭
+              {tExplorer('createDatabase.buttonClose')}
             </Button>
           </DialogFooter>
         )}

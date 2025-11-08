@@ -1,10 +1,14 @@
 import React from 'react';
 import { VerticalQueryHistory } from '@/components/query/VerticalQueryHistory';
 
-const QueryHistoryPage: React.FC = () => {
+interface QueryHistoryPageProps {
+  onClose?: () => void;
+}
+
+const QueryHistoryPage: React.FC<QueryHistoryPageProps> = ({ onClose }) => {
   return (
     <div className="h-full">
-      <VerticalQueryHistory />
+      <VerticalQueryHistory onClose={onClose} />
     </div>
   );
 };

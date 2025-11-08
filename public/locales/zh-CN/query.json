@@ -260,5 +260,28 @@
     "addedToFavorites": "已添加到收藏",
     "removedFromFavorites": "已取消收藏",
     "operationFailed": "操作失败"
-  }
+  },
+
+  "query_copied": "查询已复制",
+  "re_execute": "重新执行",
+  "copy_query": "复制查询",
+  "unfavorite": "取消收藏",
+  "query_history_management": "查询历史管理",
+  "query_history_desc": "查看和管理您的查询历史记录和收藏的查询",
+  "all_databases": "所有数据库",
+  "ascending": "升序",
+  "descending": "降序",
+  "confirm_clear": "确认清空",
+  "confirm_clear_history": "确定要清空所有历史记录吗？此操作不可撤销。",
+  "clear_history": "清空历史",
+  "query_loaded_to_tab": "查询已加载到新标签页",
+  "query_copied_to_clipboard": "查询已复制到剪贴板",
+  "add_to_favorites": "添加收藏",
+  "remove_from_favorites": "取消收藏",
+  "search_query_placeholder": "搜索查询...",
+  "database_filter": "数据库过滤",
+  "refresh": "刷新",
+  "close_panel": "关闭面板",
+  "execute_button": "执行",
+  "delete_button": "删除"
 }

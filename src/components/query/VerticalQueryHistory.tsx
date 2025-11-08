@@ -35,23 +35,27 @@ import {
   XCircle,
   Star,
   Filter,
+  X,
 } from 'lucide-react';
 import { useQueryHistoryData } from '@/hooks/useQueryHistory';
 import { useTabOperations } from '@/stores/tabStore';
 import { writeToClipboard } from '@/utils/clipboard';
 import { showMessage } from '@/utils/message';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useQueryTranslation, useMenuTranslation } from '@/hooks/useTranslation';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
 import logger from '@/utils/logger';
 
 interface VerticalQueryHistoryProps {
   className?: string;
+  onClose?: () => void;
 }
 
 export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
   className = '',
+  onClose,
 }) => {
-  const { t } = useTranslation();
+  const { t } = useQueryTranslation();
+  const { t: tMenu } = useMenuTranslation();
   const [activeTab, setActiveTab] = useState<'history' | 'saved'>('history');
   const [searchText, setSearchText] = useState('');
   const [selectedDatabase, setSelectedDatabase] = useState('');
@@ -95,15 +99,15 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
   // 处理查询执行
   const handleExecuteQuery = (query: string, database?: string, connectionId?: string) => {
     createQueryTab(database, query, connectionId);
-    showMessage.success('查询已加载到新标签页');
+    showMessage.success(t('query_loaded_to_tab'));
   };
 
   // 处理复制查询
   const handleCopyQuery = async (query: string) => {
     try {
       await writeToClipboard(query);
-      showMessage.success('查询已复制到剪贴板');
-    } catch (error) {
+      showMessage.success(t('query_copied_to_clipboard'));
+    } catch (_error) {
       showMessage.error(t('copy_failed'));
     }
   };
@@ -213,7 +217,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
               className="h-7 text-xs"
             >
               <Play className="w-3 h-3 mr-1" />
-              执行
+              {t('execute_button')}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -224,15 +228,15 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleCopyQuery(item.query)}>
                   <Copy className="w-4 h-4 mr-2" />
-                  复制查询
+                  {t('copy_query')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => handleDeleteHistory(item.id)}
                   className="text-red-600"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  删除
+                  {t('delete_button')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -298,7 +302,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
               className="h-7 text-xs"
             >
               <Play className="w-3 h-3 mr-1" />
-              执行
+              {t('execute_button')}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -309,19 +313,19 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => handleToggleFavorite(query.id)}>
                   <Star className="w-4 h-4 mr-2" />
-                  {query.favorite ? '取消收藏' : '添加收藏'}
+                  {query.favorite ? t('remove_from_favorites') : t('add_to_favorites')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleCopyQuery(query.query)}>
                   <Copy className="w-4 h-4 mr-2" />
-                  复制查询
+                  {t('copy_query')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   onClick={() => handleDeleteSaved(query.id)}
                   className="text-red-600"
                 >
                   <Trash2 className="w-4 h-4 mr-2" />
-                  删除
+                  {t('delete_button')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -334,16 +338,22 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
   return (
     <TooltipProvider>
       <div className={`h-full flex flex-col bg-background ${className}`}>
-        {/* 头部 */}
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-start gap-1">
+        {/* 标题栏 - 与其他侧边栏保持一致 */}
+        <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-muted/30 dark:bg-muted/20">
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold">{tMenu('right_panel.history')}</h3>
+          </div>
+
+          <div className="flex items-center gap-1">
+            {/* 搜索按钮 */}
             <ExpandableSearchInput
-              placeholder="搜索查询..."
+              placeholder={t('search_query_placeholder')}
               value={searchText}
               onChange={(value: string) => setSearchText(value)}
               onClear={() => setSearchText('')}
             />
 
+            {/* 数据库过滤 */}
             {uniqueDatabases.length > 0 && (
               <DropdownMenu>
                 <Tooltip>
@@ -353,16 +363,17 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
                         variant={selectedDatabase ? 'default' : 'ghost'}
                         size="sm"
                         className="h-8 w-8 p-0"
+                        title={t('database_filter')}
                       >
                         <Filter className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
                   </TooltipTrigger>
-                  <TooltipContent>数据库过滤</TooltipContent>
+                  <TooltipContent>{t('database_filter')}</TooltipContent>
                 </Tooltip>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => setSelectedDatabase('')}>
-                    所有数据库
+                    {t('all_databases')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {uniqueDatabases.map(db => (
@@ -374,6 +385,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
               </DropdownMenu>
             )}
 
+            {/* 刷新按钮 */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -382,16 +394,30 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
                   onClick={refreshAll}
                   disabled={loading}
                   className="h-8 w-8 p-0"
+                  title={t('refresh')}
                 >
                   <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>刷新</TooltipContent>
+              <TooltipContent>{t('refresh')}</TooltipContent>
             </Tooltip>
+
+            {/* 关闭按钮 */}
+            {onClose && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="h-8 w-8 p-0 hover:bg-accent"
+                title={t('close_panel')}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* 标签页 */}
+        {/* 标签页切换 */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'history' | 'saved')} className="flex-1 flex flex-col">
           <TabsList className="w-full rounded-none border-b bg-transparent p-0 h-auto grid grid-cols-2">
             <TabsTrigger

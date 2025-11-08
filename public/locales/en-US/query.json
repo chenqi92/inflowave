@@ -260,5 +260,28 @@
     "addedToFavorites": "Added to favorites",
     "removedFromFavorites": "Removed from favorites",
     "operationFailed": "Operation failed"
-  }
+  },
+
+  "query_copied": "Query copied",
+  "re_execute": "Re-execute",
+  "copy_query": "Copy Query",
+  "unfavorite": "Unfavorite",
+  "query_history_management": "Query History Management",
+  "query_history_desc": "View and manage your query history and saved queries",
+  "all_databases": "All Databases",
+  "ascending": "Ascending",
+  "descending": "Descending",
+  "confirm_clear": "Confirm Clear",
+  "confirm_clear_history": "Are you sure you want to clear all history records? This action cannot be undone.",
+  "clear_history": "Clear History",
+  "query_loaded_to_tab": "Query loaded to new tab",
+  "query_copied_to_clipboard": "Query copied to clipboard",
+  "add_to_favorites": "Add to Favorites",
+  "remove_from_favorites": "Remove from Favorites",
+  "search_query_placeholder": "Search queries...",
+  "database_filter": "Database Filter",
+  "refresh": "Refresh",
+  "close_panel": "Close Panel",
+  "execute_button": "Execute",
+  "delete_button": "Delete"
 }

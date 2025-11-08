@@ -29,9 +29,11 @@ const PanelPerformancePage: React.FC = () => (
   </div>
 );
 
-const PanelQueryHistoryPage: React.FC = () => (
+const PanelQueryHistoryPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => (
   <div className="h-full">
-    <QueryHistoryPage />
+    <Suspense fallback={<Spin />}>
+      <QueryHistoryPage onClose={onClose} />
+    </Suspense>
   </div>
 );
 
@@ -81,7 +83,7 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
       case 'monitoring':
         return <PanelPerformancePage />;
       case 'history':
-        return <PanelQueryHistoryPage />;
+        return <PanelQueryHistoryPage onClose={onClose} />;
       case 'extensions':
         return <PanelExtensionsPage />;
       default:
@@ -95,8 +97,8 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
     }
   };
 
-  // 消息通知面板和工作区面板不需要额外的头部和包装
-  if (selectedFunction === 'notifications' || selectedFunction === 'workspace') {
+  // 消息通知面板、工作区面板和查询历史面板不需要额外的头部和包装
+  if (selectedFunction === 'notifications' || selectedFunction === 'workspace' || selectedFunction === 'history') {
     return (
       <div className={`bg-background border-l border-border flex flex-col h-full ${className}`}>
         {renderFunctionContent()}
@@ -107,9 +109,9 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
   return (
     <div className={`bg-background border-l border-border flex flex-col h-full ${className}`}>
       {/* 面板头部 */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30">
+      <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-muted/30 dark:bg-muted/20">
         <div className="flex-1 min-w-0">
-          <h3 className="text-lg font-semibold text-foreground truncate">
+          <h3 className="font-semibold text-foreground truncate">
             {functionTitles[selectedFunction]}
           </h3>
         </div>

@@ -194,5 +194,21 @@
   "connectionNotExist": "Connection configuration does not exist",
   "connectionInProgress": "Connection {{name}} is connecting, please wait...",
   "connectionTimeout": "Connection operation timeout: {{name}}",
-  "connectionTimeoutSeconds": "Connection timeout ({{seconds}} seconds)"
+  "connectionTimeoutSeconds": "Connection timeout ({{seconds}} seconds)",
+  "objectStorage": "Object Storage (S3/OSS)",
+  "aliyunOSS": "Aliyun OSS",
+  "tencentCOS": "Tencent COS",
+  "versionChangeDetected": "Database version change detected: {{oldType}} v{{oldVersion}} → {{newType}} v{{newVersion}}",
+  "versionInfoUpdated": "Connection version information updated automatically",
+  "versionUpdateFailed": "Failed to update version information",
+  "serverConfig": "Server Configuration",
+  "proxyConfig": "Proxy Configuration",
+  "saveConnection": "Save Connection",
+  "saveFailed": "Save failed: {{error}}",
+  "validation": {
+    "s3_endpoint_required": "Endpoint cannot be empty",
+    "s3_region_required": "Region cannot be empty",
+    "s3_access_key_required": "Access Key cannot be empty",
+    "s3_secret_key_required": "Secret Key cannot be empty"
+  }
 }

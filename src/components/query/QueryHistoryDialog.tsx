@@ -56,7 +56,7 @@ import {
 import { useQueryHistoryData } from '@/hooks/useQueryHistory';
 import { writeToClipboard } from '@/utils/clipboard';
 import { showMessage } from '@/utils/message';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useQueryTranslation } from '@/hooks/useTranslation';
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
@@ -85,7 +85,7 @@ export const QueryHistoryDialog: React.FC<QueryHistoryDialogProps> = ({
   onExecuteQuery,
   defaultTab = 'history',
 }) => {
-  const { t } = useTranslation();
+  const { t } = useQueryTranslation();
   const [activeTab, setActiveTab] = useState<'history' | 'favorites'>(defaultTab);
   const [searchText, setSearchText] = useState('');
   const [selectedDatabase, setSelectedDatabase] = useState<string>('all');

@@ -195,7 +195,7 @@ export const WorkspaceContent: React.FC<WorkspaceContentProps> = ({
   return (
     <div className="h-full flex flex-col bg-background border-l border-border">
       {/* 标题栏 - 与NotificationPanel保持一致 */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 dark:bg-muted/20">
+      <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-muted/30 dark:bg-muted/20">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold">{t('right_panel.workspace')}</h3>
           {workspaceTabs.length > 0 && (

@@ -105,7 +105,7 @@ const NotificationPanel: React.FC<NotificationPanelProps> = ({
   return (
     <div className={`bg-background border-l border-border flex flex-col h-full ${className}`}>
       {/* 面板头部 */}
-      <div className="flex items-center justify-between p-4 border-b border-border bg-muted/30 dark:bg-muted/20">
+      <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-muted/30 dark:bg-muted/20">
         <div className="flex items-center gap-2">
           <h3 className="font-semibold">{t('notification_center')}</h3>
           {unreadCount > 0 && (
