@@ -104,6 +104,13 @@ impl ConnectionService {
             }
         }
 
+        // 设置时间戳
+        let now = chrono::Utc::now();
+        if config.created_at.is_none() {
+            config.created_at = Some(now);
+        }
+        config.updated_at = Some(now);
+
         // 加密密码
         if let Some(password) = &config.password {
             let encrypted_password = self.encryption.encrypt_password(password)
@@ -189,10 +196,10 @@ impl ConnectionService {
                 .context("密码加密失败")?;
             config.password = Some(encrypted_password);
         }
-        
+
         // 更新时间戳
-        config.updated_at = chrono::Utc::now();
-        
+        config.updated_at = Some(chrono::Utc::now());
+
         // 更新配置
         {
             let mut configs = self.configs.write().await;

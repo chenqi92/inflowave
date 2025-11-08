@@ -151,10 +151,10 @@ pub struct ConnectionConfig {
     // 数据库驱动特定配置
     #[serde(rename = "driverConfig")]
     pub driver_config: Option<DatabaseDriverConfig>,
-    #[serde(rename = "created_at")]
-    pub created_at: DateTime<Utc>,
-    #[serde(rename = "updated_at")]
-    pub updated_at: DateTime<Utc>,
+    #[serde(rename = "created_at", default = "default_timestamp")]
+    pub created_at: Option<DateTime<Utc>>,
+    #[serde(rename = "updated_at", default = "default_timestamp")]
+    pub updated_at: Option<DateTime<Utc>>,
 }
 
 // Default functions for backward compatibility
@@ -176,6 +176,10 @@ fn default_query_timeout() -> u64 {
 
 fn default_query_language() -> Option<String> {
     Some("InfluxQL".to_string())
+}
+
+fn default_timestamp() -> Option<DateTime<Utc>> {
+    None
 }
 
 // IoTDB 配置默认值函数
@@ -276,8 +280,8 @@ impl ConnectionConfig {
             retention_policy: None,
             v2_config: None,
             driver_config: None,
-            created_at: now,
-            updated_at: now,
+            created_at: Some(now),
+            updated_at: Some(now),
         }
     }
 
@@ -329,8 +333,8 @@ impl ConnectionConfig {
             driver_config: Some(DatabaseDriverConfig {
                 iotdb: Some(IoTDBConfig::default()),
             }),
-            created_at: now,
-            updated_at: now,
+            created_at: Some(now),
+            updated_at: Some(now),
         }
     }
 

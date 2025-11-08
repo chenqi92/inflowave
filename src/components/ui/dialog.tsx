@@ -29,8 +29,10 @@ DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, style, ...props }, ref) => (
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
+    disableOutsideClick?: boolean;
+  }
+>(({ className, children, style, disableOutsideClick, ...props }, ref) => (
   <DialogPortal>
     <DialogOverlay />
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -44,6 +46,7 @@ const DialogContent = React.forwardRef<
           maxHeight: '90vh',
           ...style,
         }}
+        onPointerDownOutside={disableOutsideClick ? (e) => e.preventDefault() : undefined}
         {...props}
       >
         {children}

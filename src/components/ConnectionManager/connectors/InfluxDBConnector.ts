@@ -91,11 +91,6 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           type: 'text',
           placeholder: t('influxdb.database_placeholder'),
           visible: (formData) => formData.version === '1.x',
-          validation: (value: string, formData: any) => {
-            if (formData.version === '1.x' && !value?.trim()) {
-              return t('influxdb.database_required');
-            }
-          }
         },
         {
           name: 'retentionPolicy',

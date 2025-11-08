@@ -235,7 +235,7 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
     } catch (error: any) {
       return {
         success: false,
-        error: error.message || t('connections.test_failed'),
+        error: error.message || t('test_failed'),
         latency: 0
       };
     }

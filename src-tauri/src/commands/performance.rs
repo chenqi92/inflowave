@@ -691,8 +691,8 @@ async fn try_connect_local_influxdb() -> Option<crate::models::connection::Conne
             retention_policy: None,
             driver_config: None,
             v2_config: None,
-            created_at: chrono::Utc::now(),
-            updated_at: chrono::Utc::now(),
+            created_at: Some(chrono::Utc::now()),
+            updated_at: Some(chrono::Utc::now()),
         };
 
         // 测试连接
@@ -746,8 +746,8 @@ async fn get_default_connection_for_internal_query() -> Result<crate::models::co
         retention_policy: None,
         driver_config: None,
         v2_config: None,
-        created_at: chrono::Utc::now(),
-        updated_at: chrono::Utc::now(),
+        created_at: Some(chrono::Utc::now()),
+        updated_at: Some(chrono::Utc::now()),
     })
 }
 

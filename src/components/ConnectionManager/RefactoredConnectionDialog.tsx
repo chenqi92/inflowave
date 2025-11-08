@@ -40,6 +40,7 @@ import { translateConnectionError } from '@/i18n/translate';
 import { showMessage } from '@/utils/message';
 import { generateUniqueId } from '@/utils/idGenerator';
 import logger from '@/utils/logger';
+import { useConnection } from '@/hooks/useConnection';
 import {
   getConnector,
   getAllConnectors,
@@ -68,6 +69,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
   onSuccess,
 }) => {
   const { t: tConn } = useConnectionsTranslation();
+  const { createConnection, editConnection } = useConnection();
   const isEditMode = !!connection;
 
   // 获取所有可用的连接器
@@ -215,14 +217,24 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
     try {
       const connectionConfig = currentConnector.toConnectionConfig(formData);
-      await onSuccess(connectionConfig);
+
+      if (isEditMode && connection?.id) {
+        // 更新现有连接
+        await editConnection(connectionConfig);
+        await onSuccess(connectionConfig);
+      } else {
+        // 创建新连接
+        const { id: _, ...configWithoutId } = connectionConfig;
+        await createConnection(configWithoutId);
+        await onSuccess(connectionConfig);
+      }
     } catch (error: any) {
       logger.error('保存连接失败:', error);
       showMessage.error(`${tConn('save_failed')}: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
-  }, [currentConnector, formData, onSuccess, tConn]);
+  }, [currentConnector, formData, isEditMode, connection, createConnection, editConnection, onSuccess, tConn]);
 
   // 渲染表单字段
   const renderFormField = (field: FormField) => {
@@ -557,7 +569,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
   return (
     <Dialog open={visible} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="max-w-5xl h-[85vh] overflow-hidden flex flex-col p-0">
+      <DialogContent className="max-w-5xl h-[85vh] overflow-hidden flex flex-col p-0" disableOutsideClick>
         <DialogHeader className="px-4 pt-4 pb-3 flex-shrink-0 border-b">
           <DialogTitle className="text-base">
             {isEditMode ? tConn('dialog.edit_connection') : tConn('dialog.new_connection')}
