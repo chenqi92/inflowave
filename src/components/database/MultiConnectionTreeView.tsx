@@ -44,6 +44,7 @@ interface ConnectionInfo {
   host: string;
   port: number;
   isConnected?: boolean;
+  description?: string;
 }
 
 interface MultiConnectionTreeViewProps {
@@ -331,6 +332,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
               name: connection.name,
               nodeType: 'connection' as TreeNodeType,
               dbType: connection.dbType,
+              description: connection.description,
               metadata: {
                 connectionId: connection.id,
                 connectionName: connection.name,
@@ -378,6 +380,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           // 检查是否有变化
           if (
             existingNode.name !== connection.name ||
+            existingNode.description !== connection.description ||
             existingNode.isLoading !== isLoading ||
             existingNode.error !== error ||
             existingNode.isConnected !== isConnected
@@ -386,6 +389,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
             return {
               ...existingNode,
               name: connection.name,
+              description: connection.description,
               isLoading,
               error,
               isConnected,
@@ -409,6 +413,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
               name: connection.name,
               nodeType: 'connection' as TreeNodeType,
               dbType: connection.dbType,
+              description: connection.description,
               metadata: {
                 connectionId: connection.id,
                 connectionName: connection.name,

@@ -319,8 +319,11 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                                     await safeTauriInvoke('delete_connection', { connectionId });
                                     logger.info('后端删除成功');
 
-                                    removeConnection(connectionId);
-                                    logger.info('前端状态删除成功');
+                                    // 从后端重新加载连接列表以确保状态同步
+                                    const { useConnectionStore } = await import('@/store/connection');
+                                    const { forceRefreshConnections } = useConnectionStore.getState();
+                                    await forceRefreshConnections();
+                                    logger.info('从后端重新加载连接列表成功');
 
                                     showMessage.success(tExplorer('connectionDeleted', { name: connection.name }));
                                     buildCompleteTreeData(true);

@@ -4,6 +4,7 @@ import { ChevronRight, ChevronDown, Loader2, Shield } from 'lucide-react';
 import { DatabaseIcon } from '@/components/common/DatabaseIcon';
 import { TreeNodeType, normalizeNodeType, getIoTDBNodeBehavior, getNodeBehavior } from '@/types/tree';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   useTreeStatusStore,
   selectConnectionStatus,
@@ -43,6 +44,8 @@ export interface TreeNodeData {
   errorType?: 'connection' | 'database' | 'loading';
   // 收藏状态
   isFavorite?: boolean;
+  // 描述信息
+  description?: string;
 }
 
 interface TreeNodeRendererProps {
@@ -416,15 +419,38 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
       </div>
 
       {/* 节点名称 */}
-      <span className={cn(
-        "text-sm flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
-        nodeFontStyle,
-        nodeTextColor,
-        error && "text-destructive",  // ✅ 使用订阅的 error 状态
-        isSystemNode && "text-muted-foreground"
-      )}>
-        {data.name}
-      </span>
+      {data.description ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span className={cn(
+              "text-sm flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
+              nodeFontStyle,
+              nodeTextColor,
+              error && "text-destructive",  // ✅ 使用订阅的 error 状态
+              isSystemNode && "text-muted-foreground"
+            )}>
+              {data.name}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent side="right" align="start" className='max-w-sm'>
+            <div className='space-y-1 p-1'>
+              <div className='text-sm'>
+                <span className='text-foreground'>{data.description}</span>
+              </div>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <span className={cn(
+          "text-sm flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
+          nodeFontStyle,
+          nodeTextColor,
+          error && "text-destructive",  // ✅ 使用订阅的 error 状态
+          isSystemNode && "text-muted-foreground"
+        )}>
+          {data.name}
+        </span>
+      )}
 
       {/* 收藏图标 */}
       {isFavorite && <FavoriteIndicator />}

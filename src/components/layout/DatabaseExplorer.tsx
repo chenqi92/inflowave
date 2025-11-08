@@ -1737,7 +1737,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
       prevConnections.length !== connections.length ||
       prevConnections.some((prev, index) => {
         const current = connections[index];
-        return !current || prev.id !== current.id || prev.name !== current.name;
+        if (!current) return true;
+
+        // 检查关键配置属性是否变化（不包括 isConnected 等状态属性）
+        return (
+          prev.id !== current.id ||
+          prev.name !== current.name ||
+          prev.host !== current.host ||
+          prev.port !== current.port ||
+          prev.username !== current.username ||
+          prev.dbType !== current.dbType ||
+          prev.database !== current.database
+        );
       });
 
     if (isConfigChange) {

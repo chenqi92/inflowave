@@ -357,16 +357,11 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
               await safeTauriInvoke('delete_connection', { connectionId: connection.id });
               logger.info('后端删除成功');
 
-              // 再从前端状态删除
-              removeConnection(connection.id);
-              logger.info('前端状态删除成功');
+              // 从后端重新加载连接列表以确保状态同步
+              await forceRefreshConnections();
+              logger.info('从后端重新加载连接列表成功');
 
               showMessage.success(t('connections.connection_deleted', { interpolation: { name: connection.name } }));
-
-              // 延迟刷新以确保状态同步
-              setTimeout(() => {
-                forceRefreshConnections();
-              }, 100);
 
             } catch (error) {
               logger.error('删除连接失败:', error);
@@ -787,16 +782,11 @@ const ConnectionManager: React.FC<ConnectionManagerProps> = ({
                         await safeTauriInvoke('delete_connection', { connectionId: record.id });
                         logger.info('后端删除成功');
 
-                        // 再从前端状态删除
-                        removeConnection(record.id!);
-                        logger.info('前端状态删除成功');
+                        // 从后端重新加载连接列表以确保状态同步
+                        await forceRefreshConnections();
+                        logger.info('从后端重新加载连接列表成功');
 
                         showMessage.success(t('connections.connection_deleted', { interpolation: { name: record.name } }));
-
-                        // 延迟刷新以确保状态同步
-                        setTimeout(() => {
-                          forceRefreshConnections();
-                        }, 100);
 
                       } catch (error) {
                         logger.error('删除连接失败:', error);
