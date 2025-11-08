@@ -311,7 +311,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
       case 'select':
         // 动态获取选项 - 支持函数或数组
-        let options = typeof field.options === 'function'
+        { let options = typeof field.options === 'function'
           ? field.options(formData)
           : (field.options || []);
 
@@ -355,7 +355,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               <p className="text-sm text-destructive">{error}</p>
             )}
           </div>
-        );
+        ); }
 
       case 'switch':
         return (
@@ -497,47 +497,66 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
   return (
     <Dialog open={visible} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col p-0">
-        <DialogHeader className="px-6 pt-6">
+      <DialogContent className="max-w-5xl h-[85vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 flex-shrink-0">
           <DialogTitle>
             {isEditMode ? tConn('dialog.edit_connection') : tConn('dialog.new_connection')}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 min-h-0 overflow-hidden flex">
           {/* 左侧：数据库类型选择 */}
           {!isEditMode && (
             <div className="w-48 border-r bg-muted/30 p-4 space-y-2 overflow-y-auto">
               <h3 className="text-sm font-medium text-muted-foreground mb-3">
                 {tConn('dialog.select_database_type')}
               </h3>
-              {connectors.map(connector => (
-                <button
-                  key={connector.type}
-                  onClick={() => handleTypeChange(connector.type)}
-                  className={`
-                    w-full text-left px-3 py-2.5 rounded-md transition-colors
-                    ${selectedType === connector.type
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'hover:bg-muted'
-                    }
-                  `}
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <img
-                      src={connector.icon}
-                      alt={connector.displayName}
-                      className="w-4 h-4"
-                    />
-                    <span className="font-medium text-sm">{connector.displayName}</span>
-                  </div>
-                  <p className={`text-xs ${selectedType === connector.type ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
-                    {connector.type === 'influxdb' && tConn('dialog.influxdb_desc')}
-                    {connector.type === 'iotdb' && tConn('dialog.iotdb_desc')}
-                    {connector.type === 'object_storage' && tConn('dialog.object_storage_desc')}
-                  </p>
-                </button>
-              ))}
+              {connectors.map(connector => {
+                // 动态获取翻译的名称和描述
+                const getName = () => {
+                  switch(connector.type) {
+                    case 'influxdb': return tConn('dialog.influxdb_name');
+                    case 'iotdb': return tConn('dialog.iotdb_name');
+                    case 'object-storage': return tConn('dialog.object_storage_name');
+                    default: return connector.displayName;
+                  }
+                };
+
+                const getDesc = () => {
+                  switch(connector.type) {
+                    case 'influxdb': return tConn('dialog.influxdb_desc');
+                    case 'iotdb': return tConn('dialog.iotdb_desc');
+                    case 'object-storage': return tConn('dialog.object_storage_desc');
+                    default: return '';
+                  }
+                };
+
+                return (
+                  <button
+                    key={connector.type}
+                    onClick={() => handleTypeChange(connector.type)}
+                    className={`
+                      w-full text-left px-3 py-2.5 rounded-md transition-colors
+                      ${selectedType === connector.type
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'hover:bg-muted'
+                      }
+                    `}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <img
+                        src={connector.icon}
+                        alt={getName()}
+                        className="w-4 h-4"
+                      />
+                      <span className="font-medium text-sm">{getName()}</span>
+                    </div>
+                    <p className={`text-xs ${selectedType === connector.type ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                      {getDesc()}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -581,7 +600,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
           </div>
         </div>
 
-        <DialogFooter className="px-6 pb-6">
+        <DialogFooter className="px-6 pb-6 flex-shrink-0">
           <Button variant="outline" onClick={onCancel} disabled={isTesting || isSaving}>
             {tConn('dialog.cancel')}
           </Button>

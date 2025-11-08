@@ -535,7 +535,10 @@
     "url_suffix_placeholder": "例如: ?imageView2/1/w/200/h/200",
     "url_suffix_description": "图片处理参数（可选）",
     "s3": "Amazon S3",
-    "minio": "MinIO"
+    "minio": "MinIO",
+    "bucket_required": "存储桶名称不能为空",
+    "github_branch_required": "GitHub分支名称不能为空",
+    "github_branch_description": "GitHub分支名称（可选，默认为main）"
   },
   "validation": {
     "name_required": "请输入连接名称",

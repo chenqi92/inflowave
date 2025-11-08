@@ -483,7 +483,10 @@
     "url_suffix_placeholder": "e.g.: ?imageView2/1/w/200/h/200",
     "url_suffix_description": "Image processing parameters (optional)",
     "s3": "Amazon S3",
-    "minio": "MinIO"
+    "minio": "MinIO",
+    "bucket_required": "Bucket name cannot be empty",
+    "github_branch_required": "GitHub branch name cannot be empty",
+    "github_branch_description": "GitHub branch name (optional, defaults to main)"
   },
   "iotdb": {
     "settings": "IoTDB Configuration",
