@@ -42,8 +42,9 @@ import { showMessage } from '@/utils/message';
 // import { VersionDetectionDialog } from './VersionDetectionDialog'; // 不再使用
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useConnectionsTranslation } from '@/hooks/useTranslation';
 import logger from '@/utils/logger';
+import { t } from '@/i18n';
 
 interface SimpleConnectionDialogProps {
   visible: boolean;
@@ -103,7 +104,7 @@ interface FormData {
 }
 
 // 渲染数据库类型选项（使用品牌图标）
-const renderDatabaseTypeOption = (dbType: string) => {
+const renderDatabaseTypeOption = (dbType: string, t: (key: string) => string) => {
   const dbTypeMap: Record<string, string> = {
     'influxdb': 'InfluxDB',
     'iotdb': 'IoTDB',
@@ -114,7 +115,7 @@ const renderDatabaseTypeOption = (dbType: string) => {
     switch(type) {
       case 'influxdb': return 'InfluxDB';
       case 'iotdb': return 'Apache IoTDB';
-      case 'object-storage': return '对象存储 (S3/OSS)';
+      case 'object-storage': return t('objectStorage');
       default: return type;
     }
   };
@@ -132,7 +133,7 @@ const renderDatabaseTypeOption = (dbType: string) => {
 };
 
 // 渲染对象存储服务商选项
-const renderObjectStorageProviderOption = (provider: string) => {
+const renderObjectStorageProviderOption = (provider: string, t: (key: string) => string) => {
   const providerMap: Record<string, string> = {
     's3': 'S3',
     'minio': 'MinIO',
@@ -144,8 +145,8 @@ const renderObjectStorageProviderOption = (provider: string) => {
     switch(type) {
       case 's3': return 'Amazon S3';
       case 'minio': return 'MinIO';
-      case 'aliyun-oss': return '阿里云 OSS';
-      case 'tencent-cos': return '腾讯云 COS';
+      case 'aliyun-oss': return t('aliyunOSS');
+      case 'tencent-cos': return t('tencentCOS');
       default: return type;
     }
   };
@@ -210,7 +211,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
   onCancel,
   onSuccess,
 }) => {
-  const { t } = useTranslation();
+  const { t: tConn } = useConnectionsTranslation();
   const {
     createConnection,
     editConnection,
@@ -475,16 +476,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     }
   }, [isEditing, connection?.id, formData.database, fetchRetentionPolicies]);
 
-  // 当数据库类型变化时，更新 activeTab（仅在 dbType 变化时触发）
+  // 当数据库类型变化时，确保切换到服务器配置Tab
   useEffect(() => {
-    const isObjectStorage = formData.dbType === 'object-storage';
-    if (isObjectStorage && activeTab === 'server') {
-      // 对象存储默认选中高级配置（仅当当前在服务器配置时）
-      setActiveTab('advanced');
-    } else if (!isObjectStorage && activeTab === 'advanced') {
-      // 从对象存储切换到其他类型时，切换到服务器配置（仅当当前在高级配置时）
-      setActiveTab('server');
-    }
+    // 所有数据库类型默认都显示服务器配置Tab
+    setActiveTab('server');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.dbType]);
 
@@ -500,33 +495,33 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = t('connections.validation.name_required');
+      newErrors.name = tConn('validation.name_required');
     }
 
     if (!formData.host.trim()) {
-      newErrors.host = t('connections.validation.host_required');
+      newErrors.host = tConn('validation.host_required');
     } else {
       const ipError = ValidationUtils.ipAddress(formData.host);
       const hostnameError = ValidationUtils.hostname(formData.host);
       if (ipError && hostnameError) {
-        newErrors.host = t('connections.validation.host_format_invalid');
+        newErrors.host = tConn('validation.host_format_invalid');
       }
     }
 
     if (!formData.port || formData.port < 1 || formData.port > 65535) {
-      newErrors.port = t('connections.validation.port_range');
+      newErrors.port = tConn('validation.port_range');
     }
 
     if (formData.timeout < 5 || formData.timeout > 300) {
-      newErrors.timeout = t('connections.validation.timeout_range');
+      newErrors.timeout = tConn('validation.timeout_range');
     }
 
     if (formData.connectionTimeout < 5 || formData.connectionTimeout > 300) {
-      newErrors.connectionTimeout = t('connections.validation.connection_timeout_range');
+      newErrors.connectionTimeout = tConn('validation.connection_timeout_range');
     }
 
     if (formData.queryTimeout < 10 || formData.queryTimeout > 3600) {
-      newErrors.queryTimeout = t('connections.validation.query_timeout_range');
+      newErrors.queryTimeout = tConn('validation.query_timeout_range');
     }
 
     // InfluxDB 2.x/3.x 特有验证
@@ -535,57 +530,57 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       (formData.version === '2.x' || formData.version === '3.x')
     ) {
       if (!formData.apiToken.trim()) {
-        newErrors.apiToken = t('connections.validation.api_token_required');
+        newErrors.apiToken = tConn('validation.api_token_required');
       }
       // InfluxDB 2.x 必须有组织，3.x 可选
       if (formData.version === '2.x' && !formData.organization.trim()) {
-        newErrors.organization = t('connections.validation.organization_required');
+        newErrors.organization = tConn('validation.organization_required');
       }
     }
 
     // IoTDB 特有验证
     if (formData.dbType === 'iotdb') {
       if (formData.sessionPoolSize < 1 || formData.sessionPoolSize > 50) {
-        newErrors.sessionPoolSize = t('connections.validation.session_pool_size_range');
+        newErrors.sessionPoolSize = tConn('validation.session_pool_size_range');
       }
       if (formData.fetchSize < 100 || formData.fetchSize > 100000) {
-        newErrors.fetchSize = t('connections.validation.fetch_size_range');
+        newErrors.fetchSize = tConn('validation.fetch_size_range');
       }
       if (formData.maxRetryCount < 0 || formData.maxRetryCount > 10) {
-        newErrors.maxRetryCount = t('connections.validation.max_retry_count_range');
+        newErrors.maxRetryCount = tConn('validation.max_retry_count_range');
       }
       if (formData.retryIntervalMs < 100 || formData.retryIntervalMs > 10000) {
-        newErrors.retryIntervalMs = t('connections.validation.retry_interval_range');
+        newErrors.retryIntervalMs = tConn('validation.retry_interval_range');
       }
     }
 
     // 对象存储特有验证
     if (formData.dbType === 'object-storage') {
       if (!formData.s3Endpoint.trim()) {
-        newErrors.s3Endpoint = 'Endpoint 不能为空';
+        newErrors.s3Endpoint = tConn('validation.s3_endpoint_required');
       }
       if (!formData.s3Region.trim()) {
-        newErrors.s3Region = 'Region 不能为空';
+        newErrors.s3Region = tConn('validation.s3_region_required');
       }
       if (!formData.s3AccessKey.trim()) {
-        newErrors.s3AccessKey = 'Access Key 不能为空';
+        newErrors.s3AccessKey = tConn('validation.s3_access_key_required');
       }
       if (!formData.s3SecretKey.trim()) {
-        newErrors.s3SecretKey = 'Secret Key 不能为空';
+        newErrors.s3SecretKey = tConn('validation.s3_secret_key_required');
       }
     }
 
     // 代理配置验证
     if (formData.proxyEnabled) {
       if (!formData.proxyHost.trim()) {
-        newErrors.proxyHost = t('connections.validation.proxy_host_required');
+        newErrors.proxyHost = tConn('validation.proxy_host_required');
       }
       if (
         !formData.proxyPort ||
         formData.proxyPort < 1 ||
         formData.proxyPort > 65535
       ) {
-        newErrors.proxyPort = t('connections.validation.proxy_port_range');
+        newErrors.proxyPort = tConn('validation.proxy_port_range');
       }
     }
 
@@ -788,7 +783,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       if (oldVersion !== newVersion || oldType !== newType) {
         // 版本发生变化，显示提醒
         showMessage.warning(
-          `检测到数据库版本变化：${oldType} v${oldVersion} → ${newType} v${newVersion}`,
+          tConn('versionChangeDetected', { oldType, oldVersion, newType, newVersion }),
           5000
         );
 
@@ -807,10 +802,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
             };
 
             await editConnection(updatedConfig);
-            showMessage.success('连接版本信息已自动更新');
+            showMessage.success(tConn('versionInfoUpdated'));
           } catch (error) {
             logger.error('更新版本信息失败:', error);
-            showMessage.error('更新版本信息失败');
+            showMessage.error(tConn('versionUpdateFailed'));
           }
         }
       }
@@ -962,11 +957,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {/* 连接名称 */}
         <div className='flex items-start gap-4'>
           <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-            连接名称<span className='text-destructive'>*</span>:
+            {tConn('connection_name')}<span className='text-destructive'>*</span>:
           </Label>
           <div className='flex-1'>
             <Input
-              placeholder='例如: 生产环境 InfluxDB'
+              placeholder={tConn('nameExample')}
               value={formData.name}
               onChange={e => handleInputChange('name', e.target.value)}
               autoCapitalize='off'
@@ -986,11 +981,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {/* 描述 */}
         <div className='flex items-start gap-4'>
           <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-            描述:
+            {tConn('description')}:
           </Label>
           <div className='flex-1'>
             <Input
-              placeholder='连接描述（可选）'
+              placeholder={tConn('descriptionPlaceholder')}
               value={formData.description}
               onChange={e => handleInputChange('description', e.target.value)}
               autoCapitalize='off'
@@ -1003,7 +998,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {/* 数据库类型 */}
         <div className='flex items-start gap-4'>
           <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-            数据库类型<span className='text-destructive'>*</span>:
+            {tConn('database_type')}<span className='text-destructive'>*</span>:
           </Label>
           <div className='flex-1'>
             <Select
@@ -1029,19 +1024,19 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               }}
             >
               <SelectTrigger className='h-9'>
-                <SelectValue placeholder='选择数据库类型'>
-                  {formData.dbType && renderDatabaseTypeOption(formData.dbType)}
+                <SelectValue placeholder={tConn('selectDatabaseType')}>
+                  {formData.dbType && renderDatabaseTypeOption(formData.dbType, tConn)}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value='influxdb'>
-                  {renderDatabaseTypeOption('influxdb')}
+                  {renderDatabaseTypeOption('influxdb', tConn)}
                 </SelectItem>
                 <SelectItem value='iotdb'>
-                  {renderDatabaseTypeOption('iotdb')}
+                  {renderDatabaseTypeOption('iotdb', tConn)}
                 </SelectItem>
                 <SelectItem value='object-storage'>
-                  {renderDatabaseTypeOption('object-storage')}
+                  {renderDatabaseTypeOption('object-storage', tConn)}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -1052,7 +1047,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {formData.dbType === 'influxdb' && (
           <div className='flex items-start gap-4'>
             <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              版本<span className='text-destructive'>*</span>:
+              {tConn('server_version')}<span className='text-destructive'>*</span>:
             </Label>
             <div className='flex-1'>
               <Select
@@ -1073,7 +1068,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 }}
               >
                 <SelectTrigger className='h-9'>
-                  <SelectValue placeholder='选择版本'>
+                  <SelectValue placeholder={tConn('selectVersion')}>
                     {formData.version && renderVersionOption(formData.version, formData.dbType)}
                   </SelectValue>
                 </SelectTrigger>
@@ -1100,7 +1095,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
         {formData.dbType === 'object-storage' && (
           <div className='flex items-start gap-4'>
             <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              服务商<span className='text-destructive'>*</span>:
+              {tConn('selectProvider')}<span className='text-destructive'>*</span>:
             </Label>
             <div className='flex-1'>
               <Select
@@ -1136,22 +1131,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 }}
               >
                 <SelectTrigger className='h-9'>
-                  <SelectValue placeholder='选择服务商'>
-                    {formData.objectStorageProvider && renderObjectStorageProviderOption(formData.objectStorageProvider)}
+                  <SelectValue placeholder={tConn('selectProvider')}>
+                    {formData.objectStorageProvider && renderObjectStorageProviderOption(formData.objectStorageProvider, tConn)}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='s3'>
-                    {renderObjectStorageProviderOption('s3')}
+                    {renderObjectStorageProviderOption('s3', tConn)}
                   </SelectItem>
                   <SelectItem value='minio'>
-                    {renderObjectStorageProviderOption('minio')}
+                    {renderObjectStorageProviderOption('minio', tConn)}
                   </SelectItem>
                   <SelectItem value='aliyun-oss'>
-                    {renderObjectStorageProviderOption('aliyun-oss')}
+                    {renderObjectStorageProviderOption('aliyun-oss', tConn)}
                   </SelectItem>
                   <SelectItem value='tencent-cos'>
-                    {renderObjectStorageProviderOption('tencent-cos')}
+                    {renderObjectStorageProviderOption('tencent-cos', tConn)}
                   </SelectItem>
                 </SelectContent>
               </Select>
@@ -1165,71 +1160,72 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
 
       {/* Tab 配置区域 */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full'>
-        <TabsList className={`grid w-full ${formData.dbType === 'object-storage' ? 'grid-cols-2' : 'grid-cols-3'}`}>
-          {formData.dbType !== 'object-storage' && (
-            <TabsTrigger value='server'>服务器配置</TabsTrigger>
-          )}
-          <TabsTrigger value='advanced'>高级配置</TabsTrigger>
-          <TabsTrigger value='proxy'>代理配置</TabsTrigger>
+        <TabsList className='grid w-full grid-cols-3'>
+          <TabsTrigger value='server'>{tConn('serverConfig')}</TabsTrigger>
+          <TabsTrigger value='advanced'>{tConn('advanced_settings')}</TabsTrigger>
+          <TabsTrigger value='proxy'>{tConn('proxyConfig')}</TabsTrigger>
         </TabsList>
 
         {/* 服务器配置 Tab */}
         <TabsContent value='server' className='space-y-6 mt-6'>
-          {/* 主机地址和端口 - 同一行 */}
-          <div className='flex items-start gap-4'>
-            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              主机地址<span className='text-destructive'>*</span>:
-            </Label>
-            <div className='flex-1 flex gap-4'>
-              <div className='flex-1'>
-                <Input
-                  placeholder='localhost 或 192.168.1.100'
-                  value={formData.host}
-                  onChange={e => handleInputChange('host', e.target.value)}
-                  autoCapitalize='off'
-                  autoCorrect='off'
-                  className={`h-9 ${
-                    errors.host
-                      ? 'border-destructive focus-visible:ring-destructive'
-                      : ''
-                  }`}
-                />
-                {errors.host && (
-                  <div className='text-xs text-destructive mt-1'>
-                    {errors.host}
+          {/* InfluxDB/IoTDB 配置（对象存储不显示） */}
+          {formData.dbType !== 'object-storage' && (
+            <>
+              {/* 主机地址和端口 - 同一行 */}
+              <div className='flex items-start gap-4'>
+                <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                  {tConn('host')}<span className='text-destructive'>*</span>:
+                </Label>
+                <div className='flex-1 flex gap-4'>
+                  <div className='flex-1'>
+                    <Input
+                      placeholder={tConn('hostExample')}
+                      value={formData.host}
+                      onChange={e => handleInputChange('host', e.target.value)}
+                      autoCapitalize='off'
+                      autoCorrect='off'
+                      className={`h-9 ${
+                        errors.host
+                          ? 'border-destructive focus-visible:ring-destructive'
+                          : ''
+                      }`}
+                    />
+                    {errors.host && (
+                      <div className='text-xs text-destructive mt-1'>
+                        {errors.host}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              <div className='w-32'>
-                <div className='flex items-center gap-2'>
-                  <Label className='text-sm font-medium text-foreground whitespace-nowrap'>
-                    端口<span className='text-destructive'>*</span>:
-                  </Label>
-                  <InputNumber
-                    placeholder='8086'
-                    value={formData.port}
-                    onChange={value =>
-                      handleInputChange(
-                        'port',
-                        value || createDefaultConnectionConfig().port
-                      )
-                    }
-                    className={`w-full h-9 ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                    min={1}
-                    max={65535}
-                    controls={false}
-                  />
+                  <div className='w-32'>
+                    <div className='flex items-center gap-2'>
+                      <Label className='text-sm font-medium text-foreground whitespace-nowrap'>
+                        {tConn('port')}<span className='text-destructive'>*</span>:
+                      </Label>
+                      <InputNumber
+                        placeholder={tConn('portExample')}
+                        value={formData.port}
+                        onChange={value =>
+                          handleInputChange(
+                            'port',
+                            value || createDefaultConnectionConfig().port
+                          )
+                        }
+                        className={`w-full h-9 ${errors.port ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                        min={1}
+                        max={65535}
+                        controls={false}
+                      />
+                    </div>
+                    {errors.port && (
+                      <div className='text-xs text-destructive mt-1'>
+                        {errors.port}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {errors.port && (
-                  <div className='text-xs text-destructive mt-1'>
-                    {errors.port}
-                  </div>
-                )}
               </div>
-            </div>
-          </div>
 
-          {/* InfluxDB 1.x 认证配置 */}
+              {/* InfluxDB 1.x 认证配置 */}
           {formData.version === '1.x' && (
             <div className='space-y-4'>
               <div className='flex items-center gap-2 pb-2 border-b'>
@@ -1237,19 +1233,19 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   1.x
                 </span>
                 <h4 className='text-sm font-medium text-foreground'>
-                  用户名/密码认证
+                  {tConn('auth_method')}
                 </h4>
               </div>
 
               {/* 用户名和密码 - 同一行 */}
               <div className='flex items-start gap-4'>
                 <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  用户名:
+                  {tConn('username')}:
                 </Label>
                 <div className='flex-1 flex gap-4 items-start'>
                   <div className='flex-1'>
                     <Input
-                      placeholder='可选，如 admin'
+                      placeholder={tConn('usernameOptional')}
                       value={formData.username}
                       onChange={e =>
                         handleInputChange('username', e.target.value)
@@ -1259,17 +1255,17 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       className='h-9'
                     />
                     <p className='text-xs text-muted-foreground mt-1'>
-                      留空表示匿名访问
+                      {tConn('no_auth')}
                     </p>
                   </div>
                   <div className='flex-1 flex items-start gap-2'>
                     <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                      密码:
+                      {tConn('password')}:
                     </Label>
                     <div className='flex-1'>
                       <Input
                         type='password'
-                        placeholder='可选'
+                        placeholder={tConn('usernameOptional')}
                         value={formData.password}
                         onChange={e =>
                           handleInputChange('password', e.target.value)
@@ -1297,19 +1293,19 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   {formData.version}
                 </span>
                 <h4 className='text-sm font-medium text-foreground'>
-                  API Token 认证
+                  {tConn('token_auth')}
                 </h4>
               </div>
 
               {/* API 令牌 */}
               <div className='flex items-start gap-4'>
                 <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  API 令牌<span className='text-destructive'>*</span>:
+                  {tConn('api_token')}<span className='text-destructive'>*</span>:
                 </Label>
                 <div className='flex-1'>
                   <Input
                     type='password'
-                    placeholder='请输入 API Token'
+                    placeholder={tConn('enterApiToken')}
                     value={formData.apiToken}
                     onChange={e => handleInputChange('apiToken', e.target.value)}
                     className={`h-9 ${
@@ -1332,10 +1328,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               {/* 组织 ID/名称 */}
               <div className='flex items-start gap-4'>
                 <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  组织 ID/名称{' '}
+                  {tConn('organization')}{' '}
                   {formData.version === '3.x' ? (
                     <span className='text-muted-foreground text-xs'>
-                      (可选)
+                      ({tConn('not_configured')})
                     </span>
                   ) : (
                     <span className='text-destructive'>*</span>
@@ -1376,11 +1372,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               {/* 默认存储桶 */}
               <div className='flex items-start gap-4'>
                 <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  默认存储桶:
+                  {tConn('bucket')}:
                 </Label>
                 <div className='flex-1'>
                   <Input
-                    placeholder='如: mybucket'
+                    placeholder={tConn('bucketExample')}
                     value={formData.bucket}
                     onChange={e => handleInputChange('bucket', e.target.value)}
                     autoCapitalize='off'
@@ -1403,19 +1399,19 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   1.x
                 </span>
                 <h4 className='text-sm font-medium text-foreground'>
-                  数据库配置
+                  {tConn('database_info')}
                 </h4>
               </div>
 
               {/* 默认数据库和保留策略 - 同一行 */}
               <div className='flex items-start gap-4'>
                 <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                  默认数据库:
+                  {tConn('default_database')}:
                 </Label>
                 <div className='flex-1 flex gap-4 items-start'>
                   <div className='flex-1'>
                     <Input
-                      placeholder='如: mydb'
+                      placeholder={tConn('databaseExample')}
                       value={formData.database}
                       onChange={e =>
                         handleInputChange('database', e.target.value)
@@ -1430,12 +1426,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   </div>
                   <div className='flex-1 flex items-start gap-2'>
                     <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                      保留策略:
+                      {tConn('retention_policy')}:
                     </Label>
                     <div className='flex-1'>
                       <div className='relative'>
                         <Input
-                          placeholder='如: autogen'
+                          placeholder={tConn('retentionPolicyExample')}
                           value={formData.retentionPolicy}
                           onChange={e =>
                             handleInputChange('retentionPolicy', e.target.value)
@@ -1544,300 +1540,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               </div>
             </div>
           )}
-        </TabsContent>
-
-        {/* 高级配置 Tab */}
-        <TabsContent value='advanced' className='space-y-6 mt-6'>
-          {/* 超时配置 - 三个字段一行 */}
-          <div className='flex items-start gap-4'>
-            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              连接超时(秒):
-            </Label>
-            <div className='flex-1 flex gap-4'>
-              <div className='flex-1'>
-                <InputNumber
-                  placeholder='30'
-                  value={formData.connectionTimeout}
-                  onChange={value =>
-                    handleInputChange('connectionTimeout', value || 30)
-                  }
-                  className={`w-full h-9 ${errors.connectionTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                  min={5}
-                  max={300}
-                  controls={false}
-                />
-                {errors.connectionTimeout && (
-                  <div className='text-xs text-destructive mt-1'>
-                    {errors.connectionTimeout}
-                  </div>
-                )}
-              </div>
-              <div className='flex-1 flex items-start gap-2'>
-                <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                  查询超时(秒):
-                </Label>
-                <div className='flex-1'>
-                  <InputNumber
-                    placeholder='60'
-                    value={formData.queryTimeout}
-                    onChange={value =>
-                      handleInputChange('queryTimeout', value || 60)
-                    }
-                    className={`w-full h-9 ${errors.queryTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                    min={10}
-                    max={3600}
-                    controls={false}
-                  />
-                  {errors.queryTimeout && (
-                    <div className='text-xs text-destructive mt-1'>
-                      {errors.queryTimeout}
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className='flex-1 flex items-start gap-2'>
-                <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                  超时时间(秒):
-                </Label>
-                <div className='flex-1'>
-                  <InputNumber
-                    placeholder='30'
-                    value={formData.timeout}
-                    onChange={value => handleInputChange('timeout', value || 30)}
-                    className={`w-full h-9 ${errors.timeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                    min={5}
-                    max={300}
-                    controls={false}
-                  />
-                  {errors.timeout && (
-                    <div className='text-xs text-destructive mt-1'>
-                      {errors.timeout}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* IoTDB 特定配置 */}
-          {formData.dbType === 'iotdb' && (
-            <div className='space-y-6'>
-              <div className='text-lg font-medium text-foreground border-b pb-2'>
-                IoTDB 特定配置
-              </div>
-
-              {/* 连接配置 */}
-              <div className='space-y-4'>
-                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  连接配置
-                </h4>
-                {/* 会话池大小和时区设置 - 同一行 */}
-                <div className='flex items-start gap-4'>
-                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    会话池大小:
-                  </Label>
-                  <div className='flex-1 flex gap-4 items-start'>
-                    <div className='flex-1'>
-                      <InputNumber
-                        placeholder='5'
-                        value={formData.sessionPoolSize}
-                        onChange={value =>
-                          handleInputChange('sessionPoolSize', value || 5)
-                        }
-                        className='w-full h-9'
-                        min={1}
-                        max={100}
-                        controls={false}
-                      />
-                      <div className='text-xs text-muted-foreground mt-1'>
-                        同时维护的会话连接数量，建议1-20
-                      </div>
-                    </div>
-                    <div className='flex-1 flex items-start gap-2'>
-                      <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                        时区设置:
-                      </Label>
-                      <div className='flex-1'>
-                        <Select
-                          value={formData.timeZone}
-                          onValueChange={value =>
-                            handleInputChange('timeZone', value)
-                          }
-                        >
-                          <SelectTrigger className='h-9'>
-                            <SelectValue placeholder='选择时区' />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value='Asia/Shanghai'>
-                              Asia/Shanghai (北京时间)
-                            </SelectItem>
-                            <SelectItem value='UTC'>UTC (协调世界时)</SelectItem>
-                            <SelectItem value='America/New_York'>
-                              America/New_York (美东时间)
-                            </SelectItem>
-                            <SelectItem value='Europe/London'>
-                              Europe/London (伦敦时间)
-                            </SelectItem>
-                            <SelectItem value='Asia/Tokyo'>
-                              Asia/Tokyo (东京时间)
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <div className='text-xs text-muted-foreground mt-1'>
-                          时间序列数据的时区设置
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 性能配置 */}
-              <div className='space-y-4'>
-                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  性能配置
-                </h4>
-                {/* 数据获取大小和启用数据压缩 - 同一行 */}
-                <div className='flex items-start gap-4'>
-                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    数据获取大小:
-                  </Label>
-                  <div className='flex-1 flex gap-4 items-start'>
-                    <div className='flex-1'>
-                      <InputNumber
-                        placeholder='10000'
-                        value={formData.fetchSize}
-                        onChange={value =>
-                          handleInputChange('fetchSize', value || 10000)
-                        }
-                        className='w-full h-9'
-                        min={100}
-                        max={1000000}
-                        controls={false}
-                      />
-                      <div className='text-xs text-muted-foreground mt-1'>
-                        单次查询返回的最大记录数，建议1000-50000
-                      </div>
-                    </div>
-                    <div className='flex-1'>
-                      <Label className='text-sm font-medium text-foreground mb-2 block'>
-                        启用数据压缩:
-                      </Label>
-                      <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                        <Switch
-                          id='compression-switch'
-                          checked={formData.enableCompression}
-                          onCheckedChange={checked =>
-                            handleInputChange('enableCompression', checked)
-                          }
-                        />
-                        <Label
-                          htmlFor='compression-switch'
-                          className='text-sm font-medium cursor-pointer'
-                        >
-                          {formData.enableCompression ? '已启用' : '已禁用'}
-                        </Label>
-                      </div>
-                      <div className='text-xs text-muted-foreground mt-1'>
-                        启用后可减少网络传输数据量，提高查询性能
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 重试和重定向配置 */}
-              <div className='space-y-4'>
-                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  重试和重定向配置
-                </h4>
-                {/* 最大重试次数和重试间隔 - 同一行 */}
-                <div className='flex items-start gap-4'>
-                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    最大重试次数:
-                  </Label>
-                  <div className='flex-1 flex gap-4 items-start'>
-                    <div className='flex-1'>
-                      <InputNumber
-                        placeholder='3'
-                        value={formData.maxRetryCount}
-                        onChange={value =>
-                          handleInputChange('maxRetryCount', value || 3)
-                        }
-                        className='w-full h-9'
-                        min={0}
-                        max={20}
-                        controls={false}
-                      />
-                      <div className='text-xs text-muted-foreground mt-1'>
-                        连接失败时的重试次数，0表示不重试
-                      </div>
-                    </div>
-                    <div className='flex-1 flex items-start gap-2'>
-                      <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                        重试间隔(毫秒):
-                      </Label>
-                      <div className='flex-1'>
-                        <InputNumber
-                          placeholder='1000'
-                          value={formData.retryIntervalMs}
-                          onChange={value =>
-                            handleInputChange('retryIntervalMs', value || 1000)
-                          }
-                          className='w-full h-9'
-                          min={100}
-                          max={30000}
-                          controls={false}
-                        />
-                        <div className='text-xs text-muted-foreground mt-1'>
-                          两次重试之间的等待时间
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 启用自动重定向 */}
-                <div className='flex items-start gap-4'>
-                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    自动重定向:
-                  </Label>
-                  <div className='flex-1'>
-                    <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
-                      <Switch
-                        id='redirection-switch'
-                        checked={formData.enableRedirection}
-                        onCheckedChange={checked =>
-                          handleInputChange('enableRedirection', checked)
-                        }
-                      />
-                      <Label
-                        htmlFor='redirection-switch'
-                        className='text-sm font-medium cursor-pointer'
-                      >
-                        {formData.enableRedirection ? '已启用' : '已禁用'}
-                      </Label>
-                    </div>
-                    <div className='text-xs text-muted-foreground mt-1'>
-                      在集群环境中自动重定向到正确的节点
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            </>
           )}
 
           {/* 对象存储特定配置 */}
           {formData.dbType === 'object-storage' && (
             <div className='space-y-6'>
-              <div className='text-lg font-medium text-foreground border-b pb-2'>
-                {formData.objectStorageProvider === 's3' && 'Amazon S3 配置'}
-                {formData.objectStorageProvider === 'minio' && 'MinIO 配置'}
-                {formData.objectStorageProvider === 'aliyun-oss' && '阿里云 OSS 配置'}
-                {formData.objectStorageProvider === 'tencent-cos' && '腾讯云 COS 配置'}
-                {!formData.objectStorageProvider && '对象存储配置'}
-              </div>
-
               {/* 基本连接配置 */}
               <div className='space-y-4'>
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
@@ -2030,10 +1738,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 )}
               </div>
 
-              {/* 高级配置 */}
+              {/* SSL和路径样式配置 */}
               <div className='space-y-4'>
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  高级配置
+                  连接选项
                 </h4>
 
                 {/* 使用SSL和路径样式 - 同一行 */}
@@ -2093,6 +1801,288 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               </div>
             </div>
           )}
+        </TabsContent>
+
+        {/* 高级配置 Tab */}
+        <TabsContent value='advanced' className='space-y-6 mt-6'>
+          {/* 超时配置 - 三个字段一行 */}
+          <div className='flex items-start gap-4'>
+            <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+              连接超时(秒):
+            </Label>
+            <div className='flex-1 flex gap-4'>
+              <div className='flex-1'>
+                <InputNumber
+                  placeholder='30'
+                  value={formData.connectionTimeout}
+                  onChange={value =>
+                    handleInputChange('connectionTimeout', value || 30)
+                  }
+                  className={`w-full h-9 ${errors.connectionTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  min={5}
+                  max={300}
+                  controls={false}
+                />
+                {errors.connectionTimeout && (
+                  <div className='text-xs text-destructive mt-1'>
+                    {errors.connectionTimeout}
+                  </div>
+                )}
+              </div>
+              <div className='flex-1 flex items-start gap-2'>
+                <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                  查询超时(秒):
+                </Label>
+                <div className='flex-1'>
+                  <InputNumber
+                    placeholder='60'
+                    value={formData.queryTimeout}
+                    onChange={value =>
+                      handleInputChange('queryTimeout', value || 60)
+                    }
+                    className={`w-full h-9 ${errors.queryTimeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    min={10}
+                    max={3600}
+                    controls={false}
+                  />
+                  {errors.queryTimeout && (
+                    <div className='text-xs text-destructive mt-1'>
+                      {errors.queryTimeout}
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className='flex-1 flex items-start gap-2'>
+                <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                  超时时间(秒):
+                </Label>
+                <div className='flex-1'>
+                  <InputNumber
+                    placeholder='30'
+                    value={formData.timeout}
+                    onChange={value => handleInputChange('timeout', value || 30)}
+                    className={`w-full h-9 ${errors.timeout ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    min={5}
+                    max={300}
+                    controls={false}
+                  />
+                  {errors.timeout && (
+                    <div className='text-xs text-destructive mt-1'>
+                      {errors.timeout}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* IoTDB 特定配置 */}
+          {formData.dbType === 'iotdb' && (
+            <div className='space-y-6'>
+              <div className='text-lg font-medium text-foreground border-b pb-2'>
+                IoTDB 特定配置
+              </div>
+
+              {/* 连接配置 */}
+              <div className='space-y-4'>
+                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
+                  连接配置
+                </h4>
+                {/* 会话池大小和时区设置 - 同一行 */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    会话池大小:
+                  </Label>
+                  <div className='flex-1 flex gap-4 items-start'>
+                    <div className='flex-1'>
+                      <InputNumber
+                        placeholder='5'
+                        value={formData.sessionPoolSize}
+                        onChange={value =>
+                          handleInputChange('sessionPoolSize', value || 5)
+                        }
+                        className='w-full h-9'
+                        min={1}
+                        max={100}
+                        controls={false}
+                      />
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        同时维护的会话连接数量，建议1-20
+                      </div>
+                    </div>
+                    <div className='flex-1 flex items-start gap-2'>
+                      <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                        时区设置:
+                      </Label>
+                      <div className='flex-1'>
+                        <Select
+                          value={formData.timeZone}
+                          onValueChange={value =>
+                            handleInputChange('timeZone', value)
+                          }
+                        >
+                          <SelectTrigger className='h-9'>
+                            <SelectValue placeholder={tConn('selectTimezone')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value='Asia/Shanghai'>
+                              Asia/Shanghai (北京时间)
+                            </SelectItem>
+                            <SelectItem value='UTC'>UTC (协调世界时)</SelectItem>
+                            <SelectItem value='America/New_York'>
+                              America/New_York (美东时间)
+                            </SelectItem>
+                            <SelectItem value='Europe/London'>
+                              Europe/London (伦敦时间)
+                            </SelectItem>
+                            <SelectItem value='Asia/Tokyo'>
+                              Asia/Tokyo (东京时间)
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className='text-xs text-muted-foreground mt-1'>
+                          时间序列数据的时区设置
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 性能配置 */}
+              <div className='space-y-4'>
+                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
+                  性能配置
+                </h4>
+                {/* 数据获取大小和启用数据压缩 - 同一行 */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    数据获取大小:
+                  </Label>
+                  <div className='flex-1 flex gap-4 items-start'>
+                    <div className='flex-1'>
+                      <InputNumber
+                        placeholder='10000'
+                        value={formData.fetchSize}
+                        onChange={value =>
+                          handleInputChange('fetchSize', value || 10000)
+                        }
+                        className='w-full h-9'
+                        min={100}
+                        max={1000000}
+                        controls={false}
+                      />
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        单次查询返回的最大记录数，建议1000-50000
+                      </div>
+                    </div>
+                    <div className='flex-1'>
+                      <Label className='text-sm font-medium text-foreground mb-2 block'>
+                        启用数据压缩:
+                      </Label>
+                      <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                        <Switch
+                          id='compression-switch'
+                          checked={formData.enableCompression}
+                          onCheckedChange={checked =>
+                            handleInputChange('enableCompression', checked)
+                          }
+                        />
+                        <Label
+                          htmlFor='compression-switch'
+                          className='text-sm font-medium cursor-pointer'
+                        >
+                          {formData.enableCompression ? '已启用' : '已禁用'}
+                        </Label>
+                      </div>
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        启用后可减少网络传输数据量，提高查询性能
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 重试和重定向配置 */}
+              <div className='space-y-4'>
+                <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
+                  重试和重定向配置
+                </h4>
+                {/* 最大重试次数和重试间隔 - 同一行 */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    最大重试次数:
+                  </Label>
+                  <div className='flex-1 flex gap-4 items-start'>
+                    <div className='flex-1'>
+                      <InputNumber
+                        placeholder='3'
+                        value={formData.maxRetryCount}
+                        onChange={value =>
+                          handleInputChange('maxRetryCount', value || 3)
+                        }
+                        className='w-full h-9'
+                        min={0}
+                        max={20}
+                        controls={false}
+                      />
+                      <div className='text-xs text-muted-foreground mt-1'>
+                        连接失败时的重试次数，0表示不重试
+                      </div>
+                    </div>
+                    <div className='flex-1 flex items-start gap-2'>
+                      <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
+                        重试间隔(毫秒):
+                      </Label>
+                      <div className='flex-1'>
+                        <InputNumber
+                          placeholder='1000'
+                          value={formData.retryIntervalMs}
+                          onChange={value =>
+                            handleInputChange('retryIntervalMs', value || 1000)
+                          }
+                          className='w-full h-9'
+                          min={100}
+                          max={30000}
+                          controls={false}
+                        />
+                        <div className='text-xs text-muted-foreground mt-1'>
+                          两次重试之间的等待时间
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 启用自动重定向 */}
+                <div className='flex items-start gap-4'>
+                  <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
+                    自动重定向:
+                  </Label>
+                  <div className='flex-1'>
+                    <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
+                      <Switch
+                        id='redirection-switch'
+                        checked={formData.enableRedirection}
+                        onCheckedChange={checked =>
+                          handleInputChange('enableRedirection', checked)
+                        }
+                      />
+                      <Label
+                        htmlFor='redirection-switch'
+                        className='text-sm font-medium cursor-pointer'
+                      >
+                        {formData.enableRedirection ? '已启用' : '已禁用'}
+                      </Label>
+                    </div>
+                    <div className='text-xs text-muted-foreground mt-1'>
+                      在集群环境中自动重定向到正确的节点
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 查询语言和SSL配置 - 同一行（对象存储不显示） */}
           {formData.dbType !== 'object-storage' && (
@@ -2109,7 +2099,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     }
                   >
                     <SelectTrigger className='h-9'>
-                      <SelectValue placeholder='选择查询语言' />
+                      <SelectValue placeholder={tConn('selectQueryLanguage')} />
                     </SelectTrigger>
                     <SelectContent>
                       {formData.dbType === 'influxdb' && (
@@ -2184,7 +2174,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {/* 代理服务器地址和端口 - 同一行 */}
           <div className='flex items-start gap-4'>
             <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              代理服务器<span className='text-destructive'>*</span>:
+              {tConn('host')}<span className='text-destructive'>*</span>:
             </Label>
             <div className='flex-1 flex gap-4'>
               <div className='flex-1'>
@@ -2209,7 +2199,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               <div className='w-32'>
                 <div className='flex items-center gap-2'>
                   <Label className='text-sm font-medium text-foreground whitespace-nowrap'>
-                    端口<span className='text-destructive'>*</span>:
+                    {tConn('port')}<span className='text-destructive'>*</span>:
                   </Label>
                   <InputNumber
                     placeholder='8080'
@@ -2243,7 +2233,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 onValueChange={value => handleInputChange('proxyType', value)}
               >
                 <SelectTrigger className='w-full max-w-xs h-9'>
-                  <SelectValue placeholder='选择代理类型' />
+                  <SelectValue placeholder={tConn('selectProxyType')} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='http'>HTTP</SelectItem>
@@ -2363,12 +2353,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                               </div>
 
                               <div className='text-xs text-gray-600'>
-                                <span className='font-medium'>版本:</span> {testResult.versionInfo.version}
+                                <span className='font-medium'>{tConn('testResult.version')}</span> {testResult.versionInfo.version}
                               </div>
 
                               {testResult.versionInfo.supported_features.length > 0 && (
                                 <div className='text-xs'>
-                                  <span className='font-medium text-gray-600'>支持特性:</span>
+                                  <span className='font-medium text-gray-600'>{tConn('testResult.supportedFeatures')}</span>
                                   <div className='flex flex-wrap gap-1 mt-1'>
                                     {testResult.versionInfo.supported_features.map((feature, idx) => (
                                       <span key={idx} className='px-2 py-0.5 bg-blue-50 text-blue-700 rounded text-xs'>
@@ -2382,12 +2372,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                           )}
 
                           <p className='mt-2 text-green-600'>
-                            连接配置有效，可以保存使用
+                            {tConn('testResult.connectionValid')}
                           </p>
                         </div>
                       ) : (
                         <div className='mt-2 text-sm text-red-700'>
-                          <p className='font-medium'>错误详情:</p>
+                          <p className='font-medium'>{tConn('testResult.errorDetails')}</p>
                           <p className='mt-1 bg-red-100 p-2 rounded text-xs font-mono'>
                             {testResult.error}
                           </p>
@@ -2395,18 +2385,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                             testResult.error?.includes('ping request') && (
                               <div className='mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-xs'>
                                 <p className='font-medium'>
-                                  💡 IoTDB 连接提示:
+                                  {tConn('testResult.iotdbConnectionTips')}
                                 </p>
                                 <ul className='mt-1 list-disc list-inside space-y-1'>
-                                  <li>确保 IoTDB 服务正在运行</li>
-                                  <li>检查端口号是否正确（默认: 6667）</li>
-                                  <li>确认网络连接和防火墙设置</li>
-                                  <li>IoTDB 使用 TCP 连接，不是 HTTP</li>
+                                  <li>{tConn('testResult.ensureIotdbRunning')}</li>
+                                  <li>{tConn('testResult.checkPortNumber')}</li>
+                                  <li>{tConn('testResult.checkNetworkFirewall')}</li>
+                                  <li>{tConn('testResult.iotdbUsesTcp')}</li>
                                 </ul>
                               </div>
                             )}
                           <p className='mt-2 text-red-600'>
-                            请检查连接参数后重试
+                            {tConn('testResult.checkParamsAndRetry')}
                           </p>
                         </div>
                       )}

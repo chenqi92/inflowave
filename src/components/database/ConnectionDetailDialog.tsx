@@ -32,6 +32,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { writeToClipboard } from '@/utils/clipboard';
 import logger from '@/utils/logger';
+import { useConnectionsTranslation } from '@/hooks/useTranslation';
 
 interface ConnectionDetailDialogProps {
   open: boolean;
@@ -65,6 +66,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
   onClose,
   connectionId,
 }) => {
+  const { t: tConn } = useConnectionsTranslation();
   const [info, setInfo] = useState<ConnectionInfo | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,8 +85,8 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
       setInfo(result);
     } catch (err: any) {
       logger.error('加载连接信息失败:', err);
-      setError(err.message || '加载连接信息失败');
-      showMessage.error(`加载连接信息失败: ${err.message || '未知错误'}`);
+      setError(err.message || tConn('connectionDetail.loadFailed'));
+      showMessage.error(tConn('connectionDetail.loadFailedWithError', { error: err.message || tConn('connectionDetail.unknownError') }));
     } finally {
       setLoading(false);
     }
@@ -103,28 +105,28 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
     if (!info) return;
 
     const infoText = `
-连接信息
+${tConn('connectionDetail.copyTemplate.title')}
 ======
-名称: ${info.name}
-类型: ${info.dbType}
-主机: ${info.host}
-端口: ${info.port}
-用户名: ${info.username}
-状态: ${info.status?.status || '未知'}
+${tConn('connectionDetail.copyTemplate.name')}: ${info.name}
+${tConn('connectionDetail.copyTemplate.type')}: ${info.dbType}
+${tConn('connectionDetail.copyTemplate.host')}: ${info.host}
+${tConn('connectionDetail.copyTemplate.port')}: ${info.port}
+${tConn('connectionDetail.copyTemplate.username')}: ${info.username}
+${tConn('connectionDetail.copyTemplate.status')}: ${info.status?.status || tConn('connectionDetail.unknown')}
 
-服务器信息:
-- 类型: ${info.serverInfo?.type || '未知'}
-- 版本: ${info.serverInfo?.version || '未知'}
+${tConn('connectionDetail.copyTemplate.serverInfoTitle')}:
+- ${tConn('connectionDetail.copyTemplate.serverType')}: ${info.serverInfo?.type || tConn('connectionDetail.unknown')}
+- ${tConn('connectionDetail.copyTemplate.serverVersion')}: ${info.serverInfo?.version || tConn('connectionDetail.unknown')}
 
-创建时间: ${info.createdAt || '未知'}
-更新时间: ${info.updatedAt || '未知'}
+${tConn('connectionDetail.copyTemplate.createdAt')}: ${info.createdAt || tConn('connectionDetail.unknown')}
+${tConn('connectionDetail.copyTemplate.updatedAt')}: ${info.updatedAt || tConn('connectionDetail.unknown')}
     `.trim();
 
     try {
       await writeToClipboard(infoText);
-      showMessage.success('连接信息已复制到剪贴板');
-    } catch (err) {
-      showMessage.error('复制失败');
+      showMessage.success(tConn('connectionDetail.copySuccess'));
+    } catch (_err) {
+      showMessage.error(tConn('connectionDetail.copyFailed'));
     }
   };
 
@@ -140,19 +142,19 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
       username: info.username,
       // 不包含密码、token等敏感信息
       serverInfo: {
-        type: info.serverInfo?.type || '未知',
-        version: info.serverInfo?.version || '未知',
+        type: info.serverInfo?.type || tConn('connectionDetail.unknown'),
+        version: info.serverInfo?.version || tConn('connectionDetail.unknown'),
       },
-      note: '此配置不包含密码等敏感信息，请在导入后手动配置认证信息',
+      note: tConn('connectionDetail.shareNote'),
     };
 
     const configText = JSON.stringify(shareableConfig, null, 2);
 
     try {
       await writeToClipboard(configText);
-      showMessage.success('连接配置已复制到剪贴板（JSON格式）');
-    } catch (err) {
-      showMessage.error('复制失败');
+      showMessage.success(tConn('connectionDetail.shareSuccess'));
+    } catch (_err) {
+      showMessage.error(tConn('connectionDetail.copyFailed'));
     }
   };
 
@@ -174,19 +176,19 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
   };
 
   const getStatusBadge = () => {
-    if (!info?.status) return <Badge variant="secondary">未知</Badge>;
-    
+    if (!info?.status) return <Badge variant="secondary">{tConn('connectionDetail.statusUnknown')}</Badge>;
+
     switch (info.status.status) {
       case 'connected':
-        return <Badge variant="default" className="bg-green-600">已连接</Badge>;
+        return <Badge variant="default" className="bg-green-600">{tConn('connectionDetail.statusConnected')}</Badge>;
       case 'connecting':
-        return <Badge variant="default" className="bg-yellow-600">连接中</Badge>;
+        return <Badge variant="default" className="bg-yellow-600">{tConn('connectionDetail.statusConnecting')}</Badge>;
       case 'disconnected':
-        return <Badge variant="secondary">未连接</Badge>;
+        return <Badge variant="secondary">{tConn('connectionDetail.statusDisconnected')}</Badge>;
       case 'error':
-        return <Badge variant="destructive">错误</Badge>;
+        return <Badge variant="destructive">{tConn('connectionDetail.statusError')}</Badge>;
       default:
-        return <Badge variant="secondary">未知</Badge>;
+        return <Badge variant="secondary">{tConn('connectionDetail.statusUnknown')}</Badge>;
     }
   };
 
@@ -208,10 +210,10 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
           <SheetHeader>
             <SheetTitle className="flex items-center gap-2">
               <Server className="w-5 h-5" />
-              连接详细信息
+              {tConn('connectionDetail.title')}
             </SheetTitle>
             <SheetDescription>
-              查看连接的详细配置和状态信息
+              {tConn('connectionDetail.description')}
             </SheetDescription>
           </SheetHeader>
         </div>
@@ -228,7 +230,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
               <p className="text-sm text-muted-foreground">{error}</p>
               <Button onClick={loadConnectionInfo} variant="outline" size="sm">
                 <RefreshCw className="w-4 h-4 mr-2" />
-                重试
+                {tConn('connectionDetail.retry')}
               </Button>
             </div>
           ) : info ? (
@@ -238,22 +240,22 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Database className="w-4 h-4 text-blue-500" />
-                  基本信息
+                  {tConn('connectionDetail.basicInfo')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">连接名称:</span>
+                  <span className="text-sm text-muted-foreground">{tConn('connectionDetail.connectionName')}</span>
                   <Badge variant="outline" className="font-mono">{info.name}</Badge>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">数据库类型:</span>
+                  <span className="text-sm text-muted-foreground">{tConn('connectionDetail.databaseType')}</span>
                   <Badge variant="secondary">{getDatabaseTypeLabel(info.dbType)}</Badge>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">连接ID:</span>
+                  <span className="text-sm text-muted-foreground">{tConn('connectionDetail.connectionId')}</span>
                   <code className="text-xs bg-muted px-2 py-1 rounded">{info.id}</code>
                 </div>
               </CardContent>
@@ -264,14 +266,14 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Link className="w-4 h-4 text-purple-500" />
-                  连接配置
+                  {tConn('connectionDetail.connectionConfig')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <Globe className="w-3 h-3" />
-                    主机地址:
+                    {tConn('connectionDetail.hostAddress')}
                   </span>
                   <code className="text-xs bg-muted px-2 py-1 rounded">{info.host}</code>
                 </div>
@@ -279,7 +281,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <Server className="w-3 h-3" />
-                    端口:
+                    {tConn('connectionDetail.port')}
                   </span>
                   <Badge variant="outline">{info.port}</Badge>
                 </div>
@@ -287,7 +289,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <User className="w-3 h-3" />
-                    用户名:
+                    {tConn('connectionDetail.username')}
                   </span>
                   <code className="text-xs bg-muted px-2 py-1 rounded">{info.username}</code>
                 </div>
@@ -295,7 +297,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     <Key className="w-3 h-3" />
-                    完整URL:
+                    {tConn('connectionDetail.fullUrl')}
                   </span>
                   <code className="text-xs bg-muted px-2 py-1 rounded max-w-md truncate">
                     {`${info.host}:${info.port}`}
@@ -309,14 +311,14 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Activity className="w-4 h-4 text-green-500" />
-                  连接状态
+                  {tConn('connectionDetail.connectionStatus')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground flex items-center gap-2">
                     {getStatusIcon()}
-                    当前状态:
+                    {tConn('connectionDetail.currentStatus')}
                   </span>
                   {getStatusBadge()}
                 </div>
@@ -324,7 +326,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
                   <>
                     <Separator />
                     <div className="flex justify-between items-start">
-                      <span className="text-sm text-muted-foreground">状态消息:</span>
+                      <span className="text-sm text-muted-foreground">{tConn('connectionDetail.statusMessage')}</span>
                       <span className="text-xs text-right max-w-md">{info.status.message}</span>
                     </div>
                   </>
@@ -335,7 +337,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-muted-foreground flex items-center gap-2">
                         <Clock className="w-3 h-3" />
-                        最后检查:
+                        {tConn('connectionDetail.lastChecked')}
                       </span>
                       <span className="text-xs">{new Date(info.status.lastChecked).toLocaleString()}</span>
                     </div>
@@ -350,19 +352,19 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium flex items-center gap-2">
                     <Shield className="w-4 h-4 text-orange-500" />
-                    服务器信息
+                    {tConn('connectionDetail.serverInfo')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">服务器类型:</span>
+                    <span className="text-sm text-muted-foreground">{tConn('connectionDetail.serverType')}</span>
                     <Badge variant="secondary">{info.serverInfo.type}</Badge>
                   </div>
                   {info.serverInfo.version && (
                     <>
                       <Separator />
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">版本:</span>
+                        <span className="text-sm text-muted-foreground">{tConn('connectionDetail.version')}</span>
                         <Badge variant="outline">{info.serverInfo.version}</Badge>
                       </div>
                     </>
@@ -376,13 +378,13 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm font-medium flex items-center gap-2">
                   <Clock className="w-4 h-4 text-indigo-500" />
-                  时间信息
+                  {tConn('connectionDetail.timeInfo')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 {info.createdAt && (
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">创建时间:</span>
+                    <span className="text-sm text-muted-foreground">{tConn('connectionDetail.createdAt')}</span>
                     <span className="text-xs">{new Date(info.createdAt).toLocaleString()}</span>
                   </div>
                 )}
@@ -390,7 +392,7 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
                   <>
                     <Separator />
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-muted-foreground">更新时间:</span>
+                      <span className="text-sm text-muted-foreground">{tConn('connectionDetail.updatedAt')}</span>
                       <span className="text-xs">{new Date(info.updatedAt).toLocaleString()}</span>
                     </div>
                   </>
@@ -408,15 +410,15 @@ const ConnectionDetailDialog: React.FC<ConnectionDetailDialogProps> = ({
             <div className="flex justify-between items-center gap-2">
               <Button onClick={shareConnectionConfig} variant="outline" size="sm">
                 <Share2 className="w-4 h-4 mr-2" />
-                分享配置
+                {tConn('connectionDetail.shareConfig')}
               </Button>
               <div className="flex gap-2">
                 <Button onClick={loadConnectionInfo} variant="outline" size="sm">
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  刷新
+                  {tConn('connectionDetail.refresh')}
                 </Button>
                 <Button onClick={onClose} variant="default" size="sm">
-                  关闭
+                  {tConn('connectionDetail.close')}
                 </Button>
               </div>
             </div>
