@@ -46,6 +46,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { useConnectionStore } from '@/store/connection';
 import { toast } from 'sonner';
 import logger from '@/utils/logger';
+import { useQueryTranslation } from '@/hooks/useTranslation';
 
 // 生成带时间戳的文件名
 const generateTimestampedFilename = (
@@ -146,6 +147,9 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   executionTime = 0,
   onClearResult,
 }) => {
+  // 翻译钩子
+  const { t: tQuery } = useQueryTranslation();
+
   // 获取当前连接信息
   const { connections, activeConnectionId } = useConnectionStore();
   const currentConnection = connections.find(c => c.id === activeConnectionId);
@@ -579,14 +583,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     try {
       const result = allResults[resultIndex];
       if (!result) {
-        showMessage.error('没有可导出的数据');
+        showMessage.error(tQuery('resultPanel.noDataToExport'));
         return;
       }
 
       // 获取第一个series的数据
       const series = result.results?.[0]?.series?.[0];
       if (!series || !series.columns || !series.values) {
-        showMessage.error('没有可导出的数据');
+        showMessage.error(tQuery('resultPanel.noDataToExport'));
         return;
       }
 
@@ -646,13 +650,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       if (success) {
         showMessage.success(
-          `数据已导出为 ${options.format.toUpperCase()} 格式`
+          tQuery('resultPanel.dataExported', { format: options.format.toUpperCase() })
         );
         setShowExportDialog(false);
       }
     } catch (error) {
       logger.error('导出数据失败:', error);
-      showMessage.error('导出数据失败');
+      showMessage.error(tQuery('resultPanel.exportFailed'));
     }
   };
 
@@ -665,7 +669,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   ) => {
     try {
       if (rows.length === 0) {
-        toast.error('没有可复制的数据');
+        toast.error(tQuery('resultPanel.noDataToCopy'));
         return;
       }
 
@@ -728,7 +732,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         }
 
         default:
-          toast.error('不支持的复制格式');
+          toast.error(tQuery('resultPanel.unsupportedCopyFormat'));
           return;
       }
 
@@ -736,19 +740,19 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       await navigator.clipboard.writeText(textToCopy);
 
       const formatNames: Record<CopyFormat, string> = {
-        text: '文本',
-        insert: 'INSERT 语句',
+        text: tQuery('resultPanel.copyFormats.text'),
+        insert: tQuery('resultPanel.copyFormats.insert'),
         markdown: 'Markdown',
         json: 'JSON',
         csv: 'CSV'
       };
 
-      toast.success(`已复制为 ${formatNames[format]}`, {
-        description: `已复制 ${rows.length} 行数据`
+      toast.success(tQuery('resultPanel.dataCopied', { format: formatNames[format] }), {
+        description: tQuery('resultPanel.dataCopiedDescription', { rows: rows.length })
       });
     } catch (error) {
       logger.error('复制数据失败:', error);
-      toast.error('复制数据失败');
+      toast.error(tQuery('resultPanel.copyFailed'));
     }
   }, []);
 
@@ -759,20 +763,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     try {
       // 检查是否有统计数据
       if (allFieldStatistics.length === 0) {
-        showMessage.warning('没有可导出的字段统计数据');
+        showMessage.warning(tQuery('resultPanel.noFieldStatsToExport'));
         return;
       }
 
       // 定义列名
       const columns = [
-        '字段名',
-        '数据类型',
-        '空值数量',
-        '唯一值数量',
-        '最小值',
-        '最大值',
-        '平均值',
-        '中位数',
+        tQuery('resultPanel.fieldStatsHeaders.fieldName'),
+        tQuery('resultPanel.fieldStatsHeaders.dataType'),
+        tQuery('resultPanel.fieldStatsHeaders.nullCount'),
+        tQuery('resultPanel.fieldStatsHeaders.uniqueCount'),
+        tQuery('resultPanel.fieldStatsHeaders.minValue'),
+        tQuery('resultPanel.fieldStatsHeaders.maxValue'),
+        tQuery('resultPanel.fieldStatsHeaders.avgValue'),
+        tQuery('resultPanel.fieldStatsHeaders.medianValue'),
       ];
 
       // 为每个查询创建一个 series（工作表）
@@ -789,7 +793,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         ]);
 
         return {
-          name: `查询${index + 1}_统计`,
+          name: tQuery('resultPanel.queryStats', { index: index + 1 }),
           columns,
           values,
         };
@@ -830,13 +834,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       if (success) {
         showMessage.success(
-          `字段统计已导出为 ${options.format.toUpperCase()} 格式`
+          tQuery('resultPanel.fieldStatsExported', { format: options.format.toUpperCase() })
         );
         setShowStatisticsExportDialog(false);
       }
     } catch (error) {
       logger.error('导出字段统计失败:', error);
-      showMessage.error('导出字段统计失败');
+      showMessage.error(tQuery('resultPanel.exportFieldStatsFailed'));
     }
   };
 
@@ -904,7 +908,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (!parsed) {
         return {
           queryIndex: index,
-          queryText: executedQueries[index] || `查询 ${index + 1}`,
+          queryText: executedQueries[index] || tQuery('resultPanel.queryLabel', { index: index + 1 }),
           statistics: [],
           rowCount: 0,
         };
@@ -959,7 +963,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       return {
         queryIndex: index,
-        queryText: executedQueries[index] || `查询 ${index + 1}`,
+        queryText: executedQueries[index] || tQuery('resultPanel.queryLabel', { index: index + 1 }),
         statistics: stats,
         rowCount: parsed.rowCount,
       };
@@ -1035,16 +1039,16 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     if (executionTime > 5000) {
       insights.push({
         type: 'suggestion',
-        title: '查询性能较慢',
-        description: `查询耗时 ${(executionTime / 1000).toFixed(2)} 秒，建议添加时间范围限制、使用索引或优化查询条件以提高性能。`,
+        title: tQuery('resultPanel.performanceSlow.title'),
+        description: tQuery('resultPanel.performanceSlow.description', { seconds: (executionTime / 1000).toFixed(2) }),
         severity: 'high',
         confidence: 1.0,
       });
     } else if (executionTime > 1000) {
       insights.push({
         type: 'suggestion',
-        title: '查询性能可优化',
-        description: `查询耗时 ${(executionTime / 1000).toFixed(2)} 秒，性能尚可，但仍有优化空间。`,
+        title: tQuery('resultPanel.performanceOptimizable.title'),
+        description: tQuery('resultPanel.performanceOptimizable.description', { seconds: (executionTime / 1000).toFixed(2) }),
         severity: 'low',
         confidence: 0.8,
       });
@@ -1054,24 +1058,24 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     if (parsedData.rowCount > 50000) {
       insights.push({
         type: 'suggestion',
-        title: '大数据集聚合建议',
-        description: `查询返回了 ${parsedData.rowCount.toLocaleString()} 行数据，建议使用 GROUP BY 进行时间聚合（如按分钟、小时聚合）以减少数据量并提高可读性。`,
+        title: tQuery('resultPanel.largeDataAggregation.title'),
+        description: tQuery('resultPanel.largeDataAggregation.description', { rows: parsedData.rowCount.toLocaleString() }),
         severity: 'high',
         confidence: 0.95,
       });
     } else if (parsedData.rowCount > 10000) {
       insights.push({
         type: 'suggestion',
-        title: '数据量较大',
-        description: `查询返回了 ${parsedData.rowCount.toLocaleString()} 行数据，建议考虑使用时间范围限制或聚合查询以提高性能。`,
+        title: tQuery('resultPanel.largeDataset.title'),
+        description: tQuery('resultPanel.largeDataset.description', { rows: parsedData.rowCount.toLocaleString() }),
         severity: 'medium',
         confidence: 0.85,
       });
     } else if (parsedData.rowCount < 10) {
       insights.push({
         type: 'pattern',
-        title: '数据量较少',
-        description: `查询仅返回了 ${parsedData.rowCount} 行数据，可能需要检查时间范围或查询条件是否过于严格。`,
+        title: tQuery('resultPanel.smallDataset.title'),
+        description: tQuery('resultPanel.smallDataset.description', { rows: parsedData.rowCount }),
         severity: 'low',
         confidence: 0.7,
       });
@@ -1084,8 +1088,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     if (highNullFields.length > 0) {
       insights.push({
         type: 'anomaly',
-        title: '数据质量问题',
-        description: `字段 ${highNullFields.map(f => f.fieldName).join(', ')} 包含超过50%的空值，可能影响数据分析的准确性。`,
+        title: tQuery('resultPanel.dataQuality.highNullFields.title'),
+        description: tQuery('resultPanel.dataQuality.highNullFields.description', {
+          fields: highNullFields.map(f => f.fieldName).join(', ')
+        }),
         severity: 'high',
         confidence: 1.0,
       });
@@ -1096,8 +1102,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (mediumNullFields.length > 0) {
         insights.push({
           type: 'pattern',
-          title: '部分字段存在空值',
-          description: `字段 ${mediumNullFields.map(f => f.fieldName).join(', ')} 包含 20%-50% 的空值，建议在分析时注意处理空值情况。`,
+          title: tQuery('resultPanel.dataQuality.mediumNullFields.title'),
+          description: tQuery('resultPanel.dataQuality.mediumNullFields.description', {
+            fields: mediumNullFields.map(f => f.fieldName).join(', ')
+          }),
           severity: 'medium',
           confidence: 0.9,
         });
@@ -1124,16 +1132,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         if (timeSpanDays > 30) {
           insights.push({
             type: 'pattern',
-            title: '长时间跨度数据',
-            description: `数据时间跨度为 ${timeSpanDays.toFixed(1)} 天，建议使用时间聚合（GROUP BY time(1h) 或 time(1d)）来提高可视化效果。`,
+            title: tQuery('resultPanel.timeSeries.longTimeSpan.title'),
+            description: tQuery('resultPanel.timeSeries.longTimeSpan.description', {
+              days: timeSpanDays.toFixed(1)
+            }),
             severity: 'medium',
             confidence: 0.9,
           });
         } else if (timeSpanHours < 1) {
           insights.push({
             type: 'pattern',
-            title: '短时间跨度数据',
-            description: `数据时间跨度仅为 ${(timeSpanHours * 60).toFixed(1)} 分钟，适合进行细粒度的实时监控分析。`,
+            title: tQuery('resultPanel.timeSeries.shortTimeSpan.title'),
+            description: tQuery('resultPanel.timeSeries.shortTimeSpan.description', {
+              minutes: (timeSpanHours * 60).toFixed(1)
+            }),
             severity: 'low',
             confidence: 0.85,
           });
@@ -1152,24 +1164,30 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           if (avgIntervalSeconds < 1) {
             insights.push({
               type: 'pattern',
-              title: '高频采样数据',
-              description: `平均采样间隔约 ${(avgIntervalSeconds * 1000).toFixed(0)} 毫秒，数据采集频率很高，适合实时监控场景。`,
+              title: tQuery('resultPanel.timeSeries.highFrequencySampling.title'),
+              description: tQuery('resultPanel.timeSeries.highFrequencySampling.description', {
+                ms: (avgIntervalSeconds * 1000).toFixed(0)
+              }),
               severity: 'low',
               confidence: 0.8,
             });
           } else if (avgIntervalSeconds < 60) {
             insights.push({
               type: 'pattern',
-              title: '秒级采样数据',
-              description: `平均采样间隔约 ${avgIntervalSeconds.toFixed(1)} 秒，数据密度适中，适合短期趋势分析。`,
+              title: tQuery('resultPanel.timeSeries.secondLevelSampling.title'),
+              description: tQuery('resultPanel.timeSeries.secondLevelSampling.description', {
+                seconds: avgIntervalSeconds.toFixed(1)
+              }),
               severity: 'low',
               confidence: 0.8,
             });
           } else if (avgIntervalSeconds < 3600) {
             insights.push({
               type: 'pattern',
-              title: '分钟级采样数据',
-              description: `平均采样间隔约 ${(avgIntervalSeconds / 60).toFixed(1)} 分钟，适合中期趋势分析。`,
+              title: tQuery('resultPanel.timeSeries.minuteLevelSampling.title'),
+              description: tQuery('resultPanel.timeSeries.minuteLevelSampling.description', {
+                minutes: (avgIntervalSeconds / 60).toFixed(1)
+              }),
               severity: 'low',
               confidence: 0.8,
             });
@@ -1204,8 +1222,15 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           if (Math.abs(trend) > 20) {
             insights.push({
               type: 'trend',
-              title: `${field.fieldName} 显著${trend > 0 ? '上升' : '下降'}趋势`,
-              description: `字段 ${field.fieldName} 在查询时间范围内${trend > 0 ? '上升' : '下降'}了约 ${Math.abs(trend).toFixed(1)}%，建议关注此变化趋势。`,
+              title: tQuery('resultPanel.numericFields.trendAnalysis.title', {
+                field: field.fieldName,
+                direction: trend > 0 ? '上升' : '下降'
+              }),
+              description: tQuery('resultPanel.numericFields.trendAnalysis.description', {
+                field: field.fieldName,
+                direction: trend > 0 ? '上升' : '下降',
+                percent: Math.abs(trend).toFixed(1)
+              }),
               severity: 'medium',
               confidence: 0.85,
             });
@@ -1224,8 +1249,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           if (outliers.length > 0 && outliers.length / n < 0.1) {
             insights.push({
               type: 'anomaly',
-              title: `${field.fieldName} 存在异常值`,
-              description: `检测到 ${outliers.length} 个异常数据点（超出3倍标准差），建议检查数据采集是否正常。`,
+              title: tQuery('resultPanel.numericFields.anomalyDetected.title', {
+                field: field.fieldName
+              }),
+              description: tQuery('resultPanel.numericFields.anomalyDetected.description', {
+                count: outliers.length
+              }),
               severity: 'medium',
               confidence: 0.75,
             });
@@ -1244,8 +1273,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
     if (lowCardinalityFields.length > 0) {
       insights.push({
         type: 'pattern',
-        title: '低基数字段检测',
-        description: `字段 ${lowCardinalityFields.map(f => f.fieldName).join(', ')} 的唯一值数量较少（<10），适合用作分组或分类维度。`,
+        title: tQuery('resultPanel.dataQuality.lowCardinality.title'),
+        description: tQuery('resultPanel.dataQuality.lowCardinality.description', {
+          fields: lowCardinalityFields.map(f => f.fieldName).join(', ')
+        }),
         severity: 'low',
         confidence: 0.9,
       });
@@ -1265,7 +1296,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (!parsed || parsed.rowCount === 0) {
         return {
           queryIndex: index,
-          queryText: executedQueries[index] || `查询 ${index + 1}`,
+          queryText: executedQueries[index] || tQuery('resultPanel.queryLabel', { index: index + 1 }),
           insights: [],
         };
       }
@@ -1324,24 +1355,24 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (queryExecutionTime > 5000) {
         queryInsights.push({
           type: 'suggestion',
-          title: '查询性能较慢',
-          description: `查询耗时约 ${(queryExecutionTime / 1000).toFixed(2)} 秒，建议添加时间范围限制、使用索引或优化查询条件。`,
+          title: tQuery('resultPanel.performanceSlowApprox.title'),
+          description: tQuery('resultPanel.performanceSlowApprox.description', { seconds: (queryExecutionTime / 1000).toFixed(2) }),
           severity: 'high',
           confidence: 1.0,
         });
       } else if (queryExecutionTime > 1000) {
         queryInsights.push({
           type: 'suggestion',
-          title: '查询性能可优化',
-          description: `查询耗时约 ${(queryExecutionTime / 1000).toFixed(2)} 秒，性能尚可，但仍有优化空间。`,
+          title: tQuery('resultPanel.performanceOptimizableApprox.title'),
+          description: tQuery('resultPanel.performanceOptimizableApprox.description', { seconds: (queryExecutionTime / 1000).toFixed(2) }),
           severity: 'low',
           confidence: 0.8,
         });
       } else if (queryExecutionTime < 100) {
         queryInsights.push({
           type: 'pattern',
-          title: '查询性能优秀',
-          description: `查询耗时仅 ${queryExecutionTime.toFixed(0)} 毫秒，响应速度非常快，适合实时查询场景。`,
+          title: tQuery('resultPanel.performanceExcellent.title'),
+          description: tQuery('resultPanel.performanceExcellent.description', { ms: queryExecutionTime.toFixed(0) }),
           severity: 'low',
           confidence: 0.9,
         });
@@ -1351,24 +1382,24 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (parsed.rowCount > 50000) {
         queryInsights.push({
           type: 'suggestion',
-          title: '大数据集聚合建议',
-          description: `查询返回了 ${parsed.rowCount.toLocaleString()} 行数据，建议使用 GROUP BY 进行时间聚合以减少数据量。`,
+          title: tQuery('resultPanel.largeDataAggregationSimple.title'),
+          description: tQuery('resultPanel.largeDataAggregationSimple.description', { rows: parsed.rowCount.toLocaleString() }),
           severity: 'high',
           confidence: 0.95,
         });
       } else if (parsed.rowCount > 10000) {
         queryInsights.push({
           type: 'suggestion',
-          title: '数据量较大',
-          description: `查询返回了 ${parsed.rowCount.toLocaleString()} 行数据，建议考虑使用时间范围限制或聚合查询。`,
+          title: tQuery('resultPanel.largeDatasetSimple.title'),
+          description: tQuery('resultPanel.largeDatasetSimple.description', { rows: parsed.rowCount.toLocaleString() }),
           severity: 'medium',
           confidence: 0.85,
         });
       } else if (parsed.rowCount < 10) {
         queryInsights.push({
           type: 'pattern',
-          title: '数据量较少',
-          description: `查询仅返回了 ${parsed.rowCount} 行数据，可能需要检查时间范围或查询条件。`,
+          title: tQuery('resultPanel.smallDataset.title'),
+          description: tQuery('resultPanel.smallDatasetSimple.description', { rows: parsed.rowCount }),
           severity: 'low',
           confidence: 0.7,
         });
@@ -1381,8 +1412,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (highNullFields.length > 0) {
         queryInsights.push({
           type: 'anomaly',
-          title: '数据质量问题',
-          description: `字段 ${highNullFields.map(f => f.fieldName).join(', ')} 包含超过50%的空值，可能影响数据分析准确性。`,
+          title: tQuery('resultPanel.dataQuality.highNullFields.title'),
+          description: tQuery('resultPanel.dataQuality.highNullFields.descriptionShort', {
+            fields: highNullFields.map(f => f.fieldName).join(', ')
+          }),
           severity: 'high',
           confidence: 1.0,
         });
@@ -1393,8 +1426,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         if (mediumNullFields.length > 0) {
           queryInsights.push({
             type: 'pattern',
-            title: '部分字段存在空值',
-            description: `字段 ${mediumNullFields.map(f => f.fieldName).join(', ')} 包含 20%-50% 的空值，建议在分析时注意处理。`,
+            title: tQuery('resultPanel.dataQuality.mediumNullFields.title'),
+            description: tQuery('resultPanel.dataQuality.mediumNullFields.descriptionShort', {
+              fields: mediumNullFields.map(f => f.fieldName).join(', ')
+            }),
             severity: 'medium',
             confidence: 0.9,
           });
@@ -1406,8 +1441,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (noNullFields.length === queryFieldStats.length && queryFieldStats.length > 0) {
         queryInsights.push({
           type: 'pattern',
-          title: '数据完整性良好',
-          description: `所有字段均无空值，数据完整性为100%，数据质量优秀。`,
+          title: tQuery('resultPanel.dataQuality.noNullFields.title'),
+          description: tQuery('resultPanel.dataQuality.noNullFields.description'),
           severity: 'low',
           confidence: 1.0,
         });
@@ -1432,24 +1467,30 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
           if (timeSpanDays > 365) {
             queryInsights.push({
               type: 'pattern',
-              title: '超长时间跨度数据',
-              description: `数据时间跨度超过 ${(timeSpanDays / 365).toFixed(1)} 年，建议使用按天或按周聚合来提高可视化效果。`,
+              title: tQuery('resultPanel.timeSeries.veryLongTimeSpan.title'),
+              description: tQuery('resultPanel.timeSeries.veryLongTimeSpan.description', {
+                years: (timeSpanDays / 365).toFixed(1)
+              }),
               severity: 'medium',
               confidence: 0.95,
             });
           } else if (timeSpanDays > 30) {
             queryInsights.push({
               type: 'pattern',
-              title: '长时间跨度数据',
-              description: `数据时间跨度为 ${timeSpanDays.toFixed(1)} 天，建议使用时间聚合（按小时或按天）来提高可视化效果。`,
+              title: tQuery('resultPanel.timeSeries.longTimeSpan.title'),
+              description: tQuery('resultPanel.timeSeries.longTimeSpan.descriptionShort', {
+                days: timeSpanDays.toFixed(1)
+              }),
               severity: 'medium',
               confidence: 0.9,
             });
           } else if (timeSpanHours < 1) {
             queryInsights.push({
               type: 'pattern',
-              title: '短时间跨度数据',
-              description: `数据时间跨度仅为 ${(timeSpanHours * 60).toFixed(1)} 分钟，适合进行细粒度的实时监控分析。`,
+              title: tQuery('resultPanel.timeSeries.shortTimeSpan.title'),
+              description: tQuery('resultPanel.timeSeries.shortTimeSpan.description', {
+                minutes: (timeSpanHours * 60).toFixed(1)
+              }),
               severity: 'low',
               confidence: 0.85,
             });
@@ -1467,32 +1508,40 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             if (avgIntervalSeconds < 1) {
               queryInsights.push({
                 type: 'pattern',
-                title: '高频采样数据',
-                description: `平均采样间隔约 ${(avgIntervalSeconds * 1000).toFixed(0)} 毫秒，数据采集频率很高，适合实时监控场景。`,
+                title: tQuery('resultPanel.timeSeries.highFrequencySampling.title'),
+                description: tQuery('resultPanel.timeSeries.highFrequencySampling.description', {
+                  ms: (avgIntervalSeconds * 1000).toFixed(0)
+                }),
                 severity: 'low',
                 confidence: 0.8,
               });
             } else if (avgIntervalSeconds < 60) {
               queryInsights.push({
                 type: 'pattern',
-                title: '秒级采样数据',
-                description: `平均采样间隔约 ${avgIntervalSeconds.toFixed(1)} 秒，数据密度适中，适合短期趋势分析。`,
+                title: tQuery('resultPanel.timeSeries.secondLevelSampling.title'),
+                description: tQuery('resultPanel.timeSeries.secondLevelSampling.description', {
+                  seconds: avgIntervalSeconds.toFixed(1)
+                }),
                 severity: 'low',
                 confidence: 0.8,
               });
             } else if (avgIntervalSeconds < 3600) {
               queryInsights.push({
                 type: 'pattern',
-                title: '分钟级采样数据',
-                description: `平均采样间隔约 ${(avgIntervalSeconds / 60).toFixed(1)} 分钟，适合中期趋势分析。`,
+                title: tQuery('resultPanel.timeSeries.minuteLevelSampling.title'),
+                description: tQuery('resultPanel.timeSeries.minuteLevelSampling.description', {
+                  minutes: (avgIntervalSeconds / 60).toFixed(1)
+                }),
                 severity: 'low',
                 confidence: 0.8,
               });
             } else if (avgIntervalSeconds < 86400) {
               queryInsights.push({
                 type: 'pattern',
-                title: '小时级采样数据',
-                description: `平均采样间隔约 ${(avgIntervalSeconds / 3600).toFixed(1)} 小时，适合长期趋势分析。`,
+                title: tQuery('resultPanel.timeSeries.hourLevelSampling.title'),
+                description: tQuery('resultPanel.timeSeries.hourLevelSampling.description', {
+                  hours: (avgIntervalSeconds / 3600).toFixed(1)
+                }),
                 severity: 'low',
                 confidence: 0.8,
               });
@@ -1506,8 +1555,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             if (coefficientOfVariation > 0.5) {
               queryInsights.push({
                 type: 'anomaly',
-                title: '采样间隔不均匀',
-                description: `数据采样间隔变化较大（变异系数 ${(coefficientOfVariation * 100).toFixed(1)}%），可能存在数据缺失或采集不稳定。`,
+                title: tQuery('resultPanel.timeSeries.unevenSampling.title'),
+                description: tQuery('resultPanel.timeSeries.unevenSampling.description', {
+                  cv: (coefficientOfVariation * 100).toFixed(1)
+                }),
                 severity: 'medium',
                 confidence: 0.75,
               });
@@ -1534,8 +1585,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             if (zeroCount / values.length > 0.5) {
               queryInsights.push({
                 type: 'pattern',
-                title: `${field.fieldName} 包含大量零值`,
-                description: `字段 ${field.fieldName} 中有 ${((zeroCount / values.length) * 100).toFixed(1)}% 的值为0，可能需要检查数据采集或传感器状态。`,
+                title: tQuery('resultPanel.numericFields.manyZeros.title', {
+                  field: field.fieldName
+                }),
+                description: tQuery('resultPanel.numericFields.manyZeros.description', {
+                  field: field.fieldName,
+                  percent: ((zeroCount / values.length) * 100).toFixed(1)
+                }),
                 severity: 'medium',
                 confidence: 0.85,
               });
@@ -1546,8 +1602,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             if (negativeCount > 0 && negativeCount / values.length < 0.1) {
               queryInsights.push({
                 type: 'anomaly',
-                title: `${field.fieldName} 存在负值`,
-                description: `字段 ${field.fieldName} 中有 ${negativeCount} 个负值（${((negativeCount / values.length) * 100).toFixed(1)}%），如果该字段不应为负，请检查数据源。`,
+                title: tQuery('resultPanel.numericFields.hasNegatives.title', {
+                  field: field.fieldName
+                }),
+                description: tQuery('resultPanel.numericFields.hasNegatives.description', {
+                  field: field.fieldName,
+                  count: negativeCount,
+                  percent: ((negativeCount / values.length) * 100).toFixed(1)
+                }),
                 severity: 'medium',
                 confidence: 0.7,
               });
@@ -1558,8 +1620,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             if (range === 0 && values.length > 1) {
               queryInsights.push({
                 type: 'pattern',
-                title: `${field.fieldName} 为常量字段`,
-                description: `字段 ${field.fieldName} 的所有值都相同（${min}），可能不需要包含在查询结果中。`,
+                title: tQuery('resultPanel.numericFields.constantField.title', {
+                  field: field.fieldName
+                }),
+                description: tQuery('resultPanel.numericFields.constantField.description', {
+                  field: field.fieldName,
+                  value: min
+                }),
                 severity: 'low',
                 confidence: 1.0,
               });
@@ -1573,8 +1640,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               if (cv > 2) {
                 queryInsights.push({
                   type: 'pattern',
-                  title: `${field.fieldName} 数值波动较大`,
-                  description: `字段 ${field.fieldName} 的变异系数为 ${cv.toFixed(2)}，数值波动很大，范围从 ${min.toFixed(2)} 到 ${max.toFixed(2)}。`,
+                  title: tQuery('resultPanel.highVariation.title', { field: field.fieldName }),
+                  description: tQuery('resultPanel.highVariation.description', {
+                    field: field.fieldName,
+                    cv: cv.toFixed(2),
+                    min: min.toFixed(2),
+                    max: max.toFixed(2)
+                  }),
                   severity: 'low',
                   confidence: 0.8,
                 });
@@ -1588,8 +1660,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (queryFieldStats.length > 20) {
         queryInsights.push({
           type: 'suggestion',
-          title: '字段数量较多',
-          description: `查询返回了 ${queryFieldStats.length} 个字段，建议只选择需要的字段以提高查询性能和可读性。`,
+          title: tQuery('resultPanel.tooManyFields.title'),
+          description: tQuery('resultPanel.tooManyFields.description', { count: queryFieldStats.length }),
           severity: 'low',
           confidence: 0.85,
         });
@@ -1602,8 +1674,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (lowCardinalityFields.length > 0) {
         queryInsights.push({
           type: 'suggestion',
-          title: '检测到分类字段',
-          description: `字段 ${lowCardinalityFields.map(f => f.fieldName).join(', ')} 的唯一值数量较少（<10），适合用作分组或分类维度进行聚合分析。`,
+          title: tQuery('resultPanel.categoricalFields.title'),
+          description: tQuery('resultPanel.categoricalFields.description', {
+            fields: lowCardinalityFields.map(f => f.fieldName).join(', ')
+          }),
           severity: 'low',
           confidence: 0.9,
         });
@@ -1616,8 +1690,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
       if (highCardinalityFields.length > 0) {
         queryInsights.push({
           type: 'pattern',
-          title: '检测到唯一标识字段',
-          description: `字段 ${highCardinalityFields.map(f => f.fieldName).join(', ')} 的每个值都唯一，可能是ID或时间戳字段。`,
+          title: tQuery('resultPanel.uniqueIdentifierFields.title'),
+          description: tQuery('resultPanel.uniqueIdentifierFields.description', {
+            fields: highCardinalityFields.map(f => f.fieldName).join(', ')
+          }),
           severity: 'low',
           confidence: 0.95,
         });
@@ -1643,16 +1719,26 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             if (Math.abs(trend) > 50) {
               queryInsights.push({
                 type: 'trend',
-                title: `${field.fieldName} 显著${trend > 0 ? '上升' : '下降'}趋势`,
-                description: `字段 ${field.fieldName} 在查询时间范围内${trend > 0 ? '上升' : '下降'}了约 ${Math.abs(trend).toFixed(1)}%，建议关注此显著变化。`,
+                title: tQuery(trend > 0 ? 'resultPanel.significantTrendUp.title' : 'resultPanel.significantTrendDown.title', {
+                  field: field.fieldName
+                }),
+                description: tQuery(trend > 0 ? 'resultPanel.significantTrendUp.description' : 'resultPanel.significantTrendDown.description', {
+                  field: field.fieldName,
+                  percent: Math.abs(trend).toFixed(1)
+                }),
                 severity: 'high',
                 confidence: 0.85,
               });
             } else if (Math.abs(trend) > 20) {
               queryInsights.push({
                 type: 'trend',
-                title: `${field.fieldName} ${trend > 0 ? '上升' : '下降'}趋势`,
-                description: `字段 ${field.fieldName} 在查询时间范围内${trend > 0 ? '上升' : '下降'}了约 ${Math.abs(trend).toFixed(1)}%。`,
+                title: tQuery(trend > 0 ? 'resultPanel.trendUp.title' : 'resultPanel.trendDown.title', {
+                  field: field.fieldName
+                }),
+                description: tQuery(trend > 0 ? 'resultPanel.trendUp.description' : 'resultPanel.trendDown.description', {
+                  field: field.fieldName,
+                  percent: Math.abs(trend).toFixed(1)
+                }),
                 severity: 'medium',
                 confidence: 0.8,
               });
@@ -1668,8 +1754,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             if (outliers.length > 0 && outliers.length / n < 0.05) {
               queryInsights.push({
                 type: 'anomaly',
-                title: `${field.fieldName} 存在异常值`,
-                description: `检测到 ${outliers.length} 个异常数据点（超出3倍标准差），占比 ${((outliers.length / n) * 100).toFixed(1)}%，建议检查数据采集是否正常。`,
+                title: tQuery('resultPanel.outliers.title', { field: field.fieldName }),
+                description: tQuery('resultPanel.outliers.description', {
+                  field: field.fieldName,
+                  count: outliers.length,
+                  percent: ((outliers.length / n) * 100).toFixed(1)
+                }),
                 severity: 'medium',
                 confidence: 0.75,
               });
@@ -1683,7 +1773,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
 
       return {
         queryIndex: index,
-        queryText: executedQueries[index] || `查询 ${index + 1}`,
+        queryText: executedQueries[index] || tQuery('resultPanel.queryLabel', { index: index + 1 }),
         insights: sortedInsights,
       };
     });
@@ -1730,14 +1820,14 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
   // 导出图表功能
   const handleExportChart = useCallback(async () => {
     if (!chartRef.current) {
-      showMessage.error('图表实例未找到');
+      showMessage.error(tQuery('resultPanel.chartNotFound'));
       return;
     }
 
     try {
       const chartInstance = chartRef.current.getEchartsInstance();
       if (!chartInstance) {
-        showMessage.error('ECharts实例未找到');
+        showMessage.error(tQuery('resultPanel.echartsNotFound'));
         return;
       }
 
@@ -1786,12 +1876,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
         data: base64Data,
       });
 
-      showMessage.success('图表已导出为 PNG 格式');
+      showMessage.success(tQuery('resultPanel.chartExported'));
     } catch (error) {
       logger.error('导出图表失败:', error);
-      showMessage.error(`导出图表失败: ${error}`);
+      showMessage.error(tQuery('resultPanel.chartExportFailed', { error: String(error) }));
     }
-  }, []);
+  }, [tQuery]);
 
   if (collapsed) {
     return (
@@ -1817,7 +1907,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
             >
               <Play className='w-3 h-3' />
-              执行器
+              {tQuery('resultPanel.tabs.executor')}
             </TabsTrigger>
 
           {/* 动态数据tab - 根据SQL语句类型显示不同的tab */}
@@ -1869,17 +1959,17 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               const getTabLabel = () => {
                 switch (statementCategory) {
                   case 'query':
-                    return '查询结果';
+                    return tQuery('resultPanel.tabs.queryResult');
                   case 'write':
-                    return '写入结果';
+                    return tQuery('resultPanel.tabs.writeResult');
                   case 'delete':
-                    return '删除结果';
+                    return tQuery('resultPanel.tabs.deleteResult');
                   case 'ddl':
-                    return '操作结果';
+                    return tQuery('resultPanel.tabs.operationResult');
                   case 'permission':
-                    return '权限结果';
+                    return tQuery('resultPanel.tabs.permissionResult');
                   default:
-                    return '执行结果';
+                    return tQuery('resultPanel.tabs.executionResult');
                 }
               };
 
@@ -2005,13 +2095,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 <CardHeader className='pb-2'>
                   <CardTitle className='text-sm flex items-center gap-2'>
                     <Activity className='w-4 h-4' />
-                    执行概览
+                    {tQuery('resultPanel.executor.overview')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className='space-y-2'>
                     <div className='flex items-center justify-between'>
-                      <span className='text-xs text-muted-foreground'>状态</span>
+                      <span className='text-xs text-muted-foreground'>{tQuery('resultPanel.executor.status')}</span>
                       <Badge
                         variant={allResults.length > 0 ? 'default' : 'secondary'}
                         className='text-xs'
@@ -2019,31 +2109,31 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         {allResults.length > 0 ? (
                           <>
                             <CheckCircle className='w-3 h-3 mr-1' />
-                            成功
+                            {tQuery('resultPanel.executor.success')}
                           </>
                         ) : (
                           <>
                             <Clock className='w-3 h-3 mr-1' />
-                            待执行
+                            {tQuery('resultPanel.executor.pending')}
                           </>
                         )}
                       </Badge>
                     </div>
                     <div className='flex items-center justify-between'>
-                      <span className='text-xs text-muted-foreground'>查询数</span>
+                      <span className='text-xs text-muted-foreground'>{tQuery('resultPanel.executor.queryCount')}</span>
                       <span className='text-sm font-mono font-semibold'>
                         {executedQueries.length}
                       </span>
                     </div>
                     <div className='flex items-center justify-between'>
-                      <span className='text-xs text-muted-foreground'>总耗时</span>
+                      <span className='text-xs text-muted-foreground'>{tQuery('resultPanel.executor.totalTime')}</span>
                       <span className='text-sm font-mono font-semibold'>
                         {executionTime}ms
                       </span>
                     </div>
                     {executedQueries.length > 0 && (
                       <div className='flex items-center justify-between'>
-                        <span className='text-xs text-muted-foreground'>平均耗时</span>
+                        <span className='text-xs text-muted-foreground'>{tQuery('resultPanel.executor.avgTime')}</span>
                         <span className='text-sm font-mono'>
                           {Math.round(executionTime / executedQueries.length)}ms
                         </span>
@@ -2058,20 +2148,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 <CardHeader className='pb-2'>
                   <CardTitle className='text-sm flex items-center gap-2'>
                     <Zap className='w-4 h-4' />
-                    性能分析
+                    {tQuery('resultPanel.executor.performanceAnalysis')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className='space-y-3'>
                     <div>
                       <div className='flex justify-between text-xs mb-1'>
-                        <span>执行效率</span>
+                        <span>{tQuery('resultPanel.executor.executionEfficiency')}</span>
                         <span className='font-medium'>
                           {executionTime < 1000
-                            ? '优秀'
+                            ? tQuery('resultPanel.executor.excellent')
                             : executionTime < 5000
-                              ? '良好'
-                              : '需优化'}
+                              ? tQuery('resultPanel.executor.good')
+                              : tQuery('resultPanel.executor.needsOptimization')}
                         </span>
                       </div>
                       <Progress
@@ -2085,7 +2175,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     {allResults.length > 0 && (
                       <div>
                         <div className='flex justify-between text-xs mb-1'>
-                          <span>总返回行数</span>
+                          <span>{tQuery('resultPanel.executor.totalRows')}</span>
                           <span className='font-mono font-medium'>
                             {allResults
                               .reduce((sum, r) => sum + (r.rowCount || 0), 0)
@@ -2110,7 +2200,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 <CardHeader className='pb-2'>
                   <CardTitle className='text-sm flex items-center gap-2'>
                     <Lightbulb className='w-4 h-4' />
-                    优化建议
+                    {tQuery('resultPanel.executor.optimizationSuggestions')}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -2118,29 +2208,29 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     {executionTime > 5000 ? (
                       <div className='flex items-start gap-2 text-orange-600 dark:text-orange-400'>
                         <AlertTriangle className='w-3 h-3 mt-0.5 flex-shrink-0' />
-                        <span>查询较慢，建议添加时间范围或索引</span>
+                        <span>{tQuery('resultPanel.executor.slowQuerySuggestion')}</span>
                       </div>
                     ) : executionTime > 1000 ? (
                       <div className='flex items-start gap-2 text-blue-600 dark:text-blue-400'>
                         <Info className='w-3 h-3 mt-0.5 flex-shrink-0' />
-                        <span>性能良好，可考虑进一步优化</span>
+                        <span>{tQuery('resultPanel.executor.goodPerformanceSuggestion')}</span>
                       </div>
                     ) : (
                       <div className='flex items-start gap-2 text-green-600 dark:text-green-400'>
                         <CheckCircle className='w-3 h-3 mt-0.5 flex-shrink-0' />
-                        <span>查询性能优秀</span>
+                        <span>{tQuery('resultPanel.executor.excellentPerformance')}</span>
                       </div>
                     )}
                     {allResults.reduce((sum, r) => sum + (r.rowCount || 0), 0) > 10000 && (
                       <div className='flex items-start gap-2 text-blue-600 dark:text-blue-400'>
                         <Info className='w-3 h-3 mt-0.5 flex-shrink-0' />
-                        <span>数据量较大，建议使用聚合查询</span>
+                        <span>{tQuery('resultPanel.executor.largeDataSuggestion')}</span>
                       </div>
                     )}
                     {executedQueries.length > 1 && (
                       <div className='flex items-start gap-2 text-muted-foreground'>
                         <Info className='w-3 h-3 mt-0.5 flex-shrink-0' />
-                        <span>批量执行了 {executedQueries.length} 条查询</span>
+                        <span>{tQuery('resultPanel.executor.batchExecuted', { count: executedQueries.length })}</span>
                       </div>
                     )}
                   </div>

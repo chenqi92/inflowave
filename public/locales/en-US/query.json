@@ -283,5 +283,232 @@
   "refresh": "Refresh",
   "close_panel": "Close Panel",
   "execute_button": "Execute",
-  "delete_button": "Delete"
+  "delete_button": "Delete",
+  "resultPanel": {
+    "noDataToExport": "No data to export",
+    "dataExported": "Data exported as {{format}} format",
+    "exportFailed": "Failed to export data",
+    "noDataToCopy": "No data to copy",
+    "unsupportedCopyFormat": "Unsupported copy format",
+    "copyFormats": {
+      "text": "Text",
+      "insert": "INSERT Statement"
+    },
+    "dataCopied": "Copied as {{format}}",
+    "dataCopiedDescription": "Copied {{rows}} rows",
+    "copyFailed": "Failed to copy data",
+    "noFieldStatsToExport": "No field statistics to export",
+    "fieldStatsExported": "Field statistics exported as {{format}} format",
+    "exportFieldStatsFailed": "Failed to export field statistics",
+    "fieldStatsHeaders": {
+      "fieldName": "Field Name",
+      "dataType": "Data Type",
+      "nullCount": "Null Count",
+      "uniqueCount": "Unique Count",
+      "minValue": "Min Value",
+      "maxValue": "Max Value",
+      "avgValue": "Avg Value",
+      "medianValue": "Median Value"
+    },
+    "queryLabel": "Query {{index}}",
+    "queryStats": "Query{{index}}_Stats",
+    "performanceSlow": {
+      "title": "Slow Query Performance",
+      "description": "Query took {{seconds}} seconds. Consider adding time range limits, using indexes, or optimizing query conditions to improve performance."
+    },
+    "performanceOptimizable": {
+      "title": "Query Performance Can Be Optimized",
+      "description": "Query took {{seconds}} seconds. Performance is acceptable but there's still room for optimization."
+    },
+    "performanceOptimizableApprox": {
+      "title": "Query Performance Can Be Optimized",
+      "description": "Query took approximately {{seconds}} seconds. Performance is acceptable but there's still room for optimization."
+    },
+    "performanceExcellent": {
+      "title": "Excellent Query Performance",
+      "description": "Query took only {{ms}} milliseconds, very fast response time, suitable for real-time query scenarios."
+    },
+    "performanceSlowApprox": {
+      "title": "Slow Query Performance",
+      "description": "Query took approximately {{seconds}} seconds. Consider adding time range limits, using indexes, or optimizing query conditions."
+    },
+    "largeDataAggregation": {
+      "title": "Large Dataset Aggregation Suggestions",
+      "description": "Query returned {{rows}} rows. Consider using GROUP BY with time aggregation (e.g., by minute, hour) to reduce data volume and improve readability."
+    },
+    "largeDataAggregationSimple": {
+      "title": "Large Dataset Aggregation Suggestions",
+      "description": "Query returned {{rows}} rows. Consider using GROUP BY with time aggregation to reduce data volume."
+    },
+    "largeDataset": {
+      "title": "Large Dataset",
+      "description": "Query returned {{rows}} rows. Consider using time range limits or aggregation queries to improve performance."
+    },
+    "largeDatasetSimple": {
+      "title": "Large Dataset",
+      "description": "Query returned {{rows}} rows. Consider using time range limits or aggregation queries."
+    },
+    "smallDataset": {
+      "title": "Small Dataset",
+      "description": "Query only returned {{rows}} rows. You may need to check if the time range or query conditions are too restrictive."
+    },
+    "smallDatasetSimple": {
+      "title": "Small Dataset",
+      "description": "Query only returned {{rows}} rows. You may need to check the time range or query conditions."
+    },
+    "highVariation": {
+      "title": "{{field}} High Value Variation",
+      "description": "Field {{field}} has a coefficient of variation of {{cv}}, with high value fluctuation ranging from {{min}} to {{max}}."
+    },
+    "tooManyFields": {
+      "title": "Too Many Fields",
+      "description": "Query returned {{count}} fields. Consider selecting only the needed fields to improve query performance and readability."
+    },
+    "categoricalFields": {
+      "title": "Categorical Fields Detected",
+      "description": "Fields {{fields}} have a low number of unique values (<10), suitable for grouping or categorization in aggregate analysis."
+    },
+    "uniqueIdentifierFields": {
+      "title": "Unique Identifier Fields Detected",
+      "description": "Fields {{fields}} have all unique values, possibly ID or timestamp fields."
+    },
+    "significantTrendUp": {
+      "title": "{{field}} Significant Upward Trend",
+      "description": "Field {{field}} increased by approximately {{percent}}% within the query time range, recommend paying attention to this significant change."
+    },
+    "significantTrendDown": {
+      "title": "{{field}} Significant Downward Trend",
+      "description": "Field {{field}} decreased by approximately {{percent}}% within the query time range, recommend paying attention to this significant change."
+    },
+    "trendUp": {
+      "title": "{{field}} Upward Trend",
+      "description": "Field {{field}} increased by approximately {{percent}}% within the query time range."
+    },
+    "trendDown": {
+      "title": "{{field}} Downward Trend",
+      "description": "Field {{field}} decreased by approximately {{percent}}% within the query time range."
+    },
+    "outliers": {
+      "title": "{{field}} Has Outliers",
+      "description": "Detected {{count}} anomalous data points (exceeding 3 standard deviations), accounting for {{percent}}%, recommend checking if data collection is normal."
+    },
+    "chartNotFound": "Chart instance not found",
+    "echartsNotFound": "ECharts instance not found",
+    "chartExportFormats": {
+      "png": "PNG Image"
+    },
+    "chartExported": "Chart exported as PNG format",
+    "chartExportFailed": "Failed to export chart: {{error}}",
+    "tabs": {
+      "executor": "Executor",
+      "queryResult": "Query Result",
+      "writeResult": "Write Result",
+      "deleteResult": "Delete Result",
+      "operationResult": "Operation Result",
+      "permissionResult": "Permission Result",
+      "executionResult": "Execution Result",
+      "fieldStats": "Field Statistics",
+      "visualization": "Visualization",
+      "visualizationMulti": "Visualization {{index}}",
+      "insights": "Insights"
+    },
+    "executor": {
+      "overview": "Execution Overview",
+      "status": "Status",
+      "success": "Success",
+      "pending": "Pending",
+      "queryCount": "Query Count",
+      "totalTime": "Total Time",
+      "avgTime": "Avg Time",
+      "totalRows": "Total Rows",
+      "performanceAnalysis": "Performance Analysis",
+      "executionEfficiency": "Execution Efficiency",
+      "excellent": "Excellent",
+      "good": "Good",
+      "needsOptimization": "Needs Optimization",
+      "optimizationSuggestions": "Optimization Suggestions",
+      "slowQuerySuggestion": "Query is slow, consider adding time range limits or indexes",
+      "goodPerformanceSuggestion": "Performance is good, can consider further optimization",
+      "excellentPerformance": "Excellent query performance",
+      "largeDataSuggestion": "Large dataset, consider using aggregate queries",
+      "batchExecuted": "Executed {{count}} queries in batch"
+    },
+    "dataQuality": {
+      "highNullFields": {
+        "title": "Data Quality Issues",
+        "description": "Fields {{fields}} contain over 50% null values, which may affect data analysis accuracy.",
+        "descriptionShort": "Fields {{fields}} contain over 50% null values, may affect analysis accuracy."
+      },
+      "mediumNullFields": {
+        "title": "Some Fields Have Null Values",
+        "description": "Fields {{fields}} contain 20%-50% null values, recommend handling null values during analysis.",
+        "descriptionShort": "Fields {{fields}} contain 20%-50% null values, recommend handling during analysis."
+      },
+      "noNullFields": {
+        "title": "Good Data Completeness",
+        "description": "All fields have no null values, data completeness is 100%, excellent data quality."
+      },
+      "lowCardinality": {
+        "title": "Low Cardinality Fields Detected",
+        "description": "Fields {{fields}} have a low number of unique values (<10), suitable for grouping or categorization."
+      }
+    },
+    "timeSeries": {
+      "longTimeSpan": {
+        "title": "Long Time Span Data",
+        "description": "Data time span is {{days}} days, recommend using time aggregation (GROUP BY time(1h) or time(1d)) to improve visualization.",
+        "descriptionShort": "Data time span is {{days}} days, recommend using time aggregation (by hour or day) to improve visualization."
+      },
+      "veryLongTimeSpan": {
+        "title": "Very Long Time Span Data",
+        "description": "Data time span exceeds {{years}} years, recommend using daily or weekly aggregation to improve visualization."
+      },
+      "shortTimeSpan": {
+        "title": "Short Time Span Data",
+        "description": "Data time span is only {{minutes}} minutes, suitable for fine-grained real-time monitoring analysis."
+      },
+      "highFrequencySampling": {
+        "title": "High Frequency Sampling Data",
+        "description": "Average sampling interval is approximately {{ms}} milliseconds, data collection frequency is very high, suitable for real-time monitoring scenarios."
+      },
+      "secondLevelSampling": {
+        "title": "Second-Level Sampling Data",
+        "description": "Average sampling interval is approximately {{seconds}} seconds, moderate data density, suitable for short-term trend analysis."
+      },
+      "minuteLevelSampling": {
+        "title": "Minute-Level Sampling Data",
+        "description": "Average sampling interval is approximately {{minutes}} minutes, suitable for medium-term trend analysis."
+      },
+      "hourLevelSampling": {
+        "title": "Hour-Level Sampling Data",
+        "description": "Average sampling interval is approximately {{hours}} hours, suitable for long-term trend analysis."
+      },
+      "unevenSampling": {
+        "title": "Uneven Sampling Intervals",
+        "description": "Data sampling intervals vary significantly (coefficient of variation {{cv}}%), may indicate data loss or unstable collection."
+      }
+    },
+    "numericFields": {
+      "manyZeros": {
+        "title": "{{field}} Contains Many Zero Values",
+        "description": "Field {{field}} has {{percent}}% zero values, may need to check data collection or sensor status."
+      },
+      "hasNegatives": {
+        "title": "{{field}} Has Negative Values",
+        "description": "Field {{field}} has {{count}} negative values ({{percent}}%), if this field should not be negative, please check data source."
+      },
+      "constantField": {
+        "title": "{{field}} Is a Constant Field",
+        "description": "Field {{field}} has all identical values ({{value}}), may not need to be included in query results."
+      },
+      "trendAnalysis": {
+        "title": "{{field}} Significant {{direction}} Trend",
+        "description": "Field {{field}} {{direction}} by approximately {{percent}}% within the query time range, recommend paying attention to this trend."
+      },
+      "anomalyDetected": {
+        "title": "{{field}} Has Anomalies",
+        "description": "Detected {{count}} anomalous data points (exceeding 3 standard deviations), recommend checking if data collection is normal."
+      }
+    }
+  }
 }

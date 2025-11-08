@@ -283,5 +283,232 @@
   "refresh": "刷新",
   "close_panel": "关闭面板",
   "execute_button": "执行",
-  "delete_button": "删除"
+  "delete_button": "删除",
+  "resultPanel": {
+    "noDataToExport": "没有可导出的数据",
+    "dataExported": "数据已导出为 {{format}} 格式",
+    "exportFailed": "导出数据失败",
+    "noDataToCopy": "没有可复制的数据",
+    "unsupportedCopyFormat": "不支持的复制格式",
+    "copyFormats": {
+      "text": "文本",
+      "insert": "INSERT 语句"
+    },
+    "dataCopied": "已复制为 {{format}}",
+    "dataCopiedDescription": "已复制 {{rows}} 行数据",
+    "copyFailed": "复制数据失败",
+    "noFieldStatsToExport": "没有可导出的字段统计数据",
+    "fieldStatsExported": "字段统计已导出为 {{format}} 格式",
+    "exportFieldStatsFailed": "导出字段统计失败",
+    "fieldStatsHeaders": {
+      "fieldName": "字段名",
+      "dataType": "数据类型",
+      "nullCount": "空值数量",
+      "uniqueCount": "唯一值数量",
+      "minValue": "最小值",
+      "maxValue": "最大值",
+      "avgValue": "平均值",
+      "medianValue": "中位数"
+    },
+    "queryLabel": "查询 {{index}}",
+    "queryStats": "查询{{index}}_统计",
+    "performanceSlow": {
+      "title": "查询性能较慢",
+      "description": "查询耗时 {{seconds}} 秒，建议添加时间范围限制、使用索引或优化查询条件以提高性能。"
+    },
+    "performanceOptimizable": {
+      "title": "查询性能可优化",
+      "description": "查询耗时 {{seconds}} 秒，性能尚可，但仍有优化空间。"
+    },
+    "performanceOptimizableApprox": {
+      "title": "查询性能可优化",
+      "description": "查询耗时约 {{seconds}} 秒，性能尚可，但仍有优化空间。"
+    },
+    "performanceExcellent": {
+      "title": "查询性能优秀",
+      "description": "查询耗时仅 {{ms}} 毫秒，响应速度非常快，适合实时查询场景。"
+    },
+    "performanceSlowApprox": {
+      "title": "查询性能较慢",
+      "description": "查询耗时约 {{seconds}} 秒，建议添加时间范围限制、使用索引或优化查询条件。"
+    },
+    "largeDataAggregation": {
+      "title": "大数据集聚合建议",
+      "description": "查询返回了 {{rows}} 行数据，建议使用 GROUP BY 进行时间聚合（如按分钟、小时聚合）以减少数据量并提高可读性。"
+    },
+    "largeDataAggregationSimple": {
+      "title": "大数据集聚合建议",
+      "description": "查询返回了 {{rows}} 行数据，建议使用 GROUP BY 进行时间聚合以减少数据量。"
+    },
+    "largeDataset": {
+      "title": "数据量较大",
+      "description": "查询返回了 {{rows}} 行数据，建议考虑使用时间范围限制或聚合查询以提高性能。"
+    },
+    "largeDatasetSimple": {
+      "title": "数据量较大",
+      "description": "查询返回了 {{rows}} 行数据，建议考虑使用时间范围限制或聚合查询。"
+    },
+    "smallDataset": {
+      "title": "数据量较少",
+      "description": "查询仅返回了 {{rows}} 行数据，可能需要检查时间范围或查询条件是否过于严格。"
+    },
+    "smallDatasetSimple": {
+      "title": "数据量较少",
+      "description": "查询仅返回了 {{rows}} 行数据，可能需要检查时间范围或查询条件。"
+    },
+    "highVariation": {
+      "title": "{{field}} 数值波动较大",
+      "description": "字段 {{field}} 的变异系数为 {{cv}}，数值波动很大，范围从 {{min}} 到 {{max}}。"
+    },
+    "tooManyFields": {
+      "title": "字段数量较多",
+      "description": "查询返回了 {{count}} 个字段，建议只选择需要的字段以提高查询性能和可读性。"
+    },
+    "categoricalFields": {
+      "title": "检测到分类字段",
+      "description": "字段 {{fields}} 的唯一值数量较少（<10），适合用作分组或分类维度进行聚合分析。"
+    },
+    "uniqueIdentifierFields": {
+      "title": "检测到唯一标识字段",
+      "description": "字段 {{fields}} 的每个值都唯一，可能是ID或时间戳字段。"
+    },
+    "significantTrendUp": {
+      "title": "{{field}} 显著上升趋势",
+      "description": "字段 {{field}} 在查询时间范围内上升了约 {{percent}}%，建议关注此显著变化。"
+    },
+    "significantTrendDown": {
+      "title": "{{field}} 显著下降趋势",
+      "description": "字段 {{field}} 在查询时间范围内下降了约 {{percent}}%，建议关注此显著变化。"
+    },
+    "trendUp": {
+      "title": "{{field}} 上升趋势",
+      "description": "字段 {{field}} 在查询时间范围内上升了约 {{percent}}%。"
+    },
+    "trendDown": {
+      "title": "{{field}} 下降趋势",
+      "description": "字段 {{field}} 在查询时间范围内下降了约 {{percent}}%。"
+    },
+    "outliers": {
+      "title": "{{field}} 存在异常值",
+      "description": "检测到 {{count}} 个异常数据点（超出3倍标准差），占比 {{percent}}%，建议检查数据采集是否正常。"
+    },
+    "chartNotFound": "图表实例未找到",
+    "echartsNotFound": "ECharts实例未找到",
+    "chartExportFormats": {
+      "png": "PNG 图片"
+    },
+    "chartExported": "图表已导出为 PNG 格式",
+    "chartExportFailed": "导出图表失败: {{error}}",
+    "tabs": {
+      "executor": "执行器",
+      "queryResult": "查询结果",
+      "writeResult": "写入结果",
+      "deleteResult": "删除结果",
+      "operationResult": "操作结果",
+      "permissionResult": "权限结果",
+      "executionResult": "执行结果",
+      "fieldStats": "字段统计",
+      "visualization": "可视化",
+      "visualizationMulti": "可视化 {{index}}",
+      "insights": "洞察"
+    },
+    "executor": {
+      "overview": "执行概览",
+      "status": "状态",
+      "success": "成功",
+      "pending": "待执行",
+      "queryCount": "查询数",
+      "totalTime": "总耗时",
+      "avgTime": "平均耗时",
+      "totalRows": "总返回行数",
+      "performanceAnalysis": "性能分析",
+      "executionEfficiency": "执行效率",
+      "excellent": "优秀",
+      "good": "良好",
+      "needsOptimization": "需优化",
+      "optimizationSuggestions": "优化建议",
+      "slowQuerySuggestion": "查询较慢，建议添加时间范围或索引",
+      "goodPerformanceSuggestion": "性能良好，可考虑进一步优化",
+      "excellentPerformance": "查询性能优秀",
+      "largeDataSuggestion": "数据量较大，建议使用聚合查询",
+      "batchExecuted": "批量执行了 {{count}} 条查询"
+    },
+    "dataQuality": {
+      "highNullFields": {
+        "title": "数据质量问题",
+        "description": "字段 {{fields}} 包含超过50%的空值，可能影响数据分析的准确性。",
+        "descriptionShort": "字段 {{fields}} 包含超过50%的空值，可能影响数据分析准确性。"
+      },
+      "mediumNullFields": {
+        "title": "部分字段存在空值",
+        "description": "字段 {{fields}} 包含 20%-50% 的空值，建议在分析时注意处理空值情况。",
+        "descriptionShort": "字段 {{fields}} 包含 20%-50% 的空值，建议在分析时注意处理。"
+      },
+      "noNullFields": {
+        "title": "数据完整性良好",
+        "description": "所有字段均无空值，数据完整性为100%，数据质量优秀。"
+      },
+      "lowCardinality": {
+        "title": "低基数字段检测",
+        "description": "字段 {{fields}} 的唯一值数量较少（<10），适合用作分组或分类维度。"
+      }
+    },
+    "timeSeries": {
+      "longTimeSpan": {
+        "title": "长时间跨度数据",
+        "description": "数据时间跨度为 {{days}} 天，建议使用时间聚合（GROUP BY time(1h) 或 time(1d)）来提高可视化效果。",
+        "descriptionShort": "数据时间跨度为 {{days}} 天，建议使用时间聚合（按小时或按天）来提高可视化效果。"
+      },
+      "veryLongTimeSpan": {
+        "title": "超长时间跨度数据",
+        "description": "数据时间跨度超过 {{years}} 年，建议使用按天或按周聚合来提高可视化效果。"
+      },
+      "shortTimeSpan": {
+        "title": "短时间跨度数据",
+        "description": "数据时间跨度仅为 {{minutes}} 分钟，适合进行细粒度的实时监控分析。"
+      },
+      "highFrequencySampling": {
+        "title": "高频采样数据",
+        "description": "平均采样间隔约 {{ms}} 毫秒，数据采集频率很高，适合实时监控场景。"
+      },
+      "secondLevelSampling": {
+        "title": "秒级采样数据",
+        "description": "平均采样间隔约 {{seconds}} 秒，数据密度适中，适合短期趋势分析。"
+      },
+      "minuteLevelSampling": {
+        "title": "分钟级采样数据",
+        "description": "平均采样间隔约 {{minutes}} 分钟，适合中期趋势分析。"
+      },
+      "hourLevelSampling": {
+        "title": "小时级采样数据",
+        "description": "平均采样间隔约 {{hours}} 小时，适合长期趋势分析。"
+      },
+      "unevenSampling": {
+        "title": "采样间隔不均匀",
+        "description": "数据采样间隔变化较大（变异系数 {{cv}}%），可能存在数据缺失或采集不稳定。"
+      }
+    },
+    "numericFields": {
+      "manyZeros": {
+        "title": "{{field}} 包含大量零值",
+        "description": "字段 {{field}} 中有 {{percent}}% 的值为0，可能需要检查数据采集或传感器状态。"
+      },
+      "hasNegatives": {
+        "title": "{{field}} 存在负值",
+        "description": "字段 {{field}} 中有 {{count}} 个负值（{{percent}}%），如果该字段不应为负，请检查数据源。"
+      },
+      "constantField": {
+        "title": "{{field}} 为常量字段",
+        "description": "字段 {{field}} 的所有值都相同（{{value}}），可能不需要包含在查询结果中。"
+      },
+      "trendAnalysis": {
+        "title": "{{field}} 显著{{direction}}趋势",
+        "description": "字段 {{field}} 在查询时间范围内{{direction}}了约 {{percent}}%，建议关注此变化趋势。"
+      },
+      "anomalyDetected": {
+        "title": "{{field}} 存在异常值",
+        "description": "检测到 {{count}} 个异常数据点（超出3倍标准差），建议检查数据采集是否正常。"
+      }
+    }
+  }
 }
