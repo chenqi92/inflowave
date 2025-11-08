@@ -2,7 +2,7 @@ import { BaseConnector } from './BaseConnector';
 import type { FormSection, BaseConnectionConfig, ValidationErrors } from './types';
 import type { ConnectionConfig } from '@/types';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
-import { t } from '@/i18n';
+import { tConn as t } from '@/i18n';
 import { getProxyConfigSection } from './proxyConfig';
 
 /**
@@ -71,98 +71,98 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
     const basicSection = baseSections[0];
     basicSection.fields.push({
       name: 'version',
-      label: t('connections.influxdb.version'),
+      label: t('influxdb.version'),
       type: 'select',
       required: true,
       defaultValue: '2.x',
       options: this.getVersionOptions(),
-      description: t('connections.influxdb.version_description')
+      description: t('influxdb.version_description')
     });
 
     // InfluxDB特定配置
     const influxdbSection: FormSection = {
       id: 'influxdb',
-      title: t('connections.influxdb.settings'),
+      title: t('influxdb.settings'),
       fields: [
         // InfluxDB 1.x 字段
         {
           name: 'database',
-          label: t('connections.influxdb.database'),
+          label: t('influxdb.database'),
           type: 'text',
-          placeholder: t('connections.influxdb.database_placeholder'),
+          placeholder: t('influxdb.database_placeholder'),
           visible: (formData) => formData.version === '1.x',
           validation: (value: string, formData: any) => {
             if (formData.version === '1.x' && !value?.trim()) {
-              return t('connections.influxdb.database_required');
+              return t('influxdb.database_required');
             }
           }
         },
         {
           name: 'retentionPolicy',
-          label: t('connections.influxdb.retention_policy'),
+          label: t('influxdb.retention_policy'),
           type: 'text',
           placeholder: 'autogen',
           defaultValue: 'autogen',
           visible: (formData) => formData.version === '1.x',
-          description: t('connections.influxdb.retention_policy_description')
+          description: t('influxdb.retention_policy_description')
         },
 
         // InfluxDB 2.x/3.x 字段
         {
           name: 'apiToken',
-          label: t('connections.influxdb.api_token'),
+          label: t('influxdb.api_token'),
           type: 'password',
-          placeholder: t('connections.influxdb.api_token_placeholder'),
+          placeholder: t('influxdb.api_token_placeholder'),
           required: true,
           visible: (formData) => formData.version === '2.x' || formData.version === '3.x',
           validation: (value: string, formData: any) => {
             if ((formData.version === '2.x' || formData.version === '3.x') && !value?.trim()) {
-              return t('connections.influxdb.api_token_required');
+              return t('influxdb.api_token_required');
             }
           }
         },
         {
           name: 'organization',
-          label: t('connections.influxdb.organization'),
+          label: t('influxdb.organization'),
           type: 'text',
-          placeholder: t('connections.influxdb.organization_placeholder'),
+          placeholder: t('influxdb.organization_placeholder'),
           visible: (formData) => formData.version === '2.x' || formData.version === '3.x',
           required: true,
           validation: (value: string, formData: any) => {
             if (formData.version === '2.x' && !value?.trim()) {
-              return t('connections.influxdb.organization_required');
+              return t('influxdb.organization_required');
             }
           },
-          description: t('connections.influxdb.organization_description')
+          description: t('influxdb.organization_description')
         },
         {
           name: 'bucket',
-          label: t('connections.influxdb.bucket'),
+          label: t('influxdb.bucket'),
           type: 'text',
-          placeholder: t('connections.influxdb.bucket_placeholder'),
+          placeholder: t('influxdb.bucket_placeholder'),
           visible: (formData) => formData.version === '2.x' || formData.version === '3.x',
-          description: t('connections.influxdb.bucket_description')
+          description: t('influxdb.bucket_description')
         },
 
         // 兼容性选项
         {
           name: 'v1CompatibilityApi',
-          label: t('connections.influxdb.v1_compatibility'),
+          label: t('influxdb.v1_compatibility'),
           type: 'switch',
           defaultValue: false,
           visible: (formData) => formData.version === '2.x',
-          description: t('connections.influxdb.v1_compatibility_description')
+          description: t('influxdb.v1_compatibility_description')
         },
 
         // 查询语言
         {
           name: 'defaultQueryLanguage',
-          label: t('connections.influxdb.query_language'),
+          label: t('influxdb.query_language'),
           type: 'select',
           defaultValue: 'flux',
           options: [],
           visible: (formData) => !!formData.version,
-          description: t('connections.influxdb.query_language_description')
+          description: t('influxdb.query_language_description')
         }
       ]
     };
@@ -186,14 +186,14 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
     // InfluxDB特定验证
     if (formData.version === '1.x') {
       if (!formData.database?.trim()) {
-        errors.database = t('connections.influxdb.database_required');
+        errors.database = t('influxdb.database_required');
       }
     } else if (formData.version === '2.x' || formData.version === '3.x') {
       if (!formData.apiToken?.trim()) {
-        errors.apiToken = t('connections.influxdb.api_token_required');
+        errors.apiToken = t('influxdb.api_token_required');
       }
       if (formData.version === '2.x' && !formData.organization?.trim()) {
-        errors.organization = t('connections.influxdb.organization_required');
+        errors.organization = t('influxdb.organization_required');
       }
     }
 

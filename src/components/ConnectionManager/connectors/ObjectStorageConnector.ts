@@ -2,7 +2,7 @@ import { BaseConnector } from './BaseConnector';
 import type { FormSection, BaseConnectionConfig, ValidationErrors } from './types';
 import type { ConnectionConfig } from '@/types';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
-import { t } from '@/i18n';
+import { tConn as t } from '@/i18n';
 import { getProxyConfigSection } from './proxyConfig';
 
 /**
@@ -52,7 +52,7 @@ export interface ObjectStorageConfig extends BaseConnectionConfig {
  */
 export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
   type = 'object-storage';
-  displayName = t('connections.object_storage.title');
+  displayName = t('object_storage.title');
   icon = getDatabaseBrandIcon('S3');
 
   /**
@@ -62,10 +62,10 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
     return [
       { value: 's3', label: 'Amazon S3' },
       { value: 'minio', label: 'MinIO' },
-      { value: 'aliyun-oss', label: t('connections.object_storage.aliyun_oss') },
-      { value: 'tencent-cos', label: t('connections.object_storage.tencent_cos') },
-      { value: 'qiniu-kodo', label: t('connections.object_storage.qiniu_kodo') },
-      { value: 'upyun', label: t('connections.object_storage.upyun') },
+      { value: 'aliyun-oss', label: t('object_storage.aliyun_oss') },
+      { value: 'tencent-cos', label: t('object_storage.tencent_cos') },
+      { value: 'qiniu-kodo', label: t('object_storage.qiniu_kodo') },
+      { value: 'upyun', label: t('object_storage.upyun') },
       { value: 'github', label: 'GitHub' },
       { value: 'smms', label: 'SM.MS' },
       { value: 'imgur', label: 'Imgur' }
@@ -87,24 +87,24 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
         ];
       case 'aliyun-oss':
         return [
-          { value: 'oss-cn-beijing', label: t('connections.object_storage.region_beijing') },
-          { value: 'oss-cn-shanghai', label: t('connections.object_storage.region_shanghai') },
-          { value: 'oss-cn-shenzhen', label: t('connections.object_storage.region_shenzhen') },
-          { value: 'oss-cn-hangzhou', label: t('connections.object_storage.region_hangzhou') }
+          { value: 'oss-cn-beijing', label: t('object_storage.region_beijing') },
+          { value: 'oss-cn-shanghai', label: t('object_storage.region_shanghai') },
+          { value: 'oss-cn-shenzhen', label: t('object_storage.region_shenzhen') },
+          { value: 'oss-cn-hangzhou', label: t('object_storage.region_hangzhou') }
         ];
       case 'tencent-cos':
         return [
-          { value: 'ap-beijing', label: t('connections.object_storage.region_beijing') },
-          { value: 'ap-shanghai', label: t('connections.object_storage.region_shanghai') },
-          { value: 'ap-guangzhou', label: t('connections.object_storage.region_guangzhou') }
+          { value: 'ap-beijing', label: t('object_storage.region_beijing') },
+          { value: 'ap-shanghai', label: t('object_storage.region_shanghai') },
+          { value: 'ap-guangzhou', label: t('object_storage.region_guangzhou') }
         ];
       case 'qiniu-kodo':
         return [
-          { value: 'z0', label: t('connections.object_storage.qiniu_z0') },
-          { value: 'z1', label: t('connections.object_storage.qiniu_z1') },
-          { value: 'z2', label: t('connections.object_storage.qiniu_z2') },
-          { value: 'na0', label: t('connections.object_storage.qiniu_na0') },
-          { value: 'as0', label: t('connections.object_storage.qiniu_as0') }
+          { value: 'z0', label: t('object_storage.qiniu_z0') },
+          { value: 'z1', label: t('object_storage.qiniu_z1') },
+          { value: 'z2', label: t('object_storage.qiniu_z2') },
+          { value: 'na0', label: t('object_storage.qiniu_na0') },
+          { value: 'as0', label: t('object_storage.qiniu_as0') }
         ];
       default:
         return [];
@@ -118,42 +118,42 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
     // 不使用基础的连接设置，因为对象存储有自己的配置方式
     const basicSection: FormSection = {
       id: 'basic',
-      title: t('connections.basic_info'),
+      title: t('basic_info'),
       fields: [
         {
           name: 'name',
-          label: t('connections.connection_name'),
+          label: t('connection_name'),
           type: 'text',
           required: true,
-          placeholder: t('connections.name_placeholder'),
+          placeholder: t('name_placeholder'),
           validation: (value: string) => {
             if (!value?.trim()) {
-              return t('connections.validation.name_required');
+              return t('validation.name_required');
             }
             if (value.length > 100) {
-              return t('connections.validation.name_too_long');
+              return t('validation.name_too_long');
             }
           }
         },
         {
           name: 'description',
-          label: t('connections.description'),
+          label: t('description'),
           type: 'textarea',
-          placeholder: t('connections.description_placeholder'),
+          placeholder: t('description_placeholder'),
           validation: (value: string) => {
             if (value && value.length > 500) {
-              return t('connections.validation.description_too_long');
+              return t('validation.description_too_long');
             }
           }
         },
         {
           name: 'objectStorageProvider',
-          label: t('connections.object_storage.provider'),
+          label: t('object_storage.provider'),
           type: 'select',
           required: true,
           defaultValue: 's3',
           options: this.getProviderOptions(),
-          description: t('connections.object_storage.provider_description')
+          description: t('object_storage.provider_description')
         }
       ]
     };
@@ -161,34 +161,34 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
     // 对象存储配置
     const storageSection: FormSection = {
       id: 'storage',
-      title: t('connections.object_storage.settings'),
+      title: t('object_storage.settings'),
       fields: [
         // S3/MinIO/OSS/COS - Endpoint
         {
           name: 's3Endpoint',
-          label: t('connections.object_storage.endpoint'),
+          label: t('object_storage.endpoint'),
           type: 'text',
           required: true,
           visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos'].includes(formData.objectStorageProvider),
           placeholder: 'https://s3.amazonaws.com',
-          description: t('connections.object_storage.endpoint_description'),
+          description: t('object_storage.endpoint_description'),
           validation: (value: string, formData: any) => {
             if (['s3', 'minio', 'aliyun-oss', 'tencent-cos'].includes(formData.objectStorageProvider) && !value?.trim()) {
-              return t('connections.object_storage.endpoint_required');
+              return t('object_storage.endpoint_required');
             }
           }
         },
         // S3/OSS/COS/七牛云 - Region
         {
           name: 's3Region',
-          label: t('connections.object_storage.region'),
+          label: t('object_storage.region'),
           type: 'select',
           required: true,
           options: (formData: any) => this.getRegionOptions(formData.objectStorageProvider || 's3'),
           visible: (formData) => ['s3', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
           validation: (value: string, formData: any) => {
             if (['s3', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
-              return t('connections.object_storage.region_required');
+              return t('object_storage.region_required');
             }
           }
         },
@@ -197,89 +197,89 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           name: 'bucket',
           label: (formData: any) => {
             if (formData.objectStorageProvider === 'upyun') {
-              return t('connections.object_storage.upyun_service_name');
+              return t('object_storage.upyun_service_name');
             }
-            return t('connections.object_storage.bucket');
+            return t('object_storage.bucket');
           },
           type: 'text',
           required: true,
           visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun'].includes(formData.objectStorageProvider),
-          placeholder: t('connections.object_storage.bucket_placeholder'),
-          description: t('connections.object_storage.bucket_description'),
+          placeholder: t('object_storage.bucket_placeholder'),
+          description: t('object_storage.bucket_description'),
           validation: (value: string, formData: any) => {
             if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun'].includes(formData.objectStorageProvider) && !value?.trim()) {
-              return t('connections.object_storage.bucket_required');
+              return t('object_storage.bucket_required');
             }
           }
         },
         // 七牛云 - 访问网址
         {
           name: 'qiniuAccessUrl',
-          label: t('connections.object_storage.qiniu_access_url'),
+          label: t('object_storage.qiniu_access_url'),
           type: 'text',
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'qiniu-kodo',
-          placeholder: t('connections.object_storage.qiniu_access_url_placeholder'),
-          description: t('connections.object_storage.qiniu_access_url_description'),
+          placeholder: t('object_storage.qiniu_access_url_placeholder'),
+          description: t('object_storage.qiniu_access_url_description'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'qiniu-kodo' && !value?.trim()) {
-              return t('connections.object_storage.qiniu_access_url_required');
+              return t('object_storage.qiniu_access_url_required');
             }
           }
         },
         // 又拍云 - 加速域名
         {
           name: 'upyunAccelerateUrl',
-          label: t('connections.object_storage.upyun_accelerate_url'),
+          label: t('object_storage.upyun_accelerate_url'),
           type: 'text',
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'upyun',
-          placeholder: t('connections.object_storage.upyun_accelerate_url_placeholder'),
-          description: t('connections.object_storage.upyun_accelerate_url_description'),
+          placeholder: t('object_storage.upyun_accelerate_url_placeholder'),
+          description: t('object_storage.upyun_accelerate_url_description'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'upyun' && !value?.trim()) {
-              return t('connections.object_storage.upyun_accelerate_url_required');
+              return t('object_storage.upyun_accelerate_url_required');
             }
           }
         },
         // GitHub - 仓库名
         {
           name: 'githubRepo',
-          label: t('connections.object_storage.github_repo'),
+          label: t('object_storage.github_repo'),
           type: 'text',
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'github',
-          placeholder: t('connections.object_storage.github_repo_placeholder'),
-          description: t('connections.object_storage.github_repo_description'),
+          placeholder: t('object_storage.github_repo_placeholder'),
+          description: t('object_storage.github_repo_description'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'github' && !value?.trim()) {
-              return t('connections.object_storage.github_repo_required');
+              return t('object_storage.github_repo_required');
             }
           }
         },
         // GitHub - 分支名
         {
           name: 'githubBranch',
-          label: t('connections.object_storage.github_branch'),
+          label: t('object_storage.github_branch'),
           type: 'text',
           required: true,
           defaultValue: 'main',
           visible: (formData) => formData.objectStorageProvider === 'github',
-          placeholder: t('connections.object_storage.github_branch_placeholder'),
+          placeholder: t('object_storage.github_branch_placeholder'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'github' && !value?.trim()) {
-              return t('connections.object_storage.github_branch_required');
+              return t('object_storage.github_branch_required');
             }
           }
         },
         // SM.MS - 备用上传域名
         {
           name: 'smmsBackupDomain',
-          label: t('connections.object_storage.smms_backup_domain'),
+          label: t('object_storage.smms_backup_domain'),
           type: 'text',
           visible: (formData) => formData.objectStorageProvider === 'smms',
-          placeholder: t('connections.object_storage.smms_backup_domain_placeholder'),
-          description: t('connections.object_storage.smms_backup_domain_description')
+          placeholder: t('object_storage.smms_backup_domain_placeholder'),
+          description: t('object_storage.smms_backup_domain_description')
         }
       ]
     };
@@ -287,133 +287,133 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
     // 认证配置
     const authSection: FormSection = {
       id: 'auth',
-      title: t('connections.object_storage.auth_settings'),
+      title: t('object_storage.auth_settings'),
       fields: [
         // S3/MinIO/阿里云OSS/腾讯云COS/七牛云 - Access Key
         {
           name: 's3AccessKey',
-          label: t('connections.object_storage.access_key'),
+          label: t('object_storage.access_key'),
           type: 'text',
           required: true,
           visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
-          placeholder: t('connections.object_storage.access_key_placeholder'),
+          placeholder: t('object_storage.access_key_placeholder'),
           validation: (value: string, formData: any) => {
             if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
-              return t('connections.object_storage.access_key_required');
+              return t('object_storage.access_key_required');
             }
           }
         },
         // S3/MinIO/阿里云OSS/腾讯云COS/七牛云 - Secret Key
         {
           name: 's3SecretKey',
-          label: t('connections.object_storage.secret_key'),
+          label: t('object_storage.secret_key'),
           type: 'password',
           required: true,
           visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
-          placeholder: t('connections.object_storage.secret_key_placeholder'),
+          placeholder: t('object_storage.secret_key_placeholder'),
           validation: (value: string, formData: any) => {
             if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
-              return t('connections.object_storage.secret_key_required');
+              return t('object_storage.secret_key_required');
             }
           }
         },
         // 腾讯云COS - AppId
         {
           name: 'cosAppId',
-          label: t('connections.object_storage.cos_app_id'),
+          label: t('object_storage.cos_app_id'),
           type: 'text',
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'tencent-cos',
-          placeholder: t('connections.object_storage.cos_app_id_placeholder'),
-          description: t('connections.object_storage.cos_app_id_description'),
+          placeholder: t('object_storage.cos_app_id_placeholder'),
+          description: t('object_storage.cos_app_id_description'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'tencent-cos' && !value?.trim()) {
-              return t('connections.object_storage.cos_app_id_required');
+              return t('object_storage.cos_app_id_required');
             }
           }
         },
         // 又拍云 - 操作员
         {
           name: 'upyunOperator',
-          label: t('connections.object_storage.upyun_operator'),
+          label: t('object_storage.upyun_operator'),
           type: 'text',
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'upyun',
-          placeholder: t('connections.object_storage.upyun_operator_placeholder'),
+          placeholder: t('object_storage.upyun_operator_placeholder'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'upyun' && !value?.trim()) {
-              return t('connections.object_storage.upyun_operator_required');
+              return t('object_storage.upyun_operator_required');
             }
           }
         },
         // 又拍云 - 操作员密码
         {
           name: 'upyunOperatorPassword',
-          label: t('connections.object_storage.upyun_operator_password'),
+          label: t('object_storage.upyun_operator_password'),
           type: 'password',
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'upyun',
-          placeholder: t('connections.object_storage.upyun_operator_password_placeholder'),
-          description: t('connections.object_storage.upyun_operator_password_description'),
+          placeholder: t('object_storage.upyun_operator_password_placeholder'),
+          description: t('object_storage.upyun_operator_password_description'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'upyun' && !value?.trim()) {
-              return t('connections.object_storage.upyun_operator_password_required');
+              return t('object_storage.upyun_operator_password_required');
             }
           }
         },
         // GitHub - Token
         {
           name: 'githubToken',
-          label: t('connections.object_storage.github_token'),
+          label: t('object_storage.github_token'),
           type: 'password',
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'github',
-          placeholder: t('connections.object_storage.github_token_placeholder'),
-          description: t('connections.object_storage.github_token_description'),
+          placeholder: t('object_storage.github_token_placeholder'),
+          description: t('object_storage.github_token_description'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'github' && !value?.trim()) {
-              return t('connections.object_storage.github_token_required');
+              return t('object_storage.github_token_required');
             }
           }
         },
         // SM.MS - Token
         {
           name: 'smmsToken',
-          label: t('connections.object_storage.smms_token'),
+          label: t('object_storage.smms_token'),
           type: 'password',
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'smms',
-          placeholder: t('connections.object_storage.smms_token_placeholder'),
-          description: t('connections.object_storage.smms_token_description'),
+          placeholder: t('object_storage.smms_token_placeholder'),
+          description: t('object_storage.smms_token_description'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'smms' && !value?.trim()) {
-              return t('connections.object_storage.smms_token_required');
+              return t('object_storage.smms_token_required');
             }
           }
         },
         // Imgur - Client ID
         {
           name: 'imgurClientId',
-          label: t('connections.object_storage.imgur_client_id'),
+          label: t('object_storage.imgur_client_id'),
           type: 'text',
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'imgur',
-          placeholder: t('connections.object_storage.imgur_client_id_placeholder'),
-          description: t('connections.object_storage.imgur_client_id_description'),
+          placeholder: t('object_storage.imgur_client_id_placeholder'),
+          description: t('object_storage.imgur_client_id_description'),
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'imgur' && !value?.trim()) {
-              return t('connections.object_storage.imgur_client_id_required');
+              return t('object_storage.imgur_client_id_required');
             }
           }
         },
         // S3/MinIO - Session Token (可选)
         {
           name: 's3SessionToken',
-          label: t('connections.object_storage.session_token'),
+          label: t('object_storage.session_token'),
           type: 'password',
           visible: (formData) => ['s3', 'minio'].includes(formData.objectStorageProvider),
-          placeholder: t('connections.object_storage.session_token_placeholder'),
-          description: t('connections.object_storage.session_token_description')
+          placeholder: t('object_storage.session_token_placeholder'),
+          description: t('object_storage.session_token_description')
         }
       ]
     };
@@ -421,69 +421,69 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
     // 高级配置
     const advancedSection: FormSection = {
       id: 'advanced',
-      title: t('connections.advanced_settings'),
+      title: t('advanced_settings'),
       fields: [
         {
           name: 's3UseSSL',
-          label: t('connections.object_storage.use_ssl'),
+          label: t('object_storage.use_ssl'),
           type: 'switch',
           defaultValue: true,
-          description: t('connections.object_storage.use_ssl_description')
+          description: t('object_storage.use_ssl_description')
         },
         {
           name: 's3PathStyle',
-          label: t('connections.object_storage.path_style'),
+          label: t('object_storage.path_style'),
           type: 'switch',
           defaultValue: false,
           visible: (formData) => formData.objectStorageProvider === 'minio',
-          description: t('connections.object_storage.path_style_description')
+          description: t('object_storage.path_style_description')
         },
         {
           name: 'storagePath',
-          label: t('connections.object_storage.storage_path'),
+          label: t('object_storage.storage_path'),
           type: 'text',
-          placeholder: t('connections.object_storage.storage_path_placeholder'),
-          description: t('connections.object_storage.storage_path_description')
+          placeholder: t('object_storage.storage_path_placeholder'),
+          description: t('object_storage.storage_path_description')
         },
         {
           name: 'customDomain',
-          label: t('connections.object_storage.custom_domain'),
+          label: t('object_storage.custom_domain'),
           type: 'text',
-          placeholder: t('connections.object_storage.custom_domain_placeholder'),
-          description: t('connections.object_storage.custom_domain_description')
+          placeholder: t('object_storage.custom_domain_placeholder'),
+          description: t('object_storage.custom_domain_description')
         },
         {
           name: 'urlSuffix',
-          label: t('connections.object_storage.url_suffix'),
+          label: t('object_storage.url_suffix'),
           type: 'text',
-          placeholder: t('connections.object_storage.url_suffix_placeholder'),
-          description: t('connections.object_storage.url_suffix_description')
+          placeholder: t('object_storage.url_suffix_placeholder'),
+          description: t('object_storage.url_suffix_description')
         },
         {
           name: 's3InternalEndpoint',
-          label: t('connections.object_storage.internal_endpoint'),
+          label: t('object_storage.internal_endpoint'),
           type: 'text',
-          placeholder: t('connections.object_storage.internal_endpoint_placeholder'),
-          description: t('connections.object_storage.internal_endpoint_description')
+          placeholder: t('object_storage.internal_endpoint_placeholder'),
+          description: t('object_storage.internal_endpoint_description')
         },
         {
           name: 's3ExternalEndpoint',
-          label: t('connections.object_storage.external_endpoint'),
+          label: t('object_storage.external_endpoint'),
           type: 'text',
-          placeholder: t('connections.object_storage.external_endpoint_placeholder'),
-          description: t('connections.object_storage.external_endpoint_description')
+          placeholder: t('object_storage.external_endpoint_placeholder'),
+          description: t('object_storage.external_endpoint_description')
         },
         {
           name: 'timeout',
-          label: t('connections.timeout'),
+          label: t('timeout'),
           type: 'number',
           defaultValue: 30,
           min: 5,
           max: 300,
-          description: t('connections.timeout_description'),
+          description: t('timeout_description'),
           validation: (value: number) => {
             if (value < 5 || value > 300) {
-              return t('connections.validation.timeout_range');
+              return t('validation.timeout_range');
             }
           }
         }
@@ -517,7 +517,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
 
         // 检查必填
         if (field.required && !value) {
-          errors[field.name] = t('connections.validation.field_required', { field: field.label });
+          errors[field.name] = t('validation.field_required', { field: field.label });
         }
 
         // 自定义验证

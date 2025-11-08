@@ -2,7 +2,7 @@ import { BaseConnector } from './BaseConnector';
 import type { FormSection, BaseConnectionConfig, ValidationErrors } from './types';
 import type { ConnectionConfig } from '@/types';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
-import { t } from '@/i18n';
+import { tConn as t } from '@/i18n';
 import { getProxyConfigSection } from './proxyConfig';
 
 /**
@@ -37,63 +37,63 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
     // IoTDB特定配置
     const iotdbSection: FormSection = {
       id: 'iotdb',
-      title: t('connections.iotdb.settings'),
+      title: t('iotdb.settings'),
       fields: [
         {
           name: 'database',
-          label: t('connections.iotdb.database'),
+          label: t('iotdb.database'),
           type: 'text',
           placeholder: 'root',
           defaultValue: 'root',
-          description: t('connections.iotdb.database_description')
+          description: t('iotdb.database_description')
         },
         {
           name: 'sessionPoolSize',
-          label: t('connections.iotdb.session_pool_size'),
+          label: t('iotdb.session_pool_size'),
           type: 'number',
           defaultValue: 5,
           min: 1,
           max: 50,
-          description: t('connections.iotdb.session_pool_size_description'),
+          description: t('iotdb.session_pool_size_description'),
           validation: (value: number) => {
             if (value < 1 || value > 50) {
-              return t('connections.iotdb.session_pool_size_range');
+              return t('iotdb.session_pool_size_range');
             }
           }
         },
         {
           name: 'enableCompression',
-          label: t('connections.iotdb.enable_compression'),
+          label: t('iotdb.enable_compression'),
           type: 'switch',
           defaultValue: false,
-          description: t('connections.iotdb.enable_compression_description')
+          description: t('iotdb.enable_compression_description')
         },
         {
           name: 'timeZone',
-          label: t('connections.iotdb.timezone'),
+          label: t('iotdb.timezone'),
           type: 'select',
           defaultValue: 'Asia/Shanghai',
           options: [
-            { value: 'Asia/Shanghai', label: t('connections.iotdb.timezone_shanghai') },
-            { value: 'Asia/Tokyo', label: t('connections.iotdb.timezone_tokyo') },
-            { value: 'Europe/London', label: t('connections.iotdb.timezone_london') },
-            { value: 'America/New_York', label: t('connections.iotdb.timezone_newyork') },
+            { value: 'Asia/Shanghai', label: t('iotdb.timezone_shanghai') },
+            { value: 'Asia/Tokyo', label: t('iotdb.timezone_tokyo') },
+            { value: 'Europe/London', label: t('iotdb.timezone_london') },
+            { value: 'America/New_York', label: t('iotdb.timezone_newyork') },
             { value: 'UTC', label: 'UTC' }
           ],
-          description: t('connections.iotdb.timezone_description')
+          description: t('iotdb.timezone_description')
         },
         {
           name: 'fetchSize',
-          label: t('connections.iotdb.fetch_size'),
+          label: t('iotdb.fetch_size'),
           type: 'number',
           defaultValue: 5000,
           min: 100,
           max: 100000,
           step: 100,
-          description: t('connections.iotdb.fetch_size_description'),
+          description: t('iotdb.fetch_size_description'),
           validation: (value: number) => {
             if (value < 100 || value > 100000) {
-              return t('connections.iotdb.fetch_size_range');
+              return t('iotdb.fetch_size_range');
             }
           }
         }
@@ -103,41 +103,41 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
     // 高级配置
     const advancedSection: FormSection = {
       id: 'iotdb-advanced',
-      title: t('connections.iotdb.advanced_settings'),
+      title: t('iotdb.advanced_settings'),
       fields: [
         {
           name: 'enableRedirection',
-          label: t('connections.iotdb.enable_redirection'),
+          label: t('iotdb.enable_redirection'),
           type: 'switch',
           defaultValue: false,
-          description: t('connections.iotdb.enable_redirection_description')
+          description: t('iotdb.enable_redirection_description')
         },
         {
           name: 'maxRetryCount',
-          label: t('connections.iotdb.max_retry_count'),
+          label: t('iotdb.max_retry_count'),
           type: 'number',
           defaultValue: 3,
           min: 0,
           max: 10,
-          description: t('connections.iotdb.max_retry_count_description'),
+          description: t('iotdb.max_retry_count_description'),
           validation: (value: number) => {
             if (value < 0 || value > 10) {
-              return t('connections.iotdb.max_retry_count_range');
+              return t('iotdb.max_retry_count_range');
             }
           }
         },
         {
           name: 'retryIntervalMs',
-          label: t('connections.iotdb.retry_interval'),
+          label: t('iotdb.retry_interval'),
           type: 'number',
           defaultValue: 1000,
           min: 100,
           max: 10000,
           step: 100,
-          description: t('connections.iotdb.retry_interval_description'),
+          description: t('iotdb.retry_interval_description'),
           validation: (value: number) => {
             if (value < 100 || value > 10000) {
-              return t('connections.iotdb.retry_interval_range');
+              return t('iotdb.retry_interval_range');
             }
           }
         }
@@ -164,25 +164,25 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
     // IoTDB特定验证
     if (formData.sessionPoolSize !== undefined) {
       if (formData.sessionPoolSize < 1 || formData.sessionPoolSize > 50) {
-        errors.sessionPoolSize = t('connections.iotdb.session_pool_size_range');
+        errors.sessionPoolSize = t('iotdb.session_pool_size_range');
       }
     }
 
     if (formData.fetchSize !== undefined) {
       if (formData.fetchSize < 100 || formData.fetchSize > 100000) {
-        errors.fetchSize = t('connections.iotdb.fetch_size_range');
+        errors.fetchSize = t('iotdb.fetch_size_range');
       }
     }
 
     if (formData.maxRetryCount !== undefined) {
       if (formData.maxRetryCount < 0 || formData.maxRetryCount > 10) {
-        errors.maxRetryCount = t('connections.iotdb.max_retry_count_range');
+        errors.maxRetryCount = t('iotdb.max_retry_count_range');
       }
     }
 
     if (formData.retryIntervalMs !== undefined) {
       if (formData.retryIntervalMs < 100 || formData.retryIntervalMs > 10000) {
-        errors.retryIntervalMs = t('connections.iotdb.retry_interval_range');
+        errors.retryIntervalMs = t('iotdb.retry_interval_range');
       }
     }
 

@@ -472,6 +472,14 @@ export const t = (key: string, options?: TranslationOptions): string => {
 };
 
 /**
+ * 连接相关翻译函数（同步）
+ * 自动使用 connections 命名空间
+ */
+export const tConn = (key: string, options?: TranslationOptions): string => {
+  return useI18nStore.getState().t(`connections:${key}`, options);
+};
+
+/**
  * 格式化日期（同步）
  */
 export const formatDate = (date: Date, format?: string): string => {

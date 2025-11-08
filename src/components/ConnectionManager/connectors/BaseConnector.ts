@@ -9,7 +9,7 @@ import type {
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { ValidationUtils } from '@/utils/validation';
-import { t } from '@/i18n';
+import { tConn as t } from '@/i18n';
 
 /**
  * 连接器基类
@@ -28,31 +28,31 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
     return [
       {
         id: 'basic',
-        title: t('connections.basic_info'),
+        title: t('basic_info'),
         fields: [
           {
             name: 'name',
-            label: t('connections.connection_name'),
+            label: t('connection_name'),
             type: 'text',
             required: true,
-            placeholder: t('connections.name_placeholder'),
+            placeholder: t('name_placeholder'),
             validation: (value: string) => {
               if (!value?.trim()) {
-                return t('connections.validation.name_required');
+                return t('validation.name_required');
               }
               if (value.length > 100) {
-                return t('connections.validation.name_too_long');
+                return t('validation.name_too_long');
               }
             }
           },
           {
             name: 'description',
-            label: t('connections.description'),
+            label: t('description'),
             type: 'textarea',
-            placeholder: t('connections.description_placeholder'),
+            placeholder: t('description_placeholder'),
             validation: (value: string) => {
               if (value && value.length > 500) {
-                return t('connections.validation.description_too_long');
+                return t('validation.description_too_long');
               }
             }
           }
@@ -60,28 +60,28 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
       },
       {
         id: 'connection',
-        title: t('connections.connection_settings'),
+        title: t('connection_settings'),
         fields: [
           {
             name: 'host',
-            label: t('connections.host'),
+            label: t('host'),
             type: 'text',
             required: true,
             placeholder: 'localhost',
             validation: (value: string) => {
               if (!value?.trim()) {
-                return t('connections.validation.host_required');
+                return t('validation.host_required');
               }
               const ipError = ValidationUtils.ipAddress(value);
               const hostnameError = ValidationUtils.hostname(value);
               if (ipError && hostnameError) {
-                return t('connections.validation.host_format_invalid');
+                return t('validation.host_format_invalid');
               }
             }
           },
           {
             name: 'port',
-            label: t('connections.port'),
+            label: t('port'),
             type: 'number',
             required: true,
             defaultValue: this.getDefaultPort(),
@@ -89,25 +89,25 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
             max: 65535,
             validation: (value: number) => {
               if (!value || value < 1 || value > 65535) {
-                return t('connections.validation.port_range');
+                return t('validation.port_range');
               }
             }
           },
           {
             name: 'username',
-            label: t('connections.username'),
+            label: t('username'),
             type: 'text',
-            placeholder: t('connections.username_placeholder')
+            placeholder: t('username_placeholder')
           },
           {
             name: 'password',
-            label: t('connections.password'),
+            label: t('password'),
             type: 'password',
-            placeholder: t('connections.password_placeholder')
+            placeholder: t('password_placeholder')
           },
           {
             name: 'ssl',
-            label: t('connections.use_ssl'),
+            label: t('use_ssl'),
             type: 'switch',
             defaultValue: false
           }
@@ -115,47 +115,47 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
       },
       {
         id: 'advanced',
-        title: t('connections.advanced_settings'),
+        title: t('advanced_settings'),
         fields: [
           {
             name: 'timeout',
-            label: t('connections.timeout'),
+            label: t('timeout'),
             type: 'number',
             defaultValue: 30,
             min: 5,
             max: 300,
-            description: t('connections.timeout_description'),
+            description: t('timeout_description'),
             validation: (value: number) => {
               if (value < 5 || value > 300) {
-                return t('connections.validation.timeout_range');
+                return t('validation.timeout_range');
               }
             }
           },
           {
             name: 'connectionTimeout',
-            label: t('connections.connection_timeout'),
+            label: t('connection_timeout'),
             type: 'number',
             defaultValue: 30,
             min: 5,
             max: 300,
-            description: t('connections.connection_timeout_description'),
+            description: t('connection_timeout_description'),
             validation: (value: number) => {
               if (value < 5 || value > 300) {
-                return t('connections.validation.connection_timeout_range');
+                return t('validation.connection_timeout_range');
               }
             }
           },
           {
             name: 'queryTimeout',
-            label: t('connections.query_timeout'),
+            label: t('query_timeout'),
             type: 'number',
             defaultValue: 300,
             min: 10,
             max: 3600,
-            description: t('connections.query_timeout_description'),
+            description: t('query_timeout_description'),
             validation: (value: number) => {
               if (value < 10 || value > 3600) {
-                return t('connections.validation.query_timeout_range');
+                return t('validation.query_timeout_range');
               }
             }
           }
@@ -187,7 +187,7 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
 
         // 检查必填
         if (field.required && !value) {
-          errors[field.name] = t('connections.validation.field_required', { field: field.label });
+          errors[field.name] = t('validation.field_required', { field: field.label });
         }
 
         // 自定义验证

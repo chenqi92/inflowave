@@ -47,13 +47,14 @@ export { DevTools, devTools, showI18nDashboard, generateI18nReport } from './dev
 export { languageDetector, translationLoader, resourceManager } from './config';
 
 // 导出 Store
-export { 
+export {
   useI18nStore,
   getCurrentLanguage,
   getAvailableLanguages,
   isRTLLanguage,
   getTextDirection,
   t,
+  tConn,
   formatDate,
   formatNumber,
   formatRelativeTime,

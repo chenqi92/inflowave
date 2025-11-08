@@ -1,4 +1,4 @@
-import { t } from '@/i18n';
+import { tConn as t } from '@/i18n';
 import type { FormSection } from './types';
 
 /**
@@ -10,13 +10,13 @@ export function getProxyConfigSection(dbType: string): FormSection {
   let enableProxyHint = '';
   switch (dbType) {
     case 'object-storage':
-      enableProxyHint = t('connections.enableProxyHintObjectStorage');
+      enableProxyHint = t('enableProxyHintObjectStorage');
       break;
     case 'iotdb':
-      enableProxyHint = t('connections.enableProxyHintIotdb');
+      enableProxyHint = t('enableProxyHintIotdb');
       break;
     case 'influxdb':
-      enableProxyHint = t('connections.enableProxyHintInfluxdb');
+      enableProxyHint = t('enableProxyHintInfluxdb');
       break;
     default:
       enableProxyHint = '启用后将通过代理服务器连接';
@@ -24,18 +24,18 @@ export function getProxyConfigSection(dbType: string): FormSection {
 
   return {
     id: 'proxy',
-    title: t('connections.proxy_config'),
+    title: t('proxy_config'),
     fields: [
       {
         name: 'proxyEnabled',
-        label: t('connections.enableProxy'),
+        label: t('enableProxy'),
         type: 'switch',
         defaultValue: false,
         description: enableProxyHint
       },
       {
         name: 'proxyType',
-        label: t('connections.proxyType'),
+        label: t('proxyType'),
         type: 'select',
         required: false,
         visible: (formData) => formData.proxyEnabled === true,
@@ -45,54 +45,54 @@ export function getProxyConfigSection(dbType: string): FormSection {
           { value: 'https', label: 'HTTPS' },
           { value: 'socks5', label: 'SOCKS5' }
         ],
-        description: t('connections.selectProxyType')
+        description: t('selectProxyType')
       },
       {
         name: 'proxyHost',
-        label: t('connections.proxyHost'),
+        label: t('proxyHost'),
         type: 'text',
         required: false,
         visible: (formData) => formData.proxyEnabled === true,
-        placeholder: t('connections.proxy_host_placeholder'),
+        placeholder: t('proxy_host_placeholder'),
         validation: (value: string, formData: any) => {
           if (formData.proxyEnabled && !value?.trim()) {
-            return t('connections.validation.proxy_host_required');
+            return t('validation.proxy_host_required');
           }
         }
       },
       {
         name: 'proxyPort',
-        label: t('connections.proxyPort'),
+        label: t('proxyPort'),
         type: 'number',
         required: false,
         visible: (formData) => formData.proxyEnabled === true,
         min: 1,
         max: 65535,
-        placeholder: t('connections.proxy_port_placeholder'),
+        placeholder: t('proxy_port_placeholder'),
         validation: (value: number, formData: any) => {
           if (formData.proxyEnabled) {
             if (!value) {
-              return t('connections.validation.proxy_port_range');
+              return t('validation.proxy_port_range');
             }
             if (value < 1 || value > 65535) {
-              return t('connections.validation.proxy_port_range');
+              return t('validation.proxy_port_range');
             }
           }
         }
       },
       {
         name: 'proxyUsername',
-        label: t('connections.proxyUsername'),
+        label: t('proxyUsername'),
         type: 'text',
         visible: (formData) => formData.proxyEnabled === true,
-        placeholder: t('connections.proxy_username_placeholder')
+        placeholder: t('proxy_username_placeholder')
       },
       {
         name: 'proxyPassword',
-        label: t('connections.proxyPassword'),
+        label: t('proxyPassword'),
         type: 'password',
         visible: (formData) => formData.proxyEnabled === true,
-        placeholder: t('connections.proxy_password_placeholder')
+        placeholder: t('proxy_password_placeholder')
       }
     ]
   };
