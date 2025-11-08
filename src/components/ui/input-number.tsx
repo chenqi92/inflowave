@@ -2,6 +2,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { Minus, Plus } from 'lucide-react';
 import { Button } from './button';
+import { readFromClipboard } from '@/utils/clipboard';
 
 // Helper function to merge refs
 function mergeRefs<T = unknown>(
@@ -173,6 +174,50 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
       onChange?.(finalValue);
     };
 
+    const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // 处理粘贴快捷键 (Cmd+V / Ctrl+V)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
+        e.preventDefault();
+
+        try {
+          // 从 Tauri clipboard 读取内容
+          const clipboardText = await readFromClipboard({ showError: false });
+
+          if (clipboardText && inputRef.current) {
+            const input = inputRef.current;
+            const start = input.selectionStart || 0;
+            const end = input.selectionEnd || 0;
+            const currentValue = input.value;
+
+            // 在光标位置插入剪贴板内容
+            const newDisplayValue =
+              currentValue.substring(0, start) +
+              clipboardText +
+              currentValue.substring(end);
+
+            // 更新 input 的值
+            input.value = newDisplayValue;
+
+            // 设置光标位置到粘贴内容之后
+            const newCursorPos = start + clipboardText.length;
+            input.setSelectionRange(newCursorPos, newCursorPos);
+
+            // 解析并更新数值
+            const numValue = parseValue(newDisplayValue);
+            if (value === undefined) {
+              setInnerValue(numValue);
+            }
+            onChange?.(numValue);
+
+            // 触发 input 事件以通知其他监听器
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        } catch (error) {
+          console.error('粘贴失败:', error);
+        }
+      }
+    };
+
     const getInputElement = () => {
       // 只需要为控制按钮预留空间，单位会动态跟随数字
       let rightPadding = 'pr-3'; // 默认padding
@@ -193,6 +238,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
           )}
           value={formatValue(actualValue)}
           onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           onBlur={onBlur}
           onFocus={onFocus}
           disabled={disabled}

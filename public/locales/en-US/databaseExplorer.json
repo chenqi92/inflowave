@@ -12,6 +12,8 @@
   "deleteConnectionTitle": "Delete Connection",
   "deleteConnectionConfirm": "Are you sure you want to delete connection \"{{name}}\"? This action cannot be undone.",
   "connectionDeleted": "Connection \"{{name}}\" has been deleted",
+  "deleteConnectionFailed": "Failed to delete connection \"{{name}}\": {{error}}",
+  "closeConnectionBeforeDelete": "Please close connection \"{{name}}\" before deleting",
   "databaseOpened": "Database \"{{database}}\" opened",
   "openDatabaseFailed": "Failed to open database: {{error}}",
   "databaseClosed": "Database \"{{database}}\" closed",

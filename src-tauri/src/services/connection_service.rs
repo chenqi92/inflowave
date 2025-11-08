@@ -234,11 +234,24 @@ impl ConnectionService {
     /// 删除连接
     pub async fn delete_connection(&self, connection_id: &str) -> Result<()> {
         debug!("删除连接: {}", connection_id);
-        
+
+        // 检查连接状态
+        let status = self.manager.get_connection_status(connection_id).await;
+        if let Some(status) = status {
+            if matches!(status.status, crate::models::ConnectionState::Connected) {
+                warn!("连接 '{}' 处于已连接状态，先断开连接", connection_id);
+                // 先断开连接
+                if let Err(e) = self.manager.disconnect(connection_id).await {
+                    error!("断开连接失败: {}", e);
+                    return Err(anyhow::anyhow!("无法删除已连接的连接，请先断开连接"));
+                }
+            }
+        }
+
         // 从连接管理器移除
         self.manager.remove_connection(connection_id).await
             .context("从连接管理器移除失败")?;
-        
+
         // 从配置中移除
         {
             let mut configs = self.configs.write().await;
@@ -248,6 +261,7 @@ impl ConnectionService {
         // 保存到文件
         if let Err(e) = self.save_to_storage().await {
             error!("保存连接配置到文件失败: {}", e);
+            return Err(anyhow::anyhow!("保存连接配置失败: {}", e));
         }
 
         info!("连接 '{}' 删除成功", connection_id);

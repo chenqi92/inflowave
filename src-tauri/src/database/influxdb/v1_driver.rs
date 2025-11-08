@@ -233,9 +233,11 @@ impl InfluxDriver for V1HttpDriver {
     async fn test_connection(&self) -> Result<u64> {
         let start_time = Instant::now();
 
+        // 如果配置了用户名密码，需要验证认证是否有效
+        let has_credentials = self.config.username.is_some() && self.config.password.is_some();
+
         // 使用 SHOW DATABASES 来测试连接和认证
-        // 这个查询需要有效的认证信息才能成功
-        debug!("🔐 使用SHOW DATABASES测试认证");
+        debug!("🔐 使用SHOW DATABASES测试认证 (配置了认证: {})", has_credentials);
         let url = self.build_query_url("SHOW DATABASES", None);
         let request = self.build_authenticated_request(&url);
         let response = request.send().await?;
@@ -279,6 +281,38 @@ impl InfluxDriver for V1HttpDriver {
                     if error.contains("authorization failed") || error.contains("username and password") || error.contains("unable to parse authentication credentials") {
                         return Err(anyhow::anyhow!("认证失败: 用户名或密码错误"));
                     }
+                    return Err(anyhow::anyhow!("查询失败: {}", error));
+                }
+            }
+        }
+
+        // 如果配置了认证信息，需要额外验证认证是否真正生效
+        // InfluxDB 1.x 在未启用认证的情况下，即使提供错误密码也会返回成功
+        if has_credentials {
+            debug!("🔐 配置了认证信息，进行额外的认证验证");
+
+            // 尝试使用错误的密码发送请求，如果也成功则说明服务器未启用认证
+            let test_url = self.build_query_url("SHOW DATABASES", None);
+            let test_request = self.client.get(&test_url)
+                .basic_auth(
+                    self.config.username.as_ref().unwrap(),
+                    Some("__invalid_password_test__")
+                );
+
+            match test_request.send().await {
+                Ok(test_response) if test_response.status().is_success() => {
+                    // 如果错误密码也能成功，说明服务器未启用认证
+                    debug!("⚠️ 警告: 服务器未启用认证，但配置了用户名密码");
+                    info!("连接测试成功（服务器未启用认证），延迟: {}ms", start_time.elapsed().as_millis());
+                    return Ok(start_time.elapsed().as_millis() as u64);
+                }
+                Ok(test_response) => {
+                    // 错误密码返回错误，说明认证已启用且配置的密码正确
+                    debug!("✅ 认证验证通过: 错误密码被拒绝 ({})", test_response.status());
+                }
+                Err(e) => {
+                    // 网络错误等，忽略
+                    debug!("认证验证请求失败（忽略）: {}", e);
                 }
             }
         }

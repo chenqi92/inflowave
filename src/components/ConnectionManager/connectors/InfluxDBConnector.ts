@@ -108,11 +108,8 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           type: 'text',
           placeholder: t('influxdb.database_placeholder'),
           visible: (formData: any) => formData?.version === '1.x',
-          validation: (value: string, formData: any) => {
-            if (formData?.version === '1.x' && !value?.trim()) {
-              return t('influxdb.database_required');
-            }
-          }
+          required: false, // 数据库名称不是必填的，可以连接后再选择
+          description: t('influxdb.database_optional_description')
         },
         {
           name: 'retentionPolicy',
@@ -201,9 +198,8 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
 
     // InfluxDB特定验证
     if (formData?.version === '1.x') {
-      if (!formData.database?.trim()) {
-        errors.database = t('influxdb.database_required');
-      }
+      // InfluxDB 1.x 的 database 字段是可选的，可以连接后再选择数据库
+      // 不需要验证 database 字段
     } else if (formData?.version === '2.x' || formData?.version === '3.x') {
       if (!formData.apiToken?.trim()) {
         errors.apiToken = t('influxdb.api_token_required');

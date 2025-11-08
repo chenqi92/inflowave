@@ -144,6 +144,10 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         const isIoTDB = dbType === 'iotdb';
         const isInfluxDB2x = dbType === 'influxdb2' || metadata.version === '2.x';
 
+        // 检查连接是否已打开（已连接状态）
+        const connectionId = metadata.connectionId || node.id;
+        const isConnected = metadata.isConnected || false;
+
         return (
             <>
                 <ContextMenuLabel>{t('context_menu.connection_operations')}</ContextMenuLabel>
@@ -191,13 +195,17 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                 </ContextMenuItem>
                 <ContextMenuSeparator/>
 
-                <ContextMenuItem onSelect={() => handleAction('disconnect')}>
+                <ContextMenuItem
+                    onSelect={() => handleAction('disconnect')}
+                    disabled={!isConnected}
+                >
                     <Unlink className="w-4 h-4 mr-2"/>
                     {t('context_menu.disconnect')}
                 </ContextMenuItem>
                 <ContextMenuItem
                     onSelect={() => handleAction('delete_connection')}
                     className="text-destructive focus:text-destructive"
+                    disabled={isConnected}
                 >
                     <Trash2 className="w-4 h-4 mr-2"/>
                     {t('context_menu.delete_connection')}

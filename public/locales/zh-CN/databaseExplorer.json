@@ -12,6 +12,8 @@
   "deleteConnectionTitle": "删除连接",
   "deleteConnectionConfirm": "确定要删除连接 \"{{name}}\" 吗？此操作不可撤销。",
   "connectionDeleted": "连接 \"{{name}}\" 已删除",
+  "deleteConnectionFailed": "删除连接 \"{{name}}\" 失败: {{error}}",
+  "closeConnectionBeforeDelete": "请先关闭连接 \"{{name}}\" 后再删除",
   "databaseOpened": "已打开数据库 \"{{database}}\"",
   "openDatabaseFailed": "打开数据库失败: {{error}}",
   "databaseClosed": "已关闭数据库 \"{{database}}\"",
