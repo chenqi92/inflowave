@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { openExternalLink } from '@/utils/externalLinks';
 
 interface MarkdownRendererProps {
   content: string;
@@ -237,14 +238,31 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
     return html;
   };
 
-  // 处理内部链接点击
+  // 处理链接点击
   const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     const target = event.target as HTMLElement;
-    if (target.tagName === 'A' && target.classList.contains('internal-link')) {
+
+    // 处理所有链接点击
+    if (target.tagName === 'A') {
       event.preventDefault();
-      const filename = target.getAttribute('data-filename');
-      if (filename && onInternalLinkClick) {
-        onInternalLinkClick(filename);
+
+      // 内部链接
+      if (target.classList.contains('internal-link')) {
+        const filename = target.getAttribute('data-filename');
+        if (filename && onInternalLinkClick) {
+          onInternalLinkClick(filename);
+        }
+      }
+      // 外部链接
+      else {
+        const href = target.getAttribute('href');
+        if (href) {
+          openExternalLink(href, {
+            showSuccessMessage: false,
+            showErrorMessage: true,
+            errorMessage: '无法打开链接',
+          });
+        }
       }
     }
   };

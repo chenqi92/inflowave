@@ -6,6 +6,7 @@
 import { logger } from '@/utils/logger';
 import { showMessage } from '@/utils/message';
 import { open } from '@tauri-apps/plugin-shell';
+import { isTauriEnvironment } from '@/utils/tauri';
 
 /**
  * 外部链接打开选项
@@ -34,13 +35,6 @@ export interface OpenExternalLinkResult {
   /** 错误信息（如果失败） */
   error?: string;
 }
-
-/**
- * 检测是否在 Tauri 环境中
- */
-const isTauriEnvironment = (): boolean => {
-  return typeof window !== 'undefined' && window.__TAURI__ !== undefined;
-};
 
 /**
  * 验证 URL 格式

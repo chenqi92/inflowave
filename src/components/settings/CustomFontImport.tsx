@@ -10,6 +10,7 @@ import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { useSettingsTranslation } from '@/hooks/useTranslation';
 import logger from '@/utils/logger';
+import { openExternalLink } from '@/utils/externalLinks';
 
 interface CustomFontImportProps {
   onFontImported?: () => void;
@@ -100,11 +101,9 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    import('@/utils/externalLinks').then(({ openExternalLink }) => {
-                      openExternalLink('https://fonts.google.com', {
-                        showSuccessMessage: false,
-                        showErrorMessage: true,
-                      });
+                    openExternalLink('https://fonts.google.com', {
+                      showSuccessMessage: false,
+                      showErrorMessage: true,
                     });
                   }}
                   className="text-primary hover:underline"
@@ -118,11 +117,9 @@ const CustomFontImport: React.FC<CustomFontImportProps> = ({ onFontImported }) =
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    import('@/utils/externalLinks').then(({ openExternalLink }) => {
-                      openExternalLink('https://github.com/topics/fonts', {
-                        showSuccessMessage: false,
-                        showErrorMessage: true,
-                      });
+                    openExternalLink('https://github.com/topics/fonts', {
+                      showSuccessMessage: false,
+                      showErrorMessage: true,
                     });
                   }}
                   className="text-primary hover:underline"
