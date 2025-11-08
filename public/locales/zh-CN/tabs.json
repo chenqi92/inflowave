@@ -1,8 +1,8 @@
 {
   "unsavedTabs": "未保存的查询标签页",
   "unsavedTabsDescription": "您有 {{count}} 个未保存的查询标签页。关闭应用前是否要保存这些标签页？",
-  "saveHint": "选择"保存"：这些标签页将在下次启动时恢复",
-  "discardHint": "选择"不保存"：这些标签页将被永久丢弃",
+  "saveHint": "选择\"保存\"：这些标签页将在下次启动时恢复",
+  "discardHint": "选择\"不保存\"：这些标签页将被永久丢弃",
   "detachToNewWindow": "分离到新窗口",
   "detachHint": "继续拖拽以分离Tab到独立窗口",
   "reattach": "重新附加",

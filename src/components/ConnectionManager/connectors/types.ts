@@ -23,12 +23,12 @@ export interface BaseConnectionConfig {
  */
 export interface FormField {
   name: string;
-  label: string;
+  label: string | ((formData: any) => string);
   type: 'text' | 'number' | 'password' | 'select' | 'switch' | 'textarea';
   placeholder?: string;
   required?: boolean;
   defaultValue?: any;
-  options?: Array<{ value: string; label: string }>;
+  options?: Array<{ value: string; label: string }> | ((formData: any) => Array<{ value: string; label: string }>);
   validation?: (value: any, formData?: any) => string | undefined;
   description?: string;
   min?: number;

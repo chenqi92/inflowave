@@ -62,7 +62,12 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       { value: 's3', label: 'Amazon S3' },
       { value: 'minio', label: 'MinIO' },
       { value: 'aliyun-oss', label: t('connections.object_storage.aliyun_oss') },
-      { value: 'tencent-cos', label: t('connections.object_storage.tencent_cos') }
+      { value: 'tencent-cos', label: t('connections.object_storage.tencent_cos') },
+      { value: 'qiniu-kodo', label: t('connections.object_storage.qiniu_kodo') },
+      { value: 'upyun', label: t('connections.object_storage.upyun') },
+      { value: 'github', label: 'GitHub' },
+      { value: 'smms', label: 'SM.MS' },
+      { value: 'imgur', label: 'Imgur' }
     ];
   }
 
@@ -91,6 +96,14 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           { value: 'ap-beijing', label: t('connections.object_storage.region_beijing') },
           { value: 'ap-shanghai', label: t('connections.object_storage.region_shanghai') },
           { value: 'ap-guangzhou', label: t('connections.object_storage.region_guangzhou') }
+        ];
+      case 'qiniu-kodo':
+        return [
+          { value: 'z0', label: t('connections.object_storage.qiniu_z0') },
+          { value: 'z1', label: t('connections.object_storage.qiniu_z1') },
+          { value: 'z2', label: t('connections.object_storage.qiniu_z2') },
+          { value: 'na0', label: t('connections.object_storage.qiniu_na0') },
+          { value: 'as0', label: t('connections.object_storage.qiniu_as0') }
         ];
       default:
         return [];
@@ -149,38 +162,123 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       id: 'storage',
       title: t('connections.object_storage.settings'),
       fields: [
+        // S3/MinIO/OSS/COS - Endpoint
         {
           name: 's3Endpoint',
           label: t('connections.object_storage.endpoint'),
           type: 'text',
           required: true,
+          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos'].includes(formData.objectStorageProvider),
           placeholder: 'https://s3.amazonaws.com',
           description: t('connections.object_storage.endpoint_description'),
-          validation: (value: string) => {
-            if (!value?.trim()) {
+          validation: (value: string, formData: any) => {
+            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('connections.object_storage.endpoint_required');
             }
           }
         },
+        // S3/OSS/COS/七牛云 - Region
         {
           name: 's3Region',
           label: t('connections.object_storage.region'),
           type: 'select',
           required: true,
-          options: [],
-          visible: (formData) => formData.objectStorageProvider !== 'minio',
+          options: (formData: any) => this.getRegionOptions(formData.objectStorageProvider || 's3'),
+          visible: (formData) => ['s3', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
           validation: (value: string, formData: any) => {
-            if (formData.objectStorageProvider !== 'minio' && !value?.trim()) {
+            if (['s3', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('connections.object_storage.region_required');
             }
           }
         },
+        // S3/MinIO/OSS/COS/七牛云/又拍云 - Bucket/服务名
         {
           name: 'bucket',
-          label: t('connections.object_storage.bucket'),
+          label: (formData: any) => {
+            if (formData.objectStorageProvider === 'upyun') {
+              return t('connections.object_storage.upyun_service_name');
+            }
+            return t('connections.object_storage.bucket');
+          },
           type: 'text',
+          required: true,
+          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun'].includes(formData.objectStorageProvider),
           placeholder: t('connections.object_storage.bucket_placeholder'),
-          description: t('connections.object_storage.bucket_description')
+          description: t('connections.object_storage.bucket_description'),
+          validation: (value: string, formData: any) => {
+            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun'].includes(formData.objectStorageProvider) && !value?.trim()) {
+              return t('connections.object_storage.bucket_required');
+            }
+          }
+        },
+        // 七牛云 - 访问网址
+        {
+          name: 'qiniuAccessUrl',
+          label: t('connections.object_storage.qiniu_access_url'),
+          type: 'text',
+          required: true,
+          visible: (formData) => formData.objectStorageProvider === 'qiniu-kodo',
+          placeholder: t('connections.object_storage.qiniu_access_url_placeholder'),
+          description: t('connections.object_storage.qiniu_access_url_description'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'qiniu-kodo' && !value?.trim()) {
+              return t('connections.object_storage.qiniu_access_url_required');
+            }
+          }
+        },
+        // 又拍云 - 加速域名
+        {
+          name: 'upyunAccelerateUrl',
+          label: t('connections.object_storage.upyun_accelerate_url'),
+          type: 'text',
+          required: true,
+          visible: (formData) => formData.objectStorageProvider === 'upyun',
+          placeholder: t('connections.object_storage.upyun_accelerate_url_placeholder'),
+          description: t('connections.object_storage.upyun_accelerate_url_description'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'upyun' && !value?.trim()) {
+              return t('connections.object_storage.upyun_accelerate_url_required');
+            }
+          }
+        },
+        // GitHub - 仓库名
+        {
+          name: 'githubRepo',
+          label: t('connections.object_storage.github_repo'),
+          type: 'text',
+          required: true,
+          visible: (formData) => formData.objectStorageProvider === 'github',
+          placeholder: t('connections.object_storage.github_repo_placeholder'),
+          description: t('connections.object_storage.github_repo_description'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'github' && !value?.trim()) {
+              return t('connections.object_storage.github_repo_required');
+            }
+          }
+        },
+        // GitHub - 分支名
+        {
+          name: 'githubBranch',
+          label: t('connections.object_storage.github_branch'),
+          type: 'text',
+          required: true,
+          defaultValue: 'main',
+          visible: (formData) => formData.objectStorageProvider === 'github',
+          placeholder: t('connections.object_storage.github_branch_placeholder'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'github' && !value?.trim()) {
+              return t('connections.object_storage.github_branch_required');
+            }
+          }
+        },
+        // SM.MS - 备用上传域名
+        {
+          name: 'smmsBackupDomain',
+          label: t('connections.object_storage.smms_backup_domain'),
+          type: 'text',
+          visible: (formData) => formData.objectStorageProvider === 'smms',
+          placeholder: t('connections.object_storage.smms_backup_domain_placeholder'),
+          description: t('connections.object_storage.smms_backup_domain_description')
         }
       ]
     };
@@ -190,30 +288,35 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       id: 'auth',
       title: t('connections.object_storage.auth_settings'),
       fields: [
+        // S3/MinIO/阿里云OSS/腾讯云COS/七牛云 - Access Key
         {
           name: 's3AccessKey',
           label: t('connections.object_storage.access_key'),
           type: 'text',
           required: true,
+          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
           placeholder: t('connections.object_storage.access_key_placeholder'),
-          validation: (value: string) => {
-            if (!value?.trim()) {
+          validation: (value: string, formData: any) => {
+            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('connections.object_storage.access_key_required');
             }
           }
         },
+        // S3/MinIO/阿里云OSS/腾讯云COS/七牛云 - Secret Key
         {
           name: 's3SecretKey',
           label: t('connections.object_storage.secret_key'),
           type: 'password',
           required: true,
+          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
           placeholder: t('connections.object_storage.secret_key_placeholder'),
-          validation: (value: string) => {
-            if (!value?.trim()) {
+          validation: (value: string, formData: any) => {
+            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('connections.object_storage.secret_key_required');
             }
           }
         },
+        // 腾讯云COS - AppId
         {
           name: 'cosAppId',
           label: t('connections.object_storage.cos_app_id'),
@@ -228,10 +331,86 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
             }
           }
         },
+        // 又拍云 - 操作员
+        {
+          name: 'upyunOperator',
+          label: t('connections.object_storage.upyun_operator'),
+          type: 'text',
+          required: true,
+          visible: (formData) => formData.objectStorageProvider === 'upyun',
+          placeholder: t('connections.object_storage.upyun_operator_placeholder'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'upyun' && !value?.trim()) {
+              return t('connections.object_storage.upyun_operator_required');
+            }
+          }
+        },
+        // 又拍云 - 操作员密码
+        {
+          name: 'upyunOperatorPassword',
+          label: t('connections.object_storage.upyun_operator_password'),
+          type: 'password',
+          required: true,
+          visible: (formData) => formData.objectStorageProvider === 'upyun',
+          placeholder: t('connections.object_storage.upyun_operator_password_placeholder'),
+          description: t('connections.object_storage.upyun_operator_password_description'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'upyun' && !value?.trim()) {
+              return t('connections.object_storage.upyun_operator_password_required');
+            }
+          }
+        },
+        // GitHub - Token
+        {
+          name: 'githubToken',
+          label: t('connections.object_storage.github_token'),
+          type: 'password',
+          required: true,
+          visible: (formData) => formData.objectStorageProvider === 'github',
+          placeholder: t('connections.object_storage.github_token_placeholder'),
+          description: t('connections.object_storage.github_token_description'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'github' && !value?.trim()) {
+              return t('connections.object_storage.github_token_required');
+            }
+          }
+        },
+        // SM.MS - Token
+        {
+          name: 'smmsToken',
+          label: t('connections.object_storage.smms_token'),
+          type: 'password',
+          required: true,
+          visible: (formData) => formData.objectStorageProvider === 'smms',
+          placeholder: t('connections.object_storage.smms_token_placeholder'),
+          description: t('connections.object_storage.smms_token_description'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'smms' && !value?.trim()) {
+              return t('connections.object_storage.smms_token_required');
+            }
+          }
+        },
+        // Imgur - Client ID
+        {
+          name: 'imgurClientId',
+          label: t('connections.object_storage.imgur_client_id'),
+          type: 'text',
+          required: true,
+          visible: (formData) => formData.objectStorageProvider === 'imgur',
+          placeholder: t('connections.object_storage.imgur_client_id_placeholder'),
+          description: t('connections.object_storage.imgur_client_id_description'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'imgur' && !value?.trim()) {
+              return t('connections.object_storage.imgur_client_id_required');
+            }
+          }
+        },
+        // S3/MinIO - Session Token (可选)
         {
           name: 's3SessionToken',
           label: t('connections.object_storage.session_token'),
           type: 'password',
+          visible: (formData) => ['s3', 'minio'].includes(formData.objectStorageProvider),
           placeholder: t('connections.object_storage.session_token_placeholder'),
           description: t('connections.object_storage.session_token_description')
         }
@@ -271,6 +450,13 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           type: 'text',
           placeholder: t('connections.object_storage.custom_domain_placeholder'),
           description: t('connections.object_storage.custom_domain_description')
+        },
+        {
+          name: 'urlSuffix',
+          label: t('connections.object_storage.url_suffix'),
+          type: 'text',
+          placeholder: t('connections.object_storage.url_suffix_placeholder'),
+          description: t('connections.object_storage.url_suffix_description')
         },
         {
           name: 's3InternalEndpoint',
@@ -377,11 +563,11 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       name: formData.name,
       description: formData.description,
       dbType: 'object-storage' as any,
-      host: formData.s3Endpoint || '',
+      host: formData.s3Endpoint || formData.qiniuAccessUrl || formData.upyunAccelerateUrl || '',
       port: 0,
-      username: formData.s3AccessKey || '',
-      password: formData.s3SecretKey || '',
-      database: formData.bucket || '',
+      username: formData.s3AccessKey || formData.upyunOperator || '',
+      password: formData.s3SecretKey || formData.upyunOperatorPassword || formData.githubToken || formData.smmsToken || formData.imgurClientId || '',
+      database: formData.bucket || formData.upyunServiceName || formData.githubRepo || '',
       ssl: formData.s3UseSSL || true,
       timeout: formData.timeout || 30,
       connectionTimeout: formData.connectionTimeout || 30,
@@ -400,7 +586,24 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           sessionToken: formData.s3SessionToken || '',
           cosAppId: formData.cosAppId || '',
           storagePath: formData.storagePath || '',
-          customDomain: formData.customDomain || ''
+          customDomain: formData.customDomain || '',
+          urlSuffix: formData.urlSuffix || '',
+          // 七牛云
+          qiniuAccessUrl: formData.qiniuAccessUrl || '',
+          // 又拍云
+          upyunOperator: formData.upyunOperator || '',
+          upyunOperatorPassword: formData.upyunOperatorPassword || '',
+          upyunServiceName: formData.upyunServiceName || '',
+          upyunAccelerateUrl: formData.upyunAccelerateUrl || '',
+          // GitHub
+          githubRepo: formData.githubRepo || '',
+          githubBranch: formData.githubBranch || '',
+          githubToken: formData.githubToken || '',
+          // SM.MS
+          smmsToken: formData.smmsToken || '',
+          smmsBackupDomain: formData.smmsBackupDomain || '',
+          // Imgur
+          imgurClientId: formData.imgurClientId || ''
         }
       },
       createdAt: new Date(),
@@ -441,6 +644,23 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       cosAppId: s3Config?.cosAppId,
       storagePath: s3Config?.storagePath,
       customDomain: s3Config?.customDomain,
+      urlSuffix: s3Config?.urlSuffix,
+      // 七牛云
+      qiniuAccessUrl: s3Config?.qiniuAccessUrl,
+      // 又拍云
+      upyunOperator: s3Config?.upyunOperator,
+      upyunOperatorPassword: s3Config?.upyunOperatorPassword,
+      upyunServiceName: s3Config?.upyunServiceName,
+      upyunAccelerateUrl: s3Config?.upyunAccelerateUrl,
+      // GitHub
+      githubRepo: s3Config?.githubRepo,
+      githubBranch: s3Config?.githubBranch,
+      githubToken: s3Config?.githubToken,
+      // SM.MS
+      smmsToken: s3Config?.smmsToken,
+      smmsBackupDomain: s3Config?.smmsBackupDomain,
+      // Imgur
+      imgurClientId: s3Config?.imgurClientId,
       bucket: config.database
     };
   }

@@ -18,7 +18,7 @@
   "oneClickUpdateAvailable": "一键更新可用",
   "autoDownloadAvailable": "自动下载可用",
   "oneClickInstallDesc": "支持一键下载并安装，无需手动操作。",
-  "manualDownloadDesc": "我们已为您的平台准备了安装包，点击"立即更新"开始下载。",
+  "manualDownloadDesc": "我们已为您的平台准备了安装包，点击\"立即更新\"开始下载。",
   "downloadSpeed": "下载速度",
   "skipping": "跳过中...",
   "skipThisVersion": "跳过此版本",

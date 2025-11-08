@@ -209,6 +209,9 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
     const error = errors[field.name];
     const disabled = field.disabled ? field.disabled(formData) : false;
 
+    // 处理动态label
+    const fieldLabel = typeof field.label === 'function' ? field.label(formData) : field.label;
+
     // 检查连接器是否提供了自定义渲染
     if (currentConnector?.renderCustomField) {
       const customRender = currentConnector.renderCustomField(
@@ -234,7 +237,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
-              {field.label}
+              {fieldLabel}
               {field.required && <span className="text-destructive ml-1">*</span>}
             </Label>
             <Input
@@ -258,7 +261,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
-              {field.label}
+              {fieldLabel}
               {field.required && <span className="text-destructive ml-1">*</span>}
             </Label>
             <Input
@@ -283,7 +286,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
-              {field.label}
+              {fieldLabel}
               {field.required && <span className="text-destructive ml-1">*</span>}
             </Label>
             <InputNumber
@@ -307,9 +310,13 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
         );
 
       case 'select':
-        // 动态获取选项
-        let options = field.options || [];
-        if (field.name === 'defaultQueryLanguage' && currentConnector) {
+        // 动态获取选项 - 支持函数或数组
+        let options = typeof field.options === 'function'
+          ? field.options(formData)
+          : (field.options || []);
+
+        // 特殊处理：如果仍然没有选项，尝试从连接器获取
+        if (options.length === 0 && field.name === 'defaultQueryLanguage' && currentConnector) {
           const version = formData.version;
           if (version) {
             const connector = currentConnector as any;
@@ -317,20 +324,12 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               options = connector.getQueryLanguageOptions(version);
             }
           }
-        } else if (field.name === 's3Region' && currentConnector) {
-          const provider = formData.objectStorageProvider;
-          if (provider) {
-            const connector = currentConnector as any;
-            if (connector.getRegionOptions) {
-              options = connector.getRegionOptions(provider);
-            }
-          }
         }
 
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
-              {field.label}
+              {fieldLabel}
               {field.required && <span className="text-destructive ml-1">*</span>}
             </Label>
             <Select
@@ -363,7 +362,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
           <div key={field.name} className="flex items-center justify-between space-x-4 py-2">
             <div className="flex-1">
               <Label htmlFor={field.name} className="text-base">
-                {field.label}
+                {fieldLabel}
               </Label>
               {field.description && (
                 <p className="text-sm text-muted-foreground mt-1">{field.description}</p>
@@ -382,7 +381,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
         return (
           <div key={field.name} className="space-y-2">
             <Label htmlFor={field.name}>
-              {field.label}
+              {fieldLabel}
               {field.required && <span className="text-destructive ml-1">*</span>}
             </Label>
             <Textarea

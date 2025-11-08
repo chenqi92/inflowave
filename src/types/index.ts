@@ -70,13 +70,13 @@ export interface DatabaseDriverConfig {
   };
   iotdb?: IoTDBConfig;
   s3?: {
-    provider?: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos'; // 对象存储服务商
+    provider?: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos' | 'qiniu-kodo' | 'upyun' | 'github' | 'smms' | 'imgur'; // 对象存储服务商
     endpoint?: string; // 自定义端点（用于MinIO等S3兼容服务）
     internalEndpoint?: string; // 内网端点（用于内网读写）
     externalEndpoint?: string; // 外网端点（用于外网访问）
     region?: string; // AWS区域
-    accessKey: string;
-    secretKey: string;
+    accessKey?: string;
+    secretKey?: string;
     useSSL?: boolean; // 是否使用SSL
     pathStyle?: boolean; // 是否使用path-style URLs
     sessionToken?: string; // 临时凭证
@@ -84,6 +84,23 @@ export interface DatabaseDriverConfig {
     cosAppId?: string; // 腾讯云COS AppId
     storagePath?: string; // 存储路径前缀
     customDomain?: string; // 自定义域名
+    urlSuffix?: string; // 图片处理参数
+    // 七牛云Kodo
+    qiniuAccessUrl?: string; // 七牛云访问域名
+    // 又拍云UPYUN
+    upyunOperator?: string; // 操作员账号
+    upyunOperatorPassword?: string; // 操作员密码
+    upyunServiceName?: string; // 服务名称
+    upyunAccelerateUrl?: string; // 加速域名
+    // GitHub
+    githubRepo?: string; // 仓库路径 username/repo
+    githubBranch?: string; // 分支名称
+    githubToken?: string; // GitHub Token
+    // SM.MS
+    smmsToken?: string; // SM.MS API Token
+    smmsBackupDomain?: string; // 备用上传域名
+    // Imgur
+    imgurClientId?: string; // Imgur Client ID
   };
   // 为未来的数据库类型预留空间
   prometheus?: Record<string, any>;
