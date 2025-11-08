@@ -16,6 +16,13 @@ export interface BaseConnectionConfig {
   timeout?: number;
   connectionTimeout?: number;
   queryTimeout?: number;
+  // 代理配置
+  proxyEnabled?: boolean;
+  proxyType?: 'http' | 'https' | 'socks5';
+  proxyHost?: string;
+  proxyPort?: number;
+  proxyUsername?: string;
+  proxyPassword?: string;
 }
 
 /**

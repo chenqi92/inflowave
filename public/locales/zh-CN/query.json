@@ -1,6 +1,15 @@
 {
   "execute": "执行查询",
-  "history": "查询历史",
+  "history": {
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败: {{error}}",
+    "historyCleared": "历史记录已清空",
+    "clearFailed": "清空失败: {{error}}",
+    "updateFailed": "更新失败: {{error}}",
+    "addedToFavorites": "已添加到收藏",
+    "removedFromFavorites": "已取消收藏",
+    "operationFailed": "操作失败"
+  },
   "save": "保存查询",
   "format": "格式化",
   "new_query": "新建查询",
@@ -39,6 +48,16 @@
   "indent": "缩进",
   "outdent": "取消缩进",
   "select_all": "全选",
+  "rowNumber": "行号",
+  "required": "必填",
+  "dragToSort": "拖拽排序",
+  "minValue": "最小值",
+  "maxValue": "最大值",
+  "numericValue": "数值",
+  "enterValue": "输入值",
+  "applyFilter": "应用筛选",
+  "apply": "应用",
+  "deleteFilter": "删除筛选",
   "clear_editor": "清空编辑器",
   "run_selection": "运行选中内容",
   "explain_query": "解释查询",
@@ -125,43 +144,17 @@
   "advanced_export": "高级导出选项",
   "columns_selector": "列 ({{selected}}/{{total}})",
   "column_display_settings": "列显示设置",
-  "select_all": "全选",
   "deselect_all": "取消全选",
   "clear_selection": "取消选择",
   "selected_rows_count": "已选择 {{count}} 行",
   "copy_row_success": "已复制行数据 ({{format}} 格式)",
   "copy_rows_success": "已复制 {{count}} 行数据 ({{format}} 格式)",
-  "copy_failed": "复制失败",
   "please_select_rows": "请先选择要复制的行",
   "time_column": "时间",
   "drag_to_reorder": "拖拽调整顺序，勾选显示列",
   "start_time": "开始时间",
   "end_time": "结束时间",
   "select_time": "选择时间",
-  "time_range": "时间范围",
-
-  "export_data": "导出数据",
-  "data_statistics": "数据统计",
-  "row_count": "行数",
-  "column_count": "列数",
-  "export_format": "导出格式",
-  "export_options": "导出选项",
-  "include_headers": "包含表头",
-  "custom_delimiter": "自定义分隔符 (可选，默认为逗号)",
-  "custom_delimiter_placeholder": "例如: ; | |",
-  "target_table_name": "目标表名",
-  "enter_table_name": "输入表名",
-  "filename_optional": "文件名 (可选)",
-  "default_filename_hint": "留空将使用默认文件名: {{filename}}",
-  "cancel": "取消",
-  "export_format_name": "导出 {{format}}",
-  "csv_description": "逗号分隔值文件，兼容性最好",
-  "tsv_description": "制表符分隔值文件，适合包含逗号的数据",
-  "excel_description": "Excel工作簿文件，支持格式化",
-  "json_description": "JavaScript对象表示法，适合程序处理",
-  "markdown_description": "Markdown表格格式，适合文档",
-  "sql_description": "SQL插入语句，可直接执行",
-
   "time_range": {
     "no_limit": "不限制时间",
     "last_1_hour": "最近1小时",
@@ -187,7 +180,27 @@
     "error_time_order": "开始时间必须早于结束时间",
     "success_set": "自定义时间范围已设置"
   },
-
+  "export_data": "导出数据",
+  "data_statistics": "数据统计",
+  "row_count": "行数",
+  "column_count": "列数",
+  "export_format": "导出格式",
+  "export_options": "导出选项",
+  "include_headers": "包含表头",
+  "custom_delimiter": "自定义分隔符 (可选，默认为逗号)",
+  "custom_delimiter_placeholder": "例如: ; | |",
+  "target_table_name": "目标表名",
+  "enter_table_name": "输入表名",
+  "filename_optional": "文件名 (可选)",
+  "default_filename_hint": "留空将使用默认文件名: {{filename}}",
+  "cancel": "取消",
+  "export_format_name": "导出 {{format}}",
+  "csv_description": "逗号分隔值文件，兼容性最好",
+  "tsv_description": "制表符分隔值文件，适合包含逗号的数据",
+  "excel_description": "Excel工作簿文件，支持格式化",
+  "json_description": "JavaScript对象表示法，适合程序处理",
+  "markdown_description": "Markdown表格格式，适合文档",
+  "sql_description": "SQL插入语句，可直接执行",
   "results": {
     "title": "查询结果",
     "no_results": "暂无查询结果",
@@ -208,7 +221,6 @@
     "export_failed": "导出失败",
     "sql_generated": "SQL 已生成"
   },
-
   "tabs": {
     "table_view": "表格视图",
     "json_view": "JSON 视图",
@@ -218,11 +230,9 @@
     "execution_status": "执行状态",
     "aggregate_stats": "聚合统计"
   },
-
   "messages_tab": {
     "no_messages": "暂无执行消息"
   },
-
   "execution_plan_tab": {
     "no_data": "暂无执行计划数据",
     "no_data_hint": "请使用 EXPLAIN 语句查看查询执行计划",
@@ -239,7 +249,6 @@
     "suggestion_check_join": "检查是否存在不必要的 JOIN 操作",
     "suggestion_partition": "考虑使用分区表或物化视图"
   },
-
   "execution_history_tab": {
     "no_history": "暂无执行历史",
     "execution_time": "执行时间",
@@ -251,7 +260,6 @@
     "affected_rows": "影响行数",
     "duration": "耗时"
   },
-
   "status_card": {
     "insert_success": "数据插入成功",
     "update_success": "数据更新成功",
@@ -284,7 +292,6 @@
     "deleted_rows": "删除行数",
     "total_affected_rows": "总影响行数"
   },
-
   "aggregate_stats": {
     "no_data": "未检测到聚合数据",
     "count": "总计 (COUNT)",
@@ -293,18 +300,6 @@
     "max": "最大值 (MAX)",
     "min": "最小值 (MIN)"
   },
-
-  "history": {
-    "deleteSuccess": "删除成功",
-    "deleteFailed": "删除失败: {{error}}",
-    "historyCleared": "历史记录已清空",
-    "clearFailed": "清空失败: {{error}}",
-    "updateFailed": "更新失败: {{error}}",
-    "addedToFavorites": "已添加到收藏",
-    "removedFromFavorites": "已取消收藏",
-    "operationFailed": "操作失败"
-  },
-
   "query_copied": "查询已复制",
   "re_execute": "重新执行",
   "copy_query": "复制查询",
@@ -325,7 +320,6 @@
   "database_filter": "数据库过滤",
   "refresh": "刷新",
   "close_panel": "关闭面板",
-  "execute_button": "执行",
   "delete_button": "删除",
   "resultPanel": {
     "noDataToExport": "没有可导出的数据",
@@ -443,16 +437,8 @@
     "chartExported": "图表已导出为 PNG 格式",
     "chartExportFailed": "导出图表失败: {{error}}",
     "tabs": {
-      "executor": "执行器",
-      "queryResult": "查询结果",
-      "writeResult": "写入结果",
-      "deleteResult": "删除结果",
-      "operationResult": "操作结果",
-      "permissionResult": "权限结果",
-      "executionResult": "执行结果",
-      "fieldStats": "字段统计",
+      "fieldStatistics": "字段统计",
       "visualization": "可视化",
-      "visualizationMulti": "可视化 {{index}}",
       "insights": "洞察"
     },
     "executor": {
@@ -654,11 +640,6 @@
       "up": "上升",
       "down": "下降"
     },
-    "tabs": {
-      "fieldStatistics": "字段统计",
-      "visualization": "可视化",
-      "insights": "洞察"
-    },
     "queryDetails": {
       "title": "执行的查询详情",
       "query": "查询",
@@ -689,5 +670,21 @@
       "clear": "清空",
       "noData": "查询结果 {{index}} 无数据"
     }
+  },
+  "unifiedDataTable": {
+    "filter": "[待翻译] Filter",
+    "filterColumn": "[待翻译] Filter {{column}}",
+    "filterPlaceholder": "[待翻译] Enter filter criteria...",
+    "apply": "[待翻译] Apply",
+    "clear": "[待翻译] Clear",
+    "search": "[待翻译] Search...",
+    "export": "[待翻译] Export",
+    "textFormat": "[待翻译] Text Format",
+    "jsonFormat": "[待翻译] JSON Format",
+    "csvFormat": "[待翻译] CSV Format",
+    "columns": "[待翻译] Columns ({{selected}}/{{total}})",
+    "columnDisplaySettings": "[待翻译] Column Display Settings",
+    "unselectAll": "[待翻译] Unselect All",
+    "selectAll": "[待翻译] Select All"
   }
 }

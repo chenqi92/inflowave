@@ -12,7 +12,6 @@
   "deleteConnectionTitle": "删除连接",
   "deleteConnectionConfirm": "确定要删除连接 \"{{name}}\" 吗？此操作不可撤销。",
   "connectionDeleted": "连接 \"{{name}}\" 已删除",
-
   "databaseOpened": "已打开数据库 \"{{database}}\"",
   "openDatabaseFailed": "打开数据库失败: {{error}}",
   "databaseClosed": "已关闭数据库 \"{{database}}\"",
@@ -24,28 +23,23 @@
   "deleteDatabaseTitle": "确认删除",
   "deleteDatabaseConfirm": "确定要删除数据库 \"{{database}}\" 吗？此操作不可撤销。",
   "deleteDatabaseInDevelopment": "删除数据库功能开发中: {{database}}",
-
   "queryingTable": "正在查询表 \"{{table}}\"",
   "deleteTableTitle": "确认删除表",
   "deleteTableConfirm": "确定要删除表 \"{{table}}\" 吗？\n\n⚠️ 警告：此操作将永久删除表中的所有数据，无法恢复！",
   "tableDeleted": "表 \"{{table}}\" 已成功删除",
   "deleteTableFailed": "删除表失败: {{error}}",
-
   "fieldNameCopied": "已复制字段名: {{name}}",
   "fieldStatsInDevelopment": "字段统计功能开发中: {{name}}",
   "databaseNameCopied": "已复制数据库名: {{database}}",
   "tableNameCopied": "已复制表名: {{table}}",
   "tagNameCopied": "已复制标签名: {{name}}",
   "tagValuesInDevelopment": "查看标签值功能开发中: {{name}}",
-
   "addedToFavorites": "已添加到收藏: {{table}}",
   "removedFromFavorites": "已取消收藏: {{table}}",
-
   "actionExecutionFailed": "操作失败: {{error}}",
   "unhandledAction": "未处理的右键菜单动作",
   "loadFailed": "加载失败: {{error}}",
   "retry": "重试",
-
   "createDatabase": {
     "title": "创建数据库",
     "titleBucket": "创建存储桶 (Bucket)",

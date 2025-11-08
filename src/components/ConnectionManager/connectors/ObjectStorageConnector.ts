@@ -3,6 +3,7 @@ import type { FormSection, BaseConnectionConfig, ValidationErrors } from './type
 import type { ConnectionConfig } from '@/types';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 import { t } from '@/i18n';
+import { getProxyConfigSection } from './proxyConfig';
 
 /**
  * 对象存储配置
@@ -493,7 +494,8 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       basicSection,
       storageSection,
       authSection,
-      advancedSection
+      advancedSection,
+      getProxyConfigSection('object-storage') // 代理配置
     ];
   }
 

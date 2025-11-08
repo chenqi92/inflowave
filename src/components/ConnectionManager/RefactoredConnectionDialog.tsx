@@ -125,7 +125,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
     }
     setTestResult(null);
     setErrors({});
-    setActiveTab('basic'); // 切换类型时回到基本信息
+    setActiveTab('general'); // 切换类型时回到常规配置
   };
 
   // 处理字段变更

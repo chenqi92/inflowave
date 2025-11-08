@@ -206,7 +206,7 @@ async function scanCodeForKeys() {
   
   // 查找所有 TypeScript 和 TSX 文件
   const files = await glob(`${CONFIG.srcDir}/**/*.{ts,tsx}`, {
-    ignore: ['**/node_modules/**', '**/*.d.ts'],
+    ignore: ['**/node_modules/**', '**/*.d.ts', '**/text-extractor.ts'],
   });
   
   for (const file of files) {

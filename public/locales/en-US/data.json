@@ -4,13 +4,11 @@
   "select_database": "Select Database",
   "no_connection": "Please connect to InfluxDB first. Select and activate a connection in the connection management page before writing data.",
   "no_database_selected": "Please select a database first. Choose the target database before starting the import.",
-  
   "tabs": {
     "single": "Single Write",
     "batch": "Batch Write",
     "import": "File Import"
   },
-  
   "single_write": {
     "measurement": "Measurement",
     "measurement_placeholder": "e.g.: temperature",
@@ -31,7 +29,6 @@
     "write_failed": "Data write failed",
     "added_to_batch": "Added to batch"
   },
-  
   "batch_write": {
     "title": "Batch Write",
     "format_label": "Format",
@@ -50,7 +47,6 @@
     "write_failed": "Batch write failed: {{count}} errors",
     "no_data_points": "No data points yet, please add data points to batch"
   },
-  
   "table": {
     "measurement": "Measurement",
     "tags": "Tags",
@@ -58,7 +54,6 @@
     "timestamp": "Timestamp",
     "actions": "Actions"
   },
-  
   "import": {
     "title": "File Import",
     "description": "Import CSV and JSON format data files, automatically map fields and batch write to database",
@@ -100,7 +95,6 @@
       "type_conversion": "Data type conversion"
     }
   },
-  
   "messages": {
     "load_databases_failed": "Failed to load database list",
     "write_success": "Data written successfully",
@@ -116,7 +110,6 @@
     "enterTargetFieldName": "Enter target field name",
     "selectOrEnterMeasurement": "Select or enter measurement name"
   },
-
   "export": {
     "dialog_title": "Data Export",
     "dialog_title_query_result": "Export Query Result",
@@ -155,4 +148,3 @@
     "estimate_size": "Estimate Size"
   }
 }
-

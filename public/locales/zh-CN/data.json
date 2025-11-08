@@ -4,13 +4,11 @@
   "select_database": "选择数据库",
   "no_connection": "请先连接到 InfluxDB。在连接管理页面选择一个连接并激活后，才能写入数据。",
   "no_database_selected": "请先选择数据库。在开始导入之前，请先选择要导入数据的目标数据库。",
-  
   "tabs": {
     "single": "单点写入",
     "batch": "批量写入",
     "import": "文件导入"
   },
-  
   "single_write": {
     "measurement": "测量名称",
     "measurement_placeholder": "例如: temperature",
@@ -31,7 +29,6 @@
     "write_failed": "数据写入失败",
     "added_to_batch": "已添加到批次"
   },
-  
   "batch_write": {
     "title": "批量写入",
     "format_label": "格式",
@@ -50,7 +47,6 @@
     "write_failed": "批量写入失败: {{count}} 个错误",
     "no_data_points": "暂无数据点，请添加数据点到批次"
   },
-  
   "table": {
     "measurement": "测量",
     "tags": "标签",
@@ -58,7 +54,6 @@
     "timestamp": "时间戳",
     "actions": "操作"
   },
-  
   "import": {
     "title": "文件导入",
     "description": "支持导入 CSV 和 JSON 格式的数据文件，自动映射字段并批量写入数据库",
@@ -100,7 +95,6 @@
       "type_conversion": "数据类型转换"
     }
   },
-  
   "messages": {
     "load_databases_failed": "获取数据库列表失败",
     "write_success": "数据写入成功",
@@ -116,7 +110,6 @@
     "enterTargetFieldName": "输入目标字段名",
     "selectOrEnterMeasurement": "选择或输入测量名称"
   },
-
   "export": {
     "dialog_title": "数据导出",
     "dialog_title_query_result": "导出查询结果",
@@ -155,4 +148,3 @@
     "estimate_size": "预估大小"
   }
 }
-

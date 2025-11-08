@@ -685,7 +685,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           ];
         case 'time':
           return [
-            { value: 'time_range', label: t('time_range') },
+            { value: 'time_range', label: tBrowser('filterOperators.timeRange') },
             { value: 'equals', label: tBrowser('filterOperators.equals') },
             { value: 'gt', label: tBrowser('filterOperators.after') },
             { value: 'lt', label: tBrowser('filterOperators.before') },

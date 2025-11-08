@@ -50,7 +50,8 @@
     "lte": "小于等于",
     "between": "介于",
     "after": "晚于",
-    "before": "早于"
+    "before": "早于",
+    "timeRange": "时间范围"
   },
   "copySelected": "复制 ({{count}})",
   "copyAsText": "复制为文本",

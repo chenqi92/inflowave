@@ -1,13 +1,44 @@
 {
   "title": "S3/MinIO 文件浏览器",
   "select_bucket": "选择存储桶",
-  "upload": "上传",
-  "download": "下载",
+  "upload": {
+    "select_files": "选择文件",
+    "drag_drop": "拖拽文件到此处上传",
+    "uploading": "正在上传...",
+    "success": "成功上传 {{count}} 个文件",
+    "failed": "{{count}} 个文件上传失败",
+    "progress": "{{percent}}% - {{loaded}} / {{total}}",
+    "cancel": "取消上传"
+  },
+  "download": {
+    "no_selection": "请选择要下载的文件",
+    "downloading": "正在下载...",
+    "success": "下载成功",
+    "failed": "下载 {{name}} 失败"
+  },
   "new_folder": "新建文件夹",
-  "delete": "删除",
-  "copy": "复制",
-  "cut": "剪切",
-  "paste": "粘贴",
+  "delete": {
+    "no_selection": "请选择要删除的项目",
+    "confirm_title": "确认删除",
+    "confirm_message": "确定要删除选中的 {{count}} 个项目吗？",
+    "deleting": "正在删除...",
+    "success": "成功删除 {{count}} 个项目",
+    "failed": "删除失败"
+  },
+  "copy": {
+    "copied": "已复制 {{count}} 个项目到剪贴板",
+    "no_selection": "请选择要复制的项目"
+  },
+  "cut": {
+    "cut": "已剪切 {{count}} 个项目到剪贴板",
+    "no_selection": "请选择要剪切的项目"
+  },
+  "paste": {
+    "nothing": "剪贴板为空",
+    "pasting": "正在粘贴...",
+    "success": "粘贴成功",
+    "failed": "粘贴 {{name}} 失败"
+  },
   "refresh": "刷新",
   "search": "搜索文件...",
   "generate_link": "生成分享链接",
@@ -18,7 +49,6 @@
   "items": "共 {{count}} 项",
   "selected": "已选择 {{count}} 项",
   "load_more": "加载更多",
-
   "connection": {
     "type_s3": "Amazon S3",
     "type_minio": "MinIO",
@@ -36,7 +66,6 @@
     "connect_success": "已连接到S3服务",
     "connect_failed": "连接S3服务失败"
   },
-
   "bucket": {
     "create": "创建存储桶",
     "delete": "删除存储桶",
@@ -48,57 +77,12 @@
     "delete_failed": "删除存储桶失败",
     "empty_confirm": "确定要删除存储桶吗？所有文件将被永久删除。"
   },
-
   "folder": {
     "name_placeholder": "文件夹名称",
     "name_required": "请输入文件夹名称",
     "created": "文件夹创建成功",
     "create_failed": "创建文件夹失败"
   },
-
-  "upload": {
-    "select_files": "选择文件",
-    "drag_drop": "拖拽文件到此处上传",
-    "uploading": "正在上传...",
-    "success": "成功上传 {{count}} 个文件",
-    "failed": "{{count}} 个文件上传失败",
-    "progress": "{{percent}}% - {{loaded}} / {{total}}",
-    "cancel": "取消上传"
-  },
-
-  "download": {
-    "no_selection": "请选择要下载的文件",
-    "downloading": "正在下载...",
-    "success": "下载成功",
-    "failed": "下载 {{name}} 失败"
-  },
-
-  "delete": {
-    "no_selection": "请选择要删除的项目",
-    "confirm_title": "确认删除",
-    "confirm_message": "确定要删除选中的 {{count}} 个项目吗？",
-    "deleting": "正在删除...",
-    "success": "成功删除 {{count}} 个项目",
-    "failed": "删除失败"
-  },
-
-  "copy": {
-    "copied": "已复制 {{count}} 个项目到剪贴板",
-    "no_selection": "请选择要复制的项目"
-  },
-
-  "cut": {
-    "cut": "已剪切 {{count}} 个项目到剪贴板",
-    "no_selection": "请选择要剪切的项目"
-  },
-
-  "paste": {
-    "nothing": "剪贴板为空",
-    "pasting": "正在粘贴...",
-    "success": "粘贴成功",
-    "failed": "粘贴 {{name}} 失败"
-  },
-
   "presigned_url": {
     "title": "分享链接",
     "description": "此链接将在1小时后过期",
@@ -107,7 +91,6 @@
     "failed": "生成链接失败",
     "copied": "链接已复制到剪贴板"
   },
-
   "error": {
     "load_buckets_failed": "加载存储桶列表失败",
     "load_objects_failed": "加载文件列表失败",
@@ -118,13 +101,11 @@
     "permission_denied": "权限不足",
     "network_error": "网络错误"
   },
-
   "empty": {
     "bucket": "此存储桶为空",
     "folder": "此文件夹为空",
     "search": "没有找到匹配的文件"
   },
-
   "file_types": {
     "folder": "文件夹",
     "file": "文件",

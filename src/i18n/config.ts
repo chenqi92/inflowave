@@ -66,7 +66,16 @@ const i18nConfig = {
   
   // 命名空间
   defaultNS: 'common',
-  ns: ['common', 'navigation', 'connections', 'query', 'settings', 'errors', 'dateTime', 'menu', 'visualization', 'logs', 'tests', 'utils', 'data'],
+  ns: [
+    'common', 'navigation', 'connections', 'query', 'settings', 'errors',
+    'dateTime', 'menu', 'visualization', 'logs', 'tests', 'utils', 'data',
+    'chart', 'chartType', 'contextMenu', 'dashboard', 'dataBrowser',
+    'dataGenerator', 'dataType', 'databaseExplorer', 'diagnostics',
+    'embeddedServer', 'export', 'extension', 'filter', 'font',
+    'globalSearch', 'itemType', 'notifications', 'port', 'retentionPolicy',
+    's3', 'shortcuts', 'statistics', 'status', 'tabs', 'theme',
+    'updater', 'userGuide', 'versionDetection'
+  ],
   
   // 插值配置
   interpolation: {

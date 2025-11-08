@@ -50,7 +50,8 @@
     "lte": "Less Than or Equal",
     "between": "Between",
     "after": "After",
-    "before": "Before"
+    "before": "Before",
+    "timeRange": "Time Range"
   },
   "copySelected": "Copy ({{count}})",
   "copyAsText": "Copy as Text",

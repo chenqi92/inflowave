@@ -136,11 +136,6 @@
     }
   },
   "network": {
-    "timeout": {
-      "title": "请求超时",
-      "message": "服务器响应超时",
-      "suggestion": "请检查网络连接并重试"
-    },
     "404": {
       "title": "服务不可用",
       "message": "请求的服务不存在",
@@ -150,6 +145,11 @@
       "title": "服务器错误",
       "message": "服务器内部错误",
       "suggestion": "请稍后重试或联系管理员"
+    },
+    "timeout": {
+      "title": "请求超时",
+      "message": "服务器响应超时",
+      "suggestion": "请检查网络连接并重试"
     },
     "offline": {
       "title": "网络连接失败",
@@ -290,12 +290,37 @@
       "title": "文件格式错误",
       "message": "文件格式不正确或已损坏",
       "suggestionImport": "请检查文件格式是否为支持的CSV、JSON等格式，确保文件结构完整",
-      "suggestionExport": "请选择支持的导出格式，如CSV、Excel、JSON等"
+      "suggestionExport": "请选择支持的导出格式，如CSV、Excel、JSON等",
+      "invalid": {
+        "title": "[待翻译] Invalid File Format",
+        "message": "[待翻译] Unsupported file format or corrupted file",
+        "suggestion": "[待翻译] Please check if the file format is correct and ensure the file is not corrupted"
+      },
+      "mismatch": {
+        "title": "[待翻译] File Format Mismatch",
+        "message": "[待翻译] File content does not match the selected format",
+        "suggestion": "[待翻译] Please verify the file format or select the correct import format"
+      }
     },
     "validation": {
       "title": "数据验证失败",
       "message": "数据不符合预期格式或约束条件",
-      "suggestion": "请检查数据类型、字段长度和必填项是否符合要求"
+      "suggestion": "请检查数据类型、字段长度和必填项是否符合要求",
+      "schema": {
+        "title": "[待翻译] Data Schema Validation Failed",
+        "message": "[待翻译] Data structure does not meet requirements",
+        "suggestion": "[待翻译] Please check the data structure and ensure all required fields are present"
+      },
+      "dataType": {
+        "title": "[待翻译] Data Type Error",
+        "message": "[待翻译] Data type does not match the target table structure",
+        "suggestion": "[待翻译] Please adjust the data type to match the target table requirements"
+      },
+      "constraint": {
+        "title": "[待翻译] Data Constraint Violation",
+        "message": "[待翻译] Data does not meet constraint conditions",
+        "suggestion": "[待翻译] Please check unique constraints, foreign key constraints, and other data integrity requirements"
+      }
     },
     "permission": {
       "title": "权限不足",
@@ -328,6 +353,11 @@
         "title": "内存占用过高",
         "message": "系统内存使用率过高",
         "suggestion": "建议优化查询条件或分批处理数据"
+      },
+      "leak": {
+        "title": "[待翻译] Memory Leak Detected",
+        "message": "[待翻译] {{context}} may have a memory leak",
+        "suggestion": "[待翻译] Please restart the application. If the problem persists, please contact technical support"
       }
     },
     "cpu": {
@@ -345,12 +375,27 @@
         "title": "磁盘空间不足",
         "message": "可用磁盘空间不足",
         "suggestion": "请清理磁盘空间、移动文件到其他位置或扩展存储容量"
+      },
+      "readonly": {
+        "title": "[待翻译] Disk Read-Only",
+        "message": "[待翻译] {{context}} is in read-only state",
+        "suggestion": "[待翻译] Please check disk permissions or contact system administrator"
       }
     },
     "network": {
       "title": "网络连接异常",
       "message": "网络连接不稳定或中断",
-      "suggestion": "请检查网络连接状态，确认服务器地址和端口配置正确"
+      "suggestion": "请检查网络连接状态，确认服务器地址和端口配置正确",
+      "slow": {
+        "title": "[待翻译] Slow Network Connection",
+        "message": "[待翻译] Network latency is {{usage}}ms, affecting performance",
+        "suggestion": "[待翻译] Please check network connection or try again later"
+      },
+      "unstable": {
+        "title": "[待翻译] Unstable Network",
+        "message": "[待翻译] Network connection is unstable",
+        "suggestion": "[待翻译] Recommend switching to a more stable network environment"
+      }
     },
     "default": {
       "title": "系统资源不足",
@@ -374,7 +419,17 @@
     "drag": {
       "title": "拖拽操作失败",
       "message": "无法完成拖拽操作",
-      "suggestion": "请确保目标位置支持拖拽，或尝试使用右键菜单进行操作"
+      "suggestion": "请确保目标位置支持拖拽，或尝试使用右键菜单进行操作",
+      "invalid": {
+        "title": "[待翻译] Invalid Drag Operation",
+        "message": "[待翻译] Cannot drag item to this location",
+        "suggestion": "[待翻译] Please check if the target location accepts this type of item"
+      },
+      "failed": {
+        "title": "[待翻译] Drag Operation Failed",
+        "message": "[待翻译] Unable to complete drag operation",
+        "suggestion": "[待翻译] Please try again or refresh the page"
+      }
     },
     "chart": {
       "render": {
@@ -396,17 +451,42 @@
     "theme": {
       "title": "主题切换失败",
       "message": "无法切换到指定主题",
-      "suggestion": "请尝试刷新页面或重启应用"
+      "suggestion": "请尝试刷新页面或重启应用",
+      "load": {
+        "title": "[待翻译] Theme Loading Failed",
+        "message": "[待翻译] Unable to load selected theme",
+        "suggestion": "[待翻译] Please try another theme or restart the application"
+      },
+      "apply": {
+        "title": "[待翻译] Theme Application Failed",
+        "message": "[待翻译] Unable to apply theme settings",
+        "suggestion": "[待翻译] Please check theme configuration or restore default theme"
+      }
     },
     "layout": {
       "title": "布局调整失败",
       "message": "无法调整界面布局",
-      "suggestion": "请尝试重置布局或刷新页面"
+      "suggestion": "请尝试重置布局或刷新页面",
+      "save": {
+        "title": "[待翻译] Layout Save Failed",
+        "message": "[待翻译] Unable to save current layout configuration",
+        "suggestion": "[待翻译] Please check storage permissions or try again later"
+      },
+      "restore": {
+        "title": "[待翻译] Layout Restore Failed",
+        "message": "[待翻译] Unable to restore saved layout",
+        "suggestion": "[待翻译] Please try restoring default layout or reconfigure"
+      }
     },
     "component": {
       "title": "组件加载失败",
       "message": "{{context}}无法正常加载",
-      "suggestion": "请刷新页面或重启应用，如问题持续请联系技术支持"
+      "suggestion": "请刷新页面或重启应用，如问题持续请联系技术支持",
+      "load": {
+        "title": "[待翻译] Component Loading Failed",
+        "message": "[待翻译] {{context}} component failed to load",
+        "suggestion": "[待翻译] Please refresh the page or contact technical support"
+      }
     },
     "default": {
       "title": "界面操作失败",
@@ -425,6 +505,16 @@
         "title": "插件加载失败",
         "message": "无法加载插件",
         "suggestion": "请检查插件完整性或联系插件开发者"
+      },
+      "incompatible": {
+        "title": "[待翻译] Extension Incompatible",
+        "message": "[待翻译] Extension is incompatible with current application version",
+        "suggestion": "[待翻译] Please update the extension to the latest version or use a compatible version"
+      },
+      "corrupt": {
+        "title": "[待翻译] Extension File Corrupted",
+        "message": "[待翻译] Extension file is damaged or incomplete",
+        "suggestion": "[待翻译] Please reinstall the extension or download it again"
       }
     },
     "install": {
@@ -442,17 +532,42 @@
         "title": "插件安装失败",
         "message": "插件安装过程中发生错误",
         "suggestion": "请检查网络连接和插件文件完整性"
+      },
+      "conflict": {
+        "title": "[待翻译] Extension Conflict",
+        "message": "[待翻译] Conflicts with existing extension",
+        "suggestion": "[待翻译] Please uninstall conflicting extensions first or contact extension developer"
       }
     },
     "uninstall": {
       "title": "插件卸载失败",
       "message": "无法卸载插件",
-      "suggestion": "请确保插件未在使用中，或重启应用后重试"
+      "suggestion": "请确保插件未在使用中，或重启应用后重试",
+      "inUse": {
+        "title": "[待翻译] Uninstallation Failed",
+        "message": "[待翻译] Extension is currently in use and cannot be uninstalled",
+        "suggestion": "[待翻译] Please close related functions and try again"
+      },
+      "permission": {
+        "title": "[待翻译] Uninstallation Failed",
+        "message": "[待翻译] No permission to uninstall extension",
+        "suggestion": "[待翻译] Please run the application with administrator privileges"
+      }
     },
     "dependency": {
       "title": "依赖缺失",
       "message": "插件所需的依赖不满足",
-      "suggestion": "请安装相关依赖包或升级到兼容版本"
+      "suggestion": "请安装相关依赖包或升级到兼容版本",
+      "missing": {
+        "title": "[待翻译] Dependency Missing",
+        "message": "[待翻译] Extension depends on other extensions that are not installed",
+        "suggestion": "[待翻译] Please install required dependencies first"
+      },
+      "version": {
+        "title": "[待翻译] Dependency Version Mismatch",
+        "message": "[待翻译] Dependent extension version does not meet requirements",
+        "suggestion": "[待翻译] Please update dependent extensions to compatible versions"
+      }
     },
     "version": {
       "incompatible": {
@@ -464,17 +579,47 @@
         "title": "版本检查失败",
         "message": "无法验证插件版本",
         "suggestion": "请检查插件信息或联系插件开发者"
+      },
+      "tooOld": {
+        "title": "[待翻译] Extension Version Too Old",
+        "message": "[待翻译] Extension version is too old and may have security risks",
+        "suggestion": "[待翻译] Recommend updating to the latest version"
+      },
+      "tooNew": {
+        "title": "[待翻译] Extension Version Too New",
+        "message": "[待翻译] Extension version is too new and incompatible with current application",
+        "suggestion": "[待翻译] Please wait for application update or use a lower version extension"
       }
     },
     "permission": {
       "title": "插件权限错误",
       "message": "插件没有执行所需操作的权限",
-      "suggestion": "请检查插件权限配置或联系管理员"
+      "suggestion": "请检查插件权限配置或联系管理员",
+      "denied": {
+        "title": "[待翻译] Permission Request Denied",
+        "message": "[待翻译] Extension requested permissions were denied",
+        "suggestion": "[待翻译] Please grant necessary permissions in settings for extension to work properly"
+      },
+      "excessive": {
+        "title": "[待翻译] Excessive Permission Request",
+        "message": "[待翻译] Extension requested permissions exceed its functional requirements",
+        "suggestion": "[待翻译] For security reasons, please carefully review permission requests or use other extensions"
+      }
     },
     "api": {
       "title": "插件API错误",
       "message": "插件调用系统API时发生错误",
-      "suggestion": "请检查插件兼容性或联系插件开发者更新"
+      "suggestion": "请检查插件兼容性或联系插件开发者更新",
+      "unavailable": {
+        "title": "[待翻译] API Unavailable",
+        "message": "[待翻译] Extension called API is not available in current version",
+        "suggestion": "[待翻译] Please update application or contact extension developer"
+      },
+      "deprecated": {
+        "title": "[待翻译] API Deprecated",
+        "message": "[待翻译] Extension is using deprecated API",
+        "suggestion": "[待翻译] Recommend contacting extension developer to update extension"
+      }
     },
     "default": {
       "title": "插件系统错误",
@@ -493,12 +638,32 @@
         "title": "会话错误",
         "message": "登录会话出现问题",
         "suggestion": "请尝试重新登录"
+      },
+      "invalid": {
+        "title": "[待翻译] Invalid Session",
+        "message": "[待翻译] Session information is invalid or has been tampered with",
+        "suggestion": "[待翻译] Please log in again for security reasons"
+      },
+      "concurrent": {
+        "title": "[待翻译] Concurrent Login",
+        "message": "[待翻译] Account is logged in on another device",
+        "suggestion": "[待翻译] If this is not you, please change password immediately"
       }
     },
     "permission": {
       "title": "权限不足",
       "message": "您没有执行此操作的权限",
-      "suggestion": "请联系管理员授予相应权限，或使用有权限的账户"
+      "suggestion": "请联系管理员授予相应权限，或使用有权限的账户",
+      "insufficient": {
+        "title": "[待翻译] Insufficient Permissions",
+        "message": "[待翻译] You do not have permission to perform this operation",
+        "suggestion": "[待翻译] Please contact administrator to obtain necessary permissions"
+      },
+      "expired": {
+        "title": "[待翻译] Permissions Expired",
+        "message": "[待翻译] Your operation permissions have expired",
+        "suggestion": "[待翻译] Please contact administrator to renew permissions"
+      }
     },
     "certificate": {
       "expired": {
@@ -515,6 +680,11 @@
         "title": "证书错误",
         "message": "SSL证书存在问题",
         "suggestion": "请联系系统管理员检查证书配置"
+      },
+      "revoked": {
+        "title": "[待翻译] Certificate Revoked",
+        "message": "[待翻译] SSL certificate has been revoked",
+        "suggestion": "[待翻译] Please contact system administrator immediately"
       }
     },
     "token": {
@@ -532,6 +702,11 @@
         "title": "访问令牌错误",
         "message": "身份验证令牌存在问题",
         "suggestion": "请重新登录或联系技术支持"
+      },
+      "revoked": {
+        "title": "[待翻译] Token Revoked",
+        "message": "[待翻译] Access token has been revoked",
+        "suggestion": "[待翻译] Please log in again or contact administrator"
       }
     },
     "authentication": {
@@ -544,12 +719,32 @@
         "title": "身份验证错误",
         "message": "身份验证过程中发生错误",
         "suggestion": "请重试或联系系统管理员"
+      },
+      "timeout": {
+        "title": "[待翻译] Authentication Timeout",
+        "message": "[待翻译] Authentication request timeout",
+        "suggestion": "[待翻译] Please check network connection and try again"
+      },
+      "locked": {
+        "title": "[待翻译] Account Locked",
+        "message": "[待翻译] Account has been locked due to too many failed login attempts",
+        "suggestion": "[待翻译] Please wait {{duration}} minutes or contact administrator"
       }
     },
     "authorization": {
       "title": "授权失败",
       "message": "您没有访问此资源的授权",
-      "suggestion": "请联系管理员获取相应的访问权限"
+      "suggestion": "请联系管理员获取相应的访问权限",
+      "denied": {
+        "title": "[待翻译] Access Denied",
+        "message": "[待翻译] You do not have access to this resource",
+        "suggestion": "[待翻译] Please contact administrator if you need access"
+      },
+      "scopeInsufficient": {
+        "title": "[待翻译] Insufficient Authorization Scope",
+        "message": "[待翻译] Current authorization scope does not include this operation",
+        "suggestion": "[待翻译] Please request extended authorization scope"
+      }
     },
     "default": {
       "title": "安全验证失败",
@@ -573,12 +768,27 @@
         "title": "应用启动失败",
         "message": "应用程序无法正常启动",
         "suggestion": "请重启应用或检查系统要求"
+      },
+      "dependency": {
+        "title": "[待翻译] Startup Failed",
+        "message": "[待翻译] Missing required dependencies",
+        "suggestion": "[待翻译] Please reinstall the application or install missing dependencies"
       }
     },
     "shutdown": {
       "title": "应用关闭异常",
       "message": "应用程序关闭过程中发生错误",
-      "suggestion": "数据可能未完全保存，建议重启后检查数据完整性"
+      "suggestion": "数据可能未完全保存，建议重启后检查数据完整性",
+      "unsaved": {
+        "title": "[待翻译] Unsaved Changes",
+        "message": "[待翻译] There are unsaved changes",
+        "suggestion": "[待翻译] Please save changes before closing, or changes will be lost"
+      },
+      "timeout": {
+        "title": "[待翻译] Shutdown Timeout",
+        "message": "[待翻译] Application did not close properly within specified time",
+        "suggestion": "[待翻译] Please force quit or wait for operation to complete"
+      }
     },
     "update": {
       "permission": {
@@ -595,6 +805,11 @@
         "title": "应用更新失败",
         "message": "应用程序更新过程中发生错误",
         "suggestion": "请重试更新或手动下载安装最新版本"
+      },
+      "verify": {
+        "title": "[待翻译] Update Failed",
+        "message": "[待翻译] Update package verification failed",
+        "suggestion": "[待翻译] Please download again or use official channels"
       }
     },
     "config": {
@@ -607,12 +822,32 @@
         "title": "配置加载失败",
         "message": "无法加载应用配置",
         "suggestion": "请检查配置文件权限或恢复默认配置"
+      },
+      "parse": {
+        "title": "[待翻译] Configuration Parse Error",
+        "message": "[待翻译] Unable to parse configuration file",
+        "suggestion": "[待翻译] Please check configuration file format or restore default configuration"
+      },
+      "save": {
+        "title": "[待翻译] Configuration Save Failed",
+        "message": "[待翻译] Unable to save configuration changes",
+        "suggestion": "[待翻译] Please check file permissions or disk space"
       }
     },
     "migration": {
       "title": "数据迁移失败",
       "message": "数据库迁移过程中发生错误",
-      "suggestion": "请备份现有数据，或联系技术支持协助迁移"
+      "suggestion": "请备份现有数据，或联系技术支持协助迁移",
+      "version": {
+        "title": "[待翻译] Data Migration Failed",
+        "message": "[待翻译] Data version is incompatible",
+        "suggestion": "[待翻译] Please backup data first, then contact technical support"
+      },
+      "integrity": {
+        "title": "[待翻译] Migration Failed",
+        "message": "[待翻译] Data integrity check failed",
+        "suggestion": "[待翻译] Please restore from backup or contact technical support"
+      }
     },
     "backup": {
       "space": {
@@ -624,6 +859,16 @@
         "title": "数据备份失败",
         "message": "无法创建数据备份",
         "suggestion": "请检查备份路径权限和磁盘空间"
+      },
+      "permission": {
+        "title": "[待翻译] Backup Failed",
+        "message": "[待翻译] No permission to write backup file",
+        "suggestion": "[待翻译] Please check directory permissions or choose another location"
+      },
+      "corrupt": {
+        "title": "[待翻译] Backup Corrupted",
+        "message": "[待翻译] Backup file is damaged and cannot be restored",
+        "suggestion": "[待翻译] Please use another backup or contact technical support"
       }
     },
     "default": {

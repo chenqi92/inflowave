@@ -5,24 +5,19 @@
   "notificationCenterMessage": "Click the notification icon on the right to view all notifications. Notification records will be cleared when the application is closed or restarted.",
   "systemCheckTitle": "System Check Completed",
   "systemCheckMessage": "Database connection components, query engine, and visualization modules are ready.",
-
   "connectionSuccess": "Connection Successful",
   "connectionError": "Connection Failed",
   "connectionWarning": "Connection Warning",
-
   "querySuccess": "Query Completed",
   "queryError": "Query Failed",
   "queryWarning": "Query Warning",
-
   "dataSuccess": "Data Operation Successful",
   "dataError": "Data Operation Failed",
   "dataWarning": "Data Operation Warning",
-
   "systemInfo": "System Information",
   "systemSuccess": "System Operation Successful",
   "systemError": "System Error",
   "systemWarning": "System Warning",
-
   "exportSuccess": "Export Successful",
   "exportError": "Export Failed",
   "exportWarning": "Export Warning"

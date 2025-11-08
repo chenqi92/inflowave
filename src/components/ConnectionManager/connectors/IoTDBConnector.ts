@@ -3,6 +3,7 @@ import type { FormSection, BaseConnectionConfig, ValidationErrors } from './type
 import type { ConnectionConfig } from '@/types';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 import { t } from '@/i18n';
+import { getProxyConfigSection } from './proxyConfig';
 
 /**
  * IoTDB连接配置
@@ -149,7 +150,8 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
       baseSections[1], // 连接设置
       iotdbSection,    // IoTDB特定配置
       advancedSection, // IoTDB高级配置
-      baseSections[2]  // 通用高级设置
+      baseSections[2], // 通用高级设置
+      getProxyConfigSection('iotdb') // 代理配置
     ];
   }
 

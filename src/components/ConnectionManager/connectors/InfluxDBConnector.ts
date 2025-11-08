@@ -3,6 +3,7 @@ import type { FormSection, BaseConnectionConfig, ValidationErrors } from './type
 import type { ConnectionConfig } from '@/types';
 import { getDatabaseBrandIcon } from '@/utils/iconLoader';
 import { t } from '@/i18n';
+import { getProxyConfigSection } from './proxyConfig';
 
 /**
  * InfluxDB连接配置
@@ -171,7 +172,8 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
       baseSections[0], // 基本信息
       baseSections[1], // 连接设置
       influxdbSection, // InfluxDB特定配置
-      baseSections[2]  // 高级设置
+      baseSections[2], // 高级设置
+      getProxyConfigSection('influxdb') // 代理配置
     ];
   }
 
@@ -252,6 +254,14 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
         bucket: formData.bucket || '',
         v1CompatibilityApi: formData.v1CompatibilityApi || false
       } : undefined,
+      proxyConfig: formData.proxyEnabled ? {
+        enabled: formData.proxyEnabled,
+        proxyType: formData.proxyType || 'http',
+        host: formData.proxyHost || '',
+        port: formData.proxyPort || 0,
+        username: formData.proxyUsername,
+        password: formData.proxyPassword
+      } : undefined,
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -283,7 +293,13 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
       organization: config.v2Config?.organization,
       bucket: config.v2Config?.bucket,
       v1CompatibilityApi: config.v2Config?.v1CompatibilityApi,
-      defaultQueryLanguage: config.defaultQueryLanguage
+      defaultQueryLanguage: config.defaultQueryLanguage,
+      proxyEnabled: config.proxyConfig?.enabled,
+      proxyType: config.proxyConfig?.proxyType,
+      proxyHost: config.proxyConfig?.host,
+      proxyPort: config.proxyConfig?.port,
+      proxyUsername: config.proxyConfig?.username,
+      proxyPassword: config.proxyConfig?.password
     };
   }
 

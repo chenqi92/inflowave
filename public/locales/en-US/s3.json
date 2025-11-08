@@ -1,13 +1,44 @@
 {
   "title": "S3/MinIO File Browser",
   "select_bucket": "Select Bucket",
-  "upload": "Upload",
-  "download": "Download",
+  "upload": {
+    "select_files": "Select Files",
+    "drag_drop": "Drag and drop files here to upload",
+    "uploading": "Uploading...",
+    "success": "Successfully uploaded {{count}} file(s)",
+    "failed": "Failed to upload {{count}} file(s)",
+    "progress": "{{percent}}% - {{loaded}} / {{total}}",
+    "cancel": "Cancel Upload"
+  },
+  "download": {
+    "no_selection": "Please select files to download",
+    "downloading": "Downloading...",
+    "success": "Download successful",
+    "failed": "Failed to download {{name}}"
+  },
   "new_folder": "New Folder",
-  "delete": "Delete",
-  "copy": "Copy",
-  "cut": "Cut",
-  "paste": "Paste",
+  "delete": {
+    "no_selection": "Please select items to delete",
+    "confirm_title": "Confirm Delete",
+    "confirm_message": "Are you sure you want to delete {{count}} selected item(s)?",
+    "deleting": "Deleting...",
+    "success": "Successfully deleted {{count}} item(s)",
+    "failed": "Failed to delete"
+  },
+  "copy": {
+    "copied": "Copied {{count}} item(s) to clipboard",
+    "no_selection": "Please select items to copy"
+  },
+  "cut": {
+    "cut": "Cut {{count}} item(s) to clipboard",
+    "no_selection": "Please select items to cut"
+  },
+  "paste": {
+    "nothing": "Clipboard is empty",
+    "pasting": "Pasting...",
+    "success": "Paste successful",
+    "failed": "Failed to paste {{name}}"
+  },
   "refresh": "Refresh",
   "search": "Search files...",
   "generate_link": "Generate Share Link",
@@ -18,7 +49,6 @@
   "items": "{{count}} items",
   "selected": "{{count}} selected",
   "load_more": "Load More",
-
   "connection": {
     "type_s3": "Amazon S3",
     "type_minio": "MinIO",
@@ -36,7 +66,6 @@
     "connect_success": "Connected to S3 service",
     "connect_failed": "Failed to connect to S3 service"
   },
-
   "bucket": {
     "create": "Create Bucket",
     "delete": "Delete Bucket",
@@ -48,57 +77,12 @@
     "delete_failed": "Failed to delete bucket",
     "empty_confirm": "Are you sure you want to delete this bucket? All files will be permanently deleted."
   },
-
   "folder": {
     "name_placeholder": "Folder name",
     "name_required": "Please enter a folder name",
     "created": "Folder created successfully",
     "create_failed": "Failed to create folder"
   },
-
-  "upload": {
-    "select_files": "Select Files",
-    "drag_drop": "Drag and drop files here to upload",
-    "uploading": "Uploading...",
-    "success": "Successfully uploaded {{count}} file(s)",
-    "failed": "Failed to upload {{count}} file(s)",
-    "progress": "{{percent}}% - {{loaded}} / {{total}}",
-    "cancel": "Cancel Upload"
-  },
-
-  "download": {
-    "no_selection": "Please select files to download",
-    "downloading": "Downloading...",
-    "success": "Download successful",
-    "failed": "Failed to download {{name}}"
-  },
-
-  "delete": {
-    "no_selection": "Please select items to delete",
-    "confirm_title": "Confirm Delete",
-    "confirm_message": "Are you sure you want to delete {{count}} selected item(s)?",
-    "deleting": "Deleting...",
-    "success": "Successfully deleted {{count}} item(s)",
-    "failed": "Failed to delete"
-  },
-
-  "copy": {
-    "copied": "Copied {{count}} item(s) to clipboard",
-    "no_selection": "Please select items to copy"
-  },
-
-  "cut": {
-    "cut": "Cut {{count}} item(s) to clipboard",
-    "no_selection": "Please select items to cut"
-  },
-
-  "paste": {
-    "nothing": "Clipboard is empty",
-    "pasting": "Pasting...",
-    "success": "Paste successful",
-    "failed": "Failed to paste {{name}}"
-  },
-
   "presigned_url": {
     "title": "Share Link",
     "description": "This link will expire in 1 hour",
@@ -107,7 +91,6 @@
     "failed": "Failed to generate link",
     "copied": "Link copied to clipboard"
   },
-
   "error": {
     "load_buckets_failed": "Failed to load bucket list",
     "load_objects_failed": "Failed to load file list",
@@ -118,13 +101,11 @@
     "permission_denied": "Permission denied",
     "network_error": "Network error"
   },
-
   "empty": {
     "bucket": "This bucket is empty",
     "folder": "This folder is empty",
     "search": "No matching files found"
   },
-
   "file_types": {
     "folder": "Folder",
     "file": "File",

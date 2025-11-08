@@ -5,24 +5,19 @@
   "notificationCenterMessage": "点击右侧的消息图标可以查看所有通知。软件关闭或重启后，通知记录将被清空。",
   "systemCheckTitle": "系统检查完成",
   "systemCheckMessage": "数据库连接组件、查询引擎和可视化模块已就绪。",
-
   "connectionSuccess": "连接成功",
   "connectionError": "连接失败",
   "connectionWarning": "连接警告",
-
   "querySuccess": "查询完成",
   "queryError": "查询失败",
   "queryWarning": "查询警告",
-
   "dataSuccess": "数据操作成功",
   "dataError": "数据操作失败",
   "dataWarning": "数据操作警告",
-
   "systemInfo": "系统信息",
   "systemSuccess": "系统操作成功",
   "systemError": "系统错误",
   "systemWarning": "系统警告",
-
   "exportSuccess": "导出成功",
   "exportError": "导出失败",
   "exportWarning": "导出警告"

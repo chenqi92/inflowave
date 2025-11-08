@@ -78,7 +78,11 @@
         "title": "File Format Mismatch",
         "message": "File content does not match the selected format",
         "suggestion": "Please verify the file format or select the correct import format"
-      }
+      },
+      "title": "[TODO: Translate] 文件格式错误",
+      "message": "[TODO: Translate] 文件格式不正确或已损坏",
+      "suggestionImport": "[TODO: Translate] 请检查文件格式是否为支持的CSV、JSON等格式，确保文件结构完整",
+      "suggestionExport": "[TODO: Translate] 请选择支持的导出格式，如CSV、Excel、JSON等"
     },
     "validation": {
       "schema": {
@@ -95,7 +99,10 @@
         "title": "Data Constraint Violation",
         "message": "Data does not meet constraint conditions",
         "suggestion": "Please check unique constraints, foreign key constraints, and other data integrity requirements"
-      }
+      },
+      "title": "[TODO: Translate] 数据验证失败",
+      "message": "[TODO: Translate] 数据不符合预期格式或约束条件",
+      "suggestion": "[TODO: Translate] 请检查数据类型、字段长度和必填项是否符合要求"
     },
     "permission": {
       "title": "{{operation}} Permission Denied",
@@ -110,6 +117,11 @@
     "operations": {
       "import": "import",
       "export": "export"
+    },
+    "default": {
+      "title": "[TODO: Translate] 数据{{operation}}失败",
+      "message": "[TODO: Translate] 数据{{operation}}过程中发生错误",
+      "suggestion": "[TODO: Translate] 请检查文件和网络连接，或联系技术支持"
     }
   },
   "systemResource": {
@@ -162,7 +174,15 @@
         "title": "Unstable Network",
         "message": "Network connection is unstable",
         "suggestion": "Recommend switching to a more stable network environment"
-      }
+      },
+      "title": "[TODO: Translate] 网络连接异常",
+      "message": "[TODO: Translate] 网络连接不稳定或中断",
+      "suggestion": "[TODO: Translate] 请检查网络连接状态，确认服务器地址和端口配置正确"
+    },
+    "default": {
+      "title": "[TODO: Translate] 系统资源不足",
+      "message": "[TODO: Translate] 系统资源{{context}}出现问题",
+      "suggestion": "[TODO: Translate] 请检查系统状态或联系系统管理员"
     }
   },
   "uiInteraction": {
@@ -188,7 +208,10 @@
         "title": "Drag Operation Failed",
         "message": "Unable to complete drag operation",
         "suggestion": "Please try again or refresh the page"
-      }
+      },
+      "title": "[TODO: Translate] 拖拽操作失败",
+      "message": "[TODO: Translate] 无法完成拖拽操作",
+      "suggestion": "[TODO: Translate] 请确保目标位置支持拖拽，或尝试使用右键菜单进行操作"
     },
     "chart": {
       "render": {
@@ -200,6 +223,11 @@
         "title": "Chart Data Error",
         "message": "Chart data is incomplete or in incorrect format",
         "suggestion": "Please check data source or adjust query conditions"
+      },
+      "default": {
+        "title": "[TODO: Translate] 图表显示错误",
+        "message": "[TODO: Translate] 图表组件发生错误",
+        "suggestion": "[TODO: Translate] 请尝试切换图表类型或刷新数据"
       }
     },
     "theme": {
@@ -212,7 +240,10 @@
         "title": "Theme Application Failed",
         "message": "Unable to apply theme settings",
         "suggestion": "Please check theme configuration or restore default theme"
-      }
+      },
+      "title": "[TODO: Translate] 主题切换失败",
+      "message": "[TODO: Translate] 无法切换到指定主题",
+      "suggestion": "[TODO: Translate] 请尝试刷新页面或重启应用"
     },
     "layout": {
       "save": {
@@ -224,14 +255,25 @@
         "title": "Layout Restore Failed",
         "message": "Unable to restore saved layout",
         "suggestion": "Please try restoring default layout or reconfigure"
-      }
+      },
+      "title": "[TODO: Translate] 布局调整失败",
+      "message": "[TODO: Translate] 无法调整界面布局",
+      "suggestion": "[TODO: Translate] 请尝试重置布局或刷新页面"
     },
     "component": {
       "load": {
         "title": "Component Loading Failed",
         "message": "{{context}} component failed to load",
         "suggestion": "Please refresh the page or contact technical support"
-      }
+      },
+      "title": "[TODO: Translate] 组件加载失败",
+      "message": "[TODO: Translate] {{context}}无法正常加载",
+      "suggestion": "[TODO: Translate] 请刷新页面或重启应用，如问题持续请联系技术支持"
+    },
+    "default": {
+      "title": "[TODO: Translate] 界面操作失败",
+      "message": "[TODO: Translate] 用户界面操作过程中发生错误",
+      "suggestion": "[TODO: Translate] 请重试操作或刷新页面"
     }
   },
   "extension": {
@@ -250,6 +292,11 @@
         "title": "Extension File Corrupted",
         "message": "Extension file is damaged or incomplete",
         "suggestion": "Please reinstall the extension or download it again"
+      },
+      "default": {
+        "title": "[TODO: Translate] 插件加载失败",
+        "message": "[TODO: Translate] 无法加载插件",
+        "suggestion": "[TODO: Translate] 请检查插件完整性或联系插件开发者"
       }
     },
     "install": {
@@ -267,6 +314,11 @@
         "title": "Extension Conflict",
         "message": "Conflicts with existing extension",
         "suggestion": "Please uninstall conflicting extensions first or contact extension developer"
+      },
+      "default": {
+        "title": "[TODO: Translate] 插件安装失败",
+        "message": "[TODO: Translate] 插件安装过程中发生错误",
+        "suggestion": "[TODO: Translate] 请检查网络连接和插件文件完整性"
       }
     },
     "uninstall": {
@@ -279,7 +331,10 @@
         "title": "Uninstallation Failed",
         "message": "No permission to uninstall extension",
         "suggestion": "Please run the application with administrator privileges"
-      }
+      },
+      "title": "[TODO: Translate] 插件卸载失败",
+      "message": "[TODO: Translate] 无法卸载插件",
+      "suggestion": "[TODO: Translate] 请确保插件未在使用中，或重启应用后重试"
     },
     "dependency": {
       "missing": {
@@ -291,7 +346,10 @@
         "title": "Dependency Version Mismatch",
         "message": "Dependent extension version does not meet requirements",
         "suggestion": "Please update dependent extensions to compatible versions"
-      }
+      },
+      "title": "[TODO: Translate] 依赖缺失",
+      "message": "[TODO: Translate] 插件所需的依赖不满足",
+      "suggestion": "[TODO: Translate] 请安装相关依赖包或升级到兼容版本"
     },
     "version": {
       "tooOld": {
@@ -303,6 +361,16 @@
         "title": "Extension Version Too New",
         "message": "Extension version is too new and incompatible with current application",
         "suggestion": "Please wait for application update or use a lower version extension"
+      },
+      "incompatible": {
+        "title": "[TODO: Translate] 版本不兼容",
+        "message": "[TODO: Translate] 插件版本与应用版本不兼容",
+        "suggestion": "[TODO: Translate] 请升级插件或应用到兼容版本，或查看插件文档了解支持的版本"
+      },
+      "default": {
+        "title": "[TODO: Translate] 版本检查失败",
+        "message": "[TODO: Translate] 无法验证插件版本",
+        "suggestion": "[TODO: Translate] 请检查插件信息或联系插件开发者"
       }
     },
     "permission": {
@@ -315,7 +383,10 @@
         "title": "Excessive Permission Request",
         "message": "Extension requested permissions exceed its functional requirements",
         "suggestion": "For security reasons, please carefully review permission requests or use other extensions"
-      }
+      },
+      "title": "[TODO: Translate] 插件权限错误",
+      "message": "[TODO: Translate] 插件没有执行所需操作的权限",
+      "suggestion": "[TODO: Translate] 请检查插件权限配置或联系管理员"
     },
     "api": {
       "unavailable": {
@@ -327,7 +398,15 @@
         "title": "API Deprecated",
         "message": "Extension is using deprecated API",
         "suggestion": "Recommend contacting extension developer to update extension"
-      }
+      },
+      "title": "[TODO: Translate] 插件API错误",
+      "message": "[TODO: Translate] 插件调用系统API时发生错误",
+      "suggestion": "[TODO: Translate] 请检查插件兼容性或联系插件开发者更新"
+    },
+    "default": {
+      "title": "[TODO: Translate] 插件系统错误",
+      "message": "[TODO: Translate] 插件系统发生未知错误",
+      "suggestion": "[TODO: Translate] 请重启应用或联系技术支持"
     }
   },
   "security": {
@@ -346,6 +425,11 @@
         "title": "Concurrent Login",
         "message": "Account is logged in on another device",
         "suggestion": "If this is not you, please change password immediately"
+      },
+      "default": {
+        "title": "[TODO: Translate] 会话错误",
+        "message": "[TODO: Translate] 登录会话出现问题",
+        "suggestion": "[TODO: Translate] 请尝试重新登录"
       }
     },
     "permission": {
@@ -358,7 +442,10 @@
         "title": "Permissions Expired",
         "message": "Your operation permissions have expired",
         "suggestion": "Please contact administrator to renew permissions"
-      }
+      },
+      "title": "[TODO: Translate] 权限不足",
+      "message": "[TODO: Translate] 您没有执行此操作的权限",
+      "suggestion": "[TODO: Translate] 请联系管理员授予相应权限，或使用有权限的账户"
     },
     "certificate": {
       "expired": {
@@ -375,6 +462,11 @@
         "title": "Certificate Revoked",
         "message": "SSL certificate has been revoked",
         "suggestion": "Please contact system administrator immediately"
+      },
+      "default": {
+        "title": "[TODO: Translate] 证书错误",
+        "message": "[TODO: Translate] SSL证书存在问题",
+        "suggestion": "[TODO: Translate] 请联系系统管理员检查证书配置"
       }
     },
     "token": {
@@ -392,6 +484,11 @@
         "title": "Token Revoked",
         "message": "Access token has been revoked",
         "suggestion": "Please log in again or contact administrator"
+      },
+      "default": {
+        "title": "[TODO: Translate] 访问令牌错误",
+        "message": "[TODO: Translate] 身份验证令牌存在问题",
+        "suggestion": "[TODO: Translate] 请重新登录或联系技术支持"
       }
     },
     "authentication": {
@@ -409,6 +506,11 @@
         "title": "Account Locked",
         "message": "Account has been locked due to too many failed login attempts",
         "suggestion": "Please wait {{duration}} minutes or contact administrator"
+      },
+      "default": {
+        "title": "[TODO: Translate] 身份验证错误",
+        "message": "[TODO: Translate] 身份验证过程中发生错误",
+        "suggestion": "[TODO: Translate] 请重试或联系系统管理员"
       }
     },
     "authorization": {
@@ -421,7 +523,15 @@
         "title": "Insufficient Authorization Scope",
         "message": "Current authorization scope does not include this operation",
         "suggestion": "Please request extended authorization scope"
-      }
+      },
+      "title": "[TODO: Translate] 授权失败",
+      "message": "[TODO: Translate] 您没有访问此资源的授权",
+      "suggestion": "[TODO: Translate] 请联系管理员获取相应的访问权限"
+    },
+    "default": {
+      "title": "[TODO: Translate] 安全验证失败",
+      "message": "[TODO: Translate] 安全验证过程中发生错误",
+      "suggestion": "[TODO: Translate] 请重试或联系系统管理员"
     }
   },
   "application": {
@@ -440,6 +550,11 @@
         "title": "Startup Failed",
         "message": "Missing required dependencies",
         "suggestion": "Please reinstall the application or install missing dependencies"
+      },
+      "default": {
+        "title": "[TODO: Translate] 应用启动失败",
+        "message": "[TODO: Translate] 应用程序无法正常启动",
+        "suggestion": "[TODO: Translate] 请重启应用或检查系统要求"
       }
     },
     "shutdown": {
@@ -452,7 +567,10 @@
         "title": "Shutdown Timeout",
         "message": "Application did not close properly within specified time",
         "suggestion": "Please force quit or wait for operation to complete"
-      }
+      },
+      "title": "[TODO: Translate] 应用关闭异常",
+      "message": "[TODO: Translate] 应用程序关闭过程中发生错误",
+      "suggestion": "[TODO: Translate] 数据可能未完全保存，建议重启后检查数据完整性"
     },
     "update": {
       "permission": {
@@ -469,6 +587,11 @@
         "title": "Update Failed",
         "message": "Update package verification failed",
         "suggestion": "Please download again or use official channels"
+      },
+      "default": {
+        "title": "[TODO: Translate] 应用更新失败",
+        "message": "[TODO: Translate] 应用程序更新过程中发生错误",
+        "suggestion": "[TODO: Translate] 请重试更新或手动下载安装最新版本"
       }
     },
     "config": {
@@ -486,6 +609,11 @@
         "title": "Configuration File Corrupted",
         "message": "Configuration file is damaged",
         "suggestion": "Recommend restoring backup or using default configuration"
+      },
+      "default": {
+        "title": "[TODO: Translate] 配置加载失败",
+        "message": "[TODO: Translate] 无法加载应用配置",
+        "suggestion": "[TODO: Translate] 请检查配置文件权限或恢复默认配置"
       }
     },
     "migration": {
@@ -498,7 +626,10 @@
         "title": "Migration Failed",
         "message": "Data integrity check failed",
         "suggestion": "Please restore from backup or contact technical support"
-      }
+      },
+      "title": "[TODO: Translate] 数据迁移失败",
+      "message": "[TODO: Translate] 数据库迁移过程中发生错误",
+      "suggestion": "[TODO: Translate] 请备份现有数据，或联系技术支持协助迁移"
     },
     "backup": {
       "space": {
@@ -515,10 +646,238 @@
         "title": "Backup Corrupted",
         "message": "Backup file is damaged and cannot be restored",
         "suggestion": "Please use another backup or contact technical support"
+      },
+      "default": {
+        "title": "[TODO: Translate] 数据备份失败",
+        "message": "[TODO: Translate] 无法创建数据备份",
+        "suggestion": "[TODO: Translate] 请检查备份路径权限和磁盘空间"
       }
+    },
+    "default": {
+      "title": "[TODO: Translate] 应用程序错误",
+      "message": "[TODO: Translate] 应用程序发生未知错误",
+      "suggestion": "[TODO: Translate] 请重启应用或联系技术支持"
     }
   },
   "formatError": {
     "suggestion": "Suggestion: {{suggestion}}"
+  },
+  "database": {
+    "timeout": {
+      "title": "[TODO: Translate] 连接超时",
+      "message": "[TODO: Translate] 服务器响应超时，请稍后重试",
+      "suggestion": "[TODO: Translate] 请检查网络连接或联系管理员"
+    },
+    "authentication": {
+      "title": "[TODO: Translate] 认证失败",
+      "message": "[TODO: Translate] 用户名或密码错误",
+      "suggestion": "[TODO: Translate] 请检查用户名和密码是否正确"
+    },
+    "connectionRefused": {
+      "title": "[TODO: Translate] 连接失败",
+      "message": "[TODO: Translate] 无法连接到数据库服务器",
+      "suggestion": "[TODO: Translate] 请检查服务器地址、端口是否正确，确认服务器是否正常运行"
+    },
+    "network": {
+      "title": "[TODO: Translate] 网络错误",
+      "message": "[TODO: Translate] 网络连接异常",
+      "suggestion": "[TODO: Translate] 请检查网络连接是否正常"
+    },
+    "ssl": {
+      "title": "[TODO: Translate] 安全连接失败",
+      "message": "[TODO: Translate] SSL/TLS 连接验证失败",
+      "suggestion": "[TODO: Translate] 请检查证书配置或联系管理员"
+    },
+    "default": {
+      "title": "[TODO: Translate] 连接失败",
+      "message": "[TODO: Translate] 无法建立数据库连接",
+      "suggestion": "[TODO: Translate] 请检查连接配置信息"
+    }
+  },
+  "file": {
+    "permission": {
+      "title": "[TODO: Translate] 权限不足",
+      "message": "[TODO: Translate] 没有访问该文件的权限",
+      "suggestion": "[TODO: Translate] 请检查文件权限或选择其他文件"
+    },
+    "notFound": {
+      "title": "[TODO: Translate] 文件不存在",
+      "message": "[TODO: Translate] 指定的文件不存在或已被删除",
+      "suggestion": "[TODO: Translate] 请确认文件路径是否正确"
+    },
+    "diskSpace": {
+      "title": "[TODO: Translate] 磁盘空间不足",
+      "message": "[TODO: Translate] 没有足够的磁盘空间完成操作",
+      "suggestion": "[TODO: Translate] 请清理磁盘空间后重试"
+    },
+    "locked": {
+      "title": "[TODO: Translate] 文件被占用",
+      "message": "[TODO: Translate] 文件正在被其他程序使用",
+      "suggestion": "[TODO: Translate] 请关闭相关程序后重试"
+    },
+    "read": {
+      "title": "[TODO: Translate] 文件读取失败",
+      "message": "[TODO: Translate] 无法读取文件",
+      "suggestion": "[TODO: Translate] 请重试或选择其他文件"
+    },
+    "write": {
+      "title": "[TODO: Translate] 文件写入失败",
+      "message": "[TODO: Translate] 无法写入文件",
+      "suggestion": "[TODO: Translate] 请重试或选择其他文件"
+    },
+    "select": {
+      "title": "[TODO: Translate] 文件选择失败",
+      "message": "[TODO: Translate] 无法选择文件",
+      "suggestion": "[TODO: Translate] 请重试或选择其他文件"
+    },
+    "save": {
+      "title": "[TODO: Translate] 文件保存失败",
+      "message": "[TODO: Translate] 无法保存文件",
+      "suggestion": "[TODO: Translate] 请重试或选择其他文件"
+    },
+    "operations": {
+      "read": "[TODO: Translate] 读取",
+      "write": "[TODO: Translate] 写入",
+      "select": "[TODO: Translate] 选择",
+      "save": "[TODO: Translate] 保存"
+    }
+  },
+  "network": {
+    "404": {
+      "title": "[TODO: Translate] 服务不可用",
+      "message": "[TODO: Translate] 请求的服务不存在",
+      "suggestion": "[TODO: Translate] 请检查服务地址是否正确"
+    },
+    "500": {
+      "title": "[TODO: Translate] 服务器错误",
+      "message": "[TODO: Translate] 服务器内部错误",
+      "suggestion": "[TODO: Translate] 请稍后重试或联系管理员"
+    },
+    "timeout": {
+      "title": "[TODO: Translate] 请求超时",
+      "message": "[TODO: Translate] 服务器响应超时",
+      "suggestion": "[TODO: Translate] 请检查网络连接并重试"
+    },
+    "offline": {
+      "title": "[TODO: Translate] 网络连接失败",
+      "message": "[TODO: Translate] 无法连接到网络",
+      "suggestion": "[TODO: Translate] 请检查网络连接"
+    },
+    "default": {
+      "title": "[TODO: Translate] 请求失败",
+      "message": "[TODO: Translate] 网络请求失败",
+      "suggestion": "[TODO: Translate] 请检查网络连接并重试"
+    }
+  },
+  "port": {
+    "permission": {
+      "title": "[TODO: Translate] 权限不足",
+      "message": "[TODO: Translate] 无法访问网络端口",
+      "suggestion": "[TODO: Translate] 可能需要管理员权限"
+    },
+    "occupied": {
+      "title": "[TODO: Translate] 端口被占用",
+      "message": "[TODO: Translate] 指定的端口已被其他程序使用",
+      "suggestion": "[TODO: Translate] 程序将自动寻找可用端口"
+    },
+    "default": {
+      "title": "[TODO: Translate] 端口检测失败",
+      "message": "[TODO: Translate] 无法检测端口状态",
+      "suggestion": "[TODO: Translate] 将使用默认端口配置"
+    }
+  },
+  "preferences": {
+    "permission": {
+      "title": "[TODO: Translate] 权限不足",
+      "message": "[TODO: Translate] 无法{{operation}}用户设置",
+      "suggestion": "[TODO: Translate] 请检查应用权限"
+    },
+    "corrupted": {
+      "title": "[TODO: Translate] 设置文件损坏",
+      "message": "[TODO: Translate] 用户设置文件已损坏",
+      "suggestion": "[TODO: Translate] 将使用默认设置"
+    },
+    "load": {
+      "title": "[TODO: Translate] 设置加载失败",
+      "message": "[TODO: Translate] 无法加载用户设置",
+      "suggestion": "[TODO: Translate] 请重试或重启应用"
+    },
+    "save": {
+      "title": "[TODO: Translate] 设置保存失败",
+      "message": "[TODO: Translate] 无法保存用户设置",
+      "suggestion": "[TODO: Translate] 请重试或重启应用"
+    },
+    "operations": {
+      "load": "[TODO: Translate] 加载",
+      "save": "[TODO: Translate] 保存"
+    }
+  },
+  "userCancellation": {
+    "title": "[TODO: Translate] 操作已取消",
+    "message": "[TODO: Translate] 已取消{{operation}}"
+  },
+  "generic": {
+    "title": "[TODO: Translate] 操作失败",
+    "message": "[TODO: Translate] {{context}}发生了未知错误",
+    "suggestion": "[TODO: Translate] 请重试或联系技术支持"
+  },
+  "influxdb": {
+    "undefinedFunction": {
+      "title": "[TODO: Translate] InfluxQL 函数错误",
+      "message": "[TODO: Translate] {{funcName}}() 函数在 InfluxQL 中不支持",
+      "suggestion": "[TODO: Translate] 请使用 {{replacement}}() 函数代替。InfluxQL 使用不同的聚合函数名称。",
+      "suggestionGeneric": "[TODO: Translate] 请查阅 InfluxQL 文档，使用支持的聚合函数：COUNT, SUM, MEAN, MAX, MIN, MEDIAN, MODE, STDDEV 等"
+    },
+    "measurementNotFound": {
+      "title": "[TODO: Translate] 测量不存在",
+      "message": "[TODO: Translate] 指定的测量（measurement）不存在",
+      "suggestion": "[TODO: Translate] 请检查测量名称是否正确，或查看可用的测量列表"
+    },
+    "fieldNotFound": {
+      "title": "[TODO: Translate] 字段不存在",
+      "message": "[TODO: Translate] 指定的字段不存在",
+      "suggestion": "[TODO: Translate] 请检查字段名称是否正确，或使用SHOW FIELD KEYS查看可用字段"
+    },
+    "tagNotFound": {
+      "title": "[TODO: Translate] 标签不存在",
+      "message": "[TODO: Translate] 指定的标签不存在",
+      "suggestion": "[TODO: Translate] 请检查标签名称是否正确，或使用SHOW TAG KEYS查看可用标签"
+    },
+    "syntaxError": {
+      "title": "[TODO: Translate] SQL语法错误",
+      "message": "[TODO: Translate] 查询语句存在语法错误",
+      "suggestion": "[TODO: Translate] 请检查SQL语法，特别注意字段名、引号和关键字的使用"
+    },
+    "timeout": {
+      "title": "[TODO: Translate] 查询超时",
+      "message": "[TODO: Translate] 查询执行时间过长",
+      "suggestion": "[TODO: Translate] 请尝试缩小查询时间范围或添加更多筛选条件"
+    },
+    "memory": {
+      "title": "[TODO: Translate] 内存不足",
+      "message": "[TODO: Translate] 查询数据量过大，内存不足",
+      "suggestion": "[TODO: Translate] 请减少查询时间范围或使用LIMIT限制结果数量"
+    },
+    "permission": {
+      "title": "[TODO: Translate] 权限不足",
+      "message": "[TODO: Translate] 没有执行此查询的权限",
+      "suggestion": "[TODO: Translate] 请联系管理员授予相应的数据库访问权限"
+    },
+    "databaseNotFound": {
+      "title": "[TODO: Translate] 数据库不存在",
+      "message": "[TODO: Translate] 指定的数据库不存在",
+      "suggestion": "[TODO: Translate] 请检查数据库名称是否正确，或创建相应的数据库"
+    },
+    "default": {
+      "title": "[TODO: Translate] 查询失败",
+      "message": "[TODO: Translate] InfluxDB 查询执行失败",
+      "suggestion": "[TODO: Translate] 请检查查询语句和数据库连接状态"
+    },
+    "functionMapping": {
+      "AVG": "[TODO: Translate] MEAN",
+      "AVERAGE": "[TODO: Translate] MEAN",
+      "STDEV": "[TODO: Translate] STDDEV",
+      "VAR": "[TODO: Translate] VARIANCE"
+    }
   }
 }

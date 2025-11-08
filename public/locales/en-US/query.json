@@ -1,6 +1,15 @@
 {
   "execute": "Execute Query",
-  "history": "Query History",
+  "history": {
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Delete failed: {{error}}",
+    "historyCleared": "History cleared",
+    "clearFailed": "Clear failed: {{error}}",
+    "updateFailed": "Update failed: {{error}}",
+    "addedToFavorites": "Added to favorites",
+    "removedFromFavorites": "Removed from favorites",
+    "operationFailed": "Operation failed"
+  },
   "save": "Save Query",
   "format": "Format",
   "new_query": "New Query",
@@ -39,6 +48,17 @@
   "indent": "Indent",
   "outdent": "Outdent",
   "select_all": "Select All",
+  "rowNumber": "Row Number",
+  "required": "Required",
+  "dragToSort": "Drag to Sort",
+  "minValue": "Min Value",
+  "maxValue": "Max Value",
+  "numericValue": "Numeric Value",
+  "enterValue": "Enter Value",
+  "applyFilter": "Apply Filter",
+  "apply": "Apply",
+  "deleteFilter": "Delete Filter",
+  "time_range": "Time Range",
   "clear_editor": "Clear Editor",
   "run_selection": "Run Selection",
   "explain_query": "Explain Query",
@@ -125,43 +145,17 @@
   "advanced_export": "Advanced Export Options",
   "columns_selector": "Columns ({{selected}}/{{total}})",
   "column_display_settings": "Column Display Settings",
-  "select_all": "Select All",
   "deselect_all": "Deselect All",
   "clear_selection": "Clear Selection",
   "selected_rows_count": "{{count}} rows selected",
   "copy_row_success": "Row data copied ({{format}} format)",
   "copy_rows_success": "{{count}} rows copied ({{format}} format)",
-  "copy_failed": "Copy failed",
   "please_select_rows": "Please select rows to copy",
   "time_column": "Time",
   "drag_to_reorder": "Drag to reorder, check to show columns",
   "start_time": "Start Time",
   "end_time": "End Time",
   "select_time": "Select Time",
-  "time_range": "Time Range",
-
-  "export_data": "Export Data",
-  "data_statistics": "Data Statistics",
-  "row_count": "Rows",
-  "column_count": "Columns",
-  "export_format": "Export Format",
-  "export_options": "Export Options",
-  "include_headers": "Include Headers",
-  "custom_delimiter": "Custom Delimiter (optional, default is comma)",
-  "custom_delimiter_placeholder": "e.g.: ; | |",
-  "target_table_name": "Target Table Name",
-  "enter_table_name": "Enter table name",
-  "filename_optional": "Filename (optional)",
-  "default_filename_hint": "Leave empty to use default filename: {{filename}}",
-  "cancel": "Cancel",
-  "export_format_name": "Export {{format}}",
-  "csv_description": "Comma-separated values file, best compatibility",
-  "tsv_description": "Tab-separated values file, suitable for data with commas",
-  "excel_description": "Excel workbook file, supports formatting",
-  "json_description": "JavaScript Object Notation, suitable for programming",
-  "markdown_description": "Markdown table format, suitable for documentation",
-  "sql_description": "SQL INSERT statements, can be executed directly",
-
   "time_range": {
     "no_limit": "No time limit",
     "last_1_hour": "Last 1 hour",
@@ -187,7 +181,27 @@
     "error_time_order": "Start time must be earlier than end time",
     "success_set": "Custom time range has been set"
   },
-
+  "export_data": "Export Data",
+  "data_statistics": "Data Statistics",
+  "row_count": "Rows",
+  "column_count": "Columns",
+  "export_format": "Export Format",
+  "export_options": "Export Options",
+  "include_headers": "Include Headers",
+  "custom_delimiter": "Custom Delimiter (optional, default is comma)",
+  "custom_delimiter_placeholder": "e.g.: ; | |",
+  "target_table_name": "Target Table Name",
+  "enter_table_name": "Enter table name",
+  "filename_optional": "Filename (optional)",
+  "default_filename_hint": "Leave empty to use default filename: {{filename}}",
+  "cancel": "Cancel",
+  "export_format_name": "Export {{format}}",
+  "csv_description": "Comma-separated values file, best compatibility",
+  "tsv_description": "Tab-separated values file, suitable for data with commas",
+  "excel_description": "Excel workbook file, supports formatting",
+  "json_description": "JavaScript Object Notation, suitable for programming",
+  "markdown_description": "Markdown table format, suitable for documentation",
+  "sql_description": "SQL INSERT statements, can be executed directly",
   "results": {
     "title": "Query Results",
     "no_results": "No query results",
@@ -208,7 +222,6 @@
     "export_failed": "Export failed",
     "sql_generated": "SQL generated"
   },
-
   "tabs": {
     "table_view": "Table View",
     "json_view": "JSON View",
@@ -218,11 +231,9 @@
     "execution_status": "Execution Status",
     "aggregate_stats": "Aggregate Statistics"
   },
-
   "messages_tab": {
     "no_messages": "No execution messages"
   },
-
   "execution_plan_tab": {
     "no_data": "No execution plan data",
     "no_data_hint": "Please use EXPLAIN statement to view query execution plan",
@@ -239,7 +250,6 @@
     "suggestion_check_join": "Check for unnecessary JOIN operations",
     "suggestion_partition": "Consider using partitioned tables or materialized views"
   },
-
   "execution_history_tab": {
     "no_history": "No execution history",
     "execution_time": "Execution Time",
@@ -251,7 +261,6 @@
     "affected_rows": "Affected Rows",
     "duration": "Duration"
   },
-
   "status_card": {
     "insert_success": "Data inserted successfully",
     "update_success": "Data updated successfully",
@@ -284,7 +293,6 @@
     "deleted_rows": "Deleted Rows",
     "total_affected_rows": "Total Affected Rows"
   },
-
   "aggregate_stats": {
     "no_data": "No aggregate data detected",
     "count": "Count (COUNT)",
@@ -293,18 +301,6 @@
     "max": "Maximum (MAX)",
     "min": "Minimum (MIN)"
   },
-
-  "history": {
-    "deleteSuccess": "Deleted successfully",
-    "deleteFailed": "Delete failed: {{error}}",
-    "historyCleared": "History cleared",
-    "clearFailed": "Clear failed: {{error}}",
-    "updateFailed": "Update failed: {{error}}",
-    "addedToFavorites": "Added to favorites",
-    "removedFromFavorites": "Removed from favorites",
-    "operationFailed": "Operation failed"
-  },
-
   "query_copied": "Query copied",
   "re_execute": "Re-execute",
   "copy_query": "Copy Query",
@@ -325,7 +321,6 @@
   "database_filter": "Database Filter",
   "refresh": "Refresh",
   "close_panel": "Close Panel",
-  "execute_button": "Execute",
   "delete_button": "Delete",
   "resultPanel": {
     "noDataToExport": "No data to export",
@@ -443,16 +438,8 @@
     "chartExported": "Chart exported as PNG format",
     "chartExportFailed": "Failed to export chart: {{error}}",
     "tabs": {
-      "executor": "Executor",
-      "queryResult": "Query Result",
-      "writeResult": "Write Result",
-      "deleteResult": "Delete Result",
-      "operationResult": "Operation Result",
-      "permissionResult": "Permission Result",
-      "executionResult": "Execution Result",
-      "fieldStats": "Field Statistics",
+      "fieldStatistics": "Field Statistics",
       "visualization": "Visualization",
-      "visualizationMulti": "Visualization {{index}}",
       "insights": "Insights"
     },
     "executor": {
@@ -653,11 +640,6 @@
     "trends": {
       "up": "upward",
       "down": "downward"
-    },
-    "tabs": {
-      "fieldStatistics": "Field Statistics",
-      "visualization": "Visualization",
-      "insights": "Insights"
     },
     "queryDetails": {
       "title": "Executed Query Details",
