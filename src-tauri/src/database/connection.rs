@@ -91,14 +91,14 @@ impl ConnectionManager {
     /// 测试连接
     pub async fn test_connection(&self, connection_id: &str) -> Result<ConnectionTestResult> {
         debug!("测试连接: {}", connection_id);
-        
+
         // 更新状态为连接中
         self.update_status(connection_id, |status| {
             status.connecting()
         }).await;
-        
+
         let client = self.get_connection(connection_id).await?;
-        
+
         match client.test_connection().await {
             Ok(latency) => {
                 // 更新状态为已连接
@@ -140,6 +140,55 @@ impl ConnectionManager {
                 }).await;
 
                 error!("连接测试失败: {} - {}", connection_id, error_msg);
+                Ok(ConnectionTestResult::error(user_friendly_error))
+            }
+        }
+    }
+
+    /// 测试新连接（不需要先保存）
+    pub async fn test_new_connection(&self, config: ConnectionConfig) -> Result<ConnectionTestResult> {
+        debug!("测试新连接: {}", config.name);
+
+        // 直接创建临时客户端进行测试
+        let client = match DatabaseClientFactory::create_unified_client(config.clone()).await {
+            Ok(client) => client,
+            Err(e) => {
+                let error_msg = format!("创建客户端失败: {}", e);
+                error!("{}", error_msg);
+                return Ok(ConnectionTestResult::error(error_msg));
+            }
+        };
+
+        match client.test_connection().await {
+            Ok(latency) => {
+                info!("新连接测试成功: {} ({}ms)", config.name, latency);
+                Ok(ConnectionTestResult::success(latency, None))
+            }
+            Err(e) => {
+                // 提取详细的错误信息
+                let error_msg = e.to_string();
+                let detailed_error = if error_msg.contains('\n') {
+                    error_msg.lines().next().unwrap_or("连接失败").to_string()
+                } else {
+                    error_msg.clone()
+                };
+
+                // 根据错误类型提供更友好的错误信息
+                let user_friendly_error = if detailed_error.contains("503") || detailed_error.contains("Service Unavailable") {
+                    "服务不可用 (503)，请检查数据库服务是否正常运行".to_string()
+                } else if detailed_error.contains("401") || detailed_error.contains("Unauthorized") {
+                    "认证失败，请检查用户名和密码".to_string()
+                } else if detailed_error.contains("timeout") || detailed_error.contains("超时") {
+                    "连接超时，请检查网络连接或增加超时时间".to_string()
+                } else if detailed_error.contains("refused") || detailed_error.contains("拒绝") {
+                    "连接被拒绝，请检查服务器地址和端口".to_string()
+                } else if detailed_error.contains("unreachable") || detailed_error.contains("不可达") {
+                    "服务器不可达，请检查网络连接".to_string()
+                } else {
+                    detailed_error
+                };
+
+                error!("新连接测试失败: {} - {}", config.name, error_msg);
                 Ok(ConnectionTestResult::error(user_friendly_error))
             }
         }

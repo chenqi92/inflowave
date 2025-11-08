@@ -1119,6 +1119,7 @@ async fn main() {
             establish_connection,
             create_connection,
             test_connection,
+            test_new_connection,
             get_connections,
             get_connection,
             get_connection_info,

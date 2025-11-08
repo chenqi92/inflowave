@@ -561,6 +561,17 @@
     "s3_access_key_required": "Access Key 不能为空",
     "s3_secret_key_required": "Secret Key 不能为空"
   },
+  "error_messages": {
+    "create_client_failed": "创建客户端失败",
+    "connection_test_success": "连接测试成功",
+    "connection_test_failed": "连接测试失败",
+    "service_unavailable": "服务不可用 (503)，请检查数据库服务是否正常运行",
+    "authentication_failed": "认证失败，请检查用户名和密码",
+    "connection_timeout": "连接超时，请检查网络连接或增加超时时间",
+    "connection_refused": "连接被拒绝，请检查服务器地址和端口",
+    "host_unreachable": "服务器不可达，请检查网络连接",
+    "connection_failed_generic": "连接失败"
+  },
   "dialog": {
     "new_connection": "新建连接",
     "edit_connection": "编辑连接",

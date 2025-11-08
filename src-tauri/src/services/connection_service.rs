@@ -133,9 +133,17 @@ impl ConnectionService {
     /// 测试连接
     pub async fn test_connection(&self, connection_id: &str) -> Result<ConnectionTestResult> {
         debug!("测试连接: {}", connection_id);
-        
+
         self.manager.test_connection(connection_id).await
             .context("连接测试失败")
+    }
+
+    /// 测试新连接（不需要先保存）
+    pub async fn test_new_connection(&self, config: ConnectionConfig) -> Result<ConnectionTestResult> {
+        debug!("测试新连接: {}", config.name);
+
+        self.manager.test_new_connection(config).await
+            .context("新连接测试失败")
     }
 
     /// 获取所有连接配置

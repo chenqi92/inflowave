@@ -226,7 +226,7 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
 
     try {
       const startTime = Date.now();
-      const result = await safeTauriInvoke<ConnectionTestResult>('test_connection', {
+      const result = await safeTauriInvoke<ConnectionTestResult>('test_new_connection', {
         config,
       });
 

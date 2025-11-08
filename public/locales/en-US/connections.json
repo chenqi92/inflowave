@@ -155,6 +155,17 @@
     "proxy_host_required": "[TODO: Translate] 请输入代理服务器地址",
     "proxy_port_range": "[TODO: Translate] 代理端口范围: 1-65535"
   },
+  "error_messages": {
+    "create_client_failed": "Failed to create client",
+    "connection_test_success": "Connection test succeeded",
+    "connection_test_failed": "Connection test failed",
+    "service_unavailable": "Service unavailable (503), please check if the database service is running",
+    "authentication_failed": "Authentication failed, please check username and password",
+    "connection_timeout": "Connection timeout, please check network or increase timeout",
+    "connection_refused": "Connection refused, please check server address and port",
+    "host_unreachable": "Host unreachable, please check network connection",
+    "connection_failed_generic": "Connection failed"
+  },
   "test_cancelled": "Connection test cancelled",
   "test_timeout_or_cancelled": "Connection test timeout or cancelled",
   "database_connection_normal": "Database connection normal",

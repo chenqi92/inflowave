@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
 import { useConnectionsTranslation } from '@/hooks/useTranslation';
+import { translateConnectionError } from '@/i18n/translate';
 import { showMessage } from '@/utils/message';
 import { generateUniqueId } from '@/utils/idGenerator';
 import logger from '@/utils/logger';
@@ -540,7 +541,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
                 {testResult.serverVersion && ` - ${tConn('version')}: ${testResult.serverVersion}`}
               </>
             ) : (
-              testResult.error || tConn('test_failed')
+              translateConnectionError(testResult.error || '')
             )}
           </AlertDescription>
         </div>

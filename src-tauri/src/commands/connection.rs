@@ -38,6 +38,23 @@ pub async fn test_connection(
         })
 }
 
+/// 测试新连接（不需要先保存）
+#[tauri::command]
+pub async fn test_new_connection(
+    connection_service: State<'_, ConnectionService>,
+    config: ConnectionConfig,
+) -> Result<ConnectionTestResult, String> {
+    debug!("处理测试新连接命令: {}", config.name);
+
+    connection_service
+        .test_new_connection(config)
+        .await
+        .map_err(|e| {
+            error!("测试新连接失败: {}", e);
+            format!("测试新连接失败: {}", e)
+        })
+}
+
 /// 初始化连接服务（仅加载保存的连接配置，不建立连接）
 #[tauri::command]
 pub async fn initialize_connections(
