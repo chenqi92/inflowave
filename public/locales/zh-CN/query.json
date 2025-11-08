@@ -351,10 +351,6 @@
       "avgValue": "平均值",
       "medianValue": "中位数"
     },
-    "tabs": {
-      "executor": "执行器",
-      "queryResult": "查询结果"
-    },
     "queryLabel": "查询 {{index}}",
     "queryStats": "查询{{index}}_统计",
     "performanceSlow": {
@@ -445,6 +441,10 @@
     "chartExported": "图表已导出为 PNG 格式",
     "chartExportFailed": "导出图表失败: {{error}}",
     "tabs": {
+      "executor": "执行器",
+      "queryResult": "查询结果",
+      "writeResult": "写入结果",
+      "deleteResult": "删除结果",
       "fieldStatistics": "字段统计",
       "visualization": "可视化",
       "insights": "洞察"

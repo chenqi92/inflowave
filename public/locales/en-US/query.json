@@ -352,10 +352,6 @@
       "avgValue": "Avg Value",
       "medianValue": "Median Value"
     },
-    "tabs": {
-      "executor": "Executor",
-      "queryResult": "Query Result"
-    },
     "queryLabel": "Query {{index}}",
     "queryStats": "Query{{index}}_Stats",
     "performanceSlow": {
@@ -446,6 +442,10 @@
     "chartExported": "Chart exported as PNG format",
     "chartExportFailed": "Failed to export chart: {{error}}",
     "tabs": {
+      "executor": "Executor",
+      "queryResult": "Query Result",
+      "writeResult": "Write Result",
+      "deleteResult": "Delete Result",
       "fieldStatistics": "Field Statistics",
       "visualization": "Visualization",
       "insights": "Insights"
