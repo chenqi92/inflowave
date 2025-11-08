@@ -1,5 +1,5 @@
 use aes_gcm::{
-    aead::{Aead, KeyInit, OsRng},
+    aead::{Aead, KeyInit},
     Aes256Gcm, Nonce,
 };
 use anyhow::{Context, Result};
@@ -27,10 +27,10 @@ impl EncryptionService {
     /// 加密密码
     pub fn encrypt_password(&self, password: &str) -> Result<String> {
         debug!("加密密码");
-        
+
         // 生成随机 nonce
         let mut nonce_bytes = [0u8; 12];
-        OsRng.fill_bytes(&mut nonce_bytes);
+        rand::thread_rng().fill_bytes(&mut nonce_bytes);
         let nonce = Nonce::from_slice(&nonce_bytes);
         
         // 加密

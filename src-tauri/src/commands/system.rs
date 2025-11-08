@@ -52,7 +52,7 @@ fn get_uptime() -> String {
 
 /// 获取内存使用情况
 fn get_memory_usage() -> u64 {
-    use sysinfo::{System, SystemExt};
+    use sysinfo::System;
 
     let mut sys = System::new_all();
     sys.refresh_memory();
@@ -61,14 +61,14 @@ fn get_memory_usage() -> u64 {
 
 /// 获取 CPU 使用率
 fn get_cpu_usage() -> f64 {
-    use sysinfo::{System, SystemExt, CpuExt};
+    use sysinfo::System;
 
     let mut sys = System::new_all();
-    sys.refresh_cpu();
+    sys.refresh_cpu_all();
 
     // 等待一小段时间以获取准确的 CPU 使用率
     std::thread::sleep(std::time::Duration::from_millis(200));
-    sys.refresh_cpu();
+    sys.refresh_cpu_all();
 
     // 计算所有 CPU 核心的平均使用率
     let cpus = sys.cpus();
@@ -82,16 +82,14 @@ fn get_cpu_usage() -> f64 {
 
 /// 获取磁盘使用情况
 fn get_disk_usage() -> DiskUsage {
-    use sysinfo::{System, SystemExt, DiskExt};
+    use sysinfo::Disks;
 
-    let mut sys = System::new_all();
-    sys.refresh_disks_list();
-    sys.refresh_disks();
+    let disks = Disks::new_with_refreshed_list();
 
     let mut total = 0u64;
     let mut used = 0u64;
 
-    for disk in sys.disks() {
+    for disk in &disks {
         total += disk.total_space();
         used += disk.total_space() - disk.available_space();
     }
@@ -113,18 +111,16 @@ fn get_disk_usage() -> DiskUsage {
 
 /// 获取网络统计信息
 fn get_network_stats() -> NetworkStats {
-    use sysinfo::{System, SystemExt, NetworkExt};
+    use sysinfo::Networks;
 
-    let mut sys = System::new_all();
-    sys.refresh_networks_list();
-    sys.refresh_networks();
+    let networks = Networks::new_with_refreshed_list();
 
     let mut bytes_sent = 0u64;
     let mut bytes_received = 0u64;
     let mut packets_sent = 0u64;
     let mut packets_received = 0u64;
 
-    for (_interface_name, network) in sys.networks() {
+    for (_interface_name, network) in &networks {
         bytes_sent += network.total_transmitted();
         bytes_received += network.total_received();
         packets_sent += network.total_packets_transmitted();

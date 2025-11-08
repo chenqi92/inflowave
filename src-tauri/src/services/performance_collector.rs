@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use tokio::time::{interval, Duration};
-use sysinfo::{System, SystemExt, CpuExt};
+use sysinfo::System;
 use tracing::{debug, info, error};
 use super::performance_stats::{PerformanceStatsService, PerformanceDataPoint};
 
@@ -46,16 +46,16 @@ impl PerformanceCollector {
         // 更新系统信息
         let (cpu_usage, memory_usage) = {
             let mut sys = self.system.lock().await;
-            sys.refresh_cpu();
+            sys.refresh_cpu_all();
             sys.refresh_memory();
-            
+
             // 等待一小段时间以获取准确的CPU使用率
             tokio::time::sleep(Duration::from_millis(200)).await;
-            sys.refresh_cpu();
-            
-            let cpu = sys.global_cpu_info().cpu_usage() as f64;
+            sys.refresh_cpu_all();
+
+            let cpu = sys.global_cpu_usage() as f64;
             let memory = (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0;
-            
+
             (cpu, memory)
         };
         

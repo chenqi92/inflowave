@@ -5,7 +5,7 @@ use log::{debug, error, warn, info};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use std::time::Instant;
-use sysinfo::{System, SystemExt, CpuExt, NetworkExt, DiskExt};
+use sysinfo::{System, Disks, Networks};
 use crate::services::ConnectionService;
 use crate::models::connection::ConnectionConfig;
 
@@ -1372,25 +1372,27 @@ async fn get_connection_health_metrics(
 
 async fn get_system_resource_metrics() -> Result<SystemResourceMetrics, String> {
     // 使用 sysinfo 获取真实的系统信息
-    use sysinfo::{System, SystemExt, CpuExt, DiskExt, NetworksExt, NetworkExt};
-    
+    use sysinfo::{System, Disks, Networks};
+
     let mut sys = System::new_all();
     sys.refresh_all();
-    
+
     let memory = MemoryMetrics {
         total: sys.total_memory(),
         used: sys.used_memory(),
         available: sys.available_memory(),
         percentage: (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0,
     };
-    
+
+    let load_avg = System::load_average();
     let cpu = CpuMetrics {
         cores: sys.cpus().len() as u32,
-        usage: sys.global_cpu_info().cpu_usage() as f64,
-        load_average: vec![sys.load_average().one, sys.load_average().five, sys.load_average().fifteen],
+        usage: sys.global_cpu_usage() as f64,
+        load_average: vec![load_avg.one, load_avg.five, load_avg.fifteen],
     };
-    
-    let disk = if let Some(disk) = sys.disks().first() {
+
+    let disks = Disks::new_with_refreshed_list();
+    let disk = if let Some(disk) = disks.iter().next() {
         DiskMetrics {
             total: disk.total_space(),
             used: disk.total_space() - disk.available_space(),
@@ -1405,9 +1407,10 @@ async fn get_system_resource_metrics() -> Result<SystemResourceMetrics, String> 
             percentage: 0.0,
         }
     };
-    
+
     // 获取网络接口统计信息
-    let network = if let Some(interface) = sys.networks().iter().next() {
+    let networks = Networks::new_with_refreshed_list();
+    let network = if let Some(interface) = networks.iter().next() {
         let (_, network_data) = interface;
         NetworkMetrics {
             bytes_in: network_data.total_received(),
@@ -3323,7 +3326,7 @@ async fn collect_system_metrics() -> Result<(), String> {
     sys.refresh_all();
 
     let timestamp = chrono::Utc::now();
-    let cpu_usage = sys.global_cpu_info().cpu_usage() as f64;
+    let cpu_usage = sys.global_cpu_usage() as f64;
     let memory_usage = (sys.used_memory() as f64 / sys.total_memory() as f64) * 100.0;
 
     // 获取磁盘统计 - 改进磁盘IO监控
@@ -3332,7 +3335,8 @@ async fn collect_system_metrics() -> Result<(), String> {
         let mut total_write = 0u64;
 
         // 遍历所有磁盘获取IO统计
-        for disk in sys.disks() {
+        let disks = Disks::new_with_refreshed_list();
+        for disk in &disks {
             let used_space = disk.total_space() - disk.available_space();
             let total_space = disk.total_space();
 
@@ -3358,7 +3362,8 @@ async fn collect_system_metrics() -> Result<(), String> {
         let mut total_out = 0u64;
 
         // 遍历所有网络接口
-        for (interface_name, network_data) in sys.networks() {
+        let networks = Networks::new_with_refreshed_list();
+        for (interface_name, network_data) in &networks {
             // 跳过回环接口
             if interface_name.starts_with("lo") || interface_name.starts_with("Loopback") {
                 continue;
@@ -3717,13 +3722,11 @@ async fn get_real_write_metrics(history: &[TimestampedSystemMetrics]) -> Vec<Tim
 
 /// 获取真实存储分析
 async fn get_real_storage_analysis() -> StorageAnalysisInfo {
-    use sysinfo::{System, SystemExt, DiskExt};
-    
-    let mut sys = System::new_all();
-    sys.refresh_all();
-    
+    use sysinfo::Disks;
+
     // 获取真实的磁盘使用情况
-    let (total_size, used_size) = if let Some(disk) = sys.disks().first() {
+    let disks = Disks::new_with_refreshed_list();
+    let (total_size, used_size) = if let Some(disk) = disks.iter().next() {
         (disk.total_space(), disk.total_space() - disk.available_space())
     } else {
         (0, 0)
@@ -3870,7 +3873,7 @@ pub async fn check_performance_monitoring_health() -> Result<serde_json::Value, 
 
 /// 获取当前内存使用量（MB）
 fn get_current_memory_usage() -> u64 {
-    use sysinfo::{System, SystemExt};
+    use sysinfo::System;
     let mut sys = System::new();
     sys.refresh_memory();
     sys.used_memory() / 1024 / 1024 // 转换为MB

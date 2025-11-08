@@ -15,43 +15,41 @@ default-run = "InfloWave"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2", features = ["codegen"] }
+tauri-build = { version = "2.5.1", features = ["codegen"] }
 
 [dependencies]
-tauri = { version = "2", features = [
+tauri = { version = "2.9.2", features = [
     "tray-icon",
     "devtools"
 ] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["full"] }
-reqwest = { version = "0.11", features = ["json", "native-tls", "stream"], default-features = false }
+reqwest = { version = "0.12.24", features = ["json", "native-tls", "stream"], default-features = false }
 futures-util = "0.3"
-influxdb = { version = "0.7", features = ["derive"] }
+influxdb = { version = "0.7.2", features = ["derive"] }
 influxdb2 = "0.5.2"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
 anyhow = "1.0"
-thiserror = "1.0"
+thiserror = "2.0.17"
 log = "0.4"
 env_logger = "0.10"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "time", "json"] }
 tracing-appender = "0.2"
-dirs = "5.0"
-base64 = "0.21"
+dirs = "6.0.0"
+base64 = "0.22.1"
 aes-gcm = "0.10"
-rand = "0.8"
-sysinfo = "0.29"
+rand = "0.9.1"
+sysinfo = "0.37.2"
 lazy_static = "1.4"
-rust_xlsxwriter = "0.64"
+rust_xlsxwriter = "0.91.0"
 async-trait = "0.1"
 # IoTDB 原生协议依赖
-url = "2.4"
-bytes = "1.5"
+url = "2.5.7"
+bytes = "1.10.1"
 # 移除封装客户端，使用原生协议实现
-# iotdb = "0.0.7"  # 已移除，改用原生协议
-
 # Thrift 协议支持
 thrift = "0.17"
 # REST API 支持已通过 reqwest 提供
@@ -82,22 +80,22 @@ mime_guess = "2.0"
 # Windows 特定依赖已移除，使用标准库替代
 
 # InfluxDB 3.x FlightSQL 支持
-arrow-flight = { version = "53.0", features = ["flight-sql-experimental"], optional = true }
-arrow = { version = "53.0", optional = true }
-arrow-schema = { version = "53.0", optional = true }
-tonic = { version = "0.12", optional = true }
-prost = { version = "0.13", optional = true }
+arrow-flight = { version = "57.0.0", features = ["flight-sql-experimental"], optional = true }
+arrow = { version = "57.0.0", optional = true }
+arrow-schema = { version = "57.0.0", optional = true }
+tonic = { version = "0.14.2", optional = true }
+prost = { version = "0.14.1", optional = true }
 
 # macOS平台特定依赖 - 用于窗口背景色设置
 [target.'cfg(target_os = "macos")'.dependencies]
-cocoa = "0.25"
+cocoa = "0.26.1"
 
 # Linux平台特定依赖 - 启用原生菜单支持
 [target.'cfg(target_os = "linux")'.dependencies]
-tauri = { version = "2", features = ["linux-libxdo"] }
+tauri = { version = "2.9", features = ["linux-libxdo"] }
 
 [dev-dependencies]
-tempfile = "3.8"
+tempfile = "3.23.0"
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
@@ -123,13 +121,13 @@ influxdb-v3 = ["arrow-flight", "arrow", "arrow-schema", "tonic", "prost"]
 default = ["influxdb-v2", "iotdb-v1", "iotdb-v2", "iotdb-rest"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-shell = "2"
-tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"
-tauri-plugin-os = "2"
-tauri-plugin-notification = "2"
-tauri-plugin-global-shortcut = "2"
-tauri-plugin-clipboard-manager = "2"
+tauri-plugin-shell = "2.3"
+tauri-plugin-dialog = "2.4"
+tauri-plugin-fs = "2.4"
+tauri-plugin-os = "2.3"
+tauri-plugin-notification = "2.3"
+tauri-plugin-global-shortcut = "2.3"
+tauri-plugin-clipboard-manager = "2.3"
 
 # 构建配置优化
 [profile.dev]

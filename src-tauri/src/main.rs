@@ -120,7 +120,7 @@ fn check_required_dlls() -> bool {
 
 /// 获取可用内存
 fn get_available_memory() -> u64 {
-    use sysinfo::{System, SystemExt};
+    use sysinfo::System;
     let mut system = System::new_all();
     system.refresh_memory();
     system.available_memory()
