@@ -166,7 +166,7 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
 
         // 自定义验证
         if (field.validation && value !== undefined && value !== null) {
-          const error = field.validation(value);
+          const error = field.validation(value, formData);
           if (error) {
             errors[field.name] = error;
           }

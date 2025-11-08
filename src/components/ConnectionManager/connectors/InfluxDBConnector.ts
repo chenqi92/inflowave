@@ -88,11 +88,11 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
     const passwordField = connectionSection.fields.find(f => f.name === 'password');
 
     if (usernameField) {
-      usernameField.visible = (formData: any) => formData.version === '1.x';
+      usernameField.visible = (formData: any) => formData?.version === '1.x';
       usernameField.required = false;
     }
     if (passwordField) {
-      passwordField.visible = (formData: any) => formData.version === '1.x';
+      passwordField.visible = (formData: any) => formData?.version === '1.x';
       passwordField.required = false;
     }
 
@@ -107,9 +107,9 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           label: t('influxdb.database'),
           type: 'text',
           placeholder: t('influxdb.database_placeholder'),
-          visible: (formData: any) => formData.version === '1.x',
+          visible: (formData: any) => formData?.version === '1.x',
           validation: (value: string, formData: any) => {
-            if (formData.version === '1.x' && !value?.trim()) {
+            if (formData?.version === '1.x' && !value?.trim()) {
               return t('influxdb.database_required');
             }
           }
@@ -120,7 +120,7 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           type: 'text',
           placeholder: 'autogen',
           defaultValue: 'autogen',
-          visible: (formData: any) => formData.version === '1.x',
+          visible: (formData: any) => formData?.version === '1.x',
           description: t('influxdb.retention_policy_description')
         },
 
@@ -130,9 +130,9 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           label: t('influxdb.api_token'),
           type: 'password',
           placeholder: t('influxdb.api_token_placeholder'),
-          visible: (formData: any) => formData.version === '2.x' || formData.version === '3.x',
+          visible: (formData: any) => formData?.version === '2.x' || formData?.version === '3.x',
           validation: (value: string, formData: any) => {
-            if ((formData.version === '2.x' || formData.version === '3.x') && !value?.trim()) {
+            if ((formData?.version === '2.x' || formData?.version === '3.x') && !value?.trim()) {
               return t('influxdb.api_token_required');
             }
           }
@@ -142,10 +142,10 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           label: t('influxdb.organization'),
           type: 'text',
           placeholder: t('influxdb.organization_placeholder'),
-          visible: (formData: any) => formData.version === '2.x' || formData.version === '3.x',
+          visible: (formData: any) => formData?.version === '2.x' || formData?.version === '3.x',
           width: 'half',
           validation: (value: string, formData: any) => {
-            if ((formData.version === '2.x' || formData.version === '3.x') && !value?.trim()) {
+            if ((formData?.version === '2.x' || formData?.version === '3.x') && !value?.trim()) {
               return t('influxdb.organization_required');
             }
           },
@@ -156,7 +156,7 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           label: t('influxdb.bucket'),
           type: 'text',
           placeholder: t('influxdb.bucket_placeholder'),
-          visible: (formData: any) => formData.version === '2.x' || formData.version === '3.x',
+          visible: (formData: any) => formData?.version === '2.x' || formData?.version === '3.x',
           width: 'half',
           description: t('influxdb.bucket_description')
         },
@@ -167,7 +167,7 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           label: t('influxdb.v1_compatibility'),
           type: 'switch',
           defaultValue: false,
-          visible: (formData: any) => formData.version === '2.x',
+          visible: (formData: any) => formData?.version === '2.x',
           description: t('influxdb.v1_compatibility_description')
         },
 
@@ -177,8 +177,8 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           label: t('influxdb.query_language'),
           type: 'select',
           defaultValue: 'flux',
-          options: (formData: any) => this.getQueryLanguageOptions(formData.version || '2.x'),
-          visible: (formData: any) => !!formData.version,
+          options: (formData: any) => this.getQueryLanguageOptions(formData?.version || '2.x'),
+          visible: (formData: any) => !!formData?.version,
           description: t('influxdb.query_language_description')
         }
       ]
@@ -200,15 +200,15 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
     const errors = super.validateBase(formData);
 
     // InfluxDB特定验证
-    if (formData.version === '1.x') {
+    if (formData?.version === '1.x') {
       if (!formData.database?.trim()) {
         errors.database = t('influxdb.database_required');
       }
-    } else if (formData.version === '2.x' || formData.version === '3.x') {
+    } else if (formData?.version === '2.x' || formData?.version === '3.x') {
       if (!formData.apiToken?.trim()) {
         errors.apiToken = t('influxdb.api_token_required');
       }
-      if (formData.version === '2.x' && !formData.organization?.trim()) {
+      if (formData?.version === '2.x' && !formData.organization?.trim()) {
         errors.organization = t('influxdb.organization_required');
       }
     }
@@ -305,7 +305,7 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
       timeout: config.timeout,
       connectionTimeout: config.connectionTimeout,
       queryTimeout: config.queryTimeout,
-      version: version,
+      version,
       retentionPolicy: config.retentionPolicy,
       apiToken: config.v2Config?.apiToken,
       organization: config.v2Config?.organization,

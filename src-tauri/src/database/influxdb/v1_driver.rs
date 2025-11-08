@@ -235,13 +235,17 @@ impl InfluxDriver for V1HttpDriver {
 
         // 使用 SHOW DATABASES 来测试连接和认证
         // 这个查询需要有效的认证信息才能成功
+        debug!("🔐 使用SHOW DATABASES测试认证");
         let url = self.build_query_url("SHOW DATABASES", None);
         let request = self.build_authenticated_request(&url);
         let response = request.send().await?;
 
+        debug!("HTTP状态码: {}", response.status());
+
         if !response.status().is_success() {
             let status = response.status();
             let error_text = response.text().await.unwrap_or_default();
+            debug!("错误响应: {}", error_text);
 
             // 判断是否是认证错误
             if status == 401 || error_text.contains("authorization failed") || error_text.contains("username and password") {
@@ -255,13 +259,28 @@ impl InfluxDriver for V1HttpDriver {
         let json: Value = response.json().await
             .map_err(|e| anyhow::anyhow!("解析响应失败: {}", e))?;
 
+        debug!("响应JSON: {:?}", json);
+
         // 检查是否有错误
         if let Some(error) = json.get("error") {
             let error_msg = error.as_str().unwrap_or("未知错误");
+            debug!("发现错误消息: {}", error_msg);
             if error_msg.contains("authorization failed") || error_msg.contains("username and password") {
                 return Err(anyhow::anyhow!("认证失败: 用户名或密码错误"));
             }
             return Err(anyhow::anyhow!("查询失败: {}", error_msg));
+        }
+
+        // 检查results中的错误
+        if let Some(results) = json.get("results").and_then(|r| r.as_array()) {
+            if !results.is_empty() {
+                if let Some(error) = results[0].get("error").and_then(|e| e.as_str()) {
+                    debug!("results中的错误: {}", error);
+                    if error.contains("authorization failed") || error.contains("username and password") || error.contains("unable to parse authentication credentials") {
+                        return Err(anyhow::anyhow!("认证失败: 用户名或密码错误"));
+                    }
+                }
+            }
         }
 
         let latency = start_time.elapsed().as_millis() as u64;
