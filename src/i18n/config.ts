@@ -54,16 +54,16 @@ export const resourceManager = new ResourceManager(resourceManagerConfig);
 const i18nConfig = {
   // 调试模式（仅在开发环境启用）
   debug: import.meta.env.DEV,
-  
+
   // 默认语言（将通过语言检测器动态设置）
   lng: languageDetector.detectLanguage(),
-  
+
   // 回退语言
   fallbackLng: FALLBACK_LANGUAGE,
-  
+
   // 支持的语言
   supportedLngs: SUPPORTED_LANGUAGES,
-  
+
   // 命名空间
   defaultNS: 'common',
   ns: [
@@ -76,6 +76,10 @@ const i18nConfig = {
     's3', 'shortcuts', 'statistics', 'status', 'tabs', 'theme',
     'updater', 'userGuide', 'versionDetection'
   ],
+
+  // 预加载关键命名空间（在应用启动时立即加载）
+  preload: ['zh-CN', 'en-US', 'zh', 'en'],
+  partialBundledLanguages: true,
   
   // 插值配置
   interpolation: {

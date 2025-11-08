@@ -108,6 +108,31 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
     setErrors({});
   }, [connection, currentConnector]);
 
+  // 监听对话框打开/关闭，重置状态
+  useEffect(() => {
+    if (visible && !isEditMode) {
+      // 新建模式：对话框打开时重置所有状态
+      setSelectedType('influxdb'); // 重置为默认数据库类型
+      setActiveTab('general'); // 重置为常规tab
+      setTestResult(null);
+      setErrors({});
+      setIsTesting(false);
+      setIsSaving(false);
+
+      // 重新加载默认表单数据
+      const connector = getConnector('influxdb');
+      if (connector) {
+        const defaults = connector.getDefaultConfig();
+        setFormData({
+          id: generateUniqueId(),
+          name: '',
+          dbType: 'influxdb',
+          ...defaults,
+        });
+      }
+    }
+  }, [visible, isEditMode]);
+
   // 处理数据库类型变更
   const handleTypeChange = (newType: string) => {
     if (isEditMode) return; // 编辑模式不允许更改类型
