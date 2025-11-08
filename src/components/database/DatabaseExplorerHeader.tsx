@@ -27,11 +27,11 @@ export const DatabaseExplorerHeader: React.FC<DatabaseExplorerHeaderProps> = ({
 }) => {
     return (
         <CardContent className='p-3 border-b'>
-            <div ref={headerRef} className='flex items-center justify-between'>
-                <div className='flex items-center gap-2'>
-                    <Typography.Text className='text-sm font-medium'>数据源</Typography.Text>
+            <div ref={headerRef} className='flex items-center justify-between w-[280px]'>
+                <div className='flex items-center gap-2 flex-shrink-0'>
+                    <Typography.Text className='text-sm font-medium whitespace-nowrap'>数据源</Typography.Text>
                 </div>
-                <div className='flex items-center gap-1'>
+                <div className='flex items-center gap-1 flex-shrink-0'>
                     {/* 可展开搜索框 */}
                     <ExpandableSearchInput
                         placeholder='搜索连接、数据库、表...'

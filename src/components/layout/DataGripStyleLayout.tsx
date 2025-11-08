@@ -705,10 +705,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     {/* 分割线和下半部分：结果面板 - 只在query类型标签时显示 */}
                     {!bottomPanelCollapsed && activeTabType === 'query' && tabs.length > 0 && (
                         <>
-                            <ResizableHandle
-                                withHandle
-                                className='h-2 bg-border hover:bg-border/80'
-                            />
+                            <ResizableHandle withHandle />
 
                             {/* 只有在有查询结果时才显示结果面板 */}
                             {(queryResult || (queryResults && queryResults.length > 0)) && (
@@ -772,17 +769,16 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     {/* 左侧数据库面板 */}
                     <ResizablePanel
                         defaultSize={leftPanelSize}
-                        minSize={15}
+                        minSize={5}
                         maxSize={40}
-                        collapsible={true}
-                        collapsedSize={3}
+                        collapsible={false}
                         onResize={handleLeftPanelResize}
                         className={cn(
-                            'bg-background border-r border-border transition-all duration-200',
+                            'bg-background border-r border-border overflow-hidden',
                             leftPanelCollapsed && 'min-w-12'
                         )}
                     >
-                        <div className='h-full'>
+                        <div className='h-full w-full'>
                             <DatabaseExplorer
                                 collapsed={leftPanelCollapsed}
                                 refreshTrigger={refreshTrigger}
@@ -799,8 +795,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                     </ResizablePanel>
 
                     {/* 分割线 */}
-                    <ResizableHandle
-                        className='w-px bg-border hover:bg-primary/50 transition-colors cursor-col-resize'/>
+                    <ResizableHandle />
 
                     {/* 右侧区域：使用嵌套的ResizablePanelGroup */}
                     <ResizablePanel defaultSize={100 - leftPanelSize} minSize={50}>
@@ -828,8 +823,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                             {/* 右侧功能面板（始终存在但可能隐藏） */}
                             {!rightPanelCollapsed && selectedFunction && (
                                 <>
-                                    <ResizableHandle
-                                        className='w-px bg-border hover:bg-primary/50 transition-colors cursor-col-resize'/>
+                                    <ResizableHandle />
                                     <ResizablePanel
                                         defaultSize={rightPanelSize}
                                         minSize={20}

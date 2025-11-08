@@ -417,7 +417,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
 
       {/* 节点名称 */}
       <span className={cn(
-        "text-sm truncate flex-1",
+        "text-sm flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
         nodeFontStyle,
         nodeTextColor,
         error && "text-destructive",  // ✅ 使用订阅的 error 状态
