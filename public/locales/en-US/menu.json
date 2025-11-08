@@ -272,5 +272,89 @@
     "close_other_tabs": "Close Other Tabs",
     "close_left_tabs": "Close Left Tabs",
     "close_right_tabs": "Close Right Tabs"
+  },
+  "native": {
+    "openAppSettings": "Open Application Settings",
+    "themeSwitch": {
+      "success": "Theme switched"
+    },
+    "modeSwitch": {
+      "system": "Follow System",
+      "light": "Light Mode",
+      "dark": "Dark Mode",
+      "success": "Switched to {{mode}}"
+    },
+    "languageSwitch": {
+      "success": "Language switched to {{label}}",
+      "failed": "Language switch failed"
+    },
+    "fileOperations": {
+      "openFileTitle": "Open Query File",
+      "sqlFiles": "SQL Files",
+      "textFiles": "Text Files",
+      "allFiles": "All Files",
+      "csvFiles": "CSV Files",
+      "jsonFiles": "JSON Files",
+      "fileOpened": "File opened",
+      "openFileFailed": "Failed to open file"
+    },
+    "dataOperations": {
+      "importDataTitle": "Import Data File",
+      "prepareImport": "Preparing to import data...",
+      "importDataFailed": "Failed to import data"
+    },
+    "queryOperations": {
+      "dbDisconnectedWarning": "Database connection is disconnected, please reconnect and try again",
+      "needConnectionWarning": "Explain query requires a database connection, please connect first"
+    },
+    "zoomOperations": {
+      "zoomIn": "Zoomed in to {{zoom}}%",
+      "zoomOut": "Zoomed out to {{zoom}}%",
+      "resetZoom": "Reset zoom to 100%"
+    },
+    "helpSystem": {
+      "openUserGuide": "Open User Guide",
+      "openQuickStart": "Open Quick Start",
+      "newVersionFound": "New version found: {{version}}",
+      "versionSkipped": "Version {{version}} has been skipped",
+      "latestVersion": "You are using the latest version",
+      "checkUpdateFailed": "Failed to check for updates: {{error}}"
+    },
+    "connectionRequirements": {
+      "needSelection": "This operation requires selecting a database connection first",
+      "needActiveConnection": "This operation requires an active database connection, please connect to a database first"
+    },
+    "viewSwitch": {
+      "datasource": "Data Source Management",
+      "query": "Query Editor",
+      "visualization": "Data Visualization",
+      "monitoring": "Performance Monitoring",
+      "switchTo": "Switch to {{view}}"
+    },
+    "connectionOperations": {
+      "openConnectionManagement": "Open Connection Management",
+      "selectConnectionFirst": "Please select a connection first"
+    },
+    "databaseOperations": {
+      "refreshingStructure": "Refreshing database structure...",
+      "dbDisconnected": "Database connection is disconnected, please reconnect and try again",
+      "establishConnectionFirst": "Please establish a database connection first"
+    },
+    "queryActions": {
+      "executingQuery": "Executing query...",
+      "queryStopped": "Query stopped",
+      "queryPlanNeedsConnection": "Query plan requires a database connection, please connect first"
+    },
+    "navigationMessages": {
+      "switchToPerformance": "Switch to Performance Analysis",
+      "switchToExtensions": "Switch to Extension Management",
+      "openThemeSettings": "Open Theme Settings",
+      "openPreferences": "Open Preferences",
+      "openKeyboardShortcuts": "Open Preferences - Keyboard Shortcuts",
+      "openQueryExamples": "Open Query Examples"
+    },
+    "unimplemented": {
+      "functionNotImplemented": "Menu function \"{{action}}\" not yet implemented"
+    }
   }
 }

@@ -32,8 +32,6 @@ const ResizableHandle = React.memo(
   }: React.ComponentProps<typeof ResizablePrimitive.PanelResizeHandle> & {
     withHandle?: boolean;
   }) => {
-    const [isResizing, setIsResizing] = React.useState(false);
-
     // 预计算样式类名以避免在拖动时重复计算
     const handleClassName = React.useMemo(
       () =>
@@ -49,52 +47,21 @@ const ResizableHandle = React.memo(
           'data-[panel-group-direction=vertical]:resizable-handle-vertical data-[panel-group-direction=vertical]:h-px data-[panel-group-direction=vertical]:w-full data-[panel-group-direction=vertical]:cursor-row-resize',
           'data-[panel-group-direction=vertical]:after:left-0 data-[panel-group-direction=vertical]:after:h-1 data-[panel-group-direction=vertical]:after:w-full data-[panel-group-direction=vertical]:after:-translate-y-1/2 data-[panel-group-direction=vertical]:after:translate-x-0',
           // 悬停效果
-          'hover:bg-border/80',
-          // 拖拽时的优化类
-          isResizing && 'will-change-transform',
+          'hover:bg-primary/20 active:bg-primary/30',
           className
         ),
-      [className, isResizing]
+      [className]
     );
 
     const gripClassName = React.useMemo(
       () =>
-        'resizable-grip z-10 opacity-0 flex h-4 w-3 items-center justify-center rounded-sm border bg-background shadow-sm data-[panel-group-direction=vertical]:rotate-90',
+        'resizable-grip z-10 opacity-0 group-hover:opacity-100 flex h-4 w-3 items-center justify-center rounded-sm border bg-background shadow-sm data-[panel-group-direction=vertical]:rotate-90 transition-opacity',
       []
     );
-
-    // 优化的事件处理
-    const handleMouseDown = React.useCallback(
-      (e: React.MouseEvent<HTMLDivElement>) => {
-        setIsResizing(true);
-        props.onMouseDown?.(e as any);
-      },
-      [props.onMouseDown]
-    );
-
-    const handleMouseUp = React.useCallback(
-      (e: React.MouseEvent<HTMLDivElement>) => {
-        setIsResizing(false);
-        props.onMouseUp?.(e as any);
-      },
-      [props.onMouseUp]
-    );
-
-    // 监听全局鼠标事件以确保拖拽结束
-    React.useEffect(() => {
-      const handleGlobalMouseUp = () => setIsResizing(false);
-      if (isResizing) {
-        document.addEventListener('mouseup', handleGlobalMouseUp);
-        return () =>
-          document.removeEventListener('mouseup', handleGlobalMouseUp);
-      }
-    }, [isResizing]);
 
     return (
       <ResizablePrimitive.PanelResizeHandle
         className={handleClassName}
-        onMouseDown={handleMouseDown as any}
-        onMouseUp={handleMouseUp as any}
         {...props}
       >
         {withHandle && (

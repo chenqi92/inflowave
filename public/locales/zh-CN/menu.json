@@ -272,5 +272,89 @@
     "close_other_tabs": "关闭其他标签页",
     "close_left_tabs": "关闭左侧标签页",
     "close_right_tabs": "关闭右侧标签页"
+  },
+  "native": {
+    "openAppSettings": "打开应用设置",
+    "themeSwitch": {
+      "success": "主题已切换"
+    },
+    "modeSwitch": {
+      "system": "跟随系统",
+      "light": "浅色模式",
+      "dark": "深色模式",
+      "success": "已切换到{{mode}}"
+    },
+    "languageSwitch": {
+      "success": "语言已切换到 {{label}}",
+      "failed": "语言切换失败"
+    },
+    "fileOperations": {
+      "openFileTitle": "打开查询文件",
+      "sqlFiles": "SQL 文件",
+      "textFiles": "Text 文件",
+      "allFiles": "所有文件",
+      "csvFiles": "CSV 文件",
+      "jsonFiles": "JSON 文件",
+      "fileOpened": "文件已打开",
+      "openFileFailed": "打开文件失败"
+    },
+    "dataOperations": {
+      "importDataTitle": "导入数据文件",
+      "prepareImport": "准备导入数据...",
+      "importDataFailed": "导入数据失败"
+    },
+    "queryOperations": {
+      "dbDisconnectedWarning": "数据库连接已断开，请重新连接后再试",
+      "needConnectionWarning": "解释查询需要数据库连接，请先建立连接"
+    },
+    "zoomOperations": {
+      "zoomIn": "已放大至 {{zoom}}%",
+      "zoomOut": "已缩小至 {{zoom}}%",
+      "resetZoom": "已重置缩放至 100%"
+    },
+    "helpSystem": {
+      "openUserGuide": "打开用户引导",
+      "openQuickStart": "打开快速入门",
+      "newVersionFound": "发现新版本: {{version}}",
+      "versionSkipped": "版本 {{version}} 已被跳过",
+      "latestVersion": "您使用的是最新版本",
+      "checkUpdateFailed": "检查更新失败: {{error}}"
+    },
+    "connectionRequirements": {
+      "needSelection": "此操作需要先选择一个数据库连接",
+      "needActiveConnection": "此操作需要活跃的数据库连接，请先连接到数据库"
+    },
+    "viewSwitch": {
+      "datasource": "数据源管理",
+      "query": "查询编辑器",
+      "visualization": "数据可视化",
+      "monitoring": "性能监控",
+      "switchTo": "切换到{{view}}"
+    },
+    "connectionOperations": {
+      "openConnectionManagement": "打开连接管理",
+      "selectConnectionFirst": "请先选择一个连接"
+    },
+    "databaseOperations": {
+      "refreshingStructure": "正在刷新数据库结构...",
+      "dbDisconnected": "数据库连接已断开，请重新连接后再试",
+      "establishConnectionFirst": "请先建立数据库连接"
+    },
+    "queryActions": {
+      "executingQuery": "执行查询...",
+      "queryStopped": "已停止查询",
+      "queryPlanNeedsConnection": "查询计划需要数据库连接，请先建立连接"
+    },
+    "navigationMessages": {
+      "switchToPerformance": "切换到性能分析",
+      "switchToExtensions": "切换到扩展管理",
+      "openThemeSettings": "打开主题设置",
+      "openPreferences": "打开偏好设置",
+      "openKeyboardShortcuts": "打开偏好设置 - 键盘快捷键",
+      "openQueryExamples": "打开查询示例"
+    },
+    "unimplemented": {
+      "functionNotImplemented": "菜单功能 \"{{action}}\" 暂未实现"
+    }
   }
 }

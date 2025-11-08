@@ -11,7 +11,7 @@ import { openExternalLink, openIssueReport, openDocumentation } from '@/utils/ex
 import AboutDialog from '@/components/common/AboutDialog';
 import SettingsModal from '@/components/common/SettingsModal';
 import SampleQueriesModal from '@/components/common/SampleQueriesModal';
-import { useSettingsTranslation } from '@/hooks/useTranslation';
+import { useSettingsTranslation, useMenuTranslation } from '@/hooks/useTranslation';
 
 import { logger } from '@/utils/logger';
 interface NativeMenuHandlerProps {
@@ -27,6 +27,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 }) => {
   const navigate = useNavigate();
   const { t } = useSettingsTranslation();
+  const { t: tMenu } = useMenuTranslation();
   const {
     activeConnectionId,
     connections,
@@ -90,7 +91,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     const handleOpenSettings = () => {
       setSettingsInitialTab('general');
       setSettingsVisible(true);
-      showMessage.success('打开应用设置');
+      showMessage.success(tMenu('native.openAppSettings'));
     };
 
     document.addEventListener('open-settings-modal', handleOpenSettings);
@@ -124,19 +125,12 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const handleModeChange = (mode: 'system' | 'light' | 'dark') => {
     logger.debug('🌓 切换模式:', mode);
 
-    // 模式名称映射
-    const modeLabels: Record<string, string> = {
-      'system': '跟随系统',
-      'light': '浅色模式',
-      'dark': '深色模式'
-    };
-
     // 设置模式
     setTheme(mode);
 
     // 显示成功消息
-    const modeLabel = modeLabels[mode] || mode;
-    showMessage.success(`已切换到${modeLabel}`);
+    const modeLabel = tMenu(`native.modeSwitch.${mode}`);
+    showMessage.success(tMenu('native.modeSwitch.success', { mode: modeLabel }));
   };
 
   // 语言切换处理函数
@@ -151,10 +145,10 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       await setLanguage(locale);
 
       // 显示成功消息
-      showMessage.success(`语言已切换到 ${label}`);
+      showMessage.success(tMenu('native.languageSwitch.success', { label }));
     } catch (error) {
       logger.error('语言切换失败:', error);
-      showMessage.error('语言切换失败');
+      showMessage.error(tMenu('native.languageSwitch.failed'));
     }
   };
 
@@ -165,11 +159,11 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     try {
       logger.debug('尝试打开文件对话框...');
       const result = await safeTauriInvoke('open_file_dialog', {
-        title: '打开查询文件',
+        title: tMenu('native.fileOperations.openFileTitle'),
         filters: [
-          { name: 'SQL 文件', extensions: ['sql'] },
-          { name: 'Text 文件', extensions: ['txt'] },
-          { name: '所有文件', extensions: ['*'] }
+          { name: tMenu('native.fileOperations.sqlFiles'), extensions: ['sql'] },
+          { name: tMenu('native.fileOperations.textFiles'), extensions: ['txt'] },
+          { name: tMenu('native.fileOperations.allFiles'), extensions: ['*'] }
         ],
         multiple: false
       });
@@ -183,7 +177,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         document.dispatchEvent(new CustomEvent('open-file-content', {
           detail: { content, filename: result.path }
         }));
-        showMessage.success('文件已打开');
+        showMessage.success(tMenu('native.fileOperations.fileOpened'));
       } else {
         // 用户取消选择，静默处理，不显示错误信息
         logger.debug('用户取消了文件选择');
@@ -210,11 +204,11 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     try {
       logger.debug('📥 尝试打开数据导入对话框...');
       const result = await safeTauriInvoke('open_file_dialog', {
-        title: '导入数据文件',
+        title: tMenu('native.dataOperations.importDataTitle'),
         filters: [
-          { name: 'CSV 文件', extensions: ['csv'] },
-          { name: 'JSON 文件', extensions: ['json'] },
-          { name: '所有文件', extensions: ['*'] }
+          { name: tMenu('native.fileOperations.csvFiles'), extensions: ['csv'] },
+          { name: tMenu('native.fileOperations.jsonFiles'), extensions: ['json'] },
+          { name: tMenu('native.fileOperations.allFiles'), extensions: ['*'] }
         ],
         multiple: false
       });
@@ -226,7 +220,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         document.dispatchEvent(new CustomEvent('import-data-file', {
           detail: { path: result.path }
         }));
-        showMessage.success('准备导入数据...');
+        showMessage.success(tMenu('native.dataOperations.prepareImport'));
       } else {
         // 用户取消导入，静默处理
         logger.debug('用户取消了数据导入');
@@ -252,9 +246,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     if (activeConnectionId && isConnectionConnected(activeConnectionId)) {
       document.dispatchEvent(new CustomEvent('explain-query'));
     } else if (activeConnectionId && !isConnectionConnected(activeConnectionId)) {
-      showMessage.warning('数据库连接已断开，请重新连接后再试');
+      showMessage.warning(tMenu('native.queryOperations.dbDisconnectedWarning'));
     } else {
-      showMessage.warning('解释查询需要数据库连接，请先建立连接');
+      showMessage.warning(tMenu('native.queryOperations.needConnectionWarning'));
     }
   };
 
@@ -267,45 +261,45 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     const currentZoom = parseFloat(document.body.style.zoom || '1');
     const newZoom = Math.min(currentZoom + 0.1, 2.0);
     document.body.style.zoom = newZoom.toString();
-    showMessage.success(`已放大至 ${Math.round(newZoom * 100)}%`);
+    showMessage.success(tMenu('native.zoomOperations.zoomIn', { zoom: Math.round(newZoom * 100) }));
   };
 
   const handleZoomOut = () => {
     const currentZoom = parseFloat(document.body.style.zoom || '1');
     const newZoom = Math.max(currentZoom - 0.1, 0.5);
     document.body.style.zoom = newZoom.toString();
-    showMessage.success(`已缩小至 ${Math.round(newZoom * 100)}%`);
+    showMessage.success(tMenu('native.zoomOperations.zoomOut', { zoom: Math.round(newZoom * 100) }));
   };
 
   const handleZoomReset = () => {
     document.body.style.zoom = '1';
-    showMessage.success('已重置缩放至 100%');
+    showMessage.success(tMenu('native.zoomOperations.resetZoom'));
   };
 
   // 帮助系统处理函数
   const handleUserManual = () => {
     // 触发用户引导弹框
     document.dispatchEvent(new CustomEvent('show-user-guide'));
-    showMessage.success('打开用户引导');
+    showMessage.success(tMenu('native.helpSystem.openUserGuide'));
   };
 
   const handleQuickStart = () => {
     document.dispatchEvent(new CustomEvent('show-quick-start'));
-    showMessage.success('打开快速入门');
+    showMessage.success(tMenu('native.helpSystem.openQuickStart'));
   };
 
   const handleCheckUpdates = async () => {
     try {
       const result = await safeTauriInvoke('check_for_app_updates');
       if (result.available && !result.is_skipped) {
-        showMessage.info(`发现新版本: ${result.latest_version}`);
+        showMessage.info(tMenu('native.helpSystem.newVersionFound', { version: result.latest_version }));
       } else if (result.is_skipped) {
-        showMessage.info(`版本 ${result.latest_version} 已被跳过`);
+        showMessage.info(tMenu('native.helpSystem.versionSkipped', { version: result.latest_version }));
       } else {
-        showMessage.success('您使用的是最新版本');
+        showMessage.success(tMenu('native.helpSystem.latestVersion'));
       }
     } catch (error) {
-      showMessage.error(`检查更新失败: ${error}`);
+      showMessage.error(tMenu('native.helpSystem.checkUpdateFailed', { error }));
     }
   };
 
@@ -350,17 +344,17 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     
     if (activeConnectionRequiredActions.includes(action)) {
       if (!activeConnectionId) {
-        showMessage.warning('此操作需要先选择一个数据库连接');
+        showMessage.warning(tMenu('native.connectionRequirements.needSelection'));
         return;
       }
       if (!hasActiveConnection) {
-        showMessage.warning('此操作需要活跃的数据库连接，请先连接到数据库');
+        showMessage.warning(tMenu('native.connectionRequirements.needActiveConnection'));
         return;
       }
     }
 
     if (selectedConnectionRequiredActions.includes(action) && !hasSelectedConnection) {
-      showMessage.warning('此操作需要先选择一个数据库连接');
+      showMessage.warning(tMenu('native.connectionRequirements.needSelection'));
       return;
     }
 
@@ -384,9 +378,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       };
       if (viewMap[view]) {
         navigate(viewMap[view]);
-        showMessage.success(
-          `切换到${view === 'datasource' ? '数据源管理' : view === 'query' ? '查询编辑器' : view === 'visualization' ? '数据可视化' : '性能监控'}`
-        );
+        const viewLabelMap: Record<string, string> = {
+          datasource: 'datasource',
+          query: 'query',
+          visualization: 'visualization',
+          performance: 'monitoring',
+        };
+        const viewLabel = tMenu(`native.viewSwitch.${viewLabelMap[view]}`);
+        showMessage.success(tMenu('native.viewSwitch.switchTo', { view: viewLabel }));
       }
       return;
     }
@@ -742,7 +741,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
       case 'new_connection':
       case 'new-connection':
         navigate('/connections');
-        showMessage.success('打开连接管理');
+        showMessage.success(tMenu('native.connectionOperations.openConnectionManagement'));
         handled = true;
         break;
 
@@ -762,7 +761,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           );
           handled = true;
         } else {
-          showMessage.warning('请先选择一个连接');
+          showMessage.warning(tMenu('native.connectionOperations.selectConnectionFirst'));
         }
         break;
 
@@ -774,21 +773,21 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           );
           handled = true;
         } else {
-          showMessage.warning('请先选择一个连接');
+          showMessage.warning(tMenu('native.connectionOperations.selectConnectionFirst'));
         }
         break;
 
       case 'refresh_structure':
       case 'refresh-structure':
         if (activeConnectionId && isConnected) {
-          showMessage.info('正在刷新数据库结构...');
+          showMessage.info(tMenu('native.databaseOperations.refreshingStructure'));
           // 触发刷新事件
           document.dispatchEvent(new CustomEvent('refresh-database-tree'));
           handled = true;
         } else if (activeConnectionId && !isConnected) {
-          showMessage.warning('数据库连接已断开，请重新连接后再试');
+          showMessage.warning(tMenu('native.databaseOperations.dbDisconnected'));
         } else {
-          showMessage.warning('请先建立数据库连接');
+          showMessage.warning(tMenu('native.databaseOperations.establishConnectionFirst'));
         }
         break;
 
@@ -800,9 +799,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           );
           handled = true;
         } else if (activeConnectionId && !isConnected) {
-          showMessage.warning('数据库连接已断开，请重新连接后再试');
+          showMessage.warning(tMenu('native.databaseOperations.dbDisconnected'));
         } else {
-          showMessage.warning('请先建立数据库连接');
+          showMessage.warning(tMenu('native.databaseOperations.establishConnectionFirst'));
         }
         break;
 
@@ -813,9 +812,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           );
           handled = true;
         } else if (activeConnectionId && !isConnected) {
-          showMessage.warning('数据库连接已断开，请重新连接后再试');
+          showMessage.warning(tMenu('native.databaseOperations.dbDisconnected'));
         } else {
-          showMessage.warning('请先建立数据库连接');
+          showMessage.warning(tMenu('native.databaseOperations.establishConnectionFirst'));
         }
         break;
 
@@ -826,9 +825,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           );
           handled = true;
         } else if (activeConnectionId && !isConnected) {
-          showMessage.warning('数据库连接已断开，请重新连接后再试');
+          showMessage.warning(tMenu('native.databaseOperations.dbDisconnected'));
         } else {
-          showMessage.warning('请先建立数据库连接');
+          showMessage.warning(tMenu('native.databaseOperations.establishConnectionFirst'));
         }
         break;
 
@@ -839,9 +838,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           );
           handled = true;
         } else if (activeConnectionId && !isConnected) {
-          showMessage.warning('数据库连接已断开，请重新连接后再试');
+          showMessage.warning(tMenu('native.databaseOperations.dbDisconnected'));
         } else {
-          showMessage.warning('请先建立数据库连接');
+          showMessage.warning(tMenu('native.databaseOperations.establishConnectionFirst'));
         }
         break;
 
@@ -852,12 +851,12 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           document.dispatchEvent(
             new CustomEvent('execute-query', { detail: { source: 'menu' } })
           );
-          showMessage.info('执行查询...');
+          showMessage.info(tMenu('native.queryActions.executingQuery'));
           handled = true;
         } else if (activeConnectionId && !isConnected) {
-          showMessage.warning('数据库连接已断开，请重新连接后再试');
+          showMessage.warning(tMenu('native.databaseOperations.dbDisconnected'));
         } else {
-          showMessage.warning('请先建立数据库连接');
+          showMessage.warning(tMenu('native.databaseOperations.establishConnectionFirst'));
         }
         break;
 
@@ -868,9 +867,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           );
           handled = true;
         } else if (activeConnectionId && !isConnected) {
-          showMessage.warning('数据库连接已断开，请重新连接后再试');
+          showMessage.warning(tMenu('native.databaseOperations.dbDisconnected'));
         } else {
-          showMessage.warning('请先建立数据库连接');
+          showMessage.warning(tMenu('native.databaseOperations.establishConnectionFirst'));
         }
         break;
 
@@ -879,7 +878,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         document.dispatchEvent(
           new CustomEvent('stop-query', { detail: { source: 'menu' } })
         );
-        showMessage.info('已停止查询');
+        showMessage.info(tMenu('native.queryActions.queryStopped'));
         handled = true;
         break;
 
@@ -921,9 +920,9 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
           );
           handled = true;
         } else if (activeConnectionId && !isConnected) {
-          showMessage.warning('数据库连接已断开，请重新连接后再试');
+          showMessage.warning(tMenu('native.databaseOperations.dbDisconnected'));
         } else {
-          showMessage.warning('查询计划需要数据库连接，请先建立连接');
+          showMessage.warning(tMenu('native.queryActions.queryPlanNeedsConnection'));
         }
         break;
 
@@ -948,13 +947,13 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'query_performance':
         navigate('/performance');
-        showMessage.success('切换到性能分析');
+        showMessage.success(tMenu('native.navigationMessages.switchToPerformance'));
         handled = true;
         break;
 
       case 'extensions':
         navigate('/extensions');
-        showMessage.success('切换到扩展管理');
+        showMessage.success(tMenu('native.navigationMessages.switchToExtensions'));
         handled = true;
         break;
 
@@ -962,7 +961,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         // 打开设置弹框
         setSettingsInitialTab('general');
         setSettingsVisible(true);
-        showMessage.success('打开主题设置');
+        showMessage.success(tMenu('native.navigationMessages.openThemeSettings'));
         handled = true;
         break;
 
@@ -981,7 +980,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         // 打开设置弹框
         setSettingsInitialTab('general');
         setSettingsVisible(true);
-        showMessage.success('打开偏好设置');
+        showMessage.success(tMenu('native.navigationMessages.openPreferences'));
         handled = true;
         break;
 
@@ -997,7 +996,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         // 打开设置弹框并导航到键盘快捷键部分
         setSettingsInitialTab('preferences');
         setSettingsVisible(true);
-        showMessage.success('打开偏好设置 - 键盘快捷键');
+        showMessage.success(tMenu('native.navigationMessages.openKeyboardShortcuts'));
         handled = true;
         break;
 
@@ -1020,7 +1019,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
       case 'sample_queries':
         setSampleQueriesVisible(true);
-        showMessage.success('打开查询示例');
+        showMessage.success(tMenu('native.navigationMessages.openQueryExamples'));
         handled = true;
         break;
 
@@ -1120,7 +1119,7 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     // 记录未处理的动作
     if (!handled) {
       logger.warn('未处理的菜单动作:', action);
-      showMessage.warning(`菜单功能 "${action}" 暂未实现`);
+      showMessage.warning(tMenu('native.unimplemented.functionNotImplemented', { action }));
     } else {
       logger.info('菜单动作处理完成:', action);
     }

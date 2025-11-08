@@ -79,6 +79,7 @@ import {
 import { showMessage } from '@/utils/message';
 import { safeTauriInvoke } from '@/utils/tauri';
 import dayjs from 'dayjs';
+import { useDiagnosticsTranslation } from '@/hooks/useTranslation';
 
 import { logger } from '@/utils/logger';
 interface PerformanceBottleneckDiagnosticsProps {
@@ -155,6 +156,7 @@ interface TableRowData {
 export const PerformanceBottleneckDiagnostics: React.FC<
   PerformanceBottleneckDiagnosticsProps
 > = ({ className }) => {
+  const { t } = useDiagnosticsTranslation();
   const { activeConnectionId } = useConnectionStore();
   const [bottlenecks, setBottlenecks] = useState<PerformanceBottleneck[]>([]);
   const [loading, setLoading] = useState(false);
@@ -495,7 +497,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       });
     } catch (error) {
       logger.error('获取基础性能指标失败:', error);
-      showMessage.error('获取基础性能指标失败，请检查连接状态');
+      showMessage.error(t('messages.getMetricsFailed'));
       // 清空指标数据以避免显示过期信息
       setBasicMetrics(null);
     }
@@ -580,7 +582,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       setPerformanceReport(performanceReportData);
     } catch (error) {
       logger.error(`获取${monitoringMode}监控模式的性能瓶颈数据失败:`, error);
-      showMessage.error(`获取${monitoringMode === 'local' ? '本地' : '远程'}监控数据失败`);
+      showMessage.error(t('messages.getMonitoringDataFailed', { mode: t(`messages.${monitoringMode}`) }));
       // 清理可能的脏数据
       clearAllData();
     } finally {
@@ -642,7 +644,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       logger.debug('系统监控已启动');
     } catch (error) {
       logger.error('启动系统监控失败:', error);
-      showMessage.error('启动系统监控失败');
+      showMessage.error(t('messages.startMonitoringFailed'));
     }
   }, [syncMonitoringStatus]);
 
@@ -747,15 +749,15 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     if (!basicMetrics) {
       // 如果没有真实数据，显示提示信息而不是空图表
       return {
-        timeColumn: '时间',
+        timeColumn: t('charts.time'),
         valueColumns: type === 'cpu-memory'
-          ? ['CPU使用率(%)', '内存使用率(%)']
-          : ['磁盘读取(MB)', '磁盘写入(MB)', '网络入站(B/s)', '网络出站(B/s)'],
+          ? [t('charts.cpuUsagePercent'), t('charts.memoryUsagePercent')]
+          : [t('charts.diskReadMB'), t('charts.diskWriteMB'), t('charts.networkIn'), t('charts.networkOut')],
         data: [{
-          时间: '暂无数据',
+          [t('charts.time')]: t('charts.noData'),
           ...(type === 'cpu-memory'
-            ? { 'CPU使用率(%)': 0, '内存使用率(%)': 0 }
-            : { '磁盘读取(MB)': 0, '磁盘写入(MB)': 0, '网络入站(B/s)': 0, '网络出站(B/s)': 0 })
+            ? { [t('charts.cpuUsagePercent')]: 0, [t('charts.memoryUsagePercent')]: 0 }
+            : { [t('charts.diskReadMB')]: 0, [t('charts.diskWriteMB')]: 0, [t('charts.networkIn')]: 0, [t('charts.networkOut')]: 0 })
         }],
       };
     }
@@ -765,15 +767,15 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       const combinedData = basicMetrics.cpuUsage.map((cpuPoint, index) => {
         const memoryPoint = basicMetrics.memoryUsage[index];
         return {
-          时间: new Date(cpuPoint.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-          'CPU使用率(%)': Math.round(cpuPoint.value * 10) / 10,
-          '内存使用率(%)': memoryPoint ? Math.round(memoryPoint.value * 10) / 10 : 0,
+          [t('charts.time')]: new Date(cpuPoint.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          [t('charts.cpuUsagePercent')]: Math.round(cpuPoint.value * 10) / 10,
+          [t('charts.memoryUsagePercent')]: memoryPoint ? Math.round(memoryPoint.value * 10) / 10 : 0,
         };
       });
-      
+
       return {
-        timeColumn: '时间',
-        valueColumns: ['CPU使用率(%)', '内存使用率(%)'],
+        timeColumn: t('charts.time'),
+        valueColumns: [t('charts.cpuUsagePercent'), t('charts.memoryUsagePercent')],
         data: combinedData,
       };
     } else {
@@ -793,21 +795,21 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           const netOutFormatted = formatNetworkData(networkIO.bytesOut);
 
           return {
-            时间: new Date(point.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-            '磁盘读取(MB)': readMBps,
-            '磁盘写入(MB)': writeMBps,
-            [`网络入站(${netInFormatted.unit})`]: netInFormatted.value,
-            [`网络出站(${netOutFormatted.unit})`]: netOutFormatted.value,
+            [t('charts.time')]: new Date(point.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+            [t('charts.diskReadMB')]: readMBps,
+            [t('charts.diskWriteMB')]: writeMBps,
+            [`${t('charts.networkIn')}(${netInFormatted.unit})`]: netInFormatted.value,
+            [`${t('charts.networkOut')}(${netOutFormatted.unit})`]: netOutFormatted.value,
           };
         });
-        
+
         // 获取网络数据的单位（使用第一个数据点的单位）
-        const firstNetInUnit = data.length > 0 ? Object.keys(data[0]).find(key => key.startsWith('网络入站')) || '网络入站(B/s)' : '网络入站(B/s)';
-        const firstNetOutUnit = data.length > 0 ? Object.keys(data[0]).find(key => key.startsWith('网络出站')) || '网络出站(B/s)' : '网络出站(B/s)';
+        const firstNetInUnit = data.length > 0 ? Object.keys(data[0]).find(key => key.startsWith(t('charts.networkIn'))) || `${t('charts.networkIn')}(B/s)` : `${t('charts.networkIn')}(B/s)`;
+        const firstNetOutUnit = data.length > 0 ? Object.keys(data[0]).find(key => key.startsWith(t('charts.networkOut'))) || `${t('charts.networkOut')}(B/s)` : `${t('charts.networkOut')}(B/s)`;
 
         return {
-          timeColumn: '时间',
-          valueColumns: ['磁盘读取(MB)', '磁盘写入(MB)', firstNetInUnit, firstNetOutUnit],
+          timeColumn: t('charts.time'),
+          valueColumns: [t('charts.diskReadMB'), t('charts.diskWriteMB'), firstNetInUnit, firstNetOutUnit],
           data,
         };
       } else {
@@ -816,14 +818,14 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         const netOutFormatted = formatNetworkData(networkIO.bytesOut);
 
         return {
-          timeColumn: '时间',
-          valueColumns: ['磁盘读取(MB)', '磁盘写入(MB)', `网络入站(${netInFormatted.unit})`, `网络出站(${netOutFormatted.unit})`],
+          timeColumn: t('charts.time'),
+          valueColumns: [t('charts.diskReadMB'), t('charts.diskWriteMB'), `${t('charts.networkIn')}(${netInFormatted.unit})`, `${t('charts.networkOut')}(${netOutFormatted.unit})`],
           data: [{
-            时间: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
-            '磁盘读取(MB)': Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10,
-            '磁盘写入(MB)': Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10,
-            [`网络入站(${netInFormatted.unit})`]: netInFormatted.value,
-            [`网络出站(${netOutFormatted.unit})`]: netOutFormatted.value,
+            [t('charts.time')]: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+            [t('charts.diskReadMB')]: Math.round((diskIO.readBytes / (1024 * 1024)) * 10) / 10,
+            [t('charts.diskWriteMB')]: Math.round((diskIO.writeBytes / (1024 * 1024)) * 10) / 10,
+            [`${t('charts.networkIn')}(${netInFormatted.unit})`]: netInFormatted.value,
+            [`${t('charts.networkOut')}(${netOutFormatted.unit})`]: netOutFormatted.value,
           }],
         };
       }
@@ -847,10 +849,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         connectionId: activeConnectionId,
       });
       await getBottlenecks(); // 重新加载数据
-      showMessage.success('健康检查完成');
+      showMessage.success(t('messages.healthCheckComplete'));
     } catch (error) {
       logger.error('健康检查失败:', error);
-      showMessage.error('健康检查失败');
+      showMessage.error(t('messages.healthCheckFailed'));
     }
   };
 
@@ -874,11 +876,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   const markAsResolved = async (bottleneckId: string) => {
     try {
       await PerformanceBottleneckService.markBottleneckResolved(bottleneckId);
-      showMessage.success('瓶颈已标记为已解决');
+      showMessage.success(t('messages.bottleneckResolved'));
       getBottlenecks();
     } catch (error) {
       logger.error('标记瓶颈失败:', error);
-      showMessage.error('标记瓶颈失败');
+      showMessage.error(t('messages.markResolvedFailed'));
     }
   };
 
@@ -886,11 +888,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   const ignoreBottleneck = async (bottleneckId: string) => {
     try {
       await PerformanceBottleneckService.ignoreBottleneck(bottleneckId);
-      showMessage.success('瓶颈已忽略');
+      showMessage.success(t('messages.bottleneckIgnored'));
       getBottlenecks();
     } catch (error) {
       logger.error('忽略瓶颈失败:', error);
-      showMessage.error('忽略瓶颈失败');
+      showMessage.error(t('messages.ignoreFailed'));
     }
   };
 
@@ -898,7 +900,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   const bottleneckColumns = [
     {
       accessorKey: 'type',
-      header: '类型',
+      header: t('columns.type'),
       cell: ({ row }: { row: TableRowData }) => (
         <div className='flex items-center gap-2'>
           {getTypeIcon(row.original.type)}
@@ -908,7 +910,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     },
     {
       accessorKey: 'severity',
-      header: '严重程度',
+      header: t('columns.severity'),
       cell: ({ row }: { row: TableRowData }) => (
         <div className='flex items-center gap-2'>
           {getSeverityIcon(row.original.severity)}
@@ -920,14 +922,14 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     },
     {
       accessorKey: 'title',
-      header: '标题',
+      header: t('columns.title'),
       cell: ({ row }: { row: TableRowData }) => (
         <Text className='font-semibold'>{row.original.title}</Text>
       ),
     },
     {
       accessorKey: 'description',
-      header: '描述',
+      header: t('columns.description'),
       cell: ({ row }: { row: TableRowData }) => (
         <Text className='line-clamp-2 max-w-[300px]'>
           {row.original.description}
@@ -936,39 +938,39 @@ export const PerformanceBottleneckDiagnostics: React.FC<
     },
     {
       accessorKey: 'duration',
-      header: '持续时间',
+      header: t('columns.duration'),
       cell: ({ row }: { row: TableRowData }) => formatTime(row.original.duration),
     },
     {
       accessorKey: 'frequency',
-      header: '频率',
-      cell: ({ row }: { row: TableRowData }) => `${row.original.frequency}次`,
+      header: t('columns.frequency'),
+      cell: ({ row }: { row: TableRowData }) => `${row.original.frequency}${t('details.frequencyTimes')}`,
     },
     {
       accessorKey: 'status',
-      header: '状态',
+      header: t('columns.status'),
       cell: ({ row }: { row: TableRowData }) => (
         <div className='flex items-center gap-2'>
           {getStatusIcon(row.original.status)}
           <Text>
             {row.original.status === 'active'
-              ? '活跃'
+              ? t('filters.active')
               : row.original.status === 'resolved'
-                ? '已解决'
-                : '已忽略'}
+                ? t('filters.resolved')
+                : t('filters.ignored')}
           </Text>
         </div>
       ),
     },
     {
       accessorKey: 'detectedAt',
-      header: '检测时间',
+      header: t('columns.detectedTime'),
       cell: ({ row }: { row: TableRowData }) =>
         dayjs(row.original.detectedAt).format('MM-DD HH:mm'),
     },
     {
       id: 'actions',
-      header: '操作',
+      header: t('columns.actions'),
       cell: ({ row }: { row: TableRowData }) => (
         <div className='flex gap-1'>
           <Button
@@ -1014,11 +1016,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <CheckCircle className='w-8 h-8 text-green-600' />
             </div>
             <div>
-              <Text className='text-lg font-semibold mb-2'>系统运行良好</Text>
+              <Text className='text-lg font-semibold mb-2'>{t('overview.systemRunningWell')}</Text>
               <Text className='text-muted-foreground'>
                 {monitoringMode === 'local'
-                  ? '本地系统监控未检测到性能瓶颈'
-                  : '远程监控未检测到性能瓶颈'}
+                  ? t('overview.localMonitoringNoBottlenecks')
+                  : t('overview.remoteMonitoringNoBottlenecks')}
               </Text>
             </div>
           </div>
@@ -1042,7 +1044,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='活跃瓶颈'
+                title={t('activeBottlenecks')}
                 value={`${activeBottlenecks.length} / ${bottlenecks.length}`}
                 icon={<Flame className='w-4 h-4' />}
                 valueClassName={
@@ -1056,7 +1058,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='严重瓶颈'
+                title={t('criticalBottlenecks')}
                 value={criticalBottlenecks.length}
                 icon={<AlertCircle className='w-4 h-4' />}
                 valueClassName={
@@ -1070,7 +1072,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='高危瓶颈'
+                title={t('highRiskBottlenecks')}
                 value={highBottlenecks.length}
                 icon={<AlertTriangle className='w-4 h-4' />}
                 valueClassName={
@@ -1084,7 +1086,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='总体影响'
+                title={t('overallImpact')}
                 value={`${totalImpact.toFixed(1)}%`}
                 icon={<TrendingUp className='w-4 h-4' />}
                 valueClassName={
@@ -1105,7 +1107,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end'>
               <div className='lg:col-span-2'>
                 <SearchInput
-                  placeholder='搜索瓶颈...'
+                  placeholder={t('searchBottlenecks')}
                   value={searchText}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchText(e.target.value)}
                   onClear={() => setSearchText('')}
@@ -1117,44 +1119,44 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   onValueChange={(value: 'all' | 'high' | 'low' | 'medium' | 'critical') => setSeverityFilter(value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder='严重程度' />
+                    <SelectValue placeholder={t('selectSeverity')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='all'>所有严重程度</SelectItem>
-                    <SelectItem value='critical'>严重</SelectItem>
-                    <SelectItem value='high'>高</SelectItem>
-                    <SelectItem value='medium'>中</SelectItem>
-                    <SelectItem value='low'>低</SelectItem>
+                    <SelectItem value='all'>{t('filters.allSeverities')}</SelectItem>
+                    <SelectItem value='critical'>{t('filters.critical')}</SelectItem>
+                    <SelectItem value='high'>{t('filters.high')}</SelectItem>
+                    <SelectItem value='medium'>{t('filters.medium')}</SelectItem>
+                    <SelectItem value='low'>{t('filters.low')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Select value={typeFilter} onValueChange={(value) => setTypeFilter(value as 'all' | 'query' | 'connection' | 'memory' | 'disk' | 'network' | 'cpu' | 'lock')}>
                   <SelectTrigger>
-                    <SelectValue placeholder='类型' />
+                    <SelectValue placeholder={t('selectType')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='all'>所有类型</SelectItem>
-                    <SelectItem value='query'>查询</SelectItem>
-                    <SelectItem value='connection'>连接</SelectItem>
-                    <SelectItem value='memory'>内存</SelectItem>
-                    <SelectItem value='disk'>磁盘</SelectItem>
-                    <SelectItem value='network'>网络</SelectItem>
-                    <SelectItem value='cpu'>CPU</SelectItem>
-                    <SelectItem value='lock'>锁</SelectItem>
+                    <SelectItem value='all'>{t('filters.allTypes')}</SelectItem>
+                    <SelectItem value='query'>{t('filters.query')}</SelectItem>
+                    <SelectItem value='connection'>{t('filters.connection')}</SelectItem>
+                    <SelectItem value='memory'>{t('filters.memory')}</SelectItem>
+                    <SelectItem value='disk'>{t('filters.disk')}</SelectItem>
+                    <SelectItem value='network'>{t('filters.network')}</SelectItem>
+                    <SelectItem value='cpu'>{t('filters.cpu')}</SelectItem>
+                    <SelectItem value='lock'>{t('filters.lock')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'resolved' | 'ignored')}>
                   <SelectTrigger>
-                    <SelectValue placeholder='状态' />
+                    <SelectValue placeholder={t('selectStatus')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value='all'>所有状态</SelectItem>
-                    <SelectItem value='active'>活跃</SelectItem>
-                    <SelectItem value='resolved'>已解决</SelectItem>
-                    <SelectItem value='ignored'>已忽略</SelectItem>
+                    <SelectItem value='all'>{t('filters.allStatuses')}</SelectItem>
+                    <SelectItem value='active'>{t('filters.active')}</SelectItem>
+                    <SelectItem value='resolved'>{t('filters.resolved')}</SelectItem>
+                    <SelectItem value='ignored'>{t('filters.ignored')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -1163,7 +1165,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   checked={autoRefresh}
                   onCheckedChange={setAutoRefresh}
                 />
-                <Text className='text-sm text-muted-foreground'>自动刷新</Text>
+                <Text className='text-sm text-muted-foreground'>{t('filters.autoRefresh')}</Text>
                 <Button
                   size='sm'
                   variant='outline'
@@ -1231,7 +1233,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   // 渲染系统指标
   const renderSystemMetrics = () => {
     if (!systemMetrics) {
-      return <Empty description='没有系统性能指标数据' />;
+      return <Empty description={t('empty.noSystemMetrics')} />;
     }
 
     const cpuUsage =
@@ -1249,7 +1251,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='CPU使用率'
+                title={t('cpuUsage')}
                 value={`${cpuUsage.toFixed(1)}%`}
                 icon={<Bug className='w-4 h-4' />}
                 valueClassName={
@@ -1261,7 +1263,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='内存使用率'
+                title={t('memoryUsage')}
                 value={`${memoryUsage.toFixed(1)}%`}
                 icon={<Database className='w-4 h-4' />}
                 valueClassName={
@@ -1273,7 +1275,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='磁盘I/O'
+                title={t('diskIO')}
                 value={`${diskIops} IOPS`}
                 icon={<Database className='w-4 h-4' />}
                 valueClassName='text-blue-500'
@@ -1283,7 +1285,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='网络I/O'
+                title={t('networkIO')}
                 value={FormatUtils.formatNetworkSpeed(networkBytes).formatted}
                 icon={<Webhook className='w-4 h-4' />}
                 valueClassName='text-purple-500'
@@ -1295,7 +1297,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
           <Card>
             <CardHeader>
-              <CardTitle className='text-sm'>CPU和内存使用率趋势</CardTitle>
+              <CardTitle className='text-sm'>{t('charts.cpuMemoryTrend')}</CardTitle>
             </CardHeader>
             <CardContent>
               <SimpleChart
@@ -1307,7 +1309,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className='text-sm'>磁盘和网络I/O趋势</CardTitle>
+              <CardTitle className='text-sm'>{t('charts.diskNetworkTrend')}</CardTitle>
             </CardHeader>
             <CardContent>
               <SimpleChart
@@ -1325,7 +1327,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   // 渲染慢查询
   const renderSlowQueries = () => {
     if (!slowQueries || !slowQueries.queries.length) {
-      return <Empty description='没有慢查询数据' />;
+      return <Empty description={t('empty.noSlowQueries')} />;
     }
 
     return (
@@ -1333,8 +1335,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         <Alert>
           <Info className='h-4 w-4' />
           <AlertDescription>
-            共检测到 {slowQueries.total} 个慢查询，显示前{' '}
-            {slowQueries.queries.length} 个
+            {t('slowQueries.detected', { total: slowQueries.total, count: slowQueries.queries.length })}
           </AlertDescription>
         </Alert>
 
@@ -1344,12 +1345,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className='w-[300px]'>查询</TableHead>
-                    <TableHead>平均执行时间</TableHead>
-                    <TableHead>最大执行时间</TableHead>
-                    <TableHead>执行频率</TableHead>
-                    <TableHead>数据库</TableHead>
-                    <TableHead>最近执行</TableHead>
+                    <TableHead className='w-[300px]'>{t('slowQueries.query')}</TableHead>
+                    <TableHead>{t('slowQueries.avgExecutionTime')}</TableHead>
+                    <TableHead>{t('slowQueries.maxExecutionTime')}</TableHead>
+                    <TableHead>{t('slowQueries.executionFrequency')}</TableHead>
+                    <TableHead>{t('slowQueries.database')}</TableHead>
+                    <TableHead>{t('slowQueries.lastExecuted')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1362,7 +1363,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                       </TableCell>
                       <TableCell>{formatTime(query.avgDuration)}</TableCell>
                       <TableCell>{formatTime(query.maxDuration)}</TableCell>
-                      <TableCell>{query.frequency}次</TableCell>
+                      <TableCell>{query.frequency}{t('slowQueries.times')}</TableCell>
                       <TableCell>{query.database}</TableCell>
                       <TableCell>
                         {dayjs(query.lastExecuted).format('MM-DD HH:mm')}
@@ -1381,7 +1382,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   // 渲染锁等待分析
   const renderLockWaits = () => {
     if (!lockWaits || !lockWaits.locks.length) {
-      return <Empty description='没有锁等待数据' />;
+      return <Empty description={t('empty.noLockWaits')} />;
     }
 
     return (
@@ -1390,7 +1391,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='总锁等待数'
+                title={t('totalLockWaits')}
                 value={lockWaits.summary.totalLocks}
                 icon={<Lock className='w-4 h-4' />}
               />
@@ -1399,7 +1400,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='平均等待时间'
+                title={t('averageWaitTime')}
                 value={`${lockWaits.summary.avgWaitTime.toFixed(2)} ms`}
                 icon={<Clock className='w-4 h-4' />}
               />
@@ -1408,7 +1409,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='最大等待时间'
+                title={t('maxWaitTime')}
                 value={`${lockWaits.summary.maxWaitTime.toFixed(2)} ms`}
                 icon={<AlertCircle className='w-4 h-4' />}
               />
@@ -1422,12 +1423,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>锁类型</TableHead>
-                    <TableHead>表名</TableHead>
-                    <TableHead>等待时长</TableHead>
-                    <TableHead>等待查询数</TableHead>
-                    <TableHead className='w-[200px]'>阻塞查询</TableHead>
-                    <TableHead>发生时间</TableHead>
+                    <TableHead>{t('lockWaits.lockType')}</TableHead>
+                    <TableHead>{t('lockWaits.tableName')}</TableHead>
+                    <TableHead>{t('lockWaits.waitDuration')}</TableHead>
+                    <TableHead>{t('lockWaits.waitingQueriesCount')}</TableHead>
+                    <TableHead className='w-[200px]'>{t('lockWaits.blockingQuery')}</TableHead>
+                    <TableHead>{t('lockWaits.occurredAt')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1465,7 +1466,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <CardHeader>
               <CardTitle className='text-sm flex items-center gap-2'>
                 <Lightbulb className='w-4 h-4 text-blue-500' />
-                优化建议
+                {t('lockWaits.optimizationSuggestions')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1492,7 +1493,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   // 渲染基础性能监控
   const renderBasicMonitoring = () => {
     if (!basicMetrics) {
-      return <Empty description='没有基础性能数据' />;
+      return <Empty description={t('empty.noPerformanceData')} />;
     }
 
     const { diskIO, networkIO, storageAnalysis } = basicMetrics;
@@ -1504,52 +1505,52 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='磁盘读取'
+                title={t('stats.diskRead')}
                 value={formatBytes(diskIO.readBytes)}
                 icon={<Database className='w-4 h-4' />}
                 valueClassName='text-blue-500'
               />
               <Text className='text-xs text-muted-foreground mt-1'>
-                {diskIO.readOps} 操作/秒
+                {diskIO.readOps} {t('storage.operationsPerSecond')}
               </Text>
             </CardContent>
           </Card>
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='磁盘写入'
+                title={t('stats.diskWrite')}
                 value={formatBytes(diskIO.writeBytes)}
                 icon={<Database className='w-4 h-4' />}
                 valueClassName='text-green-500'
               />
               <Text className='text-xs text-muted-foreground mt-1'>
-                {diskIO.writeOps} 操作/秒
+                {diskIO.writeOps} {t('storage.operationsPerSecond')}
               </Text>
             </CardContent>
           </Card>
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='网络输入'
+                title={t('stats.networkInput')}
                 value={FormatUtils.formatNetworkSpeed(networkIO.bytesIn).formatted}
                 icon={<Webhook className='w-4 h-4' />}
                 valueClassName='text-purple-500'
               />
               <Text className='text-xs text-muted-foreground mt-1'>
-                {networkIO.packetsIn} 包/秒
+                {networkIO.packetsIn} {t('storage.packetsPerSecond')}
               </Text>
             </CardContent>
           </Card>
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='网络输出'
+                title={t('stats.networkOutput')}
                 value={FormatUtils.formatNetworkSpeed(networkIO.bytesOut).formatted}
                 icon={<Webhook className='w-4 h-4' />}
                 valueClassName='text-orange-500'
               />
               <Text className='text-xs text-muted-foreground mt-1'>
-                {networkIO.packetsOut} 包/秒
+                {networkIO.packetsOut} {t('storage.packetsPerSecond')}
               </Text>
             </CardContent>
           </Card>
@@ -1560,25 +1561,25 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <CardHeader>
             <CardTitle className='flex items-center gap-2'>
               <Database className='w-5 h-5' />
-              存储分析
+              {t('storage.analysis')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
               <div>
-                <Text className='font-semibold mb-2 block'>总存储大小</Text>
+                <Text className='font-semibold mb-2 block'>{t('storage.totalSize')}</Text>
                 <Text className='text-2xl font-bold text-blue-600'>
                   {formatBytes(storageAnalysis.totalSize)}
                 </Text>
               </div>
               <div>
-                <Text className='font-semibold mb-2 block'>压缩比</Text>
+                <Text className='font-semibold mb-2 block'>{t('storage.compressionRatio')}</Text>
                 <Text className='text-2xl font-bold text-green-600'>
                   {storageAnalysis.compressionRatio.toFixed(2)}:1
                 </Text>
               </div>
               <div>
-                <Text className='font-semibold mb-2 block'>保留策略效果</Text>
+                <Text className='font-semibold mb-2 block'>{t('storage.retentionPolicyEffectiveness')}</Text>
                 <Text className='text-2xl font-bold text-purple-600'>
                   {storageAnalysis.retentionPolicyEffectiveness.toFixed(1)}%
                 </Text>
@@ -1587,7 +1588,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
             {storageAnalysis.recommendations.length > 0 && (
               <div className='mt-6'>
-                <Text className='font-semibold mb-3 block'>存储优化建议</Text>
+                <Text className='font-semibold mb-3 block'>{t('storage.optimizationSuggestions')}</Text>
                 <div className='space-y-3'>
                   {storageAnalysis.recommendations.map((rec, index) => (
                     <div
@@ -1605,7 +1606,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                       <div className='flex-1'>
                         <Text className='text-sm'>{rec.description}</Text>
                         <Text className='text-xs text-muted-foreground mt-1'>
-                          预计节省: {formatBytes(rec.estimatedSavings)}
+                          {t('storage.estimatedSavings')}: {formatBytes(rec.estimatedSavings)}
                         </Text>
                       </div>
                     </div>
@@ -1622,7 +1623,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   // 渲染性能报告
   const renderPerformanceReport = () => {
     if (!performanceReport) {
-      return <Empty description='没有性能报告数据' />;
+      return <Empty description={t('empty.noPerformanceReport')} />;
     }
 
     const { summary, recommendations, metrics } = performanceReport;
@@ -1633,7 +1634,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <Card>
             <CardContent className='p-4'>
               <Statistic
-                title='整体性能分数'
+                title={t('stats.overallScore')}
                 value={`${summary.overallScore.toFixed(1)} / 100`}
                 icon={<Trophy className='w-4 h-4' />}
                 valueClassName={
@@ -1645,7 +1646,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 }
               />
               <Text className='text-xs text-muted-foreground mt-1'>
-                基于系统资源和查询性能的综合评估
+                {t('performanceReport.basedOnSystemAndQuery')}
               </Text>
             </CardContent>
           </Card>
@@ -1654,7 +1655,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               <Card>
                 <CardContent className='p-4'>
                   <Statistic
-                    title='平均查询时间'
+                    title={t('stats.avgQueryTime')}
                     value={`${summary.avgQueryTime.toFixed(2)} ms`}
                     icon={<Clock className='w-4 h-4' />}
                     valueClassName={
@@ -1662,14 +1663,14 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                     }
                   />
                   <Text className='text-xs text-muted-foreground mt-1'>
-                    SQL查询的平均响应时间
+                    {t('performanceReport.sqlQueryAvgResponseTime')}
                   </Text>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className='p-4'>
                   <Statistic
-                    title='慢查询率'
+                    title={t('stats.slowQueryRate')}
                     value={`${summary.errorRate.toFixed(2)}%`}
                     icon={<Bug className='w-4 h-4' />}
                     valueClassName={
@@ -1677,19 +1678,19 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                     }
                   />
                   <Text className='text-xs text-muted-foreground mt-1'>
-                    执行时间超过5秒的查询占比
+                    {t('performanceReport.slowQueryPercentage')}
                   </Text>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className='p-4'>
                   <Statistic
-                    title='查询吞吐量'
+                    title={t('stats.queryThroughput')}
                     value={`${summary.throughput.toFixed(1)} QPS`}
                     icon={<Rocket className='w-4 h-4' />}
                   />
                   <Text className='text-xs text-muted-foreground mt-1'>
-                    每秒处理的查询数量
+                    {t('performanceReport.queriesPerSecond')}
                   </Text>
                 </CardContent>
               </Card>
@@ -1699,7 +1700,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <Card>
               <CardContent className='p-4'>
                 <Statistic
-                  title='系统负载'
+                  title={t('stats.systemLoad')}
                   value={`${((metrics.cpu + metrics.memory) / 2).toFixed(1)}%`}
                   icon={<Rocket className='w-4 h-4' />}
                   valueClassName={
@@ -1707,7 +1708,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   }
                 />
                 <Text className='text-xs text-muted-foreground mt-1'>
-                  CPU和内存的平均使用率
+                  {t('performanceReport.cpuMemoryAvgUsage')}
                 </Text>
               </CardContent>
             </Card>
@@ -1717,12 +1718,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<
         <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
           <Card>
             <CardHeader>
-              <CardTitle className='text-sm'>系统性能指标</CardTitle>
+              <CardTitle className='text-sm'>{t('performanceReport.systemPerformanceMetrics')}</CardTitle>
             </CardHeader>
             <CardContent className='space-y-4'>
               <div>
                 <div className='flex justify-between items-center mb-2'>
-                  <Text className='font-semibold'>CPU使用率</Text>
+                  <Text className='font-semibold'>{t('performanceReport.cpuUsageLabel')}</Text>
                   <Text className='text-sm text-muted-foreground'>
                     {(metrics.cpu || 0).toFixed(2)}%
                   </Text>
@@ -1734,7 +1735,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               </div>
               <div>
                 <div className='flex justify-between items-center mb-2'>
-                  <Text className='font-semibold'>内存使用率</Text>
+                  <Text className='font-semibold'>{t('performanceReport.memoryUsageLabel')}</Text>
                   <Text className='text-sm text-muted-foreground'>
                     {(metrics.memory || 0).toFixed(2)}%
                   </Text>
@@ -1746,7 +1747,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               </div>
               <div>
                 <div className='flex justify-between items-center mb-2'>
-                  <Text className='font-semibold'>磁盘使用率</Text>
+                  <Text className='font-semibold'>{t('performanceReport.diskUsageLabel')}</Text>
                   <Text className='text-sm text-muted-foreground'>
                     {(metrics.disk || 0).toFixed(2)}%
                   </Text>
@@ -1758,7 +1759,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
               </div>
               <div>
                 <div className='flex justify-between items-center mb-2'>
-                  <Text className='font-semibold'>网络I/O</Text>
+                  <Text className='font-semibold'>{t('performanceReport.networkIOLabel')}</Text>
                   <Text className='text-sm text-muted-foreground'>
                     {(metrics.network || 0).toFixed(2)}%
                   </Text>
@@ -1773,7 +1774,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
 
           <Card>
             <CardHeader>
-              <CardTitle className='text-sm'>性能优化建议</CardTitle>
+              <CardTitle className='text-sm'>{t('performanceReport.performanceOptimizationSuggestions')}</CardTitle>
             </CardHeader>
             <CardContent>
               {recommendations && recommendations.length > 0 ? (
@@ -1808,7 +1809,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                           </Text>
                           {recommendation.implementation && (
                             <Text className='text-xs text-blue-600 mt-1'>
-                              建议措施: {recommendation.implementation}
+                              {t('performanceReport.suggestedAction')}: {recommendation.implementation}
                             </Text>
                           )}
                         </div>
@@ -1819,8 +1820,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='text-center py-8'>
                   <Text className='text-muted-foreground'>
                     {monitoringMode === 'local'
-                      ? '系统运行良好，暂无优化建议'
-                      : '正在分析性能数据，请稍候...'}
+                      ? t('performanceReport.systemRunningWell')
+                      : t('performanceReport.analyzingPerformanceData')}
                   </Text>
                 </div>
               )}
@@ -1838,7 +1839,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           <div className='flex items-center justify-between'>
             <CardTitle className='flex items-center gap-2'>
               <Monitor className='w-5 h-5' />
-              性能瓶颈诊断
+              {t('title')}
               <div className='flex items-center gap-2 ml-4'>
                 <div className={`w-2 h-2 rounded-full ${
                   monitoringMode === 'local'
@@ -1847,8 +1848,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 }`} />
                 <span className='text-sm text-muted-foreground'>
                   {monitoringMode === 'local'
-                    ? (isMonitoringActive ? '本地监控运行中' : '本地监控已停止')
-                    : '远程监控模式'
+                    ? (isMonitoringActive ? t('monitoring.localMonitoringRunning') : t('monitoring.localMonitoringStopped'))
+                    : t('monitoring.remoteMonitoringMode')
                   }
                 </span>
               </div>
@@ -1890,10 +1891,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                       },
                     });
 
-                    showMessage.success(`已切换到${value === 'local' ? '本地' : '远程'}监控模式`);
+                    showMessage.success(t('messages.switchedToMode', { mode: t(`messages.${value}`) }));
                   } catch (error) {
                     logger.warn('Failed to save monitoring mode:', error);
-                    showMessage.error('保存监控设置失败');
+                    showMessage.error(t('messages.saveSettingsFailed'));
                   }
 
                   // 延迟加载新模式的数据，确保状态切换完成
@@ -1908,8 +1909,8 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value='remote'>远程监控</SelectItem>
-                  <SelectItem value='local'>本地监控</SelectItem>
+                  <SelectItem value='remote'>{t('monitoring.remoteMonitoring')}</SelectItem>
+                  <SelectItem value='local'>{t('monitoring.localMonitoring')}</SelectItem>
                 </SelectContent>
               </Select>
               <Button
@@ -1919,7 +1920,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 disabled={loading}
               >
                 <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                刷新数据
+                {t('buttons.refreshData')}
               </Button>
               {monitoringMode === 'local' && (
                 <Button
@@ -1931,12 +1932,12 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   {isMonitoringActive ? (
                     <>
                       <PauseCircle className='w-4 h-4 mr-2' />
-                      停止监控
+                      {t('buttons.stopMonitoring')}
                     </>
                   ) : (
                     <>
                       <PlayCircle className='w-4 h-4 mr-2' />
-                      启动监控
+                      {t('buttons.startMonitoring')}
                     </>
                   )}
                 </Button>
@@ -1948,7 +1949,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 disabled={loading}
               >
                 <Zap className='w-4 h-4 mr-2' />
-                健康检查
+                {t('buttons.healthCheck')}
               </Button>
               <Button
                 size='sm'
@@ -1956,7 +1957,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 onClick={() => setDiagnosticsModalVisible(true)}
               >
                 <Settings className='w-4 h-4 mr-2' />
-                诊断设置
+                {t('buttons.diagnosticsSettings')}
               </Button>
               <Button
                 size='sm'
@@ -1980,7 +1981,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 disabled={!performanceReport}
               >
                 <Download className='w-4 h-4 mr-2' />
-                导出报告
+                {t('buttons.exportReport')}
               </Button>
             </div>
           </div>
@@ -1989,21 +1990,21 @@ export const PerformanceBottleneckDiagnostics: React.FC<
           {loading ? (
             <div className='flex items-center justify-center py-8'>
               <Skeleton className='h-8 w-8 rounded-full animate-spin' />
-              <Text className='ml-2'>加载中...</Text>
+              <Text className='ml-2'>{t('loading.text')}</Text>
             </div>
           ) : (
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className={`grid w-full ${monitoringMode === 'local' ? 'grid-cols-4' : 'grid-cols-6'}`}>
-                <TabsTrigger value='overview'>瓶颈概览</TabsTrigger>
-                <TabsTrigger value='basic'>基础监控</TabsTrigger>
-                <TabsTrigger value='metrics'>系统指标</TabsTrigger>
+                <TabsTrigger value='overview'>{t('tabs.overview')}</TabsTrigger>
+                <TabsTrigger value='basic'>{t('tabs.basicMonitoring')}</TabsTrigger>
+                <TabsTrigger value='metrics'>{t('tabs.systemMetrics')}</TabsTrigger>
                 {monitoringMode === 'remote' && (
-                  <TabsTrigger value='slow-queries'>慢查询</TabsTrigger>
+                  <TabsTrigger value='slow-queries'>{t('tabs.slowQueries')}</TabsTrigger>
                 )}
                 {monitoringMode === 'remote' && (
-                  <TabsTrigger value='lock-waits'>锁等待</TabsTrigger>
+                  <TabsTrigger value='lock-waits'>{t('tabs.lockWaits')}</TabsTrigger>
                 )}
-                <TabsTrigger value='report'>性能报告</TabsTrigger>
+                <TabsTrigger value='report'>{t('tabs.performanceReport')}</TabsTrigger>
               </TabsList>
               <TabsContent value='overview' className='mt-6'>
                 {renderOverview()}
@@ -2017,13 +2018,13 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                         : 'bg-blue-500'
                     }`} />
                     <Text className='font-medium'>
-                      当前监控模式：{monitoringMode === 'local' ? '本地监控' : '远程监控'}
+                      {t('monitoring.currentMode')}：{monitoringMode === 'local' ? t('monitoring.localMonitoring') : t('monitoring.remoteMonitoring')}
                     </Text>
                   </div>
                   <Text className='text-sm text-muted-foreground'>
                     {monitoringMode === 'local'
-                      ? '正在监控本地系统资源使用情况，包括CPU、内存、磁盘和网络'
-                      : '正在监控远程InfluxDB服务器的性能指标和系统状态'
+                      ? t('monitoring.localMonitoringDesc')
+                      : t('monitoring.remoteMonitoringDesc')
                     }
                   </Text>
                 </div>
@@ -2054,20 +2055,20 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       <Sheet open={detailsDrawerVisible} onOpenChange={setDetailsDrawerVisible}>
         <SheetContent className='w-[600px] sm:max-w-[600px]'>
           <SheetHeader>
-            <SheetTitle>性能瓶颈详情</SheetTitle>
+            <SheetTitle>{t('details.title')}</SheetTitle>
           </SheetHeader>
           {selectedBottleneck && (
             <div className='mt-6 space-y-6'>
               <div className='grid gap-4'>
                 <div className='grid grid-cols-3 gap-4 py-2 border-b'>
-                  <Text className='font-semibold'>类型</Text>
+                  <Text className='font-semibold'>{t('details.type')}</Text>
                   <div className='col-span-2 flex items-center gap-2'>
                     {getTypeIcon(selectedBottleneck.type)}
                     <span>{selectedBottleneck.type}</span>
                   </div>
                 </div>
                 <div className='grid grid-cols-3 gap-4 py-2 border-b'>
-                  <Text className='font-semibold'>严重程度</Text>
+                  <Text className='font-semibold'>{t('details.severity')}</Text>
                   <div className='col-span-2 flex items-center gap-2'>
                     {getSeverityIcon(selectedBottleneck.severity)}
                     <Badge
@@ -2078,50 +2079,50 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   </div>
                 </div>
                 <div className='grid grid-cols-3 gap-4 py-2 border-b'>
-                  <Text className='font-semibold'>标题</Text>
+                  <Text className='font-semibold'>{t('details.titleLabel')}</Text>
                   <div className='col-span-2'>
                     <Text>{selectedBottleneck.title}</Text>
                   </div>
                 </div>
                 <div className='grid grid-cols-3 gap-4 py-2 border-b'>
-                  <Text className='font-semibold'>描述</Text>
+                  <Text className='font-semibold'>{t('details.description')}</Text>
                   <div className='col-span-2'>
                     <Text>{selectedBottleneck.description}</Text>
                   </div>
                 </div>
                 <div className='grid grid-cols-3 gap-4 py-2 border-b'>
-                  <Text className='font-semibold'>影响</Text>
+                  <Text className='font-semibold'>{t('details.impact')}</Text>
                   <div className='col-span-2'>
                     <Text>{selectedBottleneck.impact}</Text>
                   </div>
                 </div>
                 <div className='grid grid-cols-3 gap-4 py-2 border-b'>
-                  <Text className='font-semibold'>持续时间</Text>
+                  <Text className='font-semibold'>{t('details.duration')}</Text>
                   <div className='col-span-2'>
                     <Text>{formatTime(selectedBottleneck.duration)}</Text>
                   </div>
                 </div>
                 <div className='grid grid-cols-3 gap-4 py-2 border-b'>
-                  <Text className='font-semibold'>发生频率</Text>
+                  <Text className='font-semibold'>{t('details.frequency')}</Text>
                   <div className='col-span-2'>
-                    <Text>{selectedBottleneck.frequency}次</Text>
+                    <Text>{selectedBottleneck.frequency}{t('details.frequencyTimes')}</Text>
                   </div>
                 </div>
                 <div className='grid grid-cols-3 gap-4 py-2 border-b'>
-                  <Text className='font-semibold'>状态</Text>
+                  <Text className='font-semibold'>{t('details.status')}</Text>
                   <div className='col-span-2 flex items-center gap-2'>
                     {getStatusIcon(selectedBottleneck.status)}
                     <span>
                       {selectedBottleneck.status === 'active'
-                        ? '活跃'
+                        ? t('details.statusActive')
                         : selectedBottleneck.status === 'resolved'
-                          ? '已解决'
-                          : '已忽略'}
+                          ? t('details.statusResolved')
+                          : t('details.statusIgnored')}
                     </span>
                   </div>
                 </div>
                 <div className='grid grid-cols-3 gap-4 py-2 border-b'>
-                  <Text className='font-semibold'>检测时间</Text>
+                  <Text className='font-semibold'>{t('details.detectedTime')}</Text>
                   <div className='col-span-2'>
                     <Text>
                       {dayjs(selectedBottleneck.detectedAt).format(
@@ -2136,7 +2137,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='mt-6'>
                   <div className='flex items-center gap-2 mb-4'>
                     <Lightbulb className='w-4 h-4 text-blue-500' />
-                    <Text className='font-semibold'>解决建议</Text>
+                    <Text className='font-semibold'>{t('details.solutions')}</Text>
                   </div>
                   <div className='space-y-2'>
                     {selectedBottleneck.recommendations.map(
@@ -2165,7 +2166,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                         }}
                       >
                         <CheckCircle className='w-4 h-4 mr-2' />
-                        标记为已解决
+                        {t('details.markAsResolved')}
                       </Button>
                       <Button
                         variant='outline'
@@ -2175,7 +2176,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                         }}
                       >
                         <Minus className='w-4 h-4 mr-2' />
-                        忽略此瓶颈
+                        {t('details.ignoreBottleneck')}
                       </Button>
                     </>
                   )}
@@ -2193,11 +2194,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
       >
         <DialogContent className='max-w-[600px]'>
           <DialogHeader>
-            <DialogTitle>诊断设置</DialogTitle>
+            <DialogTitle>{t('settings.title')}</DialogTitle>
           </DialogHeader>
           <div className='space-y-6 py-4'>
             <div>
-              <Text className='font-semibold mb-3 block'>自动刷新</Text>
+              <Text className='font-semibold mb-3 block'>{t('settings.autoRefreshTitle')}</Text>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='flex items-center space-x-2'>
                   <Switch
@@ -2205,7 +2206,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                     onCheckedChange={setAutoRefresh}
                   />
                   <Text className='text-sm'>
-                    {autoRefresh ? '开启' : '关闭'}
+                    {autoRefresh ? t('settings.enabled') : t('settings.disabled')}
                   </Text>
                 </div>
                 <div>
@@ -2215,7 +2216,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                     min={10}
                     max={300}
                     disabled={!autoRefresh}
-                    addonAfter="秒"
+                    addonAfter={t('settings.seconds')}
                     className='w-full'
                   />
                 </div>
@@ -2225,10 +2226,10 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <Separator />
 
             <div>
-              <Text className='font-semibold mb-3 block'>告警阈值</Text>
+              <Text className='font-semibold mb-3 block'>{t('settings.alertThresholds')}</Text>
               <div className='grid grid-cols-2 gap-4'>
                 <div>
-                  <Text className='text-sm mb-2 block'>CPU使用率</Text>
+                  <Text className='text-sm mb-2 block'>{t('settings.cpuUsageThreshold')}</Text>
                   <InputNumber
                     value={alertThresholds.cpuUsage}
                     onChange={value =>
@@ -2244,7 +2245,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   />
                 </div>
                 <div>
-                  <Text className='text-sm mb-2 block'>内存使用率</Text>
+                  <Text className='text-sm mb-2 block'>{t('settings.memoryUsageThreshold')}</Text>
                   <InputNumber
                     value={alertThresholds.memoryUsage}
                     onChange={value =>
@@ -2260,7 +2261,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   />
                 </div>
                 <div>
-                  <Text className='text-sm mb-2 block'>磁盘I/O</Text>
+                  <Text className='text-sm mb-2 block'>{t('settings.diskIOThreshold')}</Text>
                   <InputNumber
                     value={alertThresholds.diskIo}
                     onChange={value =>
@@ -2276,7 +2277,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                   />
                 </div>
                 <div>
-                  <Text className='text-sm mb-2 block'>网络I/O</Text>
+                  <Text className='text-sm mb-2 block'>{t('settings.networkIOThreshold')}</Text>
                   <InputNumber
                     value={alertThresholds.networkIo}
                     onChange={value =>
@@ -2297,14 +2298,14 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             <Separator />
 
             <div>
-              <Text className='font-semibold mb-3 block'>实时监控</Text>
+              <Text className='font-semibold mb-3 block'>{t('settings.realTimeMonitoring')}</Text>
               <div className='flex items-center space-x-2'>
                 <Switch
                   checked={realTimeMode}
                   onCheckedChange={setRealTimeMode}
                 />
                 <Text className='text-sm'>
-                  {realTimeMode ? '开启' : '关闭'}
+                  {realTimeMode ? t('settings.enabled') : t('settings.disabled')}
                 </Text>
               </div>
             </div>
