@@ -537,5 +537,26 @@
     "s3_region_required": "Region 不能为空",
     "s3_access_key_required": "Access Key 不能为空",
     "s3_secret_key_required": "Secret Key 不能为空"
+  },
+  "dialog": {
+    "new_connection": "新建连接",
+    "edit_connection": "编辑连接",
+    "select_database_type": "选择数据库类型",
+    "influxdb_name": "InfluxDB",
+    "influxdb_desc": "时序数据库",
+    "iotdb_name": "IoTDB",
+    "iotdb_desc": "Apache IoTDB",
+    "object_storage_name": "对象存储",
+    "object_storage_desc": "S3/OSS/COS/MinIO",
+    "basic_tab": "基本信息",
+    "connection_tab": "连接配置",
+    "auth_tab": "认证信息",
+    "advanced_tab": "高级选项",
+    "cancel": "取消",
+    "test_connection": "测试连接",
+    "testing": "测试中",
+    "saving": "保存中",
+    "create": "创建",
+    "update": "更新"
   }
 }

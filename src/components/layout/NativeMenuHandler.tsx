@@ -113,40 +113,76 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const handleThemeChange = async (themeName: string) => {
     logger.render('切换风格:', themeName);
 
-    // 设置颜色方案
-    setColorScheme(themeName);
-
-    // 重建菜单以更新勾选状态
     try {
+      // 1. 先获取当前设置
+      const currentSettings = await safeTauriInvoke<any>('get_app_settings');
+      logger.debug('当前设置:', currentSettings);
+
+      // 2. 更新颜色方案字段
+      const updatedSettings = {
+        ...currentSettings,
+        visualization: {
+          ...currentSettings.visualization,
+          color_scheme: themeName,
+        },
+      };
+
+      // 3. 保存到后端
+      await safeTauriInvoke('update_app_settings', { newSettings: updatedSettings });
+      logger.debug('✅ 设置已保存到后端');
+
+      // 4. 更新前端状态
+      setColorScheme(themeName);
+
+      // 5. 重建菜单以更新勾选状态
       await safeTauriInvoke('rebuild_native_menu');
       logger.debug('✅ 菜单已重建，勾选状态已更新');
-    } catch (error) {
-      logger.error('❌ 重建菜单失败:', error);
-    }
 
-    // 显示成功消息 - 使用 i18n
-    const themeLabel = t(`theme_style_${themeName}`) || themeName;
-    showMessage.success(t('common:success') + ': ' + themeLabel);
+      // 显示成功消息 - 使用 i18n
+      const themeLabel = t(`theme_style_${themeName}`) || themeName;
+      showMessage.success(t('common:success') + ': ' + themeLabel);
+    } catch (error) {
+      logger.error('❌ 风格切换失败:', error);
+      showMessage.error(t('common:error') + ': ' + String(error));
+    }
   };
 
   // 模式切换处理函数
   const handleModeChange = async (mode: 'system' | 'light' | 'dark') => {
     logger.debug('🌓 切换模式:', mode);
 
-    // 设置模式
-    setTheme(mode);
-
-    // 重建菜单以更新勾选状态
     try {
+      // 1. 先获取当前设置
+      const currentSettings = await safeTauriInvoke<any>('get_app_settings');
+      logger.debug('当前设置:', currentSettings);
+
+      // 2. 更新主题字段
+      const updatedSettings = {
+        ...currentSettings,
+        general: {
+          ...currentSettings.general,
+          theme: mode,
+        },
+      };
+
+      // 3. 保存到后端
+      await safeTauriInvoke('update_app_settings', { newSettings: updatedSettings });
+      logger.debug('✅ 设置已保存到后端');
+
+      // 4. 更新前端状态
+      setTheme(mode);
+
+      // 5. 重建菜单以更新勾选状态
       await safeTauriInvoke('rebuild_native_menu');
       logger.debug('✅ 菜单已重建，勾选状态已更新');
-    } catch (error) {
-      logger.error('❌ 重建菜单失败:', error);
-    }
 
-    // 显示成功消息
-    const modeLabel = tMenu(`native.modeSwitch.${mode}`);
-    showMessage.success(tMenu('native.modeSwitch.success', { mode: modeLabel }));
+      // 显示成功消息
+      const modeLabel = tMenu(`native.modeSwitch.${mode}`);
+      showMessage.success(tMenu('native.modeSwitch.success', { mode: modeLabel }));
+    } catch (error) {
+      logger.error('❌ 模式切换失败:', error);
+      showMessage.error(tMenu('common:error') + ': ' + String(error));
+    }
   };
 
   // 语言切换处理函数
@@ -154,24 +190,34 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
     logger.debug('🌐 切换语言:', locale, label);
 
     try {
-      // 使用 i18n store 的语言切换功能
+      // 1. 先获取当前设置
+      const currentSettings = await safeTauriInvoke<any>('get_app_settings');
+      logger.debug('当前设置:', currentSettings);
+
+      // 2. 更新语言字段
+      const updatedSettings = {
+        ...currentSettings,
+        general: {
+          ...currentSettings.general,
+          language: locale,
+        },
+      };
+
+      // 3. 保存到后端（必须在 setLanguage 之前，这样菜单重建时能读取到新值）
+      await safeTauriInvoke('update_app_settings', { newSettings: updatedSettings });
+      logger.debug('✅ 设置已保存到后端');
+
+      // 4. 使用 i18n store 的语言切换功能（更新前端状态）
+      // 注意：setLanguage 内部会延迟 100ms 调用 update_menu_language 来更新菜单
+      // 所以这里不需要手动调用 rebuild_native_menu
       const { useI18nStore } = await import('@/i18n/store');
       const { setLanguage } = useI18nStore.getState();
-
       await setLanguage(locale);
-
-      // 重建菜单以更新勾选状态和语言
-      try {
-        await safeTauriInvoke('rebuild_native_menu');
-        logger.debug('✅ 菜单已重建，语言和勾选状态已更新');
-      } catch (error) {
-        logger.error('❌ 重建菜单失败:', error);
-      }
 
       // 显示成功消息
       showMessage.success(tMenu('native.languageSwitch.success', { label }));
     } catch (error) {
-      logger.error('语言切换失败:', error);
+      logger.error('❌ 语言切换失败:', error);
       showMessage.error(tMenu('native.languageSwitch.failed'));
     }
   };

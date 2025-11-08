@@ -420,5 +420,26 @@
     "s3_region_required": "Region cannot be empty",
     "s3_access_key_required": "Access Key cannot be empty",
     "s3_secret_key_required": "Secret Key cannot be empty"
+  },
+  "dialog": {
+    "new_connection": "New Connection",
+    "edit_connection": "Edit Connection",
+    "select_database_type": "Select Database Type",
+    "influxdb_name": "InfluxDB",
+    "influxdb_desc": "Time Series Database",
+    "iotdb_name": "IoTDB",
+    "iotdb_desc": "Apache IoTDB",
+    "object_storage_name": "Object Storage",
+    "object_storage_desc": "S3/OSS/COS/MinIO",
+    "basic_tab": "Basic",
+    "connection_tab": "Connection",
+    "auth_tab": "Authentication",
+    "advanced_tab": "Advanced",
+    "cancel": "Cancel",
+    "test_connection": "Test Connection",
+    "testing": "Testing",
+    "saving": "Saving",
+    "create": "Create",
+    "update": "Update"
   }
 }
