@@ -67,9 +67,9 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
   getFormSections(): FormSection[] {
     const baseSections = super.getBaseFormSections();
 
-    // 在基础配置后添加版本选择
-    const basicSection = baseSections[0];
-    basicSection.fields.push({
+    // 在连接配置中添加版本选择
+    const connectionSection = baseSections[0];
+    connectionSection.fields.push({
       name: 'version',
       label: t('influxdb.version'),
       type: 'select',
@@ -171,10 +171,9 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
 
     // 将InfluxDB特定配置插入到连接设置后
     return [
-      baseSections[0], // 基本信息
-      baseSections[1], // 连接设置
+      baseSections[0], // 连接设置
       influxdbSection, // InfluxDB特定配置
-      baseSections[2], // 高级设置
+      baseSections[1], // 高级设置
       getProxyConfigSection('influxdb') // 代理配置
     ];
   }

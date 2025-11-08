@@ -121,32 +121,6 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       title: t('basic_info'),
       fields: [
         {
-          name: 'name',
-          label: t('connection_name'),
-          type: 'text',
-          required: true,
-          placeholder: t('name_placeholder'),
-          validation: (value: string) => {
-            if (!value?.trim()) {
-              return t('validation.name_required');
-            }
-            if (value.length > 100) {
-              return t('validation.name_too_long');
-            }
-          }
-        },
-        {
-          name: 'description',
-          label: t('description'),
-          type: 'textarea',
-          placeholder: t('description_placeholder'),
-          validation: (value: string) => {
-            if (value && value.length > 500) {
-              return t('validation.description_too_long');
-            }
-          }
-        },
-        {
           name: 'objectStorageProvider',
           label: t('object_storage.provider'),
           type: 'select',

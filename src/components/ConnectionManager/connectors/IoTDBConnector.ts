@@ -150,11 +150,10 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
 
     // 将IoTDB特定配置插入到连接设置后
     return [
-      baseSections[0], // 基本信息
-      baseSections[1], // 连接设置
+      baseSections[0], // 连接设置
       iotdbSection,    // IoTDB特定配置
       advancedSection, // IoTDB高级配置
-      baseSections[2], // 通用高级设置
+      baseSections[1], // 通用高级设置
       getProxyConfigSection('iotdb') // 代理配置
     ];
   }

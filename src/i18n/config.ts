@@ -139,14 +139,25 @@ const initI18n = async () => {
   try {
     // 初始化资源管理器
     await resourceManager.initialize();
-    
+
     // 使用 HTTP 后端和 React 集成初始化 i18next
     await i18n
       .use(Backend)
       .use(initReactI18next)
       .init(i18nConfig);
-    
+
     logger.info('i18next initialized successfully with language:', i18n.language);
+
+    // 添加 missingKey 事件监听器，将缺失的键值打印到 frontend.log
+    i18n.on('missingKey', (lngs: readonly string[], namespace: string, key: string, res: string) => {
+      // 记录到 frontend.log
+      logger.warn(`🔑 [i18n] Missing translation key: "${key}" in namespace "${namespace}" for language(s) "${lngs.join(', ')}"`, {
+        languages: lngs,
+        namespace,
+        key,
+        result: res,
+      });
+    });
     
     // 智能预加载语言资源
     if (loaderConfig.enableLazyLoading) {

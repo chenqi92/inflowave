@@ -621,6 +621,38 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
           {/* 右侧：表单配置 */}
           <div className="flex-1 overflow-y-auto px-4 py-3">
+            {/* 基本信息：连接名称和描述 */}
+            <div className="mb-3 pb-3 border-b space-y-2">
+              <div className="space-y-1">
+                <Label htmlFor="connection-name" className="text-xs">
+                  {tConn('connection_name')}
+                  <span className="text-destructive ml-0.5">*</span>
+                </Label>
+                <Input
+                  id="connection-name"
+                  value={formData.name || ''}
+                  onChange={(e) => handleFieldChange('name', e.target.value)}
+                  placeholder={tConn('name_placeholder')}
+                  className={`h-8 text-xs ${errors.name ? 'border-destructive' : ''}`}
+                />
+                {errors.name && (
+                  <p className="text-[10px] text-destructive">{errors.name}</p>
+                )}
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="connection-description" className="text-xs">
+                  {tConn('description')}
+                </Label>
+                <Input
+                  id="connection-description"
+                  value={formData.description || ''}
+                  onChange={(e) => handleFieldChange('description', e.target.value)}
+                  placeholder={tConn('description_placeholder')}
+                  className="h-8 text-xs"
+                />
+              </div>
+            </div>
+
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-3 h-8">
                 <TabsTrigger value="general" className="text-[11px] h-7">
