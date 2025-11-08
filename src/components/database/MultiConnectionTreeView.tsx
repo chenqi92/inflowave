@@ -35,6 +35,7 @@ import useResizeObserver from 'use-resize-observer';
 import { useTabStore, useTabOperations } from '@/stores/tabStore';
 import { useOpenedDatabasesStore } from '@/stores/openedDatabasesStore';
 import { logger } from '@/utils/logger';
+import { useDatabaseExplorerTranslation } from '@/hooks/useTranslation';
 
 interface ConnectionInfo {
   id: string;
@@ -93,6 +94,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   nodeRefsMap,
   nodeToRefresh,
 }) => {
+  // 翻译钩子
+  const { t: tExplorer } = useDatabaseExplorerTranslation();
+
   // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
   const renderCountRef = useRef(0);
   if (import.meta.env.DEV) {
@@ -1662,10 +1666,10 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   if (error && treeData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2 text-destructive">
-        <p>加载失败: {error}</p>
+        <p>{tExplorer('loadFailed', { error })}</p>
         <Button onClick={handleRefresh} variant="outline" size="sm">
           <RefreshCw className="w-4 h-4 mr-2" />
-          重试
+          {tExplorer('retry')}
         </Button>
       </div>
     );

@@ -1224,11 +1224,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               type: 'trend',
               title: tQuery('resultPanel.numericFields.trendAnalysis.title', {
                 field: field.fieldName,
-                direction: trend > 0 ? '上升' : '下降'
+                direction: trend > 0 ? tQuery('resultPanel.trends.up') : tQuery('resultPanel.trends.down')
               }),
               description: tQuery('resultPanel.numericFields.trendAnalysis.description', {
                 field: field.fieldName,
-                direction: trend > 0 ? '上升' : '下降',
+                direction: trend > 0 ? tQuery('resultPanel.trends.up') : tQuery('resultPanel.trends.down'),
                 percent: Math.abs(trend).toFixed(1)
               }),
               severity: 'medium',
@@ -2020,7 +2020,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
               >
                 <Info className='w-3 h-3' />
-                字段统计
+                {tQuery('resultPanel.tabs.fieldStatistics')}
                 <Badge variant='secondary' className='ml-1 text-xs px-1'>
                   {allResults.filter((_, index) => {
                     const statementType = sqlStatementTypes[index] || 'UNKNOWN';
@@ -2052,7 +2052,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
               >
                 <BarChart3 className='w-3 h-3' />
-                可视化 {allResults.length > 1 ? `${index + 1}` : ''}
+                {tQuery('resultPanel.tabs.visualization')} {allResults.length > 1 ? `${index + 1}` : ''}
               </TabsTrigger>
             );
           })}
@@ -2073,7 +2073,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 className='flex items-center gap-1 px-3 py-1 text-xs flex-shrink-0'
               >
                 <Brain className='w-3 h-3' />
-                洞察
+                {tQuery('resultPanel.tabs.insights')}
                 {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0) > 0 && (
                   <Badge variant='secondary' className='ml-1 text-xs px-1'>
                     {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0)}
@@ -2244,7 +2244,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 <CardHeader className='pb-3'>
                   <CardTitle className='text-sm flex items-center gap-2'>
                     <Database className='w-4 h-4' />
-                    执行的查询详情 ({executedQueries.length})
+                    {tQuery('resultPanel.queryDetails.title')} ({executedQueries.length})
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -2263,22 +2263,22 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           <div className='flex items-center justify-between'>
                             <div className='flex items-center gap-2'>
                               <Badge variant='outline' className='text-xs'>
-                                查询 {index + 1}
+                                {tQuery('resultPanel.queryDetails.query')} {index + 1}
                               </Badge>
                               {hasError ? (
                                 <Badge variant='destructive' className='text-xs'>
                                   <X className='w-3 h-3 mr-1' />
-                                  失败
+                                  {tQuery('resultPanel.queryDetails.failed')}
                                 </Badge>
                               ) : (
                                 <Badge variant='default' className='text-xs bg-green-500'>
                                   <CheckCircle className='w-3 h-3 mr-1' />
-                                  成功
+                                  {tQuery('resultPanel.queryDetails.success')}
                                 </Badge>
                               )}
                               {!hasError && (
                                 <span className='text-xs text-muted-foreground'>
-                                  返回 <span className='font-mono font-semibold'>{rowCount.toLocaleString()}</span> 行
+                                  {tQuery('resultPanel.queryDetails.returned')} <span className='font-mono font-semibold'>{rowCount.toLocaleString()}</span> {tQuery('resultPanel.queryDetails.rows')}
                                 </span>
                               )}
                             </div>
@@ -2288,11 +2288,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                               className='h-7 px-2'
                               onClick={() => {
                                 navigator.clipboard.writeText(query);
-                                showMessage.success('SQL已复制到剪贴板');
+                                showMessage.success(tQuery('resultPanel.queryDetails.sqlCopied'));
                               }}
                             >
                               <Copy className='w-3 h-3 mr-1' />
-                              <span className='text-xs'>复制</span>
+                              <span className='text-xs'>{tQuery('resultPanel.queryDetails.copy')}</span>
                             </Button>
                           </div>
 
@@ -2344,26 +2344,26 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     <CardHeader className='pb-3'>
                       <CardTitle className='text-base flex items-center gap-2'>
                         <CheckCircle className='w-4 h-4 text-green-600' />
-                        批量写入操作汇总
+                        {tQuery('resultPanel.writeOperations.batchSummary')}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className='space-y-3'>
                       <div className='flex items-center justify-between py-2 border-b'>
-                        <span className='text-sm text-muted-foreground'>写入语句数量:</span>
+                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.writeOperations.statementCount')}</span>
                         <span className='font-mono text-sm text-green-600 dark:text-green-400'>
-                          {writeIndices.length} 条
+                          {writeIndices.length} {tQuery('resultPanel.writeOperations.statements')}
                         </span>
                       </div>
                       <div className='flex items-center justify-between py-2 border-b'>
-                        <span className='text-sm text-muted-foreground'>总执行时间:</span>
+                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.writeOperations.totalExecutionTime')}</span>
                         <span className='font-mono text-sm'>
                           {writeIndices.reduce((sum, idx) => sum + (allResults[idx].executionTime || 0), 0)}ms
                         </span>
                       </div>
                       <div className='flex items-center justify-between py-2'>
-                        <span className='text-sm text-muted-foreground'>操作状态:</span>
+                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.writeOperations.operationStatus')}</span>
                         <Badge variant='default' className='bg-green-600'>
-                          全部成功
+                          {tQuery('resultPanel.writeOperations.allSuccess')}
                         </Badge>
                       </div>
                     </CardContent>
@@ -2380,24 +2380,24 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         <CardHeader className='pb-3'>
                           <CardTitle className='text-sm flex items-center gap-2'>
                             <Zap className='w-4 h-4' />
-                            写入操作 {writeIndex + 1}
+                            {tQuery('resultPanel.writeOperations.writeOperation')} {writeIndex + 1}
                           </CardTitle>
                         </CardHeader>
                         <CardContent className='space-y-3'>
                           {measurementMatch && (
                             <div className='flex items-center justify-between py-2 border-b'>
-                              <span className='text-sm text-muted-foreground'>目标Measurement:</span>
+                              <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.writeOperations.targetMeasurement')}</span>
                               <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
                                 {measurementMatch[1]}
                               </code>
                             </div>
                           )}
                           <div className='flex items-center justify-between py-2 border-b'>
-                            <span className='text-sm text-muted-foreground'>执行时间:</span>
+                            <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.writeOperations.executionTime')}</span>
                             <span className='font-mono text-sm'>{result.executionTime || 0}ms</span>
                           </div>
                           <div className='flex flex-col gap-2 py-2'>
-                            <span className='text-sm text-muted-foreground'>SQL语句:</span>
+                            <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.writeOperations.sqlStatement')}</span>
                             <pre className='bg-muted p-3 rounded-md text-xs font-mono overflow-auto'>
                               {query}
                             </pre>
@@ -2414,16 +2414,16 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         <CheckCircle className='w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5' />
                         <div className='flex-1 space-y-2'>
                           <h4 className='font-medium text-green-900 dark:text-green-200'>
-                            批量写入完成
+                            {tQuery('resultPanel.writeOperations.batchCompleted')}
                           </h4>
                           <ul className='text-sm text-green-800 dark:text-green-300 space-y-1.5'>
                             <li className='flex items-start gap-2'>
                               <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
-                              <span>所有 {writeIndices.length} 条写入语句已成功执行</span>
+                              <span>{tQuery('resultPanel.writeOperations.allStatementsExecuted', { count: writeIndices.length })}</span>
                             </li>
                             <li className='flex items-start gap-2'>
                               <span className='text-green-600 dark:text-green-400 mt-0.5'>•</span>
-                              <span>可以执行 SELECT 查询验证写入的数据</span>
+                              <span>{tQuery('resultPanel.writeOperations.canVerifyWithSelect')}</span>
                             </li>
                           </ul>
                         </div>
@@ -2486,7 +2486,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                     {tableName && (
                       <div className='flex items-center gap-2 mr-2'>
                         <span className='text-sm text-muted-foreground'>
-                          查询表：
+                          {tQuery('resultPanel.dataTab.queryTable')}
                         </span>
                         <span className='px-2 py-1 bg-primary/10 text-primary rounded-md text-sm font-medium border border-primary/20'>
                           {tableName}
@@ -2501,7 +2501,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         className='text-xs'
                         onClick={onClearResult}
                       >
-                        清空
+                        {tQuery('resultPanel.dataTab.clear')}
                       </Button>
                     )}
                   </TableToolbar>
@@ -2596,7 +2596,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 <div className='h-full flex items-center justify-center'>
                   <div className='text-center text-muted-foreground'>
                     <Database className='w-16 h-16 mx-auto mb-4 opacity-50' />
-                    <p className='text-sm'>查询结果 {index + 1} 无数据</p>
+                    <p className='text-sm'>{tQuery('resultPanel.dataTab.noData', { index: index + 1 })}</p>
                   </div>
                 </div>
               )}
@@ -2636,7 +2636,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             className='text-xs'
                             onClick={onClearResult}
                           >
-                            清空
+                            {tQuery('resultPanel.dataTab.clear')}
                           </Button>
                         )}
                       </div>
@@ -2655,10 +2655,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             </div>
                             <div className='flex-1'>
                               <h3 className='font-semibold text-green-700 dark:text-green-400'>
-                                {displayInfo.description}执行成功
+                                {displayInfo.description}{tQuery('resultPanel.executionStatus.executionSuccess')}
                               </h3>
                               <p className='text-sm text-muted-foreground mt-0.5'>
-                                操作已成功完成，耗时 {executionTime}ms
+                                {tQuery('resultPanel.executionStatus.operationCompleted', { time: executionTime })}
                               </p>
                             </div>
                             <Badge variant='outline' className='text-xs'>
@@ -2676,7 +2676,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             <CardHeader className='pb-3'>
                               <CardTitle className='text-base flex items-center gap-2'>
                                 <Trash2 className='w-4 h-4' />
-                                删除操作详情
+                                {tQuery('resultPanel.executionStatus.deleteDetails')}
                               </CardTitle>
                             </CardHeader>
                             <CardContent className='space-y-3'>
@@ -2690,7 +2690,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                   <>
                                     {measurementMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>目标Measurement:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.targetMeasurement')}</span>
                                         <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
                                           {measurementMatch[1]}
                                         </code>
@@ -2698,20 +2698,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                     )}
                                     {whereMatch && (
                                       <div className='flex flex-col gap-2 py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>删除条件:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.deleteCondition')}</span>
                                         <code className='px-2 py-1 bg-muted rounded text-xs font-mono'>
                                           {whereMatch[1]}
                                         </code>
                                       </div>
                                     )}
                                     <div className='flex items-center justify-between py-2 border-b'>
-                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.executionTime')}</span>
                                       <span className='font-mono text-sm'>{executionTime}ms</span>
                                     </div>
                                     <div className='flex items-center justify-between py-2'>
-                                      <span className='text-sm text-muted-foreground'>操作状态:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.operationStatus')}</span>
                                       <Badge variant='default' className='bg-green-600'>
-                                        已完成
+                                        {tQuery('resultPanel.executionStatus.completed')}
                                       </Badge>
                                     </div>
                                   </>
@@ -2727,20 +2727,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                 <AlertTriangle className='w-5 h-5 text-orange-600 dark:text-orange-400 flex-shrink-0 mt-0.5' />
                                 <div className='flex-1 space-y-2'>
                                   <h4 className='font-medium text-orange-900 dark:text-orange-200'>
-                                    重要提示
+                                    {tQuery('resultPanel.executionStatus.importantNotice')}
                                   </h4>
                                   <ul className='text-sm text-orange-800 dark:text-orange-300 space-y-1.5'>
                                     <li className='flex items-start gap-2'>
                                       <span className='text-orange-600 dark:text-orange-400 mt-0.5'>•</span>
-                                      <span>DELETE 操作不返回删除的具体行数</span>
+                                      <span>{tQuery('resultPanel.executionStatus.deleteWarnings.noRowCount')}</span>
                                     </li>
                                     <li className='flex items-start gap-2'>
                                       <span className='text-orange-600 dark:text-orange-400 mt-0.5'>•</span>
-                                      <span>建议执行 SELECT 查询验证数据是否已删除</span>
+                                      <span>{tQuery('resultPanel.executionStatus.deleteWarnings.verifyWithSelect')}</span>
                                     </li>
                                     <li className='flex items-start gap-2'>
                                       <span className='text-orange-600 dark:text-orange-400 mt-0.5'>•</span>
-                                      <span>DELETE 操作不可撤销，请谨慎使用</span>
+                                      <span>{tQuery('resultPanel.executionStatus.deleteWarnings.irreversible')}</span>
                                     </li>
                                   </ul>
                                 </div>
@@ -2758,7 +2758,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             <CardHeader className='pb-3'>
                               <CardTitle className='text-base flex items-center gap-2'>
                                 <Database className='w-4 h-4' />
-                                DROP 操作详情
+                                {tQuery('resultPanel.executionStatus.dropDetails')}
                               </CardTitle>
                             </CardHeader>
                             <CardContent className='space-y-3'>
@@ -2771,7 +2771,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                   <>
                                     {dropTypeMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>操作类型:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.operationType')}</span>
                                         <code className='px-2 py-1 bg-destructive/10 text-destructive rounded text-sm font-mono'>
                                           DROP {dropTypeMatch[1].toUpperCase()}
                                         </code>
@@ -2779,20 +2779,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                     )}
                                     {objectMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>删除对象:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.deleteObject')}</span>
                                         <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
                                           {objectMatch[1]}
                                         </code>
                                       </div>
                                     )}
                                     <div className='flex items-center justify-between py-2 border-b'>
-                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.executionTime')}</span>
                                       <span className='font-mono text-sm'>{executionTime}ms</span>
                                     </div>
                                     <div className='flex items-center justify-between py-2'>
-                                      <span className='text-sm text-muted-foreground'>操作状态:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.operationStatus')}</span>
                                       <Badge variant='default' className='bg-green-600'>
-                                        已完成
+                                        {tQuery('resultPanel.executionStatus.completed')}
                                       </Badge>
                                     </div>
                                   </>
@@ -2808,20 +2808,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                 <AlertTriangle className='w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5' />
                                 <div className='flex-1 space-y-2'>
                                   <h4 className='font-medium text-red-900 dark:text-red-200'>
-                                    危险操作警告
+                                    {tQuery('resultPanel.executionStatus.dangerWarning')}
                                   </h4>
                                   <ul className='text-sm text-red-800 dark:text-red-300 space-y-1.5'>
                                     <li className='flex items-start gap-2'>
                                       <span className='text-red-600 dark:text-red-400 mt-0.5'>•</span>
-                                      <span>DROP 操作会永久删除数据，无法恢复</span>
+                                      <span>{tQuery('resultPanel.executionStatus.dropWarnings.permanent')}</span>
                                     </li>
                                     <li className='flex items-start gap-2'>
                                       <span className='text-red-600 dark:text-red-400 mt-0.5'>•</span>
-                                      <span>删除的对象及其所有数据已被移除</span>
+                                      <span>{tQuery('resultPanel.executionStatus.dropWarnings.dataRemoved')}</span>
                                     </li>
                                     <li className='flex items-start gap-2'>
                                       <span className='text-red-600 dark:text-red-400 mt-0.5'>•</span>
-                                      <span>请确保已做好数据备份</span>
+                                      <span>{tQuery('resultPanel.executionStatus.dropWarnings.backupFirst')}</span>
                                     </li>
                                   </ul>
                                 </div>
@@ -2839,7 +2839,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             <CardHeader className='pb-3'>
                               <CardTitle className='text-base flex items-center gap-2'>
                                 <Database className='w-4 h-4' />
-                                CREATE 操作详情
+                                {tQuery('resultPanel.executionStatus.createDetails')}
                               </CardTitle>
                             </CardHeader>
                             <CardContent className='space-y-3'>
@@ -2852,7 +2852,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                   <>
                                     {createTypeMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>操作类型:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.operationType')}</span>
                                         <code className='px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm font-mono'>
                                           CREATE {createTypeMatch[1].toUpperCase()}
                                         </code>
@@ -2860,20 +2860,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                     )}
                                     {objectMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>创建对象:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.createObject')}</span>
                                         <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
                                           {objectMatch[1]}
                                         </code>
                                       </div>
                                     )}
                                     <div className='flex items-center justify-between py-2 border-b'>
-                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.executionTime')}</span>
                                       <span className='font-mono text-sm'>{executionTime}ms</span>
                                     </div>
                                     <div className='flex items-center justify-between py-2'>
-                                      <span className='text-sm text-muted-foreground'>创建状态:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.createStatus')}</span>
                                       <Badge variant='default' className='bg-green-600'>
-                                        已创建
+                                        {tQuery('resultPanel.executionStatus.created')}
                                       </Badge>
                                     </div>
                                   </>
@@ -2889,20 +2889,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                 <Info className='w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5' />
                                 <div className='flex-1 space-y-2'>
                                   <h4 className='font-medium text-blue-900 dark:text-blue-200'>
-                                    创建操作提示
+                                    {tQuery('resultPanel.executionStatus.createNotice')}
                                   </h4>
                                   <ul className='text-sm text-blue-800 dark:text-blue-300 space-y-1.5'>
                                     <li className='flex items-start gap-2'>
                                       <span className='text-blue-600 dark:text-blue-400 mt-0.5'>•</span>
-                                      <span>对象已成功创建</span>
+                                      <span>{tQuery('resultPanel.executionStatus.createTips.objectCreated')}</span>
                                     </li>
                                     <li className='flex items-start gap-2'>
                                       <span className='text-blue-600 dark:text-blue-400 mt-0.5'>•</span>
-                                      <span>可以使用 SHOW 命令查看创建的对象</span>
+                                      <span>{tQuery('resultPanel.executionStatus.createTips.useShow')}</span>
                                     </li>
                                     <li className='flex items-start gap-2'>
                                       <span className='text-blue-600 dark:text-blue-400 mt-0.5'>•</span>
-                                      <span>如果对象已存在，某些CREATE语句可能会失败</span>
+                                      <span>{tQuery('resultPanel.executionStatus.createTips.mayFail')}</span>
                                     </li>
                                   </ul>
                                 </div>
@@ -2920,7 +2920,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             <CardHeader className='pb-3'>
                               <CardTitle className='text-base flex items-center gap-2'>
                                 <Settings className='w-4 h-4' />
-                                ALTER 操作详情
+                                {tQuery('resultPanel.executionStatus.alterDetails')}
                               </CardTitle>
                             </CardHeader>
                             <CardContent className='space-y-3'>
@@ -2933,7 +2933,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                   <>
                                     {alterTypeMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>操作类型:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.operationType')}</span>
                                         <code className='px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded text-sm font-mono'>
                                           ALTER {alterTypeMatch[1].toUpperCase()}
                                         </code>
@@ -2941,20 +2941,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                     )}
                                     {objectMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>修改对象:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.modifyObject')}</span>
                                         <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
                                           {objectMatch[1]}
                                         </code>
                                       </div>
                                     )}
                                     <div className='flex items-center justify-between py-2 border-b'>
-                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.executionTime')}</span>
                                       <span className='font-mono text-sm'>{executionTime}ms</span>
                                     </div>
                                     <div className='flex items-center justify-between py-2'>
-                                      <span className='text-sm text-muted-foreground'>修改状态:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.modifyStatus')}</span>
                                       <Badge variant='default' className='bg-green-600'>
-                                        已修改
+                                        {tQuery('resultPanel.executionStatus.modified')}
                                       </Badge>
                                     </div>
                                   </>
@@ -2973,7 +2973,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             <CardHeader className='pb-3'>
                               <CardTitle className='text-base flex items-center gap-2'>
                                 <Shield className='w-4 h-4' />
-                                权限操作详情
+                                {tQuery('resultPanel.executionStatus.permissionDetails')}
                               </CardTitle>
                             </CardHeader>
                             <CardContent className='space-y-3'>
@@ -2987,7 +2987,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                   <>
                                     {permissionMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>操作类型:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.operationType')}</span>
                                         <code className='px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded text-sm font-mono'>
                                           {permissionMatch[1].toUpperCase()}
                                         </code>
@@ -2995,7 +2995,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                     )}
                                     {privilegeMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>权限类型:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.permissionType')}</span>
                                         <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
                                           {privilegeMatch[1].toUpperCase()}
                                         </code>
@@ -3003,20 +3003,20 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                     )}
                                     {userMatch && (
                                       <div className='flex items-center justify-between py-2 border-b'>
-                                        <span className='text-sm text-muted-foreground'>目标用户:</span>
+                                        <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.targetUser')}</span>
                                         <code className='px-2 py-1 bg-muted rounded text-sm font-mono'>
                                           {userMatch[1]}
                                         </code>
                                       </div>
                                     )}
                                     <div className='flex items-center justify-between py-2 border-b'>
-                                      <span className='text-sm text-muted-foreground'>执行时间:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.executionTime')}</span>
                                       <span className='font-mono text-sm'>{executionTime}ms</span>
                                     </div>
                                     <div className='flex items-center justify-between py-2'>
-                                      <span className='text-sm text-muted-foreground'>操作状态:</span>
+                                      <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.operationStatus')}</span>
                                       <Badge variant='default' className='bg-green-600'>
-                                        已完成
+                                        {tQuery('resultPanel.executionStatus.completed')}
                                       </Badge>
                                     </div>
                                   </>
@@ -3033,11 +3033,11 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                        statementCategory !== 'permission' && (
                         <Card>
                           <CardHeader className='pb-3'>
-                            <CardTitle className='text-base'>执行统计</CardTitle>
+                            <CardTitle className='text-base'>{tQuery('resultPanel.executionStatus.executionStats')}</CardTitle>
                           </CardHeader>
                           <CardContent className='space-y-3'>
                             <div className='flex items-center justify-between py-2 border-b'>
-                              <span className='text-sm text-muted-foreground'>执行时间:</span>
+                              <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.executionTime')}</span>
                               <span className='font-mono text-sm'>{executionTime}ms</span>
                             </div>
                             {result?.rowCount !== undefined && result.rowCount > 0 && (
@@ -3049,7 +3049,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                               </div>
                             )}
                             <div className='flex items-center justify-between py-2'>
-                              <span className='text-sm text-muted-foreground'>语句类型:</span>
+                              <span className='text-sm text-muted-foreground'>{tQuery('resultPanel.executionStatus.statementType')}</span>
                               <Badge variant='outline'>{statementType}</Badge>
                             </div>
                           </CardContent>
@@ -3062,7 +3062,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           <CardHeader className='pb-3'>
                             <CardTitle className='text-base flex items-center gap-2'>
                               <FileText className='w-4 h-4' />
-                              执行的SQL语句
+                              {tQuery('resultPanel.executionStatus.executedSQL')}
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
@@ -3079,7 +3079,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           <CardHeader className='pb-3'>
                             <CardTitle className='text-base flex items-center gap-2'>
                               <Info className='w-4 h-4' />
-                              服务器响应
+                              {tQuery('resultPanel.executionStatus.serverResponse')}
                             </CardTitle>
                           </CardHeader>
                           <CardContent>
@@ -3106,12 +3106,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 <div className='flex items-center justify-between'>
                   <div className='flex items-center gap-2'>
                     <Info className='w-4 h-4' />
-                    <span className='text-sm font-medium'>字段统计信息</span>
+                    <span className='text-sm font-medium'>{tQuery('resultPanel.fieldStatistics.title')}</span>
                     <Badge variant='outline' className='text-xs'>
-                      {allFieldStatistics.length} 个查询
+                      {allFieldStatistics.length} {tQuery('resultPanel.fieldStatistics.queries')}
                     </Badge>
                     <Badge variant='secondary' className='text-xs'>
-                      {allFieldStatistics.reduce((sum, q) => sum + q.statistics.length, 0)} 个字段
+                      {allFieldStatistics.reduce((sum, q) => sum + q.statistics.length, 0)} {tQuery('resultPanel.fieldStatistics.fields')}
                     </Badge>
                   </div>
                   <div className='flex items-center gap-2'>
@@ -3122,7 +3122,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       onClick={() => setShowStatisticsExportDialog(true)}
                     >
                       <Download className='w-3 h-3 mr-1' />
-                      导出统计
+                      {tQuery('resultPanel.fieldStatistics.exportStats')}
                     </Button>
                   </div>
                 </div>
@@ -3136,16 +3136,16 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                       {/* 查询标题 */}
                       <div className='flex items-center gap-2 pb-2 border-b'>
                         <Badge variant='default' className='text-xs'>
-                          查询 {queryIndex + 1}
+                          {tQuery('resultPanel.fieldStatistics.query')} {queryIndex + 1}
                         </Badge>
                         <span className='text-xs text-muted-foreground font-mono truncate max-w-md'>
                           {queryStats.queryText}
                         </span>
                         <Badge variant='secondary' className='text-xs ml-auto'>
-                          {queryStats.statistics.length} 个字段
+                          {queryStats.statistics.length} {tQuery('resultPanel.fieldStatistics.fields')}
                         </Badge>
                         <Badge variant='outline' className='text-xs'>
-                          {queryStats.rowCount.toLocaleString()} 行
+                          {queryStats.rowCount.toLocaleString()} {tQuery('resultPanel.fieldStatistics.rows')}
                         </Badge>
                       </div>
 
@@ -3156,28 +3156,28 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             <TableHeader>
                               <TableRow>
                                 <TableHead className='px-3 py-2 text-xs font-medium'>
-                                  字段名
+                                  {tQuery('resultPanel.fieldStatsHeaders.fieldName')}
                                 </TableHead>
                                 <TableHead className='px-3 py-2 text-xs font-medium'>
-                                  数据类型
+                                  {tQuery('resultPanel.fieldStatsHeaders.dataType')}
                                 </TableHead>
                                 <TableHead className='px-3 py-2 text-xs font-medium'>
-                                  空值数量
+                                  {tQuery('resultPanel.fieldStatsHeaders.nullCount')}
                                 </TableHead>
                                 <TableHead className='px-3 py-2 text-xs font-medium'>
-                                  唯一值数量
+                                  {tQuery('resultPanel.fieldStatsHeaders.uniqueCount')}
                                 </TableHead>
                                 <TableHead className='px-3 py-2 text-xs font-medium'>
-                                  最小值
+                                  {tQuery('resultPanel.fieldStatsHeaders.min')}
                                 </TableHead>
                                 <TableHead className='px-3 py-2 text-xs font-medium'>
-                                  最大值
+                                  {tQuery('resultPanel.fieldStatsHeaders.max')}
                                 </TableHead>
                                 <TableHead className='px-3 py-2 text-xs font-medium'>
-                                  平均值
+                                  {tQuery('resultPanel.fieldStatsHeaders.avg')}
                                 </TableHead>
                                 <TableHead className='px-3 py-2 text-xs font-medium'>
-                                  中位数
+                                  {tQuery('resultPanel.fieldStatsHeaders.median')}
                                 </TableHead>
                               </TableRow>
                             </TableHeader>
@@ -3260,7 +3260,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         </div>
                       ) : (
                         <div className='text-center py-8 text-muted-foreground text-sm'>
-                          该查询无字段统计信息
+                          {tQuery('resultPanel.fieldStatistics.noStats')}
                         </div>
                       )}
                     </div>
@@ -3272,7 +3272,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             <div className='h-full flex items-center justify-center'>
               <div className='text-center text-muted-foreground'>
                 <Info className='w-16 h-16 mx-auto mb-4 opacity-50' />
-                <p className='text-sm'>请执行查询以查看字段统计</p>
+                <p className='text-sm'>{tQuery('resultPanel.fieldStatistics.executeToView')}</p>
               </div>
             </div>
           )}
@@ -3287,15 +3287,15 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                 <div className='flex items-center justify-between'>
                   <div className='flex items-center gap-2'>
                     <Eye className='w-4 h-4' />
-                    <span className='text-sm font-medium'>数据样本</span>
+                    <span className='text-sm font-medium'>{tQuery('resultPanel.fieldStatistics.dataSample')}</span>
                     <Badge variant='outline' className='text-xs'>
-                      前 10 行
+                      {tQuery('resultPanel.fieldStatistics.firstRows')}
                     </Badge>
                   </div>
                   <div className='flex items-center gap-2'>
                     <Button variant='outline' size='sm' className='text-xs'>
                       <Download className='w-3 h-3 mr-1' />
-                      导出样本
+                      {tQuery('resultPanel.fieldStatistics.exportSample')}
                     </Button>
                   </div>
                 </div>
@@ -3352,7 +3352,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             <div className='h-full flex items-center justify-center'>
               <div className='text-center text-muted-foreground'>
                 <Eye className='w-16 h-16 mx-auto mb-4 opacity-50' />
-                <p className='text-sm'>请执行查询以预览数据样本</p>
+                <p className='text-sm'>{tQuery('resultPanel.fieldStatistics.executeToPreview')}</p>
               </div>
             </div>
           )}
@@ -3395,13 +3395,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                   <div className='flex items-center justify-between mb-4'>
                     <div className='flex items-center gap-4'>
                       <h3 className='text-sm font-medium'>
-                        数据可视化 {allResults.length > 1 ? `${index + 1}` : ''}
+                        {tQuery('resultPanel.visualization.title')} {allResults.length > 1 ? `${index + 1}` : ''}
                       </h3>
                       {/* 表名标注 */}
                       {tableName && (
                         <div className='flex items-center gap-2'>
                           <span className='text-sm text-muted-foreground'>
-                            数据源：
+                            {tQuery('resultPanel.visualization.dataSource')}
                           </span>
                           <span className='px-2 py-1 bg-primary/10 text-primary rounded-md text-sm font-medium border border-primary/20'>
                             {tableName}
@@ -3419,7 +3419,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                               onChange={e =>
                                 setCustomChartTitle(e.target.value)
                               }
-                              placeholder='输入图表标题'
+                              placeholder={tQuery('resultPanel.visualization.enterChartTitle')}
                               className='h-7 w-40 text-xs'
                               autoFocus
                               onKeyDown={e => {
@@ -3459,7 +3459,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             onClick={() => setIsEditingTitle(true)}
                           >
                             <Edit2 className='w-3 h-3 mr-1' />
-                            {customChartTitle || '编辑标题'}
+                            {customChartTitle || tQuery('resultPanel.visualization.editTitle')}
                           </Button>
                         )}
                       </div>
@@ -3498,15 +3498,15 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             {visualizationType === 'category-pie' && (
                               <PieChart className='w-3 h-3 mr-1' />
                             )}
-                            {visualizationType === 'line' && '折线图'}
-                            {visualizationType === 'bar' && '柱状图'}
-                            {visualizationType === 'pie' && '饼图'}
-                            {visualizationType === 'area' && '面积图'}
-                            {visualizationType === 'scatter' && '散点图'}
-                            {visualizationType === 'heatmap' && '热力图'}
-                            {visualizationType === 'radar' && '雷达图'}
-                            {visualizationType === 'category-bar' && '分类柱状图'}
-                            {visualizationType === 'category-pie' && '分类饼图'}
+                            {visualizationType === 'line' && tQuery('resultPanel.visualization.chartTypes.line')}
+                            {visualizationType === 'bar' && tQuery('resultPanel.visualization.chartTypes.bar')}
+                            {visualizationType === 'pie' && tQuery('resultPanel.visualization.chartTypes.pie')}
+                            {visualizationType === 'area' && tQuery('resultPanel.visualization.chartTypes.area')}
+                            {visualizationType === 'scatter' && tQuery('resultPanel.visualization.chartTypes.scatter')}
+                            {visualizationType === 'heatmap' && tQuery('resultPanel.visualization.chartTypes.heatmap')}
+                            {visualizationType === 'radar' && tQuery('resultPanel.visualization.chartTypes.radar')}
+                            {visualizationType === 'category-bar' && tQuery('resultPanel.visualization.chartTypes.categoryBar')}
+                            {visualizationType === 'category-pie' && tQuery('resultPanel.visualization.chartTypes.categoryPie')}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
@@ -3514,59 +3514,59 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                             onClick={() => setVisualizationType('line')}
                           >
                             <LineChart className='w-3 h-3 mr-2' />
-                            折线图
+                            {tQuery('resultPanel.visualization.chartTypes.line')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setVisualizationType('area')}
                           >
                             <AreaChart className='w-3 h-3 mr-2' />
-                            面积图
+                            {tQuery('resultPanel.visualization.chartTypes.area')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setVisualizationType('bar')}
                           >
                             <BarChart className='w-3 h-3 mr-2' />
-                            柱状图
+                            {tQuery('resultPanel.visualization.chartTypes.bar')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setVisualizationType('scatter')}
                           >
                             <ScatterChart className='w-3 h-3 mr-2' />
-                            散点图
+                            {tQuery('resultPanel.visualization.chartTypes.scatter')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setVisualizationType('heatmap')}
                           >
                             <Grid3x3 className='w-3 h-3 mr-2' />
-                            热力图
+                            {tQuery('resultPanel.visualization.chartTypes.heatmap')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setVisualizationType('radar')}
                           >
                             <Radar className='w-3 h-3 mr-2' />
-                            雷达图
+                            {tQuery('resultPanel.visualization.chartTypes.radar')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setVisualizationType('pie')}
                           >
                             <PieChart className='w-3 h-3 mr-2' />
-                            饼图
+                            {tQuery('resultPanel.visualization.chartTypes.pie')}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuLabel className='text-xs'>
-                            分类字段统计
+                            {tQuery('resultPanel.visualization.categoricalFieldStats')}
                           </DropdownMenuLabel>
                           <DropdownMenuItem
                             onClick={() => setVisualizationType('category-bar')}
                           >
                             <BarChart className='w-3 h-3 mr-2' />
-                            分类柱状图
+                            {tQuery('resultPanel.visualization.chartTypes.categoryBar')}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setVisualizationType('category-pie')}
                           >
                             <PieChart className='w-3 h-3 mr-2' />
-                            分类饼图
+                            {tQuery('resultPanel.visualization.chartTypes.categoryPie')}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -3582,12 +3582,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                               className='text-xs'
                             >
                               <Filter className='w-3 h-3 mr-1' />
-                              字段 ({selectedFields.length}/
+                              {tQuery('resultPanel.visualization.fieldsSelected')} ({selectedFields.length}/
                               {availableNumericFields.length})
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className='w-72'>
-                            <DropdownMenuLabel>选择显示字段</DropdownMenuLabel>
+                            <DropdownMenuLabel>{tQuery('resultPanel.visualization.selectFields')}</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             {availableNumericFields.map(field => (
                               <div
@@ -3675,7 +3675,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                               <Tag className='w-3 h-3 mr-1' />
                               {selectedCategoryField
                                 ? getFieldDisplayName(selectedCategoryField)
-                                : '选择分类字段'}
+                                : tQuery('resultPanel.visualization.selectCategoryField')}
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className='w-56'>
@@ -3704,7 +3704,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         onClick={handleExportChart}
                       >
                         <Download className='w-3 h-3 mr-1' />
-                        导出图表
+                        {tQuery('resultPanel.visualization.exportChart')}
                       </Button>
                     </div>
                   </div>
@@ -3727,7 +3727,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         <div className='px-6 py-3 border-t bg-muted/30'>
                           <div className='flex items-center gap-4'>
                             <span className='text-xs text-muted-foreground whitespace-nowrap'>
-                              时间点:
+                              {tQuery('resultPanel.visualization.timePoint')}
                             </span>
                             <Slider
                               value={[timePointIndex]}
@@ -3795,12 +3795,12 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
               <div className='flex-shrink-0 bg-muted/50 border-b px-4 py-2'>
                 <div className='flex items-center gap-2'>
                   <Brain className='w-4 h-4' />
-                  <span className='text-sm font-medium'>智能数据洞察</span>
+                  <span className='text-sm font-medium'>{tQuery('resultPanel.insights.title')}</span>
                   <Badge variant='outline' className='text-xs'>
-                    {allDataInsights.length} 个查询
+                    {allDataInsights.length} {tQuery('resultPanel.fieldStatistics.queries')}
                   </Badge>
                   <Badge variant='secondary' className='text-xs'>
-                    {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0)} 条洞察
+                    {allDataInsights.reduce((sum, q) => sum + q.insights.length, 0)} {tQuery('resultPanel.insights.insightsCount')}
                   </Badge>
                 </div>
               </div>
@@ -3814,13 +3814,13 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                         {/* 查询标题 */}
                         <div className='flex items-center gap-2 pb-1.5 border-b'>
                           <Badge variant='default' className='text-xs'>
-                            查询 {queryIndex + 1}
+                            {tQuery('resultPanel.fieldStatistics.query')} {queryIndex + 1}
                           </Badge>
                           <span className='text-xs text-muted-foreground font-mono truncate max-w-md'>
                             {queryInsights.queryText}
                           </span>
                           <Badge variant='secondary' className='text-xs ml-auto'>
-                            {queryInsights.insights.length} 条洞察
+                            {queryInsights.insights.length} {tQuery('resultPanel.insights.insightsCount')}
                           </Badge>
                         </div>
 
@@ -3863,10 +3863,10 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                     className='text-xs ml-auto'
                                   >
                                     {insight.severity === 'high'
-                                      ? '高'
+                                      ? tQuery('resultPanel.insights.severity.high')
                                       : insight.severity === 'medium'
-                                        ? '中'
-                                        : '低'}
+                                        ? tQuery('resultPanel.insights.severity.medium')
+                                        : tQuery('resultPanel.insights.severity.low')}
                                   </Badge>
                                 </CardTitle>
                               </CardHeader>
@@ -3876,7 +3876,7 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                                 </p>
                                 <div className='mt-1.5 flex items-center gap-2'>
                                   <span className='text-xs text-muted-foreground'>
-                                    置信度:
+                                    {tQuery('resultPanel.insights.confidence')}
                                   </span>
                                   <Progress
                                     value={insight.confidence * 100}
@@ -3900,8 +3900,8 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
             <div className='flex items-center justify-center h-full'>
               <div className='text-center text-muted-foreground'>
                 <Brain className='w-16 h-16 mx-auto mb-4 opacity-50' />
-                <p className='text-sm'>暂无数据洞察</p>
-                <p className='text-xs mt-1'>执行查询后将自动生成智能分析结果</p>
+                <p className='text-sm'>{tQuery('resultPanel.insights.noInsights')}</p>
+                <p className='text-xs mt-1'>{tQuery('resultPanel.insights.executeForInsights')}</p>
               </div>
             </div>
           )}

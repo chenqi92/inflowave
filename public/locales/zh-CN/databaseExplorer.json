@@ -43,6 +43,8 @@
 
   "actionExecutionFailed": "操作失败: {{error}}",
   "unhandledAction": "未处理的右键菜单动作",
+  "loadFailed": "加载失败: {{error}}",
+  "retry": "重试",
 
   "createDatabase": {
     "title": "创建数据库",
@@ -81,5 +83,24 @@
     "buttonClose": "关闭",
     "buttonCreate": "创建",
     "buttonCreating": "创建中..."
+  },
+  "contextMenu": {
+    "addToFavorites": "添加到收藏",
+    "removeFromFavorites": "取消收藏",
+    "refreshDatabase": "刷新数据库",
+    "newQuery": "新建查询",
+    "properties": "属性",
+    "refreshTable": "刷新表结构",
+    "queryTable": "查询此表",
+    "tableProperties": "表属性",
+    "insertToQuery": "插入到查询",
+    "copyColumnName": "复制列名",
+    "refreshConnection": "刷新连接",
+    "recentHour": "最近1小时"
+  },
+  "messages": {
+    "favoriteRemoved": "已取消收藏",
+    "favoriteAdded": "已添加到收藏",
+    "copyFailed": "复制失败"
   }
 }

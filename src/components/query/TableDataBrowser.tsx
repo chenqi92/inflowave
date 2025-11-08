@@ -2618,21 +2618,21 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             <DropdownMenuTrigger asChild>
               <Button variant='outline' size='sm' className='h-8 px-2'>
                 <Copy className='w-3 h-3 mr-1' />
-                复制 ({selectedRows.size})
+                {tBrowser('copySelected', { count: selectedRows.size })}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end'>
               <DropdownMenuItem onClick={() => handleCopySelectedRows('text')}>
                 <FileText className='w-4 h-4 mr-2' />
-                复制为文本
+                {tBrowser('copyAsText')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleCopySelectedRows('json')}>
                 <Code className='w-4 h-4 mr-2' />
-                复制为JSON
+                {tBrowser('copyAsJSON')}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleCopySelectedRows('csv')}>
                 <FileSpreadsheet className='w-4 h-4 mr-2' />
-                复制为CSV
+                {tBrowser('copyAsCSV')}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -2646,7 +2646,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             <div className='space-y-2'>
               <div className='flex items-center justify-between'>
                 <div className='text-sm font-medium text-muted-foreground'>
-                  筛选条件 ({filters.length})
+                  {tBrowser('filterConditions', { count: filters.length })}
                 </div>
                 <Button
                   variant='outline'
@@ -2654,7 +2654,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                   onClick={applyFilters}
                   className='h-7 px-3 text-xs'
                 >
-                  应用所有过滤器
+                  {tBrowser('applyAllFilters')}
                 </Button>
               </div>
               <div className='flex flex-wrap gap-2'>
@@ -2805,7 +2805,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             }}
           >
             <FileText className='w-4 h-4' />
-            复制为文本
+            {tBrowser('copyAsText')}
           </button>
           <button
             className='w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2'
@@ -2817,7 +2817,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             }}
           >
             <Code className='w-4 h-4' />
-            复制为JSON
+            {tBrowser('copyAsJSON')}
           </button>
           <button
             className='w-full px-3 py-2 text-left text-sm hover:bg-muted flex items-center gap-2'
@@ -2829,7 +2829,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             }}
           >
             <FileSpreadsheet className='w-4 h-4' />
-            复制为CSV
+            {tBrowser('copyAsCSV')}
           </button>
           <div className='border-t my-1'></div>
           <button
@@ -2850,7 +2850,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             }}
           >
             <Square className='w-4 h-4' />
-            取消选择
+            {t('clear_selection')}
           </button>
         </div>
       )}

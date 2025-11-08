@@ -464,6 +464,13 @@ export const useNotificationsTranslation = () => {
   return useTranslation('notifications');
 };
 
+/**
+ * 数据生成器翻译 Hook
+ */
+export const useDataGeneratorTranslation = () => {
+  return useTranslation('dataGenerator');
+};
+
 // ============================================================================
 // 高级翻译工具
 // ============================================================================

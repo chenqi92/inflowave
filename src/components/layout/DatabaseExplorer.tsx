@@ -74,6 +74,7 @@ import {
   useContextMenuHandler,
 } from '@/hooks/databaseExplorer';
 import { useDataLoading } from '@/hooks/databaseExplorer/useDataLoading';
+import { useDatabaseExplorerTranslation } from '@/hooks/useTranslation';
 
 const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   collapsed = false,
@@ -94,6 +95,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   const state = useDatabaseExplorerState();
   const stores = useDatabaseExplorerStores();
   const navigate = useNavigate();
+  const { t: tExplorer } = useDatabaseExplorerTranslation();
 
   // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
    
@@ -1002,7 +1004,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         const favorite = favorites.find(fav => fav.path === path);
         if (favorite) {
           removeFavorite(favorite.id);
-          showMessage.success('已取消收藏');
+          showMessage.success(tExplorer('messages.favoriteRemoved'));
         }
       } else {
         const favoriteItem = favoritesUtils.createFavoriteFromPath(
@@ -1012,7 +1014,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         );
         if (favoriteItem) {
           addFavorite(favoriteItem);
-          showMessage.success('已添加到收藏');
+          showMessage.success(tExplorer('messages.favoriteAdded'));
         }
       }
     },
@@ -1053,7 +1055,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
     const favoriteMenuItem = {
       key: 'toggle-favorite',
-      label: isFav ? '取消收藏' : '添加到收藏',
+      label: isFav ? tExplorer('contextMenu.removeFromFavorites') : tExplorer('contextMenu.addToFavorites'),
       icon: isFav ? (
         <StarOff className='w-4 h-4' />
       ) : (
@@ -1068,18 +1070,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         { key: 'divider-db-1', type: 'divider' },
         {
           key: 'refresh-db',
-          label: '刷新数据库',
+          label: tExplorer('contextMenu.refreshDatabase'),
           icon: <RefreshCw className='w-4 h-4' />,
         },
         {
           key: 'new-query',
-          label: '新建查询',
+          label: tExplorer('contextMenu.newQuery'),
           icon: <FileText className='w-4 h-4' />,
         },
         { key: 'divider-db-2', type: 'divider' },
         {
           key: 'db-properties',
-          label: '属性',
+          label: tExplorer('contextMenu.properties'),
           icon: <Settings className='w-4 h-4' />,
         },
       ];
@@ -1091,18 +1093,18 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         { key: 'divider-table-1', type: 'divider' },
         {
           key: 'refresh-table',
-          label: '刷新表结构',
+          label: tExplorer('contextMenu.refreshTable'),
           icon: <RefreshCw className='w-4 h-4' />,
         },
         {
           key: 'query-table',
-          label: '查询此表',
+          label: tExplorer('contextMenu.queryTable'),
           icon: <FileText className='w-4 h-4' />,
         },
         { key: 'divider-table-2', type: 'divider' },
         {
           key: 'table-properties',
-          label: '表属性',
+          label: tExplorer('contextMenu.tableProperties'),
           icon: <Settings className='w-4 h-4' />,
         },
       ];
@@ -1114,12 +1116,12 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         { key: 'divider-field-1', type: 'divider' },
         {
           key: 'insert-column',
-          label: '插入到查询',
+          label: tExplorer('contextMenu.insertToQuery'),
           icon: <FileText className='w-4 h-4' />,
         },
         {
           key: 'copy-name',
-          label: '复制列名',
+          label: tExplorer('contextMenu.copyColumnName'),
           icon: <File className='w-4 h-4' />,
         },
       ];
@@ -1131,7 +1133,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         { key: 'divider-connection-1', type: 'divider' },
         {
           key: 'refresh-connection',
-          label: '刷新连接',
+          label: tExplorer('contextMenu.refreshConnection'),
           icon: <RefreshCw className='w-4 h-4' />,
         },
       ];
@@ -1178,7 +1180,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         onTableDoubleClick(database, table, query);
         const timeDesc = currentTimeRange
           ? currentTimeRange.label
-          : '最近1小时';
+          : tExplorer('contextMenu.recentHour');
         showMessage.info(
           `正在查询表 "${table}" 的数据（时间范围：${timeDesc}）...`
         );
@@ -1192,7 +1194,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
         const query = generateQuery(table, connectionId);
         const success = await writeToClipboard(query, {
           successMessage: `查询语句已复制到剪贴板: ${query}`,
-          errorMessage: '复制失败',
+          errorMessage: tExplorer('messages.copyFailed'),
         });
         if (!success) {
           showMessage.info(`查询语句: ${query}`);

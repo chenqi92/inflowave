@@ -127,6 +127,7 @@
   "column_display_settings": "Column Display Settings",
   "select_all": "Select All",
   "deselect_all": "Deselect All",
+  "clear_selection": "Clear Selection",
   "selected_rows_count": "{{count}} rows selected",
   "copy_row_success": "Row data copied ({{format}} format)",
   "copy_rows_success": "{{count}} rows copied ({{format}} format)",
@@ -509,6 +510,158 @@
         "title": "{{field}} Has Anomalies",
         "description": "Detected {{count}} anomalous data points (exceeding 3 standard deviations), recommend checking if data collection is normal."
       }
+    },
+    "executionStatus": {
+      "executionSuccess": "Execution Successful",
+      "operationCompleted": "Operation completed successfully, took {{time}}ms",
+      "deleteDetails": "Delete Operation Details",
+      "targetMeasurement": "Target Measurement:",
+      "deleteCondition": "Delete Condition:",
+      "executionTime": "Execution Time:",
+      "operationStatus": "Operation Status:",
+      "completed": "Completed",
+      "importantNotice": "Important Notice",
+      "deleteWarnings": {
+        "noRowCount": "DELETE operation does not return the specific number of deleted rows",
+        "verifyWithSelect": "Recommend executing SELECT query to verify data deletion",
+        "irreversible": "DELETE operation is irreversible, use with caution"
+      },
+      "dropDetails": "DROP Operation Details",
+      "operationType": "Operation Type:",
+      "deleteObject": "Delete Object:",
+      "dangerWarning": "Danger Warning",
+      "dropWarnings": {
+        "permanent": "DROP operation permanently deletes data and cannot be recovered",
+        "dataRemoved": "The deleted object and all its data have been removed",
+        "backupFirst": "Please ensure data backup has been made"
+      },
+      "createDetails": "CREATE Operation Details",
+      "createObject": "Create Object:",
+      "createStatus": "Create Status:",
+      "created": "Created",
+      "createNotice": "Create Operation Notice",
+      "createTips": {
+        "objectCreated": "Object created successfully",
+        "useShow": "Use SHOW command to view created objects",
+        "mayFail": "Some CREATE statements may fail if the object already exists"
+      },
+      "alterDetails": "ALTER Operation Details",
+      "modifyObject": "Modify Object:",
+      "modifyStatus": "Modify Status:",
+      "modified": "Modified",
+      "permissionDetails": "Permission Operation Details",
+      "permissionType": "Permission Type:",
+      "targetUser": "Target User:",
+      "executionStats": "Execution Statistics",
+      "statementType": "Statement Type:",
+      "executedSQL": "Executed SQL Statement",
+      "serverResponse": "Server Response"
+    },
+    "fieldStatistics": {
+      "title": "Field Statistics",
+      "queries": "queries",
+      "fields": "fields",
+      "exportStats": "Export Statistics",
+      "query": "Query",
+      "rows": "rows",
+      "noStats": "No field statistics for this query",
+      "executeToView": "Execute query to view field statistics",
+      "dataSample": "Data Sample",
+      "firstRows": "First 10 Rows",
+      "exportSample": "Export Sample",
+      "executeToPreview": "Execute query to preview data sample"
+    },
+    "visualization": {
+      "title": "Data Visualization",
+      "dataSource": "Data Source:",
+      "enterChartTitle": "Enter chart title",
+      "editTitle": "Edit Title",
+      "chartTypes": {
+        "line": "Line Chart",
+        "bar": "Bar Chart",
+        "pie": "Pie Chart",
+        "area": "Area Chart",
+        "scatter": "Scatter Chart",
+        "heatmap": "Heatmap",
+        "radar": "Radar Chart",
+        "categoryBar": "Category Bar Chart",
+        "categoryPie": "Category Pie Chart"
+      },
+      "categoricalFieldStats": "Categorical Field Statistics",
+      "fieldsSelected": "Fields",
+      "selectFields": "Select Display Fields",
+      "selectCategoryField": "Select Categorical Field",
+      "exportChart": "Export Chart",
+      "timePoint": "Time Point:",
+      "noVisualization": "Query result {{index}} has no visualization data",
+      "executeForChart": "Execute query with time and numeric fields to generate chart"
+    },
+    "insights": {
+      "title": "Intelligent Data Insights",
+      "insightsCount": "insights",
+      "confidence": "Confidence:",
+      "severity": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "noInsights": "No data insights available",
+      "executeForInsights": "Intelligent analysis will be generated after query execution"
+    },
+    "trends": {
+      "up": "upward",
+      "down": "downward"
+    },
+    "tabs": {
+      "fieldStatistics": "Field Statistics",
+      "visualization": "Visualization",
+      "insights": "Insights"
+    },
+    "queryDetails": {
+      "title": "Executed Query Details",
+      "query": "Query",
+      "failed": "Failed",
+      "success": "Success",
+      "returned": "Returned",
+      "rows": "rows",
+      "copy": "Copy",
+      "sqlCopied": "SQL copied to clipboard"
+    },
+    "writeOperations": {
+      "batchSummary": "Batch Write Operations Summary",
+      "statementCount": "Write Statements:",
+      "statements": "statements",
+      "totalExecutionTime": "Total Execution Time:",
+      "operationStatus": "Operation Status:",
+      "allSuccess": "All Successful",
+      "writeOperation": "Write Operation",
+      "targetMeasurement": "Target Measurement:",
+      "executionTime": "Execution Time:",
+      "sqlStatement": "SQL Statement:",
+      "batchCompleted": "Batch Write Completed",
+      "allStatementsExecuted": "All {{count}} write statements executed successfully",
+      "canVerifyWithSelect": "You can execute SELECT query to verify the written data"
+    },
+    "dataTab": {
+      "queryTable": "Query Table:",
+      "clear": "Clear",
+      "noData": "Query result {{index}} has no data"
     }
+  },
+  "unifiedDataTable": {
+    "filter": "Filter",
+    "filterColumn": "Filter {{column}}",
+    "filterPlaceholder": "Enter filter criteria...",
+    "apply": "Apply",
+    "clear": "Clear",
+    "search": "Search...",
+    "export": "Export",
+    "textFormat": "Text Format",
+    "jsonFormat": "JSON Format",
+    "csvFormat": "CSV Format",
+    "columns": "Columns ({{selected}}/{{total}})",
+    "columnDisplaySettings": "Column Display Settings",
+    "unselectAll": "Unselect All",
+    "selectAll": "Select All"
   }
 }

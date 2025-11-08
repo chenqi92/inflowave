@@ -1,0 +1,79 @@
+{
+  "templates": {
+    "iot": {
+      "name": "IoT传感器数据",
+      "description": "温度、湿度、压力传感器数据"
+    },
+    "system": {
+      "name": "系统监控数据",
+      "description": "CPU、内存、磁盘使用率监控数据"
+    },
+    "business": {
+      "name": "业务指标数据",
+      "description": "收入、订单、用户活跃度指标"
+    },
+    "network": {
+      "name": "网络流量数据",
+      "description": "网络带宽、延迟、丢包率数据"
+    },
+    "appPerformance": {
+      "name": "应用性能数据",
+      "description": "响应时间、错误率、吞吐量数据"
+    },
+    "ecommerce": {
+      "name": "电商交易数据 (大数据量)",
+      "description": "电商平台交易记录，包含用户行为、订单和支付信息"
+    },
+    "financial": {
+      "name": "金融市场数据 (高频)",
+      "description": "股票、期货、外汇等金融市场实时交易数据"
+    },
+    "social": {
+      "name": "社交媒体分析 (多维度)",
+      "description": "社交媒体平台用户行为和内容分析数据"
+    },
+    "iotMassive": {
+      "name": "物联网设备监控 (海量数据)",
+      "description": "大规模物联网设备状态监控和遥测数据"
+    },
+    "cloudInfra": {
+      "name": "云基础设施监控 (超大数据)",
+      "description": "云平台基础设施资源使用和性能指标"
+    }
+  },
+  "errors": {
+    "noConnection": "请先连接到InfluxDB",
+    "noDatabase": "未找到数据库，请先创建数据库",
+    "selectDatabase": "请先选择数据库",
+    "noTables": "数据库中暂无表",
+    "selectTable": "请选择目标表",
+    "loadDatabasesFailed": "加载数据库列表失败",
+    "loadTablesFailed": "加载表列表失败",
+    "loadTableStructureFailed": "获取表结构失败",
+    "generateDataFailed": "数据生成失败",
+    "clearDataFailed": "清空数据失败"
+  },
+  "messages": {
+    "stopping": "正在停止数据生成...",
+    "pause": "暂停数据生成",
+    "resume": "恢复数据生成",
+    "stoppedByUser": "数据生成已被用户停止",
+    "generationStopped": "数据生成已停止",
+    "processing": "正在处理...",
+    "noTableSelected": "请先选择要清空的表",
+    "selectTableToClear": "请先选择要清空的数据表"
+  },
+  "ui": {
+    "selectDatabase": "选择数据库",
+    "pleaseSelectDatabase": "请先选择数据库",
+    "noDatabase": "暂无数据库",
+    "pleaseConnect": "请先连接数据库",
+    "selectTable": "选择表",
+    "pleaseSelectTable_prefix": "请先选择数据库",
+    "noTables": "暂无表",
+    "refreshTableList": "刷新表列表",
+    "refreshTableStructure": "刷新表结构信息",
+    "stopping": "正在停止...",
+    "stopGeneration": "停止生成"
+  }
+}

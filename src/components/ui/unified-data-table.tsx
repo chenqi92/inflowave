@@ -1122,7 +1122,7 @@ const SimpleFilter: React.FC<SimpleFilterProps> = ({ column, onFilter }) => {
                     variant="ghost"
                     size="sm"
                     className="h-5 w-5 p-0"
-                    title="筛选"
+                    title={t('unifiedDataTable.filter')}
                 >
                     <Filter className="h-3 w-3" />
                 </Button>
@@ -1130,20 +1130,20 @@ const SimpleFilter: React.FC<SimpleFilterProps> = ({ column, onFilter }) => {
             <DropdownMenuContent align="start" className="w-64 p-3">
                 <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">筛选 {column}</span>
+                        <span className="text-sm font-medium">{t('unifiedDataTable.filterColumn', { column })}</span>
                     </div>
                     <Input
-                        placeholder={`输入筛选条件...`}
+                        placeholder={t('unifiedDataTable.filterPlaceholder')}
                         value={filterValue}
                         onChange={(e) => setFilterValue(e.target.value)}
                         className="h-8"
                     />
                     <div className="flex gap-2">
                         <Button size="sm" onClick={handleApplyFilter}>
-                            应用
+                            {t('unifiedDataTable.apply')}
                         </Button>
                         <Button size="sm" variant="outline" onClick={handleClearFilter}>
-                            清除
+                            {t('unifiedDataTable.clear')}
                         </Button>
                     </div>
                 </div>
@@ -1962,7 +1962,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                             <div className="flex items-center gap-2">
                                 {searchable && (
                                     <SearchInput
-                                        placeholder="搜索..."
+                                        placeholder={t('unifiedDataTable.search')}
                                         value={searchText}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSearch(e.target.value)}
                                         onClear={() => handleSearch('')}
@@ -1974,21 +1974,21 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="outline" size="sm">
                                                 <Download className="w-4 h-4 mr-2" />
-                                                导出
+                                                {t('unifiedDataTable.export')}
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent>
                                             <DropdownMenuItem onClick={() => onExport?.('text')}>
                                                 <FileText className="w-4 h-4 mr-2" />
-                                                文本格式
+                                                {t('unifiedDataTable.textFormat')}
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => onExport?.('json')}>
                                                 <Code className="w-4 h-4 mr-2" />
-                                                JSON格式
+                                                {t('unifiedDataTable.jsonFormat')}
                                             </DropdownMenuItem>
                                             <DropdownMenuItem onClick={() => onExport?.('csv')}>
                                                 <FileSpreadsheet className="w-4 h-4 mr-2" />
-                                                CSV格式
+                                                {t('unifiedDataTable.csvFormat')}
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -1998,13 +1998,13 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="outline" size="sm">
                                                 <Settings className="w-4 h-4 mr-2" />
-                                                列 ({effectiveSelectedColumns.length}/{columns.length})
+                                                {t('unifiedDataTable.columns', { selected: effectiveSelectedColumns.length, total: columns.length })}
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent className="w-72 max-h-80 overflow-y-auto">
                                             <div className="p-3">
                                                 <div className="flex items-center justify-between mb-3">
-                                                    <span className="text-sm font-medium">列显示设置</span>
+                                                    <span className="text-sm font-medium">{t('unifiedDataTable.columnDisplaySettings')}</span>
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
@@ -2018,7 +2018,7 @@ export const UnifiedDataTable: React.FC<UnifiedDataTableProps> = ({
                                                         }}
                                                         className="h-7 px-2 text-xs"
                                                     >
-                                                        {effectiveSelectedColumns.length === columns.length ? '取消全选' : '全选'}
+                                                        {effectiveSelectedColumns.length === columns.length ? t('unifiedDataTable.unselectAll') : t('unifiedDataTable.selectAll')}
                                                     </Button>
                                                 </div>
                                                 <div className="space-y-1">

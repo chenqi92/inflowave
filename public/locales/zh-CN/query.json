@@ -127,6 +127,7 @@
   "column_display_settings": "列显示设置",
   "select_all": "全选",
   "deselect_all": "取消全选",
+  "clear_selection": "取消选择",
   "selected_rows_count": "已选择 {{count}} 行",
   "copy_row_success": "已复制行数据 ({{format}} 格式)",
   "copy_rows_success": "已复制 {{count}} 行数据 ({{format}} 格式)",
@@ -509,6 +510,142 @@
         "title": "{{field}} 存在异常值",
         "description": "检测到 {{count}} 个异常数据点（超出3倍标准差），建议检查数据采集是否正常。"
       }
+    },
+    "executionStatus": {
+      "executionSuccess": "执行成功",
+      "operationCompleted": "操作已成功完成，耗时 {{time}}ms",
+      "deleteDetails": "删除操作详情",
+      "targetMeasurement": "目标Measurement:",
+      "deleteCondition": "删除条件:",
+      "executionTime": "执行时间:",
+      "operationStatus": "操作状态:",
+      "completed": "已完成",
+      "importantNotice": "重要提示",
+      "deleteWarnings": {
+        "noRowCount": "DELETE 操作不返回删除的具体行数",
+        "verifyWithSelect": "建议执行 SELECT 查询验证数据是否已删除",
+        "irreversible": "DELETE 操作不可撤销，请谨慎使用"
+      },
+      "dropDetails": "DROP 操作详情",
+      "operationType": "操作类型:",
+      "deleteObject": "删除对象:",
+      "dangerWarning": "危险操作警告",
+      "dropWarnings": {
+        "permanent": "DROP 操作会永久删除数据，无法恢复",
+        "dataRemoved": "删除的对象及其所有数据已被移除",
+        "backupFirst": "请确保已做好数据备份"
+      },
+      "createDetails": "CREATE 操作详情",
+      "createObject": "创建对象:",
+      "createStatus": "创建状态:",
+      "created": "已创建",
+      "createNotice": "创建操作提示",
+      "createTips": {
+        "objectCreated": "对象已成功创建",
+        "useShow": "可以使用 SHOW 命令查看创建的对象",
+        "mayFail": "如果对象已存在，某些CREATE语句可能会失败"
+      },
+      "alterDetails": "ALTER 操作详情",
+      "modifyObject": "修改对象:",
+      "modifyStatus": "修改状态:",
+      "modified": "已修改",
+      "permissionDetails": "权限操作详情",
+      "permissionType": "权限类型:",
+      "targetUser": "目标用户:",
+      "executionStats": "执行统计",
+      "statementType": "语句类型:",
+      "executedSQL": "执行的SQL语句",
+      "serverResponse": "服务器响应"
+    },
+    "fieldStatistics": {
+      "title": "字段统计信息",
+      "queries": "个查询",
+      "fields": "个字段",
+      "exportStats": "导出统计",
+      "query": "查询",
+      "rows": "行",
+      "noStats": "该查询无字段统计信息",
+      "executeToView": "请执行查询以查看字段统计",
+      "dataSample": "数据样本",
+      "firstRows": "前 10 行",
+      "exportSample": "导出样本",
+      "executeToPreview": "请执行查询以预览数据样本"
+    },
+    "visualization": {
+      "title": "数据可视化",
+      "dataSource": "数据源：",
+      "enterChartTitle": "输入图表标题",
+      "editTitle": "编辑标题",
+      "chartTypes": {
+        "line": "折线图",
+        "bar": "柱状图",
+        "pie": "饼图",
+        "area": "面积图",
+        "scatter": "散点图",
+        "heatmap": "热力图",
+        "radar": "雷达图",
+        "categoryBar": "分类柱状图",
+        "categoryPie": "分类饼图"
+      },
+      "categoricalFieldStats": "分类字段统计",
+      "fieldsSelected": "字段",
+      "selectFields": "选择显示字段",
+      "selectCategoryField": "选择分类字段",
+      "exportChart": "导出图表",
+      "timePoint": "时间点:",
+      "noVisualization": "查询结果 {{index}} 暂无可视化数据",
+      "executeForChart": "执行包含时间和数值字段的查询以生成图表"
+    },
+    "insights": {
+      "title": "智能数据洞察",
+      "insightsCount": "条洞察",
+      "confidence": "置信度:",
+      "severity": {
+        "high": "高",
+        "medium": "中",
+        "low": "低"
+      },
+      "noInsights": "暂无数据洞察",
+      "executeForInsights": "执行查询后将自动生成智能分析结果"
+    },
+    "trends": {
+      "up": "上升",
+      "down": "下降"
+    },
+    "tabs": {
+      "fieldStatistics": "字段统计",
+      "visualization": "可视化",
+      "insights": "洞察"
+    },
+    "queryDetails": {
+      "title": "执行的查询详情",
+      "query": "查询",
+      "failed": "失败",
+      "success": "成功",
+      "returned": "返回",
+      "rows": "行",
+      "copy": "复制",
+      "sqlCopied": "SQL已复制到剪贴板"
+    },
+    "writeOperations": {
+      "batchSummary": "批量写入操作汇总",
+      "statementCount": "写入语句数量:",
+      "statements": "条",
+      "totalExecutionTime": "总执行时间:",
+      "operationStatus": "操作状态:",
+      "allSuccess": "全部成功",
+      "writeOperation": "写入操作",
+      "targetMeasurement": "目标Measurement:",
+      "executionTime": "执行时间:",
+      "sqlStatement": "SQL语句:",
+      "batchCompleted": "批量写入完成",
+      "allStatementsExecuted": "所有 {{count}} 条写入语句已成功执行",
+      "canVerifyWithSelect": "可以执行 SELECT 查询验证写入的数据"
+    },
+    "dataTab": {
+      "queryTable": "查询表：",
+      "clear": "清空",
+      "noData": "查询结果 {{index}} 无数据"
     }
   }
 }

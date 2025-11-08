@@ -43,6 +43,8 @@
 
   "actionExecutionFailed": "Operation failed: {{error}}",
   "unhandledAction": "Unhandled context menu action",
+  "loadFailed": "Load failed: {{error}}",
+  "retry": "Retry",
 
   "createDatabase": {
     "title": "Create Database",
@@ -81,5 +83,24 @@
     "buttonClose": "Close",
     "buttonCreate": "Create",
     "buttonCreating": "Creating..."
+  },
+  "contextMenu": {
+    "addToFavorites": "Add to Favorites",
+    "removeFromFavorites": "Remove from Favorites",
+    "refreshDatabase": "Refresh Database",
+    "newQuery": "New Query",
+    "properties": "Properties",
+    "refreshTable": "Refresh Table Structure",
+    "queryTable": "Query This Table",
+    "tableProperties": "Table Properties",
+    "insertToQuery": "Insert to Query",
+    "copyColumnName": "Copy Column Name",
+    "refreshConnection": "Refresh Connection",
+    "recentHour": "Recent 1 Hour"
+  },
+  "messages": {
+    "favoriteRemoved": "Removed from favorites",
+    "favoriteAdded": "Added to favorites",
+    "copyFailed": "Copy failed"
   }
 }

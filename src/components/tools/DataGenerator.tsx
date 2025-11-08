@@ -35,6 +35,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import type { DataPoint, BatchWriteRequest, WriteResult } from '@/types';
 
 import { logger } from '@/utils/logger';
+import { useDataGeneratorTranslation } from '@/hooks/useTranslation';
 interface DataGeneratorProps {
   database?: string;
 }
@@ -64,6 +65,7 @@ interface FieldInfo {
 const DataGenerator: React.FC<DataGeneratorProps> = ({
   database = 'test_db',
 }) => {
+  const { t: tGen } = useDataGeneratorTranslation();
   const { activeConnectionId } = useConnectionStore();
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -87,6 +89,23 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   const [recordCount, setRecordCount] = useState<number>(100);
   const [mode, setMode] = useState<'predefined' | 'custom'>('predefined');
   const [selectedTasks, setSelectedTasks] = useState<string[]>([]);
+
+  // 模板名称到翻译键的映射
+  const getTemplateKey = (taskName: string): string => {
+    const mapping: Record<string, string> = {
+      'IoT传感器数据': 'iot',
+      '系统监控数据': 'system',
+      '业务指标数据': 'business',
+      '网络流量数据': 'network',
+      '应用性能数据': 'appPerformance',
+      '电商交易数据 (大数据量)': 'ecommerce',
+      '金融市场数据 (高频)': 'financial',
+      '社交媒体分析 (多维度)': 'social',
+      '物联网设备监控 (海量数据)': 'iotMassive',
+      '云基础设施监控 (超大数据)': 'cloudInfra',
+    };
+    return mapping[taskName] || '';
+  };
 
   // 预定义的数据生成任务
   const generatorTasks: GeneratorTask[] = [
@@ -760,7 +779,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   // 加载数据库列表
   const loadDatabases = async () => {
     if (!activeConnectionId) {
-      showMessage.error('请先连接到InfluxDB', undefined, 'connection');
+      showMessage.error(tGen('errors.noConnection'), undefined, 'connection');
       return;
     }
 
@@ -776,7 +795,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
         showMessage.success(`已加载 ${dbList.length} 个数据库`, undefined, 'data');
       } else {
         setSelectedDatabase('');
-        showMessage.info('未找到数据库，请先创建数据库', undefined, 'data');
+        showMessage.info(tGen('errors.noDatabase'), undefined, 'data');
       }
     } catch (error) {
       logger.error('加载数据库列表失败:', error);
@@ -789,7 +808,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   // 加载表列表
   const loadTables = async () => {
     if (!activeConnectionId || !selectedDatabase) {
-      showMessage.error('请先选择数据库');
+      showMessage.error(tGen('errors.selectDatabase'));
       return;
     }
 
@@ -809,7 +828,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
           setTableInfo(null);
         }
       } else {
-        showMessage.info('数据库中暂无表');
+        showMessage.info(tGen('errors.noTables'));
         setSelectedTable('');
         setTableInfo(null);
       }
@@ -1446,7 +1465,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
     setIsStopping(true);
     setShouldStop(true);
     setIsPaused(false);
-    showMessage.info('正在停止数据生成...');
+    showMessage.info(tGen('messages.stopping'));
   };
 
   // 暂停/恢复数据生成
@@ -1466,7 +1485,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
   // 执行数据生成
   const generateData = async () => {
     if (!activeConnectionId) {
-      showMessage.error('请先连接到InfluxDB', undefined, 'connection');
+      showMessage.error(tGen('errors.noConnection'), undefined, 'connection');
       return;
     }
 
@@ -1960,14 +1979,14 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
             disabled={!activeConnectionId || databases.length === 0}
           >
             <SelectTrigger className='w-[160px] h-8 text-sm'>
-              <SelectValue 
+              <SelectValue
                 placeholder={
-                  !activeConnectionId 
-                    ? '请先连接数据库' 
-                    : databases.length === 0 
-                      ? '暂无数据库' 
-                      : '选择数据库'
-                } 
+                  !activeConnectionId
+                    ? tGen('ui.pleaseConnect')
+                    : databases.length === 0
+                      ? tGen('ui.noDatabase')
+                      : tGen('ui.selectDatabase')
+                }
               />
             </SelectTrigger>
             <SelectContent className="min-w-[160px] max-w-[300px]">
@@ -1979,7 +1998,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 ))
               ) : (
                 <div className="px-2 py-1.5 text-sm text-muted-foreground">
-                  暂无数据库
+                  {tGen('ui.noDatabase')}
                 </div>
               )}
             </SelectContent>
@@ -2053,7 +2072,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 variant='outline'
                 size='sm'
                 className='h-8 px-2'
-                title="刷新表列表"
+                title={tGen('ui.refreshTableList')}
               >
                 <RefreshCw className='w-4 h-4' />
               </Button>
@@ -2131,7 +2150,7 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                 className='h-8 text-sm'
               >
                 <Square className='w-4 h-4 mr-2' />
-                {isStopping ? '正在停止...' : '停止生成'}
+                {isStopping ? tGen('ui.stopping') : tGen('ui.stopGeneration')}
               </Button>
             </div>
           )}
@@ -2323,9 +2342,9 @@ const DataGenerator: React.FC<DataGeneratorProps> = ({
                       onCheckedChange={(checked) => handleTaskSelection(task.name, !!checked)}
                     />
                     <div className='flex-1'>
-                      <CardTitle className='text-base'>{task.name}</CardTitle>
+                      <CardTitle className='text-base'>{tGen(`templates.${getTemplateKey(task.name)}.name`)}</CardTitle>
                       <CardDescription className='mt-1'>
-                        {task.description}
+                        {tGen(`templates.${getTemplateKey(task.name)}.description`)}
                       </CardDescription>
                     </div>
                   </div>

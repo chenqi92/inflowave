@@ -1,0 +1,79 @@
+{
+  "templates": {
+    "iot": {
+      "name": "IoT Sensor Data",
+      "description": "Temperature, humidity, and pressure sensor data"
+    },
+    "system": {
+      "name": "System Monitoring Data",
+      "description": "CPU, memory, and disk usage monitoring data"
+    },
+    "business": {
+      "name": "Business Metrics Data",
+      "description": "Revenue, orders, and user activity metrics"
+    },
+    "network": {
+      "name": "Network Traffic Data",
+      "description": "Network bandwidth, latency, and packet loss data"
+    },
+    "appPerformance": {
+      "name": "Application Performance Data",
+      "description": "Response time, error rate, and throughput data"
+    },
+    "ecommerce": {
+      "name": "E-commerce Transaction Data (High Volume)",
+      "description": "E-commerce platform transaction records including user behavior, orders, and payment information"
+    },
+    "financial": {
+      "name": "Financial Market Data (High Frequency)",
+      "description": "Real-time trading data for stocks, futures, and forex markets"
+    },
+    "social": {
+      "name": "Social Media Analytics (Multi-dimensional)",
+      "description": "Social media platform user behavior and content analysis data"
+    },
+    "iotMassive": {
+      "name": "IoT Device Monitoring (Massive Data)",
+      "description": "Large-scale IoT device status monitoring and telemetry data"
+    },
+    "cloudInfra": {
+      "name": "Cloud Infrastructure Monitoring (Ultra-large Data)",
+      "description": "Cloud platform infrastructure resource usage and performance metrics"
+    }
+  },
+  "errors": {
+    "noConnection": "Please connect to InfluxDB first",
+    "noDatabase": "No database found, please create a database first",
+    "selectDatabase": "Please select a database first",
+    "noTables": "No tables in database",
+    "selectTable": "Please select a target table",
+    "loadDatabasesFailed": "Failed to load database list",
+    "loadTablesFailed": "Failed to load table list",
+    "loadTableStructureFailed": "Failed to get table structure",
+    "generateDataFailed": "Data generation failed",
+    "clearDataFailed": "Failed to clear data"
+  },
+  "messages": {
+    "stopping": "Stopping data generation...",
+    "pause": "Pause data generation",
+    "resume": "Resume data generation",
+    "stoppedByUser": "Data generation stopped by user",
+    "generationStopped": "Data generation stopped",
+    "processing": "Processing...",
+    "noTableSelected": "Please select a table to clear",
+    "selectTableToClear": "Please select a data table to clear first"
+  },
+  "ui": {
+    "selectDatabase": "Select Database",
+    "pleaseSelectDatabase": "Please select a database first",
+    "noDatabase": "No database available",
+    "pleaseConnect": "Please connect to database first",
+    "selectTable": "Select Table",
+    "pleaseSelectTable_prefix": "Please select a database first",
+    "noTables": "No tables available",
+    "refreshTableList": "Refresh table list",
+    "refreshTableStructure": "Refresh table structure information",
+    "stopping": "Stopping...",
+    "stopGeneration": "Stop Generation"
+  }
+}

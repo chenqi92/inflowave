@@ -51,5 +51,11 @@
     "between": "Between",
     "after": "After",
     "before": "Before"
-  }
+  },
+  "copySelected": "Copy ({{count}})",
+  "copyAsText": "Copy as Text",
+  "copyAsJSON": "Copy as JSON",
+  "copyAsCSV": "Copy as CSV",
+  "filterConditions": "Filter Conditions ({{count}})",
+  "applyAllFilters": "Apply All Filters"
 }
