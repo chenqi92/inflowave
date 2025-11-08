@@ -4,6 +4,7 @@ import type { DataNode } from '@/types/databaseExplorer';
 import { showMessage } from '@/utils/message';
 import { log } from '@/utils/logger';
 import logger from '@/utils/logger';
+import { useConnectionsTranslation } from '@/hooks/useTranslation';
 
 interface UseConnectionHandlersProps {
   getConnection: (id: string) => ConnectionConfig | undefined;
@@ -46,6 +47,8 @@ export const useConnectionHandlers = ({
   buildCompleteTreeData,
   updateConnectionNodeDisplay,
 }: UseConnectionHandlersProps) => {
+  const { t: tConn } = useConnectionsTranslation();
+
   // ============================================================================
   // Connect and Load Databases
   // ============================================================================
@@ -77,7 +80,7 @@ export const useConnectionHandlers = ({
         clearDatabasesCache(connectionId);
 
         // 3. 连接成功，显示成功消息
-        showMessage.success(`已连接: ${connection.name}`);
+        showMessage.success(tConn('connected_to', { name: connection.name }));
         logger.debug(`✅ 连接建立成功: ${connection.name}`);
 
         // 清除加载状态
@@ -102,7 +105,7 @@ export const useConnectionHandlers = ({
           return newMap;
         });
 
-        showMessage.error(`连接失败: ${errorMessage}`);
+        showMessage.error(tConn('connection_failed_error', { error: errorMessage }));
       } finally {
         // 确保加载状态被清除
         setConnectionLoadingStates(prev => {
@@ -119,6 +122,7 @@ export const useConnectionHandlers = ({
       clearDatabasesCache,
       setConnectionErrors,
       setConnectionLoadingStates,
+      tConn,
     ]
   );
 
@@ -142,10 +146,10 @@ export const useConnectionHandlers = ({
       try {
         logger.info(`📊 加载数据库列表: ${connection.name}`);
         await buildCompleteTreeData(false); // 不强制刷新，让缓存机制决定
-        showMessage.success(`已加载数据库列表: ${connection.name}`);
+        showMessage.success(tConn('databasesLoaded', { name: connection.name }));
       } catch (error) {
         logger.error(`❌ 加载数据库列表失败:`, error);
-        showMessage.error(`加载数据库列表失败: ${error}`);
+        showMessage.error(tConn('loadDatabasesFailed', { error: String(error) }));
         return;
       } finally {
         setConnectionLoadingStates(prev => {
@@ -158,7 +162,7 @@ export const useConnectionHandlers = ({
 
       // 展开连接节点
       setExpandedKeys(prev => [...prev, connectionKey]);
-      showMessage.info(`已展开连接 "${connection.name}"`);
+      showMessage.info(tConn('connectionExpanded', { name: connection.name }));
     },
     [
       getConnection,
@@ -166,6 +170,7 @@ export const useConnectionHandlers = ({
       updateConnectionNodeDisplay,
       buildCompleteTreeData,
       setExpandedKeys,
+      tConn,
     ]
   );
 
@@ -179,14 +184,14 @@ export const useConnectionHandlers = ({
       const currentStatus = getConnectionStatus(connection_id);
 
       if (!connection) {
-        showMessage.error('连接配置不存在');
+        showMessage.error(tConn('connectionNotExist'));
         return;
       }
 
       // 检查是否正在连接中
       if (currentStatus?.status === 'connecting') {
         logger.info(`⏳ 连接 ${connection.name} 正在连接中，跳过操作`);
-        showMessage.warning(`连接 ${connection.name} 正在连接中，请稍候...`);
+        showMessage.warning(tConn('connectionInProgress', { name: connection.name }));
         return;
       }
 
@@ -210,7 +215,7 @@ export const useConnectionHandlers = ({
       const timeoutId = setTimeout(() => {
         abortController.abort();
         logger.warn(`⏰ 连接操作超时: ${connection.name}`);
-        showMessage.error(`连接操作超时: ${connection.name}`);
+        showMessage.error(tConn('connectionTimeout', { name: connection.name }));
       }, timeoutMs);
 
       try {
@@ -218,12 +223,12 @@ export const useConnectionHandlers = ({
           // 断开连接
           log.info(`断开连接: ${connection.name}`);
           await disconnectFromDatabase(connection_id);
-          showMessage.success(`已断开连接: ${connection.name}`);
+          showMessage.success(tConn('disconnected_from', { name: connection.name }));
         } else {
           // 建立连接
           log.info(`建立连接: ${connection.name}`);
           await connectToDatabase(connection_id);
-          showMessage.success(`已连接: ${connection.name}`);
+          showMessage.success(tConn('connected_to', { name: connection.name }));
         }
 
         clearTimeout(timeoutId);
@@ -237,7 +242,7 @@ export const useConnectionHandlers = ({
 
         // 检查是否是超时错误
         if (abortController.signal.aborted) {
-          errorMessage = `连接超时 (${connection.connectionTimeout || 30}秒)`;
+          errorMessage = tConn('connectionTimeoutSeconds', { seconds: connection.connectionTimeout || 30 });
         }
 
         // 设置错误状态
@@ -245,7 +250,7 @@ export const useConnectionHandlers = ({
           new Map(prev).set(connection_id, errorMessage)
         );
 
-        showMessage.error(`连接失败: ${errorMessage}`);
+        showMessage.error(tConn('connection_failed_error', { error: errorMessage }));
       } finally {
         // 🔧 使用 startTransition 批量清除 loading 状态
         startTransition(() => {
@@ -267,6 +272,7 @@ export const useConnectionHandlers = ({
       setConnectionLoadingStates,
       setConnectionErrors,
       updateConnectionNodeDisplay,
+      tConn,
     ]
   );
 

@@ -187,5 +187,12 @@
   "fair": "一般",
   "poor": "较差",
   "success": "成功",
-  "failed": "失败"
+  "failed": "失败",
+  "databasesLoaded": "已加载数据库列表: {{name}}",
+  "loadDatabasesFailed": "加载数据库列表失败: {{error}}",
+  "connectionExpanded": "已展开连接 \"{{name}}\"",
+  "connectionNotExist": "连接配置不存在",
+  "connectionInProgress": "连接 {{name}} 正在连接中，请稍候...",
+  "connectionTimeout": "连接操作超时: {{name}}",
+  "connectionTimeoutSeconds": "连接超时 ({{seconds}}秒)"
 }

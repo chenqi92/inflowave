@@ -187,5 +187,12 @@
   "fair": "Fair",
   "poor": "Poor",
   "success": "Success",
-  "failed": "Failed"
+  "failed": "Failed",
+  "databasesLoaded": "Database list loaded: {{name}}",
+  "loadDatabasesFailed": "Failed to load database list: {{error}}",
+  "connectionExpanded": "Connection \"{{name}}\" expanded",
+  "connectionNotExist": "Connection configuration does not exist",
+  "connectionInProgress": "Connection {{name}} is connecting, please wait...",
+  "connectionTimeout": "Connection operation timeout: {{name}}",
+  "connectionTimeoutSeconds": "Connection timeout ({{seconds}} seconds)"
 }

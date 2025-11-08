@@ -2,11 +2,13 @@ import {useState, useCallback, useRef} from 'react';
 import {useQueryStore} from '@/store/query';
 import type {QueryRequest, QueryResult, QueryValidationResult} from '@/types';
 import logger from '@/utils/logger';
+import { useQueryTranslation } from './useTranslation';
 
 /**
  * 查询管理 Hook
  */
 export const useQuery = () => {
+    const { t: tQuery } = useQueryTranslation();
     const {
         tabs,
         activeTabId,
@@ -69,9 +71,9 @@ export const useQuery = () => {
             abortControllerRef.current.abort();
             abortControllerRef.current = null;
             setLocalLoading(false);
-            setLocalError('查询已取消');
+            setLocalError(tQuery('query_cancelled'));
         }
-    }, []);
+    }, [tQuery]);
 
     /**
      * 验证查询
@@ -171,13 +173,13 @@ export const useQuery = () => {
         ): Promise<QueryResult | null> => {
             const currentTab = getCurrentTab();
             if (!currentTab || !currentTab.query.trim()) {
-                throw new Error('没有可执行的查询');
+                throw new Error(tQuery('noExecutableQuery'));
             }
 
             // 确保 database 不为 undefined
             const targetDatabase = database || currentTab.database;
             if (!targetDatabase) {
-                throw new Error('缺少数据库名称');
+                throw new Error(tQuery('missingDatabaseName'));
             }
 
 
@@ -189,7 +191,7 @@ export const useQuery = () => {
 
             return executeQuery(request);
         },
-        [getCurrentTab, executeQuery]
+        [getCurrentTab, executeQuery, tQuery]
     );
 
     /**
@@ -242,7 +244,7 @@ export const useQuery = () => {
         ): Promise<QueryResult> => {
             const historyItem = history.find(item => item.id === historyItemId);
             if (!historyItem) {
-                throw new Error('历史记录项不存在');
+                throw new Error(tQuery('itemNotFound'));
             }
 
             const request: QueryRequest = {
@@ -253,7 +255,7 @@ export const useQuery = () => {
 
             return executeQuery(request);
         },
-        [history, executeQuery]
+        [history, executeQuery, tQuery]
     );
 
     /**

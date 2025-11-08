@@ -5,6 +5,7 @@ import { useSmartSql } from './useSmartSql';
 import { toast } from 'sonner';
 import { safeTauriInvoke } from '@/utils/tauri';
 import logger from '@/utils/logger';
+import { useContextMenuTranslation, useConnectionsTranslation, useCommonTranslation } from './useTranslation';
 
 export interface ContextMenuState {
   visible: boolean;
@@ -23,7 +24,10 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
   const { onSqlGenerated, onActionExecuted, onError } = options;
   const navigate = useNavigate();
   const { activeConnectionId } = useConnectionStore();
-  
+  const { t: tMenu } = useContextMenuTranslation();
+  const { t: tConn } = useConnectionsTranslation();
+  const { t: tCommon } = useCommonTranslation();
+
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     visible: false,
     x: 0,
@@ -188,16 +192,16 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
           
         default:
           logger.warn('未处理的上下文菜单操作:', action);
-          toast.info(`功能 "${action}" 开发中...`);
+          toast.info(tMenu('featureInDevelopment', { action }));
       }
       
       onActionExecuted?.(action, params);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '操作失败';
+      const errorMessage = error instanceof Error ? error.message : tCommon('operationFailed');
       onError?.(errorMessage);
       toast.error(errorMessage);
     }
-  }, [hideContextMenu, onActionExecuted, onError]);
+  }, [hideContextMenu, onActionExecuted, onError, tCommon, tMenu]);
 
   /**
    * 处理 SQL 生成
@@ -238,7 +242,7 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
         result = await generateShowQuery('tag_values', params.database, params.measurement, params.tag);
         break;
       default:
-        throw new Error(`不支持的 SQL 类型: ${params.sqlType}`);
+        throw new Error(tMenu('unsupportedSqlType', { sqlType: params.sqlType }));
     }
     
     // 回调或导航到查询页面
@@ -253,9 +257,9 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
         },
       });
     }
-    
-    toast.success(`SQL 已生成: ${result.description}`);
-  }, [generateSelectQuery, generateCountQuery, generateTimeSeriesQuery, generateAggregationQuery, generateFieldStatsQuery, generateShowQuery, onSqlGenerated, navigate]);
+
+    toast.success(tMenu('sqlGenerated', { description: result.description }));
+  }, [generateSelectQuery, generateCountQuery, generateTimeSeriesQuery, generateAggregationQuery, generateFieldStatsQuery, generateShowQuery, onSqlGenerated, navigate, tMenu]);
 
   /**
    * 处理复制到剪贴板
@@ -268,7 +272,7 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
    * 处理预览数据
    */
   const handlePreviewData = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
     
     let query = `SELECT * FROM "${params.measurement}"`;
     
@@ -303,16 +307,16 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
    * 处理显示字段
    */
   const handleShowFields = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
     const fields = await safeTauriInvoke('get_field_keys', {
       connection_id: activeConnectionId,
       database: params.database,
       measurement: params.measurement,
     });
-    
+
     // 显示字段信息对话框
-    toast.success(`获取到 ${Array.isArray(fields) ? fields.length : 0} 个字段`);
+    toast.success(tMenu('fieldsCount', { count: Array.isArray(fields) ? fields.length : 0 }));
     
     return fields;
   }, [activeConnectionId]);
@@ -321,15 +325,15 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
    * 处理显示标签键
    */
   const handleShowTagKeys = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
     const tagKeys = await safeTauriInvoke('get_tag_keys', {
       connectionId: activeConnectionId,
       database: params.database,
       measurement: params.measurement,
     });
-    
-    toast.success(`获取到 ${Array.isArray(tagKeys) ? tagKeys.length : 0} 个标签键`);
+
+    toast.success(tMenu('tagKeysCount', { count: Array.isArray(tagKeys) ? tagKeys.length : 0 }));
     
     return tagKeys;
   }, [activeConnectionId]);
@@ -338,16 +342,16 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
    * 处理显示标签值
    */
   const handleShowTagValues = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
     const tagValues = await safeTauriInvoke('get_tag_values', {
       connection_id: activeConnectionId,
       database: params.database,
       measurement: params.measurement,
       tagKey: params.tagKey,
     });
-    
-    toast.success(`获取到 ${Array.isArray(tagValues) ? tagValues.length : 0} 个标签值`);
+
+    toast.success(tMenu('tagValuesCount', { count: Array.isArray(tagValues) ? tagValues.length : 0 }));
     
     return tagValues;
   }, [activeConnectionId]);
@@ -356,15 +360,15 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
    * 处理显示序列
    */
   const handleShowSeries = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
     const query = `SHOW SERIES FROM "${params.measurement}"`;
     const result = await safeTauriInvoke<any>('execute_query', {
       connection_id: activeConnectionId,
       query,
     });
-    
-    toast.success('序列信息已获取');
+
+    toast.success(tMenu('seriesInfoFetched'));
     
     return result;
   }, [activeConnectionId]);
@@ -373,8 +377,8 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
    * 处理导出数据
    */
   const handleExportData = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
     const filePath = `${params.measurement}_${Date.now()}.${params.format}`;
     const result = await safeTauriInvoke('export_table_data', {
       connection_id: activeConnectionId,
@@ -384,8 +388,8 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
       limit: 10000,
       filePath,
     });
-    
-    toast.success(`数据已导出: ${result}`);
+
+    toast.success(tMenu('dataExported', { result }));
     
     return result;
   }, [activeConnectionId]);
@@ -395,7 +399,7 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
    */
   const handleCreateChart = useCallback(async (params: any) => {
     const query = `SELECT * FROM "${params.measurement}" WHERE time >= now() - 1h ORDER BY time DESC LIMIT 1000`;
-    
+
     navigate('/visualization', {
       state: {
         presetQuery: query,
@@ -404,8 +408,8 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
         chartType: params.chartType || 'timeSeries',
       },
     });
-    
-    toast.success('正在跳转到可视化页面...');
+
+    toast.success(tMenu('navigatingToVisualization'));
   }, [navigate]);
 
   /**
@@ -413,7 +417,7 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
    */
   const handleCreateFieldChart = useCallback(async (params: any) => {
     const query = `SELECT time, "${params.field}" FROM "${params.measurement}" WHERE time >= now() - 1h ORDER BY time DESC`;
-    
+
     navigate('/visualization', {
       state: {
         presetQuery: query,
@@ -423,16 +427,16 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
         chartType: params.chartType || 'timeSeries',
       },
     });
-    
-    toast.success('正在跳转到可视化页面...');
-  }, [navigate]);
+
+    toast.success(tMenu('navigatingToVisualization'));
+  }, [navigate, tMenu]);
 
   /**
    * 处理创建标签图表
    */
   const handleCreateTagChart = useCallback(async (params: any) => {
     const query = `SELECT COUNT(*) FROM "${params.measurement}" WHERE time >= now() - 24h GROUP BY "${params.tagKey}"`;
-    
+
     navigate('/visualization', {
       state: {
         presetQuery: query,
@@ -442,86 +446,86 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
         chartType: 'distribution',
       },
     });
-    
-    toast.success('正在跳转到可视化页面...');
+
+    toast.success(tMenu('navigatingToVisualization'));
   }, [navigate]);
 
   /**
    * 处理删除测量
    */
   const handleDeleteMeasurement = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
-    const confirmed = window.confirm(`确定要删除测量 "${params.measurement}" 吗？此操作不可撤销！`);
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
+    const confirmed = window.confirm(tMenu('deleteMeasurementConfirm', { measurement: params.measurement }));
     if (!confirmed) return;
-    
+
     await safeTauriInvoke('drop_measurement', {
       connection_id: activeConnectionId,
       database: params.database,
       measurement: params.measurement,
     });
-    
-    toast.success(`测量 "${params.measurement}" 已删除`);
+
+    toast.success(tMenu('measurementDeleted', { measurement: params.measurement }));
   }, [activeConnectionId]);
 
   /**
    * 处理删除数据库
    */
   const handleDeleteDatabase = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
-    const confirmed = window.confirm(`确定要删除数据库 "${params.database}" 吗？此操作将删除所有数据且不可撤销！`);
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
+    const confirmed = window.confirm(tMenu('deleteDatabaseConfirm', { database: params.database }));
     if (!confirmed) return;
-    
+
     await safeTauriInvoke('drop_database', {
       connection_id: activeConnectionId,
       database: params.database,
     });
-    
-    toast.success(`数据库 "${params.database}" 已删除`);
+
+    toast.success(tMenu('databaseDeleted', { database: params.database }));
   }, [activeConnectionId]);
 
   /**
    * 处理显示数据库信息
    */
   const handleShowDatabaseInfo = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
     const info = await safeTauriInvoke('get_database_info', {
       connectionId: activeConnectionId,
       database: params.database,
     });
 
     toast.dismiss(); // 清除所有现有消息，避免位置叠加
-    toast.success(`数据库 "${params.database}" 信息已获取`);
+    toast.success(tMenu('databaseInfoFetched', { database: params.database }));
 
     return info;
-  }, [activeConnectionId]);
+  }, [activeConnectionId, tConn, tMenu]);
 
   /**
    * 处理显示数据库统计
    */
   const handleShowDatabaseStats = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
     const stats = await safeTauriInvoke('get_database_stats', {
       connection_id: activeConnectionId,
       database: params.database,
     });
-    
-    toast.success(`数据库 "${params.database}" 统计信息已获取`);
-    
+
+    toast.success(tMenu('databaseStatsFetched', { database: params.database }));
+
     return stats;
-  }, [activeConnectionId]);
+  }, [activeConnectionId, tConn, tMenu]);
 
   /**
    * 处理导出数据库结构
    */
   const handleExportDatabaseStructure = useCallback(async (params: any) => {
-    if (!activeConnectionId) throw new Error('请先建立连接');
-    
+    if (!activeConnectionId) throw new Error(tConn('pleaseConnect'));
+
     // 这里可以实现导出数据库结构的逻辑
-    toast.success(`数据库 "${params.database}" 结构导出功能开发中...`);
+    toast.success(tMenu('databaseExportInDevelopment', { database: params.database }));
   }, [activeConnectionId]);
 
   /**
@@ -530,8 +534,8 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
   const handleExecuteQuery = useCallback(async (params: any) => {
     // 触发查询执行事件
     window.dispatchEvent(new CustomEvent('execute-query', { detail: params }));
-    toast.success('正在执行查询...');
-  }, []);
+    toast.success(tMenu('executingQuery'));
+  }, [tMenu]);
 
   /**
    * 处理格式化查询
@@ -539,8 +543,8 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
   const handleFormatQuery = useCallback(async (params: any) => {
     // 触发格式化查询事件
     window.dispatchEvent(new CustomEvent('format-query', { detail: params }));
-    toast.success('正在格式化查询...');
-  }, []);
+    toast.success(tMenu('formattingQuery'));
+  }, [tMenu]);
 
   /**
    * 处理插入模板
@@ -548,8 +552,8 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
   const handleInsertTemplate = useCallback(async (params: any) => {
     // 触发插入模板事件
     window.dispatchEvent(new CustomEvent('insert-template', { detail: params }));
-    toast.success('模板已插入');
-  }, []);
+    toast.success(tMenu('templateInserted'));
+  }, [tMenu]);
 
   /**
    * 处理解释查询
@@ -557,8 +561,8 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
   const handleExplainQuery = useCallback(async (params: any) => {
     // 触发解释查询事件
     window.dispatchEvent(new CustomEvent('explain-query', { detail: params }));
-    toast.info('查询解释功能开发中...');
-  }, []);
+    toast.info(tMenu('explainQueryInDevelopment'));
+  }, [tMenu]);
 
   /**
    * 处理保存查询
@@ -566,8 +570,8 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
   const handleSaveQuery = useCallback(async (params: any) => {
     // 触发保存查询事件
     window.dispatchEvent(new CustomEvent('save-query', { detail: params }));
-    toast.success('正在保存查询...');
-  }, []);
+    toast.success(tMenu('savingQuery'));
+  }, [tMenu]);
 
   /**
    * 处理切换注释
@@ -575,7 +579,7 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
   const handleToggleComment = useCallback(async (params: any) => {
     // 触发切换注释事件
     window.dispatchEvent(new CustomEvent('toggle-comment', { detail: params }));
-    toast.success('已切换注释');
+    toast.success(tMenu('commentToggled'));
   }, []);
 
   /**
@@ -584,17 +588,17 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
   const handleGenerateFilterQuery = useCallback(async (params: any) => {
     const { column, value, operator } = params;
     let sqlValue = value;
-    
+
     // 根据值类型格式化SQL
     if (typeof value === 'string') {
       sqlValue = `'${value}'`;
     } else if (value === null || value === undefined) {
       sqlValue = 'NULL';
     }
-    
+
     const sql = `SELECT * FROM measurement_name WHERE "${column}" ${operator} ${sqlValue}`;
-    const description = `筛选 ${column} ${operator} ${value}`;
-    
+    const description = tMenu('filterDescription', { column, operator, value });
+
     if (onSqlGenerated) {
       onSqlGenerated(sql, description);
     } else {
@@ -603,9 +607,9 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
         detail: { sql, description }
       }));
     }
-    
-    toast.success('筛选查询已生成');
-  }, [onSqlGenerated]);
+
+    toast.success(tMenu('filterQueryGenerated'));
+  }, [onSqlGenerated, tMenu]);
 
   /**
    * 处理生成聚合查询
@@ -613,8 +617,8 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
   const handleGenerateAggregateQuery = useCallback(async (params: any) => {
     const { column, func } = params;
     const sql = `SELECT ${func}("${column}") FROM measurement_name WHERE time >= now() - 1h`;
-    const description = `${func} 聚合查询: ${column}`;
-    
+    const description = tMenu('aggregateDescription', { func, column });
+
     if (onSqlGenerated) {
       onSqlGenerated(sql, description);
     } else {
@@ -622,39 +626,39 @@ export function useContextMenu(options: ContextMenuOptions = {}) {
         detail: { sql, description }
       }));
     }
-    
-    toast.success('聚合查询已生成');
-  }, [onSqlGenerated]);
+
+    toast.success(tMenu('aggregateQueryGenerated'));
+  }, [onSqlGenerated, tMenu]);
 
   /**
    * 处理创建列图表
    */
   const handleCreateColumnChart = useCallback(async (params: any) => {
     const { column } = params;
-    
+
     // 导航到可视化页面
     window.dispatchEvent(new CustomEvent('navigate-to-visualization', {
-      detail: { 
+      detail: {
         column,
         chartType: 'column'
       }
     }));
-    
-    toast.success('正在创建列图表...');
-  }, []);
+
+    toast.success(tMenu('creatingColumnChart'));
+  }, [tMenu]);
 
   /**
    * 处理导出列数据
    */
   const handleExportColumn = useCallback(async (params: any) => {
     const { column } = params;
-    
+
     // 触发导出列数据事件
     window.dispatchEvent(new CustomEvent('export-column-data', {
       detail: { column }
     }));
-    
-    toast.success('正在导出列数据...');
+
+    toast.success(tMenu('exportingColumnData'));
   }, []);
 
   // 监听点击外部关闭菜单

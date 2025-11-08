@@ -75,7 +75,7 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
       case 'notifications':
         return <NotificationPanel onClose={onClose} />;
       case 'workspace':
-        return <WorkspaceContent onRestoreTabs={onRestoreTabs || (() => {})} />;
+        return <WorkspaceContent onRestoreTabs={onRestoreTabs || (() => {})} onClose={onClose} />;
       case 'visualization':
         return <PanelVisualizationPage />;
       case 'monitoring':

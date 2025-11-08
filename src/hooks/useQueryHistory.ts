@@ -3,6 +3,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import type { QueryHistoryItem, SavedQuery } from '@/types';
 import logger from '@/utils/logger';
+import { useQueryTranslation } from './useTranslation';
 
 interface UseQueryHistoryOptions {
   autoLoad?: boolean;
@@ -21,6 +22,7 @@ interface QueryHistoryFilters {
 
 export const useQueryHistory = (options: UseQueryHistoryOptions = {}) => {
   const { autoLoad = true, limit = 1000, offset = 0 } = options;
+  const { t: tQuery } = useQueryTranslation();
 
   const [historyItems, setHistoryItems] = useState<QueryHistoryItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -53,10 +55,10 @@ export const useQueryHistory = (options: UseQueryHistoryOptions = {}) => {
     try {
       await safeTauriInvoke('delete_query_history', { id });
       setHistoryItems(prev => prev.filter(item => item.id !== id));
-      showMessage.success('删除成功');
+      showMessage.success(tQuery('history.deleteSuccess'));
       return true;
     } catch (error) {
-      showMessage.error(`删除失败: ${error}`);
+      showMessage.error(tQuery('history.deleteFailed', { error: String(error) }));
       return false;
     }
   };
@@ -66,10 +68,10 @@ export const useQueryHistory = (options: UseQueryHistoryOptions = {}) => {
     try {
       await safeTauriInvoke('clear_query_history');
       setHistoryItems([]);
-      showMessage.success('历史记录已清空');
+      showMessage.success(tQuery('history.historyCleared'));
       return true;
     } catch (error) {
-      showMessage.error(`清空失败: ${error}`);
+      showMessage.error(tQuery('history.clearFailed', { error: String(error) }));
       return false;
     }
   };
@@ -170,6 +172,7 @@ export const useQueryHistory = (options: UseQueryHistoryOptions = {}) => {
 
 export const useSavedQueries = (options: UseQueryHistoryOptions = {}) => {
   const { autoLoad = true } = options;
+  const { t: tQuery } = useQueryTranslation();
 
   const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([]);
   const [loading, setLoading] = useState(false);
@@ -199,10 +202,10 @@ export const useSavedQueries = (options: UseQueryHistoryOptions = {}) => {
     try {
       await safeTauriInvoke('delete_saved_query', { id });
       setSavedQueries(prev => prev.filter(query => query.id !== id));
-      showMessage.success('删除成功');
+      showMessage.success(tQuery('history.deleteSuccess'));
       return true;
     } catch (error) {
-      showMessage.error(`删除失败: ${error}`);
+      showMessage.error(tQuery('history.deleteFailed', { error: String(error) }));
       return false;
     }
   };
@@ -211,12 +214,12 @@ export const useSavedQueries = (options: UseQueryHistoryOptions = {}) => {
   const updateSavedQuery = async (updatedQuery: SavedQuery) => {
     try {
       await safeTauriInvoke('update_saved_query', { query: updatedQuery });
-      setSavedQueries(prev => prev.map(q => 
+      setSavedQueries(prev => prev.map(q =>
         q.id === updatedQuery.id ? updatedQuery : q
       ));
       return true;
     } catch (error) {
-      showMessage.error(`更新失败: ${error}`);
+      showMessage.error(tQuery('history.updateFailed', { error: String(error) }));
       return false;
     }
   };
@@ -235,11 +238,11 @@ export const useSavedQueries = (options: UseQueryHistoryOptions = {}) => {
 
       const success = await updateSavedQuery(updatedQuery);
       if (success) {
-        showMessage.success(updatedQuery.favorite ? '已添加到收藏' : '已取消收藏');
+        showMessage.success(updatedQuery.favorite ? tQuery('history.addedToFavorites') : tQuery('history.removedFromFavorites'));
       }
       return success;
     } catch (error) {
-      showMessage.error('操作失败');
+      showMessage.error(tQuery('history.operationFailed'));
       return false;
     }
   };

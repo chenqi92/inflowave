@@ -249,5 +249,16 @@
     "avg": "平均值 (AVG)",
     "max": "最大值 (MAX)",
     "min": "最小值 (MIN)"
+  },
+
+  "history": {
+    "deleteSuccess": "删除成功",
+    "deleteFailed": "删除失败: {{error}}",
+    "historyCleared": "历史记录已清空",
+    "clearFailed": "清空失败: {{error}}",
+    "updateFailed": "更新失败: {{error}}",
+    "addedToFavorites": "已添加到收藏",
+    "removedFromFavorites": "已取消收藏",
+    "operationFailed": "操作失败"
   }
 }

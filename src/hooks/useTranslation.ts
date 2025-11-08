@@ -457,6 +457,13 @@ export const useDatabaseExplorerTranslation = () => {
   return useTranslation('databaseExplorer');
 };
 
+/**
+ * 通知翻译 Hook
+ */
+export const useNotificationsTranslation = () => {
+  return useTranslation('notifications');
+};
+
 // ============================================================================
 // 高级翻译工具
 // ============================================================================

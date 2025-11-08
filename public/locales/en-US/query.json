@@ -249,5 +249,16 @@
     "avg": "Average (AVG)",
     "max": "Maximum (MAX)",
     "min": "Minimum (MIN)"
+  },
+
+  "history": {
+    "deleteSuccess": "Deleted successfully",
+    "deleteFailed": "Delete failed: {{error}}",
+    "historyCleared": "History cleared",
+    "clearFailed": "Clear failed: {{error}}",
+    "updateFailed": "Update failed: {{error}}",
+    "addedToFavorites": "Added to favorites",
+    "removedFromFavorites": "Removed from favorites",
+    "operationFailed": "Operation failed"
   }
 }

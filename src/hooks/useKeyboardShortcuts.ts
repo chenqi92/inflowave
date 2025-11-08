@@ -4,6 +4,7 @@ import {useConnectionStore} from '@/store/connection';
 import {showMessage} from '@/utils/message';
 import {writeToClipboard} from '@/utils/clipboard';
 import logger from '@/utils/logger';
+import { useShortcutsTranslation } from './useTranslation';
 
 interface KeyboardShortcut {
     key: string;
@@ -132,6 +133,7 @@ export const useKeyboardShortcuts = (
 export const useGlobalShortcuts = () => {
     const navigate = useNavigate();
     const {activeConnectionId} = useConnectionStore();
+    const { t: tShortcuts } = useShortcutsTranslation();
 
     const globalShortcuts: KeyboardShortcut[] = [
         // 导航快捷键
@@ -139,42 +141,42 @@ export const useGlobalShortcuts = () => {
             key: '1',
             ctrlKey: true,
             callback: () => navigate('/dashboard'),
-            description: '打开仪表板',
+            description: tShortcuts('openDashboard'),
             category: 'navigation',
         },
         {
             key: '2',
             ctrlKey: true,
             callback: () => navigate('/connections'),
-            description: '打开连接管理',
+            description: tShortcuts('openConnections'),
             category: 'navigation',
         },
         {
             key: '3',
             ctrlKey: true,
             callback: () => navigate('/query'),
-            description: '打开数据查询',
+            description: tShortcuts('openQuery'),
             category: 'navigation',
         },
         {
             key: '4',
             ctrlKey: true,
             callback: () => navigate('/database'),
-            description: '打开数据库管理',
+            description: tShortcuts('openDatabase'),
             category: 'navigation',
         },
         {
             key: '5',
             ctrlKey: true,
             callback: () => navigate('/visualization'),
-            description: '打开数据可视化',
+            description: tShortcuts('openVisualization'),
             category: 'navigation',
         },
         {
             key: '6',
             ctrlKey: true,
             callback: () => navigate('/performance'),
-            description: '打开性能监控',
+            description: tShortcuts('openPerformance'),
             category: 'navigation',
         },
         {
@@ -185,7 +187,7 @@ export const useGlobalShortcuts = () => {
                 const settingsEvent = new CustomEvent('open-settings-modal');
                 document.dispatchEvent(settingsEvent);
             },
-            description: '打开应用设置',
+            description: tShortcuts('openSettings'),
             category: 'navigation',
         },
 
@@ -197,10 +199,10 @@ export const useGlobalShortcuts = () => {
                 if (activeConnectionId) {
                     navigate('/query');
                 } else {
-                    showMessage.warning('请先建立数据库连接');
+                    showMessage.warning(tShortcuts('pleaseConnectFirst'));
                 }
             },
-            description: '新建查询',
+            description: tShortcuts('newQuery'),
             category: 'file',
         },
         {
@@ -208,7 +210,7 @@ export const useGlobalShortcuts = () => {
             ctrlKey: true,
             shiftKey: true,
             callback: () => navigate('/connections'),
-            description: '新建连接',
+            description: tShortcuts('newConnection'),
             category: 'file',
         },
 
@@ -223,7 +225,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(executeEvent);
             },
-            description: '执行查询',
+            description: tShortcuts('executeQuery'),
             category: 'query',
         },
         {
@@ -237,7 +239,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(stopEvent);
             },
-            description: '停止查询',
+            description: tShortcuts('stopQuery'),
             category: 'query',
         },
 
@@ -252,7 +254,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(searchEvent);
             },
-            description: '全局搜索',
+            description: tShortcuts('globalSearch'),
             category: 'search',
         },
 
@@ -266,7 +268,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(shortcutsEvent);
             },
-            description: '显示快捷键帮助',
+            description: tShortcuts('showShortcutsHelp'),
             category: 'tools',
         },
 
@@ -279,7 +281,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(devToolsEvent);
             },
-            description: '切换开发者工具',
+            description: tShortcuts('toggleDevTools'),
             category: 'developer',
         },
 
@@ -292,7 +294,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(refreshEvent);
             },
-            description: '刷新页面',
+            description: tShortcuts('refreshPage'),
             category: 'general',
         },
 
@@ -306,7 +308,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(toggleSidebarEvent);
             },
-            description: '切换侧边栏',
+            description: tShortcuts('toggleSidebar'),
             category: 'layout',
         },
 
@@ -320,7 +322,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(zoomInEvent);
             },
-            description: '放大',
+            description: tShortcuts('zoomIn'),
             category: 'view',
         },
         {
@@ -332,7 +334,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(zoomOutEvent);
             },
-            description: '缩小',
+            description: tShortcuts('zoomOut'),
             category: 'view',
         },
         {
@@ -344,7 +346,7 @@ export const useGlobalShortcuts = () => {
                 });
                 document.dispatchEvent(resetZoomEvent);
             },
-            description: '重置缩放',
+            description: tShortcuts('resetZoom'),
             category: 'view',
         },
     ];
@@ -362,6 +364,8 @@ export const useGlobalShortcuts = () => {
 
 // 查询编辑器专用快捷键
 export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
+    const { t: tShortcuts } = useShortcutsTranslation();
+
     const shortcuts: KeyboardShortcut[] = [
         {
             key: 'Enter',
@@ -372,7 +376,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
                 });
                 document.dispatchEvent(executeEvent);
             },
-            description: '执行查询',
+            description: tShortcuts('executeQuery'),
             category: 'query',
         },
         {
@@ -384,7 +388,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
                 });
                 document.dispatchEvent(formatEvent);
             },
-            description: '格式化查询',
+            description: tShortcuts('formatQuery'),
             category: 'query',
         },
         {
@@ -397,10 +401,10 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
                     const lineContent = editorRef.current.getLineContent(
                         selection.startLineNumber
                     );
-                    writeToClipboard(lineContent, {successMessage: '已复制当前行'});
+                    writeToClipboard(lineContent, {successMessage: tShortcuts('copiedCurrentLine')});
                 }
             },
-            description: '复制当前行',
+            description: tShortcuts('copyCurrentLine'),
             category: 'edit',
         },
         {
@@ -412,7 +416,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
                 });
                 document.dispatchEvent(commentEvent);
             },
-            description: '切换注释',
+            description: tShortcuts('toggleComment'),
             category: 'edit',
         },
         {
@@ -424,7 +428,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
                 });
                 document.dispatchEvent(saveEvent);
             },
-            description: '保存查询',
+            description: tShortcuts('saveQuery'),
             category: 'file',
         },
         {
@@ -436,7 +440,7 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
                 });
                 document.dispatchEvent(openEvent);
             },
-            description: '打开查询',
+            description: tShortcuts('openQuery'),
             category: 'file',
         },
     ];
@@ -448,6 +452,8 @@ export const useQueryEditorShortcuts = (editorRef: React.RefObject<any>) => {
 
 // 数据库浏览器专用快捷键
 export const useDatabaseBrowserShortcuts = () => {
+    const { t: tShortcuts } = useShortcutsTranslation();
+
     const shortcuts: KeyboardShortcut[] = [
         {
             key: 'F5',
@@ -457,7 +463,7 @@ export const useDatabaseBrowserShortcuts = () => {
                 });
                 document.dispatchEvent(refreshEvent);
             },
-            description: '刷新数据库结构',
+            description: tShortcuts('refreshDatabaseStructure'),
             category: 'database',
         },
         {
@@ -468,7 +474,7 @@ export const useDatabaseBrowserShortcuts = () => {
                 });
                 document.dispatchEvent(deleteEvent);
             },
-            description: '删除选中项',
+            description: tShortcuts('deleteSelectedItem'),
             category: 'database',
         },
         {
@@ -479,7 +485,7 @@ export const useDatabaseBrowserShortcuts = () => {
                 });
                 document.dispatchEvent(renameEvent);
             },
-            description: '重命名选中项',
+            description: tShortcuts('renameSelectedItem'),
             category: 'database',
         },
         {
@@ -491,7 +497,7 @@ export const useDatabaseBrowserShortcuts = () => {
                 });
                 document.dispatchEvent(newTableEvent);
             },
-            description: '创建新表',
+            description: tShortcuts('createNewTable'),
             category: 'database',
         },
     ];
