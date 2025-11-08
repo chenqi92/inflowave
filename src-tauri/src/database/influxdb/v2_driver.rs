@@ -303,19 +303,41 @@ impl InfluxDriver for V2HttpDriver {
     
     async fn test_connection(&self) -> Result<u64> {
         let start_time = Instant::now();
-        
-        let url = format!("{}/health", self.base_url);
-        let request = self.build_authenticated_request(reqwest::Method::GET, &url);
+
+        // 使用 /api/v2/buckets 来测试连接和认证
+        // 这个端点需要有效的 API Token 才能成功
+        let url = format!("{}/api/v2/buckets", self.base_url);
+        let request = self.build_authenticated_request(reqwest::Method::GET, &url)
+            .query(&[("limit", "1")]); // 只获取1个bucket以减少响应大小
+
         let response = request.send().await?;
-        
-        if response.status().is_success() {
-            let latency = start_time.elapsed().as_millis() as u64;
-            info!("连接测试成功，延迟: {}ms", latency);
-            Ok(latency)
-        } else {
+
+        if !response.status().is_success() {
             let status = response.status();
-            Err(anyhow::anyhow!("连接测试失败: {}", status))
+            let error_text = response.text().await.unwrap_or_default();
+
+            // 判断是否是认证错误
+            if status == 401 || status == 403 {
+                return Err(anyhow::anyhow!("认证失败: API Token 无效或没有权限"));
+            }
+
+            return Err(anyhow::anyhow!("连接测试失败 ({}): {}", status, error_text));
         }
+
+        // 验证响应格式
+        let json: Value = response.json().await
+            .map_err(|e| anyhow::anyhow!("解析响应失败: {}", e))?;
+
+        // 检查响应中是否有错误信息
+        if let Some(code) = json.get("code") {
+            if code.as_str() == Some("unauthorized") || code.as_str() == Some("forbidden") {
+                return Err(anyhow::anyhow!("认证失败: API Token 无效或没有权限"));
+            }
+        }
+
+        let latency = start_time.elapsed().as_millis() as u64;
+        info!("连接测试成功，延迟: {}ms", latency);
+        Ok(latency)
     }
     
     async fn close(&self) -> Result<()> {

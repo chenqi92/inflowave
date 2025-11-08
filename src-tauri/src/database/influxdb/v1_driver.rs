@@ -232,19 +232,41 @@ impl InfluxDriver for V1HttpDriver {
     
     async fn test_connection(&self) -> Result<u64> {
         let start_time = Instant::now();
-        
-        let url = format!("{}/ping", self.base_url);
+
+        // 使用 SHOW DATABASES 来测试连接和认证
+        // 这个查询需要有效的认证信息才能成功
+        let url = self.build_query_url("SHOW DATABASES", None);
         let request = self.build_authenticated_request(&url);
         let response = request.send().await?;
-        
-        if response.status().is_success() {
-            let latency = start_time.elapsed().as_millis() as u64;
-            info!("连接测试成功，延迟: {}ms", latency);
-            Ok(latency)
-        } else {
+
+        if !response.status().is_success() {
             let status = response.status();
-            Err(anyhow::anyhow!("连接测试失败: {}", status))
+            let error_text = response.text().await.unwrap_or_default();
+
+            // 判断是否是认证错误
+            if status == 401 || error_text.contains("authorization failed") || error_text.contains("username and password") {
+                return Err(anyhow::anyhow!("认证失败: 用户名或密码错误"));
+            }
+
+            return Err(anyhow::anyhow!("连接测试失败 ({}): {}", status, error_text));
         }
+
+        // 验证响应格式
+        let json: Value = response.json().await
+            .map_err(|e| anyhow::anyhow!("解析响应失败: {}", e))?;
+
+        // 检查是否有错误
+        if let Some(error) = json.get("error") {
+            let error_msg = error.as_str().unwrap_or("未知错误");
+            if error_msg.contains("authorization failed") || error_msg.contains("username and password") {
+                return Err(anyhow::anyhow!("认证失败: 用户名或密码错误"));
+            }
+            return Err(anyhow::anyhow!("查询失败: {}", error_msg));
+        }
+
+        let latency = start_time.elapsed().as_millis() as u64;
+        info!("连接测试成功，延迟: {}ms", latency);
+        Ok(latency)
     }
     
     async fn close(&self) -> Result<()> {

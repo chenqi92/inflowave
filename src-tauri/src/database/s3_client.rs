@@ -152,12 +152,27 @@ impl S3ClientManager {
     pub async fn test_connection(&self, id: &str) -> Result<bool> {
         let client = self.get_client(id).await?;
 
-        // 尝试列出buckets来测试连接
+        // 尝试列出buckets来测试连接和认证
         match client.list_buckets().send().await {
-            Ok(_) => Ok(true),
+            Ok(_) => {
+                log::info!("S3 connection test successful");
+                Ok(true)
+            }
             Err(e) => {
                 log::error!("S3 connection test failed: {}", e);
-                Ok(false)
+
+                // 检查是否是认证错误
+                let error_msg = e.to_string();
+                if error_msg.contains("InvalidAccessKeyId") || error_msg.contains("SignatureDoesNotMatch") {
+                    return Err(anyhow::anyhow!("认证失败: Access Key 或 Secret Key 错误"));
+                } else if error_msg.contains("AccessDenied") || error_msg.contains("403") {
+                    return Err(anyhow::anyhow!("认证失败: 没有权限访问"));
+                } else if error_msg.contains("credential") || error_msg.contains("Credential") {
+                    return Err(anyhow::anyhow!("认证失败: 凭证配置错误"));
+                }
+
+                // 其他错误
+                Err(anyhow::anyhow!("连接测试失败: {}", e))
             }
         }
     }

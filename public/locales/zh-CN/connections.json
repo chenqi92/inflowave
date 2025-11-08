@@ -478,6 +478,8 @@
     "internal_endpoint_description": "用于内网环境的访问地址",
     "external_endpoint": "外网端点",
     "external_endpoint_placeholder": "外网访问地址（可选）",
+    "proxy_url": "代理地址",
+    "proxy_url_description": "HTTP/HTTPS代理服务器地址（可选）",
     "external_endpoint_description": "用于外部访问的地址",
     "qiniu_kodo": "七牛云Kodo",
     "qiniu_z0": "华东",

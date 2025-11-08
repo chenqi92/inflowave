@@ -707,6 +707,47 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               </div>
             )}
 
+            {/* InfluxDB特有：版本选择器 */}
+            {selectedType === 'influxdb' && currentConnector && 'getVersionField' in currentConnector && typeof (currentConnector as any).getVersionField === 'function' && (
+              <div className="mb-3 pb-3 border-b space-y-1">
+                {(() => {
+                  const versionField = (currentConnector as any).getVersionField();
+                  const value = formData[versionField.name];
+                  const error = errors[versionField.name];
+
+                  return (
+                    <>
+                      <Label htmlFor={versionField.name} className="text-xs">
+                        {versionField.label}
+                        {versionField.required && <span className="text-destructive ml-0.5">*</span>}
+                      </Label>
+                      <Select
+                        value={value || versionField.defaultValue}
+                        onValueChange={(newValue) => handleFieldChange(versionField.name, newValue)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder={versionField.placeholder} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {versionField.options.map((option: any) => (
+                            <SelectItem key={option.value} value={option.value} className="text-xs">
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {versionField.description && (
+                        <p className="text-[10px] text-muted-foreground leading-tight">{versionField.description}</p>
+                      )}
+                      {error && (
+                        <p className="text-[10px] text-destructive">{error}</p>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-3 h-8">
                 <TabsTrigger value="general" className="text-[11px] h-7">

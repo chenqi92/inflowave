@@ -438,6 +438,8 @@
     "external_endpoint": "External Endpoint",
     "external_endpoint_placeholder": "External access address (optional)",
     "external_endpoint_description": "Address for external access",
+    "proxy_url": "Proxy URL",
+    "proxy_url_description": "HTTP/HTTPS proxy server address (optional)",
     "qiniu_kodo": "Qiniu Kodo",
     "qiniu_z0": "East China",
     "qiniu_z1": "North China",
