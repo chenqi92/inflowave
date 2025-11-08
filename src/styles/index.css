@@ -19,6 +19,13 @@
 
 /* 查询页面优化样式 */
 @layer components {
+  /* 网格背景效果 */
+  .bg-grid-white\/5 {
+    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
   /* 虚拟化表格样式优化 - 与传统表格保持一致 */
   .virtualized-table {
     height: 100%;

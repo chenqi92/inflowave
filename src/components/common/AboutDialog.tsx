@@ -8,6 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
   Separator,
+  Button,
+  Card,
+  CardContent,
 } from '@/components/ui';
 
 import {
@@ -19,6 +22,13 @@ import {
   Users,
   Wrench,
   Github,
+  ExternalLink,
+  Star,
+  Code2,
+  Sparkles,
+  Globe,
+  Mail,
+  MessageSquare,
 } from 'lucide-react';
 
 import { getVersionInfo } from '@/utils/version';
@@ -62,154 +72,223 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
 
   return (
     <Dialog open={visible} onOpenChange={onClose}>
-      <DialogContent className='max-w-3xl h-[80vh] p-0 flex flex-col gap-0'>
-        <DialogHeader className='px-6 py-4 border-b shrink-0'>
-          <DialogTitle className='flex items-center gap-2'>
-            <Database className='w-5 h-5 text-primary' />
-            <span>关于 {appInfo.name}</span>
-          </DialogTitle>
-          <DialogDescription>
-            查看应用程序信息、版本详情和系统配置
-          </DialogDescription>
-        </DialogHeader>
-        <div className='flex-1 overflow-y-auto px-6 py-4'>
-          {/* 应用信息 */}
-          <div className='grid grid-cols-1 gap-4'>
-            <div>
-              <div className='text-center mb-6'>
-                <Database className='w-16 h-16 text-primary mx-auto mb-4' />
-                <Text className='text-2xl font-bold block'>{appInfo.name}</Text>
-                <Text className='text-muted-foreground text-base'>
-                  版本 {appInfo.version}
-                </Text>
-              </div>
+      <DialogContent className='max-w-4xl max-h-[90vh] p-0 flex flex-col gap-0 overflow-hidden'>
+        {/* 渐变背景头部 */}
+        <div className='relative bg-gradient-to-br from-primary/10 via-primary/5 to-background px-8 py-10 border-b shrink-0'>
+          <div className='absolute inset-0 bg-grid-white/5 [mask-image:linear-gradient(0deg,transparent,black)]' />
+          <div className='relative'>
+            <div className='flex items-start justify-between'>
+              <div className='flex items-center gap-4'>
+                {/* 应用图标 */}
+                <div className='relative'>
+                  <div className='absolute inset-0 bg-primary/20 blur-xl rounded-full' />
+                  <div className='relative bg-gradient-to-br from-primary to-primary/80 p-4 rounded-2xl shadow-lg'>
+                    <Database className='w-10 h-10 text-primary-foreground' />
+                  </div>
+                </div>
 
-              <Text className='block text-center text-base'>
-                {appInfo.description}
-              </Text>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* 主要功能 */}
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div className='space-y-2'>
-              <div className='flex items-center gap-2 mb-3'>
-                <Rocket className='w-4 h-4' />
-                <Text className='font-semibold'>主要功能</Text>
-              </div>
-              <ul className='space-y-2 pl-5'>
-                {features.map((feature, index) => (
-                  <li key={index}>
-                    <Text>{feature}</Text>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className='space-y-2'>
-              <div className='flex items-center gap-2 mb-3'>
-                <Wrench className='w-4 h-4' />
-                <Text className='font-semibold'>技术栈</Text>
-              </div>
-              <div className='flex flex-wrap gap-2'>
-                {techStack.map(tech => (
-                  <Tag key={tech.name} variant='secondary'>
-                    {tech.name}
-                  </Tag>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* 项目信息 */}
-          <div className='space-y-4'>
-            <div className='flex items-center gap-2 mb-4'>
-              <Info className='w-4 h-4' />
-              <Text className='font-semibold'>项目信息</Text>
-            </div>
-
-            <div className='space-y-3'>
-              <div className='flex justify-between items-center'>
-                <Text className='font-medium'>开发团队:</Text>
-                <div className='flex items-center gap-2'>
-                  <Users className='w-4 h-4' />
-                  <Text>{appInfo.author}</Text>
+                {/* 应用名称和版本 */}
+                <div>
+                  <DialogTitle className='text-3xl font-bold mb-1 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent'>
+                    {appInfo.name}
+                  </DialogTitle>
+                  <div className='flex items-center gap-2'>
+                    <Tag variant='secondary' className='text-xs font-mono'>
+                      v{appInfo.version}
+                    </Tag>
+                    <Tag variant='outline' className='text-xs'>
+                      {appInfo.license}
+                    </Tag>
+                  </div>
                 </div>
               </div>
 
-              <div className='flex justify-between items-center'>
-                <Text className='font-medium'>开源许可:</Text>
-                <Tag variant='outline'>{appInfo.license}</Tag>
-              </div>
-
-              <div className='flex justify-between items-center'>
-                <Text className='font-medium'>项目地址:</Text>
-                <button
+              {/* 快捷操作按钮 */}
+              <div className='flex gap-2'>
+                <Button
+                  variant='outline'
+                  size='sm'
                   onClick={() => openExternalLink(appInfo.repository)}
-                  className='flex items-center gap-2 text-primary hover:text-blue-800 transition-colors cursor-pointer'
+                  className='gap-2'
                 >
                   <Github className='w-4 h-4' />
-                  <span>GitHub 仓库</span>
-                </button>
-              </div>
-
-              <div className='flex justify-between items-center'>
-                <Text className='font-medium'>官方网站:</Text>
-                <button
+                  <span className='hidden sm:inline'>GitHub</span>
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
                   onClick={() => openExternalLink(appInfo.website)}
-                  className='text-primary hover:text-blue-800 transition-colors cursor-pointer'
+                  className='gap-2'
                 >
-                  {appInfo.website}
-                </button>
+                  <Globe className='w-4 h-4' />
+                  <span className='hidden sm:inline'>官网</span>
+                </Button>
               </div>
             </div>
+
+            <DialogDescription className='mt-4 text-base'>
+              {appInfo.description}
+            </DialogDescription>
           </div>
+        </div>
 
-          <Separator />
+        {/* 内容区域 */}
+        <div className='flex-1 overflow-y-auto px-8 py-6'>
+          <div className='space-y-6'>
 
-          {/* 支持信息 */}
-          <div>
-            <div className='text-center space-y-4'>
-              <div className='flex items-center justify-center gap-2'>
-                <Heart className='w-4 h-4 text-destructive' />
-                <Text>感谢您使用 {appInfo.name}！</Text>
-              </div>
+            {/* 主要功能卡片 */}
+            <Card className='border-primary/20 bg-gradient-to-br from-primary/5 to-transparent'>
+              <CardContent className='p-6'>
+                <div className='flex items-center gap-2 mb-4'>
+                  <div className='p-2 bg-primary/10 rounded-lg'>
+                    <Rocket className='w-5 h-5 text-primary' />
+                  </div>
+                  <h3 className='text-lg font-semibold'>核心功能</h3>
+                </div>
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+                  {features.map((feature, index) => (
+                    <div key={index} className='flex items-center gap-2 text-sm'>
+                      <Sparkles className='w-4 h-4 text-primary shrink-0' />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-              <Text className='text-muted-foreground'>
-                如果您遇到问题或有建议，请通过以下方式联系我们：
-              </Text>
+            {/* 技术栈卡片 */}
+            <Card className='border-primary/20'>
+              <CardContent className='p-6'>
+                <div className='flex items-center gap-2 mb-4'>
+                  <div className='p-2 bg-primary/10 rounded-lg'>
+                    <Code2 className='w-5 h-5 text-primary' />
+                  </div>
+                  <h3 className='text-lg font-semibold'>技术栈</h3>
+                </div>
+                <div className='flex flex-wrap gap-2'>
+                  {techStack.map(tech => (
+                    <Tag
+                      key={tech.name}
+                      variant='secondary'
+                      className='px-3 py-1.5 text-sm font-medium'
+                    >
+                      {tech.name}
+                    </Tag>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className='flex items-center justify-center gap-4'>
-                <button
-                  onClick={() => openExternalLink(`${appInfo.repository}/issues`)}
-                  className='flex items-center gap-2 text-primary hover:text-blue-800 transition-colors cursor-pointer'
-                >
-                  <Bug className='w-4 h-4' />
-                  <span>报告问题</span>
-                </button>
+            {/* 项目信息卡片 */}
+            <Card>
+              <CardContent className='p-6'>
+                <div className='flex items-center gap-2 mb-4'>
+                  <div className='p-2 bg-primary/10 rounded-lg'>
+                    <Info className='w-5 h-5 text-primary' />
+                  </div>
+                  <h3 className='text-lg font-semibold'>项目信息</h3>
+                </div>
 
-                <Separator orientation='vertical' className='h-4' />
+                <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+                  <div className='space-y-3'>
+                    <div className='flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors'>
+                      <Users className='w-5 h-5 text-primary shrink-0' />
+                      <div className='min-w-0'>
+                        <div className='text-xs text-muted-foreground'>开发团队</div>
+                        <div className='font-medium truncate'>{appInfo.author}</div>
+                      </div>
+                    </div>
 
-                <button
-                  onClick={() => openExternalLink(`${appInfo.repository}/discussions`)}
-                  className='flex items-center gap-2 text-primary hover:text-blue-800 transition-colors cursor-pointer'
-                >
-                  <Users className='w-4 h-4' />
-                  <span>社区讨论</span>
-                </button>
+                    <Button
+                      variant='outline'
+                      className='w-full justify-start gap-3 h-auto p-3'
+                      onClick={() => openExternalLink(appInfo.repository)}
+                    >
+                      <Github className='w-5 h-5 shrink-0' />
+                      <div className='text-left min-w-0'>
+                        <div className='text-xs text-muted-foreground'>项目地址</div>
+                        <div className='font-medium truncate'>GitHub 仓库</div>
+                      </div>
+                      <ExternalLink className='w-4 h-4 ml-auto shrink-0' />
+                    </Button>
+                  </div>
+
+                  <div className='space-y-3'>
+                    <div className='flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors'>
+                      <Star className='w-5 h-5 text-primary shrink-0' />
+                      <div className='min-w-0'>
+                        <div className='text-xs text-muted-foreground'>开源许可</div>
+                        <div className='font-medium'>{appInfo.license}</div>
+                      </div>
+                    </div>
+
+                    <Button
+                      variant='outline'
+                      className='w-full justify-start gap-3 h-auto p-3'
+                      onClick={() => openExternalLink(appInfo.website)}
+                    >
+                      <Globe className='w-5 h-5 shrink-0' />
+                      <div className='text-left min-w-0'>
+                        <div className='text-xs text-muted-foreground'>官方网站</div>
+                        <div className='font-medium truncate'>{appInfo.website.replace('https://', '')}</div>
+                      </div>
+                      <ExternalLink className='w-4 h-4 ml-auto shrink-0' />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 支持与反馈卡片 */}
+            <Card className='border-primary/20 bg-gradient-to-br from-primary/5 to-transparent'>
+              <CardContent className='p-6'>
+                <div className='text-center space-y-4'>
+                  <div className='inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-primary/10'>
+                    <Heart className='w-4 h-4 text-primary animate-pulse' />
+                    <span className='font-medium'>感谢您使用 {appInfo.name}！</span>
+                  </div>
+
+                  <p className='text-sm text-muted-foreground'>
+                    如果您遇到问题或有建议，欢迎通过以下方式联系我们
+                  </p>
+
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2'>
+                    <Button
+                      variant='outline'
+                      className='gap-2 h-auto py-3'
+                      onClick={() => openExternalLink(`${appInfo.repository}/issues`)}
+                    >
+                      <Bug className='w-4 h-4' />
+                      <div className='text-left'>
+                        <div className='font-medium'>报告问题</div>
+                        <div className='text-xs text-muted-foreground'>提交 Bug 或建议</div>
+                      </div>
+                    </Button>
+
+                    <Button
+                      variant='outline'
+                      className='gap-2 h-auto py-3'
+                      onClick={() => openExternalLink(`${appInfo.repository}/discussions`)}
+                    >
+                      <MessageSquare className='w-4 h-4' />
+                      <div className='text-left'>
+                        <div className='font-medium'>社区讨论</div>
+                        <div className='text-xs text-muted-foreground'>加入社区交流</div>
+                      </div>
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 版权信息 */}
+            <div className='text-center pt-2'>
+              <div className='inline-flex items-center gap-2 text-sm text-muted-foreground'>
+                <span>© 2024 {appInfo.author}</span>
+                <span>•</span>
+                <span>All rights reserved</span>
               </div>
             </div>
-          </div>
-
-          {/* 版权信息 */}
-          <div className='text-center mt-6'>
-            <Text className='text-muted-foreground text-xs'>
-              © 2024 {appInfo.author}. All rights reserved.
-            </Text>
           </div>
         </div>
       </DialogContent>
