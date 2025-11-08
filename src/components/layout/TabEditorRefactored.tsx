@@ -440,6 +440,7 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                 onSaveTab={saveCurrentTab}
                 onSaveTabAs={saveFileAs}
                 onSaveAllTabs={saveAllTabs}
+                onCreateNewTab={() => createNewTab('query')}
               />
             </div>
 

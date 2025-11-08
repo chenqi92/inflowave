@@ -643,7 +643,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           formData.dbType === 'iotdb' &&
           errorMessage.includes('ping request')
         ) {
-          errorMessage = `IoTDB 连接失败: ${errorMessage}`;
+          errorMessage = tConn('iotdbConnectionFailed', { error: errorMessage });
         }
 
         finalTestResult = {
@@ -941,7 +941,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
       const errorMessage = String(error).replace('Error: ', '');
       setTestResult({
         success: false,
-        error: `保存失败: ${errorMessage}`,
+        error: tConn('saveFailed', { error: errorMessage }),
         latency: 0,
       });
       // 错误结果会显示在底部测试结果区域
@@ -1085,7 +1085,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </SelectContent>
               </Select>
               <p className='text-xs text-muted-foreground mt-1'>
-                不同版本使用不同的认证方式和查询语言
+                {tConn('versionDifferenceHint')}
               </p>
             </div>
           </div>
@@ -1151,7 +1151,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </SelectContent>
               </Select>
               <p className='text-xs text-muted-foreground mt-1'>
-                选择对象存储服务提供商
+                {tConn('objectStorage.selectProviderHint')}
               </p>
             </div>
           </div>
@@ -1320,7 +1320,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     </div>
                   )}
                   <p className='text-xs text-muted-foreground mt-1'>
-                    在 InfluxDB UI 中生成的 API Token，具有读写权限
+                    {tConn('influxdb.apiTokenHint')}
                   </p>
                 </div>
               </div>
@@ -1341,8 +1341,8 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   <Input
                     placeholder={
                       formData.version === '3.x'
-                        ? '可选，如: myorg'
-                        : '如: myorg 或 org-id'
+                        ? tConn('influxdb.organizationPlaceholder3x')
+                        : tConn('influxdb.organizationPlaceholder2x')
                     }
                     value={formData.organization}
                     onChange={e =>
@@ -1363,8 +1363,8 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   )}
                   <p className='text-xs text-muted-foreground mt-1'>
                     {formData.version === '3.x'
-                      ? '可选，某些 InfluxDB 3.x 部署不需要组织'
-                      : '组织名称或 ID'}
+                      ? tConn('influxdb.organizationHint3x')
+                      : tConn('influxdb.organizationHint2x')}
                   </p>
                 </div>
               </div>
@@ -1384,7 +1384,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     className='h-9'
                   />
                   <p className='text-xs text-muted-foreground mt-1'>
-                    可选，连接后默认选择的存储桶
+                    {tConn('influxdb.defaultBucketHint')}
                   </p>
                 </div>
               </div>
@@ -1421,7 +1421,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       className='h-9'
                     />
                     <p className='text-xs text-muted-foreground mt-1'>
-                      可选，连接后默认选择的数据库
+                      {tConn('influxdb.defaultDatabaseHint')}
                     </p>
                   </div>
                   <div className='flex-1 flex items-start gap-2'>
@@ -1443,15 +1443,15 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         />
                         <datalist id='retention-policy-suggestions'>
                           {/* 常用预设选项 */}
-                          <option value='autogen'>autogen (默认)</option>
-                          <option value='default'>default</option>
-                          <option value='1h'>1h (1小时)</option>
-                          <option value='24h'>24h (1天)</option>
-                          <option value='7d'>7d (7天)</option>
-                          <option value='30d'>30d (30天)</option>
-                          <option value='90d'>90d (90天)</option>
-                          <option value='365d'>365d (1年)</option>
-                          <option value='INF'>INF (永久)</option>
+                          <option value='autogen'>{tConn('influxdb.retentionPolicyOptions.autogenDefault')}</option>
+                          <option value='default'>{tConn('influxdb.retentionPolicyOptions.default')}</option>
+                          <option value='1h'>{tConn('influxdb.retentionPolicyOptions.oneHour')}</option>
+                          <option value='24h'>{tConn('influxdb.retentionPolicyOptions.oneDay')}</option>
+                          <option value='7d'>{tConn('influxdb.retentionPolicyOptions.sevenDays')}</option>
+                          <option value='30d'>{tConn('influxdb.retentionPolicyOptions.thirtyDays')}</option>
+                          <option value='90d'>{tConn('influxdb.retentionPolicyOptions.ninetyDays')}</option>
+                          <option value='365d'>{tConn('influxdb.retentionPolicyOptions.oneYear')}</option>
+                          <option value='INF'>{tConn('influxdb.retentionPolicyOptions.infinite')}</option>
                           {/* 从数据库获取的保留策略 */}
                           {availableRetentionPolicies.map(policy => (
                             <option key={policy} value={policy}>
@@ -1466,7 +1466,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         )}
                       </div>
                       <p className='text-xs text-muted-foreground mt-1'>
-                        可选，默认保留策略名称。支持自定义输入或从下拉列表选择
+                        {tConn('influxdb.retentionPolicyHint')}
                       </p>
                     </div>
                   </div>
@@ -1488,13 +1488,13 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                   {formData.version}
                 </span>
                 <h4 className='text-sm font-medium text-foreground'>
-                  兼容性配置
+                  {tConn('influxdb.compatibilityConfig')}
                 </h4>
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='space-y-1'>
                   <Label className='block text-sm font-medium text-foreground'>
-                    V1 兼容 API
+                    {tConn('influxdb.v1CompatApi')}
                   </Label>
                   <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
                     <Switch
@@ -1509,21 +1509,21 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       className='text-sm font-medium cursor-pointer'
                     >
                       {formData.v1CompatibilityApi
-                        ? '已启用 V1 兼容 API'
-                        : '启用 V1 兼容 API'}
+                        ? tConn('influxdb.v1CompatApiEnabled')
+                        : tConn('influxdb.v1CompatApiEnable')}
                     </Label>
                   </div>
                   <p className='text-xs text-muted-foreground'>
-                    启用后可使用 InfluxQL 查询语言
+                    {tConn('influxdb.v1CompatApiHint')}
                   </p>
                 </div>
 
                 <div className='space-y-1'>
                   <Label className='block text-sm font-medium text-foreground'>
-                    默认数据库
+                    {tConn('influxdb.v1DefaultDatabase')}
                   </Label>
                   <Input
-                    placeholder='可选，用于 V1 兼容 API'
+                    placeholder={tConn('influxdb.v1DefaultDatabasePlaceholder')}
                     value={formData.database}
                     onChange={e =>
                       handleInputChange('database', e.target.value)
@@ -1534,7 +1534,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                     disabled={!formData.v1CompatibilityApi}
                   />
                   <p className='text-xs text-muted-foreground'>
-                    仅在启用 V1 兼容 API 时有效
+                    {tConn('influxdb.v1DefaultDatabaseHint')}
                   </p>
                 </div>
               </div>
@@ -1549,7 +1549,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               {/* 基本连接配置 */}
               <div className='space-y-4'>
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  连接配置
+                  {tConn('serverConfig')}
                 </h4>
 
                 {/* Endpoint */}
@@ -1564,7 +1564,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         formData.objectStorageProvider === 'minio' ? 'localhost:9000' :
                         formData.objectStorageProvider === 'aliyun-oss' ? 'oss-cn-hangzhou.aliyuncs.com' :
                         formData.objectStorageProvider === 'tencent-cos' ? 'cos.ap-beijing.myqcloud.com' :
-                        '服务端点地址'
+                        tConn('objectStorage.endpoint')
                       }
                       value={formData.s3Endpoint}
                       onChange={e => handleInputChange('s3Endpoint', e.target.value)}
@@ -1573,11 +1573,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       className='h-9'
                     />
                     <div className='text-xs text-muted-foreground mt-1'>
-                      {formData.objectStorageProvider === 's3' && 'S3 服务端点，例如: s3.amazonaws.com 或 s3.us-west-2.amazonaws.com'}
-                      {formData.objectStorageProvider === 'minio' && 'MinIO 服务端点，例如: localhost:9000'}
-                      {formData.objectStorageProvider === 'aliyun-oss' && '阿里云 OSS Endpoint，例如: oss-cn-hangzhou.aliyuncs.com'}
-                      {formData.objectStorageProvider === 'tencent-cos' && '腾讯云 COS Endpoint，例如: cos.ap-beijing.myqcloud.com'}
-                      {!formData.objectStorageProvider && '对象存储服务端点地址'}
+                      {formData.objectStorageProvider === 's3' && tConn('objectStorage.endpointHintS3')}
+                      {formData.objectStorageProvider === 'minio' && tConn('objectStorage.endpointHintMinio')}
+                      {formData.objectStorageProvider === 'aliyun-oss' && tConn('objectStorage.endpointHintAliyun')}
+                      {formData.objectStorageProvider === 'tencent-cos' && tConn('objectStorage.endpointHintTencent')}
+                      {!formData.objectStorageProvider && tConn('objectStorage.endpointHintGeneral')}
                     </div>
                   </div>
                 </div>
@@ -1585,11 +1585,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 {/* 内网 Endpoint (可选) */}
                 <div className='flex items-start gap-4'>
                   <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    内网 Endpoint:
+                    {tConn('objectStorage.internalEndpoint')}:
                   </Label>
                   <div className='flex-1'>
                     <Input
-                      placeholder='内网访问地址（可选）'
+                      placeholder={tConn('objectStorage.internalEndpointPlaceholder')}
                       value={formData.s3InternalEndpoint}
                       onChange={e => handleInputChange('s3InternalEndpoint', e.target.value)}
                       autoCapitalize='off'
@@ -1597,7 +1597,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       className='h-9'
                     />
                     <div className='text-xs text-muted-foreground mt-1'>
-                      内网环境访问的端点，用于提高内网访问速度（可选）
+                      {tConn('objectStorage.internalEndpointHint')}
                     </div>
                   </div>
                 </div>
@@ -1605,11 +1605,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 {/* 外网 Endpoint (可选) */}
                 <div className='flex items-start gap-4'>
                   <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    外网 Endpoint:
+                    {tConn('objectStorage.externalEndpoint')}:
                   </Label>
                   <div className='flex-1'>
                     <Input
-                      placeholder='外网访问地址（可选）'
+                      placeholder={tConn('objectStorage.externalEndpointPlaceholder')}
                       value={formData.s3ExternalEndpoint}
                       onChange={e => handleInputChange('s3ExternalEndpoint', e.target.value)}
                       autoCapitalize='off'
@@ -1617,7 +1617,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       className='h-9'
                     />
                     <div className='text-xs text-muted-foreground mt-1'>
-                      外网环境访问的端点，用于外部访问（可选）
+                      {tConn('objectStorage.externalEndpointHint')}
                     </div>
                   </div>
                 </div>
@@ -1634,7 +1634,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         formData.objectStorageProvider === 'minio' ? 'us-east-1' :
                         formData.objectStorageProvider === 'aliyun-oss' ? 'oss-cn-hangzhou' :
                         formData.objectStorageProvider === 'tencent-cos' ? 'ap-beijing' :
-                        '区域代码'
+                        tConn('objectStorage.regionPlaceholder')
                       }
                       value={formData.s3Region}
                       onChange={e => handleInputChange('s3Region', e.target.value)}
@@ -1643,11 +1643,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       className='h-9'
                     />
                     <div className='text-xs text-muted-foreground mt-1'>
-                      {formData.objectStorageProvider === 's3' && 'AWS 区域，例如: us-east-1, us-west-2, ap-southeast-1'}
-                      {formData.objectStorageProvider === 'minio' && 'MinIO 区域设置，通常使用 us-east-1'}
-                      {formData.objectStorageProvider === 'aliyun-oss' && '阿里云区域，例如: oss-cn-hangzhou, oss-cn-beijing'}
-                      {formData.objectStorageProvider === 'tencent-cos' && '腾讯云区域，例如: ap-beijing, ap-shanghai, ap-guangzhou'}
-                      {!formData.objectStorageProvider && '对象存储服务区域'}
+                      {formData.objectStorageProvider === 's3' && tConn('objectStorage.regionHintS3')}
+                      {formData.objectStorageProvider === 'minio' && tConn('objectStorage.regionHintMinio')}
+                      {formData.objectStorageProvider === 'aliyun-oss' && tConn('objectStorage.regionHintAliyun')}
+                      {formData.objectStorageProvider === 'tencent-cos' && tConn('objectStorage.regionHintTencent')}
+                      {!formData.objectStorageProvider && tConn('objectStorage.regionGeneral')}
                     </div>
                   </div>
                 </div>
@@ -1656,7 +1656,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               {/* 认证配置 */}
               <div className='space-y-4'>
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  认证配置
+                  {tConn('objectStorage.authConfig')}
                 </h4>
 
                 {/* Access Key */}
@@ -1678,10 +1678,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       className='h-9'
                     />
                     <div className='text-xs text-muted-foreground mt-1'>
-                      {formData.objectStorageProvider === 'aliyun-oss' && '阿里云 AccessKey ID'}
-                      {formData.objectStorageProvider === 'tencent-cos' && '腾讯云 SecretId'}
-                      {(formData.objectStorageProvider === 's3' || formData.objectStorageProvider === 'minio') && 'AWS Access Key ID 或 MinIO Access Key'}
-                      {!formData.objectStorageProvider && '访问密钥 ID'}
+                      {formData.objectStorageProvider === 'aliyun-oss' && tConn('objectStorage.accessKeyHintAliyun')}
+                      {formData.objectStorageProvider === 'tencent-cos' && tConn('objectStorage.accessKeyHintTencent')}
+                      {(formData.objectStorageProvider === 's3' || formData.objectStorageProvider === 'minio') && tConn('objectStorage.accessKeyHintS3Minio')}
+                      {!formData.objectStorageProvider && tConn('objectStorage.accessKeyIdGeneral')}
                     </div>
                   </div>
                 </div>
@@ -1706,10 +1706,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                       className='h-9'
                     />
                     <div className='text-xs text-muted-foreground mt-1'>
-                      {formData.objectStorageProvider === 'aliyun-oss' && '阿里云 AccessKey Secret'}
-                      {formData.objectStorageProvider === 'tencent-cos' && '腾讯云 SecretKey'}
-                      {(formData.objectStorageProvider === 's3' || formData.objectStorageProvider === 'minio') && 'AWS Secret Access Key 或 MinIO Secret Key'}
-                      {!formData.objectStorageProvider && '访问密钥'}
+                      {formData.objectStorageProvider === 'aliyun-oss' && tConn('objectStorage.secretKeyHintAliyun')}
+                      {formData.objectStorageProvider === 'tencent-cos' && tConn('objectStorage.secretKeyHintTencent')}
+                      {(formData.objectStorageProvider === 's3' || formData.objectStorageProvider === 'minio') && tConn('objectStorage.secretKeyHintS3Minio')}
+                      {!formData.objectStorageProvider && tConn('objectStorage.secretKeyGeneral')}
                     </div>
                   </div>
                 </div>
@@ -1718,12 +1718,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 {formData.objectStorageProvider === 's3' && (
                   <div className='flex items-start gap-4'>
                     <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                      Session Token:
+                      {tConn('objectStorage.sessionToken')}:
                     </Label>
                     <div className='flex-1'>
                       <Input
                         type='password'
-                        placeholder='临时凭证的 Session Token (可选)'
+                        placeholder={tConn('objectStorage.sessionTokenPlaceholder')}
                         value={formData.s3SessionToken}
                         onChange={e => handleInputChange('s3SessionToken', e.target.value)}
                         autoCapitalize='off'
@@ -1731,7 +1731,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         className='h-9'
                       />
                       <div className='text-xs text-muted-foreground mt-1'>
-                        使用临时安全凭证(STS)时需要提供
+                        {tConn('objectStorage.sessionTokenHint')}
                       </div>
                     </div>
                   </div>
@@ -1741,18 +1741,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               {/* SSL和路径样式配置 */}
               <div className='space-y-4'>
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  连接选项
+                  {tConn('objectStorage.connectionOptions')}
                 </h4>
 
                 {/* 使用SSL和路径样式 - 同一行 */}
                 <div className='flex items-start gap-4'>
                   <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    SSL/路径样式:
+                    {tConn('objectStorage.sslPathStyle')}:
                   </Label>
                   <div className='flex-1 flex gap-4 items-start'>
                     <div className='flex-1'>
                       <Label className='text-sm font-medium text-foreground mb-2 block'>
-                        使用 SSL:
+                        {tConn('objectStorage.useSSL')}:
                       </Label>
                       <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
                         <Switch
@@ -1770,12 +1770,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         </Label>
                       </div>
                       <div className='text-xs text-muted-foreground mt-1'>
-                        生产环境建议启用 SSL (HTTPS)
+                        {tConn('objectStorage.sslHint')}
                       </div>
                     </div>
                     <div className='flex-1'>
                       <Label className='text-sm font-medium text-foreground mb-2 block'>
-                        路径样式:
+                        {tConn('objectStorage.pathStyle')}:
                       </Label>
                       <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
                         <Switch
@@ -1793,7 +1793,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         </Label>
                       </div>
                       <div className='text-xs text-muted-foreground mt-1'>
-                        {formData.objectStorageProvider === 'minio' ? 'MinIO 通常使用 Path Style' : 'S3/OSS/COS 通常使用 Virtual Hosted'}
+                        {formData.objectStorageProvider === 'minio' ? tConn('objectStorage.forcePathStyleHintMinio') : tConn('objectStorage.forcePathStyleHintOthers')}
                       </div>
                     </div>
                   </div>
@@ -1808,7 +1808,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {/* 超时配置 - 三个字段一行 */}
           <div className='flex items-start gap-4'>
             <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              连接超时(秒):
+              {tConn('objectStorage.connectionTimeoutSeconds')}:
             </Label>
             <div className='flex-1 flex gap-4'>
               <div className='flex-1'>
@@ -1880,18 +1880,18 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {formData.dbType === 'iotdb' && (
             <div className='space-y-6'>
               <div className='text-lg font-medium text-foreground border-b pb-2'>
-                IoTDB 特定配置
+                {tConn('iotdb.specificConfig')}
               </div>
 
               {/* 连接配置 */}
               <div className='space-y-4'>
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  连接配置
+                  {tConn('serverConfig')}
                 </h4>
                 {/* 会话池大小和时区设置 - 同一行 */}
                 <div className='flex items-start gap-4'>
                   <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    会话池大小:
+                    {tConn('iotdb.sessionPoolSize')}:
                   </Label>
                   <div className='flex-1 flex gap-4 items-start'>
                     <div className='flex-1'>
@@ -1907,12 +1907,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         controls={false}
                       />
                       <div className='text-xs text-muted-foreground mt-1'>
-                        同时维护的会话连接数量，建议1-20
+                        {tConn('iotdb.sessionPoolSizeHint')}
                       </div>
                     </div>
                     <div className='flex-1 flex items-start gap-2'>
                       <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                        时区设置:
+                        {tConn('iotdb.timezoneSettings')}:
                       </Label>
                       <div className='flex-1'>
                         <Select
@@ -1926,22 +1926,22 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value='Asia/Shanghai'>
-                              Asia/Shanghai (北京时间)
+                              {tConn('iotdb.timezone.asiaShanghaiLabel')}
                             </SelectItem>
-                            <SelectItem value='UTC'>UTC (协调世界时)</SelectItem>
+                            <SelectItem value='UTC'>{tConn('iotdb.timezone.utcLabel')}</SelectItem>
                             <SelectItem value='America/New_York'>
-                              America/New_York (美东时间)
+                              {tConn('iotdb.timezone.americaNewYorkLabel')}
                             </SelectItem>
                             <SelectItem value='Europe/London'>
-                              Europe/London (伦敦时间)
+                              {tConn('iotdb.timezone.europeLondonLabel')}
                             </SelectItem>
                             <SelectItem value='Asia/Tokyo'>
-                              Asia/Tokyo (东京时间)
+                              {tConn('iotdb.timezone.asiaTokyoLabel')}
                             </SelectItem>
                           </SelectContent>
                         </Select>
                         <div className='text-xs text-muted-foreground mt-1'>
-                          时间序列数据的时区设置
+                          {tConn('iotdb.timezoneHint')}
                         </div>
                       </div>
                     </div>
@@ -1952,12 +1952,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               {/* 性能配置 */}
               <div className='space-y-4'>
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  性能配置
+                  {tConn('iotdb.performanceConfig')}
                 </h4>
                 {/* 数据获取大小和启用数据压缩 - 同一行 */}
                 <div className='flex items-start gap-4'>
                   <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    数据获取大小:
+                    {tConn('iotdb.fetchSize')}:
                   </Label>
                   <div className='flex-1 flex gap-4 items-start'>
                     <div className='flex-1'>
@@ -1973,12 +1973,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         controls={false}
                       />
                       <div className='text-xs text-muted-foreground mt-1'>
-                        单次查询返回的最大记录数，建议1000-50000
+                        {tConn('iotdb.fetchSizeHint')}
                       </div>
                     </div>
                     <div className='flex-1'>
                       <Label className='text-sm font-medium text-foreground mb-2 block'>
-                        启用数据压缩:
+                        {tConn('iotdb.enableCompression')}:
                       </Label>
                       <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
                         <Switch
@@ -1992,11 +1992,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                           htmlFor='compression-switch'
                           className='text-sm font-medium cursor-pointer'
                         >
-                          {formData.enableCompression ? '已启用' : '已禁用'}
+                          {formData.enableCompression ? tConn('common.enabled') : tConn('common.disabled')}
                         </Label>
                       </div>
                       <div className='text-xs text-muted-foreground mt-1'>
-                        启用后可减少网络传输数据量，提高查询性能
+                        {tConn('iotdb.compressionHint')}
                       </div>
                     </div>
                   </div>
@@ -2006,12 +2006,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               {/* 重试和重定向配置 */}
               <div className='space-y-4'>
                 <h4 className='text-sm font-medium text-foreground text-muted-foreground'>
-                  重试和重定向配置
+                  {tConn('iotdb.retryRedirectConfig')}
                 </h4>
                 {/* 最大重试次数和重试间隔 - 同一行 */}
                 <div className='flex items-start gap-4'>
                   <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    最大重试次数:
+                    {tConn('iotdb.maxRetryCount')}:
                   </Label>
                   <div className='flex-1 flex gap-4 items-start'>
                     <div className='flex-1'>
@@ -2027,12 +2027,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         controls={false}
                       />
                       <div className='text-xs text-muted-foreground mt-1'>
-                        连接失败时的重试次数，0表示不重试
+                        {tConn('iotdb.maxRetryCountHint')}
                       </div>
                     </div>
                     <div className='flex-1 flex items-start gap-2'>
                       <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                        重试间隔(毫秒):
+                        {tConn('iotdb.retryIntervalMs')}:
                       </Label>
                       <div className='flex-1'>
                         <InputNumber
@@ -2047,7 +2047,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                           controls={false}
                         />
                         <div className='text-xs text-muted-foreground mt-1'>
-                          两次重试之间的等待时间
+                          {tConn('iotdb.retryIntervalHint')}
                         </div>
                       </div>
                     </div>
@@ -2057,7 +2057,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 {/* 启用自动重定向 */}
                 <div className='flex items-start gap-4'>
                   <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                    自动重定向:
+                    {tConn('iotdb.autoRedirection')}:
                   </Label>
                   <div className='flex-1'>
                     <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
@@ -2072,11 +2072,11 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         htmlFor='redirection-switch'
                         className='text-sm font-medium cursor-pointer'
                       >
-                        {formData.enableRedirection ? '已启用' : '已禁用'}
+                        {formData.enableRedirection ? tConn('common.enabled') : tConn('common.disabled')}
                       </Label>
                     </div>
                     <div className='text-xs text-muted-foreground mt-1'>
-                      在集群环境中自动重定向到正确的节点
+                      {tConn('iotdb.redirectionHint')}
                     </div>
                   </div>
                 </div>
@@ -2088,7 +2088,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {formData.dbType !== 'object-storage' && (
             <div className='flex items-start gap-4'>
               <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-                默认查询语言:
+                {tConn('defaultQueryLanguage')}:
               </Label>
               <div className='flex-1 flex gap-4 items-start'>
                 <div className='flex-1'>
@@ -2119,7 +2119,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 </div>
                 <div className='flex-1 flex items-start gap-2'>
                   <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                    启用SSL:
+                    {tConn('ssl_enabled')}:
                   </Label>
                   <div className='flex-1'>
                     <div className='flex items-center space-x-3 p-3 rounded-lg border bg-muted/50'>
@@ -2132,7 +2132,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                         htmlFor='ssl-switch'
                         className='text-sm font-medium cursor-pointer'
                       >
-                        {formData.ssl ? '已启用 SSL 加密连接' : '使用 SSL 加密连接'}
+                        {formData.ssl ? tConn('sslEnabledLabel') : tConn('sslDisabledLabel')}
                       </Label>
                     </div>
                   </div>
@@ -2151,14 +2151,14 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 htmlFor='proxy-switch'
                 className='text-sm font-medium cursor-pointer'
               >
-                启用代理
+                {tConn('enableProxy')}
               </Label>
               <p className='text-xs text-muted-foreground mt-1'>
                 {formData.dbType === 'object-storage'
-                  ? '启用后将通过代理服务器访问对象存储服务'
+                  ? tConn('enableProxyHintObjectStorage')
                   : formData.dbType === 'iotdb'
-                  ? '启用后将通过代理服务器连接到 IoTDB'
-                  : '启用后将通过代理服务器连接到 InfluxDB'
+                  ? tConn('enableProxyHintIotdb')
+                  : tConn('enableProxyHintInfluxdb')
                 }
               </p>
             </div>
@@ -2225,7 +2225,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {/* 代理类型 */}
           <div className='flex items-start gap-4'>
             <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              代理类型:
+              {tConn('proxyType')}:
             </Label>
             <div className='flex-1'>
               <Select
@@ -2247,12 +2247,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {/* 代理用户名和密码 - 同一行 */}
           <div className='flex items-start gap-4'>
             <Label className='text-sm font-medium text-foreground w-32 flex-shrink-0 pt-2'>
-              代理用户名:
+              {tConn('proxyUsername')}:
             </Label>
             <div className='flex-1 flex gap-4 items-start'>
               <div className='flex-1'>
                 <Input
-                  placeholder='可选'
+                  placeholder={tConn('common.optional')}
                   value={formData.proxyUsername}
                   onChange={e =>
                     handleInputChange('proxyUsername', e.target.value)
@@ -2264,12 +2264,12 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
               </div>
               <div className='flex-1 flex items-start gap-2'>
                 <Label className='text-sm font-medium text-foreground whitespace-nowrap pt-2'>
-                  代理密码:
+                  {tConn('proxyPassword')}:
                 </Label>
                 <div className='flex-1'>
                   <Input
                     type='password'
-                    placeholder='可选'
+                    placeholder={tConn('common.optional')}
                     value={formData.proxyPassword}
                     onChange={e =>
                       handleInputChange('proxyPassword', e.target.value)
@@ -2292,7 +2292,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           {/* 固定头部 */}
           <DialogHeader className='px-6 py-4 border-b flex-shrink-0'>
             <DialogTitle className='text-xl font-semibold'>
-              {isEditing ? '编辑连接' : '新建连接'}
+              {isEditing ? tConn('edit_connection') : tConn('create_connection')}
             </DialogTitle>
           </DialogHeader>
 
@@ -2412,7 +2412,7 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
           <div className='px-6 py-4 border-t flex-shrink-0 bg-background'>
             <div className='flex justify-end gap-3'>
               <Button onClick={handleCancel} variant='outline' size='sm'>
-                取消
+                {tConn('cancel')}
               </Button>
 
               <Button
@@ -2424,10 +2424,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 {isTesting ? (
                   <>
                     <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                    测试中...
+                    {tConn('testing_connection')}
                   </>
                 ) : (
-                  '测试连接'
+                  tConn('test_connection')
                 )}
               </Button>
 
@@ -2435,10 +2435,10 @@ export const SimpleConnectionDialog: React.FC<SimpleConnectionDialogProps> = ({
                 {isSubmitting ? (
                   <>
                     <Loader2 className='w-4 h-4 mr-2 animate-spin' />
-                    保存中...
+                    {tConn('saving_connection')}
                   </>
                 ) : (
-                  '保存连接'
+                  tConn('saveConnection')
                 )}
               </Button>
             </div>

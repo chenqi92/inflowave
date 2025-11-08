@@ -40,6 +40,7 @@ interface TabManagerProps {
   onSaveTab?: (tabId: string) => void;
   onSaveTabAs?: (tabId: string) => void;
   onSaveAllTabs?: () => Promise<void>;
+  onCreateNewTab?: () => void; // 新建查询tab的回调
 }
 
 interface ClosingTab {
@@ -56,6 +57,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
   onSaveTab,
   onSaveTabAs,
   onSaveAllTabs,
+  onCreateNewTab,
 }) => {
   const [closingTab, setClosingTab] = useState<ClosingTab | null>(null);
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
@@ -302,62 +304,6 @@ export const TabManager: React.FC<TabManagerProps> = ({
       showMessage.success(`已复制标签页: ${newTab.title}`);
     }
   }, [duplicateTab]);
-
-  // 创建新标签
-  const createNewTab = useCallback((type: 'query' | 'table' | 'database' = 'query') => {
-    const newTab: EditorTab = {
-      id: generateUniqueId('tab'),
-      title: `${type === 'query' ? '查询' : type === 'table' ? '表' : '数据库'}-${tabs.length + 1}`,
-      content: '', // 所有类型的新标签都从空内容开始
-      type,
-      modified: false, // 空内容不标记为已修改
-      saved: true,     // 空内容视为已保存
-    };
-
-    const newTabs = [...tabs, newTab];
-    onTabsChange(newTabs);
-    onActiveKeyChange(newTab.id);
-  }, [tabs, onTabsChange, onActiveKeyChange]);
-
-  // 创建数据浏览标签
-  const createDataBrowserTab = useCallback((connectionId: string, database: string, tableName: string) => {
-    const newTab: EditorTab = {
-      id: generateUniqueId('tab'),
-      title: `${tableName}`,
-      content: '', // 数据浏览不需要content
-      type: 'data-browser',
-      modified: false, // 数据浏览标签不需要保存
-      saved: true,     // 数据浏览标签默认为已保存状态
-      connectionId,
-      database,
-      tableName,
-    };
-
-    const newTabs = [...tabs, newTab];
-    onTabsChange(newTabs);
-    onActiveKeyChange(newTab.id);
-  }, [tabs, onTabsChange, onActiveKeyChange]);
-
-  // 创建带数据库选择的查询标签页
-  const createQueryTabWithDatabase = useCallback((database: string, query?: string) => {
-    const content = query || '';
-    const hasContent = content.trim().length > 0;
-
-    const newTab: EditorTab = {
-      id: generateUniqueId('tab'),
-      title: `查询-${tabs.length + 1}`,
-      content,
-      type: 'query',
-      modified: hasContent,  // 只有有内容时才标记为已修改
-      saved: !hasContent,    // 空内容视为已保存
-    };
-
-    const newTabs = [...tabs, newTab];
-    onTabsChange(newTabs);
-    onActiveKeyChange(newTab.id);
-
-    logger.debug(`✅ 创建查询标签页并选中数据库: ${database}`);
-  }, [tabs, onTabsChange, onActiveKeyChange]);
 
   // 关闭标签
   const closeTab = useCallback((tabId: string) => {
@@ -838,7 +784,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
         size='sm'
         className='ml-2 flex-shrink-0 focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0'
         title='新建SQL查询'
-        onClick={() => createNewTab('query')}
+        onClick={() => onCreateNewTab?.()}
       >
         <Plus className='w-4 h-4' />
       </Button>
