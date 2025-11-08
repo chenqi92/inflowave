@@ -89,16 +89,27 @@ rustflags = [
 ]
 
 # 注册表配置（使用国内镜像加速）
+# 如果镜像源无法访问，可以注释掉下面的 replace-with 行使用官方源
+# 或者取消注释使用其他镜像源
 [source.crates-io]
-replace-with = 'ustc'
+# replace-with = 'rsproxy'  # 使用字节跳动镜像
+# replace-with = 'sjtu'     # 使用上海交通大学镜像
+# replace-with = 'ustc'     # 使用中国科学技术大学镜像
+# replace-with = 'tuna'     # 使用清华大学镜像
 
-[source.ustc]
-registry = "https://mirrors.ustc.edu.cn/crates.io-index"
+# 字节跳动镜像（推荐，速度快）
+[source.rsproxy]
+registry = "https://rsproxy.cn/crates.io-index"
 
-# 备用镜像
+# 上海交通大学镜像
 [source.sjtu]
 registry = "https://mirrors.sjtug.sjtu.edu.cn/git/crates.io-index/"
 
+# 中国科学技术大学镜像
+[source.ustc]
+registry = "https://mirrors.ustc.edu.cn/crates.io-index"
+
+# 清华大学镜像
 [source.tuna]
 registry = "https://mirrors.tuna.tsinghua.edu.cn/git/crates.io-index.git"
 

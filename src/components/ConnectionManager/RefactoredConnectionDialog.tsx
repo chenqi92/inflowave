@@ -22,21 +22,17 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
 } from '@/components/ui';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   CheckCircle,
   Loader2,
   XCircle,
-  AlertCircle,
   Database,
   Settings,
   Key,
-  Globe
+  Globe,
+  Network
 } from 'lucide-react';
 import type { ConnectionConfig, ConnectionTestResult } from '@/types';
 import { useConnectionsTranslation } from '@/hooks/useTranslation';
@@ -60,8 +56,9 @@ interface RefactoredConnectionDialogProps {
 }
 
 /**
- * 重构后的连接对话框组件
- * 使用策略模式动态处理不同类型的数据库连接
+ * 重构后的连接对话框组件 - 使用紧凑的 Tab 布局
+ * 左侧: 数据库类型选择
+ * 右侧: 表单配置（基本信息、连接配置、认证信息、高级选项）
  */
 const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
   visible,
@@ -82,6 +79,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
   const [isTesting, setIsTesting] = useState(false);
   const [testResult, setTestResult] = useState<ConnectionTestResult | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState('general');
 
   // 获取当前选中的连接器
   const currentConnector = useMemo(() => {
@@ -100,58 +98,56 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
       const defaults = currentConnector.getDefaultConfig();
       setFormData({
         id: generateUniqueId(),
-        ...defaults
+        name: '',
+        dbType: selectedType,
+        ...defaults,
       });
     }
+    // 重置测试结果和错误
+    setTestResult(null);
+    setErrors({});
   }, [connection, currentConnector]);
 
   // 处理数据库类型变更
-  const handleTypeChange = useCallback((newType: string) => {
-    setSelectedType(newType);
-    setErrors({});
-    setTestResult(null);
+  const handleTypeChange = (newType: string) => {
+    if (isEditMode) return; // 编辑模式不允许更改类型
 
-    const connector = getConnector(newType);
-    if (connector) {
-      const defaults = connector.getDefaultConfig();
+    setSelectedType(newType);
+    const newConnector = getConnector(newType);
+    if (newConnector) {
+      const defaults = newConnector.getDefaultConfig();
       setFormData({
-        id: formData.id || generateUniqueId(),
-        name: formData.name || '',
-        description: formData.description || '',
-        ...defaults
+        id: generateUniqueId(),
+        name: formData.name || '', // 保留已输入的名称
+        dbType: newType,
+        ...defaults,
       });
     }
-  }, [formData.id, formData.name, formData.description]);
+    setTestResult(null);
+    setErrors({});
+    setActiveTab('basic'); // 切换类型时回到基本信息
+  };
 
-  // 处理表单字段变更
-  const handleFieldChange = useCallback((fieldName: string, value: any) => {
+  // 处理字段变更
+  const handleFieldChange = (fieldName: string, value: any) => {
     setFormData((prev: any) => ({
       ...prev,
-      [fieldName]: value
+      [fieldName]: value,
     }));
 
     // 清除该字段的错误
     if (errors[fieldName]) {
-      setErrors(prev => {
+      setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[fieldName];
         return newErrors;
       });
     }
-  }, [errors]);
-
-  // 验证表单
-  const validateForm = useCallback((): boolean => {
-    if (!currentConnector) return false;
-
-    const validationErrors = currentConnector.validate(formData);
-    setErrors(validationErrors);
-    return Object.keys(validationErrors).length === 0;
-  }, [currentConnector, formData]);
+  };
 
   // 测试连接
   const handleTestConnection = useCallback(async () => {
-    if (!validateForm() || !currentConnector) return;
+    if (!currentConnector) return;
 
     setIsTesting(true);
     setTestResult(null);
@@ -166,35 +162,41 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
         showMessage.error(result.error || tConn('test_failed'));
       }
     } catch (error: any) {
-      logger.error('Connection test failed:', error);
-      setTestResult({
+      const errorResult: ConnectionTestResult = {
         success: false,
         error: error.message || tConn('test_failed'),
-        latency: 0
-      });
-      showMessage.error(error.message || tConn('test_failed'));
+      };
+      setTestResult(errorResult);
+      showMessage.error(errorResult.error || tConn('test_failed'));
     } finally {
       setIsTesting(false);
     }
-  }, [validateForm, currentConnector, formData, tConn]);
+  }, [currentConnector, formData, tConn]);
 
   // 保存连接
   const handleSave = useCallback(async () => {
-    if (!validateForm() || !currentConnector) return;
+    if (!currentConnector) return;
+
+    // 验证表单
+    const validationErrors = currentConnector.validate(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      showMessage.error(tConn('save_failed'));
+      return;
+    }
 
     setIsSaving(true);
 
     try {
-      const config = currentConnector.toConnectionConfig(formData);
-      onSuccess(config);
-      showMessage.success(isEditMode ? tConn('update_success') : tConn('create_success'));
+      const connectionConfig = currentConnector.toConnectionConfig(formData);
+      await onSuccess(connectionConfig);
     } catch (error: any) {
-      logger.error('Failed to save connection:', error);
-      showMessage.error(error.message || tConn('save_failed'));
+      logger.error('保存连接失败:', error);
+      showMessage.error(`${tConn('save_failed')}: ${error.message}`);
     } finally {
       setIsSaving(false);
     }
-  }, [validateForm, currentConnector, formData, onSuccess, isEditMode, tConn]);
+  }, [currentConnector, formData, onSuccess, tConn]);
 
   // 渲染表单字段
   const renderFormField = (field: FormField) => {
@@ -306,9 +308,8 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
       case 'select':
         // 动态获取选项
-        { let options = field.options || [];
+        let options = field.options || [];
         if (field.name === 'defaultQueryLanguage' && currentConnector) {
-          // 特殊处理查询语言选项
           const version = formData.version;
           if (version) {
             const connector = currentConnector as any;
@@ -317,7 +318,6 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
             }
           }
         } else if (field.name === 's3Region' && currentConnector) {
-          // 特殊处理区域选项
           const provider = formData.objectStorageProvider;
           if (provider) {
             const connector = currentConnector as any;
@@ -356,18 +356,17 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               <p className="text-sm text-destructive">{error}</p>
             )}
           </div>
-        ); }
+        );
 
       case 'switch':
         return (
-          <div key={field.name} className="flex items-center justify-between space-y-2">
-            <div className="space-y-0.5">
-              <Label htmlFor={field.name}>
+          <div key={field.name} className="flex items-center justify-between space-x-4 py-2">
+            <div className="flex-1">
+              <Label htmlFor={field.name} className="text-base">
                 {field.label}
-                {field.required && <span className="text-destructive ml-1">*</span>}
               </Label>
               {field.description && (
-                <p className="text-sm text-muted-foreground">{field.description}</p>
+                <p className="text-sm text-muted-foreground mt-1">{field.description}</p>
               )}
             </div>
             <Switch
@@ -376,9 +375,6 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               onCheckedChange={(checked) => handleFieldChange(field.name, checked)}
               disabled={disabled}
             />
-            {error && (
-              <p className="text-sm text-destructive">{error}</p>
-            )}
           </div>
         );
 
@@ -395,8 +391,8 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               onChange={(e) => handleFieldChange(field.name, e.target.value)}
               placeholder={field.placeholder}
               disabled={disabled}
+              rows={field.rows || 3}
               className={error ? 'border-destructive' : ''}
-              rows={3}
             />
             {field.description && (
               <p className="text-sm text-muted-foreground">{field.description}</p>
@@ -412,13 +408,8 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
     }
   };
 
-  // 渲染表单区域
+  // 渲染表单区域（用于分组）
   const renderFormSection = (section: FormSection) => {
-    // 检查区域是否可见
-    if (section.visible && !section.visible(formData)) {
-      return null;
-    }
-
     const visibleFields = section.fields.filter(field =>
       !field.visible || field.visible(formData)
     );
@@ -428,20 +419,47 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
     }
 
     return (
-      <AccordionItem key={section.id} value={section.id}>
-        <AccordionTrigger className="text-sm font-medium">
-          <div className="flex items-center gap-2">
-            {section.icon}
-            {section.title}
-          </div>
-        </AccordionTrigger>
-        <AccordionContent>
-          <div className="space-y-4 px-1">
-            {visibleFields.map(field => renderFormField(field))}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
+      <div key={section.id} className="space-y-4">
+        <div className="space-y-4">
+          {visibleFields.map(field => renderFormField(field))}
+        </div>
+      </div>
     );
+  };
+
+  // 按tab分组表单区域
+  const groupSectionsByTab = () => {
+    if (!currentConnector) return {};
+
+    const formSections = currentConnector.getFormSections();
+    const groups: Record<string, FormSection[]> = {
+      general: [],
+      advanced: [],
+      proxy: []
+    };
+
+    formSections.forEach(section => {
+      // 根据section.id将表单分组到不同的tab
+      // General tab: 基本信息、连接配置、认证、数据库特定配置
+      if (section.id === 'basic' || section.id === 'connection' || section.id === 'auth' || section.id === 'authentication' ||
+          section.id === 'influxdb' || section.id === 'iotdb' || section.id === 'object_storage' || section.id === 's3Config') {
+        groups.general.push(section);
+      }
+      // Advanced tab: 高级设置、性能、重试等
+      else if (section.id === 'advanced' || section.id === 'performance' || section.id === 'retry' || section.id === 's3Advanced') {
+        groups.advanced.push(section);
+      }
+      // Proxy tab: 代理配置
+      else if (section.id === 'proxy' || section.id === 'proxyConfig') {
+        groups.proxy.push(section);
+      }
+      // 默认归类到常规配置
+      else {
+        groups.general.push(section);
+      }
+    });
+
+    return groups;
   };
 
   // 渲染测试结果
@@ -476,58 +494,97 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
     return null;
   }
 
-  const formSections = currentConnector.getFormSections();
+  const sectionGroups = groupSectionsByTab();
 
   return (
     <Dialog open={visible} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6">
           <DialogTitle>
-            {isEditMode ? tConn('edit_connection') : tConn('new_connection')}
+            {isEditMode ? tConn('dialog.edit_connection') : tConn('dialog.new_connection')}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-1">
-          {/* 数据库类型选择（仅新建时显示） */}
+        <div className="flex-1 overflow-hidden flex">
+          {/* 左侧：数据库类型选择 */}
           {!isEditMode && (
-            <div className="mb-6">
-              <Label>{tConn('database_type')}</Label>
-              <div className="grid grid-cols-3 gap-3 mt-2">
-                {connectors.map(connector => (
-                  <Button
-                    key={connector.type}
-                    variant={selectedType === connector.type ? 'default' : 'outline'}
-                    className="justify-start"
-                    onClick={() => handleTypeChange(connector.type)}
-                  >
+            <div className="w-48 border-r bg-muted/30 p-4 space-y-2 overflow-y-auto">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">
+                {tConn('dialog.select_database_type')}
+              </h3>
+              {connectors.map(connector => (
+                <button
+                  key={connector.type}
+                  onClick={() => handleTypeChange(connector.type)}
+                  className={`
+                    w-full text-left px-3 py-2.5 rounded-md transition-colors
+                    ${selectedType === connector.type
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'hover:bg-muted'
+                    }
+                  `}
+                >
+                  <div className="flex items-center gap-2 mb-1">
                     <img
                       src={connector.icon}
                       alt={connector.displayName}
-                      className="w-4 h-4 mr-2"
+                      className="w-4 h-4"
                     />
-                    {connector.displayName}
-                  </Button>
-                ))}
+                    <span className="font-medium text-sm">{connector.displayName}</span>
+                  </div>
+                  <p className={`text-xs ${selectedType === connector.type ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    {connector.type === 'influxdb' && tConn('dialog.influxdb_desc')}
+                    {connector.type === 'iotdb' && tConn('dialog.iotdb_desc')}
+                    {connector.type === 'object_storage' && tConn('dialog.object_storage_desc')}
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 右侧：表单配置 */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 mb-6">
+                <TabsTrigger value="general" className="text-xs">
+                  <Database className="w-3.5 h-3.5 mr-1.5" />
+                  {tConn('dialog.general_tab')}
+                </TabsTrigger>
+                <TabsTrigger value="advanced" className="text-xs">
+                  <Settings className="w-3.5 h-3.5 mr-1.5" />
+                  {tConn('dialog.advanced_tab')}
+                </TabsTrigger>
+                <TabsTrigger value="proxy" className="text-xs">
+                  <Network className="w-3.5 h-3.5 mr-1.5" />
+                  {tConn('dialog.proxy_tab')}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="general" className="space-y-4 mt-0">
+                {sectionGroups.general?.map(section => renderFormSection(section))}
+              </TabsContent>
+
+              <TabsContent value="advanced" className="space-y-4 mt-0">
+                {sectionGroups.advanced?.map(section => renderFormSection(section))}
+              </TabsContent>
+
+              <TabsContent value="proxy" className="space-y-4 mt-0">
+                {sectionGroups.proxy?.map(section => renderFormSection(section))}
+              </TabsContent>
+            </Tabs>
+
+            {/* 测试结果 */}
+            {testResult && (
+              <div className="mt-6">
+                {renderTestResult()}
               </div>
-            </div>
-          )}
-
-          {/* 表单内容 */}
-          <Accordion type="multiple" defaultValue={['basic', 'connection']} className="w-full">
-            {formSections.map(section => renderFormSection(section))}
-          </Accordion>
-
-          {/* 测试结果 */}
-          {testResult && (
-            <div className="mt-4">
-              {renderTestResult()}
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        <DialogFooter className="mt-4">
+        <DialogFooter className="px-6 pb-6">
           <Button variant="outline" onClick={onCancel} disabled={isTesting || isSaving}>
-            {tConn('cancel')}
+            {tConn('dialog.cancel')}
           </Button>
           <Button
             variant="outline"
@@ -537,10 +594,10 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
             {isTesting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {tConn('testing')}
+                {tConn('dialog.testing')}
               </>
             ) : (
-              tConn('test_connection')
+              tConn('dialog.test_connection')
             )}
           </Button>
           <Button
@@ -550,10 +607,10 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
             {isSaving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {tConn('saving')}
+                {tConn('dialog.saving')}
               </>
             ) : (
-              isEditMode ? tConn('update') : tConn('create')
+              isEditMode ? tConn('dialog.update') : tConn('dialog.create')
             )}
           </Button>
         </DialogFooter>

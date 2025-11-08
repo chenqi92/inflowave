@@ -34,6 +34,7 @@ export interface FormField {
   min?: number;
   max?: number;
   step?: number;
+  rows?: number;
   visible?: (formData: any) => boolean;
   disabled?: (formData: any) => boolean;
 }

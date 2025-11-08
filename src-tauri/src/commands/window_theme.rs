@@ -25,26 +25,28 @@ pub async fn set_window_background<R: Runtime>(
 
     #[cfg(target_os = "macos")]
     {
-        use cocoa::appkit::{NSColor, NSWindow};
-        use cocoa::base::{id, nil};
+        use objc2_app_kit::NSColor;
+        use objc2::{msg_send, rc::Retained, runtime::AnyObject};
 
-        let ns_window = _window.ns_window().map_err(|e| e.to_string())? as id;
+        // 解析颜色
+        let (r, g, b) = parse_hex_color(background_color)?;
 
         unsafe {
-            // 解析颜色
-            let (r, g, b) = parse_hex_color(background_color)?;
+            // 获取 NSWindow 指针
+            let ns_window = _window.ns_window().map_err(|e| e.to_string())? as *mut AnyObject;
 
-            // 创建 NSColor
-            let color = NSColor::colorWithSRGBRed_green_blue_alpha_(
-                nil,
-                r as f64 / 255.0,
-                g as f64 / 255.0,
-                b as f64 / 255.0,
-                1.0,
-            );
+            if !ns_window.is_null() {
+                // 创建 NSColor
+                let color: Retained<NSColor> = NSColor::colorWithSRGBRed_green_blue_alpha(
+                    r as f64 / 255.0,
+                    g as f64 / 255.0,
+                    b as f64 / 255.0,
+                    1.0,
+                );
 
-            // 设置窗口背景色
-            ns_window.setBackgroundColor_(color);
+                // 设置窗口背景色
+                let _: () = msg_send![ns_window, setBackgroundColor: &*color];
+            }
         }
     }
 

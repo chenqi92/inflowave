@@ -223,6 +223,35 @@
     "no_messages": "暂无执行消息"
   },
 
+  "execution_plan_tab": {
+    "no_data": "暂无执行计划数据",
+    "no_data_hint": "请使用 EXPLAIN 语句查看查询执行计划",
+    "total_cost": "总成本",
+    "estimated_rows": "估算行数",
+    "execution_steps": "执行步骤",
+    "plan_details": "执行计划详情",
+    "tree_view": "树形视图",
+    "cost": "成本",
+    "rows": "行数",
+    "optimization_suggestions": "优化建议",
+    "suggestion_add_index": "查询成本较高，建议检查是否可以添加索引",
+    "suggestion_optimize_where": "考虑优化 WHERE 条件，减少扫描行数",
+    "suggestion_check_join": "检查是否存在不必要的 JOIN 操作",
+    "suggestion_partition": "考虑使用分区表或物化视图"
+  },
+
+  "execution_history_tab": {
+    "no_history": "暂无执行历史",
+    "execution_time": "执行时间",
+    "sql_statement": "SQL 语句",
+    "type": "类型",
+    "status": "状态",
+    "success": "成功",
+    "failed": "失败",
+    "affected_rows": "影响行数",
+    "duration": "耗时"
+  },
+
   "status_card": {
     "insert_success": "数据插入成功",
     "update_success": "数据更新成功",
@@ -240,7 +269,20 @@
     "operation_success_no_count": "操作已成功执行，耗时 {{time}}",
     "affected_rows": "影响行数",
     "execution_time": "执行时间",
-    "operation_type": "操作类型"
+    "operation_type": "操作类型",
+    "delete_operation_note": "DELETE 操作说明",
+    "delete_executed_successfully": "DELETE 语句已成功执行",
+    "delete_no_row_count_info": "InfluxDB 不返回删除的具体行数，这是正常的数据库行为",
+    "important_note": "重要提示：",
+    "delete_where_condition_tags_only": "DELETE WHERE 条件只能使用 tags 和 time",
+    "delete_cannot_use_fields": "不能使用 fields 作为 WHERE 条件",
+    "delete_check_where_condition": "如果数据未被删除，请检查 WHERE 条件是否使用了 field",
+    "delete_show_tag_keys_hint": "可以使用 SHOW TAG KEYS 查看哪些是 tag",
+    "operation_details": "操作详情",
+    "inserted_rows": "插入行数",
+    "updated_rows": "更新行数",
+    "deleted_rows": "删除行数",
+    "total_affected_rows": "总影响行数"
   },
 
   "aggregate_stats": {

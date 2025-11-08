@@ -9,7 +9,7 @@ import { t } from '@/i18n';
  */
 export interface ObjectStorageConfig extends BaseConnectionConfig {
   dbType: 'object-storage';
-  objectStorageProvider: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos';
+  objectStorageProvider: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos' | 'qiniu-kodo' | 'upyun' | 'github' | 'smms' | 'imgur';
   s3Endpoint?: string;
   s3InternalEndpoint?: string;
   s3ExternalEndpoint?: string;
@@ -20,6 +20,30 @@ export interface ObjectStorageConfig extends BaseConnectionConfig {
   s3PathStyle?: boolean;
   s3SessionToken?: string;
   bucket?: string;
+  // 腾讯云COS特有字段
+  cosAppId?: string;
+  // 七牛云Kodo字段
+  qiniuAccessUrl?: string;  // 七牛云访问网址
+  // 又拍云UPYUN字段
+  upyunOperator?: string;    // 操作员
+  upyunOperatorPassword?: string;  // 操作员密码
+  upyunServiceName?: string; // 服务名
+  upyunAccelerateUrl?: string; // 加速域名
+  // GitHub字段
+  githubRepo?: string;       // 仓库名 username/repo
+  githubBranch?: string;     // 分支名
+  githubToken?: string;      // GitHub Token
+  // SM.MS字段
+  smmsToken?: string;        // SM.MS API Token
+  smmsBackupDomain?: string; // 备用上传域名
+  // Imgur字段
+  imgurClientId?: string;    // Imgur Client ID
+  // 存储路径前缀（可选）
+  storagePath?: string;
+  // 自定义域名（可选）
+  customDomain?: string;
+  // 地址后缀（图片处理参数）
+  urlSuffix?: string;
 }
 
 /**
@@ -191,6 +215,20 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           }
         },
         {
+          name: 'cosAppId',
+          label: t('connections.object_storage.cos_app_id'),
+          type: 'text',
+          required: true,
+          visible: (formData) => formData.objectStorageProvider === 'tencent-cos',
+          placeholder: t('connections.object_storage.cos_app_id_placeholder'),
+          description: t('connections.object_storage.cos_app_id_description'),
+          validation: (value: string, formData: any) => {
+            if (formData.objectStorageProvider === 'tencent-cos' && !value?.trim()) {
+              return t('connections.object_storage.cos_app_id_required');
+            }
+          }
+        },
+        {
           name: 's3SessionToken',
           label: t('connections.object_storage.session_token'),
           type: 'password',
@@ -219,6 +257,20 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           defaultValue: false,
           visible: (formData) => formData.objectStorageProvider === 'minio',
           description: t('connections.object_storage.path_style_description')
+        },
+        {
+          name: 'storagePath',
+          label: t('connections.object_storage.storage_path'),
+          type: 'text',
+          placeholder: t('connections.object_storage.storage_path_placeholder'),
+          description: t('connections.object_storage.storage_path_description')
+        },
+        {
+          name: 'customDomain',
+          label: t('connections.object_storage.custom_domain'),
+          type: 'text',
+          placeholder: t('connections.object_storage.custom_domain_placeholder'),
+          description: t('connections.object_storage.custom_domain_description')
         },
         {
           name: 's3InternalEndpoint',
@@ -345,7 +397,10 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           secretKey: formData.s3SecretKey || '',
           useSSL: formData.s3UseSSL || true,
           pathStyle: formData.s3PathStyle || false,
-          sessionToken: formData.s3SessionToken || ''
+          sessionToken: formData.s3SessionToken || '',
+          cosAppId: formData.cosAppId || '',
+          storagePath: formData.storagePath || '',
+          customDomain: formData.customDomain || ''
         }
       },
       createdAt: new Date(),
@@ -383,6 +438,9 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       s3UseSSL: s3Config?.useSSL,
       s3PathStyle: s3Config?.pathStyle,
       s3SessionToken: s3Config?.sessionToken,
+      cosAppId: s3Config?.cosAppId,
+      storagePath: s3Config?.storagePath,
+      customDomain: s3Config?.customDomain,
       bucket: config.database
     };
   }

@@ -3,6 +3,7 @@ import { GlideDataTable, type ColumnConfig, type DataRow } from '@/components/ui
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle, XCircle, Clock, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export interface ExecutionHistoryRecord {
   id: string;
@@ -64,10 +65,12 @@ const truncateSQL = (sql: string, maxLength: number = 100): string => {
  * 执行历史 Tab 组件
  * 使用 GlideDataTable 展示当前会话的 SQL 执行历史
  */
-export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({ 
+export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
   history,
-  className 
+  className
 }) => {
+  const { t } = useTranslation('query');
+
   // 转换历史记录为表格数据
   const tableData = useMemo(() => {
     return history.map((record, index) => ({
@@ -87,7 +90,7 @@ export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
   const columns: ColumnConfig[] = useMemo(() => [
     {
       key: 'timestamp',
-      title: '执行时间',
+      title: t('execution_history_tab.execution_time'),
       width: 140,
       sortable: true,
       render: (value: any) => (
@@ -99,7 +102,7 @@ export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
     },
     {
       key: 'sqlTruncated',
-      title: 'SQL 语句',
+      title: t('execution_history_tab.sql_statement'),
       width: 400,
       sortable: false,
       render: (value: any, row: any) => (
@@ -110,7 +113,7 @@ export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
     },
     {
       key: 'sqlType',
-      title: '类型',
+      title: t('execution_history_tab.type'),
       width: 100,
       sortable: true,
       render: (value: any) => (
@@ -125,7 +128,7 @@ export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
     },
     {
       key: 'status',
-      title: '状态',
+      title: t('execution_history_tab.status'),
       width: 100,
       sortable: true,
       render: (value: any, row: any) => (
@@ -133,13 +136,13 @@ export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
           {value === 'success' ? (
             <>
               <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-              <span className="text-xs text-green-700 dark:text-green-400">成功</span>
+              <span className="text-xs text-green-700 dark:text-green-400">{t('execution_history_tab.success')}</span>
             </>
           ) : (
             <>
               <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
               <span className="text-xs text-red-700 dark:text-red-400" title={row.error}>
-                失败
+                {t('execution_history_tab.failed')}
               </span>
             </>
           )}
@@ -148,7 +151,7 @@ export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
     },
     {
       key: 'rows',
-      title: '影响行数',
+      title: t('execution_history_tab.affected_rows'),
       width: 120,
       sortable: true,
       render: (value: any) => (
@@ -160,7 +163,7 @@ export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
     },
     {
       key: 'duration',
-      title: '耗时',
+      title: t('execution_history_tab.duration'),
       width: 100,
       sortable: true,
       render: (value: any) => (
@@ -173,7 +176,7 @@ export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
         </div>
       ),
     },
-  ], []);
+  ], [t]);
 
   // 如果没有历史记录
   if (history.length === 0) {
@@ -181,7 +184,7 @@ export const ExecutionHistoryTab: React.FC<ExecutionHistoryTabProps> = ({
       <div className={cn('h-full flex items-center justify-center', className)}>
         <div className="text-center text-muted-foreground">
           <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">暂无执行历史</p>
+          <p className="text-sm">{t('execution_history_tab.no_history')}</p>
         </div>
       </div>
     );

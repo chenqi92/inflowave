@@ -54,7 +54,7 @@ bytes = "1.10.1"
 thrift = "0.17"
 # REST API 支持已通过 reqwest 提供
 # WebSocket 支持（可选）
-tokio-tungstenite = { version = "0.20", optional = true }
+tokio-tungstenite = { version = "0.28.0", optional = true }
 
 # 新增依赖
 regex = "1.10"
@@ -88,7 +88,8 @@ prost = { version = "0.14.1", optional = true }
 
 # macOS平台特定依赖 - 用于窗口背景色设置
 [target.'cfg(target_os = "macos")'.dependencies]
-cocoa = "0.26.1"
+objc2 = "0.5"
+objc2-app-kit = { version = "0.2", features = ["NSColor", "NSWindow"] }
 
 # Linux平台特定依赖 - 启用原生菜单支持
 [target.'cfg(target_os = "linux")'.dependencies]

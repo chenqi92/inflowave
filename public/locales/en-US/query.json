@@ -223,6 +223,35 @@
     "no_messages": "No execution messages"
   },
 
+  "execution_plan_tab": {
+    "no_data": "No execution plan data",
+    "no_data_hint": "Please use EXPLAIN statement to view query execution plan",
+    "total_cost": "Total Cost",
+    "estimated_rows": "Estimated Rows",
+    "execution_steps": "Execution Steps",
+    "plan_details": "Execution Plan Details",
+    "tree_view": "Tree View",
+    "cost": "Cost",
+    "rows": "Rows",
+    "optimization_suggestions": "Optimization Suggestions",
+    "suggestion_add_index": "Query cost is high, consider adding indexes",
+    "suggestion_optimize_where": "Consider optimizing WHERE conditions to reduce scanned rows",
+    "suggestion_check_join": "Check for unnecessary JOIN operations",
+    "suggestion_partition": "Consider using partitioned tables or materialized views"
+  },
+
+  "execution_history_tab": {
+    "no_history": "No execution history",
+    "execution_time": "Execution Time",
+    "sql_statement": "SQL Statement",
+    "type": "Type",
+    "status": "Status",
+    "success": "Success",
+    "failed": "Failed",
+    "affected_rows": "Affected Rows",
+    "duration": "Duration"
+  },
+
   "status_card": {
     "insert_success": "Data inserted successfully",
     "update_success": "Data updated successfully",
@@ -240,7 +269,20 @@
     "operation_success_no_count": "Operation completed successfully, took {{time}}",
     "affected_rows": "Affected Rows",
     "execution_time": "Execution Time",
-    "operation_type": "Operation Type"
+    "operation_type": "Operation Type",
+    "delete_operation_note": "DELETE Operation Notes",
+    "delete_executed_successfully": "DELETE statement executed successfully",
+    "delete_no_row_count_info": "InfluxDB does not return the exact number of deleted rows, this is normal database behavior",
+    "important_note": "Important Notes:",
+    "delete_where_condition_tags_only": "DELETE WHERE conditions can only use tags and time",
+    "delete_cannot_use_fields": "Cannot use fields in WHERE conditions",
+    "delete_check_where_condition": "If data was not deleted, check if WHERE condition used a field",
+    "delete_show_tag_keys_hint": "Use SHOW TAG KEYS to see which columns are tags",
+    "operation_details": "Operation Details",
+    "inserted_rows": "Inserted Rows",
+    "updated_rows": "Updated Rows",
+    "deleted_rows": "Deleted Rows",
+    "total_affected_rows": "Total Affected Rows"
   },
 
   "aggregate_stats": {

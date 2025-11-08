@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { 
-  ChevronRight, 
+import {
+  ChevronRight,
   ChevronDown,
   Activity,
   TrendingUp,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ExecutionPlan, ExecutionPlanStep } from '@/types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface ExecutionPlanTabProps {
   executionPlan?: ExecutionPlan;
@@ -51,6 +52,7 @@ const ExecutionPlanStepItem: React.FC<{
   step: ExecutionPlanStep;
   level: number;
 }> = ({ step, level }) => {
+  const { t } = useTranslation('query');
   const [expanded, setExpanded] = useState(true);
   const hasChildren = step.children && step.children.length > 0;
 
@@ -89,7 +91,7 @@ const ExecutionPlanStepItem: React.FC<{
             {step.cost !== undefined && (
               <div className="flex items-center gap-1">
                 <TrendingUp className="w-3 h-3" />
-                <span>成本:</span>
+                <span>{t('execution_plan_tab.cost')}:</span>
                 <span className={cn('font-medium', getCostColor(step.cost))}>
                   {formatCost(step.cost)}
                 </span>
@@ -98,7 +100,7 @@ const ExecutionPlanStepItem: React.FC<{
             {step.rows !== undefined && (
               <div className="flex items-center gap-1">
                 <Hash className="w-3 h-3" />
-                <span>行数:</span>
+                <span>{t('execution_plan_tab.rows')}:</span>
                 <span className="font-medium">{formatRows(step.rows)}</span>
               </div>
             )}
@@ -133,18 +135,20 @@ const ExecutionPlanStepItem: React.FC<{
  * 执行计划 Tab 组件
  * 展示 EXPLAIN 查询的执行计划
  */
-export const ExecutionPlanTab: React.FC<ExecutionPlanTabProps> = ({ 
+export const ExecutionPlanTab: React.FC<ExecutionPlanTabProps> = ({
   executionPlan,
-  className 
+  className
 }) => {
+  const { t } = useTranslation('query');
+
   // 如果没有执行计划
   if (!executionPlan || !executionPlan.steps || executionPlan.steps.length === 0) {
     return (
       <div className={cn('h-full flex items-center justify-center', className)}>
         <div className="text-center text-muted-foreground">
           <Info className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p className="text-sm">暂无执行计划数据</p>
-          <p className="text-xs mt-1">请使用 EXPLAIN 语句查看查询执行计划</p>
+          <p className="text-sm">{t('execution_plan_tab.no_data')}</p>
+          <p className="text-xs mt-1">{t('execution_plan_tab.no_data_hint')}</p>
         </div>
       </div>
     );
@@ -158,7 +162,7 @@ export const ExecutionPlanTab: React.FC<ExecutionPlanTabProps> = ({
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              总成本
+              {t('execution_plan_tab.total_cost')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -172,7 +176,7 @@ export const ExecutionPlanTab: React.FC<ExecutionPlanTabProps> = ({
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Hash className="w-4 h-4" />
-              估算行数
+              {t('execution_plan_tab.estimated_rows')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -186,7 +190,7 @@ export const ExecutionPlanTab: React.FC<ExecutionPlanTabProps> = ({
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <Activity className="w-4 h-4" />
-              执行步骤
+              {t('execution_plan_tab.execution_steps')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -202,9 +206,9 @@ export const ExecutionPlanTab: React.FC<ExecutionPlanTabProps> = ({
         <CardHeader>
           <CardTitle className="text-sm flex items-center gap-2">
             <Activity className="w-4 h-4" />
-            执行计划详情
+            {t('execution_plan_tab.plan_details')}
             <Badge variant="outline" className="ml-2 text-xs">
-              树形视图
+              {t('execution_plan_tab.tree_view')}
             </Badge>
           </CardTitle>
         </CardHeader>
@@ -229,15 +233,15 @@ export const ExecutionPlanTab: React.FC<ExecutionPlanTabProps> = ({
           <CardHeader>
             <CardTitle className="text-sm flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
               <Info className="w-4 h-4" />
-              优化建议
+              {t('execution_plan_tab.optimization_suggestions')}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-sm text-muted-foreground space-y-2">
-              <p>• 查询成本较高，建议检查是否可以添加索引</p>
-              <p>• 考虑优化 WHERE 条件，减少扫描行数</p>
-              <p>• 检查是否存在不必要的 JOIN 操作</p>
-              <p>• 考虑使用分区表或物化视图</p>
+              <p>• {t('execution_plan_tab.suggestion_add_index')}</p>
+              <p>• {t('execution_plan_tab.suggestion_optimize_where')}</p>
+              <p>• {t('execution_plan_tab.suggestion_check_join')}</p>
+              <p>• {t('execution_plan_tab.suggestion_partition')}</p>
             </div>
           </CardContent>
         </Card>

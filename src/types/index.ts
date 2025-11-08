@@ -81,6 +81,9 @@ export interface DatabaseDriverConfig {
     pathStyle?: boolean; // 是否使用path-style URLs
     sessionToken?: string; // 临时凭证
     signatureVersion?: 'v2' | 'v4'; // 签名版本
+    cosAppId?: string; // 腾讯云COS AppId
+    storagePath?: string; // 存储路径前缀
+    customDomain?: string; // 自定义域名
   };
   // 为未来的数据库类型预留空间
   prometheus?: Record<string, any>;
