@@ -343,10 +343,18 @@
       "dataType": "Data Type",
       "nullCount": "Null Count",
       "uniqueCount": "Unique Count",
+      "min": "Min",
+      "max": "Max",
+      "avg": "Avg",
+      "median": "Median",
       "minValue": "Min Value",
       "maxValue": "Max Value",
       "avgValue": "Avg Value",
       "medianValue": "Median Value"
+    },
+    "tabs": {
+      "executor": "Executor",
+      "queryResult": "Query Result"
     },
     "queryLabel": "Query {{index}}",
     "queryStats": "Query{{index}}_Stats",

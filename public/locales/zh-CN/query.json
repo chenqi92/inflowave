@@ -342,10 +342,18 @@
       "dataType": "数据类型",
       "nullCount": "空值数量",
       "uniqueCount": "唯一值数量",
+      "min": "最小值",
+      "max": "最大值",
+      "avg": "平均值",
+      "median": "中位数",
       "minValue": "最小值",
       "maxValue": "最大值",
       "avgValue": "平均值",
       "medianValue": "中位数"
+    },
+    "tabs": {
+      "executor": "执行器",
+      "queryResult": "查询结果"
     },
     "queryLabel": "查询 {{index}}",
     "queryStats": "查询{{index}}_统计",

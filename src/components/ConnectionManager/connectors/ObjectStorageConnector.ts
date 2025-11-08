@@ -297,6 +297,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           required: true,
           visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
           placeholder: t('object_storage.access_key_placeholder'),
+          width: 'half',
           validation: (value: string, formData: any) => {
             if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('object_storage.access_key_required');
@@ -311,6 +312,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           required: true,
           visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
           placeholder: t('object_storage.secret_key_placeholder'),
+          width: 'half',
           validation: (value: string, formData: any) => {
             if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('object_storage.secret_key_required');
@@ -340,6 +342,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           required: true,
           visible: (formData) => formData.objectStorageProvider === 'upyun',
           placeholder: t('object_storage.upyun_operator_placeholder'),
+          width: 'half',
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'upyun' && !value?.trim()) {
               return t('object_storage.upyun_operator_required');
@@ -355,6 +358,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           visible: (formData) => formData.objectStorageProvider === 'upyun',
           placeholder: t('object_storage.upyun_operator_password_placeholder'),
           description: t('object_storage.upyun_operator_password_description'),
+          width: 'half',
           validation: (value: string, formData: any) => {
             if (formData.objectStorageProvider === 'upyun' && !value?.trim()) {
               return t('object_storage.upyun_operator_password_required');

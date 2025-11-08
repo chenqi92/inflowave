@@ -128,6 +128,7 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           placeholder: t('influxdb.organization_placeholder'),
           visible: (formData) => formData.version === '2.x' || formData.version === '3.x',
           required: true,
+          width: 'half',
           validation: (value: string, formData: any) => {
             if (formData.version === '2.x' && !value?.trim()) {
               return t('influxdb.organization_required');
@@ -141,6 +142,7 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
           type: 'text',
           placeholder: t('influxdb.bucket_placeholder'),
           visible: (formData) => formData.version === '2.x' || formData.version === '3.x',
+          width: 'half',
           description: t('influxdb.bucket_description')
         },
 
@@ -273,6 +275,8 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
    * 从连接配置转换
    */
   fromConnectionConfig(config: ConnectionConfig): InfluxDBConfig {
+    const version = (config.version || '2.x') as '1.x' | '2.x' | '3.x';
+
     return {
       id: config.id || '',
       name: config.name,
@@ -287,13 +291,13 @@ export class InfluxDBConnector extends BaseConnector<InfluxDBConfig> {
       timeout: config.timeout,
       connectionTimeout: config.connectionTimeout,
       queryTimeout: config.queryTimeout,
-      version: (config.version || '2.x') as '1.x' | '2.x' | '3.x',
+      version: version,
       retentionPolicy: config.retentionPolicy,
       apiToken: config.v2Config?.apiToken,
       organization: config.v2Config?.organization,
       bucket: config.v2Config?.bucket,
       v1CompatibilityApi: config.v2Config?.v1CompatibilityApi,
-      defaultQueryLanguage: config.defaultQueryLanguage,
+      defaultQueryLanguage: config.defaultQueryLanguage || this.getDefaultQueryLanguage(version),
       proxyEnabled: config.proxyConfig?.enabled,
       proxyType: config.proxyConfig?.proxyType,
       proxyHost: config.proxyConfig?.host,

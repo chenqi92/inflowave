@@ -54,10 +54,27 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
           defaultValue: 5,
           min: 1,
           max: 50,
+          width: 'half',
           description: t('iotdb.session_pool_size_description'),
           validation: (value: number) => {
             if (value < 1 || value > 50) {
               return t('iotdb.session_pool_size_range');
+            }
+          }
+        },
+        {
+          name: 'fetchSize',
+          label: t('iotdb.fetch_size'),
+          type: 'number',
+          defaultValue: 5000,
+          min: 100,
+          max: 100000,
+          step: 100,
+          width: 'half',
+          description: t('iotdb.fetch_size_description'),
+          validation: (value: number) => {
+            if (value < 100 || value > 100000) {
+              return t('iotdb.fetch_size_range');
             }
           }
         },
@@ -81,21 +98,6 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
             { value: 'UTC', label: 'UTC' }
           ],
           description: t('iotdb.timezone_description')
-        },
-        {
-          name: 'fetchSize',
-          label: t('iotdb.fetch_size'),
-          type: 'number',
-          defaultValue: 5000,
-          min: 100,
-          max: 100000,
-          step: 100,
-          description: t('iotdb.fetch_size_description'),
-          validation: (value: number) => {
-            if (value < 100 || value > 100000) {
-              return t('iotdb.fetch_size_range');
-            }
-          }
         }
       ]
     };
@@ -119,6 +121,7 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
           defaultValue: 3,
           min: 0,
           max: 10,
+          width: 'half',
           description: t('iotdb.max_retry_count_description'),
           validation: (value: number) => {
             if (value < 0 || value > 10) {
@@ -134,6 +137,7 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
           min: 100,
           max: 10000,
           step: 100,
+          width: 'half',
           description: t('iotdb.retry_interval_description'),
           validation: (value: number) => {
             if (value < 100 || value > 10000) {

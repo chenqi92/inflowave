@@ -54,6 +54,7 @@ export function getProxyConfigSection(dbType: string): FormSection {
         required: false,
         visible: (formData) => formData.proxyEnabled === true,
         placeholder: t('proxy_host_placeholder'),
+        width: 'half',
         validation: (value: string, formData: any) => {
           if (formData.proxyEnabled && !value?.trim()) {
             return t('validation.proxy_host_required');
@@ -69,6 +70,7 @@ export function getProxyConfigSection(dbType: string): FormSection {
         min: 1,
         max: 65535,
         placeholder: t('proxy_port_placeholder'),
+        width: 'half',
         validation: (value: number, formData: any) => {
           if (formData.proxyEnabled) {
             if (!value) {
@@ -85,14 +87,16 @@ export function getProxyConfigSection(dbType: string): FormSection {
         label: t('proxyUsername'),
         type: 'text',
         visible: (formData) => formData.proxyEnabled === true,
-        placeholder: t('proxy_username_placeholder')
+        placeholder: t('proxy_username_placeholder'),
+        width: 'half'
       },
       {
         name: 'proxyPassword',
         label: t('proxyPassword'),
         type: 'password',
         visible: (formData) => formData.proxyEnabled === true,
-        placeholder: t('proxy_password_placeholder')
+        placeholder: t('proxy_password_placeholder'),
+        width: 'half'
       }
     ]
   };

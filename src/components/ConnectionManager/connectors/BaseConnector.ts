@@ -68,6 +68,7 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
             type: 'text',
             required: true,
             placeholder: 'localhost',
+            width: 'half',
             validation: (value: string) => {
               if (!value?.trim()) {
                 return t('validation.host_required');
@@ -87,6 +88,7 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
             defaultValue: this.getDefaultPort(),
             min: 1,
             max: 65535,
+            width: 'half',
             validation: (value: number) => {
               if (!value || value < 1 || value > 65535) {
                 return t('validation.port_range');
@@ -97,13 +99,15 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
             name: 'username',
             label: t('username'),
             type: 'text',
-            placeholder: t('username_placeholder')
+            placeholder: t('username_placeholder'),
+            width: 'half'
           },
           {
             name: 'password',
             label: t('password'),
             type: 'password',
-            placeholder: t('password_placeholder')
+            placeholder: t('password_placeholder'),
+            width: 'half'
           },
           {
             name: 'ssl',
@@ -124,6 +128,7 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
             defaultValue: 30,
             min: 5,
             max: 300,
+            width: 'half',
             description: t('timeout_description'),
             validation: (value: number) => {
               if (value < 5 || value > 300) {
@@ -138,6 +143,7 @@ export abstract class BaseConnector<T extends BaseConnectionConfig = BaseConnect
             defaultValue: 30,
             min: 5,
             max: 300,
+            width: 'half',
             description: t('connection_timeout_description'),
             validation: (value: number) => {
               if (value < 5 || value > 300) {

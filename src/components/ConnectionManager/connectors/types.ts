@@ -44,6 +44,7 @@ export interface FormField {
   rows?: number;
   visible?: (formData: any) => boolean;
   disabled?: (formData: any) => boolean;
+  width?: 'full' | 'half'; // 字段宽度：full=全宽，half=半宽（与下一个字段并排）
 }
 
 /**
