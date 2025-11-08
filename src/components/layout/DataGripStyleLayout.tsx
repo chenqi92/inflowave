@@ -27,6 +27,8 @@ import { useTabStore } from '@/stores/tabStore';
 import type {QueryResult} from '@/types';
 import { debounce } from 'lodash-es';
 import logger from '@/utils/logger';
+import { WorkspaceTab } from '@/services/workspace';
+import type { EditorTab } from '@/components/editor/TabManager';
 
 
 
@@ -45,7 +47,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     // 🔧 使用 userPreferencesStore 替代废弃的 useUserPreferences hook
     const { preferences, updateWorkspace } = useUserPreferencesStore();
     // 🔧 获取Tab状态，用于判断是否有Tab
-    const { tabs } = useTabStore();
+    const { tabs, addTab, setActiveKey } = useTabStore();
     const location = useLocation();
     const navigate = useNavigate();
 
@@ -283,6 +285,36 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
             saveWorkspaceSettingsRef.current();
         }, 100);
     }, []);
+
+    // 处理从工作区恢复标签页
+    const handleRestoreTabs = useCallback((workspaceTabs: WorkspaceTab[]) => {
+        logger.info('从工作区恢复标签页', workspaceTabs.length);
+
+        workspaceTabs.forEach(wsTab => {
+            // 转换WorkspaceTab为EditorTab
+            const editorTab: EditorTab = {
+                id: wsTab.id,
+                title: wsTab.title,
+                content: wsTab.content,
+                type: wsTab.tab_type as 'query' | 'table' | 'database' | 'data-browser',
+                modified: false,
+                saved: true,
+                database: wsTab.database,
+                connectionId: wsTab.connection_id,
+                tableName: wsTab.table_name,
+            };
+
+            addTab(editorTab);
+        });
+
+        // 激活最后一个恢复的标签页
+        if (workspaceTabs.length > 0) {
+            setActiveKey(workspaceTabs[workspaceTabs.length - 1].id);
+        }
+
+        // 切换到查询视图
+        setCurrentView('query');
+    }, [addTab, setActiveKey]);
 
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [queryResult, setQueryResult] = useState<QueryResult | null>(null);
@@ -808,6 +840,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                                             <RightFunctionPanel
                                                 selectedFunction={selectedFunction}
                                                 onClose={handleRightPanelClose}
+                                                onRestoreTabs={handleRestoreTabs}
                                             />
                                         </div>
                                     </ResizablePanel>

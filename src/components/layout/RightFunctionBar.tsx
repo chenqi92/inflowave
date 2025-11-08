@@ -6,11 +6,12 @@ import {
   Activity,
   History,
   Bell,
+  FolderOpen,
 } from 'lucide-react';
 import { useNotificationStore } from '@/store/notifications';
 import { useMenuTranslation } from '@/hooks/useTranslation';
 
-export type FunctionType = 'notifications' | 'visualization' | 'monitoring' | 'extensions' | 'history';
+export type FunctionType = 'notifications' | 'visualization' | 'monitoring' | 'extensions' | 'history' | 'workspace';
 
 interface FunctionItem {
   key: FunctionType;
@@ -40,6 +41,12 @@ const RightFunctionBar: React.FC<RightFunctionBarProps> = ({
       icon: <Bell className="w-4 h-4" />,
       label: t('right_panel.notifications'),
       description: t('right_panel.notifications_description'),
+    },
+    {
+      key: 'workspace',
+      icon: <FolderOpen className="w-4 h-4" />,
+      label: t('right_panel.workspace'),
+      description: t('right_panel.workspace_description'),
     },
     {
       key: 'visualization',

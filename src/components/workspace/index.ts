@@ -1,2 +1,2 @@
-export { WorkspaceDialog } from './WorkspaceDialog';
+export { WorkspaceContent } from './WorkspaceContent';
 

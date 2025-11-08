@@ -450,6 +450,13 @@ export const useGlobalSearchTranslation = () => {
   return useTranslation('globalSearch');
 };
 
+/**
+ * 数据库浏览器翻译 Hook
+ */
+export const useDatabaseExplorerTranslation = () => {
+  return useTranslation('databaseExplorer');
+};
+
 // ============================================================================
 // 高级翻译工具
 // ============================================================================

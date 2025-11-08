@@ -1,0 +1,46 @@
+{
+  "connectionRefreshed": "Connection {{name}} refreshed",
+  "connectionDisconnected": "Connection {{name}} disconnected",
+  "connectionTestSuccess": "Connection test successful",
+  "connectionTestFailed": "Connection test failed",
+  "testConnectionFailed": "Test connection failed: {{error}}",
+  "connectionNotFound": "Connection not found",
+  "openConnectionInfoFailed": "Failed to open connection info dialog: {{error}}",
+  "connectionNameCopied": "Connection name copied: {{name}}",
+  "copyFailed": "Copy failed",
+  "openTemplateManagerFailed": "Failed to open template manager",
+  "deleteConnectionTitle": "Delete Connection",
+  "deleteConnectionConfirm": "Are you sure you want to delete connection \"{{name}}\"? This action cannot be undone.",
+  "connectionDeleted": "Connection \"{{name}}\" has been deleted",
+
+  "databaseOpened": "Database \"{{database}}\" opened",
+  "openDatabaseFailed": "Failed to open database: {{error}}",
+  "databaseClosed": "Database \"{{database}}\" closed",
+  "closeDatabaseFailed": "Failed to close database: {{error}}",
+  "databaseRefreshed": "Database {{database}} refreshed",
+  "refreshDatabaseFailed": "Failed to refresh database structure: {{error}}",
+  "openCreateDatabaseDialogFailed": "Failed to open create database dialog",
+  "createMeasurementInDevelopment": "Create measurement feature in development: {{database}}",
+  "deleteDatabaseTitle": "Confirm Delete",
+  "deleteDatabaseConfirm": "Are you sure you want to delete database \"{{database}}\"? This action cannot be undone.",
+  "deleteDatabaseInDevelopment": "Delete database feature in development: {{database}}",
+
+  "queryingTable": "Querying table \"{{table}}\"",
+  "deleteTableTitle": "Confirm Delete Table",
+  "deleteTableConfirm": "Are you sure you want to delete table \"{{table}}\"?\n\n⚠️ Warning: This will permanently delete all data in the table and cannot be recovered!",
+  "tableDeleted": "Table \"{{table}}\" has been successfully deleted",
+  "deleteTableFailed": "Failed to delete table: {{error}}",
+
+  "fieldNameCopied": "Field name copied: {{name}}",
+  "fieldStatsInDevelopment": "Field statistics feature in development: {{name}}",
+  "databaseNameCopied": "Database name copied: {{database}}",
+  "tableNameCopied": "Table name copied: {{table}}",
+  "tagNameCopied": "Tag name copied: {{name}}",
+  "tagValuesInDevelopment": "View tag values feature in development: {{name}}",
+
+  "addedToFavorites": "Added to favorites: {{table}}",
+  "removedFromFavorites": "Removed from favorites: {{table}}",
+
+  "actionExecutionFailed": "Operation failed: {{error}}",
+  "unhandledAction": "Unhandled context menu action"
+}

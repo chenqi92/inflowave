@@ -34,12 +34,15 @@
     "visualization": "Visualization",
     "monitoring": "Monitoring",
     "history": "History",
+    "workspace": "Workspace",
     "extensions": "Extensions",
     "notifications_description": "Notification Center",
     "visualization_description": "Data Charts and Dashboards",
     "monitoring_description": "Performance Monitoring and Diagnostics",
     "history_description": "Query History",
-    "extensions_description": "Plugins and Integrations"
+    "workspace_description": "Manage Saved Query Tabs",
+    "extensions_description": "Plugins and Integrations",
+    "unknown_function": "Unknown Function Type"
   },
   "context_menu": {
     "connection_operations": "Connection Operations",

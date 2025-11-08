@@ -34,11 +34,13 @@
     "visualization": "可视化",
     "monitoring": "监控",
     "history": "历史",
+    "workspace": "工作区",
     "extensions": "扩展",
     "notifications_description": "消息通知中心",
     "visualization_description": "数据图表和仪表板",
     "monitoring_description": "性能监控和诊断",
     "history_description": "查询历史记录",
+    "workspace_description": "管理已保存的查询标签页",
     "extensions_description": "插件和集成",
     "unknown_function": "未知功能类型"
   },

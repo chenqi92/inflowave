@@ -12,8 +12,9 @@ const VisualizationPage = React.lazy(() => import('@/pages/Visualization'));
 const QueryHistoryPage = React.lazy(() => import('@/pages/QueryHistory'));
 const Extensions = React.lazy(() => import('@/pages/Extensions'));
 
-// 直接导入性能监控组件
+// 直接导入性能监控组件和工作区内容
 import { ModernPerformanceMonitor } from '@/components/performance/ModernPerformanceMonitor';
+import { WorkspaceContent } from '@/components/workspace/WorkspaceContent';
 
 // 面板适配组件
 const PanelVisualizationPage: React.FC = () => (
@@ -43,19 +44,22 @@ const PanelExtensionsPage: React.FC = () => (
 interface RightFunctionPanelProps {
   selectedFunction: FunctionType | null;
   onClose: () => void;
+  onRestoreTabs?: (tabs: any[]) => void;
   className?: string;
 }
 
 const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
   selectedFunction,
   onClose,
+  onRestoreTabs,
   className = '',
 }) => {
   const { t } = useMenuTranslation();
-  
+
   // 功能标题映射
   const functionTitles: Record<FunctionType, string> = {
     notifications: t('right_panel.notifications'),
+    workspace: t('right_panel.workspace'),
     visualization: t('right_panel.visualization'),
     monitoring: t('right_panel.monitoring'),
     history: t('right_panel.history'),
@@ -70,6 +74,8 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
     switch (selectedFunction) {
       case 'notifications':
         return <NotificationPanel onClose={onClose} />;
+      case 'workspace':
+        return <WorkspaceContent onRestoreTabs={onRestoreTabs || (() => {})} />;
       case 'visualization':
         return <PanelVisualizationPage />;
       case 'monitoring':
@@ -89,8 +95,8 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
     }
   };
 
-  // 消息通知面板不需要额外的头部和包装
-  if (selectedFunction === 'notifications') {
+  // 消息通知面板和工作区面板不需要额外的头部和包装
+  if (selectedFunction === 'notifications' || selectedFunction === 'workspace') {
     return (
       <div className={`bg-background border-l border-border flex flex-col h-full ${className}`}>
         {renderFunctionContent()}

@@ -48,6 +48,9 @@ export const useFileOperations = ({
       onTabsChange(updatedTabs);
 
       showMessage.success(`已保存到工作区: ${currentTab.title}`);
+
+      // 触发工作区更新事件
+      window.dispatchEvent(new CustomEvent('workspace-updated'));
     } catch (error) {
       logger.error('保存到工作区失败:', error);
       showMessage.error(`保存失败: ${error}`);
@@ -277,7 +280,7 @@ export const useFileOperations = ({
       await Promise.all(savePromises);
 
       // 更新所有标签状态
-      const updatedTabs = tabs.map(tab => 
+      const updatedTabs = tabs.map(tab =>
         modifiedTabs.includes(tab)
           ? { ...tab, modified: false, saved: true }
           : tab
@@ -285,6 +288,9 @@ export const useFileOperations = ({
       onTabsChange(updatedTabs);
 
       showMessage.success(`已保存 ${modifiedTabs.length} 个文件`);
+
+      // 触发工作区更新事件
+      window.dispatchEvent(new CustomEvent('workspace-updated'));
     } catch (error) {
       logger.error('批量保存失败:', error);
       showMessage.error(`保存失败: ${error}`);
