@@ -122,59 +122,62 @@ export const ReleaseNotesManager: React.FC = () => {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium">{t('current_version_label') || '当前版本'}:</span>
-                                <Badge variant="outline">
-                                    v{getCurrentVersion()}
-                                </Badge>
-                            </div>
-                            <Separator orientation="vertical" className="h-6"/>
-                            <div className="flex items-center space-x-2">
-                                <span className="text-sm font-medium">{t('view_version_label') || '查看版本'}:</span>
-                                <Select value={selectedVersion} onValueChange={setSelectedVersion}>
-                                    <SelectTrigger className="w-32">
-                                        <SelectValue placeholder={t('select_version_placeholder') || '选择版本'}/>
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {availableVersions.map((version) => (
-                                            <SelectItem key={version} value={version}>
-                                                v{version}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                    {/* 版本信息区域 */}
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-sm font-medium whitespace-nowrap">{t('current_version_label') || '当前版本'}:</span>
+                            <Badge variant="outline" className="flex-shrink-0">
+                                v{getCurrentVersion()}
+                            </Badge>
                         </div>
+                        <Separator orientation="vertical" className="h-6 flex-shrink-0"/>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-sm font-medium whitespace-nowrap">{t('view_version_label') || '查看版本'}:</span>
+                            <Select value={selectedVersion} onValueChange={setSelectedVersion}>
+                                <SelectTrigger className="w-32">
+                                    <SelectValue placeholder={t('select_version_placeholder') || '选择版本'}/>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableVersions.map((version) => (
+                                        <SelectItem key={version} value={version}>
+                                            v{version}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
 
-                        <div className="flex items-center space-x-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleRefresh}
-                                disabled={refreshing}
-                            >
-                                <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`}/>
-                                {t('refresh_button') || '刷新'}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleCheckUpdates}
-                            >
-                                <Download className="w-4 h-4 mr-2"/>
-                                {t('check_update_button') || '检查更新'}
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => updaterService.openDownloadPage(`https://github.com/chenqi92/inflowave/releases`).catch(err => logger.error('Failed to open download page:', err))}
-                            >
-                                <ExternalLink className="w-4 h-4 mr-2"/>
-                                GitHub
-                            </Button>
-                        </div>
+                    {/* 操作按钮区域 */}
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRefresh}
+                            disabled={refreshing}
+                            className="flex-shrink-0"
+                        >
+                            <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`}/>
+                            <span className="whitespace-nowrap">{t('refresh_button') || '刷新'}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCheckUpdates}
+                            className="flex-shrink-0"
+                        >
+                            <Download className="w-4 h-4 mr-2"/>
+                            <span className="whitespace-nowrap">{t('check_update_button') || '检查更新'}</span>
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updaterService.openDownloadPage(`https://github.com/chenqi92/inflowave/releases`).catch(err => logger.error('Failed to open download page:', err))}
+                            className="flex-shrink-0"
+                        >
+                            <ExternalLink className="w-4 h-4 mr-2"/>
+                            <span className="whitespace-nowrap">GitHub</span>
+                        </Button>
                     </div>
                 </CardContent>
             </Card>

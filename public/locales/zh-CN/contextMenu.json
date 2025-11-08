@@ -1,4 +1,8 @@
 {
+  "confirmOperation": "确认操作",
+  "confirmTemplate": "确定要{{label}}吗？",
+  "successSuffix": "成功",
+  "errorSuffix": "失败",
   "seriesInfoFetched": "序列信息已获取",
   "navigatingToVisualization": "正在跳转到可视化页面...",
   "executingQuery": "正在执行查询...",
@@ -27,5 +31,355 @@
   "databaseStatsFetched": "数据库 \"{{database}}\" 统计信息已获取",
   "databaseExportInDevelopment": "数据库 \"{{database}}\" 结构导出功能开发中...",
   "filterDescription": "筛选 {{column}} {{operator}} {{value}}",
-  "aggregateDescription": "{{func}} 聚合查询: {{column}}"
+  "aggregateDescription": "{{func}} 聚合查询: {{column}}",
+  "actions": {
+    "test_connection": {
+      "label": "测试连接",
+      "success": "连接测试成功",
+      "error": "连接测试失败"
+    },
+    "refresh_connection": {
+      "label": "刷新连接",
+      "success": "连接已刷新"
+    },
+    "create_database": {
+      "label": "创建数据库"
+    },
+    "connection_info": {
+      "label": "连接信息"
+    },
+    "connection_properties": {
+      "label": "连接属性"
+    },
+    "copy_connection_name": {
+      "label": "复制连接名",
+      "success": "已复制连接名"
+    },
+    "disconnect": {
+      "label": "断开连接",
+      "confirm": "确定要断开连接吗？",
+      "success": "已断开连接"
+    },
+    "delete_connection": {
+      "label": "删除连接",
+      "confirm": "确定要删除此连接吗？此操作不可撤销！",
+      "success": "连接已删除"
+    },
+    "open_database": {
+      "label": "打开数据库",
+      "success": "数据库已打开"
+    },
+    "close_database": {
+      "label": "关闭数据库",
+      "success": "数据库已关闭"
+    },
+    "refresh_database": {
+      "label": "刷新数据库",
+      "success": "数据库已刷新"
+    },
+    "show_tables": {
+      "label": "显示所有表"
+    },
+    "database_info": {
+      "label": "数据库信息"
+    },
+    "manage_retention_policies": {
+      "label": "保留策略"
+    },
+    "export_metadata": {
+      "label": "导出元数据",
+      "success": "元数据导出成功"
+    },
+    "copy_database_name": {
+      "label": "复制数据库名",
+      "success": "已复制数据库名"
+    },
+    "copy_use_statement": {
+      "label": "复制 USE 语句",
+      "success": "已复制 USE 语句"
+    },
+    "delete_database": {
+      "label": "删除数据库",
+      "confirm": "确定要删除此数据库吗？此操作将删除所有数据且不可撤销！",
+      "success": "数据库已删除"
+    },
+    "view_table_data": {
+      "label": "查看数据"
+    },
+    "query_table": {
+      "label": "查询数据"
+    },
+    "query_builder": {
+      "label": "查询构建器"
+    },
+    "refresh_table": {
+      "label": "刷新表",
+      "success": "表已刷新"
+    },
+    "generate_select_query": {
+      "label": "查询所有数据"
+    },
+    "generate_count_query": {
+      "label": "统计记录数"
+    },
+    "generate_recent_query": {
+      "label": "查询最近数据"
+    },
+    "generate_aggregate_query": {
+      "label": "聚合查询"
+    },
+    "table_statistics": {
+      "label": "统计分析"
+    },
+    "data_preview": {
+      "label": "数据预览"
+    },
+    "table_info": {
+      "label": "表信息"
+    },
+    "edit_table": {
+      "label": "编辑表结构"
+    },
+    "table_designer": {
+      "label": "表设计器"
+    },
+    "export_table_data": {
+      "label": "导出数据",
+      "success": "数据导出成功"
+    },
+    "import_table_data": {
+      "label": "导入数据"
+    },
+    "add_favorite": {
+      "label": "添加收藏",
+      "success": "已添加到收藏"
+    },
+    "remove_favorite": {
+      "label": "取消收藏",
+      "success": "已取消收藏"
+    },
+    "copy_table_name": {
+      "label": "复制表名",
+      "success": "已复制表名"
+    },
+    "copy_select_statement": {
+      "label": "复制 SELECT 语句",
+      "success": "已复制 SELECT 语句"
+    },
+    "delete_table": {
+      "label": "删除表",
+      "confirm": "确定要删除此表吗？此操作不可撤销！",
+      "success": "表已删除"
+    },
+    "query_field": {
+      "label": "查询此字段"
+    },
+    "field_details": {
+      "label": "字段详情"
+    },
+    "field_max": {
+      "label": "最大值"
+    },
+    "field_min": {
+      "label": "最小值"
+    },
+    "field_avg": {
+      "label": "平均值"
+    },
+    "field_sum": {
+      "label": "求和"
+    },
+    "field_count": {
+      "label": "计数"
+    },
+    "field_stats": {
+      "label": "字段统计"
+    },
+    "field_distribution": {
+      "label": "数值分布"
+    },
+    "copy_field_name": {
+      "label": "复制字段名",
+      "success": "已复制字段名"
+    },
+    "query_tag": {
+      "label": "查询此标签"
+    },
+    "tag_details": {
+      "label": "标签详情"
+    },
+    "tag_values": {
+      "label": "查看所有值"
+    },
+    "tag_cardinality": {
+      "label": "基数统计"
+    },
+    "tag_distribution": {
+      "label": "值分布"
+    },
+    "generate_filter_query": {
+      "label": "生成筛选查询"
+    },
+    "copy_tag_name": {
+      "label": "复制标签名",
+      "success": "已复制标签名"
+    },
+    "refresh_fields": {
+      "label": "刷新字段列表"
+    },
+    "show_all_fields": {
+      "label": "显示所有字段"
+    },
+    "refresh_tags": {
+      "label": "刷新标签列表"
+    },
+    "show_all_tags": {
+      "label": "显示所有标签"
+    },
+    "view_device_data": {
+      "label": "查看设备数据"
+    },
+    "refresh_device": {
+      "label": "刷新设备"
+    },
+    "create_timeseries": {
+      "label": "创建时间序列"
+    },
+    "show_timeseries": {
+      "label": "显示所有时间序列"
+    },
+    "device_info": {
+      "label": "设备信息"
+    },
+    "copy_device_name": {
+      "label": "复制设备名",
+      "success": "已复制设备名"
+    },
+    "delete_device": {
+      "label": "删除设备",
+      "confirm": "确定要删除此设备吗？",
+      "success": "设备已删除"
+    },
+    "query_timeseries": {
+      "label": "查询数据"
+    },
+    "timeseries_info": {
+      "label": "序列信息"
+    },
+    "timeseries_stats": {
+      "label": "统计分析"
+    },
+    "copy_timeseries_name": {
+      "label": "复制序列名",
+      "success": "已复制序列名"
+    },
+    "delete_timeseries": {
+      "label": "删除时间序列",
+      "confirm": "确定要删除此时间序列吗？",
+      "success": "时间序列已删除"
+    },
+    "view_template": {
+      "label": "查看模板"
+    },
+    "edit_template": {
+      "label": "编辑模板"
+    },
+    "refresh_template": {
+      "label": "刷新模板"
+    },
+    "mount_template": {
+      "label": "挂载模板"
+    },
+    "mount_template_to_device": {
+      "label": "挂载模板到设备"
+    },
+    "unmount_template": {
+      "label": "卸载模板"
+    },
+    "copy_template_name": {
+      "label": "复制模板名",
+      "success": "已复制模板名"
+    },
+    "delete_template": {
+      "label": "删除模板",
+      "confirm": "确定要删除此模板吗？",
+      "success": "模板已删除"
+    },
+    "manage_templates": {
+      "label": "管理模板"
+    },
+    "view_retention_policy": {
+      "label": "查看策略"
+    },
+    "edit_retention_policy": {
+      "label": "编辑策略"
+    },
+    "copy_policy_name": {
+      "label": "复制策略名",
+      "success": "已复制策略名"
+    },
+    "delete_retention_policy": {
+      "label": "删除策略",
+      "confirm": "确定要删除此策略吗？",
+      "success": "策略已删除"
+    },
+    "open_organization": {
+      "label": "打开组织",
+      "success": "组织已打开"
+    },
+    "close_organization": {
+      "label": "关闭组织",
+      "success": "组织已关闭"
+    },
+    "refresh_organization": {
+      "label": "刷新组织",
+      "success": "组织已刷新"
+    },
+    "organization_info": {
+      "label": "组织信息"
+    },
+    "copy_organization_name": {
+      "label": "复制组织名",
+      "success": "已复制组织名"
+    },
+    "create_bucket": {
+      "label": "创建存储桶",
+      "success": "存储桶创建成功"
+    },
+    "open_bucket": {
+      "label": "打开存储桶",
+      "success": "存储桶已打开"
+    },
+    "close_bucket": {
+      "label": "关闭存储桶",
+      "success": "存储桶已关闭"
+    },
+    "refresh_bucket": {
+      "label": "刷新存储桶",
+      "success": "存储桶已刷新"
+    },
+    "bucket_info": {
+      "label": "存储桶信息"
+    },
+    "update_bucket_retention": {
+      "label": "更新保留策略",
+      "success": "保留策略已更新"
+    },
+    "copy_bucket_name": {
+      "label": "复制存储桶名",
+      "success": "已复制存储桶名"
+    },
+    "delete_bucket": {
+      "label": "删除存储桶",
+      "confirm": "确定要删除此存储桶吗？此操作不可撤销！",
+      "success": "存储桶已删除"
+    },
+    "refresh": {
+      "label": "刷新"
+    },
+    "copy_name": {
+      "label": "复制名称",
+      "success": "已复制名称"
+    }
+  }
 }

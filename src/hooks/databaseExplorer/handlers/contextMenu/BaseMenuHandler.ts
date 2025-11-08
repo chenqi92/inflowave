@@ -8,6 +8,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { dialog } from '@/utils/dialog';
 import { writeToClipboard } from '@/utils/clipboard';
+import { tNs } from '@/i18n/translate';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import type { ContextMenuAction, ContextMenuActionMetadata } from '@/types/contextMenu';
 import { CONTEXT_MENU_ACTIONS } from '@/types/contextMenu';
@@ -77,11 +78,61 @@ export abstract class BaseMenuHandler {
   }
 
   /**
+   * 获取动作的标签翻译
+   */
+  protected getActionLabel(action: ContextMenuAction): string {
+    return tNs('contextMenu', `actions.${action}.label`);
+  }
+
+  /**
+   * 获取动作的成功消息翻译
+   */
+  protected getActionSuccess(action: ContextMenuAction): string {
+    const successMsg = tNs('contextMenu', `actions.${action}.success`);
+    // 如果翻译存在（不是返回的key本身），直接使用
+    if (successMsg && !successMsg.startsWith('actions.')) {
+      return successMsg;
+    }
+    // 否则使用标签 + 成功后缀
+    const label = this.getActionLabel(action);
+    const suffix = tNs('contextMenu', 'successSuffix');
+    return `${label}${suffix}`;
+  }
+
+  /**
+   * 获取动作的错误消息翻译
+   */
+  protected getActionError(action: ContextMenuAction): string {
+    const errorMsg = tNs('contextMenu', `actions.${action}.error`);
+    // 如果翻译存在，直接使用
+    if (errorMsg && !errorMsg.startsWith('actions.')) {
+      return errorMsg;
+    }
+    // 否则使用标签 + 失败后缀
+    const label = this.getActionLabel(action);
+    const suffix = tNs('contextMenu', 'errorSuffix');
+    return `${label}${suffix}`;
+  }
+
+  /**
+   * 获取动作的确认消息翻译
+   */
+  protected getActionConfirm(action: ContextMenuAction): string {
+    const confirmMsg = tNs('contextMenu', `actions.${action}.confirm`);
+    // 如果翻译存在，直接使用
+    if (confirmMsg && !confirmMsg.startsWith('actions.')) {
+      return confirmMsg;
+    }
+    // 否则使用模板 + 标签
+    const label = this.getActionLabel(action);
+    return tNs('contextMenu', 'confirmTemplate', { label });
+  }
+
+  /**
    * 显示成功消息
    */
   protected showSuccess(action: ContextMenuAction, customMessage?: string): void {
-    const metadata = this.getActionMetadata(action);
-    const message = customMessage || metadata.successMessage || `${metadata.label}成功`;
+    const message = customMessage || this.getActionSuccess(action);
     showMessage.success(message);
   }
 
@@ -89,8 +140,7 @@ export abstract class BaseMenuHandler {
    * 显示错误消息
    */
   protected showError(action: ContextMenuAction, error: any): void {
-    const metadata = this.getActionMetadata(action);
-    const message = metadata.errorMessage || `${metadata.label}失败`;
+    const message = this.getActionError(action);
     const errorDetail = error instanceof Error ? error.message : String(error);
     showMessage.error(`${message}: ${errorDetail}`);
   }
@@ -104,11 +154,12 @@ export abstract class BaseMenuHandler {
       return true;
     }
 
-    const message = customMessage || metadata.confirmationMessage || `确定要${metadata.label}吗？`;
-    
+    const message = customMessage || this.getActionConfirm(action);
+    const title = tNs('contextMenu', 'confirmOperation');
+
     return new Promise((resolve) => {
       dialog.confirm({
-        title: '确认操作',
+        title,
         content: message,
         onConfirm: () => resolve(true),
         onCancel: () => resolve(false),

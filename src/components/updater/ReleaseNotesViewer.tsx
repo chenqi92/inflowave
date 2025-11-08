@@ -135,18 +135,18 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 w-full min-w-0">
             {/* 版本信息头部 */}
             {showMetadata && (
-                <div className="flex items-center justify-between pb-2">
-                    <div className="flex items-center space-x-2">
-                        <Badge variant="secondary" className="text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                        <Badge variant="secondary" className="text-sm flex-shrink-0">
                             v{version}
                         </Badge>
                         {releaseNote.date && (
-                            <div className="flex items-center text-xs text-muted-foreground">
-                                <Calendar className="w-3 h-3 mr-1"/>
-                                {releaseNote.date}
+                            <div className="flex items-center text-xs text-muted-foreground flex-shrink-0">
+                                <Calendar className="w-3 h-3 mr-1 flex-shrink-0"/>
+                                <span className="whitespace-nowrap">{releaseNote.date}</span>
                             </div>
                         )}
                     </div>
@@ -154,25 +154,24 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
                         variant="ghost"
                         size="sm"
                         onClick={() => handleExternalLink(`https://github.com/chenqi92/inflowave/releases/tag/v${version}`)}
-                        className="text-xs"
+                        className="text-xs flex-shrink-0"
                     >
                         <ExternalLink className="w-3 h-3 mr-1"/>
-                        GitHub
+                        <span className="whitespace-nowrap">GitHub</span>
                     </Button>
                 </div>
             )}
 
             {/* 重点功能摘要 */}
             {releaseNote.highlights && releaseNote.highlights.length > 0 && (
-                <div
-                    className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center">
-                        <Sparkles className="w-4 h-4 mr-2"/>
-                        本版本亮点
+                <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-4 border border-blue-200 dark:border-blue-800 w-full min-w-0">
+                    <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 flex-shrink-0"/>
+                        <span className="truncate">本版本亮点</span>
                     </h4>
                     <ul className="space-y-1">
                         {releaseNote.highlights.map((highlight, index) => (
-                            <li key={index} className="text-xs text-blue-700 dark:text-blue-300">
+                            <li key={index} className="text-xs text-blue-700 dark:text-blue-300 break-words">
                                 • {highlight.replace(/[🚀✨🎯]/gu, '').trim()}
                             </li>
                         ))}
@@ -182,43 +181,36 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
 
             {/* 功能分类摘要 */}
             {features && (
-                <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="grid grid-cols-2 gap-3 mb-4 w-full">
                     {features.newFeatures.length > 0 && (
-                        <div
-                            className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-200 dark:border-green-800">
-                            <div
-                                className="flex items-center text-xs font-medium text-green-900 dark:text-green-100 mb-1">
-                                <Sparkles className="w-3 h-3 mr-1"/>
-                                新功能 ({features.newFeatures.length})
+                        <div className="bg-green-50 dark:bg-green-950/30 rounded-lg p-3 border border-green-200 dark:border-green-800 min-w-0">
+                            <div className="flex items-center text-xs font-medium text-green-900 dark:text-green-100 mb-1 gap-1">
+                                <Sparkles className="w-3 h-3 flex-shrink-0"/>
+                                <span className="truncate">新功能 ({features.newFeatures.length})</span>
                             </div>
                         </div>
                     )}
                     {features.improvements.length > 0 && (
-                        <div
-                            className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
-                            <div
-                                className="flex items-center text-xs font-medium text-blue-900 dark:text-blue-100 mb-1">
-                                <Wrench className="w-3 h-3 mr-1"/>
-                                改进优化 ({features.improvements.length})
+                        <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800 min-w-0">
+                            <div className="flex items-center text-xs font-medium text-blue-900 dark:text-blue-100 mb-1 gap-1">
+                                <Wrench className="w-3 h-3 flex-shrink-0"/>
+                                <span className="truncate">改进优化 ({features.improvements.length})</span>
                             </div>
                         </div>
                     )}
                     {features.bugFixes.length > 0 && (
-                        <div
-                            className="bg-red-50 dark:bg-red-950/30 rounded-lg p-3 border border-red-200 dark:border-red-800">
-                            <div className="flex items-center text-xs font-medium text-red-900 dark:text-red-100 mb-1">
-                                <Bug className="w-3 h-3 mr-1"/>
-                                错误修复 ({features.bugFixes.length})
+                        <div className="bg-red-50 dark:bg-red-950/30 rounded-lg p-3 border border-red-200 dark:border-red-800 min-w-0">
+                            <div className="flex items-center text-xs font-medium text-red-900 dark:text-red-100 mb-1 gap-1">
+                                <Bug className="w-3 h-3 flex-shrink-0"/>
+                                <span className="truncate">错误修复 ({features.bugFixes.length})</span>
                             </div>
                         </div>
                     )}
                     {features.technicalChanges.length > 0 && (
-                        <div
-                            className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-3 border border-purple-200 dark:border-purple-800">
-                            <div
-                                className="flex items-center text-xs font-medium text-purple-900 dark:text-purple-100 mb-1">
-                                <Code className="w-3 h-3 mr-1"/>
-                                技术改进 ({features.technicalChanges.length})
+                        <div className="bg-purple-50 dark:bg-purple-950/30 rounded-lg p-3 border border-purple-200 dark:border-purple-800 min-w-0">
+                            <div className="flex items-center text-xs font-medium text-purple-900 dark:text-purple-100 mb-1 gap-1">
+                                <Code className="w-3 h-3 flex-shrink-0"/>
+                                <span className="truncate">技术改进 ({features.technicalChanges.length})</span>
                             </div>
                         </div>
                     )}
@@ -226,20 +218,20 @@ export const ReleaseNotesViewer: React.FC<ReleaseNotesViewerProps> = ({
             )}
 
             {/* 发布说明内容 - 只有Markdown内容在可滚动区域中 */}
-            <div 
+            <div
                 style={{
                     height: maxHeight,
                     maxHeight,
                     scrollbarWidth: 'none', // Firefox
                     msOverflowStyle: 'none', // IE and Edge
-                }} 
-                className="w-full overflow-y-scroll overflow-x-hidden border border-gray-200 dark:border-gray-700 rounded-md p-4 [&::-webkit-scrollbar]:hidden"
+                }}
+                className="w-full min-w-0 overflow-y-scroll overflow-x-hidden border border-gray-200 dark:border-gray-700 rounded-md p-4 [&::-webkit-scrollbar]:hidden"
             >
-                <div className="min-h-full">
-                    <MarkdownRenderer 
+                <div className="min-h-full w-full min-w-0">
+                    <MarkdownRenderer
                         content={processContentForMarkdown(releaseNote.content)}
                         onInternalLinkClick={handleInternalLinkClick}
-                        className="text-sm leading-relaxed"
+                        className="text-sm leading-relaxed break-words"
                     />
                 </div>
             </div>

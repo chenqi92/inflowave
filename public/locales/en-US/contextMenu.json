@@ -1,4 +1,8 @@
 {
+  "confirmOperation": "Confirm Operation",
+  "confirmTemplate": "Are you sure you want to {{label}}?",
+  "successSuffix": "successful",
+  "errorSuffix": "failed",
   "seriesInfoFetched": "Series information fetched",
   "navigatingToVisualization": "Navigating to visualization page...",
   "executingQuery": "Executing query...",
@@ -27,5 +31,355 @@
   "databaseStatsFetched": "Database \"{{database}}\" statistics retrieved",
   "databaseExportInDevelopment": "Database \"{{database}}\" structure export feature in development...",
   "filterDescription": "Filter {{column}} {{operator}} {{value}}",
-  "aggregateDescription": "{{func}} aggregation query: {{column}}"
+  "aggregateDescription": "{{func}} aggregation query: {{column}}",
+  "actions": {
+    "test_connection": {
+      "label": "Test Connection",
+      "success": "Connection test successful",
+      "error": "Connection test failed"
+    },
+    "refresh_connection": {
+      "label": "Refresh Connection",
+      "success": "Connection refreshed"
+    },
+    "create_database": {
+      "label": "Create Database"
+    },
+    "connection_info": {
+      "label": "Connection Info"
+    },
+    "connection_properties": {
+      "label": "Connection Properties"
+    },
+    "copy_connection_name": {
+      "label": "Copy Connection Name",
+      "success": "Connection name copied"
+    },
+    "disconnect": {
+      "label": "Disconnect",
+      "confirm": "Are you sure you want to disconnect?",
+      "success": "Disconnected"
+    },
+    "delete_connection": {
+      "label": "Delete Connection",
+      "confirm": "Are you sure you want to delete this connection? This action cannot be undone!",
+      "success": "Connection deleted"
+    },
+    "open_database": {
+      "label": "Open Database",
+      "success": "Database opened"
+    },
+    "close_database": {
+      "label": "Close Database",
+      "success": "Database closed"
+    },
+    "refresh_database": {
+      "label": "Refresh Database",
+      "success": "Database refreshed"
+    },
+    "show_tables": {
+      "label": "Show All Tables"
+    },
+    "database_info": {
+      "label": "Database Info"
+    },
+    "manage_retention_policies": {
+      "label": "Retention Policies"
+    },
+    "export_metadata": {
+      "label": "Export Metadata",
+      "success": "Metadata exported successfully"
+    },
+    "copy_database_name": {
+      "label": "Copy Database Name",
+      "success": "Database name copied"
+    },
+    "copy_use_statement": {
+      "label": "Copy USE Statement",
+      "success": "USE statement copied"
+    },
+    "delete_database": {
+      "label": "Delete Database",
+      "confirm": "Are you sure you want to delete this database? This will delete all data and cannot be undone!",
+      "success": "Database deleted"
+    },
+    "view_table_data": {
+      "label": "View Data"
+    },
+    "query_table": {
+      "label": "Query Data"
+    },
+    "query_builder": {
+      "label": "Query Builder"
+    },
+    "refresh_table": {
+      "label": "Refresh Table",
+      "success": "Table refreshed"
+    },
+    "generate_select_query": {
+      "label": "Query All Data"
+    },
+    "generate_count_query": {
+      "label": "Count Records"
+    },
+    "generate_recent_query": {
+      "label": "Query Recent Data"
+    },
+    "generate_aggregate_query": {
+      "label": "Aggregate Query"
+    },
+    "table_statistics": {
+      "label": "Statistical Analysis"
+    },
+    "data_preview": {
+      "label": "Data Preview"
+    },
+    "table_info": {
+      "label": "Table Info"
+    },
+    "edit_table": {
+      "label": "Edit Table Structure"
+    },
+    "table_designer": {
+      "label": "Table Designer"
+    },
+    "export_table_data": {
+      "label": "Export Data",
+      "success": "Data exported successfully"
+    },
+    "import_table_data": {
+      "label": "Import Data"
+    },
+    "add_favorite": {
+      "label": "Add to Favorites",
+      "success": "Added to favorites"
+    },
+    "remove_favorite": {
+      "label": "Remove from Favorites",
+      "success": "Removed from favorites"
+    },
+    "copy_table_name": {
+      "label": "Copy Table Name",
+      "success": "Table name copied"
+    },
+    "copy_select_statement": {
+      "label": "Copy SELECT Statement",
+      "success": "SELECT statement copied"
+    },
+    "delete_table": {
+      "label": "Delete Table",
+      "confirm": "Are you sure you want to delete this table? This action cannot be undone!",
+      "success": "Table deleted"
+    },
+    "query_field": {
+      "label": "Query This Field"
+    },
+    "field_details": {
+      "label": "Field Details"
+    },
+    "field_max": {
+      "label": "Maximum Value"
+    },
+    "field_min": {
+      "label": "Minimum Value"
+    },
+    "field_avg": {
+      "label": "Average Value"
+    },
+    "field_sum": {
+      "label": "Sum"
+    },
+    "field_count": {
+      "label": "Count"
+    },
+    "field_stats": {
+      "label": "Field Statistics"
+    },
+    "field_distribution": {
+      "label": "Value Distribution"
+    },
+    "copy_field_name": {
+      "label": "Copy Field Name",
+      "success": "Field name copied"
+    },
+    "query_tag": {
+      "label": "Query This Tag"
+    },
+    "tag_details": {
+      "label": "Tag Details"
+    },
+    "tag_values": {
+      "label": "View All Values"
+    },
+    "tag_cardinality": {
+      "label": "Cardinality Statistics"
+    },
+    "tag_distribution": {
+      "label": "Value Distribution"
+    },
+    "generate_filter_query": {
+      "label": "Generate Filter Query"
+    },
+    "copy_tag_name": {
+      "label": "Copy Tag Name",
+      "success": "Tag name copied"
+    },
+    "refresh_fields": {
+      "label": "Refresh Field List"
+    },
+    "show_all_fields": {
+      "label": "Show All Fields"
+    },
+    "refresh_tags": {
+      "label": "Refresh Tag List"
+    },
+    "show_all_tags": {
+      "label": "Show All Tags"
+    },
+    "view_device_data": {
+      "label": "View Device Data"
+    },
+    "refresh_device": {
+      "label": "Refresh Device"
+    },
+    "create_timeseries": {
+      "label": "Create Time Series"
+    },
+    "show_timeseries": {
+      "label": "Show All Time Series"
+    },
+    "device_info": {
+      "label": "Device Info"
+    },
+    "copy_device_name": {
+      "label": "Copy Device Name",
+      "success": "Device name copied"
+    },
+    "delete_device": {
+      "label": "Delete Device",
+      "confirm": "Are you sure you want to delete this device?",
+      "success": "Device deleted"
+    },
+    "query_timeseries": {
+      "label": "Query Data"
+    },
+    "timeseries_info": {
+      "label": "Series Info"
+    },
+    "timeseries_stats": {
+      "label": "Statistical Analysis"
+    },
+    "copy_timeseries_name": {
+      "label": "Copy Series Name",
+      "success": "Series name copied"
+    },
+    "delete_timeseries": {
+      "label": "Delete Time Series",
+      "confirm": "Are you sure you want to delete this time series?",
+      "success": "Time series deleted"
+    },
+    "view_template": {
+      "label": "View Template"
+    },
+    "edit_template": {
+      "label": "Edit Template"
+    },
+    "refresh_template": {
+      "label": "Refresh Template"
+    },
+    "mount_template": {
+      "label": "Mount Template"
+    },
+    "mount_template_to_device": {
+      "label": "Mount Template to Device"
+    },
+    "unmount_template": {
+      "label": "Unmount Template"
+    },
+    "copy_template_name": {
+      "label": "Copy Template Name",
+      "success": "Template name copied"
+    },
+    "delete_template": {
+      "label": "Delete Template",
+      "confirm": "Are you sure you want to delete this template?",
+      "success": "Template deleted"
+    },
+    "manage_templates": {
+      "label": "Manage Templates"
+    },
+    "view_retention_policy": {
+      "label": "View Policy"
+    },
+    "edit_retention_policy": {
+      "label": "Edit Policy"
+    },
+    "copy_policy_name": {
+      "label": "Copy Policy Name",
+      "success": "Policy name copied"
+    },
+    "delete_retention_policy": {
+      "label": "Delete Policy",
+      "confirm": "Are you sure you want to delete this policy?",
+      "success": "Policy deleted"
+    },
+    "open_organization": {
+      "label": "Open Organization",
+      "success": "Organization opened"
+    },
+    "close_organization": {
+      "label": "Close Organization",
+      "success": "Organization closed"
+    },
+    "refresh_organization": {
+      "label": "Refresh Organization",
+      "success": "Organization refreshed"
+    },
+    "organization_info": {
+      "label": "Organization Info"
+    },
+    "copy_organization_name": {
+      "label": "Copy Organization Name",
+      "success": "Organization name copied"
+    },
+    "create_bucket": {
+      "label": "Create Bucket",
+      "success": "Bucket created successfully"
+    },
+    "open_bucket": {
+      "label": "Open Bucket",
+      "success": "Bucket opened"
+    },
+    "close_bucket": {
+      "label": "Close Bucket",
+      "success": "Bucket closed"
+    },
+    "refresh_bucket": {
+      "label": "Refresh Bucket",
+      "success": "Bucket refreshed"
+    },
+    "bucket_info": {
+      "label": "Bucket Info"
+    },
+    "update_bucket_retention": {
+      "label": "Update Retention Policy",
+      "success": "Retention policy updated"
+    },
+    "copy_bucket_name": {
+      "label": "Copy Bucket Name",
+      "success": "Bucket name copied"
+    },
+    "delete_bucket": {
+      "label": "Delete Bucket",
+      "confirm": "Are you sure you want to delete this bucket? This action cannot be undone!",
+      "success": "Bucket deleted"
+    },
+    "refresh": {
+      "label": "Refresh"
+    },
+    "copy_name": {
+      "label": "Copy Name",
+      "success": "Name copied"
+    }
+  }
 }

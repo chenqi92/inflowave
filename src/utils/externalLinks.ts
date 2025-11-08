@@ -5,6 +5,7 @@
 
 import { logger } from '@/utils/logger';
 import { showMessage } from '@/utils/message';
+import { open } from '@tauri-apps/plugin-shell';
 
 /**
  * 外部链接打开选项
@@ -134,8 +135,6 @@ export async function openExternalLink(
 
       try {
         // 使用 Tauri shell API 打开链接
-        const { open } = await import('@tauri-apps/plugin-shell');
-
         // shell.open 在 Tauri 中是异步的，但不会返回结果
         // 它会直接在系统默认浏览器中打开链接
         await open(url);
@@ -154,7 +153,7 @@ export async function openExternalLink(
       } catch (tauriError) {
         // Tauri API 失败
         const errorMsg = tauriError instanceof Error ? tauriError.message : String(tauriError);
-        logger.error('Tauri shell.open 失败:', errorMsg);
+        logger.error('Tauri shell.open 失败:', errorMsg, tauriError);
 
         if (showErrorMessage) {
           showMessage.error(`${errorMessage}: ${errorMsg}`);
@@ -169,35 +168,35 @@ export async function openExternalLink(
     } else {
       // 浏览器环境，直接使用 window.open
       logger.debug('检测到浏览器环境，使用 window.open');
-      
+
       const success = openWithWindowOpen(url);
-      
+
       if (success) {
         const duration = Date.now() - startTime;
         logger.info(`外部链接已通过 window.open 打开 (${duration}ms):`, url);
-        
+
         if (showSuccessMessage) {
           showMessage.success(successMessage);
         }
-        
+
         return {
           success: true,
           method: 'window-open',
         };
       }
-      
+
       throw new Error('window.open 打开失败');
     }
   } catch (error) {
     const duration = Date.now() - startTime;
     const errorMsg = error instanceof Error ? error.message : String(error);
-    
-    logger.error(`打开外部链接失败 (${duration}ms):`, errorMsg, { url });
-    
+
+    logger.error(`打开外部链接失败 (${duration}ms):`, errorMsg, { url, error });
+
     if (showErrorMessage) {
       showMessage.error(`${errorMessage}: ${errorMsg}`);
     }
-    
+
     return {
       success: false,
       method: isTauriEnvironment() ? 'tauri-shell' : 'window-open',
