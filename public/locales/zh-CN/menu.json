@@ -1,5 +1,6 @@
 {
   "toolbar": {
+    "new_connection": "新建连接",
     "new_query": "新建查询",
     "workspace": "工作区",
     "theme_toggle": "主题切换",

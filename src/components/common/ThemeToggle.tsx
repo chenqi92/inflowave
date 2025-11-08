@@ -28,12 +28,12 @@ export function ThemeToggle({
 
   const getCurrentIcon = () => {
     if (theme === 'system') {
-      return <Monitor className='h-4 w-4' />;
+      return <Monitor className='h-3.5 w-3.5' />;
     }
     return resolvedTheme === 'dark' ? (
-      <Moon className='h-4 w-4' />
+      <Moon className='h-3.5 w-3.5' />
     ) : (
-      <Sun className='h-4 w-4' />
+      <Sun className='h-3.5 w-3.5' />
     );
   };
 
@@ -57,11 +57,11 @@ export function ThemeToggle({
         <Button
           variant={variant}
           size={size}
-          className={`gap-2 ${className}`}
+          className={`gap-0.5 ${className}`}
           title={t('theme_toggle.toggle_theme')}
         >
           {getCurrentIcon()}
-          {showLabel && <span className='text-xs whitespace-nowrap'>{getThemeLabel(theme)}</span>}
+          {showLabel && <span className='text-[10px] whitespace-nowrap'>{getThemeLabel(theme)}</span>}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end'>

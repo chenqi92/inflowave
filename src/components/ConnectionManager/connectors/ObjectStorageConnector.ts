@@ -12,8 +12,6 @@ export interface ObjectStorageConfig extends BaseConnectionConfig {
   dbType: 'object-storage';
   objectStorageProvider: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos' | 'qiniu-kodo' | 'upyun' | 'github' | 'smms' | 'imgur';
   s3Endpoint?: string;
-  s3InternalEndpoint?: string;
-  s3ExternalEndpoint?: string;
   s3Region?: string;
   s3AccessKey?: string;
   s3SecretKey?: string;
@@ -39,6 +37,7 @@ export interface ObjectStorageConfig extends BaseConnectionConfig {
   smmsBackupDomain?: string; // 备用上传域名
   // Imgur字段
   imgurClientId?: string;    // Imgur Client ID
+  proxyUrl?: string;         // 代理URL (Imgur)
   // 存储路径前缀（可选）
   storagePath?: string;
   // 自定义域名（可选）
@@ -112,42 +111,42 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
   }
 
   /**
+   * 获取服务商选择字段
+   * 这个字段会在对话框级别渲染，在 name 和 description 之后，tabs 之前
+   */
+  getProviderField(): any {
+    return {
+      name: 'objectStorageProvider',
+      label: t('object_storage.provider'),
+      type: 'select',
+      required: true,
+      defaultValue: 's3',
+      options: this.getProviderOptions(),
+      description: t('object_storage.provider_description')
+    };
+  }
+
+  /**
    * 获取表单配置
    */
   getFormSections(): FormSection[] {
-    // 不使用基础的连接设置，因为对象存储有自己的配置方式
-    const basicSection: FormSection = {
-      id: 'basic',
-      title: t('basic_info'),
-      fields: [
-        {
-          name: 'objectStorageProvider',
-          label: t('object_storage.provider'),
-          type: 'select',
-          required: true,
-          defaultValue: 's3',
-          options: this.getProviderOptions(),
-          description: t('object_storage.provider_description')
-        }
-      ]
-    };
+    // 不使用 basic section，服务商选择器会在对话框级别渲染
 
     // 对象存储配置
     const storageSection: FormSection = {
       id: 'storage',
       title: t('object_storage.settings'),
       fields: [
-        // S3/MinIO/OSS/COS - Endpoint
+        // S3/MinIO/OSS/COS - Endpoint (内网端点)
         {
           name: 's3Endpoint',
           label: t('object_storage.endpoint'),
           type: 'text',
-          required: true,
-          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos'].includes(formData.objectStorageProvider),
+          visible: (formData: any) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos'].includes(formData.objectStorageProvider),
           placeholder: 'https://s3.amazonaws.com',
           description: t('object_storage.endpoint_description'),
           validation: (value: string, formData: any) => {
-            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos'].includes(formData.objectStorageProvider) && !value?.trim()) {
+            if (['minio'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('object_storage.endpoint_required');
             }
           }
@@ -401,25 +400,12 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       id: 'advanced',
       title: t('advanced_settings'),
       fields: [
-        {
-          name: 's3UseSSL',
-          label: t('object_storage.use_ssl'),
-          type: 'switch',
-          defaultValue: true,
-          description: t('object_storage.use_ssl_description')
-        },
-        {
-          name: 's3PathStyle',
-          label: t('object_storage.path_style'),
-          type: 'switch',
-          defaultValue: false,
-          visible: (formData) => formData.objectStorageProvider === 'minio',
-          description: t('object_storage.path_style_description')
-        },
+        // 通用选项
         {
           name: 'storagePath',
           label: t('object_storage.storage_path'),
           type: 'text',
+          visible: (formData) => !['smms', 'imgur'].includes(formData.objectStorageProvider),
           placeholder: t('object_storage.storage_path_placeholder'),
           description: t('object_storage.storage_path_description')
         },
@@ -427,6 +413,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           name: 'customDomain',
           label: t('object_storage.custom_domain'),
           type: 'text',
+          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun', 'github'].includes(formData.objectStorageProvider),
           placeholder: t('object_storage.custom_domain_placeholder'),
           description: t('object_storage.custom_domain_description')
         },
@@ -434,22 +421,35 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           name: 'urlSuffix',
           label: t('object_storage.url_suffix'),
           type: 'text',
+          visible: (formData) => ['aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun'].includes(formData.objectStorageProvider),
           placeholder: t('object_storage.url_suffix_placeholder'),
           description: t('object_storage.url_suffix_description')
         },
+        // S3/MinIO 特有选项
         {
-          name: 's3InternalEndpoint',
-          label: t('object_storage.internal_endpoint'),
-          type: 'text',
-          placeholder: t('object_storage.internal_endpoint_placeholder'),
-          description: t('object_storage.internal_endpoint_description')
+          name: 's3UseSSL',
+          label: t('object_storage.use_ssl'),
+          type: 'switch',
+          defaultValue: true,
+          visible: (formData) => ['s3', 'minio'].includes(formData.objectStorageProvider),
+          description: t('object_storage.use_ssl_description')
         },
         {
-          name: 's3ExternalEndpoint',
-          label: t('object_storage.external_endpoint'),
+          name: 's3PathStyle',
+          label: t('object_storage.path_style'),
+          type: 'switch',
+          defaultValue: false,
+          visible: (formData) => ['s3', 'minio'].includes(formData.objectStorageProvider),
+          description: t('object_storage.path_style_description')
+        },
+        // Imgur 代理
+        {
+          name: 'proxyUrl',
+          label: t('object_storage.proxy_url'),
           type: 'text',
-          placeholder: t('object_storage.external_endpoint_placeholder'),
-          description: t('object_storage.external_endpoint_description')
+          visible: (formData) => formData.objectStorageProvider === 'imgur',
+          placeholder: 'http://127.0.0.1:1080',
+          description: t('object_storage.proxy_url_description')
         },
         {
           name: 'timeout',
@@ -469,11 +469,9 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
     };
 
     return [
-      basicSection,
       storageSection,
       authSection,
-      advancedSection,
-      getProxyConfigSection('object-storage') // 代理配置
+      advancedSection
     ];
   }
 
@@ -556,8 +554,6 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
         s3: {
           provider: formData.objectStorageProvider,
           endpoint: formData.s3Endpoint || '',
-          internalEndpoint: formData.s3InternalEndpoint || '',
-          externalEndpoint: formData.s3ExternalEndpoint || '',
           region: formData.s3Region || '',
           accessKey: formData.s3AccessKey || '',
           secretKey: formData.s3SecretKey || '',
@@ -568,6 +564,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           storagePath: formData.storagePath || '',
           customDomain: formData.customDomain || '',
           urlSuffix: formData.urlSuffix || '',
+          proxyUrl: formData.proxyUrl || '',
           // 七牛云
           qiniuAccessUrl: formData.qiniuAccessUrl || '',
           // 又拍云
@@ -613,8 +610,6 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       queryTimeout: config.queryTimeout,
       objectStorageProvider: s3Config?.provider || 's3',
       s3Endpoint: s3Config?.endpoint,
-      s3InternalEndpoint: s3Config?.internalEndpoint,
-      s3ExternalEndpoint: s3Config?.externalEndpoint,
       s3Region: s3Config?.region,
       s3AccessKey: s3Config?.accessKey,
       s3SecretKey: s3Config?.secretKey,
@@ -625,6 +620,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       storagePath: s3Config?.storagePath,
       customDomain: s3Config?.customDomain,
       urlSuffix: s3Config?.urlSuffix,
+      proxyUrl: s3Config?.proxyUrl,
       // 七牛云
       qiniuAccessUrl: s3Config?.qiniuAccessUrl,
       // 又拍云

@@ -106,11 +106,90 @@ pub struct IoTDBConfig {
     pub retry_interval_ms: u64,
 }
 
+/// S3/对象存储特有配置
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct S3Config {
+    /// 对象存储服务商
+    pub provider: Option<String>,
+    /// 自定义端点（用于MinIO等S3兼容服务）
+    pub endpoint: Option<String>,
+    /// AWS区域
+    pub region: Option<String>,
+    /// Access Key
+    #[serde(rename = "accessKey")]
+    pub access_key: Option<String>,
+    /// Secret Key
+    #[serde(rename = "secretKey")]
+    pub secret_key: Option<String>,
+    /// 是否使用SSL
+    #[serde(rename = "useSSL")]
+    pub use_ssl: Option<bool>,
+    /// 是否使用path-style URLs
+    #[serde(rename = "pathStyle")]
+    pub path_style: Option<bool>,
+    /// 临时凭证
+    #[serde(rename = "sessionToken")]
+    pub session_token: Option<String>,
+    /// 签名版本
+    #[serde(rename = "signatureVersion")]
+    pub signature_version: Option<String>,
+    /// 腾讯云COS AppId
+    #[serde(rename = "cosAppId")]
+    pub cos_app_id: Option<String>,
+    /// 存储路径前缀
+    #[serde(rename = "storagePath")]
+    pub storage_path: Option<String>,
+    /// 自定义域名
+    #[serde(rename = "customDomain")]
+    pub custom_domain: Option<String>,
+    /// 图片处理参数
+    #[serde(rename = "urlSuffix")]
+    pub url_suffix: Option<String>,
+    /// 代理URL（用于Imgur等需要代理的服务商）
+    #[serde(rename = "proxyUrl")]
+    pub proxy_url: Option<String>,
+    /// 七牛云访问域名
+    #[serde(rename = "qiniuAccessUrl")]
+    pub qiniu_access_url: Option<String>,
+    /// 又拍云操作员账号
+    #[serde(rename = "upyunOperator")]
+    pub upyun_operator: Option<String>,
+    /// 又拍云操作员密码
+    #[serde(rename = "upyunOperatorPassword")]
+    pub upyun_operator_password: Option<String>,
+    /// 又拍云服务名称
+    #[serde(rename = "upyunServiceName")]
+    pub upyun_service_name: Option<String>,
+    /// 又拍云加速域名
+    #[serde(rename = "upyunAccelerateUrl")]
+    pub upyun_accelerate_url: Option<String>,
+    /// GitHub仓库路径 username/repo
+    #[serde(rename = "githubRepo")]
+    pub github_repo: Option<String>,
+    /// GitHub分支名称
+    #[serde(rename = "githubBranch")]
+    pub github_branch: Option<String>,
+    /// GitHub Token
+    #[serde(rename = "githubToken")]
+    pub github_token: Option<String>,
+    /// SM.MS API Token
+    #[serde(rename = "smmsToken")]
+    pub smms_token: Option<String>,
+    /// SM.MS备用上传域名
+    #[serde(rename = "smmsBackupDomain")]
+    pub smms_backup_domain: Option<String>,
+    /// Imgur Client ID
+    #[serde(rename = "imgurClientId")]
+    pub imgur_client_id: Option<String>,
+}
+
 /// 数据库驱动特定配置
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DatabaseDriverConfig {
     pub iotdb: Option<IoTDBConfig>,
+    pub s3: Option<S3Config>,
     // 可以添加其他数据库的特定配置
     // pub prometheus: Option<PrometheusConfig>,
 }
@@ -253,6 +332,7 @@ impl Default for DatabaseDriverConfig {
     fn default() -> Self {
         Self {
             iotdb: None,
+            s3: None,
         }
     }
 }
@@ -332,6 +412,7 @@ impl ConnectionConfig {
             v2_config: None,
             driver_config: Some(DatabaseDriverConfig {
                 iotdb: Some(IoTDBConfig::default()),
+                s3: None,
             }),
             created_at: Some(now),
             updated_at: Some(now),

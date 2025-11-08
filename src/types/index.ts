@@ -72,8 +72,6 @@ export interface DatabaseDriverConfig {
   s3?: {
     provider?: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos' | 'qiniu-kodo' | 'upyun' | 'github' | 'smms' | 'imgur'; // 对象存储服务商
     endpoint?: string; // 自定义端点（用于MinIO等S3兼容服务）
-    internalEndpoint?: string; // 内网端点（用于内网读写）
-    externalEndpoint?: string; // 外网端点（用于外网访问）
     region?: string; // AWS区域
     accessKey?: string;
     secretKey?: string;
@@ -85,6 +83,7 @@ export interface DatabaseDriverConfig {
     storagePath?: string; // 存储路径前缀
     customDomain?: string; // 自定义域名
     urlSuffix?: string; // 图片处理参数
+    proxyUrl?: string; // 代理URL（用于Imgur等需要代理的服务商）
     // 七牛云Kodo
     qiniuAccessUrl?: string; // 七牛云访问域名
     // 又拍云UPYUN

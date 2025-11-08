@@ -6,6 +6,7 @@ import {
   Database,
   Settings,
   FilePlus,
+  Plus,
 } from 'lucide-react';
 import { useConnectionStore, connectionUtils } from '@/store/connection';
 import { useNavigate } from 'react-router-dom';
@@ -97,47 +98,55 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
   }, [onViewChange]);
 
   return (
-    <div className='datagrip-toolbar flex items-center justify-between w-full min-h-[56px] px-2 border-0 shadow-none bg-transparent'>
+    <div className='datagrip-toolbar flex items-center justify-between w-full h-full px-1 border-0 shadow-none bg-transparent'>
       {/* 左侧功能区域 - 使用flex-shrink-0防止被挤压 */}
-      <div className='flex items-center gap-2 flex-1 min-w-0'>
-        {/* 区域1: 软件名称显示 - 艺术体风格 */}
-        <div className='flex items-center gap-2 px-3 py-2 flex-shrink-0'>
-          <div className='flex items-center gap-2'>
-            <Database className='w-6 h-6 text-primary' />
-            <div className='flex flex-col'>
-              <span className='text-lg font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent'>
-                InfloWave
-              </span>
-              <span className='text-xs text-muted-foreground -mt-1'>
-                {t('toolbar.time_series_database_tool')}
-              </span>
-            </div>
-          </div>
+      <div className='flex items-center gap-1 flex-1 min-w-0'>
+        {/* 区域1: 软件名称显示 - 极致紧凑 */}
+        <div className='flex items-center gap-1 px-1.5 flex-shrink-0'>
+          <Database className='w-3.5 h-3.5 text-primary' />
+          <span className='text-xs font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent'>
+            InfloWave
+          </span>
         </div>
 
-        {/* 区域2: 新建查询按钮 */}
+        {/* 区域2: 新建连接按钮 */}
         <Button
           variant='ghost'
           size='sm'
-          className='h-10 min-w-14 px-2 py-1 flex flex-col items-center justify-center gap-1'
+          className='h-8 min-w-12 px-1.5 py-0.5 flex flex-col items-center justify-center gap-0.5'
+          onClick={() => {
+            // 触发打开连接对话框事件
+            document.dispatchEvent(new CustomEvent('open-connection-dialog'));
+          }}
+          title={t('toolbar.new_connection')}
+        >
+          <Plus className='w-3.5 h-3.5' />
+          <span className='text-[10px] whitespace-nowrap'>{t('toolbar.new_connection')}</span>
+        </Button>
+
+        {/* 区域3: 新建查询按钮 */}
+        <Button
+          variant='ghost'
+          size='sm'
+          className='h-8 min-w-12 px-1.5 py-0.5 flex flex-col items-center justify-center gap-0.5'
           onClick={() => {
             onViewChange?.('query');
             onCreateQueryTab?.();
           }}
           title={t('toolbar.new_query')}
         >
-          <FilePlus className='w-4 h-4' />
-          <span className='text-xs whitespace-nowrap'>{t('toolbar.new_query')}</span>
+          <FilePlus className='w-3.5 h-3.5' />
+          <span className='text-[10px] whitespace-nowrap'>{t('toolbar.new_query')}</span>
         </Button>
 
-        <div className='w-px h-6 bg-border mx-3' />
+        <div className='w-px h-4 bg-border mx-1.5' />
 
 
       </div>
 
       {/* 右侧：工具和设置 - 统一按钮尺寸，防止被挤压 */}
-      <div className='flex items-center gap-1 flex-shrink-0'>
-        <div className='w-px h-6 bg-border mx-3' />
+      <div className='flex items-center gap-0.5 flex-shrink-0'>
+        <div className='w-px h-4 bg-border mx-1.5' />
 
 
         {/* 注意：扩展、历史、工具等功能已移至右侧功能面板 */}
@@ -147,7 +156,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           variant='ghost'
           size='sm'
           showLabel={true}
-          className='h-10 min-w-14 px-2 py-1 flex flex-col items-center justify-center gap-1'
+          className='h-8 min-w-12 px-1.5 py-0.5 flex flex-col items-center justify-center gap-0.5'
         />
 
         {/* 快速设置 - 安全和查询设置 */}
@@ -157,13 +166,13 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
         <Button
           variant='ghost'
           size='sm'
-          className='h-10 min-w-14 px-2 py-1 flex flex-col items-center justify-center gap-1'
+          className='h-8 min-w-12 px-1.5 py-0.5 flex flex-col items-center justify-center gap-0.5'
           onClick={() => setSettingsVisible(true)}
           title={t('toolbar.app_settings')}
 
         >
-          <Settings className='w-4 h-4' />
-          <span className='text-xs whitespace-nowrap'>{t('toolbar.settings')}</span>
+          <Settings className='w-3.5 h-3.5' />
+          <span className='text-[10px] whitespace-nowrap'>{t('toolbar.settings')}</span>
         </Button>
       </div>
 

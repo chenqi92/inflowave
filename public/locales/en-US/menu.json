@@ -1,5 +1,6 @@
 {
   "toolbar": {
+    "new_connection": "New Connection",
     "new_query": "New Query",
     "workspace": "Workspace",
     "theme_toggle": "Theme Toggle",

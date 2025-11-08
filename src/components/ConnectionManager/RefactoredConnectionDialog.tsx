@@ -666,6 +666,47 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               </div>
             </div>
 
+            {/* 对象存储特有：服务商选择器 */}
+            {selectedType === 'object-storage' && currentConnector && 'getProviderField' in currentConnector && typeof (currentConnector as any).getProviderField === 'function' && (
+              <div className="mb-3 pb-3 border-b space-y-1">
+                {(() => {
+                  const providerField = (currentConnector as any).getProviderField();
+                  const value = formData[providerField.name];
+                  const error = errors[providerField.name];
+
+                  return (
+                    <>
+                      <Label htmlFor={providerField.name} className="text-xs">
+                        {providerField.label}
+                        {providerField.required && <span className="text-destructive ml-0.5">*</span>}
+                      </Label>
+                      <Select
+                        value={value || providerField.defaultValue}
+                        onValueChange={(newValue) => handleFieldChange(providerField.name, newValue)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder={providerField.placeholder} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {providerField.options.map((option: any) => (
+                            <SelectItem key={option.value} value={option.value} className="text-xs">
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {providerField.description && (
+                        <p className="text-[10px] text-muted-foreground leading-tight">{providerField.description}</p>
+                      )}
+                      {error && (
+                        <p className="text-[10px] text-destructive">{error}</p>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
               <TabsList className="grid w-full grid-cols-3 mb-3 h-8">
                 <TabsTrigger value="general" className="text-[11px] h-7">

@@ -118,7 +118,7 @@ influxdb-v1 = []
 influxdb-v2 = []
 influxdb-v3 = ["arrow-flight", "arrow", "arrow-schema", "tonic", "prost"]
 
-# 默认启用 InfluxDB v1, v2 和 IoTDB v1, v2, REST 支持 (v3 暂时禁用)
+# 默认启用 InfluxDB v1, v2 和 IoTDB v1, v2, REST 支持 (v3 需要修复API兼容性问题)
 default = ["influxdb-v1", "influxdb-v2", "iotdb-v1", "iotdb-v2", "iotdb-rest"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

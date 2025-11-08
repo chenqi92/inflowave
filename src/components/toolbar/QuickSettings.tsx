@@ -88,15 +88,15 @@ const QuickSettings: React.FC = () => {
         <Button
           variant='ghost'
           size='sm'
-          className='h-10 min-w-14 px-2 py-1 flex flex-col items-center justify-center gap-1 relative'
+          className='h-8 min-w-12 px-1.5 py-0.5 flex flex-col items-center justify-center gap-0.5 relative'
           title={t('quick_settings')}
         >
-          <Shield className='w-4 h-4' />
-          <span className='text-xs whitespace-nowrap'>{t('quick_settings_panel.title')}</span>
+          <Shield className='w-3.5 h-3.5' />
+          <span className='text-[10px] whitespace-nowrap'>{t('quick_settings_panel.title')}</span>
           {dangerousOpsCount > 0 && (
             <Badge
               variant='destructive'
-              className='absolute -top-1 -right-1 h-4 w-4 p-0 text-[10px] flex items-center justify-center min-w-[16px] rounded-full'
+              className='absolute -top-0.5 -right-0.5 h-3.5 w-3.5 p-0 text-[9px] flex items-center justify-center min-w-[14px] rounded-full'
             >
               {dangerousOpsCount}
             </Badge>

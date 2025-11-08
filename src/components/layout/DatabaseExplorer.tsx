@@ -1867,6 +1867,20 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     };
   }, []);
 
+  // 监听来自工具栏的打开连接对话框事件
+  useEffect(() => {
+    const handleOpenConnectionDialogEvent = () => {
+      logger.info('📥 DatabaseExplorer收到打开连接对话框事件');
+      handleOpenConnectionDialog();
+    };
+
+    document.addEventListener('open-connection-dialog', handleOpenConnectionDialogEvent);
+
+    return () => {
+      document.removeEventListener('open-connection-dialog', handleOpenConnectionDialogEvent);
+    };
+  }, [handleOpenConnectionDialog]);
+
   if (collapsed) {
     return (
       <DatabaseExplorerCollapsedView
