@@ -29,6 +29,7 @@ import { debounce } from 'lodash-es';
 import logger from '@/utils/logger';
 import { WorkspaceTab } from '@/services/workspace';
 import type { EditorTab } from '@/components/editor/TabManager';
+import { useMenuTranslation } from '@/hooks/useTranslation';
 
 
 
@@ -50,6 +51,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     const { tabs, addTab, setActiveKey } = useTabStore();
     const location = useLocation();
     const navigate = useNavigate();
+    const { t: tMenu } = useMenuTranslation();
 
     // 🔧 标记是否已完成初始化，避免启动时立即保存
     const isInitializedRef = useRef(false);
@@ -711,11 +713,13 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                             {(queryResult || (queryResults && queryResults.length > 0)) && (
                                 <ResizablePanel
                                     defaultSize={bottomPanelSize}
-                                    minSize={25}
+                                    minSize={10}
                                     maxSize={70}
+                                    collapsible={false}
                                     onResize={handleBottomPanelResize}
+                                    className='overflow-hidden'
                                 >
-                                    <div className='h-full border-t border-0 shadow-none bg-background overflow-hidden'>
+                                    <div className='h-full w-full border-t border-0 shadow-none bg-background'>
                                         <EnhancedResultPanel
                                             collapsed={bottomPanelCollapsed}
                                             queryResult={queryResult}
@@ -826,11 +830,13 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                                     <ResizableHandle />
                                     <ResizablePanel
                                         defaultSize={rightPanelSize}
-                                        minSize={20}
+                                        minSize={5}
                                         maxSize={60}
+                                        collapsible={false}
                                         onResize={handleRightPanelResize}
+                                        className='overflow-hidden'
                                     >
-                                        <div className='h-full bg-background'>
+                                        <div className='h-full w-full'>
                                             <RightFunctionPanel
                                                 selectedFunction={selectedFunction}
                                                 onClose={handleRightPanelClose}

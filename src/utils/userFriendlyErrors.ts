@@ -3,6 +3,8 @@
  * 将技术性错误转换为用户可理解的友好提示
  */
 
+import { tError } from '@/i18n/translate';
+
 export interface UserFriendlyError {
   title: string;
   message: string;
@@ -14,51 +16,51 @@ export interface UserFriendlyError {
  */
 export const getDatabaseConnectionError = (error: string): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  
+
   if (errorLower.includes('timeout') || errorLower.includes('超时')) {
     return {
-      title: '连接超时',
-      message: '服务器响应超时，请稍后重试',
-      suggestion: '请检查网络连接或联系管理员'
+      title: tError('connectionTimeout'),
+      message: tError('security.authentication.timeout.message'),
+      suggestion: tError('security.authentication.timeout.suggestion')
     };
   }
-  
+
   if (errorLower.includes('authentication') || errorLower.includes('unauthorized') || errorLower.includes('认证') || errorLower.includes('授权')) {
     return {
-      title: '认证失败',
-      message: '用户名或密码错误',
-      suggestion: '请检查用户名和密码是否正确'
+      title: tError('authenticationFailed'),
+      message: tError('security.authentication.failed.message'),
+      suggestion: tError('security.authentication.failed.suggestion')
     };
   }
-  
+
   if (errorLower.includes('connection refused') || errorLower.includes('连接被拒绝') || errorLower.includes('无法连接')) {
     return {
-      title: '连接失败',
-      message: '无法连接到数据库服务器',
-      suggestion: '请检查服务器地址、端口是否正确，确认服务器是否正常运行'
+      title: tError('connectionFailed'),
+      message: tError('serviceUnavailable'),
+      suggestion: tError('security.authentication.timeout.suggestion')
     };
   }
-  
+
   if (errorLower.includes('network') || errorLower.includes('网络')) {
     return {
-      title: '网络错误',
-      message: '网络连接异常',
-      suggestion: '请检查网络连接是否正常'
+      title: tError('networkError'),
+      message: tError('networkError'),
+      suggestion: tError('security.authentication.timeout.suggestion')
     };
   }
-  
+
   if (errorLower.includes('ssl') || errorLower.includes('tls') || errorLower.includes('certificate')) {
     return {
-      title: '安全连接失败',
-      message: 'SSL/TLS 连接验证失败',
-      suggestion: '请检查证书配置或联系管理员'
+      title: tError('security.certificate.invalid.title'),
+      message: tError('security.certificate.invalid.message'),
+      suggestion: tError('security.certificate.invalid.suggestion')
     };
   }
-  
+
   return {
-    title: '连接失败',
-    message: '无法建立数据库连接',
-    suggestion: '请检查连接配置信息'
+    title: tError('connectionFailed'),
+    message: tError('connectionFailed'),
+    suggestion: tError('configurationError')
   };
 };
 
@@ -67,50 +69,50 @@ export const getDatabaseConnectionError = (error: string): UserFriendlyError => 
  */
 export const getFileOperationError = (error: string, operation: 'read' | 'write' | 'select' | 'save'): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  
+
   if (errorLower.includes('permission') || errorLower.includes('权限') || errorLower.includes('access denied')) {
     return {
-      title: '权限不足',
-      message: '没有访问该文件的权限',
-      suggestion: '请检查文件权限或选择其他文件'
+      title: tError('permissionDenied'),
+      message: tError('permissionDenied'),
+      suggestion: tError('application.backup.permission.suggestion')
     };
   }
-  
+
   if (errorLower.includes('not found') || errorLower.includes('不存在') || errorLower.includes('找不到')) {
     return {
-      title: '文件不存在',
-      message: '指定的文件不存在或已被删除',
-      suggestion: '请确认文件路径是否正确'
+      title: tError('fileNotFound'),
+      message: tError('fileNotFound'),
+      suggestion: tError('application.config.corrupt.suggestion')
     };
   }
-  
+
   if (errorLower.includes('space') || errorLower.includes('disk full') || errorLower.includes('磁盘空间')) {
     return {
-      title: '磁盘空间不足',
-      message: '没有足够的磁盘空间完成操作',
-      suggestion: '请清理磁盘空间后重试'
+      title: tError('diskSpaceError'),
+      message: tError('diskSpaceError'),
+      suggestion: tError('application.backup.space.suggestion')
     };
   }
-  
+
   if (errorLower.includes('locked') || errorLower.includes('被占用') || errorLower.includes('in use')) {
     return {
-      title: '文件被占用',
-      message: '文件正在被其他程序使用',
-      suggestion: '请关闭相关程序后重试'
+      title: tError('fileReadError'),
+      message: tError('fileReadError'),
+      suggestion: tError('uiInteraction.drag.invalid.suggestion')
     };
   }
-  
+
   const operationText = {
-    read: '读取',
-    write: '写入',
-    select: '选择',
-    save: '保存'
+    read: tError('fileReadError'),
+    write: tError('fileWriteError'),
+    select: tError('fileNotFound'),
+    save: tError('fileWriteError')
   }[operation];
-  
+
   return {
-    title: `文件${operationText}失败`,
-    message: `无法${operationText}文件`,
-    suggestion: '请重试或选择其他文件'
+    title: operationText,
+    message: operationText,
+    suggestion: tError('application.backup.permission.suggestion')
   };
 };
 
@@ -119,43 +121,43 @@ export const getFileOperationError = (error: string, operation: 'read' | 'write'
  */
 export const getNetworkError = (error: string): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  
+
   if (errorLower.includes('timeout') || errorLower.includes('超时')) {
     return {
-      title: '请求超时',
-      message: '服务器响应超时',
-      suggestion: '请检查网络连接并重试'
+      title: tError('queryTimeout'),
+      message: tError('security.authentication.timeout.message'),
+      suggestion: tError('security.authentication.timeout.suggestion')
     };
   }
-  
+
   if (errorLower.includes('404') || errorLower.includes('not found')) {
     return {
-      title: '服务不可用',
-      message: '请求的服务不存在',
-      suggestion: '请检查服务地址是否正确'
+      title: tError('serviceUnavailable'),
+      message: tError('resourceNotAvailable'),
+      suggestion: tError('application.config.parse.suggestion')
     };
   }
-  
+
   if (errorLower.includes('500') || errorLower.includes('server error')) {
     return {
-      title: '服务器错误',
-      message: '服务器内部错误',
-      suggestion: '请稍后重试或联系管理员'
+      title: tError('serverError'),
+      message: tError('serverError'),
+      suggestion: tError('security.authentication.timeout.suggestion')
     };
   }
-  
+
   if (errorLower.includes('network') || errorLower.includes('网络') || errorLower.includes('offline')) {
     return {
-      title: '网络连接失败',
-      message: '无法连接到网络',
-      suggestion: '请检查网络连接'
+      title: tError('networkError'),
+      message: tError('networkError'),
+      suggestion: tError('systemResource.network.unstable.suggestion')
     };
   }
-  
+
   return {
-    title: '请求失败',
-    message: '网络请求失败',
-    suggestion: '请检查网络连接并重试'
+    title: tError('networkError'),
+    message: tError('networkError'),
+    suggestion: tError('security.authentication.timeout.suggestion')
   };
 };
 
@@ -164,27 +166,27 @@ export const getNetworkError = (error: string): UserFriendlyError => {
  */
 export const getPortDiscoveryError = (error: string): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  
+
   if (errorLower.includes('permission') || errorLower.includes('权限')) {
     return {
-      title: '权限不足',
-      message: '无法访问网络端口',
-      suggestion: '可能需要管理员权限'
+      title: tError('permissionDenied'),
+      message: tError('permissionDenied'),
+      suggestion: tError('extension.install.permission.suggestion')
     };
   }
-  
+
   if (errorLower.includes('occupied') || errorLower.includes('被占用') || errorLower.includes('in use')) {
     return {
-      title: '端口被占用',
-      message: '指定的端口已被其他程序使用',
-      suggestion: '程序将自动寻找可用端口'
+      title: tError('application.startup.port.title'),
+      message: tError('application.startup.port.message'),
+      suggestion: tError('application.startup.port.suggestion')
     };
   }
-  
+
   return {
-    title: '端口检测失败',
-    message: '无法检测端口状态',
-    suggestion: '将使用默认端口配置'
+    title: tError('networkError'),
+    message: tError('networkError'),
+    suggestion: tError('application.startup.port.suggestion')
   };
 };
 
@@ -192,29 +194,28 @@ export const getPortDiscoveryError = (error: string): UserFriendlyError => {
  * 用户偏好设置错误转换
  */
 export const getUserPreferencesError = (error: string, operation: 'load' | 'save'): UserFriendlyError => {
-  const operationText = operation === 'load' ? '加载' : '保存';
   const errorLower = error.toLowerCase();
-  
+
   if (errorLower.includes('permission') || errorLower.includes('权限')) {
     return {
-      title: '权限不足',
-      message: `无法${operationText}用户设置`,
-      suggestion: '请检查应用权限'
+      title: tError('permissionDenied'),
+      message: tError('permissionDenied'),
+      suggestion: tError('application.backup.permission.suggestion')
     };
   }
-  
+
   if (errorLower.includes('corrupted') || errorLower.includes('损坏') || errorLower.includes('invalid')) {
     return {
-      title: '设置文件损坏',
-      message: '用户设置文件已损坏',
-      suggestion: '将使用默认设置'
+      title: tError('application.config.corrupt.title'),
+      message: tError('application.config.corrupt.message'),
+      suggestion: tError('application.config.corrupt.suggestion')
     };
   }
-  
+
   return {
-    title: `设置${operationText}失败`,
-    message: `无法${operationText}用户设置`,
-    suggestion: '请重试或重启应用'
+    title: operation === 'load' ? tError('configurationError') : tError('application.config.save.title'),
+    message: operation === 'load' ? tError('configurationError') : tError('application.config.save.message'),
+    suggestion: operation === 'load' ? tError('application.config.save.suggestion') : tError('application.config.save.suggestion')
   };
 };
 
@@ -225,10 +226,10 @@ export const handleUserCancellation = (operation: string, showNotification = fal
   if (!showNotification) {
     return null; // 静默处理
   }
-  
+
   return {
-    title: '操作已取消',
-    message: `已取消${operation}`,
+    title: tError('operationCancelled'),
+    message: tError('operationCancelled'),
     suggestion: ''
   };
 };
@@ -237,12 +238,10 @@ export const handleUserCancellation = (operation: string, showNotification = fal
  * 通用错误处理
  */
 export const getGenericError = (error: string, context?: string): UserFriendlyError => {
-  const contextText = context ? `${context}时` : '';
-  
   return {
-    title: '操作失败',
-    message: `${contextText}发生了未知错误`,
-    suggestion: '请重试或联系技术支持'
+    title: tError('operationFailed'),
+    message: tError('unknownError'),
+    suggestion: tError('application.config.save.suggestion')
   };
 };
 
@@ -270,89 +269,89 @@ export const getInfluxDBQueryError = (error: string): UserFriendlyError => {
 
     if (replacement) {
       return {
-        title: 'InfluxQL 函数错误',
-        message: `${funcName}() 函数在 InfluxQL 中不支持`,
-        suggestion: `请使用 ${replacement}() 函数代替。InfluxQL 使用不同的聚合函数名称。`
+        title: tError('invalidQuery'),
+        message: `${funcName}() ${tError('notImplemented')}`,
+        suggestion: `${tError('application.config.save.suggestion')}`
       };
     }
 
     return {
-      title: 'InfluxQL 函数错误',
-      message: `${funcName}() 函数在 InfluxQL 中不支持`,
-      suggestion: '请查阅 InfluxQL 文档，使用支持的聚合函数：COUNT, SUM, MEAN, MAX, MIN, MEDIAN, MODE, STDDEV 等'
+      title: tError('invalidQuery'),
+      message: `${funcName}() ${tError('notImplemented')}`,
+      suggestion: tError('application.config.save.suggestion')
     };
   }
 
   if (errorLower.includes('measurement') && errorLower.includes('not found')) {
     return {
-      title: '测量不存在',
-      message: '指定的测量（measurement）不存在',
-      suggestion: '请检查测量名称是否正确，或查看可用的测量列表'
+      title: tError('tableNotFound'),
+      message: tError('tableNotFound'),
+      suggestion: tError('application.config.parse.suggestion')
     };
   }
 
   if (errorLower.includes('field') && (errorLower.includes('not found') || errorLower.includes('does not exist'))) {
     return {
-      title: '字段不存在',
-      message: '指定的字段不存在',
-      suggestion: '请检查字段名称是否正确，或使用SHOW FIELD KEYS查看可用字段'
+      title: tError('columnNotFound'),
+      message: tError('columnNotFound'),
+      suggestion: tError('application.config.parse.suggestion')
     };
   }
 
   if (errorLower.includes('tag') && (errorLower.includes('not found') || errorLower.includes('does not exist'))) {
     return {
-      title: '标签不存在',
-      message: '指定的标签不存在',
-      suggestion: '请检查标签名称是否正确，或使用SHOW TAG KEYS查看可用标签'
+      title: tError('columnNotFound'),
+      message: tError('columnNotFound'),
+      suggestion: tError('application.config.parse.suggestion')
     };
   }
-  
+
   if (errorLower.includes('syntax error') || errorLower.includes('parse error')) {
     return {
-      title: 'SQL语法错误',
-      message: '查询语句存在语法错误',
-      suggestion: '请检查SQL语法，特别注意字段名、引号和关键字的使用'
+      title: tError('invalidSyntax'),
+      message: tError('parseError'),
+      suggestion: tError('application.config.parse.suggestion')
     };
   }
-  
+
   if (errorLower.includes('timeout') || errorLower.includes('query timeout')) {
     return {
-      title: '查询超时',
-      message: '查询执行时间过长',
-      suggestion: '请尝试缩小查询时间范围或添加更多筛选条件'
+      title: tError('queryTimeout'),
+      message: tError('queryTimeout'),
+      suggestion: tError('security.authentication.timeout.suggestion')
     };
   }
-  
+
   if (errorLower.includes('memory') || errorLower.includes('out of memory')) {
     return {
-      title: '内存不足',
-      message: '查询数据量过大，内存不足',
-      suggestion: '请减少查询时间范围或使用LIMIT限制结果数量'
+      title: tError('memoryError'),
+      message: tError('systemResource.memory.critical.message', { usage: 90 }),
+      suggestion: tError('systemResource.memory.critical.suggestion')
     };
   }
-  
+
   if (errorLower.includes('permission') || errorLower.includes('unauthorized')) {
     return {
-      title: '权限不足',
-      message: '没有执行此查询的权限',
-      suggestion: '请联系管理员授予相应的数据库访问权限'
+      title: tError('permissionDenied'),
+      message: tError('permissionDenied'),
+      suggestion: tError('security.permission.insufficient.suggestion')
     };
   }
-  
+
   if (errorLower.includes('database') && errorLower.includes('not found')) {
     return {
-      title: '数据库不存在',
-      message: '指定的数据库不存在',
-      suggestion: '请检查数据库名称是否正确，或创建相应的数据库'
+      title: tError('databaseNotFound'),
+      message: tError('databaseNotFound'),
+      suggestion: tError('application.config.parse.suggestion')
     };
   }
 
   // 检查是否是类型不兼容错误
   if (errorLower.includes('not compatible') || errorLower.includes('type mismatch')) {
     return {
-      title: '数据类型不兼容',
-      message: '查询中的数据类型不匹配',
-      suggestion: '请检查时间条件的格式，确保时间函数（如now()）没有被引号包裹'
+      title: tError('dataTypeError'),
+      message: tError('dataTypeError'),
+      suggestion: tError('application.config.parse.suggestion')
     };
   }
 
@@ -365,9 +364,9 @@ export const getInfluxDBQueryError = (error: string): UserFriendlyError => {
         if (errorObj.results && errorObj.results[0] && errorObj.results[0].error) {
           const influxError = errorObj.results[0].error;
           return {
-            title: '查询执行失败',
+            title: tError('invalidQuery'),
             message: influxError,
-            suggestion: '请检查查询语句的语法和数据类型'
+            suggestion: tError('application.config.parse.suggestion')
           };
         }
       }
@@ -377,9 +376,9 @@ export const getInfluxDBQueryError = (error: string): UserFriendlyError => {
   }
 
   return {
-    title: '查询执行失败',
-    message: '查询执行过程中发生错误',
-    suggestion: '请检查查询语句或联系技术支持'
+    title: tError('invalidQuery'),
+    message: tError('operationFailed'),
+    suggestion: tError('application.config.save.suggestion')
   };
 };
 
@@ -388,70 +387,70 @@ export const getInfluxDBQueryError = (error: string): UserFriendlyError => {
  */
 export const getDataImportExportError = (error: string, context: 'import' | 'export', subType?: 'format' | 'size' | 'encoding' | 'validation'): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  const operationText = context === 'import' ? '导入' : '导出';
-  
+  const operation = tError(`dataImportExport.operations.${context}`);
+
   // 文件大小相关错误
   if ((subType === 'size' || errorLower.includes('too large') || errorLower.includes('file size') || errorLower.includes('exceed')) && errorLower.includes('size')) {
     return {
-      title: '文件过大',
-      message: `文件大小超过限制，无法${operationText}`,
-      suggestion: context === 'import' 
-        ? '请将文件分割为小于10MB的多个文件，或使用流式导入功能'
-        : '请减少导出数据量或使用分批导出功能'
+      title: tError('dataImportExport.size.title'),
+      message: context === 'import'
+        ? tError('dataImportExport.size.messageImport')
+        : tError('dataImportExport.size.messageExport'),
+      suggestion: context === 'import'
+        ? tError('dataImportExport.size.suggestionImport')
+        : tError('dataImportExport.size.suggestionExport')
     };
   }
-  
+
   // 编码相关错误
   if (subType === 'encoding' || errorLower.includes('encoding') || errorLower.includes('charset') || errorLower.includes('decode')) {
     return {
-      title: '文件编码错误',
-      message: `无法正确解析文件编码`,
-      suggestion: '请确保文件使用UTF-8编码，或在导入时指定正确的编码格式'
+      title: tError('dataImportExport.encoding.title'),
+      message: tError('dataImportExport.encoding.message'),
+      suggestion: tError('dataImportExport.encoding.suggestion')
     };
   }
-  
+
   // 格式相关错误
   if (subType === 'format' || errorLower.includes('format') || errorLower.includes('invalid') || errorLower.includes('malformed')) {
     return {
-      title: '文件格式错误',
-      message: `文件格式不正确或已损坏`,
-      suggestion: context === 'import'
-        ? '请检查文件格式是否为支持的CSV、JSON等格式，确保文件结构完整'
-        : '请选择支持的导出格式，如CSV、Excel、JSON等'
+      title: tError('dataImportExport.format.invalid.title'),
+      message: tError('dataImportExport.format.invalid.message'),
+      suggestion: tError('dataImportExport.format.invalid.suggestion')
     };
   }
-  
+
   // 数据验证相关错误
   if (subType === 'validation' || errorLower.includes('validation') || errorLower.includes('constraint') || errorLower.includes('invalid data')) {
     return {
-      title: '数据验证失败',
-      message: `数据不符合预期格式或约束条件`,
-      suggestion: '请检查数据类型、字段长度和必填项是否符合要求'
+      title: tError('dataImportExport.validation.schema.title'),
+      message: tError('dataImportExport.validation.schema.message'),
+      suggestion: tError('dataImportExport.validation.schema.suggestion')
     };
   }
-  
+
   // 权限相关错误
   if (errorLower.includes('permission') || errorLower.includes('access denied') || errorLower.includes('forbidden')) {
     return {
-      title: '权限不足',
-      message: `没有${operationText}数据的权限`,
-      suggestion: '请联系管理员授予相应的数据操作权限'
+      title: tError('dataImportExport.permission.title', { operation }),
+      message: tError('dataImportExport.permission.message', { operation }),
+      suggestion: tError('dataImportExport.permission.suggestion')
     };
   }
-  
+
   // 空间不足错误
   if (errorLower.includes('space') || errorLower.includes('disk full') || errorLower.includes('no space')) {
     return {
-      title: '存储空间不足',
-      message: `磁盘空间不足，无法完成${operationText}`,
-      suggestion: '请清理磁盘空间或选择其他存储位置'
+      title: tError('dataImportExport.space.title'),
+      message: tError('dataImportExport.space.message', { operation }),
+      suggestion: tError('dataImportExport.space.suggestion')
     };
   }
-  
+
   return {
-    title: `数据${operationText}失败`,
-    message: `数据${operationText}过程中发生错误`,
-    suggestion: `请检查文件和网络连接，或联系技术支持`
+    title: tError('operationFailed'),
+    message: tError('operationFailed'),
+    suggestion: tError('application.config.save.suggestion')
   };
 };
 
@@ -464,56 +463,54 @@ export const getSystemResourceError = (
   threshold?: number,
   context?: string
 ): UserFriendlyError => {
-  const usageText = usage ? `${usage}%` : '较高水平';
-  
   switch (resourceType) {
     case 'memory':
       if (usage && usage > 90) {
         return {
-          title: '内存不足',
-          message: `系统内存使用率已达到${usageText}`,
-          suggestion: '建议关闭其他应用程序、减少查询数据量或重启应用'
+          title: tError('systemResource.memory.critical.title'),
+          message: tError('systemResource.memory.critical.message', { usage }),
+          suggestion: tError('systemResource.memory.critical.suggestion')
         };
       }
       return {
-        title: '内存占用过高',
-        message: '系统内存使用率过高',
-        suggestion: '建议优化查询条件或分批处理数据'
+        title: tError('systemResource.memory.high.title'),
+        message: tError('systemResource.memory.high.message'),
+        suggestion: tError('systemResource.memory.high.suggestion')
       };
-      
+
     case 'cpu':
       return {
-        title: 'CPU占用过高',
-        message: `处理器使用率达到${usageText}`,
-        suggestion: '请等待当前操作完成，或考虑优化查询复杂度'
+        title: tError('systemResource.cpu.title'),
+        message: tError('systemResource.cpu.message', { usage: usage || 80 }),
+        suggestion: tError('systemResource.cpu.suggestion')
       };
-      
+
     case 'disk':
       if (usage && usage > 95) {
         return {
-          title: '磁盘空间严重不足',
-          message: `磁盘使用率已达到${usageText}`,
-          suggestion: '请立即清理磁盘空间、删除不必要的文件或扩展存储容量'
+          title: tError('systemResource.disk.critical.title'),
+          message: tError('systemResource.disk.critical.message', { threshold: threshold || 100 }),
+          suggestion: tError('systemResource.disk.critical.suggestion')
         };
       }
       return {
-        title: '磁盘空间不足',
-        message: '可用磁盘空间不足',
-        suggestion: '请清理磁盘空间、移动文件到其他位置或扩展存储容量'
+        title: tError('systemResource.disk.high.title'),
+        message: tError('systemResource.disk.high.message', { threshold: threshold || 1 }),
+        suggestion: tError('systemResource.disk.high.suggestion')
       };
-      
+
     case 'network':
       return {
-        title: '网络连接异常',
-        message: '网络连接不稳定或中断',
-        suggestion: '请检查网络连接状态，确认服务器地址和端口配置正确'
+        title: tError('systemResource.network.unstable.title'),
+        message: tError('systemResource.network.unstable.message'),
+        suggestion: tError('systemResource.network.unstable.suggestion')
       };
-      
+
     default:
       return {
-        title: '系统资源不足',
-        message: `系统资源${context || ''}出现问题`,
-        suggestion: '请检查系统状态或联系系统管理员'
+        title: tError('resourceNotAvailable'),
+        message: tError('resourceNotAvailable'),
+        suggestion: tError('application.config.save.suggestion')
       };
   }
 };
@@ -527,76 +524,83 @@ export const getUIInteractionError = (
   context?: string
 ): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  
+
   switch (interactionType) {
     case 'form':
       if (errorLower.includes('validation') || errorLower.includes('required') || errorLower.includes('invalid')) {
         return {
-          title: '表单验证失败',
-          message: '输入的信息不符合要求',
-          suggestion: '请检查必填项和数据格式，确保所有信息正确填写'
+          title: tError('uiInteraction.form.validation.title'),
+          message: tError('uiInteraction.form.validation.message'),
+          suggestion: tError('uiInteraction.form.validation.suggestion')
         };
       }
       return {
-        title: '表单提交失败',
-        message: '表单提交过程中发生错误',
-        suggestion: '请检查网络连接并重试'
+        title: tError('uiInteraction.form.submit.title'),
+        message: tError('uiInteraction.form.submit.message'),
+        suggestion: tError('uiInteraction.form.submit.suggestion')
       };
-      
+
     case 'drag':
+      if (errorLower.includes('invalid') || errorLower.includes('not allowed')) {
+        return {
+          title: tError('uiInteraction.drag.invalid.title'),
+          message: tError('uiInteraction.drag.invalid.message'),
+          suggestion: tError('uiInteraction.drag.invalid.suggestion')
+        };
+      }
       return {
-        title: '拖拽操作失败',
-        message: '无法完成拖拽操作',
-        suggestion: '请确保目标位置支持拖拽，或尝试使用右键菜单进行操作'
+        title: tError('uiInteraction.drag.failed.title'),
+        message: tError('uiInteraction.drag.failed.message'),
+        suggestion: tError('uiInteraction.drag.failed.suggestion')
       };
-      
+
     case 'chart':
       if (errorLower.includes('render') || errorLower.includes('draw')) {
         return {
-          title: '图表渲染失败',
-          message: `${context || '图表'}无法正常显示`,
-          suggestion: '请检查数据格式是否正确，或尝试刷新页面'
+          title: tError('uiInteraction.chart.render.title'),
+          message: tError('uiInteraction.chart.render.message', { context: context || 'chart' }),
+          suggestion: tError('uiInteraction.chart.render.suggestion')
         };
       }
       if (errorLower.includes('data') || errorLower.includes('empty')) {
         return {
-          title: '图表数据异常',
-          message: '图表数据为空或格式不正确',
-          suggestion: '请确认查询返回了有效数据，检查时间范围和筛选条件'
+          title: tError('uiInteraction.chart.data.title'),
+          message: tError('uiInteraction.chart.data.message'),
+          suggestion: tError('uiInteraction.chart.data.suggestion')
         };
       }
       return {
-        title: '图表显示错误',
-        message: '图表组件发生错误',
-        suggestion: '请尝试切换图表类型或刷新数据'
+        title: tError('uiInteraction.chart.render.title'),
+        message: tError('uiInteraction.chart.render.message', { context: context || 'chart' }),
+        suggestion: tError('uiInteraction.chart.render.suggestion')
       };
-      
+
     case 'theme':
       return {
-        title: '主题切换失败',
-        message: '无法切换到指定主题',
-        suggestion: '请尝试刷新页面或重启应用'
+        title: tError('uiInteraction.theme.apply.title'),
+        message: tError('uiInteraction.theme.apply.message'),
+        suggestion: tError('uiInteraction.theme.apply.suggestion')
       };
-      
+
     case 'layout':
       return {
-        title: '布局调整失败',
-        message: '无法调整界面布局',
-        suggestion: '请尝试重置布局或刷新页面'
+        title: tError('uiInteraction.layout.save.title'),
+        message: tError('uiInteraction.layout.save.message'),
+        suggestion: tError('uiInteraction.layout.save.suggestion')
       };
-      
+
     case 'component':
       return {
-        title: '组件加载失败',
-        message: `${context || '界面组件'}无法正常加载`,
-        suggestion: '请刷新页面或重启应用，如问题持续请联系技术支持'
+        title: tError('uiInteraction.component.load.title'),
+        message: tError('uiInteraction.component.load.message', { context: context || 'component' }),
+        suggestion: tError('uiInteraction.component.load.suggestion')
       };
-      
+
     default:
       return {
-        title: '界面操作失败',
-        message: '用户界面操作过程中发生错误',
-        suggestion: '请重试操作或刷新页面'
+        title: tError('operationFailed'),
+        message: tError('operationFailed'),
+        suggestion: tError('uiInteraction.drag.failed.suggestion')
       };
   }
 };
@@ -609,90 +613,139 @@ export const getExtensionError = (
   context: 'load' | 'install' | 'uninstall' | 'dependency' | 'version' | 'permission' | 'api'
 ): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  
+
   switch (context) {
     case 'load':
       if (errorLower.includes('not found') || errorLower.includes('missing')) {
         return {
-          title: '插件加载失败',
-          message: '找不到指定的插件文件',
-          suggestion: '请检查插件是否正确安装，或尝试重新安装插件'
+          title: tError('extension.load.notFound.title'),
+          message: tError('extension.load.notFound.message'),
+          suggestion: tError('extension.load.notFound.suggestion')
+        };
+      }
+      if (errorLower.includes('incompatible')) {
+        return {
+          title: tError('extension.load.incompatible.title'),
+          message: tError('extension.load.incompatible.message'),
+          suggestion: tError('extension.load.incompatible.suggestion')
         };
       }
       return {
-        title: '插件加载失败',
-        message: '无法加载插件',
-        suggestion: '请检查插件完整性或联系插件开发者'
+        title: tError('extension.load.corrupt.title'),
+        message: tError('extension.load.corrupt.message'),
+        suggestion: tError('extension.load.corrupt.suggestion')
       };
-      
+
     case 'install':
       if (errorLower.includes('permission') || errorLower.includes('access denied')) {
         return {
-          title: '插件安装失败',
-          message: '没有安装插件的权限',
-          suggestion: '请使用管理员权限运行应用，或联系系统管理员'
+          title: tError('extension.install.permission.title'),
+          message: tError('extension.install.permission.message'),
+          suggestion: tError('extension.install.permission.suggestion')
         };
       }
       if (errorLower.includes('space') || errorLower.includes('disk full')) {
         return {
-          title: '插件安装失败',
-          message: '磁盘空间不足',
-          suggestion: '请清理磁盘空间后重新安装'
+          title: tError('extension.install.space.title'),
+          message: tError('extension.install.space.message'),
+          suggestion: tError('extension.install.space.suggestion')
         };
       }
-      return {
-        title: '插件安装失败',
-        message: '插件安装过程中发生错误',
-        suggestion: '请检查网络连接和插件文件完整性'
-      };
-      
-    case 'uninstall':
-      return {
-        title: '插件卸载失败',
-        message: '无法卸载插件',
-        suggestion: '请确保插件未在使用中，或重启应用后重试'
-      };
-      
-    case 'dependency':
-      return {
-        title: '依赖缺失',
-        message: '插件所需的依赖不满足',
-        suggestion: '请安装相关依赖包或升级到兼容版本'
-      };
-      
-    case 'version':
-      if (errorLower.includes('incompatible') || errorLower.includes('version')) {
+      if (errorLower.includes('conflict')) {
         return {
-          title: '版本不兼容',
-          message: '插件版本与应用版本不兼容',
-          suggestion: '请升级插件或应用到兼容版本，或查看插件文档了解支持的版本'
+          title: tError('extension.install.conflict.title'),
+          message: tError('extension.install.conflict.message'),
+          suggestion: tError('extension.install.conflict.suggestion')
         };
       }
       return {
-        title: '版本检查失败',
-        message: '无法验证插件版本',
-        suggestion: '请检查插件信息或联系插件开发者'
+        title: tError('extension.install.permission.title'),
+        message: tError('extension.install.permission.message'),
+        suggestion: tError('extension.install.permission.suggestion')
       };
-      
+
+    case 'uninstall':
+      if (errorLower.includes('in use')) {
+        return {
+          title: tError('extension.uninstall.inUse.title'),
+          message: tError('extension.uninstall.inUse.message'),
+          suggestion: tError('extension.uninstall.inUse.suggestion')
+        };
+      }
+      return {
+        title: tError('extension.uninstall.permission.title'),
+        message: tError('extension.uninstall.permission.message'),
+        suggestion: tError('extension.uninstall.permission.suggestion')
+      };
+
+    case 'dependency':
+      if (errorLower.includes('version')) {
+        return {
+          title: tError('extension.dependency.version.title'),
+          message: tError('extension.dependency.version.message'),
+          suggestion: tError('extension.dependency.version.suggestion')
+        };
+      }
+      return {
+        title: tError('extension.dependency.missing.title'),
+        message: tError('extension.dependency.missing.message'),
+        suggestion: tError('extension.dependency.missing.suggestion')
+      };
+
+    case 'version':
+      if (errorLower.includes('too old')) {
+        return {
+          title: tError('extension.version.tooOld.title'),
+          message: tError('extension.version.tooOld.message'),
+          suggestion: tError('extension.version.tooOld.suggestion')
+        };
+      }
+      if (errorLower.includes('too new')) {
+        return {
+          title: tError('extension.version.tooNew.title'),
+          message: tError('extension.version.tooNew.message'),
+          suggestion: tError('extension.version.tooNew.suggestion')
+        };
+      }
+      return {
+        title: tError('versionMismatch'),
+        message: tError('extension.load.incompatible.message'),
+        suggestion: tError('extension.load.incompatible.suggestion')
+      };
+
     case 'permission':
+      if (errorLower.includes('excessive')) {
+        return {
+          title: tError('extension.permission.excessive.title'),
+          message: tError('extension.permission.excessive.message'),
+          suggestion: tError('extension.permission.excessive.suggestion')
+        };
+      }
       return {
-        title: '插件权限错误',
-        message: '插件没有执行所需操作的权限',
-        suggestion: '请检查插件权限配置或联系管理员'
+        title: tError('extension.permission.denied.title'),
+        message: tError('extension.permission.denied.message'),
+        suggestion: tError('extension.permission.denied.suggestion')
       };
-      
+
     case 'api':
+      if (errorLower.includes('deprecated')) {
+        return {
+          title: tError('extension.api.deprecated.title'),
+          message: tError('extension.api.deprecated.message'),
+          suggestion: tError('extension.api.deprecated.suggestion')
+        };
+      }
       return {
-        title: '插件API错误',
-        message: '插件调用系统API时发生错误',
-        suggestion: '请检查插件兼容性或联系插件开发者更新'
+        title: tError('extension.api.unavailable.title'),
+        message: tError('extension.api.unavailable.message'),
+        suggestion: tError('extension.api.unavailable.suggestion')
       };
-      
+
     default:
       return {
-        title: '插件系统错误',
-        message: '插件系统发生未知错误',
-        suggestion: '请重启应用或联系技术支持'
+        title: tError('operationFailed'),
+        message: tError('unknownError'),
+        suggestion: tError('application.config.save.suggestion')
       };
   }
 };
@@ -705,97 +758,125 @@ export const getSecurityError = (
   context: 'session' | 'permission' | 'certificate' | 'token' | 'authentication' | 'authorization'
 ): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  
+
   switch (context) {
     case 'session':
       if (errorLower.includes('expired') || errorLower.includes('timeout')) {
         return {
-          title: '会话已过期',
-          message: '您的登录会话已过期',
-          suggestion: '请重新登录以继续使用'
+          title: tError('security.session.expired.title'),
+          message: tError('security.session.expired.message'),
+          suggestion: tError('security.session.expired.suggestion')
+        };
+      }
+      if (errorLower.includes('concurrent')) {
+        return {
+          title: tError('security.session.concurrent.title'),
+          message: tError('security.session.concurrent.message'),
+          suggestion: tError('security.session.concurrent.suggestion')
         };
       }
       return {
-        title: '会话错误',
-        message: '登录会话出现问题',
-        suggestion: '请尝试重新登录'
+        title: tError('security.session.invalid.title'),
+        message: tError('security.session.invalid.message'),
+        suggestion: tError('security.session.invalid.suggestion')
       };
-      
+
     case 'permission':
+      if (errorLower.includes('expired')) {
+        return {
+          title: tError('security.permission.expired.title'),
+          message: tError('security.permission.expired.message'),
+          suggestion: tError('security.permission.expired.suggestion')
+        };
+      }
       return {
-        title: '权限不足',
-        message: '您没有执行此操作的权限',
-        suggestion: '请联系管理员授予相应权限，或使用有权限的账户'
+        title: tError('security.permission.insufficient.title'),
+        message: tError('security.permission.insufficient.message'),
+        suggestion: tError('security.permission.insufficient.suggestion')
       };
-      
+
     case 'certificate':
       if (errorLower.includes('expired')) {
         return {
-          title: '证书已过期',
-          message: 'SSL证书已过期',
-          suggestion: '请联系系统管理员更新证书'
+          title: tError('security.certificate.expired.title'),
+          message: tError('security.certificate.expired.message'),
+          suggestion: tError('security.certificate.expired.suggestion')
         };
       }
-      if (errorLower.includes('invalid') || errorLower.includes('verification failed')) {
+      if (errorLower.includes('revoked')) {
         return {
-          title: '证书验证失败',
-          message: 'SSL证书验证失败',
-          suggestion: '请检查证书配置或联系系统管理员'
+          title: tError('security.certificate.revoked.title'),
+          message: tError('security.certificate.revoked.message'),
+          suggestion: tError('security.certificate.revoked.suggestion')
         };
       }
       return {
-        title: '证书错误',
-        message: 'SSL证书存在问题',
-        suggestion: '请联系系统管理员检查证书配置'
+        title: tError('security.certificate.invalid.title'),
+        message: tError('security.certificate.invalid.message'),
+        suggestion: tError('security.certificate.invalid.suggestion')
       };
-      
+
     case 'token':
       if (errorLower.includes('expired')) {
         return {
-          title: '访问令牌已过期',
-          message: '身份验证令牌已过期',
-          suggestion: '请重新登录获取新的访问令牌'
+          title: tError('security.token.expired.title'),
+          message: tError('security.token.expired.message'),
+          suggestion: tError('security.token.expired.suggestion')
         };
       }
-      if (errorLower.includes('invalid')) {
+      if (errorLower.includes('revoked')) {
         return {
-          title: '访问令牌无效',
-          message: '身份验证令牌无效或已被撤销',
-          suggestion: '请重新登录或联系管理员'
+          title: tError('security.token.revoked.title'),
+          message: tError('security.token.revoked.message'),
+          suggestion: tError('security.token.revoked.suggestion')
         };
       }
       return {
-        title: '访问令牌错误',
-        message: '身份验证令牌存在问题',
-        suggestion: '请重新登录或联系技术支持'
+        title: tError('security.token.invalid.title'),
+        message: tError('security.token.invalid.message'),
+        suggestion: tError('security.token.invalid.suggestion')
       };
-      
+
     case 'authentication':
       if (errorLower.includes('failed') || errorLower.includes('invalid credentials')) {
         return {
-          title: '身份验证失败',
-          message: '用户名或密码错误',
-          suggestion: '请检查登录凭据是否正确，注意大小写'
+          title: tError('security.authentication.failed.title'),
+          message: tError('security.authentication.failed.message'),
+          suggestion: tError('security.authentication.failed.suggestion')
+        };
+      }
+      if (errorLower.includes('locked')) {
+        return {
+          title: tError('security.authentication.locked.title'),
+          message: tError('security.authentication.locked.message', { duration: 30 }),
+          suggestion: tError('security.authentication.locked.suggestion', { duration: 30 })
         };
       }
       return {
-        title: '身份验证错误',
-        message: '身份验证过程中发生错误',
-        suggestion: '请重试或联系系统管理员'
+        title: tError('security.authentication.timeout.title'),
+        message: tError('security.authentication.timeout.message'),
+        suggestion: tError('security.authentication.timeout.suggestion')
       };
-      
+
     case 'authorization':
+      if (errorLower.includes('scope')) {
+        return {
+          title: tError('security.authorization.scopeInsufficient.title'),
+          message: tError('security.authorization.scopeInsufficient.message'),
+          suggestion: tError('security.authorization.scopeInsufficient.suggestion')
+        };
+      }
       return {
-        title: '授权失败',
-        message: '您没有访问此资源的授权',
-        suggestion: '请联系管理员获取相应的访问权限'
+        title: tError('security.authorization.denied.title'),
+        message: tError('security.authorization.denied.message'),
+        suggestion: tError('security.authorization.denied.suggestion')
       };
-      
+
     default:
       return {
-        title: '安全验证失败',
-        message: '安全验证过程中发生错误',
-        suggestion: '请重试或联系系统管理员'
+        title: tError('authenticationFailed'),
+        message: tError('authenticationFailed'),
+        suggestion: tError('application.config.save.suggestion')
       };
   }
 };
@@ -808,97 +889,139 @@ export const getApplicationError = (
   context: 'startup' | 'shutdown' | 'update' | 'config' | 'migration' | 'backup'
 ): UserFriendlyError => {
   const errorLower = error.toLowerCase();
-  
+
   switch (context) {
     case 'startup':
       if (errorLower.includes('port') || errorLower.includes('address in use')) {
         return {
-          title: '应用启动失败',
-          message: '端口被占用，无法启动应用',
-          suggestion: '请关闭占用端口的程序，或修改应用端口配置'
+          title: tError('application.startup.port.title'),
+          message: tError('application.startup.port.message'),
+          suggestion: tError('application.startup.port.suggestion')
         };
       }
       if (errorLower.includes('config') || errorLower.includes('configuration')) {
         return {
-          title: '配置文件错误',
-          message: '应用配置文件存在问题',
-          suggestion: '请检查配置文件格式，或恢复默认配置'
+          title: tError('application.startup.config.title'),
+          message: tError('application.startup.config.message'),
+          suggestion: tError('application.startup.config.suggestion')
+        };
+      }
+      if (errorLower.includes('dependency')) {
+        return {
+          title: tError('application.startup.dependency.title'),
+          message: tError('application.startup.dependency.message'),
+          suggestion: tError('application.startup.dependency.suggestion')
         };
       }
       return {
-        title: '应用启动失败',
-        message: '应用程序无法正常启动',
-        suggestion: '请重启应用或检查系统要求'
+        title: tError('application.startup.port.title'),
+        message: tError('application.startup.port.message'),
+        suggestion: tError('application.startup.port.suggestion')
       };
-      
+
     case 'shutdown':
+      if (errorLower.includes('unsaved')) {
+        return {
+          title: tError('application.shutdown.unsaved.title'),
+          message: tError('application.shutdown.unsaved.message'),
+          suggestion: tError('application.shutdown.unsaved.suggestion')
+        };
+      }
       return {
-        title: '应用关闭异常',
-        message: '应用程序关闭过程中发生错误',
-        suggestion: '数据可能未完全保存，建议重启后检查数据完整性'
+        title: tError('application.shutdown.timeout.title'),
+        message: tError('application.shutdown.timeout.message'),
+        suggestion: tError('application.shutdown.timeout.suggestion')
       };
-      
+
     case 'update':
       if (errorLower.includes('permission')) {
         return {
-          title: '更新失败',
-          message: '没有更新应用的权限',
-          suggestion: '请使用管理员权限运行更新，或手动下载最新版本'
+          title: tError('application.update.permission.title'),
+          message: tError('application.update.permission.message'),
+          suggestion: tError('application.update.permission.suggestion')
         };
       }
       if (errorLower.includes('network') || errorLower.includes('download')) {
         return {
-          title: '更新下载失败',
-          message: '无法下载更新文件',
-          suggestion: '请检查网络连接，或前往官网手动下载更新'
+          title: tError('application.update.network.title'),
+          message: tError('application.update.network.message'),
+          suggestion: tError('application.update.network.suggestion')
+        };
+      }
+      if (errorLower.includes('verify')) {
+        return {
+          title: tError('application.update.verify.title'),
+          message: tError('application.update.verify.message'),
+          suggestion: tError('application.update.verify.suggestion')
         };
       }
       return {
-        title: '应用更新失败',
-        message: '应用程序更新过程中发生错误',
-        suggestion: '请重试更新或手动下载安装最新版本'
+        title: tError('application.update.permission.title'),
+        message: tError('application.update.permission.message'),
+        suggestion: tError('application.update.permission.suggestion')
       };
-      
+
     case 'config':
       if (errorLower.includes('corrupt') || errorLower.includes('invalid')) {
         return {
-          title: '配置文件损坏',
-          message: '应用配置文件已损坏或格式错误',
-          suggestion: '请删除配置文件以恢复默认设置，或从备份中恢复'
+          title: tError('application.config.corrupt.title'),
+          message: tError('application.config.corrupt.message'),
+          suggestion: tError('application.config.corrupt.suggestion')
+        };
+      }
+      if (errorLower.includes('parse')) {
+        return {
+          title: tError('application.config.parse.title'),
+          message: tError('application.config.parse.message'),
+          suggestion: tError('application.config.parse.suggestion')
         };
       }
       return {
-        title: '配置加载失败',
-        message: '无法加载应用配置',
-        suggestion: '请检查配置文件权限或恢复默认配置'
+        title: tError('application.config.save.title'),
+        message: tError('application.config.save.message'),
+        suggestion: tError('application.config.save.suggestion')
       };
-      
+
     case 'migration':
+      if (errorLower.includes('version')) {
+        return {
+          title: tError('application.migration.version.title'),
+          message: tError('application.migration.version.message'),
+          suggestion: tError('application.migration.version.suggestion')
+        };
+      }
       return {
-        title: '数据迁移失败',
-        message: '数据库迁移过程中发生错误',
-        suggestion: '请备份现有数据，或联系技术支持协助迁移'
+        title: tError('application.migration.integrity.title'),
+        message: tError('application.migration.integrity.message'),
+        suggestion: tError('application.migration.integrity.suggestion')
       };
-      
+
     case 'backup':
       if (errorLower.includes('space')) {
         return {
-          title: '备份失败',
-          message: '磁盘空间不足，无法创建备份',
-          suggestion: '请清理磁盘空间或选择其他备份位置'
+          title: tError('application.backup.space.title'),
+          message: tError('application.backup.space.message'),
+          suggestion: tError('application.backup.space.suggestion')
+        };
+      }
+      if (errorLower.includes('permission')) {
+        return {
+          title: tError('application.backup.permission.title'),
+          message: tError('application.backup.permission.message'),
+          suggestion: tError('application.backup.permission.suggestion')
         };
       }
       return {
-        title: '数据备份失败',
-        message: '无法创建数据备份',
-        suggestion: '请检查备份路径权限和磁盘空间'
+        title: tError('application.backup.corrupt.title'),
+        message: tError('application.backup.corrupt.message'),
+        suggestion: tError('application.backup.corrupt.suggestion')
       };
-      
+
     default:
       return {
-        title: '应用程序错误',
-        message: '应用程序发生未知错误',
-        suggestion: '请重启应用或联系技术支持'
+        title: tError('operationFailed'),
+        message: tError('unknownError'),
+        suggestion: tError('application.config.save.suggestion')
       };
   }
 };
@@ -909,7 +1032,7 @@ export const getApplicationError = (
 export const formatErrorMessage = (error: UserFriendlyError): string => {
   let message = error.message;
   if (error.suggestion) {
-    message += `\n建议：${error.suggestion}`;
+    message += `\n${tError('formatError.suggestion', { suggestion: error.suggestion })}`;
   }
   return message;
 };

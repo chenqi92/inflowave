@@ -54,5 +54,585 @@
   "overflowError": "溢出错误",
   "underflowError": "下溢错误",
   "sync_connection_config_failed": "同步连接配置失败，请检查后端服务",
-  "load_connection_list_failed": "加载连接列表失败: {{error}}"
+  "load_connection_list_failed": "加载连接列表失败: {{error}}",
+  "database": {
+    "timeout": {
+      "title": "连接超时",
+      "message": "服务器响应超时，请稍后重试",
+      "suggestion": "请检查网络连接或联系管理员"
+    },
+    "authentication": {
+      "title": "认证失败",
+      "message": "用户名或密码错误",
+      "suggestion": "请检查用户名和密码是否正确"
+    },
+    "connectionRefused": {
+      "title": "连接失败",
+      "message": "无法连接到数据库服务器",
+      "suggestion": "请检查服务器地址、端口是否正确，确认服务器是否正常运行"
+    },
+    "network": {
+      "title": "网络错误",
+      "message": "网络连接异常",
+      "suggestion": "请检查网络连接是否正常"
+    },
+    "ssl": {
+      "title": "安全连接失败",
+      "message": "SSL/TLS 连接验证失败",
+      "suggestion": "请检查证书配置或联系管理员"
+    },
+    "default": {
+      "title": "连接失败",
+      "message": "无法建立数据库连接",
+      "suggestion": "请检查连接配置信息"
+    }
+  },
+  "file": {
+    "permission": {
+      "title": "权限不足",
+      "message": "没有访问该文件的权限",
+      "suggestion": "请检查文件权限或选择其他文件"
+    },
+    "notFound": {
+      "title": "文件不存在",
+      "message": "指定的文件不存在或已被删除",
+      "suggestion": "请确认文件路径是否正确"
+    },
+    "diskSpace": {
+      "title": "磁盘空间不足",
+      "message": "没有足够的磁盘空间完成操作",
+      "suggestion": "请清理磁盘空间后重试"
+    },
+    "locked": {
+      "title": "文件被占用",
+      "message": "文件正在被其他程序使用",
+      "suggestion": "请关闭相关程序后重试"
+    },
+    "read": {
+      "title": "文件读取失败",
+      "message": "无法读取文件",
+      "suggestion": "请重试或选择其他文件"
+    },
+    "write": {
+      "title": "文件写入失败",
+      "message": "无法写入文件",
+      "suggestion": "请重试或选择其他文件"
+    },
+    "select": {
+      "title": "文件选择失败",
+      "message": "无法选择文件",
+      "suggestion": "请重试或选择其他文件"
+    },
+    "save": {
+      "title": "文件保存失败",
+      "message": "无法保存文件",
+      "suggestion": "请重试或选择其他文件"
+    },
+    "operations": {
+      "read": "读取",
+      "write": "写入",
+      "select": "选择",
+      "save": "保存"
+    }
+  },
+  "network": {
+    "timeout": {
+      "title": "请求超时",
+      "message": "服务器响应超时",
+      "suggestion": "请检查网络连接并重试"
+    },
+    "404": {
+      "title": "服务不可用",
+      "message": "请求的服务不存在",
+      "suggestion": "请检查服务地址是否正确"
+    },
+    "500": {
+      "title": "服务器错误",
+      "message": "服务器内部错误",
+      "suggestion": "请稍后重试或联系管理员"
+    },
+    "offline": {
+      "title": "网络连接失败",
+      "message": "无法连接到网络",
+      "suggestion": "请检查网络连接"
+    },
+    "default": {
+      "title": "请求失败",
+      "message": "网络请求失败",
+      "suggestion": "请检查网络连接并重试"
+    }
+  },
+  "port": {
+    "permission": {
+      "title": "权限不足",
+      "message": "无法访问网络端口",
+      "suggestion": "可能需要管理员权限"
+    },
+    "occupied": {
+      "title": "端口被占用",
+      "message": "指定的端口已被其他程序使用",
+      "suggestion": "程序将自动寻找可用端口"
+    },
+    "default": {
+      "title": "端口检测失败",
+      "message": "无法检测端口状态",
+      "suggestion": "将使用默认端口配置"
+    }
+  },
+  "preferences": {
+    "permission": {
+      "title": "权限不足",
+      "message": "无法{{operation}}用户设置",
+      "suggestion": "请检查应用权限"
+    },
+    "corrupted": {
+      "title": "设置文件损坏",
+      "message": "用户设置文件已损坏",
+      "suggestion": "将使用默认设置"
+    },
+    "load": {
+      "title": "设置加载失败",
+      "message": "无法加载用户设置",
+      "suggestion": "请重试或重启应用"
+    },
+    "save": {
+      "title": "设置保存失败",
+      "message": "无法保存用户设置",
+      "suggestion": "请重试或重启应用"
+    },
+    "operations": {
+      "load": "加载",
+      "save": "保存"
+    }
+  },
+  "userCancellation": {
+    "title": "操作已取消",
+    "message": "已取消{{operation}}"
+  },
+  "generic": {
+    "title": "操作失败",
+    "message": "{{context}}发生了未知错误",
+    "suggestion": "请重试或联系技术支持"
+  },
+  "influxdb": {
+    "undefinedFunction": {
+      "title": "InfluxQL 函数错误",
+      "message": "{{funcName}}() 函数在 InfluxQL 中不支持",
+      "suggestion": "请使用 {{replacement}}() 函数代替。InfluxQL 使用不同的聚合函数名称。",
+      "suggestionGeneric": "请查阅 InfluxQL 文档，使用支持的聚合函数：COUNT, SUM, MEAN, MAX, MIN, MEDIAN, MODE, STDDEV 等"
+    },
+    "measurementNotFound": {
+      "title": "测量不存在",
+      "message": "指定的测量（measurement）不存在",
+      "suggestion": "请检查测量名称是否正确，或查看可用的测量列表"
+    },
+    "fieldNotFound": {
+      "title": "字段不存在",
+      "message": "指定的字段不存在",
+      "suggestion": "请检查字段名称是否正确，或使用SHOW FIELD KEYS查看可用字段"
+    },
+    "tagNotFound": {
+      "title": "标签不存在",
+      "message": "指定的标签不存在",
+      "suggestion": "请检查标签名称是否正确，或使用SHOW TAG KEYS查看可用标签"
+    },
+    "syntaxError": {
+      "title": "SQL语法错误",
+      "message": "查询语句存在语法错误",
+      "suggestion": "请检查SQL语法，特别注意字段名、引号和关键字的使用"
+    },
+    "timeout": {
+      "title": "查询超时",
+      "message": "查询执行时间过长",
+      "suggestion": "请尝试缩小查询时间范围或添加更多筛选条件"
+    },
+    "memory": {
+      "title": "内存不足",
+      "message": "查询数据量过大，内存不足",
+      "suggestion": "请减少查询时间范围或使用LIMIT限制结果数量"
+    },
+    "permission": {
+      "title": "权限不足",
+      "message": "没有执行此查询的权限",
+      "suggestion": "请联系管理员授予相应的数据库访问权限"
+    },
+    "databaseNotFound": {
+      "title": "数据库不存在",
+      "message": "指定的数据库不存在",
+      "suggestion": "请检查数据库名称是否正确，或创建相应的数据库"
+    },
+    "default": {
+      "title": "查询失败",
+      "message": "InfluxDB 查询执行失败",
+      "suggestion": "请检查查询语句和数据库连接状态"
+    },
+    "functionMapping": {
+      "AVG": "MEAN",
+      "AVERAGE": "MEAN",
+      "STDEV": "STDDEV",
+      "VAR": "VARIANCE"
+    }
+  },
+  "dataImportExport": {
+    "size": {
+      "title": "文件过大",
+      "messageImport": "文件大小超过限制，无法导入",
+      "messageExport": "文件大小超过限制，无法导出",
+      "suggestionImport": "请将文件分割为小于10MB的多个文件，或使用流式导入功能",
+      "suggestionExport": "请减少导出数据量或使用分批导出功能"
+    },
+    "encoding": {
+      "title": "文件编码错误",
+      "message": "无法正确解析文件编码",
+      "suggestion": "请确保文件使用UTF-8编码，或在导入时指定正确的编码格式"
+    },
+    "format": {
+      "title": "文件格式错误",
+      "message": "文件格式不正确或已损坏",
+      "suggestionImport": "请检查文件格式是否为支持的CSV、JSON等格式，确保文件结构完整",
+      "suggestionExport": "请选择支持的导出格式，如CSV、Excel、JSON等"
+    },
+    "validation": {
+      "title": "数据验证失败",
+      "message": "数据不符合预期格式或约束条件",
+      "suggestion": "请检查数据类型、字段长度和必填项是否符合要求"
+    },
+    "permission": {
+      "title": "权限不足",
+      "message": "没有{{operation}}数据的权限",
+      "suggestion": "请联系管理员授予相应的数据操作权限"
+    },
+    "space": {
+      "title": "存储空间不足",
+      "message": "磁盘空间不足，无法完成{{operation}}",
+      "suggestion": "请清理磁盘空间或选择其他存储位置"
+    },
+    "default": {
+      "title": "数据{{operation}}失败",
+      "message": "数据{{operation}}过程中发生错误",
+      "suggestion": "请检查文件和网络连接，或联系技术支持"
+    },
+    "operations": {
+      "import": "导入",
+      "export": "导出"
+    }
+  },
+  "systemResource": {
+    "memory": {
+      "critical": {
+        "title": "内存不足",
+        "message": "系统内存使用率已达到{{usage}}%",
+        "suggestion": "建议关闭其他应用程序、减少查询数据量或重启应用"
+      },
+      "high": {
+        "title": "内存占用过高",
+        "message": "系统内存使用率过高",
+        "suggestion": "建议优化查询条件或分批处理数据"
+      }
+    },
+    "cpu": {
+      "title": "CPU占用过高",
+      "message": "处理器使用率达到{{usage}}%",
+      "suggestion": "请等待当前操作完成，或考虑优化查询复杂度"
+    },
+    "disk": {
+      "critical": {
+        "title": "磁盘空间严重不足",
+        "message": "磁盘使用率已达到{{usage}}%",
+        "suggestion": "请立即清理磁盘空间、删除不必要的文件或扩展存储容量"
+      },
+      "high": {
+        "title": "磁盘空间不足",
+        "message": "可用磁盘空间不足",
+        "suggestion": "请清理磁盘空间、移动文件到其他位置或扩展存储容量"
+      }
+    },
+    "network": {
+      "title": "网络连接异常",
+      "message": "网络连接不稳定或中断",
+      "suggestion": "请检查网络连接状态，确认服务器地址和端口配置正确"
+    },
+    "default": {
+      "title": "系统资源不足",
+      "message": "系统资源{{context}}出现问题",
+      "suggestion": "请检查系统状态或联系系统管理员"
+    }
+  },
+  "uiInteraction": {
+    "form": {
+      "validation": {
+        "title": "表单验证失败",
+        "message": "输入的信息不符合要求",
+        "suggestion": "请检查必填项和数据格式，确保所有信息正确填写"
+      },
+      "submit": {
+        "title": "表单提交失败",
+        "message": "表单提交过程中发生错误",
+        "suggestion": "请检查网络连接并重试"
+      }
+    },
+    "drag": {
+      "title": "拖拽操作失败",
+      "message": "无法完成拖拽操作",
+      "suggestion": "请确保目标位置支持拖拽，或尝试使用右键菜单进行操作"
+    },
+    "chart": {
+      "render": {
+        "title": "图表渲染失败",
+        "message": "{{context}}无法正常显示",
+        "suggestion": "请检查数据格式是否正确，或尝试刷新页面"
+      },
+      "data": {
+        "title": "图表数据异常",
+        "message": "图表数据为空或格式不正确",
+        "suggestion": "请确认查询返回了有效数据，检查时间范围和筛选条件"
+      },
+      "default": {
+        "title": "图表显示错误",
+        "message": "图表组件发生错误",
+        "suggestion": "请尝试切换图表类型或刷新数据"
+      }
+    },
+    "theme": {
+      "title": "主题切换失败",
+      "message": "无法切换到指定主题",
+      "suggestion": "请尝试刷新页面或重启应用"
+    },
+    "layout": {
+      "title": "布局调整失败",
+      "message": "无法调整界面布局",
+      "suggestion": "请尝试重置布局或刷新页面"
+    },
+    "component": {
+      "title": "组件加载失败",
+      "message": "{{context}}无法正常加载",
+      "suggestion": "请刷新页面或重启应用，如问题持续请联系技术支持"
+    },
+    "default": {
+      "title": "界面操作失败",
+      "message": "用户界面操作过程中发生错误",
+      "suggestion": "请重试操作或刷新页面"
+    }
+  },
+  "extension": {
+    "load": {
+      "notFound": {
+        "title": "插件加载失败",
+        "message": "找不到指定的插件文件",
+        "suggestion": "请检查插件是否正确安装，或尝试重新安装插件"
+      },
+      "default": {
+        "title": "插件加载失败",
+        "message": "无法加载插件",
+        "suggestion": "请检查插件完整性或联系插件开发者"
+      }
+    },
+    "install": {
+      "permission": {
+        "title": "插件安装失败",
+        "message": "没有安装插件的权限",
+        "suggestion": "请使用管理员权限运行应用，或联系系统管理员"
+      },
+      "space": {
+        "title": "插件安装失败",
+        "message": "磁盘空间不足",
+        "suggestion": "请清理磁盘空间后重新安装"
+      },
+      "default": {
+        "title": "插件安装失败",
+        "message": "插件安装过程中发生错误",
+        "suggestion": "请检查网络连接和插件文件完整性"
+      }
+    },
+    "uninstall": {
+      "title": "插件卸载失败",
+      "message": "无法卸载插件",
+      "suggestion": "请确保插件未在使用中，或重启应用后重试"
+    },
+    "dependency": {
+      "title": "依赖缺失",
+      "message": "插件所需的依赖不满足",
+      "suggestion": "请安装相关依赖包或升级到兼容版本"
+    },
+    "version": {
+      "incompatible": {
+        "title": "版本不兼容",
+        "message": "插件版本与应用版本不兼容",
+        "suggestion": "请升级插件或应用到兼容版本，或查看插件文档了解支持的版本"
+      },
+      "default": {
+        "title": "版本检查失败",
+        "message": "无法验证插件版本",
+        "suggestion": "请检查插件信息或联系插件开发者"
+      }
+    },
+    "permission": {
+      "title": "插件权限错误",
+      "message": "插件没有执行所需操作的权限",
+      "suggestion": "请检查插件权限配置或联系管理员"
+    },
+    "api": {
+      "title": "插件API错误",
+      "message": "插件调用系统API时发生错误",
+      "suggestion": "请检查插件兼容性或联系插件开发者更新"
+    },
+    "default": {
+      "title": "插件系统错误",
+      "message": "插件系统发生未知错误",
+      "suggestion": "请重启应用或联系技术支持"
+    }
+  },
+  "security": {
+    "session": {
+      "expired": {
+        "title": "会话已过期",
+        "message": "您的登录会话已过期",
+        "suggestion": "请重新登录以继续使用"
+      },
+      "default": {
+        "title": "会话错误",
+        "message": "登录会话出现问题",
+        "suggestion": "请尝试重新登录"
+      }
+    },
+    "permission": {
+      "title": "权限不足",
+      "message": "您没有执行此操作的权限",
+      "suggestion": "请联系管理员授予相应权限，或使用有权限的账户"
+    },
+    "certificate": {
+      "expired": {
+        "title": "证书已过期",
+        "message": "SSL证书已过期",
+        "suggestion": "请联系系统管理员更新证书"
+      },
+      "invalid": {
+        "title": "证书验证失败",
+        "message": "SSL证书验证失败",
+        "suggestion": "请检查证书配置或联系系统管理员"
+      },
+      "default": {
+        "title": "证书错误",
+        "message": "SSL证书存在问题",
+        "suggestion": "请联系系统管理员检查证书配置"
+      }
+    },
+    "token": {
+      "expired": {
+        "title": "访问令牌已过期",
+        "message": "身份验证令牌已过期",
+        "suggestion": "请重新登录获取新的访问令牌"
+      },
+      "invalid": {
+        "title": "访问令牌无效",
+        "message": "身份验证令牌无效或已被撤销",
+        "suggestion": "请重新登录或联系管理员"
+      },
+      "default": {
+        "title": "访问令牌错误",
+        "message": "身份验证令牌存在问题",
+        "suggestion": "请重新登录或联系技术支持"
+      }
+    },
+    "authentication": {
+      "failed": {
+        "title": "身份验证失败",
+        "message": "用户名或密码错误",
+        "suggestion": "请检查登录凭据是否正确，注意大小写"
+      },
+      "default": {
+        "title": "身份验证错误",
+        "message": "身份验证过程中发生错误",
+        "suggestion": "请重试或联系系统管理员"
+      }
+    },
+    "authorization": {
+      "title": "授权失败",
+      "message": "您没有访问此资源的授权",
+      "suggestion": "请联系管理员获取相应的访问权限"
+    },
+    "default": {
+      "title": "安全验证失败",
+      "message": "安全验证过程中发生错误",
+      "suggestion": "请重试或联系系统管理员"
+    }
+  },
+  "application": {
+    "startup": {
+      "port": {
+        "title": "应用启动失败",
+        "message": "端口被占用，无法启动应用",
+        "suggestion": "请关闭占用端口的程序，或修改应用端口配置"
+      },
+      "config": {
+        "title": "配置文件错误",
+        "message": "应用配置文件存在问题",
+        "suggestion": "请检查配置文件格式，或恢复默认配置"
+      },
+      "default": {
+        "title": "应用启动失败",
+        "message": "应用程序无法正常启动",
+        "suggestion": "请重启应用或检查系统要求"
+      }
+    },
+    "shutdown": {
+      "title": "应用关闭异常",
+      "message": "应用程序关闭过程中发生错误",
+      "suggestion": "数据可能未完全保存，建议重启后检查数据完整性"
+    },
+    "update": {
+      "permission": {
+        "title": "更新失败",
+        "message": "没有更新应用的权限",
+        "suggestion": "请使用管理员权限运行更新，或手动下载最新版本"
+      },
+      "network": {
+        "title": "更新下载失败",
+        "message": "无法下载更新文件",
+        "suggestion": "请检查网络连接，或前往官网手动下载更新"
+      },
+      "default": {
+        "title": "应用更新失败",
+        "message": "应用程序更新过程中发生错误",
+        "suggestion": "请重试更新或手动下载安装最新版本"
+      }
+    },
+    "config": {
+      "corrupt": {
+        "title": "配置文件损坏",
+        "message": "应用配置文件已损坏或格式错误",
+        "suggestion": "请删除配置文件以恢复默认设置，或从备份中恢复"
+      },
+      "default": {
+        "title": "配置加载失败",
+        "message": "无法加载应用配置",
+        "suggestion": "请检查配置文件权限或恢复默认配置"
+      }
+    },
+    "migration": {
+      "title": "数据迁移失败",
+      "message": "数据库迁移过程中发生错误",
+      "suggestion": "请备份现有数据，或联系技术支持协助迁移"
+    },
+    "backup": {
+      "space": {
+        "title": "备份失败",
+        "message": "磁盘空间不足，无法创建备份",
+        "suggestion": "请清理磁盘空间或选择其他备份位置"
+      },
+      "default": {
+        "title": "数据备份失败",
+        "message": "无法创建数据备份",
+        "suggestion": "请检查备份路径权限和磁盘空间"
+      }
+    },
+    "default": {
+      "title": "应用程序错误",
+      "message": "应用程序发生未知错误",
+      "suggestion": "请重启应用或联系技术支持"
+    }
+  },
+  "formatError": {
+    "suggestion": "建议：{{suggestion}}"
+  }
 }

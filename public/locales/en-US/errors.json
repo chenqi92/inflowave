@@ -54,5 +54,471 @@
   "overflowError": "Overflow error",
   "underflowError": "Underflow error",
   "sync_connection_config_failed": "Failed to sync connection configuration, please check backend service",
-  "load_connection_list_failed": "Failed to load connection list: {{error}}"
+  "load_connection_list_failed": "Failed to load connection list: {{error}}",
+  "dataImportExport": {
+    "size": {
+      "title": "File Too Large",
+      "messageImport": "File size exceeds the limit and cannot be imported",
+      "messageExport": "File size exceeds the limit and cannot be exported",
+      "suggestionImport": "Please split the file into multiple files smaller than 10MB, or use streaming import",
+      "suggestionExport": "Please reduce the amount of exported data or use batch export"
+    },
+    "encoding": {
+      "title": "File Encoding Error",
+      "message": "Unable to parse file encoding correctly",
+      "suggestion": "Please ensure the file uses UTF-8 encoding, or specify the correct encoding when importing"
+    },
+    "format": {
+      "invalid": {
+        "title": "Invalid File Format",
+        "message": "Unsupported file format or corrupted file",
+        "suggestion": "Please check if the file format is correct and ensure the file is not corrupted"
+      },
+      "mismatch": {
+        "title": "File Format Mismatch",
+        "message": "File content does not match the selected format",
+        "suggestion": "Please verify the file format or select the correct import format"
+      }
+    },
+    "validation": {
+      "schema": {
+        "title": "Data Schema Validation Failed",
+        "message": "Data structure does not meet requirements",
+        "suggestion": "Please check the data structure and ensure all required fields are present"
+      },
+      "dataType": {
+        "title": "Data Type Error",
+        "message": "Data type does not match the target table structure",
+        "suggestion": "Please adjust the data type to match the target table requirements"
+      },
+      "constraint": {
+        "title": "Data Constraint Violation",
+        "message": "Data does not meet constraint conditions",
+        "suggestion": "Please check unique constraints, foreign key constraints, and other data integrity requirements"
+      }
+    },
+    "permission": {
+      "title": "{{operation}} Permission Denied",
+      "message": "Insufficient permissions to perform {{operation}} operation",
+      "suggestion": "Please contact administrator to obtain the necessary permissions"
+    },
+    "space": {
+      "title": "Insufficient Space",
+      "message": "Insufficient disk space for {{operation}} operation",
+      "suggestion": "Please clean up disk space or choose another location"
+    },
+    "operations": {
+      "import": "import",
+      "export": "export"
+    }
+  },
+  "systemResource": {
+    "memory": {
+      "critical": {
+        "title": "Out of Memory",
+        "message": "System memory usage has reached {{usage}}%",
+        "suggestion": "Recommend closing other applications, reducing query data volume, or restarting the application"
+      },
+      "high": {
+        "title": "High Memory Usage",
+        "message": "System memory usage is too high",
+        "suggestion": "Recommend optimizing query conditions or processing data in batches"
+      },
+      "leak": {
+        "title": "Memory Leak Detected",
+        "message": "{{context}} may have a memory leak",
+        "suggestion": "Please restart the application. If the problem persists, please contact technical support"
+      }
+    },
+    "cpu": {
+      "title": "High CPU Usage",
+      "message": "Processor usage has reached {{usage}}%",
+      "suggestion": "Please wait for the current operation to complete, or consider optimizing query complexity"
+    },
+    "disk": {
+      "critical": {
+        "title": "Disk Space Critical",
+        "message": "Disk space is less than {{threshold}}MB",
+        "suggestion": "Please clean up disk space immediately, otherwise the application may not work properly"
+      },
+      "high": {
+        "title": "Disk Space Low",
+        "message": "Available disk space is less than {{threshold}}GB",
+        "suggestion": "Recommend cleaning up unnecessary files to avoid affecting application performance"
+      },
+      "readonly": {
+        "title": "Disk Read-Only",
+        "message": "{{context}} is in read-only state",
+        "suggestion": "Please check disk permissions or contact system administrator"
+      }
+    },
+    "network": {
+      "slow": {
+        "title": "Slow Network Connection",
+        "message": "Network latency is {{usage}}ms, affecting performance",
+        "suggestion": "Please check network connection or try again later"
+      },
+      "unstable": {
+        "title": "Unstable Network",
+        "message": "Network connection is unstable",
+        "suggestion": "Recommend switching to a more stable network environment"
+      }
+    }
+  },
+  "uiInteraction": {
+    "form": {
+      "validation": {
+        "title": "Form Validation Failed",
+        "message": "The entered information does not meet requirements",
+        "suggestion": "Please check required fields and data formats to ensure all information is correctly filled"
+      },
+      "submit": {
+        "title": "Form Submission Failed",
+        "message": "Unable to submit form data",
+        "suggestion": "Please check network connection and input content, then try again"
+      }
+    },
+    "drag": {
+      "invalid": {
+        "title": "Invalid Drag Operation",
+        "message": "Cannot drag item to this location",
+        "suggestion": "Please check if the target location accepts this type of item"
+      },
+      "failed": {
+        "title": "Drag Operation Failed",
+        "message": "Unable to complete drag operation",
+        "suggestion": "Please try again or refresh the page"
+      }
+    },
+    "chart": {
+      "render": {
+        "title": "Chart Rendering Failed",
+        "message": "{{context}} cannot be displayed properly",
+        "suggestion": "Please check if data format is correct, or try refreshing the page"
+      },
+      "data": {
+        "title": "Chart Data Error",
+        "message": "Chart data is incomplete or in incorrect format",
+        "suggestion": "Please check data source or adjust query conditions"
+      }
+    },
+    "theme": {
+      "load": {
+        "title": "Theme Loading Failed",
+        "message": "Unable to load selected theme",
+        "suggestion": "Please try another theme or restart the application"
+      },
+      "apply": {
+        "title": "Theme Application Failed",
+        "message": "Unable to apply theme settings",
+        "suggestion": "Please check theme configuration or restore default theme"
+      }
+    },
+    "layout": {
+      "save": {
+        "title": "Layout Save Failed",
+        "message": "Unable to save current layout configuration",
+        "suggestion": "Please check storage permissions or try again later"
+      },
+      "restore": {
+        "title": "Layout Restore Failed",
+        "message": "Unable to restore saved layout",
+        "suggestion": "Please try restoring default layout or reconfigure"
+      }
+    },
+    "component": {
+      "load": {
+        "title": "Component Loading Failed",
+        "message": "{{context}} component failed to load",
+        "suggestion": "Please refresh the page or contact technical support"
+      }
+    }
+  },
+  "extension": {
+    "load": {
+      "notFound": {
+        "title": "Extension Loading Failed",
+        "message": "Cannot find the specified extension file",
+        "suggestion": "Please check if the extension is correctly installed, or try reinstalling the extension"
+      },
+      "incompatible": {
+        "title": "Extension Incompatible",
+        "message": "Extension is incompatible with current application version",
+        "suggestion": "Please update the extension to the latest version or use a compatible version"
+      },
+      "corrupt": {
+        "title": "Extension File Corrupted",
+        "message": "Extension file is damaged or incomplete",
+        "suggestion": "Please reinstall the extension or download it again"
+      }
+    },
+    "install": {
+      "permission": {
+        "title": "Extension Installation Failed",
+        "message": "No permission to install extension",
+        "suggestion": "Please run the application with administrator privileges or contact system administrator"
+      },
+      "space": {
+        "title": "Installation Failed",
+        "message": "Insufficient disk space to install extension",
+        "suggestion": "Please clean up disk space and try again"
+      },
+      "conflict": {
+        "title": "Extension Conflict",
+        "message": "Conflicts with existing extension",
+        "suggestion": "Please uninstall conflicting extensions first or contact extension developer"
+      }
+    },
+    "uninstall": {
+      "inUse": {
+        "title": "Uninstallation Failed",
+        "message": "Extension is currently in use and cannot be uninstalled",
+        "suggestion": "Please close related functions and try again"
+      },
+      "permission": {
+        "title": "Uninstallation Failed",
+        "message": "No permission to uninstall extension",
+        "suggestion": "Please run the application with administrator privileges"
+      }
+    },
+    "dependency": {
+      "missing": {
+        "title": "Dependency Missing",
+        "message": "Extension depends on other extensions that are not installed",
+        "suggestion": "Please install required dependencies first"
+      },
+      "version": {
+        "title": "Dependency Version Mismatch",
+        "message": "Dependent extension version does not meet requirements",
+        "suggestion": "Please update dependent extensions to compatible versions"
+      }
+    },
+    "version": {
+      "tooOld": {
+        "title": "Extension Version Too Old",
+        "message": "Extension version is too old and may have security risks",
+        "suggestion": "Recommend updating to the latest version"
+      },
+      "tooNew": {
+        "title": "Extension Version Too New",
+        "message": "Extension version is too new and incompatible with current application",
+        "suggestion": "Please wait for application update or use a lower version extension"
+      }
+    },
+    "permission": {
+      "denied": {
+        "title": "Permission Request Denied",
+        "message": "Extension requested permissions were denied",
+        "suggestion": "Please grant necessary permissions in settings for extension to work properly"
+      },
+      "excessive": {
+        "title": "Excessive Permission Request",
+        "message": "Extension requested permissions exceed its functional requirements",
+        "suggestion": "For security reasons, please carefully review permission requests or use other extensions"
+      }
+    },
+    "api": {
+      "unavailable": {
+        "title": "API Unavailable",
+        "message": "Extension called API is not available in current version",
+        "suggestion": "Please update application or contact extension developer"
+      },
+      "deprecated": {
+        "title": "API Deprecated",
+        "message": "Extension is using deprecated API",
+        "suggestion": "Recommend contacting extension developer to update extension"
+      }
+    }
+  },
+  "security": {
+    "session": {
+      "expired": {
+        "title": "Session Expired",
+        "message": "Your login session has expired",
+        "suggestion": "Please log in again to continue"
+      },
+      "invalid": {
+        "title": "Invalid Session",
+        "message": "Session information is invalid or has been tampered with",
+        "suggestion": "Please log in again for security reasons"
+      },
+      "concurrent": {
+        "title": "Concurrent Login",
+        "message": "Account is logged in on another device",
+        "suggestion": "If this is not you, please change password immediately"
+      }
+    },
+    "permission": {
+      "insufficient": {
+        "title": "Insufficient Permissions",
+        "message": "You do not have permission to perform this operation",
+        "suggestion": "Please contact administrator to obtain necessary permissions"
+      },
+      "expired": {
+        "title": "Permissions Expired",
+        "message": "Your operation permissions have expired",
+        "suggestion": "Please contact administrator to renew permissions"
+      }
+    },
+    "certificate": {
+      "expired": {
+        "title": "Certificate Expired",
+        "message": "SSL certificate has expired",
+        "suggestion": "Please contact system administrator to update certificate"
+      },
+      "invalid": {
+        "title": "Invalid Certificate",
+        "message": "SSL certificate is invalid or untrusted",
+        "suggestion": "Please check network security settings or contact administrator"
+      },
+      "revoked": {
+        "title": "Certificate Revoked",
+        "message": "SSL certificate has been revoked",
+        "suggestion": "Please contact system administrator immediately"
+      }
+    },
+    "token": {
+      "expired": {
+        "title": "Access Token Expired",
+        "message": "Authentication token has expired",
+        "suggestion": "Please log in again to get a new access token"
+      },
+      "invalid": {
+        "title": "Invalid Token",
+        "message": "Authentication token is invalid or has been tampered with",
+        "suggestion": "Please log in again for security reasons"
+      },
+      "revoked": {
+        "title": "Token Revoked",
+        "message": "Access token has been revoked",
+        "suggestion": "Please log in again or contact administrator"
+      }
+    },
+    "authentication": {
+      "failed": {
+        "title": "Authentication Failed",
+        "message": "Username or password is incorrect",
+        "suggestion": "Please check credentials or reset password"
+      },
+      "timeout": {
+        "title": "Authentication Timeout",
+        "message": "Authentication request timeout",
+        "suggestion": "Please check network connection and try again"
+      },
+      "locked": {
+        "title": "Account Locked",
+        "message": "Account has been locked due to too many failed login attempts",
+        "suggestion": "Please wait {{duration}} minutes or contact administrator"
+      }
+    },
+    "authorization": {
+      "denied": {
+        "title": "Access Denied",
+        "message": "You do not have access to this resource",
+        "suggestion": "Please contact administrator if you need access"
+      },
+      "scopeInsufficient": {
+        "title": "Insufficient Authorization Scope",
+        "message": "Current authorization scope does not include this operation",
+        "suggestion": "Please request extended authorization scope"
+      }
+    }
+  },
+  "application": {
+    "startup": {
+      "port": {
+        "title": "Application Startup Failed",
+        "message": "Port is occupied, unable to start application",
+        "suggestion": "Please close programs occupying the port, or modify application port configuration"
+      },
+      "config": {
+        "title": "Startup Failed",
+        "message": "Configuration file error",
+        "suggestion": "Please check configuration file or restore default configuration"
+      },
+      "dependency": {
+        "title": "Startup Failed",
+        "message": "Missing required dependencies",
+        "suggestion": "Please reinstall the application or install missing dependencies"
+      }
+    },
+    "shutdown": {
+      "unsaved": {
+        "title": "Unsaved Changes",
+        "message": "There are unsaved changes",
+        "suggestion": "Please save changes before closing, or changes will be lost"
+      },
+      "timeout": {
+        "title": "Shutdown Timeout",
+        "message": "Application did not close properly within specified time",
+        "suggestion": "Please force quit or wait for operation to complete"
+      }
+    },
+    "update": {
+      "permission": {
+        "title": "Update Failed",
+        "message": "No permission to update application",
+        "suggestion": "Please run update with administrator privileges, or manually download the latest version"
+      },
+      "network": {
+        "title": "Update Failed",
+        "message": "Unable to download update package",
+        "suggestion": "Please check network connection or manually download the update"
+      },
+      "verify": {
+        "title": "Update Failed",
+        "message": "Update package verification failed",
+        "suggestion": "Please download again or use official channels"
+      }
+    },
+    "config": {
+      "parse": {
+        "title": "Configuration Parse Error",
+        "message": "Unable to parse configuration file",
+        "suggestion": "Please check configuration file format or restore default configuration"
+      },
+      "save": {
+        "title": "Configuration Save Failed",
+        "message": "Unable to save configuration changes",
+        "suggestion": "Please check file permissions or disk space"
+      },
+      "corrupt": {
+        "title": "Configuration File Corrupted",
+        "message": "Configuration file is damaged",
+        "suggestion": "Recommend restoring backup or using default configuration"
+      }
+    },
+    "migration": {
+      "version": {
+        "title": "Data Migration Failed",
+        "message": "Data version is incompatible",
+        "suggestion": "Please backup data first, then contact technical support"
+      },
+      "integrity": {
+        "title": "Migration Failed",
+        "message": "Data integrity check failed",
+        "suggestion": "Please restore from backup or contact technical support"
+      }
+    },
+    "backup": {
+      "space": {
+        "title": "Backup Failed",
+        "message": "Insufficient disk space to create backup",
+        "suggestion": "Please clean up disk space or choose another backup location"
+      },
+      "permission": {
+        "title": "Backup Failed",
+        "message": "No permission to write backup file",
+        "suggestion": "Please check directory permissions or choose another location"
+      },
+      "corrupt": {
+        "title": "Backup Corrupted",
+        "message": "Backup file is damaged and cannot be restored",
+        "suggestion": "Please use another backup or contact technical support"
+      }
+    }
+  },
+  "formatError": {
+    "suggestion": "Suggestion: {{suggestion}}"
+  }
 }

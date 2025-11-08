@@ -107,9 +107,9 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
   }
 
   return (
-    <div className={`bg-background border-l border-border flex flex-col h-full ${className}`}>
+    <div className={`bg-background border-l border-border flex flex-col h-full w-full ${className}`}>
       {/* 面板头部 */}
-      <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-muted/30 dark:bg-muted/20">
+      <div className="flex items-center justify-between py-2 px-3 border-b border-border bg-muted/30 dark:bg-muted/20 flex-shrink-0">
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-foreground truncate">
             {functionTitles[selectedFunction]}
@@ -118,7 +118,7 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
         <Button
           variant="ghost"
           size="sm"
-          className="ml-2 h-8 w-8 p-0 hover:bg-accent"
+          className="ml-2 h-8 w-8 p-0 hover:bg-accent flex-shrink-0"
           onClick={onClose}
           title="关闭面板"
         >
@@ -135,7 +135,7 @@ const RightFunctionPanel: React.FC<RightFunctionPanelProps> = ({
             </div>
           }
         >
-          <div className="h-full overflow-auto bg-background">
+          <div className="h-full w-full overflow-auto bg-background">
             {renderFunctionContent()}
           </div>
         </Suspense>

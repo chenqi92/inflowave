@@ -39,6 +39,7 @@ import {
     FileSpreadsheet,
 } from 'lucide-react';
 import logger from '@/utils/logger';
+import { t } from '@/i18n';
 
 // 自定义虚拟化表格组件
 interface CustomVirtualizedTableProps {

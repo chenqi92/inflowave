@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import SimpleChart from '@/components/common/SimpleChart';
 import { DEFAULT_PERFORMANCE_CONFIG } from '@/config/defaults';
 import { FormatUtils } from '@/utils/format';
+import { cn } from '@/lib/utils';
 import {
   Card,
   CardContent,
@@ -1833,11 +1834,11 @@ export const PerformanceBottleneckDiagnostics: React.FC<
   };
 
   return (
-    <div className={className}>
-      <Card>
-        <CardHeader>
-          <div className='flex items-center justify-between'>
-            <CardTitle className='flex items-center gap-2'>
+    <div className={cn('w-full h-full', className)}>
+      <Card className='w-full h-full flex flex-col'>
+        <CardHeader className='flex-shrink-0'>
+          <div className='flex items-center justify-between flex-wrap gap-4'>
+            <CardTitle className='flex items-center gap-2 flex-shrink-0'>
               <Monitor className='w-5 h-5' />
               {t('title')}
               <div className='flex items-center gap-2 ml-4'>
@@ -1846,7 +1847,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                     ? (isMonitoringActive ? 'bg-green-500' : 'bg-gray-400')
                     : 'bg-blue-500'
                 }`} />
-                <span className='text-sm text-muted-foreground'>
+                <span className='text-sm text-muted-foreground whitespace-nowrap'>
                   {monitoringMode === 'local'
                     ? (isMonitoringActive ? t('monitoring.localMonitoringRunning') : t('monitoring.localMonitoringStopped'))
                     : t('monitoring.remoteMonitoringMode')
@@ -1854,7 +1855,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 </span>
               </div>
             </CardTitle>
-            <div className='flex gap-2'>
+            <div className='flex gap-2 flex-shrink-0 flex-wrap'>
               <Select
                 value={monitoringMode}
                 onValueChange={async (value: 'local' | 'remote') => {
@@ -1986,30 +1987,30 @@ export const PerformanceBottleneckDiagnostics: React.FC<
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className='flex-1 overflow-hidden flex flex-col'>
           {loading ? (
             <div className='flex items-center justify-center py-8'>
               <Skeleton className='h-8 w-8 rounded-full animate-spin' />
               <Text className='ml-2'>{t('loading.text')}</Text>
             </div>
           ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList className={`grid w-full ${monitoringMode === 'local' ? 'grid-cols-4' : 'grid-cols-6'}`}>
-                <TabsTrigger value='overview'>{t('tabs.overview')}</TabsTrigger>
-                <TabsTrigger value='basic'>{t('tabs.basicMonitoring')}</TabsTrigger>
-                <TabsTrigger value='metrics'>{t('tabs.systemMetrics')}</TabsTrigger>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className='w-full h-full flex flex-col'>
+              <TabsList className='flex-shrink-0 w-full inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground'>
+                <TabsTrigger value='overview' className='flex-shrink-0'>{t('tabs.overview')}</TabsTrigger>
+                <TabsTrigger value='basic' className='flex-shrink-0'>{t('tabs.basicMonitoring')}</TabsTrigger>
+                <TabsTrigger value='metrics' className='flex-shrink-0'>{t('tabs.systemMetrics')}</TabsTrigger>
                 {monitoringMode === 'remote' && (
-                  <TabsTrigger value='slow-queries'>{t('tabs.slowQueries')}</TabsTrigger>
+                  <TabsTrigger value='slow-queries' className='flex-shrink-0'>{t('tabs.slowQueries')}</TabsTrigger>
                 )}
                 {monitoringMode === 'remote' && (
-                  <TabsTrigger value='lock-waits'>{t('tabs.lockWaits')}</TabsTrigger>
+                  <TabsTrigger value='lock-waits' className='flex-shrink-0'>{t('tabs.lockWaits')}</TabsTrigger>
                 )}
-                <TabsTrigger value='report'>{t('tabs.performanceReport')}</TabsTrigger>
+                <TabsTrigger value='report' className='flex-shrink-0'>{t('tabs.performanceReport')}</TabsTrigger>
               </TabsList>
-              <TabsContent value='overview' className='mt-6'>
+              <TabsContent value='overview' className='mt-6 flex-1 overflow-auto'>
                 {renderOverview()}
               </TabsContent>
-              <TabsContent value='basic' className='mt-6'>
+              <TabsContent value='basic' className='mt-6 flex-1 overflow-auto'>
                 <div className='mb-4 p-4 bg-muted/50 rounded-lg'>
                   <div className='flex items-center gap-2 mb-2'>
                     <div className={`w-3 h-3 rounded-full ${
@@ -2030,20 +2031,20 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 </div>
                 {renderBasicMonitoring()}
               </TabsContent>
-              <TabsContent value='metrics' className='mt-6'>
+              <TabsContent value='metrics' className='mt-6 flex-1 overflow-auto'>
                 {renderSystemMetrics()}
               </TabsContent>
               {monitoringMode === 'remote' && (
-                <TabsContent value='slow-queries' className='mt-6'>
+                <TabsContent value='slow-queries' className='mt-6 flex-1 overflow-auto'>
                   {renderSlowQueries()}
                 </TabsContent>
               )}
               {monitoringMode === 'remote' && (
-                <TabsContent value='lock-waits' className='mt-6'>
+                <TabsContent value='lock-waits' className='mt-6 flex-1 overflow-auto'>
                   {renderLockWaits()}
                 </TabsContent>
               )}
-              <TabsContent value='report' className='mt-6'>
+              <TabsContent value='report' className='mt-6 flex-1 overflow-auto'>
                 {renderPerformanceReport()}
               </TabsContent>
             </Tabs>

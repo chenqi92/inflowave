@@ -5,7 +5,8 @@
     "theme_toggle": "主题切换",
     "settings": "设置",
     "app_settings": "应用设置",
-    "time_series_database_tool": "时序数据库管理工具"
+    "time_series_database_tool": "时序数据库管理工具",
+    "no_time_limit": "不限制时间"
   },
   "workspace": {
     "title": "工作区",

@@ -5,7 +5,8 @@
     "theme_toggle": "Theme Toggle",
     "settings": "Settings",
     "app_settings": "Application Settings",
-    "time_series_database_tool": "Time Series Database Management Tool"
+    "time_series_database_tool": "Time Series Database Management Tool",
+    "no_time_limit": "No Time Limit"
   },
   "workspace": {
     "title": "Workspace",

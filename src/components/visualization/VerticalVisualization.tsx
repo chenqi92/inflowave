@@ -384,10 +384,10 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
 
   return (
     <TooltipProvider>
-      <div className={`h-full flex flex-col bg-background ${className}`}>
+      <div className={`w-full h-full flex flex-col bg-background ${className}`}>
         {/* 头部 */}
-        <div className="p-3 border-b">
-          <div className="flex items-center justify-start gap-1">
+        <div className="p-3 border-b flex-shrink-0">
+          <div className="flex items-center justify-start gap-1 flex-wrap">
             <ExpandableSearchInput
               placeholder="搜索图表..."
               value={searchText}
