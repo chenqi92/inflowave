@@ -239,16 +239,12 @@ impl ConnectionService {
         let status = self.manager.get_connection_status(connection_id).await;
         if let Some(status) = status {
             if matches!(status.status, crate::models::ConnectionState::Connected) {
-                warn!("连接 '{}' 处于已连接状态，先断开连接", connection_id);
-                // 先断开连接
-                if let Err(e) = self.manager.disconnect(connection_id).await {
-                    error!("断开连接失败: {}", e);
-                    return Err(anyhow::anyhow!("无法删除已连接的连接，请先断开连接"));
-                }
+                warn!("连接 '{}' 处于已连接状态，将在删除时自动断开", connection_id);
+                // remove_connection 会自动清理连接，无需手动断开
             }
         }
 
-        // 从连接管理器移除
+        // 从连接管理器移除（会自动断开连接）
         self.manager.remove_connection(connection_id).await
             .context("从连接管理器移除失败")?;
 
