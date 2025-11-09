@@ -318,8 +318,14 @@ impl S3ClientManager {
             .iter()
             .map(|obj| {
                 let key = obj.key().unwrap_or("").to_string();
-                let name = key.split('/').last().unwrap_or(&key).to_string();
                 let is_directory = key.ends_with('/');
+
+                // 对于以 / 结尾的 key（文件夹标记），先去掉尾部的 / 再提取名称
+                let name = if is_directory {
+                    key.trim_end_matches('/').split('/').last().unwrap_or(&key).to_string()
+                } else {
+                    key.split('/').last().unwrap_or(&key).to_string()
+                };
 
                 S3Object {
                     key: key.clone(),

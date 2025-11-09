@@ -421,7 +421,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       logger.debug(`📦 [S3Browser] 完整响应:`, result);
 
       // 过滤掉 objects 中已经是文件夹的项（避免与 commonPrefixes 重复）
-      let newObjects = result.objects.filter(obj => !obj.isDirectory);
+      // 同时过滤掉名称为空的对象（通常是文件夹标记对象）
+      let newObjects = result.objects.filter(obj => !obj.isDirectory && obj.name.trim() !== '');
 
       logger.info(`📦 [S3Browser] 过滤后文件数: ${newObjects.length}`);
 
