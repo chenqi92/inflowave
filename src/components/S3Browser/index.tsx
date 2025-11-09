@@ -185,8 +185,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       const commonPrefixes = result.commonPrefixes || [];
       logger.info(`📦 [S3Browser] 加载到 ${result.objects.length} 个对象, ${commonPrefixes.length} 个文件夹前缀`);
+      logger.info(`📦 [S3Browser] 当前路径: "${currentPath}"`);
       logger.debug(`📦 [S3Browser] 对象列表:`, result.objects.map(o => ({ key: o.key, name: o.name, isDir: o.isDirectory })));
       logger.debug(`📦 [S3Browser] 文件夹前缀:`, commonPrefixes);
+      logger.debug(`📦 [S3Browser] 完整响应:`, result);
 
       // 过滤掉 objects 中已经是文件夹的项（避免与 commonPrefixes 重复）
       let newObjects = result.objects.filter(obj => !obj.isDirectory);
@@ -195,15 +197,21 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       // 添加文件夹（从 commonPrefixes）
       commonPrefixes.forEach(prefix => {
+        logger.debug(`📦 [S3Browser] 处理前缀: "${prefix}", 当前路径: "${currentPath}"`);
         const folderName = prefix.replace(currentPath, '').replace(/\/$/, '');
+        logger.debug(`📦 [S3Browser] 提取的文件夹名: "${folderName}"`);
         if (folderName) { // 确保文件夹名称不为空
-          newObjects.push({
+          const folderObj = {
             key: prefix,
             name: folderName,
             size: 0,
             lastModified: new Date(),
             isDirectory: true,
-          });
+          };
+          logger.debug(`📦 [S3Browser] 添加文件夹对象:`, folderObj);
+          newObjects.push(folderObj);
+        } else {
+          logger.warn(`📦 [S3Browser] 跳过空文件夹名: prefix="${prefix}", currentPath="${currentPath}"`);
         }
       });
 

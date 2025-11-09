@@ -42,6 +42,7 @@ pub struct S3Bucket {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct S3ListObjectsResult {
     pub objects: Vec<S3Object>,
     pub common_prefixes: Vec<String>,
