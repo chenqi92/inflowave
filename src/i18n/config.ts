@@ -11,7 +11,7 @@ import { ResourceManager, type ResourceManagerConfig } from './resource-manager'
 import type { LanguageDetectionConfig, LoaderConfig } from './types';
 import logger from '@/utils/logger';
 
-// 支持的语言列表（包含基础语言代码以支持 fallback）
+// 支持的语言列表（包含简化的语言代码以避免警告）
 export const SUPPORTED_LANGUAGES = ['zh-CN', 'en-US', 'zh', 'en'] as const;
 
 // 默认语言
@@ -121,7 +121,22 @@ const i18nConfig = {
   
   // 后端配置（用于动态加载）
   backend: {
-    loadPath: `${loaderConfig.resourcePath}/{{lng}}/{{ns}}.json`,
+    // 使用函数来映射语言代码，将简化的代码（zh, en）映射到完整的路径（zh-CN, en-US）
+    loadPath: (lngs: readonly string[], namespaces: readonly string[]) => {
+      const lng = lngs[0];
+      const ns = namespaces[0];
+
+      // 语言代码映射
+      const languageMap: Record<string, string> = {
+        'zh': 'zh-CN',
+        'en': 'en-US',
+      };
+
+      // 使用映射后的语言代码或原始代码
+      const mappedLng = languageMap[lng] || lng;
+
+      return `${loaderConfig.resourcePath}/${mappedLng}/${ns}.json`;
+    },
     addPath: `${loaderConfig.resourcePath}/{{lng}}/{{ns}}.json`,
     allowMultiLoading: false,
     crossDomain: false,
@@ -134,9 +149,36 @@ const i18nConfig = {
   },
 };
 
+// 迁移旧的语言代码到新格式
+const migrateLanguageCode = () => {
+  try {
+    const storedLang = localStorage.getItem('i18nextLng');
+    if (storedLang) {
+      // 语言代码映射
+      const languageMap: Record<string, string> = {
+        'zh': 'zh-CN',
+        'en': 'en-US',
+      };
+
+      const normalizedLang = languageMap[storedLang] || storedLang;
+
+      // 如果语言代码被映射了，更新 localStorage
+      if (normalizedLang !== storedLang) {
+        logger.info(`🔄 [i18n] 迁移语言代码: ${storedLang} -> ${normalizedLang}`);
+        localStorage.setItem('i18nextLng', normalizedLang);
+      }
+    }
+  } catch (error) {
+    logger.warn('⚠️ [i18n] 迁移语言代码失败:', error);
+  }
+};
+
 // 初始化 i18next
 const initI18n = async () => {
   try {
+    // 迁移旧的语言代码
+    migrateLanguageCode();
+
     // 初始化资源管理器
     await resourceManager.initialize();
 

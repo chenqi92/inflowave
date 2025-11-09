@@ -1703,8 +1703,14 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     let nodeData;
     try {
       nodeData = item.getItemData();
+      if (!nodeData) {
+        logger.warn(`[renderItem] 节点数据为空，索引: ${index}`);
+        return null;
+      }
     } catch (error) {
-      logger.error(`[renderItem] 无法获取节点数据，索引: ${index}`, error);
+      // 捕获异常但不传播，避免影响虚拟列表渲染
+      // 这种情况通常发生在删除节点后，虚拟列表还未完全同步
+      logger.debug(`[renderItem] 无法获取节点数据，索引: ${index}，可能节点已被删除`);
       return null;
     }
     const isSelected = selectedItems.includes(nodeData.id);

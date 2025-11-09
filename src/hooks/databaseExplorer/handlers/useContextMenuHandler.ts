@@ -316,6 +316,12 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                             if (confirmed) {
                                 try {
                                     logger.debug(`开始删除连接: ${connection.name} (${connectionId})`);
+
+                                    // 先从前端移除该连接，避免虚拟列表渲染错误
+                                    removeConnection(connectionId);
+                                    logger.info('已从前端移除连接');
+
+                                    // 调用后端删除
                                     await safeTauriInvoke('delete_connection', { connectionId });
                                     logger.info('后端删除成功');
 
@@ -326,13 +332,21 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                                     logger.info('从后端重新加载连接列表成功');
 
                                     showMessage.success(tExplorer('connectionDeleted', { name: connection.name }));
-                                    buildCompleteTreeData(true);
+
+                                    // 重建树数据
+                                    await buildCompleteTreeData(true);
                                 } catch (deleteError) {
                                     logger.error('删除连接失败:', deleteError);
                                     showMessage.error(tExplorer('deleteConnectionFailed', {
                                         name: connection.name,
                                         error: String(deleteError)
                                     }));
+
+                                    // 如果删除失败，重新加载以恢复状态
+                                    const { useConnectionStore } = await import('@/store/connection');
+                                    const { forceRefreshConnections } = useConnectionStore.getState();
+                                    await forceRefreshConnections();
+                                    await buildCompleteTreeData(true);
                                 }
                             }
                         } else {

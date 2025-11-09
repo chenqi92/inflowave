@@ -233,7 +233,7 @@ impl ConnectionService {
 
     /// 删除连接
     pub async fn delete_connection(&self, connection_id: &str) -> Result<()> {
-        debug!("删除连接: {}", connection_id);
+        info!("🗑️  开始删除连接: {}", connection_id);
 
         // 检查连接状态
         let status = self.manager.get_connection_status(connection_id).await;
@@ -247,20 +247,29 @@ impl ConnectionService {
         // 从连接管理器移除（会自动断开连接）
         self.manager.remove_connection(connection_id).await
             .context("从连接管理器移除失败")?;
+        info!("✅ 已从连接管理器移除: {}", connection_id);
 
         // 从配置中移除
         {
             let mut configs = self.configs.write().await;
-            configs.remove(connection_id);
+            let removed = configs.remove(connection_id);
+            if removed.is_some() {
+                info!("✅ 已从内存配置中移除: {}", connection_id);
+                info!("📊 删除后内存中剩余连接数: {}", configs.len());
+                info!("📋 删除后剩余的连接ID列表: {:?}", configs.keys().collect::<Vec<_>>());
+            } else {
+                warn!("⚠️  配置中未找到要删除的连接: {}", connection_id);
+            }
         }
 
         // 保存到文件
+        info!("💾 开始保存更新后的配置到文件...");
         if let Err(e) = self.save_to_storage().await {
-            error!("保存连接配置到文件失败: {}", e);
+            error!("❌ 保存连接配置到文件失败: {}", e);
             return Err(anyhow::anyhow!("保存连接配置失败: {}", e));
         }
 
-        info!("连接 '{}' 删除成功", connection_id);
+        info!("🎉 连接 '{}' 删除成功", connection_id);
         Ok(())
     }
 
@@ -411,10 +420,14 @@ impl ConnectionService {
 
     /// 保存连接配置到文件
     async fn save_to_storage(&self) -> Result<()> {
-        debug!("保存连接配置到文件: {:?}", self.storage_path);
+        info!("📝 开始保存连接配置到文件: {:?}", self.storage_path);
 
         let configs = self.configs.read().await;
         let connections: Vec<ConnectionConfig> = configs.values().cloned().collect();
+
+        info!("💾 准备保存 {} 个连接到文件", connections.len());
+        info!("📋 将要保存的连接ID列表: {:?}",
+            connections.iter().map(|c| &c.id).collect::<Vec<_>>());
 
         let storage = ConnectionStorage {
             connections,
@@ -433,10 +446,18 @@ impl ConnectionService {
         let json_data = serde_json::to_string_pretty(&storage)
             .context("序列化连接配置失败")?;
 
-        tokio::fs::write(&self.storage_path, json_data).await
+        info!("📦 序列化数据大小: {} bytes", json_data.len());
+
+        tokio::fs::write(&self.storage_path, &json_data).await
             .context("写入连接配置文件失败")?;
 
-        info!("连接配置已保存到: {:?}", self.storage_path);
+        info!("✅ 连接配置已成功保存到: {:?}", self.storage_path);
+
+        // 验证写入
+        if let Ok(file_size) = tokio::fs::metadata(&self.storage_path).await {
+            info!("✓ 文件大小验证: {} bytes", file_size.len());
+        }
+
         Ok(())
     }
 
@@ -447,29 +468,61 @@ impl ConnectionService {
 
     /// 从文件加载连接配置（内部实现）
     async fn load_from_storage_internal(&self) -> Result<()> {
-        debug!("从文件加载连接配置: {:?}", self.storage_path);
+        info!("📂 开始从文件加载连接配置: {:?}", self.storage_path);
 
         // 检查文件是否存在
         if !self.storage_path.exists() {
-            info!("连接配置文件不存在，跳过加载");
+            info!("⚠️  连接配置文件不存在，跳过加载");
             return Ok(());
+        }
+
+        // 检查文件大小
+        if let Ok(metadata) = tokio::fs::metadata(&self.storage_path).await {
+            info!("📄 配置文件大小: {} bytes", metadata.len());
         }
 
         // 读取文件内容
         let json_data = tokio::fs::read_to_string(&self.storage_path).await
             .context("读取连接配置文件失败")?;
 
+        info!("📖 读取到 {} bytes 的配置数据", json_data.len());
+
         // 反序列化
         let storage: ConnectionStorage = serde_json::from_str(&json_data)
             .context("解析连接配置文件失败")?;
 
-        info!("从文件加载 {} 个连接配置", storage.connections.len());
+        info!("📦 从文件解析出 {} 个连接配置", storage.connections.len());
+        info!("📋 加载的连接ID列表: {:?}",
+            storage.connections.iter().map(|c| &c.id).collect::<Vec<_>>());
+
+        // 清空现有配置（重要：避免加载旧数据）
+        {
+            let mut configs = self.configs.write().await;
+            let old_count = configs.len();
+            configs.clear();
+            if old_count > 0 {
+                info!("🗑️  清空了 {} 个旧的内存配置", old_count);
+            }
+        }
 
         // 加载连接配置
+        let mut loaded_count = 0;
         for config in storage.connections {
+            let config_id = config.id.clone();
             if let Err(e) = self.load_single_connection(config).await {
-                error!("加载连接配置失败: {}", e);
+                error!("❌ 加载连接配置失败 ({}): {}", config_id, e);
+            } else {
+                loaded_count += 1;
             }
+        }
+
+        info!("✅ 成功加载 {} 个连接配置到内存", loaded_count);
+
+        // 验证加载结果
+        {
+            let configs = self.configs.read().await;
+            info!("✓ 内存中当前连接数: {}", configs.len());
+            info!("✓ 内存中的连接ID列表: {:?}", configs.keys().collect::<Vec<_>>());
         }
 
         Ok(())
