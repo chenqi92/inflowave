@@ -55,6 +55,10 @@
       "label": "复制连接名",
       "success": "已复制连接名"
     },
+    "connect": {
+      "label": "打开连接",
+      "success": "已连接"
+    },
     "disconnect": {
       "label": "断开连接",
       "confirm": "确定要断开连接吗？",

@@ -47,6 +47,10 @@ export class ConnectionMenuHandler extends BaseMenuHandler {
         await this.copyToClipboard(node.name, action);
         break;
 
+      case 'connect':
+        await this.connect(connectionId, node.name);
+        break;
+
       case 'disconnect':
         await this.disconnect(connectionId, node.name);
         break;
@@ -153,6 +157,19 @@ export class ConnectionMenuHandler extends BaseMenuHandler {
       }));
     } catch (error) {
       this.showError('connection_info', error);
+    }
+  }
+
+  /**
+   * 打开连接
+   */
+  private async connect(connectionId: string, connectionName: string): Promise<void> {
+    try {
+      await this.deps.handleConnectionToggle(connectionId);
+      this.showSuccess('connect', `已连接到 "${connectionName}"`);
+      await this.refreshTree(true);
+    } catch (error) {
+      this.showError('connect', error);
     }
   }
 

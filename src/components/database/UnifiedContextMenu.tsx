@@ -46,6 +46,7 @@ import {
     Link,
     Unlink,
     FileStack,
+    Database,
 } from 'lucide-react';
 import {TreeNodeData} from './TreeNodeRenderer';
 import {useMenuTranslation} from '@/hooks/useTranslation';
@@ -145,8 +146,9 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         const isInfluxDB2x = dbType === 'influxdb2' || metadata.version === '2.x';
 
         // 检查连接是否已打开（已连接状态）
+        // 🔧 修复：优先检查节点级别的 isConnected，然后才检查 metadata
         const connectionId = metadata.connectionId || node.id;
-        const isConnected = metadata.isConnected || false;
+        const isConnected = node.isConnected ?? metadata.isConnected ?? false;
 
         return (
             <>
@@ -195,13 +197,22 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                 </ContextMenuItem>
                 <ContextMenuSeparator/>
 
-                <ContextMenuItem
-                    onSelect={() => handleAction('disconnect')}
-                    disabled={!isConnected}
-                >
-                    <Unlink className="w-4 h-4 mr-2"/>
-                    {t('context_menu.disconnect')}
-                </ContextMenuItem>
+                {/* 根据连接状态动态显示"打开连接"或"断开连接" */}
+                {isConnected ? (
+                    <ContextMenuItem
+                        onSelect={() => handleAction('disconnect')}
+                    >
+                        <Unlink className="w-4 h-4 mr-2"/>
+                        {t('context_menu.disconnect')}
+                    </ContextMenuItem>
+                ) : (
+                    <ContextMenuItem
+                        onSelect={() => handleAction('connect')}
+                    >
+                        <Database className="w-4 h-4 mr-2"/>
+                        {t('context_menu.connect')}
+                    </ContextMenuItem>
+                )}
                 <ContextMenuItem
                     onSelect={() => handleAction('delete_connection')}
                     className="text-destructive focus:text-destructive"

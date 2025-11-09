@@ -16,6 +16,7 @@ export type ContextMenuAction =
   | 'connection_info'
   | 'connection_properties'
   | 'copy_connection_name'
+  | 'connect'
   | 'disconnect'
   | 'delete_connection'
   
@@ -208,6 +209,7 @@ export const CONTEXT_MENU_ACTIONS: Record<ContextMenuAction, ContextMenuActionMe
   connection_info: createAction('connection_info'),
   connection_properties: createAction('connection_properties'),
   copy_connection_name: createAction('copy_connection_name'),
+  connect: createAction('connect'),
   disconnect: createAction('disconnect', true),
   delete_connection: createAction('delete_connection', true),
 
