@@ -22,6 +22,7 @@
   "download": {
     "label": "下载",
     "no_selection": "请选择要下载的文件",
+    "success": "成功下载 {{count}} 个文件",
     "failed": "下载 {{name}} 失败"
   },
   "delete": {
@@ -77,7 +78,11 @@
   "folder": {
     "name_placeholder": "文件夹名称",
     "name_required": "请输入文件夹名称",
+    "name_description": "请输入文件夹名称",
+    "default_name": "新建文件夹",
+    "select_bucket_first": "请先选择存储桶",
     "created": "文件夹创建成功",
+    "created_rename_tip": "文件夹已创建",
     "create_failed": "创建文件夹失败"
   },
   "presigned_url": {
@@ -113,5 +118,13 @@
     "archive": "压缩包",
     "code": "代码文件",
     "unknown": "未知类型"
+  },
+  "preview": {
+    "title": "文件预览",
+    "loading": "正在加载预览...",
+    "failed": "预览失败",
+    "no_content": "无法预览此文件",
+    "not_supported": "不支持预览此文件类型",
+    "download_to_view": "请下载后查看"
   }
 }

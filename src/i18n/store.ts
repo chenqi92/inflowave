@@ -359,7 +359,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
     devTools.logTranslationCall(key, currentLanguage);
     
     try {
-      const translation = i18n.t(key, options as any);
+      const translation = (i18n.t as any)(key, options);
       
       // 检查是否返回了键名（表示翻译缺失）
       if (translation === key && !i18n.exists(key)) {

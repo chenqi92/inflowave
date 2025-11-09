@@ -26,7 +26,7 @@ class RefreshEventManager {
       try {
         listener();
       } catch (error) {
-        logger.error(i18n.t('logs:refresh.listener_error'), error);
+        logger.error((i18n.t as any)('logs:refresh.listener_error'), error);
       }
     });
   }

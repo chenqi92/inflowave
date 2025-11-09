@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import {
   Button,
   Input,
@@ -45,7 +46,7 @@ import {
 import { S3Service } from '@/services/s3Service';
 import { showMessage } from '@/utils/message';
 import { formatBytes, formatDate } from '@/utils/format';
-import { useTranslation as useI18nTranslation } from 'react-i18next';
+import { t } from '@/i18n/translate';
 import type {
   S3Object,
   S3Bucket,
@@ -53,6 +54,7 @@ import type {
 } from '@/types/s3';
 import './S3Browser.css';
 import logger from '@/utils/logger';
+import { safeTauriInvoke } from '@/utils/tauri';
 
 // 判断文件是否为图片
 const isImageFile = (object: S3Object): boolean => {
@@ -134,7 +136,11 @@ const FileThumbnail = React.memo<{
   const [thumbnailError, setThumbnailError] = useState(false);
 
   useEffect(() => {
-    if (!currentBucket || thumbnailError) return;
+    // 重置状态
+    setThumbnailUrl(null);
+    setThumbnailError(false);
+
+    if (!currentBucket) return;
 
     // 仅在网格视图下加载缩略图
     if (viewMode !== 'grid' || (!isImageFile(object) && !isVideoFile(object))) {
@@ -176,7 +182,8 @@ const FileThumbnail = React.memo<{
     return () => {
       isCancelled = true;
     };
-  }, [object.key, connectionId, currentBucket, viewMode, thumbnailError, object.name]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [object.key, connectionId, currentBucket, viewMode]);
 
   // 如果加载失败或不支持预览，显示图标
   if (thumbnailError || isLoadingThumbnail) {
@@ -228,7 +235,6 @@ interface FileOperation {
 }
 
 const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S3' }) => {
-  const { t } = useI18nTranslation(['s3', 'common']);
   const [buckets, setBuckets] = useState<S3Bucket[]>([]);
   const [currentBucket, setCurrentBucket] = useState<string>(''); // 当前所在的 bucket
   const [currentPath, setCurrentPath] = useState<string>(''); // 当前路径（bucket内的路径）
@@ -271,11 +277,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const startWidth = useRef<number>(0);
 
   // 对话框状态
-  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [showPresignedUrlDialog, setShowPresignedUrlDialog] = useState(false);
   const [presignedUrl, setPresignedUrl] = useState('');
-  const [newFolderName, setNewFolderName] = useState('');
+
+  // 文件预览状态
+  const [showPreviewDialog, setShowPreviewDialog] = useState(false);
+  const [previewObject, setPreviewObject] = useState<S3Object | null>(null);
+  const [previewContent, setPreviewContent] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   // 加载根级别内容（buckets 或 bucket 内的对象）
   useEffect(() => {
@@ -379,7 +389,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       logger.info(`📦 [S3Browser] 显示 ${bucketObjects.length} 个 bucket 作为文件夹`);
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载 buckets 失败:`, error);
-      showMessage.error(`${String(t('error.load_buckets_failed'))}: ${error}`);
+      showMessage.error(`${String(t('s3:error.load_buckets_failed'))}: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -488,7 +498,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       logger.info(`📦 [S3Browser] 加载完成: hasMore=${result.isTruncated}, nextToken=${result.nextContinuationToken ? '有' : '无'}`);
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载对象失败:`, error);
-      showMessage.error(`${String(t('error.load_objects_failed'))}: ${error}`);
+      showMessage.error(`${String(t('s3:error.load_objects_failed'))}: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -500,7 +510,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     setLastSelectedIndex(-1);
   };
 
-  const handleObjectClick = (object: S3Object) => {
+  const handleObjectClick = async (object: S3Object) => {
     if (object.isDirectory) {
       // 如果当前在根级别（没有选择 bucket），则进入该 bucket
       if (!currentBucket) {
@@ -515,8 +525,89 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         navigateToPath(object.key);
       }
     } else {
-      // 预览或下载文件
+      // 双击文件：预览
+      await handlePreviewFile(object);
+    }
+  };
+
+  // 判断文件是否可以预览
+  const isPreviewableFile = (object: S3Object): boolean => {
+    if (object.isDirectory) return false;
+    const extension = object.name.split('.').pop()?.toLowerCase();
+    const previewableExtensions = [
+      // 图片
+      'jpg', 'jpeg', 'png', 'gif', 'svg', 'bmp', 'webp',
+      // 视频
+      'mp4', 'webm', 'ogg',
+      // 音频
+      'mp3', 'wav', 'ogg',
+      // 文本
+      'txt', 'md', 'json', 'xml', 'csv',
+      // 代码
+      'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css',
+      // Office
+      'xlsx', 'xls', 'csv',
+      // PDF
+      'pdf',
+    ];
+    return previewableExtensions.includes(extension || '');
+  };
+
+  // 预览文件
+  const handlePreviewFile = async (object: S3Object) => {
+    if (!isPreviewableFile(object)) {
+      // 不支持预览的文件类型，直接下载
       handleDownload([object]);
+      return;
+    }
+
+    setPreviewObject(object);
+    setShowPreviewDialog(true);
+    setPreviewLoading(true);
+    setPreviewContent(null);
+
+    try {
+      const extension = object.name.split('.').pop()?.toLowerCase();
+
+      // 图片、视频、音频、PDF：使用 presigned URL
+      if (
+        isImageFile(object) ||
+        isVideoFile(object) ||
+        ['mp3', 'wav', 'ogg', 'pdf'].includes(extension || '')
+      ) {
+        const result = await S3Service.generatePresignedUrl(
+          connectionId,
+          currentBucket,
+          object.key,
+          'get',
+          300
+        );
+        setPreviewContent(result.url);
+      }
+      // 文本文件：下载并显示内容
+      else if (
+        ['txt', 'md', 'json', 'xml', 'csv', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css'].includes(
+          extension || ''
+        )
+      ) {
+        const data = await S3Service.downloadObject(connectionId, currentBucket, object.key);
+        const text = new TextDecoder('utf-8').decode(data);
+        setPreviewContent(text);
+      }
+      // Excel 文件：解析并显示
+      else if (['xlsx', 'xls'].includes(extension || '')) {
+        const data = await S3Service.downloadObject(connectionId, currentBucket, object.key);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const html = XLSX.utils.sheet_to_html(firstSheet);
+        setPreviewContent(html);
+      }
+    } catch (error) {
+      logger.error(`Preview file failed:`, error);
+      showMessage.error(`${String(t('s3:preview.failed'))}: ${error}`);
+      setShowPreviewDialog(false);
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
@@ -598,12 +689,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     setIsLoading(false);
 
     if (successCount > 0) {
-      showMessage.success(String(t('upload.success', { count: successCount })));
+      showMessage.success(String(t('s3:upload.success', { count: successCount })));
       loadObjects();
     }
 
     if (failCount > 0) {
-      showMessage.error(String(t('upload.failed', { count: failCount })));
+      showMessage.error(String(t('s3:upload.failed', { count: failCount })));
     }
 
     // 清空文件输入
@@ -618,35 +709,69 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       .filter(Boolean) as S3Object[];
 
     if (toDownload.length === 0) {
-      showMessage.warning(String(t('download.no_selection')));
+      showMessage.warning(String(t('s3:download.no_selection')));
       return;
     }
 
     setIsLoading(true);
+    let successCount = 0;
+    let failCount = 0;
 
     for (const object of toDownload) {
       if (object.isDirectory) continue;
 
       try {
-        const blob = await S3Service.downloadObjectAsBlob(
+        // 获取文件扩展名
+        const extension = object.name.split('.').pop()?.toLowerCase() || '';
+
+        // 显示原生文件保存对话框
+        const dialogResult = await safeTauriInvoke<{ path?: string; name?: string } | null>(
+          'save_file_dialog',
+          {
+            params: {
+              default_path: object.name,
+              filters: extension ? [
+                { name: `${extension.toUpperCase()} Files`, extensions: [extension] },
+                { name: 'All Files', extensions: ['*'] }
+              ] : [
+                { name: 'All Files', extensions: ['*'] }
+              ]
+            }
+          }
+        );
+
+        // 用户取消了保存
+        if (!dialogResult || !dialogResult.path) {
+          continue;
+        }
+
+        // 使用原生下载方法保存到用户选择的路径
+        await S3Service.downloadFile(
           connectionId,
           currentBucket,
           object.key,
-          object.contentType
+          dialogResult.path
         );
-        S3Service.triggerDownload(blob, object.name);
+
+        successCount++;
       } catch (error) {
-        showMessage.error(`${String(t('download.failed', { name: object.name }))}: ${error}`);
+        failCount++;
+        logger.error(`Download failed for ${object.name}:`, error);
+        showMessage.error(`${String(t('s3:download.failed', { name: object.name }))}: ${error}`);
       }
     }
 
     setIsLoading(false);
+
+    if (successCount > 0) {
+      showMessage.success(String(t('s3:download.success', { count: successCount })));
+    }
   };
 
   const handleDelete = async () => {
     const toDelete = Array.from(selectedObjects);
     if (toDelete.length === 0) {
-      showMessage.warning(String(t('delete.no_selection')));
+      showMessage.warning(String(t('s3:delete.no_selection')));
       return;
     }
 
@@ -659,33 +784,67 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         currentBucket,
         toDelete
       );
-      showMessage.success(String(t('delete.success', { count: deletedKeys.length })));
+      showMessage.success(String(t('s3:delete.success', { count: deletedKeys.length })));
       setSelectedObjects(new Set());
       loadObjects();
     } catch (error) {
-      showMessage.error(`${String(t('delete.failed'))}: ${error}`);
+      showMessage.error(`${String(t('s3:delete.failed'))}: ${error}`);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // 生成唯一的文件夹名称
+  const generateUniqueFolderName = (baseName: string): string => {
+    const existingNames = new Set(objects.map(obj => obj.name));
+
+    if (!existingNames.has(baseName)) {
+      return baseName;
+    }
+
+    let counter = 1;
+    let newName = `${baseName} (${counter})`;
+    while (existingNames.has(newName)) {
+      counter++;
+      newName = `${baseName} (${counter})`;
+    }
+
+    return newName;
+  };
+
   const handleCreateFolder = async () => {
-    if (!newFolderName.trim()) {
-      showMessage.warning(String(t('folder.name_required')));
+    if (!currentBucket) {
+      showMessage.warning(String(t('s3:folder.select_bucket_first', { defaultValue: '请先选择存储桶' })));
       return;
     }
 
-    setShowCreateFolderDialog(false);
     setIsLoading(true);
 
     try {
-      const folderPath = currentPath + newFolderName.trim();
-      await S3Service.createFolder(connectionId, currentBucket, folderPath);
-      showMessage.success(String(t('folder.created')));
-      setNewFolderName('');
-      loadObjects();
+      // 生成唯一的文件夹名称
+      const baseName = String(t('s3:folder.default_name', { defaultValue: '新建文件夹' }));
+      const uniqueName = generateUniqueFolderName(baseName);
+      const folderPath = currentPath + uniqueName;
+
+      // 确保路径以 / 结尾
+      const folderKey = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
+
+      // 创建文件夹（上传空对象）
+      await S3Service.uploadObject(
+        connectionId,
+        currentBucket,
+        folderKey,
+        new Uint8Array(0),
+        'application/x-directory'
+      );
+
+      showMessage.success(String(t('s3:folder.created_rename_tip', { defaultValue: '文件夹已创建，双击可重命名' })));
+
+      // 重新加载对象列表
+      await loadObjects();
     } catch (error) {
-      showMessage.error(`${String(t('folder.create_failed'))}: ${error}`);
+      logger.error('Create folder failed:', error);
+      showMessage.error(`${String(t('s3:folder.create_failed'))}: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -701,7 +860,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       items,
       sourceBucket: currentBucket,
     });
-    showMessage.info(String(t('copy.copied', { count: items.length })));
+    showMessage.info(String(t('s3:copy.copied', { count: items.length })));
   };
 
   const handleCut = () => {
@@ -714,12 +873,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       items,
       sourceBucket: currentBucket,
     });
-    showMessage.info(String(t('cut.cut', { count: items.length })));
+    showMessage.info(String(t('s3:cut.cut', { count: items.length })));
   };
 
   const handlePaste = async () => {
     if (!fileOperation) {
-      showMessage.warning(String(t('paste.nothing')));
+      showMessage.warning(String(t('s3:paste.nothing')));
       return;
     }
 
@@ -747,20 +906,20 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           );
         }
       } catch (error) {
-        showMessage.error(`${String(t('paste.failed', { name: item.name }))}: ${error}`);
+        showMessage.error(`${String(t('s3:paste.failed', { name: item.name }))}: ${error}`);
       }
     }
 
     setFileOperation(null);
     setIsLoading(false);
     loadObjects();
-    showMessage.success(String(t('paste.success')));
+    showMessage.success(String(t('s3:paste.success')));
   };
 
   const handleGeneratePresignedUrl = async () => {
     const selected = Array.from(selectedObjects);
     if (selected.length !== 1) {
-      showMessage.warning(String(t('presigned_url.select_one')));
+      showMessage.warning(String(t('s3:presigned_url.select_one')));
       return;
     }
 
@@ -775,7 +934,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       setPresignedUrl(result.url);
       setShowPresignedUrlDialog(true);
     } catch (error) {
-      showMessage.error(`${String(t('presigned_url.failed'))}: ${error}`);
+      showMessage.error(`${String(t('s3:presigned_url.failed'))}: ${error}`);
     }
   };
 
@@ -883,7 +1042,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         {/* 操作按钮 */}
         <Button size="sm" variant="ghost" onClick={handleUpload} disabled={!currentBucket}>
           <Upload className="w-4 h-4 mr-1" />
-          {t('upload.label')}
+          {t('s3:upload.label')}
         </Button>
 
         <Button
@@ -893,17 +1052,17 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           disabled={selectedObjects.size === 0}
         >
           <Download className="w-4 h-4 mr-1" />
-          {t('download.label')}
+          {t('s3:download.label')}
         </Button>
 
         <Button
           size="sm"
           variant="ghost"
-          onClick={() => setShowCreateFolderDialog(true)}
+          onClick={handleCreateFolder}
           disabled={!currentBucket}
         >
           <FolderPlus className="w-4 h-4 mr-1" />
-          {t('new_folder')}
+          {t('s3:new_folder')}
         </Button>
 
         <Button
@@ -913,7 +1072,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           disabled={selectedObjects.size === 0}
         >
           <Trash2 className="w-4 h-4 mr-1" />
-          {t('delete.label')}
+          {t('s3:delete.label')}
         </Button>
 
         <Button size="sm" variant="ghost" onClick={() => loadObjects()}>
@@ -930,15 +1089,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           <DropdownMenuContent>
             <DropdownMenuItem onClick={handleCopy} disabled={selectedObjects.size === 0}>
               <Copy className="w-4 h-4 mr-2" />
-              {t('copy.label')}
+              {t('s3:copy.label')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleCut} disabled={selectedObjects.size === 0}>
               <Scissors className="w-4 h-4 mr-2" />
-              {t('cut.label')}
+              {t('s3:cut.label')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handlePaste} disabled={!fileOperation}>
               <Clipboard className="w-4 h-4 mr-2" />
-              {t('paste.label')}
+              {t('s3:paste.label')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -946,7 +1105,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               disabled={selectedObjects.size !== 1}
             >
               <Link className="w-4 h-4 mr-2" />
-              {t('generate_link')}
+              {t('s3:generate_link')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -974,7 +1133,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           <Search className="absolute left-2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
             className="pl-8 w-48 h-9"
-            placeholder={t('search')}
+            placeholder={t('s3:search')}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
@@ -1004,26 +1163,28 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             <thead className="sticky top-0 bg-background z-10">
               <tr className="border-b">
                 <th className="text-left p-2 w-8">
-                  <Checkbox
-                    checked={objects.length > 0 && selectedObjects.size === objects.length}
-                    onCheckedChange={handleSelectAll}
-                  />
+                  <div className="flex items-center justify-center">
+                    <Checkbox
+                      checked={objects.length > 0 && selectedObjects.size === objects.length}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </div>
                 </th>
                 <th className="text-left p-2" style={{ width: columnWidths.name }}>
                   <div className="flex items-center">
-                    <span>{t('name')}</span>
+                    <span>{t('s3:name')}</span>
                     <div
                       className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('name', 'size', e)}
+                      onMouseDown={(e) => handleColumnResizeStart('s3:name', 'size', e)}
                     />
                   </div>
                 </th>
                 <th className="text-left p-2" style={{ width: columnWidths.size }}>
                   <div className="flex items-center">
-                    <span>{t('size')}</span>
+                    <span>{t('s3:size')}</span>
                     <div
                       className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('size', !currentBucket ? 'count' : 'modified', e)}
+                      onMouseDown={(e) => handleColumnResizeStart('s3:size', !currentBucket ? 'count' : 'modified', e)}
                     />
                   </div>
                 </th>
@@ -1031,7 +1192,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                 {!currentBucket && (
                   <th className="text-left p-2" style={{ width: columnWidths.count }}>
                     <div className="flex items-center">
-                      <span>{t('object_count', { ns: 's3', defaultValue: '对象数量' })}</span>
+                      <span>{t('s3:object_count', { defaultValue: '对象数量' })}</span>
                       <div
                         className="column-resizer"
                         onMouseDown={(e) => handleColumnResizeStart('count', 'modified', e)}
@@ -1041,10 +1202,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                 )}
                 <th className="text-left p-2" style={{ width: columnWidths.modified }}>
                   <div className="flex items-center">
-                    <span>{t('modified')}</span>
+                    <span>{t('s3:modified')}</span>
                     <div
                       className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('modified', null, e)}
+                      onMouseDown={(e) => handleColumnResizeStart('s3:modified', null, e)}
                     />
                   </div>
                 </th>
@@ -1065,19 +1226,21 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   onDoubleClick={() => handleObjectClick(object)}
                 >
                   <td className="p-2">
-                    <Checkbox
-                      checked={selectedObjects.has(object.key)}
-                      onCheckedChange={(checked) => {
-                        // Checkbox 点击时模拟一个带 Ctrl 键的事件（切换选择）
-                        const syntheticEvent = {
-                          ctrlKey: true,
-                          metaKey: false,
-                          shiftKey: false,
-                        } as React.MouseEvent;
-                        handleObjectSelect(object, index, syntheticEvent);
-                      }}
-                      onClick={e => e.stopPropagation()}
-                    />
+                    <div className="flex items-center justify-center h-full">
+                      <Checkbox
+                        checked={selectedObjects.has(object.key)}
+                        onCheckedChange={(checked) => {
+                          // Checkbox 点击时模拟一个带 Ctrl 键的事件（切换选择）
+                          const syntheticEvent = {
+                            ctrlKey: true,
+                            metaKey: false,
+                            shiftKey: false,
+                          } as React.MouseEvent;
+                          handleObjectSelect(object, index, syntheticEvent);
+                        }}
+                        onClick={e => e.stopPropagation()}
+                      />
+                    </div>
                   </td>
                   <td className="p-2" style={{ width: columnWidths.name }}>
                     <div className="flex items-center gap-2">
@@ -1149,11 +1312,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             {isLoading ? (
               <div className="flex items-center justify-center gap-2 text-muted-foreground">
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span className="text-sm">{t('loading', { ns: 'common' })}</span>
+                <span className="text-sm">{t('common:loading')}</span>
               </div>
             ) : (
               <div className="text-sm text-muted-foreground">
-                {t('scroll_to_load_more', { ns: 's3', defaultValue: '向下滚动加载更多' })}
+                {t('s3:scroll_to_load_more', { defaultValue: '向下滚动加载更多' })}
               </div>
             )}
           </div>
@@ -1163,8 +1326,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       {/* 状态栏 */}
       <div className="statusbar px-2 py-1 border-t text-sm text-muted-foreground flex justify-between">
         <span>
-          {t('items', { count: objects.length })}
-          {selectedObjects.size > 0 && ` | ${t('selected', { count: selectedObjects.size })}`}
+          {t('s3:items', { count: objects.length })}
+          {selectedObjects.size > 0 && ` | ${t('s3:selected', { count: selectedObjects.size })}`}
         </span>
         <span>{connectionName}</span>
       </div>
@@ -1178,44 +1341,21 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         onChange={handleFileSelect}
       />
 
-      {/* 创建文件夹对话框 */}
-      <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t('new_folder')}</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              placeholder={t('folder.name_placeholder')}
-              value={newFolderName}
-              onChange={e => setNewFolderName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreateFolderDialog(false)}>
-              {String(t('cancel', { ns: 'common' }))}
-            </Button>
-            <Button onClick={handleCreateFolder}>{String(t('create', { ns: 'common' }))}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* 删除确认对话框 */}
       <Dialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('delete.confirm_title')}</DialogTitle>
+            <DialogTitle>{t('s3:delete.confirm_title')}</DialogTitle>
             <DialogDescription>
-              {t('delete.confirm_message', { count: selectedObjects.size })}
+              {t('s3:delete.confirm_message', { count: selectedObjects.size })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteConfirmDialog(false)}>
-              {String(t('cancel', { ns: 'common' }))}
+              {String(t('common:cancel'))}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              {String(t('delete', { ns: 'common' }))}
+              {String(t('common:delete'))}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1225,8 +1365,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       <Dialog open={showPresignedUrlDialog} onOpenChange={setShowPresignedUrlDialog}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>{t('presigned_url.title')}</DialogTitle>
-            <DialogDescription>{t('presigned_url.description')}</DialogDescription>
+            <DialogTitle>{t('s3:presigned_url.title')}</DialogTitle>
+            <DialogDescription>{t('s3:presigned_url.description')}</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input value={presignedUrl} readOnly className="font-mono text-sm" />
@@ -1236,13 +1376,110 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               variant="outline"
               onClick={() => {
                 navigator.clipboard.writeText(presignedUrl);
-                showMessage.success(String(t('copied', { ns: 'common' })));
+                showMessage.success(String(t('common:copied')));
               }}
             >
-              {String(t('copy', { ns: 'common' }))}
+              {String(t('common:copy'))}
             </Button>
             <Button onClick={() => setShowPresignedUrlDialog(false)}>
-              {String(t('close', { ns: 'common' }))}
+              {String(t('common:close'))}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 文件预览对话框 */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-5xl max-h-[90vh]">
+          <DialogHeader>
+            <DialogTitle>{previewObject?.name || ''}</DialogTitle>
+            <DialogDescription>
+              {previewObject && (
+                <>
+                  {formatBytes(previewObject.size)}
+                  {previewObject.lastModified && (
+                    <> • {previewObject.lastModified.toLocaleString()}</>
+                  )}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="max-h-[70vh] w-full">
+            {previewLoading ? (
+              <div className="flex items-center justify-center p-8">
+                <RefreshCw className="w-8 h-8 animate-spin" />
+              </div>
+            ) : previewObject && previewContent ? (
+              <div className="w-full">
+                {/* 图片预览 */}
+                {isImageFile(previewObject) && (
+                  <img
+                    src={previewContent}
+                    alt={previewObject.name}
+                    className="w-full h-auto rounded-md"
+                  />
+                )}
+
+                {/* 视频预览 */}
+                {isVideoFile(previewObject) && (
+                  <video
+                    src={previewContent}
+                    controls
+                    className="w-full h-auto rounded-md"
+                  />
+                )}
+
+                {/* 音频预览 */}
+                {['mp3', 'wav', 'ogg'].includes(
+                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                ) && (
+                  <audio src={previewContent} controls className="w-full" />
+                )}
+
+                {/* PDF预览 */}
+                {previewObject.name.endsWith('.pdf') && (
+                  <iframe
+                    src={previewContent}
+                    className="w-full h-[600px] rounded-md"
+                    title="PDF Preview"
+                  />
+                )}
+
+                {/* 文本/代码预览 */}
+                {['txt', 'md', 'json', 'xml', 'csv', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css'].includes(
+                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                ) && (
+                  <pre className="p-4 bg-muted rounded-md overflow-auto text-sm">
+                    <code>{previewContent}</code>
+                  </pre>
+                )}
+
+                {/* Excel预览 */}
+                {['xlsx', 'xls'].includes(
+                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                ) && (
+                  <div
+                    className="overflow-auto"
+                    dangerouslySetInnerHTML={{ __html: previewContent }}
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="text-center p-8 text-muted-foreground">
+                {t('s3:preview.no_content', { defaultValue: '无法预览此文件' })}
+              </div>
+            )}
+          </ScrollArea>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => previewObject && handleDownload([previewObject])}
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {t('s3:download.label')}
+            </Button>
+            <Button onClick={() => setShowPreviewDialog(false)}>
+              {String(t('common:close'))}
             </Button>
           </DialogFooter>
         </DialogContent>

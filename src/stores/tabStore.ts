@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import type { EditorTab } from '@/components/editor/TabManager';
 import { i18n } from '@/i18n';
 import logger from '@/utils/logger';
+import { useOpenedDatabasesStore } from './openedDatabasesStore';
 
 interface TabState {
   tabs: EditorTab[];
@@ -86,7 +87,7 @@ export const useTabStore = create<TabStore>()(
 
         // 如果是 S3 浏览器 tab，关闭对应的对象存储节点
         if (tabToRemove?.type === 's3-browser' && tabToRemove.connectionId) {
-          const { closeObjectStorage } = require('./openedDatabasesStore').useOpenedDatabasesStore.getState();
+          const { closeObjectStorage } = useOpenedDatabasesStore.getState();
           closeObjectStorage(tabToRemove.connectionId);
           logger.info(`📁 [TabStore] 关闭S3 Tab时同步关闭对象存储节点: ${tabToRemove.connectionId}`);
         }
@@ -239,13 +240,13 @@ export const useTabStore = create<TabStore>()(
                 const number = parseInt(match[1], 10);
                 return {
                   ...tab,
-                  title: String(i18n.t('query:query_tab_title', { number })),
+                  title: String((i18n.t as any)('query:query_tab_title', { number })),
                 } as EditorTab;
               }
             } else if (tab.type === 'data-browser' && tab.tableName && tab.database) {
               return {
                 ...tab,
-                title: String(i18n.t('query:data_browser_tab_title', {
+                title: String((i18n.t as any)('query:data_browser_tab_title', {
                   table: tab.tableName,
                   database: tab.database,
                 })),
@@ -348,7 +349,7 @@ export const useTabOperations = () => {
 
     // 确保使用当前语言的翻译
     const title = i18n.isInitialized
-      ? String(i18n.t('query:query_tab_title', { number: tabNumber }))
+      ? String((i18n.t as any)('query:query_tab_title', { number: tabNumber }))
       : `Query-${tabNumber}`; // 如果 i18n 未初始化，使用默认英文
 
     const newTab: EditorTab = {
@@ -479,7 +480,7 @@ export const useTabOperations = () => {
     // 如果不存在，创建新tab
     // 确保使用当前语言的翻译
     const title = i18n.isInitialized
-      ? String(i18n.t('query:data_browser_tab_title', { table: tableName, database }))
+      ? String((i18n.t as any)('query:data_browser_tab_title', { table: tableName, database }))
       : `${tableName} - ${database}`; // 如果 i18n 未初始化，使用简单格式
 
     const newTab: EditorTab = {

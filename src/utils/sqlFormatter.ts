@@ -315,7 +315,7 @@ export function formatSQL(sql: string, databaseType?: DatabaseType, customOption
         return formatCommonSQL(sql, options);
     }
   } catch (error) {
-    logger.warn(i18n.t('logs:sql.format_failed'), error);
+    logger.warn((i18n.t as any)('logs:sql.format_failed'), error);
     return sql;
   }
 }

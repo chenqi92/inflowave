@@ -22,6 +22,7 @@
   "download": {
     "label": "Download",
     "no_selection": "Please select files to download",
+    "success": "Successfully downloaded {{count}} file(s)",
     "failed": "Failed to download {{name}}"
   },
   "delete": {
@@ -77,7 +78,11 @@
   "folder": {
     "name_placeholder": "Folder name",
     "name_required": "Please enter a folder name",
+    "name_description": "Please enter a folder name",
+    "default_name": "New Folder",
+    "select_bucket_first": "Please select a bucket first",
     "created": "Folder created successfully",
+    "created_rename_tip": "Folder created",
     "create_failed": "Failed to create folder"
   },
   "presigned_url": {
@@ -113,5 +118,13 @@
     "archive": "Archive",
     "code": "Code File",
     "unknown": "Unknown Type"
+  },
+  "preview": {
+    "title": "File Preview",
+    "loading": "Loading preview...",
+    "failed": "Preview failed",
+    "no_content": "Unable to preview this file",
+    "not_supported": "This file type is not supported for preview",
+    "download_to_view": "Please download to view"
   }
 }

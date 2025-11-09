@@ -15,7 +15,7 @@ import i18n from 'i18next';
  */
 export const t = (key: string, options?: Record<string, any>): string => {
   try {
-    return i18n.t(key as any, options as any) as string;
+    return String((i18n.t as any)(key, options));
   } catch (error) {
     console.warn(`Translation failed for key: ${key}`, error);
     return options?.defaultValue || key;

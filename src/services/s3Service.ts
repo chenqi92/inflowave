@@ -82,12 +82,12 @@ export class S3Service {
   ): Promise<S3ListObjectsResult> {
     return await safeTauriInvoke<S3ListObjectsResult>('s3_list_objects', {
       request: {
-        connection_id: connectionId,
+        connectionId,
         bucket,
         prefix,
         delimiter,
-        max_keys: maxKeys,
-        continuation_token: continuationToken,
+        maxKeys,
+        continuationToken,
       },
     });
   }
@@ -104,11 +104,11 @@ export class S3Service {
   ): Promise<void> {
     await safeTauriInvoke<void>('s3_upload_object', {
       request: {
-        connection_id: connectionId,
+        connectionId,
         bucket,
         key,
         data: Array.from(data),
-        content_type: contentType,
+        contentType,
       },
     });
   }
@@ -123,7 +123,7 @@ export class S3Service {
   ): Promise<Uint8Array> {
     const data = await safeTauriInvoke<number[]>('s3_download_object', {
       request: {
-        connection_id: connectionId,
+        connectionId,
         bucket,
         key,
       },
@@ -156,7 +156,7 @@ export class S3Service {
   ): Promise<string[]> {
     return await safeTauriInvoke<string[]>('s3_delete_objects', {
       request: {
-        connection_id: connectionId,
+        connectionId,
         bucket,
         keys,
       },
@@ -175,11 +175,11 @@ export class S3Service {
   ): Promise<void> {
     await safeTauriInvoke<void>('s3_copy_object', {
       request: {
-        connection_id: connectionId,
-        source_bucket: sourceBucket,
-        source_key: sourceKey,
-        dest_bucket: destBucket,
-        dest_key: destKey,
+        connectionId,
+        sourceBucket,
+        sourceKey,
+        destBucket,
+        destKey,
       },
     });
   }
@@ -196,11 +196,11 @@ export class S3Service {
   ): Promise<void> {
     await safeTauriInvoke<void>('s3_move_object', {
       request: {
-        connection_id: connectionId,
-        source_bucket: sourceBucket,
-        source_key: sourceKey,
-        dest_bucket: destBucket,
-        dest_key: destKey,
+        connectionId,
+        sourceBucket,
+        sourceKey,
+        destBucket,
+        destKey,
       },
     });
   }
@@ -247,11 +247,11 @@ export class S3Service {
   ): Promise<S3PresignedUrlResult> {
     return await safeTauriInvoke<S3PresignedUrlResult>('s3_generate_presigned_url', {
       request: {
-        connection_id: connectionId,
+        connectionId,
         bucket,
         key,
         operation,
-        expires_in_seconds: expiresInSeconds,
+        expiresInSeconds,
       },
     });
   }
@@ -267,9 +267,9 @@ export class S3Service {
   ): Promise<S3Object[]> {
     return await safeTauriInvoke<S3Object[]>('s3_search_objects', {
       request: {
-        connection_id: connectionId,
+        connectionId,
         bucket,
-        search_term: searchTerm,
+        searchTerm,
         prefix,
       },
     });

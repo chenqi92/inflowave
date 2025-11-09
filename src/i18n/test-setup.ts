@@ -20,18 +20,18 @@ export const testI18nSetup = async () => {
     console.log('Current language:', i18nInstance.language);
     
     // 测试基本翻译功能
-    const testTranslation = i18nInstance.t('common:ok');
+    const testTranslation = (i18nInstance.t as any)('common:ok');
     console.log('Test translation (common:ok):', testTranslation);
-    
+
     // 测试语言切换
     await i18nInstance.changeLanguage('en-US');
     console.log('Language changed to en-US');
-    console.log('Translation after change:', i18nInstance.t('common:ok'));
-    
+    console.log('Translation after change:', (i18nInstance.t as any)('common:ok'));
+
     // 切换回默认语言
     await i18nInstance.changeLanguage(DEFAULT_LANGUAGE);
     console.log('Language changed back to default');
-    console.log('Translation after change back:', i18nInstance.t('common:ok'));
+    console.log('Translation after change back:', (i18nInstance.t as any)('common:ok'));
     
     console.log('i18n setup test completed successfully!');
     return true;

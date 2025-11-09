@@ -10,7 +10,7 @@ export const getAppVersion = (): string => {
   try {
     return packageJson.version || '0.1.3';
   } catch (error) {
-    logger.warn(i18n.t('logs:version.get_failed'), error);
+    logger.warn((i18n.t as any)('logs:version.get_failed'), error);
     return '0.1.3'; // 默认版本，与package.json保持一致
   }
 };

@@ -603,7 +603,7 @@ class UIInteractionTester {
    * 运行所有UI测试
    */
   async runAllUITests(): Promise<UITestReport> {
-    console.log(`🎯 ${i18next.t('logs:ui_test.starting' as any)}`);
+    console.log(`🎯 ${(i18next.t as any)('logs:ui_test.starting' as any)}`);
 
     this.results = [];
     this.testCounter = 0;
@@ -612,37 +612,37 @@ class UIInteractionTester {
       // 等待页面加载完成
       await this.wait(1000);
 
-      console.log(`📱 ${i18next.t('logs:ui_test.testing_toolbar' as any)}`);
+      console.log(`📱 ${(i18next.t as any)('logs:ui_test.testing_toolbar' as any)}`);
       await this.testToolbarButtons();
 
-      console.log(`👤 ${i18next.t('logs:ui_test.testing_user_menu' as any)}`);
+      console.log(`👤 ${(i18next.t as any)('logs:ui_test.testing_user_menu' as any)}`);
       await this.testUserMenu();
 
-      console.log(`⌨️ ${i18next.t('logs:ui_test.testing_shortcuts' as any)}`);
+      console.log(`⌨️ ${(i18next.t as any)('logs:ui_test.testing_shortcuts' as any)}`);
       await this.testKeyboardShortcuts();
 
-      console.log(`📝 ${i18next.t('logs:ui_test.testing_forms' as any)}`);
+      console.log(`📝 ${(i18next.t as any)('logs:ui_test.testing_forms' as any)}`);
       await this.testFormInteractions();
 
-      console.log(`🔲 ${i18next.t('logs:ui_test.testing_modals' as any)}`);
+      console.log(`🔲 ${(i18next.t as any)('logs:ui_test.testing_modals' as any)}`);
       await this.testModalsAndDialogs();
 
-      console.log(`🗂️ ${i18next.t('logs:ui_test.testing_navigation' as any)}`);
+      console.log(`🗂️ ${(i18next.t as any)('logs:ui_test.testing_navigation' as any)}`);
       await this.testPageNavigation();
 
       const report = this.generateReport();
 
-      console.log(`\n📊 ${i18next.t('logs:ui_test.report_summary' as any)}:`);
-      console.log(i18next.t('logs:ui_test.total_tests' as any, { count: report.totalTests }));
-      console.log(i18next.t('logs:ui_test.passed_tests' as any, { count: report.passedTests }));
-      console.log(i18next.t('logs:ui_test.failed_tests' as any, { count: report.failedTests }));
+      console.log(`\n📊 ${(i18next.t as any)('logs:ui_test.report_summary' as any)}:`);
+      console.log((i18next.t as any)('logs:ui_test.total_tests' as any, { count: report.totalTests }));
+      console.log((i18next.t as any)('logs:ui_test.passed_tests' as any, { count: report.passedTests }));
+      console.log((i18next.t as any)('logs:ui_test.failed_tests' as any, { count: report.failedTests }));
       console.log(
-        i18next.t('logs:ui_test.success_rate' as any, { 
+        (i18next.t as any)('logs:ui_test.success_rate' as any, { 
           rate: ((report.passedTests / report.totalTests) * 100).toFixed(1) 
         })
       );
 
-      console.log(`\n📋 ${i18next.t('logs:ui_test.category_stats' as any)}:`);
+      console.log(`\n📋 ${(i18next.t as any)('logs:ui_test.category_stats' as any)}:`);
       Object.entries(report.categories).forEach(([category, stats]) => {
         console.log(
           `${category}: ${stats.passed}/${stats.total} (${((stats.passed / stats.total) * 100).toFixed(1)}%)`
@@ -651,7 +651,7 @@ class UIInteractionTester {
 
       return report;
     } catch (error) {
-      console.error(`❌ ${i18next.t('logs:ui_test.run_failed' as any)}:`, error);
+      console.error(`❌ ${(i18next.t as any)('logs:ui_test.run_failed' as any)}:`, error);
       throw error;
     }
   }

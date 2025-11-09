@@ -142,7 +142,7 @@ export class ThemeManager {
     try {
       localStorage.setItem(this.storageKey, JSON.stringify(this.config));
     } catch (error) {
-      logger.error(i18n.t('logs:theme.save_failed'), error);
+      logger.error((i18n.t as any)('logs:theme.save_failed'), error);
     }
   }
 
@@ -158,7 +158,7 @@ export class ThemeManager {
         this.applyConfig();
       }
     } catch (error) {
-      logger.error(i18n.t('logs:theme.load_failed'), error);
+      logger.error((i18n.t as any)('logs:theme.load_failed'), error);
     }
   }
 
@@ -188,7 +188,7 @@ export class ThemeManager {
       }
       return false;
     } catch (error) {
-      logger.error(i18n.t('logs:theme.import_failed'), error);
+      logger.error((i18n.t as any)('logs:theme.import_failed'), error);
       return false;
     }
   }
@@ -258,7 +258,7 @@ export class ThemeManager {
         JSON.stringify(customPresets)
       );
     } catch (error) {
-      logger.error(i18n.t('logs:theme.preset_save_failed'), error);
+      logger.error((i18n.t as any)('logs:theme.preset_save_failed'), error);
     }
   }
 
@@ -279,7 +279,7 @@ export class ThemeManager {
         });
       }
     } catch (error) {
-      logger.error(i18n.t('logs:theme.preset_load_failed'), error);
+      logger.error((i18n.t as any)('logs:theme.preset_load_failed'), error);
     }
   }
 
@@ -290,8 +290,8 @@ export class ThemeManager {
     const builtinPresets: ThemePreset[] = [
       {
         id: 'default-light',
-        name: i18n.t('utils:theme.presets.default_light.name'),
-        description: i18n.t('utils:theme.presets.default_light.description'),
+        name: (i18n.t as any)('utils:theme.presets.default_light.name'),
+        description: (i18n.t as any)('utils:theme.presets.default_light.description'),
         config: {
           mode: 'light',
           colorScheme: 'default',
@@ -302,8 +302,8 @@ export class ThemeManager {
       },
       {
         id: 'default-dark',
-        name: i18n.t('utils:theme.presets.default_dark.name'),
-        description: i18n.t('utils:theme.presets.default_dark.description'),
+        name: (i18n.t as any)('utils:theme.presets.default_dark.name'),
+        description: (i18n.t as any)('utils:theme.presets.default_dark.description'),
         config: {
           mode: 'dark',
           colorScheme: 'default',
@@ -314,8 +314,8 @@ export class ThemeManager {
       },
       {
         id: 'minimal',
-        name: i18n.t('utils:theme.presets.minimal.name'),
-        description: i18n.t('utils:theme.presets.minimal.description'),
+        name: (i18n.t as any)('utils:theme.presets.minimal.name'),
+        description: (i18n.t as any)('utils:theme.presets.minimal.description'),
         config: {
           mode: 'light',
           colorScheme: 'shadcn',
@@ -326,8 +326,8 @@ export class ThemeManager {
       },
       {
         id: 'modern',
-        name: i18n.t('utils:theme.presets.modern.name'),
-        description: i18n.t('utils:theme.presets.modern.description'),
+        name: (i18n.t as any)('utils:theme.presets.modern.name'),
+        description: (i18n.t as any)('utils:theme.presets.modern.description'),
         config: {
           mode: 'dark',
           colorScheme: 'zinc',
@@ -338,8 +338,8 @@ export class ThemeManager {
       },
       {
         id: 'nature',
-        name: i18n.t('utils:theme.presets.nature.name'),
-        description: i18n.t('utils:theme.presets.nature.description'),
+        name: (i18n.t as any)('utils:theme.presets.nature.name'),
+        description: (i18n.t as any)('utils:theme.presets.nature.description'),
         config: {
           mode: 'light',
           colorScheme: 'emerald',

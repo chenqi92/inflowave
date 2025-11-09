@@ -29,6 +29,7 @@
 
 .s3-browser tbody tr {
   @apply border-b transition-colors;
+  height: 40px; /* 固定行高 */
 }
 
 .s3-browser tbody tr:hover {
@@ -37,7 +38,19 @@
 
 .s3-browser td,
 .s3-browser th {
-  @apply p-2 text-left;
+  @apply p-2 text-left align-middle; /* 添加 align-middle 确保垂直居中 */
+  height: 40px; /* 固定单元格高度 */
+}
+
+/* 确保 checkbox 单元格内容垂直居中 */
+.s3-browser td:first-child,
+.s3-browser th:first-child {
+  @apply align-middle;
+}
+
+/* 确保 checkbox 容器不影响行高 */
+.s3-browser td:first-child > div {
+  @apply h-full;
 }
 
 /* 列调整器样式 */
@@ -165,6 +178,37 @@
 
 .s3-browser .file-preview-content {
   @apply max-w-4xl max-h-[90vh] bg-background rounded-lg overflow-auto;
+}
+
+/* Excel 预览表格样式 */
+.s3-browser table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.s3-browser table td,
+.s3-browser table th {
+  border: 1px solid hsl(var(--border));
+  padding: 8px;
+  text-align: left;
+}
+
+.s3-browser table th {
+  background-color: hsl(var(--muted));
+  font-weight: 600;
+}
+
+.s3-browser table tr:nth-child(even) {
+  background-color: hsl(var(--muted) / 0.3);
+}
+
+/* 代码预览样式 */
+.s3-browser pre code {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 /* 上传进度 */

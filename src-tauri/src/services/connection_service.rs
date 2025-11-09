@@ -128,6 +128,67 @@ impl ConnectionService {
             }
         }
 
+        // 加密代理密码
+        if let Some(ref mut proxy_config) = config.proxy_config {
+            if let Some(ref proxy_password) = proxy_config.password {
+                if !proxy_password.is_empty() {
+                    let encrypted_proxy_password = self.encryption.encrypt_password(proxy_password)
+                        .context("代理密码加密失败")?;
+                    proxy_config.password = Some(encrypted_proxy_password);
+                }
+            }
+        }
+
+        // 加密对象存储敏感字段
+        if let Some(ref mut driver_config) = config.driver_config {
+            if let Some(ref mut s3_config) = driver_config.s3 {
+                // 加密 Secret Key
+                if let Some(ref secret_key) = s3_config.secret_key {
+                    if !secret_key.is_empty() {
+                        let encrypted_secret_key = self.encryption.encrypt_password(secret_key)
+                            .context("S3 Secret Key 加密失败")?;
+                        s3_config.secret_key = Some(encrypted_secret_key);
+                    }
+                }
+
+                // 加密 Session Token
+                if let Some(ref session_token) = s3_config.session_token {
+                    if !session_token.is_empty() {
+                        let encrypted_session_token = self.encryption.encrypt_password(session_token)
+                            .context("S3 Session Token 加密失败")?;
+                        s3_config.session_token = Some(encrypted_session_token);
+                    }
+                }
+
+                // 加密又拍云操作员密码
+                if let Some(ref upyun_password) = s3_config.upyun_operator_password {
+                    if !upyun_password.is_empty() {
+                        let encrypted_upyun_password = self.encryption.encrypt_password(upyun_password)
+                            .context("又拍云操作员密码加密失败")?;
+                        s3_config.upyun_operator_password = Some(encrypted_upyun_password);
+                    }
+                }
+
+                // 加密 GitHub Token
+                if let Some(ref github_token) = s3_config.github_token {
+                    if !github_token.is_empty() {
+                        let encrypted_github_token = self.encryption.encrypt_password(github_token)
+                            .context("GitHub Token 加密失败")?;
+                        s3_config.github_token = Some(encrypted_github_token);
+                    }
+                }
+
+                // 加密 SM.MS Token
+                if let Some(ref smms_token) = s3_config.smms_token {
+                    if !smms_token.is_empty() {
+                        let encrypted_smms_token = self.encryption.encrypt_password(smms_token)
+                            .context("SM.MS Token 加密失败")?;
+                        s3_config.smms_token = Some(encrypted_smms_token);
+                    }
+                }
+            }
+        }
+
         // 存储配置
         {
             let mut configs = self.configs.write().await;
@@ -168,24 +229,9 @@ impl ConnectionService {
                 .clone()
         };
 
-        // 解密密码和 API Token 用于测试
-        let mut runtime_config = config.clone();
-        if let Some(encrypted_password) = &config.password {
-            debug!("🔐 解密密码用于连接测试");
-            let decrypted_password = self.encryption.decrypt_password(encrypted_password)
-                .context("密码解密失败")?;
-            runtime_config.password = Some(decrypted_password);
-        }
-
-        // 解密 InfluxDB 2.x/3.x 的 API Token
-        if let Some(ref mut v2_config) = runtime_config.v2_config {
-            if !v2_config.api_token.is_empty() {
-                debug!("🔐 解密 API Token 用于连接测试");
-                let decrypted_token = self.encryption.decrypt_password(&v2_config.api_token)
-                    .context("API Token 解密失败")?;
-                v2_config.api_token = decrypted_token;
-            }
-        }
+        // 解密所有敏感字段用于测试
+        debug!("🔐 解密敏感字段用于连接测试");
+        let runtime_config = self.decrypt_sensitive_fields(&config)?;
 
         // 使用解密后的配置测试连接
         self.manager.test_new_connection(runtime_config).await
@@ -210,53 +256,272 @@ impl ConnectionService {
     /// 获取所有连接配置
     pub async fn get_connections(&self) -> Vec<ConnectionConfig> {
         let configs = self.configs.read().await;
-        
-        // 返回时移除密码字段以确保安全
+
+        // 返回时移除所有敏感字段以确保安全
         configs.values().map(|config| {
-            let mut safe_config = config.clone();
-            safe_config.password = None;
-            safe_config
+            Self::sanitize_config(config)
         }).collect()
     }
 
     /// 获取连接配置
     pub async fn get_connection(&self, connection_id: &str) -> Option<ConnectionConfig> {
         let configs = self.configs.read().await;
-        
+
         configs.get(connection_id).map(|config| {
-            let mut safe_config = config.clone();
-            safe_config.password = None;
-            safe_config
+            Self::sanitize_config(config)
         })
+    }
+
+    /// 清除配置中的敏感字段
+    fn sanitize_config(config: &ConnectionConfig) -> ConnectionConfig {
+        let mut safe_config = config.clone();
+
+        // 清除通用密码
+        safe_config.password = None;
+
+        // 清除 InfluxDB 2.x/3.x 的 API Token
+        if let Some(ref mut v2_config) = safe_config.v2_config {
+            v2_config.api_token = String::new();
+        }
+
+        // 清除代理密码
+        if let Some(ref mut proxy_config) = safe_config.proxy_config {
+            proxy_config.password = None;
+        }
+
+        // 清除对象存储敏感字段
+        if let Some(ref mut driver_config) = safe_config.driver_config {
+            if let Some(ref mut s3_config) = driver_config.s3 {
+                s3_config.secret_key = None;
+                s3_config.session_token = None;
+                s3_config.upyun_operator_password = None;
+                s3_config.github_token = None;
+                s3_config.smms_token = None;
+            }
+        }
+
+        safe_config
+    }
+
+    /// 解密配置中的所有敏感字段
+    fn decrypt_sensitive_fields(&self, config: &ConnectionConfig) -> Result<ConnectionConfig> {
+        let mut runtime_config = config.clone();
+
+        // 解密通用密码
+        if let Some(encrypted_password) = &config.password {
+            let decrypted_password = self.encryption.decrypt_password(encrypted_password)
+                .context("密码解密失败")?;
+            runtime_config.password = Some(decrypted_password);
+        }
+
+        // 解密 InfluxDB 2.x/3.x 的 API Token
+        if let Some(ref mut v2_config) = runtime_config.v2_config {
+            if !v2_config.api_token.is_empty() {
+                let decrypted_token = self.encryption.decrypt_password(&v2_config.api_token)
+                    .context("API Token 解密失败")?;
+                v2_config.api_token = decrypted_token;
+            }
+        }
+
+        // 解密代理密码
+        if let Some(ref mut proxy_config) = runtime_config.proxy_config {
+            if let Some(ref encrypted_proxy_password) = proxy_config.password {
+                if !encrypted_proxy_password.is_empty() {
+                    let decrypted_proxy_password = self.encryption.decrypt_password(encrypted_proxy_password)
+                        .context("代理密码解密失败")?;
+                    proxy_config.password = Some(decrypted_proxy_password);
+                }
+            }
+        }
+
+        // 解密对象存储敏感字段
+        if let Some(ref mut driver_config) = runtime_config.driver_config {
+            if let Some(ref mut s3_config) = driver_config.s3 {
+                // 解密 Secret Key
+                if let Some(ref encrypted_secret_key) = s3_config.secret_key {
+                    if !encrypted_secret_key.is_empty() {
+                        let decrypted_secret_key = self.encryption.decrypt_password(encrypted_secret_key)
+                            .context("S3 Secret Key 解密失败")?;
+                        s3_config.secret_key = Some(decrypted_secret_key);
+                    }
+                }
+
+                // 解密 Session Token
+                if let Some(ref encrypted_session_token) = s3_config.session_token {
+                    if !encrypted_session_token.is_empty() {
+                        let decrypted_session_token = self.encryption.decrypt_password(encrypted_session_token)
+                            .context("S3 Session Token 解密失败")?;
+                        s3_config.session_token = Some(decrypted_session_token);
+                    }
+                }
+
+                // 解密又拍云操作员密码
+                if let Some(ref encrypted_upyun_password) = s3_config.upyun_operator_password {
+                    if !encrypted_upyun_password.is_empty() {
+                        let decrypted_upyun_password = self.encryption.decrypt_password(encrypted_upyun_password)
+                            .context("又拍云操作员密码解密失败")?;
+                        s3_config.upyun_operator_password = Some(decrypted_upyun_password);
+                    }
+                }
+
+                // 解密 GitHub Token
+                if let Some(ref encrypted_github_token) = s3_config.github_token {
+                    if !encrypted_github_token.is_empty() {
+                        let decrypted_github_token = self.encryption.decrypt_password(encrypted_github_token)
+                            .context("GitHub Token 解密失败")?;
+                        s3_config.github_token = Some(decrypted_github_token);
+                    }
+                }
+
+                // 解密 SM.MS Token
+                if let Some(ref encrypted_smms_token) = s3_config.smms_token {
+                    if !encrypted_smms_token.is_empty() {
+                        let decrypted_smms_token = self.encryption.decrypt_password(encrypted_smms_token)
+                            .context("SM.MS Token 解密失败")?;
+                        s3_config.smms_token = Some(decrypted_smms_token);
+                    }
+                }
+            }
+        }
+
+        Ok(runtime_config)
     }
 
     /// 更新连接
     pub async fn update_connection(&self, mut config: ConnectionConfig) -> Result<()> {
         debug!("更新连接: {}", config.name);
-        
+
         let connection_id = config.id.clone();
-        
-        // 检查连接是否存在
-        {
+
+        // 获取原有配置
+        let old_config = {
             let configs = self.configs.read().await;
-            if !configs.contains_key(&connection_id) {
-                return Err(anyhow::anyhow!("连接 '{}' 不存在", connection_id));
-            }
-        }
-        
-        // 加密密码
+            configs.get(&connection_id)
+                .ok_or_else(|| anyhow::anyhow!("连接 '{}' 不存在", connection_id))?
+                .clone()
+        };
+
+        // 加密密码（如果提供了新密码）
         if let Some(password) = &config.password {
-            let encrypted_password = self.encryption.encrypt_password(password)
-                .context("密码加密失败")?;
-            config.password = Some(encrypted_password);
+            if !password.is_empty() {
+                let encrypted_password = self.encryption.encrypt_password(password)
+                    .context("密码加密失败")?;
+                config.password = Some(encrypted_password);
+            } else {
+                // 如果密码为空，保留原有的加密密码
+                config.password = old_config.password.clone();
+            }
+        } else {
+            // 如果没有提供密码，保留原有的加密密码
+            config.password = old_config.password.clone();
         }
 
         // 加密 InfluxDB 2.x/3.x 的 API Token
         if let Some(ref mut v2_config) = config.v2_config {
             if !v2_config.api_token.is_empty() {
+                // 如果提供了新的 API Token，加密它
                 let encrypted_token = self.encryption.encrypt_password(&v2_config.api_token)
                     .context("API Token 加密失败")?;
                 v2_config.api_token = encrypted_token;
+            } else {
+                // 如果 API Token 为空，保留原有的加密 API Token
+                if let Some(ref old_v2_config) = old_config.v2_config {
+                    v2_config.api_token = old_v2_config.api_token.clone();
+                }
+            }
+        }
+
+        // 加密代理密码
+        if let Some(ref mut proxy_config) = config.proxy_config {
+            if let Some(ref proxy_password) = proxy_config.password {
+                if !proxy_password.is_empty() {
+                    let encrypted_proxy_password = self.encryption.encrypt_password(proxy_password)
+                        .context("代理密码加密失败")?;
+                    proxy_config.password = Some(encrypted_proxy_password);
+                } else {
+                    // 如果代理密码为空，保留原有的加密代理密码
+                    if let Some(ref old_proxy_config) = old_config.proxy_config {
+                        proxy_config.password = old_proxy_config.password.clone();
+                    }
+                }
+            } else {
+                // 如果没有提供代理密码，保留原有的加密代理密码
+                if let Some(ref old_proxy_config) = old_config.proxy_config {
+                    proxy_config.password = old_proxy_config.password.clone();
+                }
+            }
+        }
+
+        // 加密对象存储敏感字段
+        if let Some(ref mut driver_config) = config.driver_config {
+            if let Some(ref mut s3_config) = driver_config.s3 {
+                let old_s3_config = old_config.driver_config.as_ref()
+                    .and_then(|dc| dc.s3.as_ref());
+
+                // 加密 Secret Key
+                if let Some(ref secret_key) = s3_config.secret_key {
+                    if !secret_key.is_empty() {
+                        let encrypted_secret_key = self.encryption.encrypt_password(secret_key)
+                            .context("S3 Secret Key 加密失败")?;
+                        s3_config.secret_key = Some(encrypted_secret_key);
+                    } else if let Some(old_s3) = old_s3_config {
+                        s3_config.secret_key = old_s3.secret_key.clone();
+                    }
+                } else if let Some(old_s3) = old_s3_config {
+                    s3_config.secret_key = old_s3.secret_key.clone();
+                }
+
+                // 加密 Session Token
+                if let Some(ref session_token) = s3_config.session_token {
+                    if !session_token.is_empty() {
+                        let encrypted_session_token = self.encryption.encrypt_password(session_token)
+                            .context("S3 Session Token 加密失败")?;
+                        s3_config.session_token = Some(encrypted_session_token);
+                    } else if let Some(old_s3) = old_s3_config {
+                        s3_config.session_token = old_s3.session_token.clone();
+                    }
+                } else if let Some(old_s3) = old_s3_config {
+                    s3_config.session_token = old_s3.session_token.clone();
+                }
+
+                // 加密又拍云操作员密码
+                if let Some(ref upyun_password) = s3_config.upyun_operator_password {
+                    if !upyun_password.is_empty() {
+                        let encrypted_upyun_password = self.encryption.encrypt_password(upyun_password)
+                            .context("又拍云操作员密码加密失败")?;
+                        s3_config.upyun_operator_password = Some(encrypted_upyun_password);
+                    } else if let Some(old_s3) = old_s3_config {
+                        s3_config.upyun_operator_password = old_s3.upyun_operator_password.clone();
+                    }
+                } else if let Some(old_s3) = old_s3_config {
+                    s3_config.upyun_operator_password = old_s3.upyun_operator_password.clone();
+                }
+
+                // 加密 GitHub Token
+                if let Some(ref github_token) = s3_config.github_token {
+                    if !github_token.is_empty() {
+                        let encrypted_github_token = self.encryption.encrypt_password(github_token)
+                            .context("GitHub Token 加密失败")?;
+                        s3_config.github_token = Some(encrypted_github_token);
+                    } else if let Some(old_s3) = old_s3_config {
+                        s3_config.github_token = old_s3.github_token.clone();
+                    }
+                } else if let Some(old_s3) = old_s3_config {
+                    s3_config.github_token = old_s3.github_token.clone();
+                }
+
+                // 加密 SM.MS Token
+                if let Some(ref smms_token) = s3_config.smms_token {
+                    if !smms_token.is_empty() {
+                        let encrypted_smms_token = self.encryption.encrypt_password(smms_token)
+                            .context("SM.MS Token 加密失败")?;
+                        s3_config.smms_token = Some(encrypted_smms_token);
+                    } else if let Some(old_s3) = old_s3_config {
+                        s3_config.smms_token = old_s3.smms_token.clone();
+                    }
+                } else if let Some(old_s3) = old_s3_config {
+                    s3_config.smms_token = old_s3.smms_token.clone();
+                }
             }
         }
 
@@ -278,22 +543,8 @@ impl ConnectionService {
         self.manager.remove_connection(&connection_id).await
             .context("移除旧连接失败")?;
         
-        // 解密密码和 API Token 用于连接
-        let mut runtime_config = config.clone();
-        if let Some(encrypted_password) = &config.password {
-            let decrypted_password = self.encryption.decrypt_password(encrypted_password)
-                .context("密码解密失败")?;
-            runtime_config.password = Some(decrypted_password);
-        }
-
-        // 解密 InfluxDB 2.x/3.x 的 API Token
-        if let Some(ref mut v2_config) = runtime_config.v2_config {
-            if !v2_config.api_token.is_empty() {
-                let decrypted_token = self.encryption.decrypt_password(&v2_config.api_token)
-                    .context("API Token 解密失败")?;
-                v2_config.api_token = decrypted_token;
-            }
-        }
+        // 解密所有敏感字段用于连接
+        let runtime_config = self.decrypt_sensitive_fields(&config)?;
 
         // 添加新连接
         self.manager.add_connection(runtime_config).await
@@ -467,34 +718,14 @@ impl ConnectionService {
                 .clone()
         };
 
-        // 解密密码和 API Token 用于连接
-        let mut runtime_config = config.clone();
-        if let Some(encrypted_password) = &config.password {
-            match self.encryption.decrypt_password(encrypted_password) {
-                Ok(decrypted_password) => {
-                    runtime_config.password = Some(decrypted_password);
-                }
-                Err(e) => {
-                    error!("解密连接密码失败: {} - {}", connection_id, e);
-                    return Err(e.into());
-                }
+        // 解密所有敏感字段用于连接
+        let runtime_config = match self.decrypt_sensitive_fields(&config) {
+            Ok(config) => config,
+            Err(e) => {
+                error!("解密连接敏感字段失败: {} - {}", connection_id, e);
+                return Err(e);
             }
-        }
-
-        // 解密 InfluxDB 2.x/3.x 的 API Token
-        if let Some(ref mut v2_config) = runtime_config.v2_config {
-            if !v2_config.api_token.is_empty() {
-                match self.encryption.decrypt_password(&v2_config.api_token) {
-                    Ok(decrypted_token) => {
-                        v2_config.api_token = decrypted_token;
-                    }
-                    Err(e) => {
-                        error!("解密 API Token 失败: {} - {}", connection_id, e);
-                        return Err(e.into());
-                    }
-                }
-            }
-        }
+        };
 
         // 添加到连接管理器（建立连接）
         self.manager.add_connection(runtime_config.clone()).await

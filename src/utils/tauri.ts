@@ -121,6 +121,16 @@ const VOID_COMMANDS = new Set([
   'alter_retention_policy',
   'drop_measurement',
 
+  // S3 operations (返回 Result<(), String>)
+  's3_disconnect',
+  's3_create_bucket',
+  's3_delete_bucket',
+  's3_upload_object',
+  's3_delete_object',
+  's3_copy_object',
+  's3_move_object',
+  's3_create_folder',
+
   // Legacy/deprecated
   'reset_settings',
   'save_app_config',
@@ -157,7 +167,8 @@ export async function safeTauriInvoke<T = any>(
 
     return result;
   } catch (error) {
-    logger.error(i18n.t('logs:tauri.invoke_error', { command }), error);
+    const errorMsg: string = String((i18n.t as any)('logs:tauri.invoke_error', { command }));
+    logger.error(errorMsg, error);
     // 只有在 Tauri API 调用失败时才抛出错误，不再使用模拟数据
     throw error;
   }
@@ -176,7 +187,8 @@ export const safeTauriInvokeOptional = async <T = any>(
     const result = await invoke<T>(command, args);
     return result;
   } catch (error) {
-    logger.error(i18n.t('logs:tauri.invoke_error', { command }), error);
+    const errorMsg: string = String((i18n.t as any)('logs:tauri.invoke_error', { command }));
+    logger.error(errorMsg, error);
     // 对于可选调用，返回 null 而不是抛出错误
     return null;
   }
@@ -195,7 +207,8 @@ export const safeTauriInvokeVoid = async (
     // 对于 void 命令，不检查返回值
     return;
   } catch (error) {
-    logger.error(i18n.t('logs:tauri.invoke_error', { command }), error);
+    const errorMsg: string = String((i18n.t as any)('logs:tauri.invoke_error', { command }));
+    logger.error(errorMsg, error);
     throw error;
   }
 };
@@ -205,8 +218,8 @@ export const safeTauriListen = async <T = any>(
   event: string,
   handler: (event: { payload: T }) => void
 ): Promise<() => void> => {
-  logger.info(i18n.t('logs:tauri.event_listener_setup', { event }));
-  logger.info(i18n.t('logs:tauri.environment_check'), {
+  logger.info(String((i18n.t as any)('logs:tauri.event_listener_setup', { event })));
+  logger.info(String((i18n.t as any)('logs:tauri.environment_check')), {
     isTauri: isTauriEnvironment(),
     hasWindow: typeof window !== 'undefined',
     hasTauriGlobal: typeof window !== 'undefined' && window.__TAURI__ !== undefined,
@@ -218,11 +231,12 @@ export const safeTauriListen = async <T = any>(
   // 强制尝试设置事件监听器，即使环境检测失败
   try {
     const { listen } = await import('@tauri-apps/api/event');
-    logger.info(i18n.t('logs:tauri.api_import_success'));
+    logger.info(String((i18n.t as any)('logs:tauri.api_import_success')));
     const unlisten = await listen<T>(event, handler);
     return unlisten;
   } catch (error) {
-    logger.error(i18n.t('logs:tauri.invoke_error', { command: event }), error);
+    const errorMsg: string = String((i18n.t as any)('logs:tauri.invoke_error', { command: event }));
+    logger.error(errorMsg, error);
 
     // 如果不在 Tauri 环境中，返回空函数
     if (!isTauriEnvironment()) {
@@ -258,7 +272,7 @@ export const getEnvironmentInfo = () => {
 // 显示环境警告 - 桌面应用专用，无需警告
 export const showEnvironmentWarning = () => {
   // 桌面应用专用，无需显示浏览器环境警告
-  logger.info(i18n.t('logs:system.initialized'));
+  logger.info(String((i18n.t as any)('logs:system.initialized')));
 };
 
 // 初始化环境检测 - 桌面应用专用
