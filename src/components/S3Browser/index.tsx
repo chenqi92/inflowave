@@ -74,173 +74,18 @@ import logger from '@/utils/logger';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { open as openInBrowser } from '@tauri-apps/plugin-shell';
 
-// 判断文件是否为图片
-const isImageFile = (object: S3Object): boolean => {
-  if (object.isDirectory) return false;
-  const extension = object.name.split('.').pop()?.toLowerCase();
-  return ['jpg', 'jpeg', 'png', 'gif', 'svg', 'bmp', 'webp'].includes(
-    extension || ''
-  );
-};
-
-// 判断文件是否为视频
-const isVideoFile = (object: S3Object): boolean => {
-  if (object.isDirectory) return false;
-  const extension = object.name.split('.').pop()?.toLowerCase();
-  return ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(
-    extension || ''
-  );
-};
-
-// 获取文件图标
-const getFileIcon = (object: S3Object) => {
-  if (object.isDirectory) {
-    return <Folder className='w-4 h-4' />;
-  }
-
-  const extension = object.name.split('.').pop()?.toLowerCase();
-  switch (extension) {
-    case 'txt':
-    case 'md':
-    case 'doc':
-    case 'docx':
-    case 'pdf':
-      return <FileText className='w-4 h-4' />;
-    case 'jpg':
-    case 'jpeg':
-    case 'png':
-    case 'gif':
-    case 'svg':
-    case 'bmp':
-      return <FileImage className='w-4 h-4' />;
-    case 'mp4':
-    case 'avi':
-    case 'mov':
-    case 'wmv':
-    case 'flv':
-      return <FileVideo className='w-4 h-4' />;
-    case 'mp3':
-    case 'wav':
-    case 'flac':
-    case 'aac':
-      return <FileAudio className='w-4 h-4' />;
-    case 'js':
-    case 'ts':
-    case 'jsx':
-    case 'tsx':
-    case 'py':
-    case 'java':
-    case 'c':
-    case 'cpp':
-    case 'go':
-    case 'rs':
-      return <FileCode className='w-4 h-4' />;
-    case 'zip':
-    case 'rar':
-    case '7z':
-    case 'tar':
-    case 'gz':
-      return <Archive className='w-4 h-4' />;
-    default:
-      return <File className='w-4 h-4' />;
-  }
-};
-
-// 文件缩略图组件 - 移到外部并使用 React.memo 优化
-const FileThumbnail = React.memo<{
-  object: S3Object;
-  connectionId: string;
-  currentBucket: string;
-  viewMode: 'list' | 'grid' | 'tree';
-}>(({ object, connectionId, currentBucket, viewMode }) => {
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
-  const [isLoadingThumbnail, setIsLoadingThumbnail] = useState(false);
-  const [thumbnailError, setThumbnailError] = useState(false);
-
-  useEffect(() => {
-    // 重置状态
-    setThumbnailUrl(null);
-    setThumbnailError(false);
-
-    if (!currentBucket) return;
-
-    // 仅在网格视图下加载缩略图
-    if (viewMode !== 'grid' || (!isImageFile(object) && !isVideoFile(object))) {
-      return;
-    }
-
-    let isCancelled = false;
-
-    const loadThumbnail = async () => {
-      try {
-        setIsLoadingThumbnail(true);
-        // 使用 presigned URL 获取预览
-        const result = await S3Service.generatePresignedUrl(
-          connectionId,
-          currentBucket,
-          object.key,
-          'get',
-          300 // 5分钟过期
-        );
-
-        if (!isCancelled) {
-          setThumbnailUrl(result.url);
-        }
-      } catch (error) {
-        if (!isCancelled) {
-          logger.warn(
-            `Failed to generate thumbnail for ${object.name}:`,
-            error
-          );
-          setThumbnailError(true);
-        }
-      } finally {
-        if (!isCancelled) {
-          setIsLoadingThumbnail(false);
-        }
-      }
-    };
-
-    loadThumbnail();
-
-    // 清理函数：取消异步操作
-    return () => {
-      isCancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [object.key, connectionId, currentBucket, viewMode]);
-
-  // 如果加载失败或不支持预览，显示图标
-  if (thumbnailError || isLoadingThumbnail) {
-    return getFileIcon(object);
-  }
-
-  if (isImageFile(object) && thumbnailUrl) {
-    return (
-      <img
-        src={thumbnailUrl}
-        alt={object.name}
-        className='w-full h-24 object-contain rounded-md bg-muted/20'
-        onError={() => setThumbnailError(true)}
-      />
-    );
-  }
-
-  if (isVideoFile(object) && thumbnailUrl) {
-    return (
-      <video
-        src={thumbnailUrl}
-        className='w-full h-24 object-contain rounded-md bg-muted/20'
-        onError={() => setThumbnailError(true)}
-        preload='metadata'
-      />
-    );
-  }
-
-  return getFileIcon(object);
-});
-
-FileThumbnail.displayName = 'FileThumbnail';
+// 导入重构后的模块
+import {
+  isImageFile,
+  isVideoFile,
+  isPreviewableFile,
+  getFileExtension,
+  parseBreadcrumbs,
+  buildObjectPath,
+} from './utils/fileHelpers';
+import { FileThumbnail, getFileIcon } from './components/FileThumbnail';
+import { setupPreviewNavigationGuard, cleanupNavigationGuard, type NavigationGuardCleanup } from './utils/navigationGuard';
+import { generatePreviewContent, loadObjectTags, cleanupBlobUrl } from './utils/previewHandler';
 
 interface S3BrowserProps {
   connectionId: string;
@@ -687,74 +532,6 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     }
   };
 
-  // 判断文件是否可以预览
-  const isPreviewableFile = (object: S3Object): boolean => {
-    if (object.isDirectory) return false;
-    const extension = object.name.split('.').pop()?.toLowerCase();
-    const previewableExtensions = [
-      // 图片
-      'jpg',
-      'jpeg',
-      'png',
-      'gif',
-      'svg',
-      'bmp',
-      'webp',
-      'ico',
-      // 视频
-      'mp4',
-      'webm',
-      'ogg',
-      // 音频
-      'mp3',
-      'wav',
-      'ogg',
-      // 文本
-      'txt',
-      'md',
-      'json',
-      'xml',
-      'csv',
-      'log',
-      'yaml',
-      'yml',
-      'ini',
-      'conf',
-      // 代码
-      'js',
-      'jsx',
-      'ts',
-      'tsx',
-      'py',
-      'java',
-      'c',
-      'cpp',
-      'go',
-      'rs',
-      'html',
-      'css',
-      'scss',
-      'sass',
-      'less',
-      'vue',
-      'php',
-      'rb',
-      'sh',
-      'bash',
-      // Office
-      'xlsx',
-      'xls',
-      'csv',
-      'doc',
-      'docx',
-      'ppt',
-      'pptx',
-      // PDF
-      'pdf',
-    ];
-    return previewableExtensions.includes(extension || '');
-  };
-
   // 预览文件
   const handlePreviewFile = async (object: S3Object) => {
     if (!isPreviewableFile(object)) {
@@ -770,7 +547,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
     // 异步获取标签并更新预览对象
     if (currentBucket && !object.isDirectory) {
-      S3Service.getObjectTagging(connectionId, currentBucket, object.key)
+      loadObjectTags(connectionId, currentBucket, object.key)
         .then(tags => {
           setPreviewObject(prev => (prev ? { ...prev, tags } : null));
         })
@@ -780,154 +557,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     }
 
     try {
-      const extension = object.name.split('.').pop()?.toLowerCase();
+      // 使用统一的预览内容生成器
+      const result = await generatePreviewContent(
+        connectionId,
+        currentBucket,
+        object
+      );
 
-      // 图片、视频、音频、PDF：下载文件并使用 blob URL
-      if (
-        isImageFile(object) ||
-        isVideoFile(object) ||
-        ['mp3', 'wav', 'ogg', 'pdf'].includes(extension || '')
-      ) {
-        try {
-          logger.info('Downloading file for preview:', object.key);
-          const data = await S3Service.downloadObject(
-            connectionId,
-            currentBucket,
-            object.key
-          );
-
-          // 根据文件类型设置正确的 MIME 类型
-          let mimeType = 'application/octet-stream';
-
-          if (isImageFile(object)) {
-            mimeType = `image/${extension}`;
-            if (extension === 'svg') {
-              mimeType = 'image/svg+xml';
-            } else if (extension === 'jpg') {
-              mimeType = 'image/jpeg';
-            }
-          } else if (isVideoFile(object)) {
-            if (extension === 'mp4') {
-              mimeType = 'video/mp4';
-            } else if (extension === 'webm') {
-              mimeType = 'video/webm';
-            } else if (extension === 'ogg') {
-              mimeType = 'video/ogg';
-            }
-          } else if (['mp3', 'wav', 'ogg'].includes(extension || '')) {
-            if (extension === 'mp3') {
-              mimeType = 'audio/mpeg';
-            } else if (extension === 'wav') {
-              mimeType = 'audio/wav';
-            } else if (extension === 'ogg') {
-              mimeType = 'audio/ogg';
-            }
-          } else if (extension === 'pdf') {
-            mimeType = 'application/pdf';
-          }
-
-          // 创建 blob URL
-          const blob = new Blob([data.slice()], { type: mimeType });
-          const blobUrl = URL.createObjectURL(blob);
-          setPreviewContent(blobUrl);
-
-          logger.info('Created blob URL for preview:', blobUrl);
-        } catch (error) {
-          logger.error('Failed to load file as blob:', error);
-          throw error;
-        }
-      }
-      // 文本文件：下载并显示内容
-      else if (
-        [
-          'txt',
-          'md',
-          'json',
-          'xml',
-          'csv',
-          'log',
-          'yaml',
-          'yml',
-          'ini',
-          'conf',
-          'js',
-          'jsx',
-          'ts',
-          'tsx',
-          'py',
-          'java',
-          'c',
-          'cpp',
-          'go',
-          'rs',
-          'html',
-          'css',
-          'scss',
-          'sass',
-          'less',
-          'vue',
-          'php',
-          'rb',
-          'sh',
-          'bash',
-        ].includes(extension || '')
-      ) {
-        const data = await S3Service.downloadObject(
-          connectionId,
-          currentBucket,
-          object.key
-        );
-        const text = new TextDecoder('utf-8').decode(data);
-        setPreviewContent(text);
-      }
-      // Excel 文件：解析并创建 blob URL
-      else if (['xlsx', 'xls'].includes(extension || '')) {
-        const data = await S3Service.downloadObject(
-          connectionId,
-          currentBucket,
-          object.key
-        );
-        const workbook = XLSX.read(data, { type: 'array' });
-        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-        const html = XLSX.utils.sheet_to_html(firstSheet);
-
-        // 创建完整的 HTML 文档并转换为 blob URL
-        const fullHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';">
-  <style>
-    body { margin: 0; padding: 16px; font-family: system-ui, -apple-system, sans-serif; }
-    table { border-collapse: collapse; min-width: 100%; }
-    th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; white-space: nowrap; }
-    th { background-color: #f9fafb; font-weight: 600; }
-    tr:nth-child(even) { background-color: #f9fafb; }
-  </style>
-</head>
-<body>
-  ${html}
-</body>
-</html>`;
-
-        const blob = new Blob([fullHtml], { type: 'text/html' });
-        const blobUrl = URL.createObjectURL(blob);
-        setPreviewContent(blobUrl);
-        logger.info('Created blob URL for Excel preview:', blobUrl);
-      }
-      // Word/PowerPoint 文件：生成预签名 URL 用于下载提示
-      else if (['doc', 'docx', 'ppt', 'pptx'].includes(extension || '')) {
-        const result = await S3Service.generatePresignedUrl(
-          connectionId,
-          currentBucket,
-          object.key,
-          'get',
-          300
-        );
-        setPreviewContent(result.url);
-      }
+      setPreviewContent(result.content);
     } catch (error) {
       logger.error(`Preview file failed:`, error);
       showMessage.error(`${String(t('s3:preview.failed'))}: ${error}`);
@@ -937,120 +574,24 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     }
   };
 
-  // 拦截预览内容中的链接点击和导航，使用系统浏览器打开
+  // 设置预览对话框的导航保护
   useEffect(() => {
     if (!showPreviewDialog) return;
 
-    // 拦截链接点击
-    const handleLinkClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      const link = target.closest('a');
+    const iframes = [
+      { ref: pdfIframeRef, name: 'PDF' },
+      { ref: excelIframeRef, name: 'Excel' },
+    ];
 
-      if (link && link.href) {
-        if (link.href.startsWith('http://') || link.href.startsWith('https://')) {
-          e.preventDefault();
-          e.stopPropagation();
-          logger.info('Opening link in system browser:', link.href);
-          openInBrowser(link.href).catch(error => {
-            logger.error('Failed to open link in browser:', error);
-            showMessage.error(`Failed to open link: ${error}`);
-          });
-        }
-      }
-    };
-
-    // 阻止窗口导航
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-      logger.warn('Prevented navigation attempt during preview');
-    };
-
-    // 监听所有导航尝试
-    const originalWindowOpen = window.open;
-    window.open = function(...args) {
-      const url = args[0];
-      if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
-        logger.info('Intercepted window.open, opening in system browser:', url);
-        openInBrowser(url).catch(error => {
-          logger.error('Failed to open URL in browser:', error);
-        });
-        return null;
-      }
-      return originalWindowOpen.apply(this, args);
-    };
-
-    if (previewContentRef.current) {
-      const previewElement = previewContentRef.current;
-      previewElement.addEventListener('click', handleLinkClick, true);
-    }
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
+    const cleanup = setupPreviewNavigationGuard(
+      previewContentRef,
+      iframes,
+      previewContent,
+      t
+    );
 
     return () => {
-      if (previewContentRef.current) {
-        previewContentRef.current.removeEventListener('click', handleLinkClick, true);
-      }
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.open = originalWindowOpen;
-    };
-  }, [showPreviewDialog]);
-
-  // 监控 iframe 导航并阻止外部链接加载
-  useEffect(() => {
-    if (!showPreviewDialog || !previewContent || !previewContent.startsWith('blob:')) return;
-
-    const handlers: Array<{ iframe: HTMLIFrameElement; handler: (event: Event) => void }> = [];
-
-    const createLoadHandler = (iframe: HTMLIFrameElement, originalSrc: string) => {
-      return (event: Event) => {
-        try {
-          const currentSrc = iframe.src;
-
-          // 如果 src 从 blob: 变成了 http/https，说明发生了导航
-          if (originalSrc.startsWith('blob:') &&
-              (currentSrc.startsWith('http://') || currentSrc.startsWith('https://'))) {
-            logger.warn('Detected iframe navigation to:', currentSrc);
-            logger.info('Preventing navigation, opening in system browser instead');
-
-            // 在系统浏览器中打开
-            openInBrowser(currentSrc).catch(error => {
-              logger.error('Failed to open URL in browser:', error);
-              showMessage.error(t('s3:error.operation_failed'));
-            });
-
-            // 立即重置 iframe src 以停止加载
-            iframe.src = originalSrc;
-            logger.info('Reset iframe to original src');
-          }
-        } catch (error) {
-          // 跨域错误是预期的
-          logger.debug('Cross-origin access blocked (expected):', error);
-        }
-      };
-    };
-
-    // 监听 PDF iframe
-    if (pdfIframeRef.current) {
-      const iframe = pdfIframeRef.current;
-      const handler = createLoadHandler(iframe, previewContent);
-      iframe.addEventListener('load', handler);
-      handlers.push({ iframe, handler });
-    }
-
-    // 监听 Excel iframe
-    if (excelIframeRef.current) {
-      const iframe = excelIframeRef.current;
-      const handler = createLoadHandler(iframe, previewContent);
-      iframe.addEventListener('load', handler);
-      handlers.push({ iframe, handler });
-    }
-
-    // 统一清理所有事件监听器
-    return () => {
-      handlers.forEach(({ iframe, handler }) => {
-        iframe.removeEventListener('load', handler);
-      });
+      cleanupNavigationGuard(cleanup);
     };
   }, [showPreviewDialog, previewContent]);
 
@@ -1116,7 +657,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
     for (const file of files) {
       try {
-        const key = currentPath + file.name;
+        const key = buildObjectPath(currentPath, file.name);
         const data = await S3Service.fileToUint8Array(file);
         await S3Service.uploadObject(
           connectionId,
@@ -1172,7 +713,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
       try {
         // 获取文件扩展名
-        const extension = object.name.split('.').pop()?.toLowerCase() || '';
+        const extension = getFileExtension(object.name);
 
         // 显示原生文件保存对话框
         const dialogResult = await safeTauriInvoke<{
@@ -1289,7 +830,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         t('s3:folder.default_name', { defaultValue: '新建文件夹' })
       );
       const uniqueName = generateUniqueFolderName(baseName);
-      const folderPath = currentPath + uniqueName;
+      const folderPath = buildObjectPath(currentPath, uniqueName);
 
       // 确保路径以 / 结尾
       const folderKey = folderPath.endsWith('/')
@@ -1358,7 +899,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     setIsLoading(true);
 
     for (const item of fileOperation.items) {
-      let destKey = currentPath + item.name;
+      let destKey = buildObjectPath(currentPath, item.name);
 
       // 如果是文件夹，确保目标 key 以 / 结尾
       if (item.isDirectory && !destKey.endsWith('/')) {
@@ -1473,7 +1014,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     setIsLoading(true);
     try {
       const oldKey = renameObject.key;
-      let newKey = currentPath + newName;
+      let newKey = buildObjectPath(currentPath, newName);
 
       // 如果是文件夹，确保新的 key 以 / 结尾
       if (renameObject.isDirectory && !newKey.endsWith('/')) {
@@ -1740,12 +1281,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
   // 清理blob URL以避免内存泄漏
   useEffect(() => {
-    if (
-      !showPreviewDialog &&
-      previewContent &&
-      previewContent.startsWith('blob:')
-    ) {
-      URL.revokeObjectURL(previewContent);
+    if (!showPreviewDialog) {
+      cleanupBlobUrl(previewContent);
     }
   }, [showPreviewDialog, previewContent]);
 
@@ -1755,20 +1292,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     // 根目录
     items.push({ label: connectionName, path: '', isBucket: false });
 
-    // 如果在某个 bucket 内
-    if (currentBucket) {
-      items.push({ label: currentBucket, path: '', isBucket: true });
-
-      // 如果有路径
-      if (currentPath) {
-        const parts = currentPath.split('/').filter(Boolean);
-        let path = '';
-        for (const part of parts) {
-          path += `${part}/`;
-          items.push({ label: part, path, isBucket: false });
-        }
-      }
-    }
+    // 使用工具函数解析 bucket 和路径
+    const pathItems = parseBreadcrumbs(currentBucket, currentPath);
+    items.push(...pathItems);
 
     return items;
   };
@@ -2481,10 +2007,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             setShareExpireTime('');
 
             // 清理 blob URL 以避免内存泄漏
-            if (previewContent && previewContent.startsWith('blob:')) {
-              URL.revokeObjectURL(previewContent);
-              logger.info('Revoked blob URL:', previewContent);
-            }
+            cleanupBlobUrl(previewContent);
             setPreviewContent(null);
             setPreviewObject(null);
           }
@@ -2585,7 +2108,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                   )}
                   <span className='inline-flex items-center gap-1.5'>
                     <FileText className='w-3.5 h-3.5' />
-                    {previewObject.name.split('.').pop()?.toUpperCase() ||
+                    {getFileExtension(previewObject.name).toUpperCase() ||
                       'Unknown'}
                   </span>
                 </div>
@@ -2678,7 +2201,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
                 {/* 音频预览 */}
                 {['mp3', 'wav', 'ogg'].includes(
-                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                  getFileExtension(previewObject.name)
                 ) && (
                   <div className='flex flex-col items-center justify-center p-12 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-xl'>
                     <div className='w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6'>
@@ -2743,13 +2266,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                   'sh',
                   'bash',
                 ].includes(
-                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                  getFileExtension(previewObject.name)
                 ) && (
                   <div className='rounded-xl overflow-hidden border-2 shadow-lg'>
                     <div className='bg-muted/50 px-4 py-2 border-b flex items-center gap-2'>
                       <Code className='w-4 h-4 text-muted-foreground' />
                       <span className='text-sm font-medium text-muted-foreground'>
-                        {previewObject.name.split('.').pop()?.toUpperCase()}
+                        {getFileExtension(previewObject.name).toUpperCase()}
                       </span>
                     </div>
                     <div className='relative max-h-[600px] overflow-auto'>
@@ -2762,7 +2285,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
                 {/* Excel预览 */}
                 {['xlsx', 'xls'].includes(
-                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                  getFileExtension(previewObject.name)
                 ) && (
                   <div className='rounded-xl overflow-hidden border-2 shadow-lg max-h-[600px] w-full'>
                     <iframe
@@ -2778,7 +2301,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
                 {/* Word/PowerPoint 文件预览提示 */}
                 {['doc', 'docx', 'ppt', 'pptx'].includes(
-                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                  getFileExtension(previewObject.name)
                 ) && (
                   <div className='flex flex-col items-center justify-center p-12 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-xl'>
                     <div className='w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6'>
