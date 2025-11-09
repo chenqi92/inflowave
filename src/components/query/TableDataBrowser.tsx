@@ -215,7 +215,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
                 placeholder={t('start_time')}
                 showTime
                 size='small'
-                className='w-24'
+                className='w-20'
               />
               <span className='text-xs text-muted-foreground'>-</span>
               <DatePicker
@@ -226,7 +226,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
                 placeholder={t('end_time')}
                 showTime
                 size='small'
-                className='w-24'
+                className='w-20'
               />
             </div>
           );
@@ -281,7 +281,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
       </Badge>
 
       <Select value={filter.operator} onValueChange={handleOperatorChange}>
-        <SelectTrigger className='w-[70px] h-6 text-xs flex-shrink-0'>
+        <SelectTrigger className='min-w-[70px] w-auto h-6 text-xs flex-shrink-0 whitespace-nowrap'>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

@@ -174,7 +174,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
     ];
 
     const sizeClasses = {
-      small: 'h-8',
+      small: 'h-6',
       middle: 'h-10',
       large: 'h-12',
     };
