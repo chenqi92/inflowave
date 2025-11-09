@@ -100,12 +100,21 @@
     "create_failed": "Failed to create folder"
   },
   "presigned_url": {
-    "title": "Share Link",
-    "description": "This link will expire in 1 hour",
+    "title": "Share File",
+    "description": "The following URL lets you share this object without requiring a login. The URL expires automatically at the earlier of your configured time (12 hours) or the expiration of your current web session.",
     "select_one": "Please select one file",
+    "only_files": "Can only generate share links for files",
+    "active_for": "Active for",
+    "days": "Days",
+    "hours": "Hours",
+    "minutes": "Minutes",
+    "expire_at": "Link will be available until",
+    "generate": "Generate",
     "generating": "Generating link...",
+    "success": "Link generated successfully",
     "failed": "Failed to generate link",
-    "copied": "Link copied to clipboard"
+    "copied": "Link copied to clipboard",
+    "invalid_time": "Please set a valid expiration time"
   },
   "error": {
     "load_buckets_failed": "Failed to load bucket list",

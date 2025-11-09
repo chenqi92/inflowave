@@ -293,6 +293,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
   const [showPresignedUrlDialog, setShowPresignedUrlDialog] = useState(false);
   const [presignedUrl, setPresignedUrl] = useState('');
+  const [shareObject, setShareObject] = useState<S3Object | null>(null);
+  const [shareDays, setShareDays] = useState(0);
+  const [shareHours, setShareHours] = useState(12);
+  const [shareMinutes, setShareMinutes] = useState(0);
+  const [shareExpireTime, setShareExpireTime] = useState('');
 
   // 文件预览状态
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
@@ -331,6 +336,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const [showTagsDialog, setShowTagsDialog] = useState(false);
   const [tagsObject, setTagsObject] = useState<S3Object | null>(null);
   const [objectTags, setObjectTags] = useState<Array<{ key: string; value: string }>>([]);
+  const [tagsLoading, setTagsLoading] = useState(false);
 
   // 加载根级别内容（buckets 或 bucket 内的对象）
   useEffect(() => {
@@ -638,7 +644,23 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           'get',
           300
         );
-        setPreviewContent(result.url);
+        logger.info('Generated presigned URL for preview:', result.url);
+
+        // 对于图片，使用blob URL以避免CORS和URL编码问题
+        if (isImageFile(object)) {
+          try {
+            const data = await S3Service.downloadObject(connectionId, currentBucket, object.key);
+            const blob = new Blob([data], { type: `image/${extension}` });
+            const blobUrl = URL.createObjectURL(blob);
+            setPreviewContent(blobUrl);
+          } catch (error) {
+            logger.error('Failed to load image as blob:', error);
+            // 降级到直接使用presigned URL
+            setPreviewContent(result.url);
+          }
+        } else {
+          setPreviewContent(result.url);
+        }
       }
       // 文本文件：下载并显示内容
       else if (
@@ -977,24 +999,65 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     showMessage.success(String(t('s3:paste.success')));
   };
 
-  const handleGeneratePresignedUrl = async () => {
-    const selected = Array.from(selectedObjects);
-    if (selected.length !== 1) {
+  const handleGeneratePresignedUrl = async (object?: S3Object) => {
+    let fullObject: S3Object | null = null;
+
+    if (object) {
+      // 如果直接传入了对象（如右键菜单），直接使用
+      fullObject = object;
+    } else if (selectedObjects.size === 1) {
+      // 如果是通过选择触发的，从选中的对象中查找
+      const selectedKey = Array.from(selectedObjects)[0];
+      fullObject = objects.find(obj => obj.key === selectedKey) || null;
+    }
+
+    if (!fullObject) {
       showMessage.warning(String(t('s3:presigned_url.select_one')));
       return;
     }
 
+    if (fullObject.isDirectory) {
+      showMessage.warning(String(t('s3:presigned_url.only_files')));
+      return;
+    }
+
+    // 设置对象并显示对话框，让用户设置过期时间
+    setShareObject(fullObject);
+    setPresignedUrl(''); // 清空之前的URL
+    setShowPresignedUrlDialog(true);
+  };
+
+  // 生成分享链接
+  const generateShareUrl = async () => {
+    if (!shareObject || !currentBucket) return;
+
     try {
+      // 计算过期秒数
+      const expiresInSeconds = shareDays * 86400 + shareHours * 3600 + shareMinutes * 60;
+
+      if (expiresInSeconds <= 0) {
+        showMessage.warning(String(t('s3:presigned_url.invalid_time')));
+        return;
+      }
+
       const result = await S3Service.generatePresignedUrl(
         connectionId,
         currentBucket,
-        selected[0],
+        shareObject.key,
         'get',
-        3600 // 1小时
+        expiresInSeconds
       );
+
       setPresignedUrl(result.url);
-      setShowPresignedUrlDialog(true);
+
+      // 计算过期时间
+      const expireDate = new Date();
+      expireDate.setSeconds(expireDate.getSeconds() + expiresInSeconds);
+      setShareExpireTime(formatDate(expireDate));
+
+      showMessage.success(String(t('s3:presigned_url.success')));
     } catch (error) {
+      logger.error('生成预签名URL失败:', error);
       showMessage.error(`${String(t('s3:presigned_url.failed'))}: ${error}`);
     }
   };
@@ -1206,6 +1269,23 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     setSelectionEnd(null);
   };
 
+  // 获取对象标签
+  const fetchObjectTags = async (object: S3Object) => {
+    if (!currentBucket || object.isDirectory) return;
+
+    setTagsLoading(true);
+    try {
+      const tags = await S3Service.getObjectTagging(connectionId, currentBucket, object.key);
+      const tagsArray = Object.entries(tags).map(([key, value]) => ({ key, value }));
+      setObjectTags(tagsArray);
+    } catch (error) {
+      logger.error('获取标签失败:', error);
+      setObjectTags([]);
+    } finally {
+      setTagsLoading(false);
+    }
+  };
+
   // 右键菜单处理
   const handleContextMenu = (e: React.MouseEvent, object: S3Object) => {
     e.preventDefault();
@@ -1243,41 +1323,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     }
   }, [contextMenu.visible]);
 
-  // 加载文件预览内容
+  // 清理blob URL以避免内存泄漏
   useEffect(() => {
-    const loadPreview = async () => {
-      if (!showPreviewDialog || !previewObject || !currentBucket) return;
-
-      setPreviewLoading(true);
-      setPreviewContent(null);
-
-      try {
-        // 只预览文本文件和小文件（<1MB）
-        if (previewObject.size > 1024 * 1024) {
-          setPreviewContent(null);
-          return;
-        }
-
-        // 下载文件内容
-        const data = await S3Service.downloadObject(
-          connectionId,
-          currentBucket,
-          previewObject.key
-        );
-
-        // 尝试将内容转换为文本
-        const text = new TextDecoder('utf-8').decode(data);
-        setPreviewContent(text);
-      } catch (error) {
-        logger.error('文件预览失败:', error);
-        setPreviewContent(null);
-      } finally {
-        setPreviewLoading(false);
-      }
-    };
-
-    loadPreview();
-  }, [showPreviewDialog, previewObject]);
+    if (!showPreviewDialog && previewContent && previewContent.startsWith('blob:')) {
+      URL.revokeObjectURL(previewContent);
+    }
+  }, [showPreviewDialog, previewContent]);
 
   const getBreadcrumbs = (): BreadcrumbItem[] => {
     const items: BreadcrumbItem[] = [];
@@ -1443,7 +1494,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={handleGeneratePresignedUrl}
+              onClick={() => handleGeneratePresignedUrl()}
               disabled={selectedObjects.size !== 1}
             >
               <Link className="w-4 h-4 mr-2" />
@@ -1501,7 +1552,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       {/* 文件列表 */}
       <div
         ref={containerRef}
-        className="flex-1 relative"
+        className="flex-1 relative overflow-hidden"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -1809,28 +1860,127 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       </Dialog>
 
       {/* 预签名URL对话框 */}
-      <Dialog open={showPresignedUrlDialog} onOpenChange={setShowPresignedUrlDialog}>
+      <Dialog
+        open={showPresignedUrlDialog}
+        onOpenChange={(open) => {
+          setShowPresignedUrlDialog(open);
+          if (!open) {
+            // 关闭时重置状态
+            setPresignedUrl('');
+            setShareObject(null);
+            setShareDays(0);
+            setShareHours(12);
+            setShareMinutes(0);
+            setShareExpireTime('');
+          }
+        }}
+      >
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>{t('s3:presigned_url.title')}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Link className="w-5 h-5" />
+              {t('s3:presigned_url.title')}
+            </DialogTitle>
             <DialogDescription>{t('s3:presigned_url.description')}</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Input value={presignedUrl} readOnly className="font-mono text-sm" />
+
+          <div className="space-y-4 py-4">
+            {/* 过期时间设置 */}
+            <div className="space-y-2">
+              <Label>{t('s3:presigned_url.active_for')}</Label>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={shareDays}
+                    onChange={(e) => setShareDays(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="w-20 text-center"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {t('s3:presigned_url.days')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="23"
+                    value={shareHours}
+                    onChange={(e) => setShareHours(Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
+                    className="w-20 text-center"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {t('s3:presigned_url.hours')}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max="59"
+                    value={shareMinutes}
+                    onChange={(e) => setShareMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                    className="w-20 text-center"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {t('s3:presigned_url.minutes')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* 显示过期时间 */}
+            {shareExpireTime && (
+              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                <Link className="w-4 h-4" />
+                {t('s3:presigned_url.expire_at')}: {shareExpireTime}
+              </div>
+            )}
+
+            {/* 生成的URL */}
+            {presignedUrl && (
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    value={presignedUrl}
+                    readOnly
+                    className="font-mono text-xs pr-10"
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="absolute right-1 top-1 h-7 w-7 p-0"
+                    onClick={() => {
+                      navigator.clipboard.writeText(presignedUrl);
+                      showMessage.success(String(t('common:copied')));
+                    }}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
+
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                navigator.clipboard.writeText(presignedUrl);
-                showMessage.success(String(t('common:copied')));
-              }}
-            >
-              {String(t('common:copy'))}
-            </Button>
-            <Button onClick={() => setShowPresignedUrlDialog(false)}>
+            <Button variant="outline" onClick={() => setShowPresignedUrlDialog(false)}>
               {String(t('common:close'))}
             </Button>
+            {!presignedUrl ? (
+              <Button onClick={generateShareUrl}>
+                {String(t('s3:presigned_url.generate'))}
+              </Button>
+            ) : (
+              <Button
+                onClick={() => {
+                  navigator.clipboard.writeText(presignedUrl);
+                  showMessage.success(String(t('common:copied')));
+                }}
+              >
+                {String(t('common:copy'))}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -2039,55 +2189,68 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            {objectTags.length > 0 ? (
-              objectTags.map((tag, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    placeholder={t('s3:tags_mgmt.key_placeholder', { defaultValue: '输入标签键' })}
-                    value={tag.key}
-                    onChange={(e) => {
-                      const newTags = [...objectTags];
-                      newTags[index].key = e.target.value;
-                      setObjectTags(newTags);
-                    }}
-                    className="flex-1"
-                  />
-                  <Input
-                    placeholder={t('s3:tags_mgmt.value_placeholder', { defaultValue: '输入标签值' })}
-                    value={tag.value}
-                    onChange={(e) => {
-                      const newTags = [...objectTags];
-                      newTags[index].value = e.target.value;
-                      setObjectTags(newTags);
-                    }}
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const newTags = objectTags.filter((_, i) => i !== index);
-                      setObjectTags(newTags);
-                    }}
-                  >
-                    {t('s3:tags_mgmt.remove', { defaultValue: '移除' })}
-                  </Button>
+            {tagsLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">
+                    {t('s3:tags_mgmt.loading', { defaultValue: '正在加载标签...' })}
+                  </p>
                 </div>
-              ))
-            ) : (
-              <div className="text-center text-muted-foreground py-8">
-                {t('s3:tags_mgmt.no_tags', { defaultValue: '无标签' })}
               </div>
+            ) : (
+              <>
+                {objectTags.length > 0 ? (
+                  objectTags.map((tag, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <Input
+                        placeholder={t('s3:tags_mgmt.key_placeholder', { defaultValue: '输入标签键' })}
+                        value={tag.key}
+                        onChange={(e) => {
+                          const newTags = [...objectTags];
+                          newTags[index].key = e.target.value;
+                          setObjectTags(newTags);
+                        }}
+                        className="flex-1"
+                      />
+                      <Input
+                        placeholder={t('s3:tags_mgmt.value_placeholder', { defaultValue: '输入标签值' })}
+                        value={tag.value}
+                        onChange={(e) => {
+                          const newTags = [...objectTags];
+                          newTags[index].value = e.target.value;
+                          setObjectTags(newTags);
+                        }}
+                        className="flex-1"
+                      />
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newTags = objectTags.filter((_, i) => i !== index);
+                          setObjectTags(newTags);
+                        }}
+                      >
+                        {t('s3:tags_mgmt.remove', { defaultValue: '移除' })}
+                      </Button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-muted-foreground py-8">
+                    {t('s3:tags_mgmt.no_tags', { defaultValue: '无标签' })}
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setObjectTags([...objectTags, { key: '', value: '' }]);
+                  }}
+                  className="w-full"
+                >
+                  + {t('s3:tags_mgmt.add', { defaultValue: '添加标签' })}
+                </Button>
+              </>
             )}
-            <Button
-              variant="outline"
-              onClick={() => {
-                setObjectTags([...objectTags, { key: '', value: '' }]);
-              }}
-              className="w-full"
-            >
-              + {t('s3:tags_mgmt.add', { defaultValue: '添加标签' })}
-            </Button>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowTagsDialog(false)}>
@@ -2111,54 +2274,24 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   tagsObject.key,
                   tagsMap
                 );
+
+                // 更新本地对象状态以显示标签
+                setObjects(prevObjects =>
+                  prevObjects.map(obj =>
+                    obj.key === tagsObject.key
+                      ? { ...obj, tags: tagsMap }
+                      : obj
+                  )
+                );
+
                 showMessage.success(String(t('s3:tags_mgmt.success')));
                 setShowTagsDialog(false);
-                await loadObjects(); // 重新加载以更新对象信息
               } catch (error) {
                 logger.error('设置标签失败:', error);
                 showMessage.error(String(t('s3:tags_mgmt.failed')));
               }
             }}>
               {String(t('common:confirm'))}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 文件预览对话框 */}
-      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh]">
-          <DialogHeader>
-            <DialogTitle>{t('s3:preview.title', { defaultValue: '文件预览' })}</DialogTitle>
-            <DialogDescription>
-              {previewObject?.name}
-            </DialogDescription>
-          </DialogHeader>
-          <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
-            {previewLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p className="text-sm text-muted-foreground">
-                    {t('s3:preview.loading', { defaultValue: '正在加载预览...' })}
-                  </p>
-                </div>
-              </div>
-            ) : previewContent ? (
-              <pre className="text-sm whitespace-pre-wrap break-words">
-                {previewContent}
-              </pre>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-sm text-muted-foreground">
-                  {t('s3:preview.not_supported', { defaultValue: '不支持预览此文件类型' })}
-                </p>
-              </div>
-            )}
-          </ScrollArea>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>
-              {String(t('common:close'))}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -2223,7 +2356,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               <div
                 className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
                 onClick={() => {
-                  handleGeneratePresignedUrl();
+                  handleGeneratePresignedUrl(contextMenu.object || undefined);
                   closeContextMenu();
                 }}
               >
@@ -2234,15 +2367,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               {/* 设置标签 */}
               <div
                 className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
-                onClick={() => {
+                onClick={async () => {
                   setTagsObject(contextMenu.object);
-                  setObjectTags(
-                    contextMenu.object!.tags
-                      ? Object.entries(contextMenu.object!.tags).map(([key, value]) => ({ key, value }))
-                      : []
-                  );
                   setShowTagsDialog(true);
                   closeContextMenu();
+                  // 异步获取标签
+                  if (contextMenu.object) {
+                    await fetchObjectTags(contextMenu.object);
+                  }
                 }}
               >
                 <Tag className="w-4 h-4" />

@@ -101,11 +101,20 @@
   },
   "presigned_url": {
     "title": "分享链接",
-    "description": "此链接将在1小时后过期",
+    "description": "生成一个临时的分享链接，链接将在指定时间后自动失效",
     "select_one": "请选择一个文件",
+    "only_files": "只能为文件生成分享链接",
+    "active_for": "有效期",
+    "days": "天",
+    "hours": "小时",
+    "minutes": "分钟",
+    "expire_at": "链接将失效于",
+    "generate": "生成链接",
     "generating": "正在生成链接...",
+    "success": "链接生成成功",
     "failed": "生成链接失败",
-    "copied": "链接已复制到剪贴板"
+    "copied": "链接已复制到剪贴板",
+    "invalid_time": "请设置有效的过期时间"
   },
   "error": {
     "load_buckets_failed": "加载存储桶列表失败",

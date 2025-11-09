@@ -214,9 +214,9 @@ export class S3Service {
     folderPath: string
   ): Promise<void> {
     await safeTauriInvoke<void>('s3_create_folder', {
-      connection_id: connectionId,
+      connectionId,
       bucket,
-      folder_path: folderPath,
+      folderPath,
     });
   }
 
@@ -229,7 +229,7 @@ export class S3Service {
     key: string
   ): Promise<Record<string, string>> {
     return await safeTauriInvoke<Record<string, string>>('s3_get_object_metadata', {
-      connection_id: connectionId,
+      connectionId,
       bucket,
       key,
     });
@@ -286,11 +286,11 @@ export class S3Service {
     contentType?: string
   ): Promise<void> {
     await safeTauriInvoke<void>('s3_upload_file', {
-      connection_id: connectionId,
+      connectionId,
       bucket,
       key,
-      file_path: filePath,
-      content_type: contentType,
+      filePath,
+      contentType,
     });
   }
 
@@ -304,10 +304,10 @@ export class S3Service {
     savePath: string
   ): Promise<void> {
     await safeTauriInvoke<void>('s3_download_file', {
-      connection_id: connectionId,
+      connectionId,
       bucket,
       key,
-      save_path: savePath,
+      savePath,
     });
   }
 
@@ -323,7 +323,7 @@ export class S3Service {
     bucket_name: string;
   }> {
     return await safeTauriInvoke('s3_get_bucket_stats', {
-      connection_id: connectionId,
+      connectionId,
       bucket,
     });
   }
