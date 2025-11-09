@@ -17,7 +17,9 @@
   "upload": {
     "label": "上传",
     "success": "成功上传 {{count}} 个文件",
-    "failed": "{{count}} 个文件上传失败"
+    "failed": "{{count}} 个文件上传失败",
+    "drop_here": "释放文件以上传",
+    "no_bucket": "请先选择存储桶"
   },
   "download": {
     "label": "下载",
@@ -46,6 +48,17 @@
     "nothing": "剪贴板为空",
     "success": "粘贴成功",
     "failed": "粘贴 {{name}} 失败"
+  },
+  "rename": {
+    "label": "重命名",
+    "title": "重命名",
+    "description": "请输入新的名称",
+    "placeholder": "输入新名称",
+    "success": "重命名成功",
+    "failed": "重命名失败"
+  },
+  "create_folder": {
+    "label": "新建文件夹"
   },
   "connection": {
     "type_s3": "Amazon S3",

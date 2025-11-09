@@ -16,6 +16,11 @@ import {
   DialogTitle,
   Checkbox,
   ScrollArea,
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
 } from '@/components/ui';
 import {
   Upload,
@@ -286,6 +291,20 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const [previewObject, setPreviewObject] = useState<S3Object | null>(null);
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  // 重命名状态
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renameObject, setRenameObject] = useState<S3Object | null>(null);
+  const [newName, setNewName] = useState('');
+
+  // 框选状态
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{ x: number; y: number } | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // 拖放状态
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
 
   // 加载根级别内容（buckets 或 bucket 内的对象）
   useEffect(() => {
@@ -939,6 +958,195 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     }
   };
 
+  // 重命名处理
+  const handleRename = (object: S3Object) => {
+    setRenameObject(object);
+    setNewName(object.name);
+    setShowRenameDialog(true);
+  };
+
+  const handleRenameSubmit = async () => {
+    if (!renameObject || !currentBucket || !newName.trim()) return;
+
+    setIsLoading(true);
+    try {
+      const oldKey = renameObject.key;
+      const newKey = currentPath + newName;
+
+      // 复制到新位置
+      await S3Service.copyObject(
+        connectionId,
+        currentBucket,
+        oldKey,
+        currentBucket,
+        newKey
+      );
+
+      // 删除旧对象
+      await S3Service.deleteObject(connectionId, currentBucket, oldKey);
+
+      showMessage.success(String(t('s3:rename.success', { defaultValue: '重命名成功' })));
+      setShowRenameDialog(false);
+      setRenameObject(null);
+      setNewName('');
+      loadObjects();
+    } catch (error) {
+      logger.error('Rename failed:', error);
+      showMessage.error(`${String(t('s3:rename.failed', { defaultValue: '重命名失败' }))}: ${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 刷新处理
+  const handleRefresh = () => {
+    if (!currentBucket) {
+      loadBuckets();
+    } else {
+      loadObjects();
+    }
+  };
+
+  // 拖放处理
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // 根目录不允许上传
+    if (!currentBucket) return;
+    setIsDraggingOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+
+    // 根目录不允许上传
+    if (!currentBucket) {
+      showMessage.warning(String(t('s3:upload.no_bucket', { defaultValue: '请先选择存储桶' })));
+      return;
+    }
+
+    const items = Array.from(e.dataTransfer.items);
+    const files: File[] = [];
+
+    for (const item of items) {
+      if (item.kind === 'file') {
+        const file = item.getAsFile();
+        if (file) {
+          files.push(file);
+        }
+      }
+    }
+
+    if (files.length === 0) return;
+
+    setIsLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const file of files) {
+      try {
+        const uploadKey = currentPath ? `${currentPath}${file.name}` : file.name;
+        const data = await S3Service.fileToUint8Array(file);
+        await S3Service.uploadObject(
+          connectionId,
+          currentBucket,
+          uploadKey,
+          data,
+          file.type || 'application/octet-stream'
+        );
+        successCount++;
+      } catch (error) {
+        failCount++;
+        logger.error('Upload file failed:', error);
+      }
+    }
+
+    setIsLoading(false);
+
+    if (successCount > 0) {
+      showMessage.success(String(t('s3:upload.success', { count: successCount })));
+      loadObjects();
+    }
+
+    if (failCount > 0) {
+      showMessage.error(String(t('s3:upload.failed', { count: failCount })));
+    }
+  };
+
+  // 框选处理
+  const handleMouseDown = (e: React.MouseEvent) => {
+    // 只在空白区域开始框选
+    if ((e.target as HTMLElement).closest('.object-item')) return;
+
+    // 右键不触发框选
+    if (e.button !== 0) return;
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    setIsSelecting(true);
+    setSelectionStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    setSelectionEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isSelecting || !selectionStart) return;
+
+    const rect = containerRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    setSelectionEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+
+    // 计算选择框覆盖的对象
+    const selectionBox = {
+      left: Math.min(selectionStart.x, e.clientX - rect.left),
+      right: Math.max(selectionStart.x, e.clientX - rect.left),
+      top: Math.min(selectionStart.y, e.clientY - rect.top),
+      bottom: Math.max(selectionStart.y, e.clientY - rect.top),
+    };
+
+    const newSelected = new Set<string>();
+    const itemElements = containerRef.current?.querySelectorAll('.object-item');
+
+    itemElements?.forEach((el, index) => {
+      const itemRect = el.getBoundingClientRect();
+      const relativeRect = {
+        left: itemRect.left - rect.left,
+        right: itemRect.right - rect.left,
+        top: itemRect.top - rect.top,
+        bottom: itemRect.bottom - rect.top,
+      };
+
+      // 检查是否与选择框相交
+      if (
+        relativeRect.left < selectionBox.right &&
+        relativeRect.right > selectionBox.left &&
+        relativeRect.top < selectionBox.bottom &&
+        relativeRect.bottom > selectionBox.top
+      ) {
+        if (objects[index]) {
+          newSelected.add(objects[index].key);
+        }
+      }
+    });
+
+    setSelectedObjects(newSelected);
+  };
+
+  const handleMouseUp = () => {
+    setIsSelecting(false);
+    setSelectionStart(null);
+    setSelectionEnd(null);
+  };
+
   const getBreadcrumbs = (): BreadcrumbItem[] => {
     const items: BreadcrumbItem[] = [];
 
@@ -1158,7 +1366,36 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       </div>
 
       {/* 文件列表 */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1">
+      <div
+        ref={containerRef}
+        className="flex-1 relative"
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseUp}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
+        {isDraggingOver && (
+          <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary z-50 flex items-center justify-center pointer-events-none">
+            <div className="text-lg font-semibold text-primary">
+              {t('s3:upload.drop_here', { defaultValue: '释放文件以上传' })}
+            </div>
+          </div>
+        )}
+        {isSelecting && selectionStart && selectionEnd && (
+          <div
+            className="absolute border-2 border-primary bg-primary/10 pointer-events-none z-40"
+            style={{
+              left: Math.min(selectionStart.x, selectionEnd.x),
+              top: Math.min(selectionStart.y, selectionEnd.y),
+              width: Math.abs(selectionEnd.x - selectionStart.x),
+              height: Math.abs(selectionEnd.y - selectionStart.y),
+            }}
+          />
+        )}
+        <ScrollArea ref={scrollAreaRef} className="h-full">
         {viewConfig.viewMode === 'list' ? (
           <table className="w-full">
             <thead className="sticky top-0 bg-background z-10">
@@ -1216,7 +1453,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               {objects.map((object, index) => (
                 <tr
                   key={object.key}
-                  className="border-b hover:bg-muted/50 cursor-pointer"
+                  className="border-b hover:bg-muted/50 cursor-pointer object-item"
                   onClick={(e) => {
                     // 如果点击的是 checkbox，不触发行选择
                     if ((e.target as HTMLElement).closest('button[role="checkbox"]')) {
@@ -1268,41 +1505,71 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         ) : (
           <div className="grid grid-cols-6 gap-2 p-2">
             {objects.map((object, index) => (
-              <div
-                key={object.key}
-                className={`
-                  flex flex-col items-center p-4 rounded-lg cursor-pointer
-                  hover:bg-muted/50 transition-colors
-                  ${selectedObjects.has(object.key) ? 'bg-muted' : ''}
-                `}
-                onDoubleClick={() => handleObjectClick(object)}
-                onClick={(e) => handleObjectSelect(object, index, e)}
-              >
-                <div className="w-full mb-2 flex items-center justify-center min-h-[96px]">
-                  {object.isDirectory ? (
-                    <FolderOpen className="w-12 h-12" />
-                  ) : (isImageFile(object) || isVideoFile(object)) ? (
-                    <FileThumbnail
-                      object={object}
-                      connectionId={connectionId}
-                      currentBucket={currentBucket}
-                      viewMode={viewConfig.viewMode}
-                    />
-                  ) : (
-                    <div className="text-4xl">
-                      {getFileIcon(object)}
+              <ContextMenu key={object.key}>
+                <ContextMenuTrigger asChild>
+                  <div
+                    className={`
+                      flex flex-col items-center p-4 rounded-lg cursor-pointer object-item
+                      hover:bg-muted/50 transition-colors
+                      ${selectedObjects.has(object.key) ? 'bg-muted' : ''}
+                    `}
+                    onDoubleClick={() => handleObjectClick(object)}
+                    onClick={(e) => handleObjectSelect(object, index, e)}
+                  >
+                    <div className="w-full mb-2 flex items-center justify-center min-h-[96px]">
+                      {object.isDirectory ? (
+                        <FolderOpen className="w-12 h-12" />
+                      ) : (isImageFile(object) || isVideoFile(object)) ? (
+                        <FileThumbnail
+                          object={object}
+                          connectionId={connectionId}
+                          currentBucket={currentBucket}
+                          viewMode={viewConfig.viewMode}
+                        />
+                      ) : (
+                        <div className="text-4xl">
+                          {getFileIcon(object)}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="text-sm text-center truncate w-full" title={object.name}>
-                  {object.name}
-                </div>
-                {!object.isDirectory && (
-                  <div className="text-xs text-muted-foreground">
-                    {formatBytes(object.size)}
+                    <div className="text-sm text-center truncate w-full" title={object.name}>
+                      {object.name}
+                    </div>
+                    {!object.isDirectory && (
+                      <div className="text-xs text-muted-foreground">
+                        {formatBytes(object.size)}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  {currentBucket && (
+                    <>
+                      <ContextMenuItem onClick={() => handleRename(object)}>
+                        {t('s3:rename.label', { defaultValue: '重命名' })}
+                      </ContextMenuItem>
+                      <ContextMenuSeparator />
+                    </>
+                  )}
+                  <ContextMenuItem onClick={() => handleDownload([object])}>
+                    <Download className="w-4 h-4 mr-2" />
+                    {t('s3:download.label', { defaultValue: '下载' })}
+                  </ContextMenuItem>
+                  <ContextMenuItem onClick={handleCopy}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    {t('s3:copy.label', { defaultValue: '复制' })}
+                  </ContextMenuItem>
+                  <ContextMenuItem onClick={handleCut}>
+                    <Scissors className="w-4 h-4 mr-2" />
+                    {t('s3:cut.label', { defaultValue: '剪切' })}
+                  </ContextMenuItem>
+                  <ContextMenuSeparator />
+                  <ContextMenuItem onClick={() => setShowDeleteConfirmDialog(true)}>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {t('s3:delete.label', { defaultValue: '删除' })}
+                  </ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
             ))}
           </div>
         )}
@@ -1323,6 +1590,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           </div>
         )}
       </ScrollArea>
+      </div>
 
       {/* 状态栏 */}
       <div className="statusbar px-2 py-1 border-t text-sm text-muted-foreground flex justify-between">
@@ -1481,6 +1749,38 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             </Button>
             <Button onClick={() => setShowPreviewDialog(false)}>
               {String(t('common:close'))}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 重命名对话框 */}
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('s3:rename.title', { defaultValue: '重命名' })}</DialogTitle>
+            <DialogDescription>
+              {t('s3:rename.description', { defaultValue: '请输入新的名称' })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder={t('s3:rename.placeholder', { defaultValue: '输入新名称' })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleRenameSubmit();
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+              {String(t('common:cancel'))}
+            </Button>
+            <Button onClick={handleRenameSubmit} disabled={!newName.trim()}>
+              {String(t('common:confirm'))}
             </Button>
           </DialogFooter>
         </DialogContent>

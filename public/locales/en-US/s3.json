@@ -17,7 +17,9 @@
   "upload": {
     "label": "Upload",
     "success": "Successfully uploaded {{count}} file(s)",
-    "failed": "Failed to upload {{count}} file(s)"
+    "failed": "Failed to upload {{count}} file(s)",
+    "drop_here": "Drop files to upload",
+    "no_bucket": "Please select a bucket first"
   },
   "download": {
     "label": "Download",
@@ -46,6 +48,17 @@
     "nothing": "Clipboard is empty",
     "success": "Paste successful",
     "failed": "Failed to paste {{name}}"
+  },
+  "rename": {
+    "label": "Rename",
+    "title": "Rename",
+    "description": "Please enter a new name",
+    "placeholder": "Enter new name",
+    "success": "Renamed successfully",
+    "failed": "Failed to rename"
+  },
+  "create_folder": {
+    "label": "New Folder"
   },
   "connection": {
     "type_s3": "Amazon S3",
