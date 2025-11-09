@@ -5,7 +5,7 @@
  * 完全替代 DatabaseExplorerContextMenu、TreeContextMenu、DatabaseContextMenu、TableContextMenu
  */
 
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
     ContextMenu,
     ContextMenuContent,
@@ -18,6 +18,8 @@ import {
     ContextMenuSubTrigger,
     ContextMenuShortcut,
 } from '@/components/ui/context-menu';
+import { Popconfirm } from '@/components/ui/popconfirm';
+import { Button } from '@/components/ui/button';
 import {
     Copy,
     RefreshCw,
@@ -78,8 +80,38 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     // 🔧 从 store 实时获取连接状态
     const connectionStatuses = useConnectionStore(state => state.connectionStatuses);
 
+    // 状态管理：用于控制 Popconfirm 的显示
+    const [pendingAction, setPendingAction] = useState<string | null>(null);
+    const [popconfirmOpen, setPopconfirmOpen] = useState(false);
+
     const handleAction = (action: string) => {
-        onAction(action, node);
+        // 对于需要确认的操作，显示 Popconfirm
+        const needsConfirmation = ['disconnect', 'delete_connection'].includes(action);
+
+        if (needsConfirmation) {
+            setPendingAction(action);
+            // 延迟显示 Popconfirm，等待菜单关闭动画完成
+            setTimeout(() => {
+                setPopconfirmOpen(true);
+            }, 100);
+        } else {
+            onAction(action, node);
+        }
+    };
+
+    // 确认操作
+    const handleConfirm = async () => {
+        if (pendingAction) {
+            onAction(pendingAction, node);
+            setPendingAction(null);
+        }
+        setPopconfirmOpen(false);
+    };
+
+    // 取消操作
+    const handleCancel = () => {
+        setPendingAction(null);
+        setPopconfirmOpen(false);
     };
 
     // 根据节点类型渲染菜单项
@@ -916,6 +948,29 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         </>
     );
 
+    // 获取确认消息和标题
+    const getConfirmConfig = () => {
+        if (!pendingAction) return { title: '', message: '' };
+
+        switch (pendingAction) {
+            case 'disconnect':
+                return {
+                    title: '确认操作',
+                    message: '确定要断开连接吗？'
+                };
+            case 'delete_connection':
+                return {
+                    title: '确认操作',
+                    message: '确定要删除此连接吗？此操作不可撤销！'
+                };
+            default:
+                return {
+                    title: '确认操作',
+                    message: '确定要执行此操作吗？'
+                };
+        }
+    };
+
     // ============================================================================
     // 主渲染
     // ============================================================================
@@ -924,20 +979,43 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     }
 
     return (
-        <ContextMenu modal={false}>
-            <ContextMenuTrigger asChild={false} className="block w-full">
-                {children}
-            </ContextMenuTrigger>
-            <ContextMenuContent
-                className="w-56"
-                onCloseAutoFocus={(e) => {
-                    // 阻止自动焦点恢复，避免与对话框的焦点管理冲突
-                    e.preventDefault();
-                }}
-            >
-                {renderMenuItems()}
-            </ContextMenuContent>
-        </ContextMenu>
+        <>
+            <ContextMenu modal={false}>
+                <ContextMenuTrigger asChild={false} className="block w-full">
+                    {children}
+                </ContextMenuTrigger>
+                <ContextMenuContent
+                    className="w-56"
+                    onCloseAutoFocus={(e) => {
+                        // 阻止自动焦点恢复，避免与对话框的焦点管理冲突
+                        e.preventDefault();
+                    }}
+                >
+                    {renderMenuItems()}
+                </ContextMenuContent>
+            </ContextMenu>
+
+            {/* Popconfirm for confirmable actions */}
+            {pendingAction && (() => {
+                const config = getConfirmConfig();
+                return (
+                    <Popconfirm
+                        title={config.title}
+                        description={config.message}
+                        open={popconfirmOpen}
+                        onConfirm={handleConfirm}
+                        onCancel={handleCancel}
+                        onOpenChange={setPopconfirmOpen}
+                        okText="确定"
+                        cancelText="取消"
+                        okType={pendingAction === 'delete_connection' ? 'danger' : 'primary'}
+                        placement="right"
+                    >
+                        <Button ref={confirmButtonRef} className="hidden" />
+                    </Popconfirm>
+                );
+            })()}
+        </>
     );
 }, (prevProps, nextProps) => {
     // 🔧 自定义比较函数：只有当关键属性变化时才重新渲染

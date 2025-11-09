@@ -147,6 +147,8 @@ export abstract class BaseMenuHandler {
 
   /**
    * 确认操作
+   * 注意：disconnect 和 delete_connection 操作的确认已在 UnifiedContextMenu 中处理
+   * 这里只处理其他需要确认的操作
    */
   protected async confirm(action: ContextMenuAction, customMessage?: string): Promise<boolean> {
     const metadata = this.getActionMetadata(action);
@@ -154,6 +156,13 @@ export abstract class BaseMenuHandler {
       return true;
     }
 
+    // disconnect 和 delete_connection 的确认在 UI 层（UnifiedContextMenu）处理
+    // 这里直接返回 true，因为如果代码执行到这里，说明用户已经在 UI 层确认过了
+    if (['disconnect', 'delete_connection'].includes(action)) {
+      return true;
+    }
+
+    // 其他操作使用全局 dialog
     const message = customMessage || this.getActionConfirm(action);
     const title = tNs('contextMenu', 'confirmOperation');
 

@@ -16,3 +16,4 @@ pub mod influxdb_client;
 
 // S3/MinIO 支持
 pub mod s3_client;
+pub mod s3_database_client;

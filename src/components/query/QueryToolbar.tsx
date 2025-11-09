@@ -123,7 +123,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
         onValueChange={handleConnectionChange}
         disabled={disabled || connectedConnections.length === 0}
       >
-        <SelectTrigger className="w-[140px] h-6 text-xs">
+        <SelectTrigger className="min-w-[140px] w-auto h-6 text-xs whitespace-nowrap">
           <SelectValue
             placeholder={
               connectedConnections.length === 0
@@ -153,7 +153,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
         onValueChange={onDatabaseChange}
         disabled={disabled || !selectedConnectionId || currentConnectionDatabases.length === 0}
       >
-        <SelectTrigger className="w-[100px] h-6 text-xs">
+        <SelectTrigger className="min-w-[140px] w-auto h-6 text-xs whitespace-nowrap">
           <SelectValue
             placeholder={
               !selectedConnectionId

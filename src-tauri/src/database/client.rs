@@ -1,6 +1,7 @@
 use crate::models::{ConnectionConfig, QueryResult, RetentionPolicy, DatabaseType, TagInfo, FieldInfo, FieldType, TableSchema};
 use crate::database::iotdb_official_client::IoTDBOfficialClient;
 use crate::database::influxdb_client::InfluxDBClient;
+use crate::database::s3_database_client::S3DatabaseClient;
 use anyhow::Result;
 use influxdb::Client;
 use std::time::Instant;
@@ -16,6 +17,7 @@ pub enum DatabaseClient {
     InfluxDB2x(InfluxDB2Client),
     InfluxDBUnified(InfluxDBClient), // 新的统一客户端
     IoTDB(Arc<Mutex<IoTDBOfficialClient>>),
+    ObjectStorage(S3DatabaseClient), // S3/MinIO 等对象存储
 }
 
 impl DatabaseClient {
@@ -29,6 +31,7 @@ impl DatabaseClient {
                 let client = client.lock().await;
                 client.test_connection().await
             },
+            DatabaseClient::ObjectStorage(client) => client.test_connection().await,
         }
     }
 
@@ -45,6 +48,9 @@ impl DatabaseClient {
             },
             DatabaseClient::IoTDB(client) => {
                 let client = client.lock().await;
+                client.execute_query(query, None).await
+            },
+            DatabaseClient::ObjectStorage(client) => {
                 client.execute_query(query, None).await
             },
         }
@@ -85,6 +91,9 @@ impl DatabaseClient {
                 let client = client.lock().await;
                 client.get_databases().await
             },
+            DatabaseClient::ObjectStorage(client) => {
+                client.get_databases().await
+            },
         }
     }
 
@@ -102,6 +111,9 @@ impl DatabaseClient {
             DatabaseClient::IoTDB(client) => {
                 let client = client.lock().await;
                 client.get_devices(database).await
+            },
+            DatabaseClient::ObjectStorage(client) => {
+                client.get_tables(database).await
             },
         }
     }
@@ -132,6 +144,7 @@ impl DatabaseClient {
                 };
                 client.get_timeseries(&device_path).await
             },
+            DatabaseClient::ObjectStorage(_) => Ok(vec![]),
         }
     }
 
@@ -193,6 +206,7 @@ impl DatabaseClient {
                     "timezone": "UTC"
                 }))
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
         }
     }
 
@@ -215,6 +229,7 @@ impl DatabaseClient {
                 let client = client.lock().await;
                 client.disconnect().await
             },
+            DatabaseClient::ObjectStorage(_) => Ok(()),
         }
     }
 
@@ -225,6 +240,7 @@ impl DatabaseClient {
             DatabaseClient::InfluxDB2x(_) => DatabaseType::InfluxDB,
             DatabaseClient::InfluxDBUnified(_) => DatabaseType::InfluxDB,
             DatabaseClient::IoTDB(_) => DatabaseType::IoTDB,
+            DatabaseClient::ObjectStorage(_) => DatabaseType::ObjectStorage,
         }
     }
 
@@ -237,6 +253,9 @@ impl DatabaseClient {
             DatabaseClient::IoTDB(client) => {
                 let client = client.lock().await;
                 client.get_config().clone()
+            },
+            DatabaseClient::ObjectStorage(_) => {
+                todo!("ObjectStorage get_config")
             },
         }
     }
@@ -258,6 +277,9 @@ impl DatabaseClient {
                 client.execute_query(&sql, None).await?;
                 Ok(())
             },
+            DatabaseClient::ObjectStorage(_) => {
+                todo!("ObjectStorage get_config")
+            },
         }
     }
 
@@ -278,6 +300,7 @@ impl DatabaseClient {
                 client.execute_query(&sql, None).await?;
                 Ok(())
             },
+            DatabaseClient::ObjectStorage(client) => client.delete_database(database_name).await,
         }
     }
 
@@ -304,6 +327,7 @@ impl DatabaseClient {
                 // IoTDB 不支持保留策略概念，返回空列表
                 Ok(vec![])
             },
+            DatabaseClient::ObjectStorage(client) => client.get_retention_policies(database).await,
         }
     }
 
@@ -322,6 +346,7 @@ impl DatabaseClient {
                 let client = client.lock().await;
                 client.get_devices(database).await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
         }
     }
 
@@ -350,6 +375,7 @@ impl DatabaseClient {
                 };
                 client.get_timeseries(&device_path).await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
         }
     }
 
@@ -398,6 +424,7 @@ impl DatabaseClient {
                     fields: vec![],
                 })
             },
+            DatabaseClient::ObjectStorage(client) => client.get_table_schema(database, measurement).await,
         }
     }
 
@@ -420,6 +447,7 @@ impl DatabaseClient {
                 // IoTDB 多协议客户端暂不支持行协议写入
                 Err(anyhow::anyhow!("IoTDB 多协议客户端暂不支持行协议写入"))
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
         }
     }
 
@@ -441,6 +469,7 @@ impl DatabaseClient {
                 let client = client.lock().await;
                 client.detect_version().await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
         }
     }
 
@@ -463,6 +492,7 @@ impl DatabaseClient {
                 let client = client.lock().await;
                 client.get_tree_nodes().await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
         }
     }
 
@@ -486,6 +516,7 @@ impl DatabaseClient {
                 // IoTDB 子节点获取逻辑
                 client.get_tree_children(parent_node_id, node_type, metadata).await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
         }
     }
 
@@ -500,6 +531,8 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.get_influxdb2_organizations().await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
     }
@@ -513,6 +546,8 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.get_influxdb2_organization_info(org_name).await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
     }
@@ -534,6 +569,8 @@ impl DatabaseClient {
                     client.get_influxdb2_buckets().await
                 }
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
     }
@@ -547,6 +584,8 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.get_influxdb2_bucket_info(bucket_name).await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
     }
@@ -560,6 +599,8 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.create_influxdb2_bucket(name, org_id, retention_period, description).await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
     }
@@ -573,6 +614,8 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.delete_influxdb2_bucket(bucket_name).await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
     }
@@ -586,6 +629,8 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.update_influxdb2_bucket_retention(bucket_name, retention_period).await
             },
+            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
     }
@@ -4358,6 +4403,11 @@ impl DatabaseClientFactory {
                 let client = IoTDBOfficialClient::new(config).await?;
                 Ok(DatabaseClient::IoTDB(Arc::new(Mutex::new(client))))
             },
+            DatabaseType::ObjectStorage => {
+                info!("创建S3/对象存储客户端: {}:{}", config.host, config.port);
+                let client = S3DatabaseClient::new(config).await?;
+                Ok(DatabaseClient::ObjectStorage(client))
+            },
             _ => Err(anyhow::anyhow!("不支持的数据库类型: {:?}", config.db_type)),
         }
     }
@@ -4409,6 +4459,11 @@ impl DatabaseClientFactory {
                 // 注意：这是遗留的同步方法，无法使用async的IoTDBOfficialClient::new
                 // 建议使用 create_unified_client 方法
                 return Err(anyhow::anyhow!("IoTDB客户端创建需要使用异步方法 create_unified_client"));
+            },
+            DatabaseType::ObjectStorage => {
+                // 注意：这是遗留的同步方法，无法使用async的S3DatabaseClient::new
+                // 建议使用 create_unified_client 方法
+                return Err(anyhow::anyhow!("对象存储客户端创建需要使用异步方法 create_unified_client"));
             },
             _ => {
                 Err(anyhow::anyhow!("不支持的数据库类型: {:?}", config.db_type))

@@ -165,7 +165,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
             }
           }
         },
-        // S3/MinIO/OSS/COS/七牛云/又拍云 - Bucket/服务名
+        // S3/MinIO/OSS/COS/七牛云/又拍云 - Bucket/服务名 (可选)
         {
           name: 'bucket',
           label: (formData: any) => {
@@ -175,15 +175,11 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
             return t('object_storage.bucket');
           },
           type: 'text',
-          required: true,
+          required: false,  // 改为非必填
           visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun'].includes(formData.objectStorageProvider),
-          placeholder: t('object_storage.bucket_placeholder'),
-          description: t('object_storage.bucket_description'),
-          validation: (value: string, formData: any) => {
-            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun'].includes(formData.objectStorageProvider) && !value?.trim()) {
-              return t('object_storage.bucket_required');
-            }
-          }
+          placeholder: t('object_storage.bucket_placeholder_optional'),
+          description: t('object_storage.bucket_description_optional'),
+          // 移除验证，因为现在是可选字段
         },
         // 七牛云 - 访问网址
         {

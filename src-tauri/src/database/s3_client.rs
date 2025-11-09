@@ -63,6 +63,7 @@ pub struct S3PresignedUrlResult {
     pub expires_at: ChronoDateTime<Utc>,
 }
 
+#[derive(Debug)]
 pub struct S3ClientManager {
     clients: Arc<RwLock<HashMap<String, Arc<Client>>>>,
 }
@@ -112,11 +113,22 @@ impl S3ClientManager {
 
         // 设置自定义端点（用于MinIO等）
         if let Some(endpoint) = &config.endpoint {
-            let endpoint_url = if config.use_ssl {
-                format!("https://{}", endpoint)
+            // 检查端点是否已包含协议
+            let endpoint_url = if endpoint.starts_with("http://") || endpoint.starts_with("https://") {
+                // 如果已经包含协议，直接使用
+                log::debug!("使用已包含协议的端点: {}", endpoint);
+                endpoint.clone()
             } else {
-                format!("http://{}", endpoint)
+                // 如果没有协议，根据 use_ssl 添加
+                let url = if config.use_ssl {
+                    format!("https://{}", endpoint)
+                } else {
+                    format!("http://{}", endpoint)
+                };
+                log::debug!("构建端点URL: {} (use_ssl: {})", url, config.use_ssl);
+                url
             };
+            log::info!("设置S3端点: {}", endpoint_url);
             s3_config_builder = s3_config_builder.endpoint_url(endpoint_url);
         }
 
