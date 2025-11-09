@@ -285,6 +285,10 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               placeholder={field.placeholder}
               disabled={disabled}
               className={`h-8 text-xs ${error ? 'border-destructive' : ''}`}
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
             />
             {field.description && (
               <p className="text-[10px] text-muted-foreground leading-tight">{field.description}</p>
@@ -310,6 +314,10 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               placeholder={field.placeholder}
               disabled={disabled}
               className={`h-8 text-xs ${error ? 'border-destructive' : ''}`}
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck="false"
             />
             {field.description && (
               <p className="text-[10px] text-muted-foreground leading-tight">{field.description}</p>
@@ -647,6 +655,10 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
                   onChange={(e) => handleFieldChange('name', e.target.value)}
                   placeholder={tConn('name_placeholder')}
                   className={`h-8 text-xs ${errors.name ? 'border-destructive' : ''}`}
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                 />
                 {errors.name && (
                   <p className="text-[10px] text-destructive">{errors.name}</p>
@@ -662,6 +674,10 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
                   onChange={(e) => handleFieldChange('description', e.target.value)}
                   placeholder={tConn('description_placeholder')}
                   className="h-8 text-xs"
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                 />
               </div>
             </div>

@@ -57,7 +57,7 @@
     },
     "connect": {
       "label": "打开连接",
-      "success": "已连接"
+      "success": "已打开连接"
     },
     "disconnect": {
       "label": "断开连接",

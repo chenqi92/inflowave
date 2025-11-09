@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import {TreeNodeData} from './TreeNodeRenderer';
 import {useMenuTranslation} from '@/hooks/useTranslation';
+import {useConnectionStore} from '@/store/connection';
 
 export interface UnifiedContextMenuProps {
     children: React.ReactNode;
@@ -73,6 +74,9 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                                                                            disabled = false,
                                                                        }) => {
     const {t} = useMenuTranslation();
+
+    // 🔧 从 store 实时获取连接状态
+    const connectionStatuses = useConnectionStore(state => state.connectionStatuses);
 
     const handleAction = (action: string) => {
         onAction(action, node);
@@ -145,10 +149,10 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         const isIoTDB = dbType === 'iotdb';
         const isInfluxDB2x = dbType === 'influxdb2' || metadata.version === '2.x';
 
-        // 检查连接是否已打开（已连接状态）
-        // 🔧 修复：优先检查节点级别的 isConnected，然后才检查 metadata
+        // 🔧 修复：从 store 实时获取连接状态，而不是依赖 node.isConnected
         const connectionId = metadata.connectionId || node.id;
-        const isConnected = node.isConnected ?? metadata.isConnected ?? false;
+        const connectionStatus = connectionStatuses[connectionId];
+        const isConnected = connectionStatus?.status === 'connected';
 
         return (
             <>

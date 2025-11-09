@@ -166,7 +166,8 @@ export class ConnectionMenuHandler extends BaseMenuHandler {
   private async connect(connectionId: string, connectionName: string): Promise<void> {
     try {
       await this.deps.handleConnectionToggle(connectionId);
-      this.showSuccess('connect', `已连接到 "${connectionName}"`);
+      // 使用翻译系统的成功消息
+      this.showSuccess('connect');
       await this.refreshTree(true);
     } catch (error) {
       this.showError('connect', error);
@@ -177,10 +178,7 @@ export class ConnectionMenuHandler extends BaseMenuHandler {
    * 断开连接
    */
   private async disconnect(connectionId: string, connectionName: string): Promise<void> {
-    const confirmed = await this.confirm(
-      'disconnect',
-      `确定要断开连接 "${connectionName}" 吗？`
-    );
+    const confirmed = await this.confirm('disconnect');
 
     if (!confirmed) {
       return;
@@ -188,7 +186,8 @@ export class ConnectionMenuHandler extends BaseMenuHandler {
 
     try {
       await this.deps.disconnectFromDatabase(connectionId);
-      this.showSuccess('disconnect', `已断开连接 "${connectionName}"`);
+      // 使用翻译系统的成功消息
+      this.showSuccess('disconnect');
       await this.refreshTree(true);
     } catch (error) {
       this.showError('disconnect', error);

@@ -56,8 +56,8 @@
       "success": "Connection name copied"
     },
     "connect": {
-      "label": "Connect",
-      "success": "Connected"
+      "label": "Open Connection",
+      "success": "Connection opened"
     },
     "disconnect": {
       "label": "Disconnect",
