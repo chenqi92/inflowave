@@ -12,6 +12,7 @@
   "items": "共 {{count}} 项",
   "selected": "已选择 {{count}} 项",
   "load_more": "加载更多",
+  "scroll_to_load_more": "向下滚动加载更多",
   "upload": {
     "label": "上传",
     "success": "成功上传 {{count}} 个文件",

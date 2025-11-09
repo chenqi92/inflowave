@@ -96,6 +96,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const [fileOperation, setFileOperation] = useState<FileOperation | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // 无限滚动加载
+  const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+
   // 对话框状态
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
@@ -114,6 +118,38 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       loadObjects();
     }
   }, [connectionId, currentBucket, currentPath, searchTerm, viewConfig.sortBy]);
+
+  // 无限滚动：使用 IntersectionObserver 监听触发器元素
+  useEffect(() => {
+    if (!hasMore || isLoading || !loadMoreTriggerRef.current) {
+      return;
+    }
+
+    // 查找 ScrollArea 的 viewport 元素作为滚动容器
+    const scrollViewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        // 当触发器元素进入视口时，加载更多数据
+        if (entry.isIntersecting && hasMore && !isLoading) {
+          logger.info('📦 [S3Browser] 触发无限滚动加载');
+          loadObjects(true);
+        }
+      },
+      {
+        root: scrollViewport || null, // 使用 ScrollArea 的 viewport 作为根，如果找不到则使用视口
+        rootMargin: '100px', // 提前100px触发加载
+        threshold: 0.1, // 当10%可见时触发
+      }
+    );
+
+    observer.observe(loadMoreTriggerRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, isLoading, currentBucket]);
 
   const loadBuckets = async () => {
     try {
@@ -750,7 +786,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       </div>
 
       {/* 文件列表 */}
-      <ScrollArea className="flex-1">
+      <ScrollArea ref={scrollAreaRef} className="flex-1">
         {viewConfig.viewMode === 'list' ? (
           <table className="w-full">
             <thead className="sticky top-0 bg-background z-10">
@@ -829,11 +865,19 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           </div>
         )}
 
+        {/* 无限滚动触发器 */}
         {hasMore && (
-          <div className="text-center p-4">
-            <Button onClick={() => loadObjects(true)} disabled={isLoading}>
-              {t('load_more')}
-            </Button>
+          <div ref={loadMoreTriggerRef} className="text-center p-4">
+            {isLoading ? (
+              <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-sm">{t('loading', { ns: 'common' })}</span>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                {t('scroll_to_load_more', { ns: 's3', defaultValue: '向下滚动加载更多' })}
+              </div>
+            )}
           </div>
         )}
       </ScrollArea>
