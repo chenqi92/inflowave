@@ -268,7 +268,6 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     name: 400,
     size: 150,
     count: 150, // bucket 文件数量列
-    tags: 200, // 标签列
     modified: 200,
   });
 
@@ -286,8 +285,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
   // 列宽调整
   const resizingColumn = useRef<string | null>(null);
+  const nextResizingColumn = useRef<string | null>(null);
   const startX = useRef<number>(0);
   const startWidth = useRef<number>(0);
+  const nextStartWidth = useRef<number>(0);
 
   // 对话框状态
   const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
@@ -438,6 +439,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       setObjects(bucketObjects);
       logger.info(`📦 [S3Browser] 显示 ${bucketObjects.length} 个 bucket 作为文件夹`);
+      // Buckets 列表没有分页，所以没有更多内容
+      setHasMore(false);
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载 buckets 失败:`, error);
       showMessage.error(`${String(t('s3:error.load_buckets_failed'))}: ${error}`);
@@ -628,6 +631,17 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     setPreviewLoading(true);
     setPreviewContent(null);
 
+    // 异步获取标签并更新预览对象
+    if (currentBucket && !object.isDirectory) {
+      S3Service.getObjectTagging(connectionId, currentBucket, object.key)
+        .then(tags => {
+          setPreviewObject(prev => prev ? { ...prev, tags } : null);
+        })
+        .catch(error => {
+          logger.error('获取预览文件标签失败:', error);
+        });
+    }
+
     try {
       const extension = object.name.split('.').pop()?.toLowerCase();
 
@@ -650,7 +664,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         if (isImageFile(object)) {
           try {
             const data = await S3Service.downloadObject(connectionId, currentBucket, object.key);
-            const blob = new Blob([data], { type: `image/${extension}` });
+            // 使用 Uint8Array.slice() 创建新副本，确保类型兼容
+            const blob = new Blob([data.slice()], { type: `image/${extension}` });
             const blobUrl = URL.createObjectURL(blob);
             setPreviewContent(blobUrl);
           } catch (error) {
@@ -1380,11 +1395,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     e.preventDefault();
     e.stopPropagation(); // 阻止事件冒泡，避免触发容器的框选功能
     resizingColumn.current = columnName;
+    nextResizingColumn.current = nextColumnName;
     startX.current = e.clientX;
     startWidth.current = columnWidths[columnName as keyof typeof columnWidths];
 
     // 保存下一列的初始宽度（如果存在）
-    const nextColumnStartWidth = nextColumnName
+    nextStartWidth.current = nextColumnName
       ? columnWidths[nextColumnName as keyof typeof columnWidths]
       : 0;
 
@@ -1395,15 +1411,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       const newWidth = Math.max(80, startWidth.current + diff); // 最小宽度 80px
 
       // 如果有下一列，同时调整下一列的宽度（保持总宽度不变）
-      if (nextColumnName) {
-        const nextNewWidth = Math.max(80, nextColumnStartWidth - diff);
+      if (nextResizingColumn.current) {
+        const nextNewWidth = Math.max(80, nextStartWidth.current - diff);
 
         // 只有当两列都满足最小宽度要求时才更新
         if (newWidth >= 80 && nextNewWidth >= 80) {
           setColumnWidths(prev => ({
             ...prev,
             [resizingColumn.current!]: newWidth,
-            [nextColumnName]: nextNewWidth,
+            [nextResizingColumn.current!]: nextNewWidth,
           }));
         }
       } else {
@@ -1417,6 +1433,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
     const handleMouseUp = () => {
       resizingColumn.current = null;
+      nextResizingColumn.current = null;
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
@@ -1584,7 +1601,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           <table className="w-full">
             <thead className="sticky top-0 bg-background z-10">
               <tr className="border-b">
-                <th className="text-left p-2 w-8">
+                <th className="text-left p-2" style={{ width: '48px', minWidth: '48px', maxWidth: '48px' }}>
                   <div className="flex items-center justify-center">
                     <Checkbox
                       checked={objects.length > 0 && selectedObjects.size === objects.length}
@@ -1622,18 +1639,6 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     </div>
                   </th>
                 )}
-                {/* 在非根目录（bucket 内）显示标签列 */}
-                {currentBucket && (
-                  <th className="text-left p-2" style={{ width: columnWidths.tags }}>
-                    <div className="flex items-center">
-                      <span>{t('s3:tags', { defaultValue: '标签' })}</span>
-                      <div
-                        className="column-resizer"
-                        onMouseDown={(e) => handleColumnResizeStart('tags', 'modified', e)}
-                      />
-                    </div>
-                  </th>
-                )}
                 <th className="text-left p-2" style={{ width: columnWidths.modified }}>
                   <div className="flex items-center">
                     <span>{t('s3:modified')}</span>
@@ -1660,7 +1665,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   onDoubleClick={() => handleObjectClick(object)}
                   onContextMenu={(e) => handleContextMenu(e, object)}
                 >
-                  <td className="p-2">
+                  <td className="p-2" style={{ width: '48px', minWidth: '48px', maxWidth: '48px' }}>
                     <div className="flex items-center justify-center h-full">
                       <Checkbox
                         checked={selectedObjects.has(object.key)}
@@ -1694,31 +1699,6 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                       <span className="truncate block">
                         {object.objectCount !== undefined ? object.objectCount : '-'}
                       </span>
-                    </td>
-                  )}
-                  {/* 在 bucket 内显示标签 */}
-                  {currentBucket && (
-                    <td className="p-2" style={{ width: columnWidths.tags }}>
-                      {object.tags && Object.keys(object.tags).length > 0 ? (
-                        <div className="flex flex-wrap gap-1 min-w-0">
-                          {Object.entries(object.tags).slice(0, 2).map(([key, value]) => (
-                            <span
-                              key={key}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-primary/10 text-primary truncate"
-                              title={`${key}: ${value}`}
-                            >
-                              {key}
-                            </span>
-                          ))}
-                          {Object.keys(object.tags).length > 2 && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">
-                              +{Object.keys(object.tags).length - 2}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">-</span>
-                      )}
                     </td>
                   )}
                   <td className="p-2" style={{ width: columnWidths.modified }}>
@@ -1990,17 +1970,33 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         <DialogContent className="max-w-5xl max-h-[90vh]">
           <DialogHeader>
             <DialogTitle>{previewObject?.name || ''}</DialogTitle>
-            <DialogDescription>
-              {previewObject && (
-                <>
-                  {formatBytes(previewObject.size)}
-                  {previewObject.lastModified && (
-                    <> • {previewObject.lastModified.toLocaleString()}</>
-                  )}
-                </>
-              )}
-            </DialogDescription>
           </DialogHeader>
+          {/* 文件信息和标签 */}
+          {previewObject && (
+            <div className="space-y-2 px-6 pb-2">
+              <div className="text-sm text-muted-foreground">
+                {formatBytes(previewObject.size)}
+                {previewObject.lastModified && (
+                  <> • {previewObject.lastModified.toLocaleString()}</>
+                )}
+              </div>
+              {/* 标签显示 */}
+              {previewObject.tags && Object.keys(previewObject.tags).length > 0 && (
+                <div className="flex flex-wrap gap-1 pt-1">
+                  {Object.entries(previewObject.tags).map(([key, value]) => (
+                    <span
+                      key={key}
+                      className="inline-flex items-center px-2 py-1 rounded text-xs bg-primary/10 text-primary"
+                      title={`${key}: ${value}`}
+                    >
+                      <Tag className="w-3 h-3 mr-1" />
+                      {key}: {value}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           <ScrollArea className="max-h-[70vh] w-full">
             {previewLoading ? (
               <div className="flex items-center justify-center p-8">
