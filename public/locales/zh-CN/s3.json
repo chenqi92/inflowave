@@ -149,7 +149,8 @@
     "failed": "预览失败",
     "no_content": "无法预览此文件",
     "not_supported": "不支持预览此文件类型",
-    "download_to_view": "请下载后查看"
+    "download_to_view": "请下载后查看",
+    "office_not_supported": "暂不支持在线预览 Office 文档，请下载后使用本地应用打开"
   },
   "permissions": {
     "label": "设置权限",

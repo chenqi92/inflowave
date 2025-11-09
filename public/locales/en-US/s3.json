@@ -149,7 +149,8 @@
     "failed": "Preview failed",
     "no_content": "Unable to preview this file",
     "not_supported": "This file type is not supported for preview",
-    "download_to_view": "Please download to view"
+    "download_to_view": "Please download to view",
+    "office_not_supported": "Online preview of Office documents is not supported. Please download and open with a local application"
   },
   "permissions": {
     "label": "Set Permissions",

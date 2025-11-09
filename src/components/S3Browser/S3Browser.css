@@ -69,15 +69,20 @@
   padding: 0.5rem; /* 恢复 padding */
 }
 
+.s3-browser table th {
+  position: relative;
+}
+
 .s3-browser table th .column-resizer {
   position: absolute;
   right: -4px;
   top: 0;
   bottom: 0;
   width: 8px;
-  cursor: col-resize;
+  cursor: col-resize !important;
   transition: background-color 0.15s;
-  z-index: 10; /* 提高 z-index 确保在其他元素之上 */
+  z-index: 20;
+  pointer-events: auto;
 }
 
 /* 分割线的视觉部分 */

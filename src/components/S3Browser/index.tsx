@@ -68,11 +68,7 @@ import { S3Service } from '@/services/s3Service';
 import { showMessage } from '@/utils/message';
 import { formatBytes, formatDate } from '@/utils/format';
 import { t } from '@/i18n/translate';
-import type {
-  S3Object,
-  S3Bucket,
-  S3BrowserViewConfig,
-} from '@/types/s3';
+import type { S3Object, S3Bucket, S3BrowserViewConfig } from '@/types/s3';
 import './S3Browser.css';
 import logger from '@/utils/logger';
 import { safeTauriInvoke } from '@/utils/tauri';
@@ -81,20 +77,24 @@ import { safeTauriInvoke } from '@/utils/tauri';
 const isImageFile = (object: S3Object): boolean => {
   if (object.isDirectory) return false;
   const extension = object.name.split('.').pop()?.toLowerCase();
-  return ['jpg', 'jpeg', 'png', 'gif', 'svg', 'bmp', 'webp'].includes(extension || '');
+  return ['jpg', 'jpeg', 'png', 'gif', 'svg', 'bmp', 'webp'].includes(
+    extension || ''
+  );
 };
 
 // 判断文件是否为视频
 const isVideoFile = (object: S3Object): boolean => {
   if (object.isDirectory) return false;
   const extension = object.name.split('.').pop()?.toLowerCase();
-  return ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(extension || '');
+  return ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(
+    extension || ''
+  );
 };
 
 // 获取文件图标
 const getFileIcon = (object: S3Object) => {
   if (object.isDirectory) {
-    return <Folder className="w-4 h-4" />;
+    return <Folder className='w-4 h-4' />;
   }
 
   const extension = object.name.split('.').pop()?.toLowerCase();
@@ -104,25 +104,25 @@ const getFileIcon = (object: S3Object) => {
     case 'doc':
     case 'docx':
     case 'pdf':
-      return <FileText className="w-4 h-4" />;
+      return <FileText className='w-4 h-4' />;
     case 'jpg':
     case 'jpeg':
     case 'png':
     case 'gif':
     case 'svg':
     case 'bmp':
-      return <FileImage className="w-4 h-4" />;
+      return <FileImage className='w-4 h-4' />;
     case 'mp4':
     case 'avi':
     case 'mov':
     case 'wmv':
     case 'flv':
-      return <FileVideo className="w-4 h-4" />;
+      return <FileVideo className='w-4 h-4' />;
     case 'mp3':
     case 'wav':
     case 'flac':
     case 'aac':
-      return <FileAudio className="w-4 h-4" />;
+      return <FileAudio className='w-4 h-4' />;
     case 'js':
     case 'ts':
     case 'jsx':
@@ -133,15 +133,15 @@ const getFileIcon = (object: S3Object) => {
     case 'cpp':
     case 'go':
     case 'rs':
-      return <FileCode className="w-4 h-4" />;
+      return <FileCode className='w-4 h-4' />;
     case 'zip':
     case 'rar':
     case '7z':
     case 'tar':
     case 'gz':
-      return <Archive className="w-4 h-4" />;
+      return <Archive className='w-4 h-4' />;
     default:
-      return <File className="w-4 h-4" />;
+      return <File className='w-4 h-4' />;
   }
 };
 
@@ -187,7 +187,10 @@ const FileThumbnail = React.memo<{
         }
       } catch (error) {
         if (!isCancelled) {
-          logger.warn(`Failed to generate thumbnail for ${object.name}:`, error);
+          logger.warn(
+            `Failed to generate thumbnail for ${object.name}:`,
+            error
+          );
           setThumbnailError(true);
         }
       } finally {
@@ -216,7 +219,7 @@ const FileThumbnail = React.memo<{
       <img
         src={thumbnailUrl}
         alt={object.name}
-        className="w-full h-24 object-contain rounded-md bg-muted/20"
+        className='w-full h-24 object-contain rounded-md bg-muted/20'
         onError={() => setThumbnailError(true)}
       />
     );
@@ -226,9 +229,9 @@ const FileThumbnail = React.memo<{
     return (
       <video
         src={thumbnailUrl}
-        className="w-full h-24 object-contain rounded-md bg-muted/20"
+        className='w-full h-24 object-contain rounded-md bg-muted/20'
         onError={() => setThumbnailError(true)}
-        preload="metadata"
+        preload='metadata'
       />
     );
   }
@@ -255,12 +258,17 @@ interface FileOperation {
   sourceBucket: string;
 }
 
-const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S3' }) => {
+const S3Browser: React.FC<S3BrowserProps> = ({
+  connectionId,
+  connectionName = 'S3',
+}) => {
   const [buckets, setBuckets] = useState<S3Bucket[]>([]);
   const [currentBucket, setCurrentBucket] = useState<string>(''); // 当前所在的 bucket
   const [currentPath, setCurrentPath] = useState<string>(''); // 当前路径（bucket内的路径）
   const [objects, setObjects] = useState<S3Object[]>([]);
-  const [selectedObjects, setSelectedObjects] = useState<Set<string>>(new Set());
+  const [selectedObjects, setSelectedObjects] = useState<Set<string>>(
+    new Set()
+  );
   const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1); // 用于 Shift 范围选择
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -281,11 +289,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   });
 
   // 分页相关
-  const [continuationToken, setcontinuationToken] = useState<string | undefined>();
+  const [continuationToken, setcontinuationToken] = useState<
+    string | undefined
+  >();
   const [hasMore, setHasMore] = useState(false);
 
   // 文件操作
-  const [fileOperation, setFileOperation] = useState<FileOperation | null>(null);
+  const [fileOperation, setFileOperation] = useState<FileOperation | null>(
+    null
+  );
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 无限滚动加载
@@ -323,8 +335,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
   // 框选状态
   const [isSelecting, setIsSelecting] = useState(false);
-  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
-  const [selectionEnd, setSelectionEnd] = useState<{ x: number; y: number } | null>(null);
+  const [selectionStart, setSelectionStart] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 拖放状态
@@ -340,18 +358,26 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
   // 权限设置对话框状态
   const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
-  const [permissionsObject, setPermissionsObject] = useState<S3Object | null>(null);
-  const [selectedAcl, setSelectedAcl] = useState<'private' | 'public-read' | 'public-read-write' | 'authenticated-read'>('private');
+  const [permissionsObject, setPermissionsObject] = useState<S3Object | null>(
+    null
+  );
+  const [selectedAcl, setSelectedAcl] = useState<
+    'private' | 'public-read' | 'public-read-write' | 'authenticated-read'
+  >('private');
 
   // Tags 管理对话框状态
   const [showTagsDialog, setShowTagsDialog] = useState(false);
   const [tagsObject, setTagsObject] = useState<S3Object | null>(null);
-  const [objectTags, setObjectTags] = useState<Array<{ key: string; value: string }>>([]);
+  const [objectTags, setObjectTags] = useState<
+    Array<{ key: string; value: string }>
+  >([]);
   const [tagsLoading, setTagsLoading] = useState(false);
 
   // 加载根级别内容（buckets 或 bucket 内的对象）
   useEffect(() => {
-    logger.info(`📦 [S3Browser] useEffect 触发: bucket=${currentBucket}, path=${currentPath}`);
+    logger.info(
+      `📦 [S3Browser] useEffect 触发: bucket=${currentBucket}, path=${currentPath}`
+    );
     if (!currentBucket) {
       // 在根级别，显示所有 buckets
       loadBuckets();
@@ -368,10 +394,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     }
 
     // 查找 ScrollArea 的 viewport 元素作为滚动容器
-    const scrollViewport = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+    const scrollViewport = scrollAreaRef.current?.querySelector(
+      '[data-radix-scroll-area-viewport]'
+    );
 
     const observer = new IntersectionObserver(
-      (entries) => {
+      entries => {
         const [entry] = entries;
         // 当触发器元素进入视口时，加载更多数据
         if (entry.isIntersecting && hasMore && !isLoading) {
@@ -396,20 +424,31 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const loadBuckets = async () => {
     try {
       setIsLoading(true);
-      logger.info(`📦 [S3Browser] 开始加载 buckets, connectionId: ${connectionId}`);
+      logger.info(
+        `📦 [S3Browser] 开始加载 buckets, connectionId: ${connectionId}`
+      );
       const bucketList = await S3Service.listBuckets(connectionId);
-      logger.info(`📦 [S3Browser] 加载到 ${bucketList.length} 个 buckets:`, bucketList.map(b => b.name));
+      logger.info(
+        `📦 [S3Browser] 加载到 ${bucketList.length} 个 buckets:`,
+        bucketList.map(b => b.name)
+      );
       setBuckets(bucketList);
 
       // 将 buckets 转换为文件夹对象显示，并获取每个bucket的对象数量
-      const bucketObjectsPromises = bucketList.map(async (bucket) => {
+      const bucketObjectsPromises = bucketList.map(async bucket => {
         let objectCount = 0;
         try {
           // 使用原生 API 获取 bucket 统计信息
-          const stats = await S3Service.getBucketStats(connectionId, bucket.name);
+          const stats = await S3Service.getBucketStats(
+            connectionId,
+            bucket.name
+          );
           objectCount = stats.total_count;
         } catch (error) {
-          logger.warn(`📦 [S3Browser] 获取 bucket ${bucket.name} 对象数量失败:`, error);
+          logger.warn(
+            `📦 [S3Browser] 获取 bucket ${bucket.name} 对象数量失败:`,
+            error
+          );
         }
 
         return {
@@ -429,7 +468,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         bucketObjects = bucketObjects.filter(obj =>
           obj.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
-        logger.info(`📦 [S3Browser] 搜索过滤后剩余 ${bucketObjects.length} 个 bucket`);
+        logger.info(
+          `📦 [S3Browser] 搜索过滤后剩余 ${bucketObjects.length} 个 bucket`
+        );
       }
 
       // 排序
@@ -441,19 +482,25 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           case 'name':
             return a.name.localeCompare(b.name) * order;
           case 'lastModified':
-            return (a.lastModified.getTime() - b.lastModified.getTime()) * order;
+            return (
+              (a.lastModified.getTime() - b.lastModified.getTime()) * order
+            );
           default:
             return 0;
         }
       });
 
       setObjects(bucketObjects);
-      logger.info(`📦 [S3Browser] 显示 ${bucketObjects.length} 个 bucket 作为文件夹`);
+      logger.info(
+        `📦 [S3Browser] 显示 ${bucketObjects.length} 个 bucket 作为文件夹`
+      );
       // Buckets 列表没有分页，所以没有更多内容
       setHasMore(false);
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载 buckets 失败:`, error);
-      showMessage.error(`${String(t('s3:error.load_buckets_failed'))}: ${error}`);
+      showMessage.error(
+        `${String(t('s3:error.load_buckets_failed'))}: ${error}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -467,7 +514,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
     try {
       setIsLoading(true);
-      logger.info(`📦 [S3Browser] 开始加载对象: bucket=${currentBucket}, path=${currentPath}, append=${append}`);
+      logger.info(
+        `📦 [S3Browser] 开始加载对象: bucket=${currentBucket}, path=${currentPath}, append=${append}`
+      );
       const result = await S3Service.listObjects(
         connectionId,
         currentBucket,
@@ -478,9 +527,18 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       );
 
       const commonPrefixes = result.commonPrefixes || [];
-      logger.info(`📦 [S3Browser] 加载到 ${result.objects.length} 个对象, ${commonPrefixes.length} 个文件夹前缀`);
+      logger.info(
+        `📦 [S3Browser] 加载到 ${result.objects.length} 个对象, ${commonPrefixes.length} 个文件夹前缀`
+      );
       logger.info(`📦 [S3Browser] 当前路径: "${currentPath}"`);
-      logger.debug(`📦 [S3Browser] 对象列表:`, result.objects.map(o => ({ key: o.key, name: o.name, isDir: o.isDirectory })));
+      logger.debug(
+        `📦 [S3Browser] 对象列表:`,
+        result.objects.map(o => ({
+          key: o.key,
+          name: o.name,
+          isDir: o.isDirectory,
+        }))
+      );
       logger.debug(`📦 [S3Browser] 文件夹前缀:`, commonPrefixes);
       logger.debug(`📦 [S3Browser] 完整响应:`, result);
 
@@ -494,7 +552,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         const hasValidName = obj.name && obj.name.trim() !== '';
         const isNotDirectory = !obj.isDirectory;
         // 检查是否是文件夹标记对象（key 在 commonPrefixes 中或以 / 结尾）
-        const isNotFolderMarker = !prefixSet.has(obj.key) && !prefixSet.has(`${obj.key  }/`) && !obj.key.endsWith('/');
+        const isNotFolderMarker =
+          !prefixSet.has(obj.key) &&
+          !prefixSet.has(`${obj.key}/`) &&
+          !obj.key.endsWith('/');
         return hasValidName && isNotDirectory && isNotFolderMarker;
       });
 
@@ -502,10 +563,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       // 添加文件夹（从 commonPrefixes）
       commonPrefixes.forEach(prefix => {
-        logger.debug(`📦 [S3Browser] 处理前缀: "${prefix}", 当前路径: "${currentPath}"`);
+        logger.debug(
+          `📦 [S3Browser] 处理前缀: "${prefix}", 当前路径: "${currentPath}"`
+        );
         const folderName = prefix.replace(currentPath, '').replace(/\/$/, '');
         logger.debug(`📦 [S3Browser] 提取的文件夹名: "${folderName}"`);
-        if (folderName) { // 确保文件夹名称不为空
+        if (folderName) {
+          // 确保文件夹名称不为空
           const folderObj = {
             key: prefix,
             name: folderName,
@@ -516,11 +580,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           logger.debug(`📦 [S3Browser] 添加文件夹对象:`, folderObj);
           newObjects.push(folderObj);
         } else {
-          logger.warn(`📦 [S3Browser] 跳过空文件夹名: prefix="${prefix}", currentPath="${currentPath}"`);
+          logger.warn(
+            `📦 [S3Browser] 跳过空文件夹名: prefix="${prefix}", currentPath="${currentPath}"`
+          );
         }
       });
 
-      logger.info(`📦 [S3Browser] 合并后共 ${newObjects.length} 个项目（${commonPrefixes.length} 个文件夹 + ${result.objects.filter(o => !o.isDirectory).length} 个文件）`);
+      logger.info(
+        `📦 [S3Browser] 合并后共 ${newObjects.length} 个项目（${commonPrefixes.length} 个文件夹 + ${result.objects.filter(o => !o.isDirectory).length} 个文件）`
+      );
 
       // 过滤和排序
       if (!viewConfig.showHidden) {
@@ -551,7 +619,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           case 'size':
             return (a.size - b.size) * order;
           case 'lastModified':
-            return (a.lastModified.getTime() - b.lastModified.getTime()) * order;
+            return (
+              (a.lastModified.getTime() - b.lastModified.getTime()) * order
+            );
           default:
             return 0;
         }
@@ -564,16 +634,22 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           return updated;
         });
       } else {
-        logger.info(`📦 [S3Browser] 设置对象列表，共 ${newObjects.length} 个项目`);
+        logger.info(
+          `📦 [S3Browser] 设置对象列表，共 ${newObjects.length} 个项目`
+        );
         setObjects(newObjects);
       }
 
       setcontinuationToken(result.nextContinuationToken);
       setHasMore(result.isTruncated);
-      logger.info(`📦 [S3Browser] 加载完成: hasMore=${result.isTruncated}, nextToken=${result.nextContinuationToken ? '有' : '无'}`);
+      logger.info(
+        `📦 [S3Browser] 加载完成: hasMore=${result.isTruncated}, nextToken=${result.nextContinuationToken ? '有' : '无'}`
+      );
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载对象失败:`, error);
-      showMessage.error(`${String(t('s3:error.load_objects_failed'))}: ${error}`);
+      showMessage.error(
+        `${String(t('s3:error.load_objects_failed'))}: ${error}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -611,17 +687,62 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     const extension = object.name.split('.').pop()?.toLowerCase();
     const previewableExtensions = [
       // 图片
-      'jpg', 'jpeg', 'png', 'gif', 'svg', 'bmp', 'webp',
+      'jpg',
+      'jpeg',
+      'png',
+      'gif',
+      'svg',
+      'bmp',
+      'webp',
+      'ico',
       // 视频
-      'mp4', 'webm', 'ogg',
+      'mp4',
+      'webm',
+      'ogg',
       // 音频
-      'mp3', 'wav', 'ogg',
+      'mp3',
+      'wav',
+      'ogg',
       // 文本
-      'txt', 'md', 'json', 'xml', 'csv',
+      'txt',
+      'md',
+      'json',
+      'xml',
+      'csv',
+      'log',
+      'yaml',
+      'yml',
+      'ini',
+      'conf',
       // 代码
-      'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css',
+      'js',
+      'jsx',
+      'ts',
+      'tsx',
+      'py',
+      'java',
+      'c',
+      'cpp',
+      'go',
+      'rs',
+      'html',
+      'css',
+      'scss',
+      'sass',
+      'less',
+      'vue',
+      'php',
+      'rb',
+      'sh',
+      'bash',
       // Office
-      'xlsx', 'xls', 'csv',
+      'xlsx',
+      'xls',
+      'csv',
+      'doc',
+      'docx',
+      'ppt',
+      'pptx',
       // PDF
       'pdf',
     ];
@@ -645,7 +766,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     if (currentBucket && !object.isDirectory) {
       S3Service.getObjectTagging(connectionId, currentBucket, object.key)
         .then(tags => {
-          setPreviewObject(prev => prev ? { ...prev, tags } : null);
+          setPreviewObject(prev => (prev ? { ...prev, tags } : null));
         })
         .catch(error => {
           logger.error('获取预览文件标签失败:', error);
@@ -673,9 +794,20 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         // 对于图片，使用blob URL以避免CORS和URL编码问题
         if (isImageFile(object)) {
           try {
-            const data = await S3Service.downloadObject(connectionId, currentBucket, object.key);
+            const data = await S3Service.downloadObject(
+              connectionId,
+              currentBucket,
+              object.key
+            );
             // 使用 Uint8Array.slice() 创建新副本，确保类型兼容
-            const blob = new Blob([data.slice()], { type: `image/${extension}` });
+            // 根据扩展名设置正确的 MIME 类型
+            let mimeType = `image/${extension}`;
+            if (extension === 'svg') {
+              mimeType = 'image/svg+xml';
+            } else if (extension === 'jpg') {
+              mimeType = 'image/jpeg';
+            }
+            const blob = new Blob([data.slice()], { type: mimeType });
             const blobUrl = URL.createObjectURL(blob);
             setPreviewContent(blobUrl);
           } catch (error) {
@@ -689,21 +821,69 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       }
       // 文本文件：下载并显示内容
       else if (
-        ['txt', 'md', 'json', 'xml', 'csv', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css'].includes(
-          extension || ''
-        )
+        [
+          'txt',
+          'md',
+          'json',
+          'xml',
+          'csv',
+          'log',
+          'yaml',
+          'yml',
+          'ini',
+          'conf',
+          'js',
+          'jsx',
+          'ts',
+          'tsx',
+          'py',
+          'java',
+          'c',
+          'cpp',
+          'go',
+          'rs',
+          'html',
+          'css',
+          'scss',
+          'sass',
+          'less',
+          'vue',
+          'php',
+          'rb',
+          'sh',
+          'bash',
+        ].includes(extension || '')
       ) {
-        const data = await S3Service.downloadObject(connectionId, currentBucket, object.key);
+        const data = await S3Service.downloadObject(
+          connectionId,
+          currentBucket,
+          object.key
+        );
         const text = new TextDecoder('utf-8').decode(data);
         setPreviewContent(text);
       }
       // Excel 文件：解析并显示
       else if (['xlsx', 'xls'].includes(extension || '')) {
-        const data = await S3Service.downloadObject(connectionId, currentBucket, object.key);
+        const data = await S3Service.downloadObject(
+          connectionId,
+          currentBucket,
+          object.key
+        );
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const html = XLSX.utils.sheet_to_html(firstSheet);
         setPreviewContent(html);
+      }
+      // Word/PowerPoint 文件：生成预签名 URL 用于下载提示
+      else if (['doc', 'docx', 'ppt', 'pptx'].includes(extension || '')) {
+        const result = await S3Service.generatePresignedUrl(
+          connectionId,
+          currentBucket,
+          object.key,
+          'get',
+          300
+        );
+        setPreviewContent(result.url);
       }
     } catch (error) {
       logger.error(`Preview file failed:`, error);
@@ -719,7 +899,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     index: number,
     event: React.MouseEvent | React.ChangeEvent
   ) => {
-    const isCtrlOrCmd = 'ctrlKey' in event ? event.ctrlKey || event.metaKey : false;
+    const isCtrlOrCmd =
+      'ctrlKey' in event ? event.ctrlKey || event.metaKey : false;
     const isShift = 'shiftKey' in event ? event.shiftKey : false;
 
     let newSelection = new Set(selectedObjects);
@@ -763,7 +944,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     fileInputRef.current?.click();
   };
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -792,7 +975,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     setIsLoading(false);
 
     if (successCount > 0) {
-      showMessage.success(String(t('s3:upload.success', { count: successCount })));
+      showMessage.success(
+        String(t('s3:upload.success', { count: successCount }))
+      );
       loadObjects();
     }
 
@@ -807,9 +992,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   };
 
   const handleDownload = async (items?: S3Object[]) => {
-    const toDownload = items || Array.from(selectedObjects)
-      .map(key => objects.find(obj => obj.key === key))
-      .filter(Boolean) as S3Object[];
+    const toDownload =
+      items ||
+      (Array.from(selectedObjects)
+        .map(key => objects.find(obj => obj.key === key))
+        .filter(Boolean) as S3Object[]);
 
     if (toDownload.length === 0) {
       showMessage.warning(String(t('s3:download.no_selection')));
@@ -828,20 +1015,23 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         const extension = object.name.split('.').pop()?.toLowerCase() || '';
 
         // 显示原生文件保存对话框
-        const dialogResult = await safeTauriInvoke<{ path?: string; name?: string } | null>(
-          'save_file_dialog',
-          {
-            params: {
-              default_path: object.name,
-              filters: extension ? [
-                { name: `${extension.toUpperCase()} Files`, extensions: [extension] },
-                { name: 'All Files', extensions: ['*'] }
-              ] : [
-                { name: 'All Files', extensions: ['*'] }
-              ]
-            }
-          }
-        );
+        const dialogResult = await safeTauriInvoke<{
+          path?: string;
+          name?: string;
+        } | null>('save_file_dialog', {
+          params: {
+            default_path: object.name,
+            filters: extension
+              ? [
+                  {
+                    name: `${extension.toUpperCase()} Files`,
+                    extensions: [extension],
+                  },
+                  { name: 'All Files', extensions: ['*'] },
+                ]
+              : [{ name: 'All Files', extensions: ['*'] }],
+          },
+        });
 
         // 用户取消了保存
         if (!dialogResult || !dialogResult.path) {
@@ -860,14 +1050,18 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       } catch (error) {
         failCount++;
         logger.error(`Download failed for ${object.name}:`, error);
-        showMessage.error(`${String(t('s3:download.failed', { name: object.name }))}: ${error}`);
+        showMessage.error(
+          `${String(t('s3:download.failed', { name: object.name }))}: ${error}`
+        );
       }
     }
 
     setIsLoading(false);
 
     if (successCount > 0) {
-      showMessage.success(String(t('s3:download.success', { count: successCount })));
+      showMessage.success(
+        String(t('s3:download.success', { count: successCount }))
+      );
     }
   };
 
@@ -887,7 +1081,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         currentBucket,
         toDelete
       );
-      showMessage.success(String(t('s3:delete.success', { count: deletedKeys.length })));
+      showMessage.success(
+        String(t('s3:delete.success', { count: deletedKeys.length }))
+      );
       setSelectedObjects(new Set());
       loadObjects();
     } catch (error) {
@@ -917,7 +1113,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
   const handleCreateFolder = async () => {
     if (!currentBucket) {
-      showMessage.warning(String(t('s3:folder.select_bucket_first', { defaultValue: '请先选择存储桶' })));
+      showMessage.warning(
+        String(
+          t('s3:folder.select_bucket_first', { defaultValue: '请先选择存储桶' })
+        )
+      );
       return;
     }
 
@@ -925,12 +1125,16 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
     try {
       // 生成唯一的文件夹名称
-      const baseName = String(t('s3:folder.default_name', { defaultValue: '新建文件夹' }));
+      const baseName = String(
+        t('s3:folder.default_name', { defaultValue: '新建文件夹' })
+      );
       const uniqueName = generateUniqueFolderName(baseName);
       const folderPath = currentPath + uniqueName;
 
       // 确保路径以 / 结尾
-      const folderKey = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
+      const folderKey = folderPath.endsWith('/')
+        ? folderPath
+        : `${folderPath}/`;
 
       // 创建文件夹（上传空对象）
       await S3Service.uploadObject(
@@ -941,7 +1145,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         'application/x-directory'
       );
 
-      showMessage.success(String(t('s3:folder.created_rename_tip', { defaultValue: '文件夹已创建，双击可重命名' })));
+      showMessage.success(
+        String(
+          t('s3:folder.created_rename_tip', {
+            defaultValue: '文件夹已创建，双击可重命名',
+          })
+        )
+      );
 
       // 重新加载对象列表
       await loadObjects();
@@ -992,7 +1202,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       // 如果是文件夹，确保目标 key 以 / 结尾
       if (item.isDirectory && !destKey.endsWith('/')) {
-        destKey = `${destKey  }/`;
+        destKey = `${destKey}/`;
       }
 
       try {
@@ -1014,7 +1224,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           );
         }
       } catch (error) {
-        showMessage.error(`${String(t('s3:paste.failed', { name: item.name }))}: ${error}`);
+        showMessage.error(
+          `${String(t('s3:paste.failed', { name: item.name }))}: ${error}`
+        );
       }
     }
 
@@ -1058,7 +1270,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
     try {
       // 计算过期秒数
-      const expiresInSeconds = shareDays * 86400 + shareHours * 3600 + shareMinutes * 60;
+      const expiresInSeconds =
+        shareDays * 86400 + shareHours * 3600 + shareMinutes * 60;
 
       if (expiresInSeconds <= 0) {
         showMessage.warning(String(t('s3:presigned_url.invalid_time')));
@@ -1104,7 +1317,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       // 如果是文件夹，确保新的 key 以 / 结尾
       if (renameObject.isDirectory && !newKey.endsWith('/')) {
-        newKey = `${newKey  }/`;
+        newKey = `${newKey}/`;
       }
 
       // 复制到新位置
@@ -1119,14 +1332,18 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       // 删除旧对象
       await S3Service.deleteObject(connectionId, currentBucket, oldKey);
 
-      showMessage.success(String(t('s3:rename.success', { defaultValue: '重命名成功' })));
+      showMessage.success(
+        String(t('s3:rename.success', { defaultValue: '重命名成功' }))
+      );
       setShowRenameDialog(false);
       setRenameObject(null);
       setNewName('');
       loadObjects();
     } catch (error) {
       logger.error('Rename failed:', error);
-      showMessage.error(`${String(t('s3:rename.failed', { defaultValue: '重命名失败' }))}: ${error}`);
+      showMessage.error(
+        `${String(t('s3:rename.failed', { defaultValue: '重命名失败' }))}: ${error}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -1163,7 +1380,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
     // 根目录不允许上传
     if (!currentBucket) {
-      showMessage.warning(String(t('s3:upload.no_bucket', { defaultValue: '请先选择存储桶' })));
+      showMessage.warning(
+        String(t('s3:upload.no_bucket', { defaultValue: '请先选择存储桶' }))
+      );
       return;
     }
 
@@ -1187,7 +1406,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
     for (const file of files) {
       try {
-        const uploadKey = currentPath ? `${currentPath}${file.name}` : file.name;
+        const uploadKey = currentPath
+          ? `${currentPath}${file.name}`
+          : file.name;
         const data = await S3Service.fileToUint8Array(file);
         await S3Service.uploadObject(
           connectionId,
@@ -1206,7 +1427,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     setIsLoading(false);
 
     if (successCount > 0) {
-      showMessage.success(String(t('s3:upload.success', { count: successCount })));
+      showMessage.success(
+        String(t('s3:upload.success', { count: successCount }))
+      );
       loadObjects();
     }
 
@@ -1300,8 +1523,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
     setTagsLoading(true);
     try {
-      const tags = await S3Service.getObjectTagging(connectionId, currentBucket, object.key);
-      const tagsArray = Object.entries(tags).map(([key, value]) => ({ key, value }));
+      const tags = await S3Service.getObjectTagging(
+        connectionId,
+        currentBucket,
+        object.key
+      );
+      const tagsArray = Object.entries(tags).map(([key, value]) => ({
+        key,
+        value,
+      }));
       setObjectTags(tagsArray);
     } catch (error) {
       logger.error('获取标签失败:', error);
@@ -1350,7 +1580,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
   // 清理blob URL以避免内存泄漏
   useEffect(() => {
-    if (!showPreviewDialog && previewContent && previewContent.startsWith('blob:')) {
+    if (
+      !showPreviewDialog &&
+      previewContent &&
+      previewContent.startsWith('blob:')
+    ) {
       URL.revokeObjectURL(previewContent);
     }
   }, [showPreviewDialog, previewContent]);
@@ -1370,7 +1604,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         const parts = currentPath.split('/').filter(Boolean);
         let path = '';
         for (const part of parts) {
-          path += `${part  }/`;
+          path += `${part}/`;
           items.push({ label: part, path, isBucket: false });
         }
       }
@@ -1401,7 +1635,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   };
 
   // 列宽调整处理函数
-  const handleColumnResizeStart = (columnName: string, nextColumnName: string | null, e: React.MouseEvent) => {
+  const handleColumnResizeStart = (
+    columnName: string,
+    nextColumnName: string | null,
+    e: React.MouseEvent
+  ) => {
     e.preventDefault();
     e.stopPropagation(); // 阻止事件冒泡，避免触发容器的框选功能
     resizingColumn.current = columnName;
@@ -1415,30 +1653,32 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       : 0;
 
     const handleMouseMove = (e: MouseEvent) => {
-      if (!resizingColumn.current) return;
+      if (!resizingColumn.current || !nextResizingColumn.current) return;
 
-      const diff = e.clientX - startX.current;
-      const newWidth = Math.max(80, startWidth.current + diff); // 最小宽度 80px
+      const MIN_WIDTH = 80; // 最小宽度 80px
+      let diff = e.clientX - startX.current;
 
-      // 如果有下一列，同时调整下一列的宽度（保持总宽度不变）
-      if (nextResizingColumn.current) {
-        const nextNewWidth = Math.max(80, nextStartWidth.current - diff);
+      // 计算理想的新宽度
+      let newWidth = startWidth.current + diff;
+      let nextNewWidth = nextStartWidth.current - diff;
 
-        // 只有当两列都满足最小宽度要求时才更新
-        if (newWidth >= 80 && nextNewWidth >= 80) {
-          setColumnWidths(prev => ({
-            ...prev,
-            [resizingColumn.current!]: newWidth,
-            [nextResizingColumn.current!]: nextNewWidth,
-          }));
-        }
-      } else {
-        // 如果没有下一列（最后一列），只调整当前列
-        setColumnWidths(prev => ({
-          ...prev,
-          [resizingColumn.current!]: newWidth,
-        }));
+      // 限制diff，确保两列都不小于最小宽度
+      if (newWidth < MIN_WIDTH) {
+        diff = MIN_WIDTH - startWidth.current;
+        newWidth = MIN_WIDTH;
+        nextNewWidth = nextStartWidth.current - diff;
+      } else if (nextNewWidth < MIN_WIDTH) {
+        diff = nextStartWidth.current - MIN_WIDTH;
+        newWidth = startWidth.current + diff;
+        nextNewWidth = MIN_WIDTH;
       }
+
+      // 更新列宽
+      setColumnWidths(prev => ({
+        ...prev,
+        [resizingColumn.current!]: newWidth,
+        [nextResizingColumn.current!]: nextNewWidth,
+      }));
     };
 
     const handleMouseUp = () => {
@@ -1452,71 +1692,81 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-
   return (
-    <div className="s3-browser h-full flex flex-col">
+    <div className='s3-browser h-full flex flex-col'>
       {/* 工具栏 */}
-      <div className="toolbar p-2 border-b flex items-center gap-2">
-        <div className="flex-1" />
+      <div className='toolbar p-2 border-b flex items-center gap-2'>
+        <div className='flex-1' />
 
         {/* 操作按钮 */}
-        <Button size="sm" variant="ghost" onClick={handleUpload} disabled={!currentBucket}>
-          <Upload className="w-4 h-4 mr-1" />
+        <Button
+          size='sm'
+          variant='ghost'
+          onClick={handleUpload}
+          disabled={!currentBucket}
+        >
+          <Upload className='w-4 h-4 mr-1' />
           {t('s3:upload.label')}
         </Button>
 
         <Button
-          size="sm"
-          variant="ghost"
+          size='sm'
+          variant='ghost'
           onClick={() => handleDownload()}
           disabled={selectedObjects.size === 0}
         >
-          <Download className="w-4 h-4 mr-1" />
+          <Download className='w-4 h-4 mr-1' />
           {t('s3:download.label')}
         </Button>
 
         <Button
-          size="sm"
-          variant="ghost"
+          size='sm'
+          variant='ghost'
           onClick={handleCreateFolder}
           disabled={!currentBucket}
         >
-          <FolderPlus className="w-4 h-4 mr-1" />
+          <FolderPlus className='w-4 h-4 mr-1' />
           {t('s3:new_folder')}
         </Button>
 
         <Button
-          size="sm"
-          variant="ghost"
+          size='sm'
+          variant='ghost'
           onClick={() => setShowDeleteConfirmDialog(true)}
           disabled={selectedObjects.size === 0}
         >
-          <Trash2 className="w-4 h-4 mr-1" />
+          <Trash2 className='w-4 h-4 mr-1' />
           {t('s3:delete.label')}
         </Button>
 
-        <Button size="sm" variant="ghost" onClick={() => loadObjects()}>
-          <RefreshCw className="w-4 h-4" />
+        <Button size='sm' variant='ghost' onClick={() => loadObjects()}>
+          <RefreshCw className='w-4 h-4' />
         </Button>
 
         {/* 更多操作 */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button size="sm" variant="ghost">
-              <MoreVertical className="w-4 h-4" />
+            <Button size='sm' variant='ghost'>
+              <MoreVertical className='w-4 h-4' />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={handleCopy} disabled={selectedObjects.size === 0}>
-              <Copy className="w-4 h-4 mr-2" />
+            <DropdownMenuItem
+              onClick={handleCopy}
+              disabled={selectedObjects.size === 0}
+            >
+              <Copy className='w-4 h-4 mr-2' />
               {t('s3:copy.label')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleCut} disabled={selectedObjects.size === 0}>
-              <Scissors className="w-4 h-4 mr-2" />
+            <DropdownMenuItem
+              onClick={handleCut}
+              disabled={selectedObjects.size === 0}
+            >
+              <Scissors className='w-4 h-4 mr-2' />
               {t('s3:cut.label')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handlePaste} disabled={!fileOperation}>
-              <Clipboard className="w-4 h-4 mr-2" />
+              <Clipboard className='w-4 h-4 mr-2' />
               {t('s3:paste.label')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -1524,35 +1774,39 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               onClick={() => handleGeneratePresignedUrl()}
               disabled={selectedObjects.size !== 1}
             >
-              <Link className="w-4 h-4 mr-2" />
+              <Link className='w-4 h-4 mr-2' />
               {t('s3:generate_link')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         {/* 视图切换 */}
-        <div className="flex gap-1">
+        <div className='flex gap-1'>
           <Button
-            size="sm"
+            size='sm'
             variant={viewConfig.viewMode === 'list' ? 'default' : 'ghost'}
-            onClick={() => setViewConfig(prev => ({ ...prev, viewMode: 'list' }))}
+            onClick={() =>
+              setViewConfig(prev => ({ ...prev, viewMode: 'list' }))
+            }
           >
-            <List className="w-4 h-4" />
+            <List className='w-4 h-4' />
           </Button>
           <Button
-            size="sm"
+            size='sm'
             variant={viewConfig.viewMode === 'grid' ? 'default' : 'ghost'}
-            onClick={() => setViewConfig(prev => ({ ...prev, viewMode: 'grid' }))}
+            onClick={() =>
+              setViewConfig(prev => ({ ...prev, viewMode: 'grid' }))
+            }
           >
-            <Grid className="w-4 h-4" />
+            <Grid className='w-4 h-4' />
           </Button>
         </div>
 
         {/* 搜索框 */}
-        <div className="relative flex items-center">
-          <Search className="absolute left-2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <div className='relative flex items-center'>
+          <Search className='absolute left-2 w-4 h-4 text-muted-foreground pointer-events-none' />
           <Input
-            className="pl-8 w-48 h-9"
+            className='pl-8 w-48 h-9'
             placeholder={t('s3:search')}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
@@ -1561,15 +1815,17 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       </div>
 
       {/* 面包屑导航 */}
-      <div className="breadcrumbs">
+      <div className='breadcrumbs'>
         {getBreadcrumbs().map((item, index) => (
           <React.Fragment key={`${item.label}-${index}`}>
-            {index > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
+            {index > 0 && (
+              <ChevronRight className='w-3.5 h-3.5 text-muted-foreground' />
+            )}
             <button
-              className="hover:underline hover:text-primary flex items-center gap-1 text-sm py-0"
+              className='hover:underline hover:text-primary flex items-center gap-1 text-sm py-0'
               onClick={() => handleBreadcrumbClick(item, index)}
             >
-              {index === 0 && <Home className="w-3.5 h-3.5" />}
+              {index === 0 && <Home className='w-3.5 h-3.5' />}
               {item.label}
             </button>
           </React.Fragment>
@@ -1579,7 +1835,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       {/* 文件列表 */}
       <div
         ref={containerRef}
-        className="flex-1 relative overflow-hidden"
+        className='flex-1 relative overflow-hidden'
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -1589,15 +1845,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         onDrop={handleDrop}
       >
         {isDraggingOver && (
-          <div className="absolute inset-0 bg-primary/10 border-2 border-dashed border-primary z-50 flex items-center justify-center pointer-events-none">
-            <div className="text-lg font-semibold text-primary">
+          <div className='absolute inset-0 bg-primary/10 border-2 border-dashed border-primary z-50 flex items-center justify-center pointer-events-none'>
+            <div className='text-lg font-semibold text-primary'>
               {t('s3:upload.drop_here', { defaultValue: '释放文件以上传' })}
             </div>
           </div>
         )}
         {isSelecting && selectionStart && selectionEnd && (
           <div
-            className="absolute border-2 border-primary bg-primary/10 pointer-events-none z-40"
+            className='absolute border-2 border-primary bg-primary/10 pointer-events-none z-40'
             style={{
               left: Math.min(selectionStart.x, selectionEnd.x),
               top: Math.min(selectionStart.y, selectionEnd.y),
@@ -1606,216 +1862,273 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             }}
           />
         )}
-        <ScrollArea ref={scrollAreaRef} className="h-full">
-        {viewConfig.viewMode === 'list' ? (
-          <table>
-            <thead className="sticky top-0 bg-background z-10">
-              <tr className="border-b">
-                <th className="text-left p-2" style={{ width: '48px', minWidth: '48px', maxWidth: '48px' }}>
-                  <div className="flex items-center justify-center">
-                    <Checkbox
-                      checked={objects.length > 0 && selectedObjects.size === objects.length}
-                      onCheckedChange={handleSelectAll}
-                    />
-                  </div>
-                </th>
-                <th className="text-left p-2" style={{ width: columnWidths.name }}>
-                  <div className="flex items-center">
-                    <span>{t('s3:name')}</span>
-                    <div
-                      className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('name', 'size', e)}
-                    />
-                  </div>
-                </th>
-                <th className="text-left p-2" style={{ width: columnWidths.size }}>
-                  <div className="flex items-center">
-                    <span>{t('s3:size')}</span>
-                    <div
-                      className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('size', !currentBucket ? 'count' : 'modified', e)}
-                    />
-                  </div>
-                </th>
-                {/* 在根目录显示文件数量列 */}
-                {!currentBucket && (
-                  <th className="text-left p-2" style={{ width: columnWidths.count }}>
-                    <div className="flex items-center">
-                      <span>{t('s3:object_count', { defaultValue: '对象数量' })}</span>
-                      <div
-                        className="column-resizer"
-                        onMouseDown={(e) => handleColumnResizeStart('count', 'modified', e)}
+        <ScrollArea ref={scrollAreaRef} className='h-full'>
+          {viewConfig.viewMode === 'list' ? (
+            <table className='w-full' style={{ tableLayout: 'fixed' }}>
+              <thead className='sticky top-0 bg-background z-10'>
+                <tr className='border-b'>
+                  <th
+                    className='text-left p-2'
+                    style={{
+                      width: '48px',
+                      minWidth: '48px',
+                      maxWidth: '48px',
+                    }}
+                  >
+                    <div className='flex items-center justify-center'>
+                      <Checkbox
+                        checked={
+                          objects.length > 0 &&
+                          selectedObjects.size === objects.length
+                        }
+                        onCheckedChange={handleSelectAll}
                       />
                     </div>
                   </th>
-                )}
-                <th className="text-left p-2" style={{ width: columnWidths.modified }}>
-                  <div className="flex items-center">
-                    <span>{t('s3:modified')}</span>
-                    <div
-                      className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('modified', null, e)}
-                    />
-                  </div>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {objects.map((object, index) => (
-                <tr
-                  key={object.key}
-                  className="border-b hover:bg-muted/50 cursor-pointer object-item"
-                  onClick={(e) => {
-                    // 如果点击的是 checkbox，不触发行选择
-                    if ((e.target as HTMLElement).closest('button[role="checkbox"]')) {
-                      return;
-                    }
-                    handleObjectSelect(object, index, e);
-                  }}
-                  onDoubleClick={() => handleObjectClick(object)}
-                  onContextMenu={(e) => handleContextMenu(e, object)}
-                >
-                  <td className="p-2" style={{ width: '48px', minWidth: '48px', maxWidth: '48px' }}>
-                    <div className="flex items-center justify-center h-full">
-                      <Checkbox
-                        checked={selectedObjects.has(object.key)}
-                        onCheckedChange={(checked) => {
-                          // Checkbox 点击时模拟一个带 Ctrl 键的事件（切换选择）
-                          const syntheticEvent = {
-                            ctrlKey: true,
-                            metaKey: false,
-                            shiftKey: false,
-                          } as React.MouseEvent;
-                          handleObjectSelect(object, index, syntheticEvent);
-                        }}
-                        onClick={e => e.stopPropagation()}
+                  <th
+                    className='text-left p-2'
+                    style={{ width: columnWidths.name }}
+                  >
+                    <div className='flex items-center'>
+                      <span>{t('s3:name')}</span>
+                      <div
+                        className='column-resizer'
+                        onMouseDown={e =>
+                          handleColumnResizeStart('name', 'size', e)
+                        }
                       />
                     </div>
-                  </td>
-                  <td className="p-2" style={{ width: columnWidths.name }}>
-                    <div className="flex items-center gap-2 min-w-0">
-                      {getFileIcon(object)}
-                      <span className="truncate" title={object.name}>{object.name}</span>
+                  </th>
+                  <th
+                    className='text-left p-2'
+                    style={{ width: columnWidths.size }}
+                  >
+                    <div className='flex items-center'>
+                      <span>{t('s3:size')}</span>
+                      <div
+                        className='column-resizer'
+                        onMouseDown={e =>
+                          handleColumnResizeStart(
+                            'size',
+                            !currentBucket ? 'count' : 'modified',
+                            e
+                          )
+                        }
+                      />
                     </div>
-                  </td>
-                  <td className="p-2" style={{ width: columnWidths.size }}>
-                    <span className="truncate block" title={object.isDirectory ? '-' : formatBytes(object.size)}>
-                      {object.isDirectory ? '-' : formatBytes(object.size)}
-                    </span>
-                  </td>
-                  {/* 在根目录显示文件数量 */}
+                  </th>
+                  {/* 在根目录显示文件数量列 */}
                   {!currentBucket && (
-                    <td className="p-2" style={{ width: columnWidths.count }}>
-                      <span className="truncate block">
-                        {object.objectCount !== undefined ? object.objectCount : '-'}
+                    <th
+                      className='text-left p-2'
+                      style={{ width: columnWidths.count }}
+                    >
+                      <div className='flex items-center'>
+                        <span>
+                          {t('s3:object_count', { defaultValue: '对象数量' })}
+                        </span>
+                        <div
+                          className='column-resizer'
+                          onMouseDown={e =>
+                            handleColumnResizeStart('count', 'modified', e)
+                          }
+                        />
+                      </div>
+                    </th>
+                  )}
+                  <th
+                    className='text-left p-2'
+                    style={{ width: columnWidths.modified }}
+                  >
+                    <span>{t('s3:modified')}</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {objects.map((object, index) => (
+                  <tr
+                    key={object.key}
+                    className='border-b hover:bg-muted/50 cursor-pointer object-item'
+                    onClick={e => {
+                      // 如果点击的是 checkbox，不触发行选择
+                      if (
+                        (e.target as HTMLElement).closest(
+                          'button[role="checkbox"]'
+                        )
+                      ) {
+                        return;
+                      }
+                      handleObjectSelect(object, index, e);
+                    }}
+                    onDoubleClick={() => handleObjectClick(object)}
+                    onContextMenu={e => handleContextMenu(e, object)}
+                  >
+                    <td
+                      className='p-2'
+                      style={{
+                        width: '48px',
+                        minWidth: '48px',
+                        maxWidth: '48px',
+                      }}
+                    >
+                      <div className='flex items-center justify-center h-full'>
+                        <Checkbox
+                          checked={selectedObjects.has(object.key)}
+                          onCheckedChange={checked => {
+                            // Checkbox 点击时模拟一个带 Ctrl 键的事件（切换选择）
+                            const syntheticEvent = {
+                              ctrlKey: true,
+                              metaKey: false,
+                              shiftKey: false,
+                            } as React.MouseEvent;
+                            handleObjectSelect(object, index, syntheticEvent);
+                          }}
+                          onClick={e => e.stopPropagation()}
+                        />
+                      </div>
+                    </td>
+                    <td className='p-2' style={{ width: columnWidths.name }}>
+                      <div className='flex items-center gap-2 min-w-0'>
+                        {getFileIcon(object)}
+                        <span className='truncate' title={object.name}>
+                          {object.name}
+                        </span>
+                      </div>
+                    </td>
+                    <td className='p-2' style={{ width: columnWidths.size }}>
+                      <span
+                        className='truncate block'
+                        title={
+                          object.isDirectory ? '-' : formatBytes(object.size)
+                        }
+                      >
+                        {object.isDirectory ? '-' : formatBytes(object.size)}
                       </span>
                     </td>
-                  )}
-                  <td className="p-2" style={{ width: columnWidths.modified }}>
-                    <span className="truncate block" title={formatDate(object.lastModified)}>
-                      {formatDate(object.lastModified)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="grid grid-cols-6 gap-2 p-2">
-            {objects.map((object, index) => (
-              <ContextMenu key={object.key}>
-                <ContextMenuTrigger asChild>
-                  <div
-                    className={`
+                    {/* 在根目录显示文件数量 */}
+                    {!currentBucket && (
+                      <td className='p-2' style={{ width: columnWidths.count }}>
+                        <span className='truncate block'>
+                          {object.objectCount !== undefined
+                            ? object.objectCount
+                            : '-'}
+                        </span>
+                      </td>
+                    )}
+                    <td className='p-2' style={{ width: columnWidths.modified }}>
+                      <span
+                        className='truncate block'
+                        title={formatDate(object.lastModified)}
+                      >
+                        {formatDate(object.lastModified)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <div className='grid grid-cols-6 gap-2 p-2'>
+              {objects.map((object, index) => (
+                <ContextMenu key={object.key}>
+                  <ContextMenuTrigger asChild>
+                    <div
+                      className={`
                       flex flex-col items-center p-4 rounded-lg cursor-pointer object-item
                       hover:bg-muted/50 transition-colors
                       ${selectedObjects.has(object.key) ? 'bg-muted' : ''}
                     `}
-                    onDoubleClick={() => handleObjectClick(object)}
-                    onClick={(e) => handleObjectSelect(object, index, e)}
-                  >
-                    <div className="w-full mb-2 flex items-center justify-center min-h-[96px]">
-                      {object.isDirectory ? (
-                        <FolderOpen className="w-12 h-12" />
-                      ) : (isImageFile(object) || isVideoFile(object)) ? (
-                        <FileThumbnail
-                          object={object}
-                          connectionId={connectionId}
-                          currentBucket={currentBucket}
-                          viewMode={viewConfig.viewMode}
-                        />
-                      ) : (
-                        <div className="text-4xl">
-                          {getFileIcon(object)}
+                      onDoubleClick={() => handleObjectClick(object)}
+                      onClick={e => handleObjectSelect(object, index, e)}
+                    >
+                      <div className='w-full mb-2 flex items-center justify-center min-h-[96px]'>
+                        {object.isDirectory ? (
+                          <FolderOpen className='w-12 h-12' />
+                        ) : isImageFile(object) || isVideoFile(object) ? (
+                          <FileThumbnail
+                            object={object}
+                            connectionId={connectionId}
+                            currentBucket={currentBucket}
+                            viewMode={viewConfig.viewMode}
+                          />
+                        ) : (
+                          <div className='text-4xl'>{getFileIcon(object)}</div>
+                        )}
+                      </div>
+                      <div
+                        className='text-sm text-center truncate w-full'
+                        title={object.name}
+                      >
+                        {object.name}
+                      </div>
+                      {!object.isDirectory && (
+                        <div className='text-xs text-muted-foreground'>
+                          {formatBytes(object.size)}
                         </div>
                       )}
                     </div>
-                    <div className="text-sm text-center truncate w-full" title={object.name}>
-                      {object.name}
-                    </div>
-                    {!object.isDirectory && (
-                      <div className="text-xs text-muted-foreground">
-                        {formatBytes(object.size)}
-                      </div>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent>
+                    {currentBucket && (
+                      <>
+                        <ContextMenuItem onClick={() => handleRename(object)}>
+                          <Edit2 className='w-4 h-4 mr-2' />
+                          {t('s3:rename.label', { defaultValue: '重命名' })}
+                        </ContextMenuItem>
+                        <ContextMenuSeparator />
+                      </>
                     )}
-                  </div>
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                  {currentBucket && (
-                    <>
-                      <ContextMenuItem onClick={() => handleRename(object)}>
-                        <Edit2 className="w-4 h-4 mr-2" />
-                        {t('s3:rename.label', { defaultValue: '重命名' })}
-                      </ContextMenuItem>
-                      <ContextMenuSeparator />
-                    </>
-                  )}
-                  <ContextMenuItem onClick={() => handleDownload([object])}>
-                    <Download className="w-4 h-4 mr-2" />
-                    {t('s3:download.label', { defaultValue: '下载' })}
-                  </ContextMenuItem>
-                  <ContextMenuItem onClick={handleCopy}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    {t('s3:copy.label', { defaultValue: '复制' })}
-                  </ContextMenuItem>
-                  <ContextMenuItem onClick={handleCut}>
-                    <Scissors className="w-4 h-4 mr-2" />
-                    {t('s3:cut.label', { defaultValue: '剪切' })}
-                  </ContextMenuItem>
-                  <ContextMenuSeparator />
-                  <ContextMenuItem onClick={() => setShowDeleteConfirmDialog(true)}>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    {t('s3:delete.label', { defaultValue: '删除' })}
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-            ))}
-          </div>
-        )}
+                    <ContextMenuItem onClick={() => handleDownload([object])}>
+                      <Download className='w-4 h-4 mr-2' />
+                      {t('s3:download.label', { defaultValue: '下载' })}
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={handleCopy}>
+                      <Copy className='w-4 h-4 mr-2' />
+                      {t('s3:copy.label', { defaultValue: '复制' })}
+                    </ContextMenuItem>
+                    <ContextMenuItem onClick={handleCut}>
+                      <Scissors className='w-4 h-4 mr-2' />
+                      {t('s3:cut.label', { defaultValue: '剪切' })}
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem
+                      onClick={() => setShowDeleteConfirmDialog(true)}
+                    >
+                      <Trash2 className='w-4 h-4 mr-2' />
+                      {t('s3:delete.label', { defaultValue: '删除' })}
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
+              ))}
+            </div>
+          )}
 
-        {/* 无限滚动触发器 */}
-        {hasMore && (
-          <div ref={loadMoreTriggerRef} className="text-center p-4">
-            {isLoading ? (
-              <div className="flex items-center justify-center gap-2 text-muted-foreground">
-                <RefreshCw className="w-4 h-4 animate-spin" />
-                <span className="text-sm">{t('common:loading')}</span>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                {t('s3:scroll_to_load_more', { defaultValue: '向下滚动加载更多' })}
-              </div>
-            )}
-          </div>
-        )}
-      </ScrollArea>
+          {/* 无限滚动触发器 */}
+          {hasMore && (
+            <div ref={loadMoreTriggerRef} className='text-center p-4'>
+              {isLoading ? (
+                <div className='flex items-center justify-center gap-2 text-muted-foreground'>
+                  <RefreshCw className='w-4 h-4 animate-spin' />
+                  <span className='text-sm'>{t('common:loading')}</span>
+                </div>
+              ) : (
+                <div className='text-sm text-muted-foreground'>
+                  {t('s3:scroll_to_load_more', {
+                    defaultValue: '向下滚动加载更多',
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </ScrollArea>
       </div>
 
       {/* 状态栏 */}
-      <div className="statusbar px-2 py-1 border-t text-sm text-muted-foreground flex justify-between">
+      <div className='statusbar px-2 py-1 border-t text-sm text-muted-foreground flex justify-between'>
         <span>
           {t('s3:items', { count: objects.length })}
-          {selectedObjects.size > 0 && ` | ${t('s3:selected', { count: selectedObjects.size })}`}
+          {selectedObjects.size > 0 &&
+            ` | ${t('s3:selected', { count: selectedObjects.size })}`}
         </span>
         <span>{connectionName}</span>
       </div>
@@ -1823,14 +2136,17 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       {/* 隐藏的文件输入 */}
       <input
         ref={fileInputRef}
-        type="file"
+        type='file'
         multiple
-        className="hidden"
+        className='hidden'
         onChange={handleFileSelect}
       />
 
       {/* 删除确认对话框 */}
-      <Dialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
+      <Dialog
+        open={showDeleteConfirmDialog}
+        onOpenChange={setShowDeleteConfirmDialog}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('s3:delete.confirm_title')}</DialogTitle>
@@ -1839,10 +2155,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteConfirmDialog(false)}>
+            <Button
+              variant='outline'
+              onClick={() => setShowDeleteConfirmDialog(false)}
+            >
               {String(t('common:cancel'))}
             </Button>
-            <Button variant="destructive" onClick={handleDelete}>
+            <Button variant='destructive' onClick={handleDelete}>
               {String(t('common:delete'))}
             </Button>
           </DialogFooter>
@@ -1852,7 +2171,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       {/* 预签名URL对话框 */}
       <Dialog
         open={showPresignedUrlDialog}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           setShowPresignedUrlDialog(open);
           if (!open) {
             // 关闭时重置状态
@@ -1865,55 +2184,67 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           }
         }}
       >
-        <DialogContent className="max-w-xl">
+        <DialogContent className='max-w-xl'>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Link className="w-5 h-5" />
+            <DialogTitle className='flex items-center gap-2'>
+              <Link className='w-5 h-5' />
               {t('s3:presigned_url.title')}
             </DialogTitle>
-            <DialogDescription>{t('s3:presigned_url.description')}</DialogDescription>
+            <DialogDescription>
+              {t('s3:presigned_url.description')}
+            </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className='space-y-4 py-4'>
             {/* 过期时间设置 */}
-            <div className="space-y-2">
+            <div className='space-y-2'>
               <Label>{t('s3:presigned_url.active_for')}</Label>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
+              <div className='flex items-center gap-3'>
+                <div className='flex items-center gap-2'>
                   <Input
-                    type="number"
-                    min="0"
+                    type='number'
+                    min='0'
                     value={shareDays}
-                    onChange={(e) => setShareDays(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="w-20 text-center"
+                    onChange={e =>
+                      setShareDays(Math.max(0, parseInt(e.target.value) || 0))
+                    }
+                    className='w-20 text-center'
                   />
-                  <span className="text-sm text-muted-foreground">
+                  <span className='text-sm text-muted-foreground'>
                     {t('s3:presigned_url.days')}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className='flex items-center gap-2'>
                   <Input
-                    type="number"
-                    min="0"
-                    max="23"
+                    type='number'
+                    min='0'
+                    max='23'
                     value={shareHours}
-                    onChange={(e) => setShareHours(Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
-                    className="w-20 text-center"
+                    onChange={e =>
+                      setShareHours(
+                        Math.max(0, Math.min(23, parseInt(e.target.value) || 0))
+                      )
+                    }
+                    className='w-20 text-center'
                   />
-                  <span className="text-sm text-muted-foreground">
+                  <span className='text-sm text-muted-foreground'>
                     {t('s3:presigned_url.hours')}
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className='flex items-center gap-2'>
                   <Input
-                    type="number"
-                    min="0"
-                    max="59"
+                    type='number'
+                    min='0'
+                    max='59'
                     value={shareMinutes}
-                    onChange={(e) => setShareMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                    className="w-20 text-center"
+                    onChange={e =>
+                      setShareMinutes(
+                        Math.max(0, Math.min(59, parseInt(e.target.value) || 0))
+                      )
+                    }
+                    className='w-20 text-center'
                   />
-                  <span className="text-sm text-muted-foreground">
+                  <span className='text-sm text-muted-foreground'>
                     {t('s3:presigned_url.minutes')}
                   </span>
                 </div>
@@ -1922,31 +2253,31 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
             {/* 显示过期时间 */}
             {shareExpireTime && (
-              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                <Link className="w-4 h-4" />
+              <div className='text-sm text-muted-foreground flex items-center gap-2'>
+                <Link className='w-4 h-4' />
                 {t('s3:presigned_url.expire_at')}: {shareExpireTime}
               </div>
             )}
 
             {/* 生成的URL */}
             {presignedUrl && (
-              <div className="space-y-2">
-                <div className="relative">
+              <div className='space-y-2'>
+                <div className='relative'>
                   <Input
                     value={presignedUrl}
                     readOnly
-                    className="font-mono text-xs pr-10"
+                    className='font-mono text-xs pr-10'
                   />
                   <Button
-                    size="sm"
-                    variant="ghost"
-                    className="absolute right-1 top-1 h-7 w-7 p-0"
+                    size='sm'
+                    variant='ghost'
+                    className='absolute right-1 top-1 h-7 w-7 p-0'
                     onClick={() => {
                       navigator.clipboard.writeText(presignedUrl);
                       showMessage.success(String(t('common:copied')));
                     }}
                   >
-                    <Copy className="w-4 h-4" />
+                    <Copy className='w-4 h-4' />
                   </Button>
                 </div>
               </div>
@@ -1954,7 +2285,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPresignedUrlDialog(false)}>
+            <Button
+              variant='outline'
+              onClick={() => setShowPresignedUrlDialog(false)}
+            >
               {String(t('common:close'))}
             </Button>
             {!presignedUrl ? (
@@ -1978,7 +2312,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       {/* 文件预览对话框 */}
       <Dialog
         open={showPreviewDialog}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           setShowPreviewDialog(open);
           if (!open) {
             // 关闭时重置状态
@@ -1988,118 +2322,175 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           }
         }}
       >
-        <DialogContent className="max-w-6xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+        <DialogContent className='max-w-6xl max-h-[90vh] p-0 gap-0 overflow-hidden flex flex-col'>
           {/* 顶部标题栏 */}
-          <div className="flex items-start gap-3 px-6 pt-6 pb-4 border-b bg-muted/30">
+          <div className='flex items-start gap-3 px-6 pt-6 pb-4 border-b bg-muted/30'>
             {/* 文件类型图标 */}
-            <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-              {previewObject && isImageFile(previewObject) && <ImageIcon className="w-6 h-6 text-primary" />}
-              {previewObject && isVideoFile(previewObject) && <Video className="w-6 h-6 text-primary" />}
-              {previewObject && ['mp3', 'wav', 'ogg'].includes(
-                previewObject.name.split('.').pop()?.toLowerCase() || ''
-              ) && <Music className="w-6 h-6 text-primary" />}
-              {previewObject && previewObject.name.endsWith('.pdf') && <FileText className="w-6 h-6 text-primary" />}
-              {previewObject && ['txt', 'md', 'json', 'xml', 'csv', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css'].includes(
-                previewObject.name.split('.').pop()?.toLowerCase() || ''
-              ) && <Code className="w-6 h-6 text-primary" />}
-              {previewObject && ['xlsx', 'xls'].includes(
-                previewObject.name.split('.').pop()?.toLowerCase() || ''
-              ) && <Table className="w-6 h-6 text-primary" />}
-              {previewObject && !isImageFile(previewObject) && !isVideoFile(previewObject) &&
-                !['mp3', 'wav', 'ogg', 'pdf', 'txt', 'md', 'json', 'xml', 'csv', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css', 'xlsx', 'xls'].some(ext =>
-                  previewObject.name.toLowerCase().endsWith(`.${  ext}`)
-                ) && <File className="w-6 h-6 text-primary" />}
+            <div className='flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center'>
+              {previewObject && isImageFile(previewObject) && (
+                <ImageIcon className='w-6 h-6 text-primary' />
+              )}
+              {previewObject && isVideoFile(previewObject) && (
+                <Video className='w-6 h-6 text-primary' />
+              )}
+              {previewObject &&
+                ['mp3', 'wav', 'ogg'].includes(
+                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                ) && <Music className='w-6 h-6 text-primary' />}
+              {previewObject && previewObject.name.endsWith('.pdf') && (
+                <FileText className='w-6 h-6 text-primary' />
+              )}
+              {previewObject &&
+                [
+                  'txt',
+                  'md',
+                  'json',
+                  'xml',
+                  'csv',
+                  'js',
+                  'jsx',
+                  'ts',
+                  'tsx',
+                  'py',
+                  'java',
+                  'c',
+                  'cpp',
+                  'go',
+                  'rs',
+                  'html',
+                  'css',
+                ].includes(
+                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                ) && <Code className='w-6 h-6 text-primary' />}
+              {previewObject &&
+                ['xlsx', 'xls'].includes(
+                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                ) && <Table className='w-6 h-6 text-primary' />}
+              {previewObject &&
+                !isImageFile(previewObject) &&
+                !isVideoFile(previewObject) &&
+                ![
+                  'mp3',
+                  'wav',
+                  'ogg',
+                  'pdf',
+                  'txt',
+                  'md',
+                  'json',
+                  'xml',
+                  'csv',
+                  'js',
+                  'jsx',
+                  'ts',
+                  'tsx',
+                  'py',
+                  'java',
+                  'c',
+                  'cpp',
+                  'go',
+                  'rs',
+                  'html',
+                  'css',
+                  'xlsx',
+                  'xls',
+                ].some(ext =>
+                  previewObject.name.toLowerCase().endsWith(`.${ext}`)
+                ) && <File className='w-6 h-6 text-primary' />}
             </div>
 
             {/* 文件信息 */}
-            <div className="flex-1 min-w-0">
-              <DialogTitle className="text-lg font-semibold truncate mb-1.5">
+            <div className='flex-1 min-w-0'>
+              <DialogTitle className='text-lg font-semibold truncate mb-1.5'>
                 {previewObject?.name || ''}
               </DialogTitle>
               {previewObject && (
-                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                  <span className="inline-flex items-center gap-1.5">
-                    <HardDrive className="w-3.5 h-3.5" />
+                <div className='flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground'>
+                  <span className='inline-flex items-center gap-1.5'>
+                    <HardDrive className='w-3.5 h-3.5' />
                     {formatBytes(previewObject.size)}
                   </span>
                   {previewObject.lastModified && (
-                    <span className="inline-flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
+                    <span className='inline-flex items-center gap-1.5'>
+                      <Clock className='w-3.5 h-3.5' />
                       {previewObject.lastModified.toLocaleString()}
                     </span>
                   )}
-                  <span className="inline-flex items-center gap-1.5">
-                    <FileText className="w-3.5 h-3.5" />
-                    {previewObject.name.split('.').pop()?.toUpperCase() || 'Unknown'}
+                  <span className='inline-flex items-center gap-1.5'>
+                    <FileText className='w-3.5 h-3.5' />
+                    {previewObject.name.split('.').pop()?.toUpperCase() ||
+                      'Unknown'}
                   </span>
                 </div>
               )}
             </div>
 
             {/* 快捷操作按钮 */}
-            <div className="flex items-center gap-1">
+            <div className='flex items-center gap-1'>
               <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9"
+                variant='ghost'
+                size='icon'
+                className='h-9 w-9'
                 onClick={() => previewObject && handleDownload([previewObject])}
                 title={String(t('s3:download.label'))}
               >
-                <Download className="w-4 h-4" />
+                <Download className='w-4 h-4' />
               </Button>
               <Button
-                variant="ghost"
-                size="icon"
-                className="h-9 w-9"
+                variant='ghost'
+                size='icon'
+                className='h-9 w-9'
                 onClick={() => {
                   if (previewObject) {
                     setShareObject(previewObject);
-                    setShowPresignedUrlDialog(true);
-                    setShowPreviewDialog(false);
+                    setShowShareInPreview(true);
                   }
                 }}
                 title={String(t('s3:generate_link'))}
               >
-                <Share2 className="w-4 h-4" />
+                <Share2 className='w-4 h-4' />
               </Button>
             </div>
           </div>
 
           {/* 标签区域 */}
-          {previewObject && previewObject.tags && Object.keys(previewObject.tags).length > 0 && (
-            <div className="px-6 py-3 border-b bg-background/50">
-              <div className="flex flex-wrap gap-2">
-                {Object.entries(previewObject.tags).map(([key, value]) => (
-                  <span
-                    key={key}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted/50 border hover:bg-muted transition-colors"
-                    title={`${key}: ${value}`}
-                  >
-                    <Tag className="w-3 h-3 text-primary" />
-                    <span className="text-muted-foreground">{key}:</span>
-                    <span className="font-semibold">{value}</span>
-                  </span>
-                ))}
+          {previewObject &&
+            previewObject.tags &&
+            Object.keys(previewObject.tags).length > 0 && (
+              <div className='px-6 py-3 border-b bg-background/50'>
+                <div className='flex flex-wrap gap-2'>
+                  {Object.entries(previewObject.tags).map(([key, value]) => (
+                    <span
+                      key={key}
+                      className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted/50 border hover:bg-muted transition-colors'
+                      title={`${key}: ${value}`}
+                    >
+                      <Tag className='w-3 h-3 text-primary' />
+                      <span className='text-muted-foreground'>{key}:</span>
+                      <span className='font-semibold'>{value}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* 预览内容区域 */}
-          <ScrollArea className="flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+          <ScrollArea className='flex-1 overflow-auto'>
             {previewLoading ? (
-              <div className="flex flex-col items-center justify-center p-20">
-                <RefreshCw className="w-10 h-10 animate-spin text-primary mb-4" />
-                <p className="text-sm text-muted-foreground">{t('s3:preview.loading')}</p>
+              <div className='flex flex-col items-center justify-center p-20'>
+                <RefreshCw className='w-10 h-10 animate-spin text-primary mb-4' />
+                <p className='text-sm text-muted-foreground'>
+                  {t('s3:preview.loading')}
+                </p>
               </div>
             ) : previewObject && previewContent ? (
-              <div className="p-6">
+              <div className='p-6'>
                 {/* 图片预览 */}
                 {isImageFile(previewObject) && (
-                  <div className="flex items-center justify-center bg-muted/20 rounded-lg p-6 min-h-[300px]">
+                  <div className='flex items-center justify-center bg-muted/20 rounded-lg p-6 min-h-[300px]'>
                     <img
                       src={previewContent}
                       alt={previewObject.name}
-                      className="max-w-full h-auto rounded-md shadow-xl"
+                      className='max-w-full h-auto rounded-md shadow-xl'
                       style={{ maxHeight: '65vh' }}
                     />
                   </div>
@@ -2107,11 +2498,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
                 {/* 视频预览 */}
                 {isVideoFile(previewObject) && (
-                  <div className="bg-black rounded-xl overflow-hidden shadow-xl">
+                  <div className='bg-black rounded-xl overflow-hidden shadow-xl'>
                     <video
                       src={previewContent}
                       controls
-                      className="w-full h-auto"
+                      className='w-full h-auto'
                       style={{ maxHeight: '65vh' }}
                     />
                   </div>
@@ -2121,40 +2512,79 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                 {['mp3', 'wav', 'ogg'].includes(
                   previewObject.name.split('.').pop()?.toLowerCase() || ''
                 ) && (
-                  <div className="flex flex-col items-center justify-center p-12 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-xl">
-                    <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6">
-                      <Music className="w-10 h-10 text-primary" />
+                  <div className='flex flex-col items-center justify-center p-12 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-xl'>
+                    <div className='w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6'>
+                      <Music className='w-10 h-10 text-primary' />
                     </div>
-                    <h3 className="text-lg font-medium mb-6">{previewObject.name}</h3>
-                    <audio src={previewContent} controls className="w-full max-w-lg shadow-lg" />
+                    <h3 className='text-lg font-medium mb-6'>
+                      {previewObject.name}
+                    </h3>
+                    <audio
+                      src={previewContent}
+                      controls
+                      className='w-full max-w-lg shadow-lg'
+                    />
                   </div>
                 )}
 
                 {/* PDF预览 */}
                 {previewObject.name.endsWith('.pdf') && (
-                  <div className="rounded-xl overflow-hidden border-2 shadow-lg">
+                  <div className='rounded-xl overflow-hidden border-2 shadow-lg'>
                     <iframe
                       src={previewContent}
-                      className="w-full h-[650px]"
-                      title="PDF Preview"
+                      className='w-full h-[650px]'
+                      title='PDF Preview'
                     />
                   </div>
                 )}
 
                 {/* 文本/代码预览 */}
-                {['txt', 'md', 'json', 'xml', 'csv', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css'].includes(
+                {[
+                  'txt',
+                  'md',
+                  'json',
+                  'xml',
+                  'csv',
+                  'log',
+                  'yaml',
+                  'yml',
+                  'ini',
+                  'conf',
+                  'js',
+                  'jsx',
+                  'ts',
+                  'tsx',
+                  'py',
+                  'java',
+                  'c',
+                  'cpp',
+                  'go',
+                  'rs',
+                  'html',
+                  'css',
+                  'scss',
+                  'sass',
+                  'less',
+                  'vue',
+                  'php',
+                  'rb',
+                  'sh',
+                  'bash',
+                ].includes(
                   previewObject.name.split('.').pop()?.toLowerCase() || ''
                 ) && (
-                  <div className="rounded-xl overflow-hidden border-2 shadow-lg">
-                    <div className="bg-muted/50 px-4 py-2 border-b flex items-center gap-2">
-                      <Code className="w-4 h-4 text-muted-foreground" />
-                      <span className="text-sm font-medium text-muted-foreground">
+                  <div className='rounded-xl overflow-hidden border-2 shadow-lg'>
+                    <div className='bg-muted/50 px-4 py-2 border-b flex items-center gap-2'>
+                      <Code className='w-4 h-4 text-muted-foreground' />
+                      <span className='text-sm font-medium text-muted-foreground'>
                         {previewObject.name.split('.').pop()?.toUpperCase()}
                       </span>
                     </div>
-                    <pre className="p-6 bg-muted/30 overflow-auto text-sm font-mono leading-relaxed max-h-[600px]">
-                      <code>{previewContent}</code>
-                    </pre>
+                    <div className='relative max-h-[600px] overflow-auto'>
+                      <pre className='p-6 bg-muted/30 text-sm font-mono leading-relaxed whitespace-pre-wrap break-words'>
+                        <code>{previewContent}</code>
+                      </pre>
+                    </div>
                   </div>
                 )}
 
@@ -2162,24 +2592,52 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                 {['xlsx', 'xls'].includes(
                   previewObject.name.split('.').pop()?.toLowerCase() || ''
                 ) && (
-                  <div className="rounded-xl overflow-auto border-2 shadow-lg max-h-[600px]">
+                  <div className='rounded-xl overflow-auto border-2 shadow-lg max-h-[600px]'>
                     <div
-                      className="[&_table]:w-full [&_table]:border-collapse [&_th]:bg-muted/50 [&_th]:p-2 [&_th]:text-left [&_th]:font-medium [&_th]:border [&_td]:p-2 [&_td]:border"
+                      className='[&_table]:w-full [&_table]:border-collapse [&_th]:bg-muted/50 [&_th]:p-2 [&_th]:text-left [&_th]:font-medium [&_th]:border [&_td]:p-2 [&_td]:border'
                       dangerouslySetInnerHTML={{ __html: previewContent }}
                     />
                   </div>
                 )}
+
+                {/* Word/PowerPoint 文件预览提示 */}
+                {['doc', 'docx', 'ppt', 'pptx'].includes(
+                  previewObject.name.split('.').pop()?.toLowerCase() || ''
+                ) && (
+                  <div className='flex flex-col items-center justify-center p-12 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-xl'>
+                    <div className='w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6'>
+                      <FileText className='w-10 h-10 text-primary' />
+                    </div>
+                    <h3 className='text-lg font-medium mb-2'>{previewObject.name}</h3>
+                    <p className='text-sm text-muted-foreground mb-6 text-center max-w-md'>
+                      {t('s3:preview.office_not_supported', {
+                        defaultValue: '暂不支持在线预览 Office 文档，请下载后使用本地应用打开',
+                      })}
+                    </p>
+                    <Button
+                      onClick={() => previewObject && handleDownload([previewObject])}
+                      className='gap-2'
+                    >
+                      <Download className='w-4 h-4' />
+                      {t('s3:download.label')}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center p-20 text-center">
-                <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-                  <FileX className="w-10 h-10 text-muted-foreground" />
+              <div className='flex flex-col items-center justify-center p-20 text-center'>
+                <div className='w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4'>
+                  <FileX className='w-10 h-10 text-muted-foreground' />
                 </div>
-                <p className="text-base font-medium mb-2">
-                  {t('s3:preview.not_supported', { defaultValue: '不支持预览此文件类型' })}
+                <p className='text-base font-medium mb-2'>
+                  {t('s3:preview.not_supported', {
+                    defaultValue: '不支持预览此文件类型',
+                  })}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {t('s3:preview.download_to_view', { defaultValue: '请下载后查看' })}
+                <p className='text-sm text-muted-foreground'>
+                  {t('s3:preview.download_to_view', {
+                    defaultValue: '请下载后查看',
+                  })}
                 </p>
               </div>
             )}
@@ -2187,53 +2645,75 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
           {/* 底部操作栏 / 分享表单 */}
           {showShareInPreview ? (
-            <div className="border-t bg-muted/20">
-              <div className="px-6 py-4 space-y-4">
+            <div className='border-t bg-muted/20'>
+              <div className='px-6 py-4 space-y-4'>
                 {/* 分享表单标题 */}
-                <div className="flex items-center gap-2">
-                  <Share2 className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">{t('s3:presigned_url.title')}</h3>
+                <div className='flex items-center gap-2'>
+                  <Share2 className='w-5 h-5 text-primary' />
+                  <h3 className='font-semibold'>
+                    {t('s3:presigned_url.title')}
+                  </h3>
                 </div>
 
                 {/* 过期时间设置 */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">{t('s3:presigned_url.active_for')}</Label>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
+                <div className='space-y-2'>
+                  <Label className='text-sm font-medium'>
+                    {t('s3:presigned_url.active_for')}
+                  </Label>
+                  <div className='flex items-center gap-3'>
+                    <div className='flex items-center gap-2'>
                       <Input
-                        type="number"
-                        min="0"
+                        type='number'
+                        min='0'
                         value={shareDays}
-                        onChange={(e) => setShareDays(Math.max(0, parseInt(e.target.value) || 0))}
-                        className="w-20 text-center"
+                        onChange={e =>
+                          setShareDays(
+                            Math.max(0, parseInt(e.target.value) || 0)
+                          )
+                        }
+                        className='w-20 text-center'
                       />
-                      <span className="text-sm text-muted-foreground">
+                      <span className='text-sm text-muted-foreground'>
                         {t('s3:presigned_url.days')}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className='flex items-center gap-2'>
                       <Input
-                        type="number"
-                        min="0"
-                        max="23"
+                        type='number'
+                        min='0'
+                        max='23'
                         value={shareHours}
-                        onChange={(e) => setShareHours(Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
-                        className="w-20 text-center"
+                        onChange={e =>
+                          setShareHours(
+                            Math.max(
+                              0,
+                              Math.min(23, parseInt(e.target.value) || 0)
+                            )
+                          )
+                        }
+                        className='w-20 text-center'
                       />
-                      <span className="text-sm text-muted-foreground">
+                      <span className='text-sm text-muted-foreground'>
                         {t('s3:presigned_url.hours')}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className='flex items-center gap-2'>
                       <Input
-                        type="number"
-                        min="0"
-                        max="59"
+                        type='number'
+                        min='0'
+                        max='59'
                         value={shareMinutes}
-                        onChange={(e) => setShareMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                        className="w-20 text-center"
+                        onChange={e =>
+                          setShareMinutes(
+                            Math.max(
+                              0,
+                              Math.min(59, parseInt(e.target.value) || 0)
+                            )
+                          )
+                        }
+                        className='w-20 text-center'
                       />
-                      <span className="text-sm text-muted-foreground">
+                      <span className='text-sm text-muted-foreground'>
                         {t('s3:presigned_url.minutes')}
                       </span>
                     </div>
@@ -2242,41 +2722,43 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
                 {/* 显示过期时间 */}
                 {shareExpireTime && (
-                  <div className="text-sm text-muted-foreground flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-md">
-                    <Clock className="w-4 h-4" />
+                  <div className='text-sm text-muted-foreground flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-md'>
+                    <Clock className='w-4 h-4' />
                     {t('s3:presigned_url.expire_at')}: {shareExpireTime}
                   </div>
                 )}
 
                 {/* 生成的URL */}
                 {presignedUrl && (
-                  <div className="space-y-2">
-                    <Label className="text-sm font-medium">{t('s3:presigned_url.title')}</Label>
-                    <div className="relative">
+                  <div className='space-y-2'>
+                    <Label className='text-sm font-medium'>
+                      {t('s3:presigned_url.title')}
+                    </Label>
+                    <div className='relative'>
                       <Input
                         value={presignedUrl}
                         readOnly
-                        className="font-mono text-xs pr-10"
+                        className='font-mono text-xs pr-10'
                       />
                       <Button
-                        size="sm"
-                        variant="ghost"
-                        className="absolute right-1 top-1 h-7 w-7 p-0"
+                        size='sm'
+                        variant='ghost'
+                        className='absolute right-1 top-1 h-7 w-7 p-0'
                         onClick={() => {
                           navigator.clipboard.writeText(presignedUrl);
                           showMessage.success(String(t('common:copied')));
                         }}
                       >
-                        <Copy className="w-4 h-4" />
+                        <Copy className='w-4 h-4' />
                       </Button>
                     </div>
                   </div>
                 )}
 
                 {/* 操作按钮 */}
-                <div className="flex items-center justify-end gap-2 pt-2">
+                <div className='flex items-center justify-end gap-2 pt-2'>
                   <Button
-                    variant="outline"
+                    variant='outline'
                     onClick={() => {
                       setShowShareInPreview(false);
                       setPresignedUrl('');
@@ -2287,7 +2769,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   </Button>
                   {!presignedUrl ? (
                     <Button onClick={generateShareUrl}>
-                      <Share2 className="w-4 h-4 mr-2" />
+                      <Share2 className='w-4 h-4 mr-2' />
                       {String(t('s3:presigned_url.generate'))}
                     </Button>
                   ) : (
@@ -2297,7 +2779,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                         showMessage.success(String(t('common:copied')));
                       }}
                     >
-                      <Copy className="w-4 h-4 mr-2" />
+                      <Copy className='w-4 h-4 mr-2' />
                       {String(t('common:copy'))}
                     </Button>
                   )}
@@ -2305,7 +2787,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-muted/20">
+            <div className='flex items-center justify-end gap-2 px-6 py-4 border-t bg-muted/20'>
               <Button onClick={() => setShowPreviewDialog(false)}>
                 {String(t('common:close'))}
               </Button>
@@ -2318,17 +2800,21 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('s3:rename.title', { defaultValue: '重命名' })}</DialogTitle>
+            <DialogTitle>
+              {t('s3:rename.title', { defaultValue: '重命名' })}
+            </DialogTitle>
             <DialogDescription>
               {t('s3:rename.description', { defaultValue: '请输入新的名称' })}
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className='py-4'>
             <Input
               value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder={t('s3:rename.placeholder', { defaultValue: '输入新名称' })}
-              onKeyDown={(e) => {
+              onChange={e => setNewName(e.target.value)}
+              placeholder={t('s3:rename.placeholder', {
+                defaultValue: '输入新名称',
+              })}
+              onKeyDown={e => {
                 if (e.key === 'Enter') {
                   handleRenameSubmit();
                 }
@@ -2336,7 +2822,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             />
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowRenameDialog(false)}>
+            <Button
+              variant='outline'
+              onClick={() => setShowRenameDialog(false)}
+            >
               {String(t('common:cancel'))}
             </Button>
             <Button onClick={handleRenameSubmit} disabled={!newName.trim()}>
@@ -2347,64 +2836,101 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       </Dialog>
 
       {/* 权限设置对话框 */}
-      <Dialog open={showPermissionsDialog} onOpenChange={setShowPermissionsDialog}>
+      <Dialog
+        open={showPermissionsDialog}
+        onOpenChange={setShowPermissionsDialog}
+      >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('s3:permissions.title', { defaultValue: '设置权限' })}</DialogTitle>
-            <DialogDescription>
-              {permissionsObject?.name}
-            </DialogDescription>
+            <DialogTitle>
+              {t('s3:permissions.title', { defaultValue: '设置权限' })}
+            </DialogTitle>
+            <DialogDescription>{permissionsObject?.name}</DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <RadioGroup value={selectedAcl} onValueChange={(value: any) => setSelectedAcl(value)}>
-              <div className="flex items-center space-x-2 mb-3">
-                <RadioGroupItem value="private" id="private" />
-                <Label htmlFor="private" className="font-normal cursor-pointer flex-1">
-                  {t('s3:permissions.private', { defaultValue: '私有（仅所有者可读写）' })}
+          <div className='py-4'>
+            <RadioGroup
+              value={selectedAcl}
+              onValueChange={(value: any) => setSelectedAcl(value)}
+            >
+              <div className='flex items-center space-x-2 mb-3'>
+                <RadioGroupItem value='private' id='private' />
+                <Label
+                  htmlFor='private'
+                  className='font-normal cursor-pointer flex-1'
+                >
+                  {t('s3:permissions.private', {
+                    defaultValue: '私有（仅所有者可读写）',
+                  })}
                 </Label>
               </div>
-              <div className="flex items-center space-x-2 mb-3">
-                <RadioGroupItem value="public-read" id="public-read" />
-                <Label htmlFor="public-read" className="font-normal cursor-pointer flex-1">
-                  {t('s3:permissions.public_read', { defaultValue: '公开读（所有人可读）' })}
+              <div className='flex items-center space-x-2 mb-3'>
+                <RadioGroupItem value='public-read' id='public-read' />
+                <Label
+                  htmlFor='public-read'
+                  className='font-normal cursor-pointer flex-1'
+                >
+                  {t('s3:permissions.public_read', {
+                    defaultValue: '公开读（所有人可读）',
+                  })}
                 </Label>
               </div>
-              <div className="flex items-center space-x-2 mb-3">
-                <RadioGroupItem value="public-read-write" id="public-read-write" />
-                <Label htmlFor="public-read-write" className="font-normal cursor-pointer flex-1">
-                  {t('s3:permissions.public_read_write', { defaultValue: '公开读写（所有人可读写）' })}
+              <div className='flex items-center space-x-2 mb-3'>
+                <RadioGroupItem
+                  value='public-read-write'
+                  id='public-read-write'
+                />
+                <Label
+                  htmlFor='public-read-write'
+                  className='font-normal cursor-pointer flex-1'
+                >
+                  {t('s3:permissions.public_read_write', {
+                    defaultValue: '公开读写（所有人可读写）',
+                  })}
                 </Label>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="authenticated-read" id="authenticated-read" />
-                <Label htmlFor="authenticated-read" className="font-normal cursor-pointer flex-1">
-                  {t('s3:permissions.authenticated_read', { defaultValue: '授权读（已认证用户可读）' })}
+              <div className='flex items-center space-x-2'>
+                <RadioGroupItem
+                  value='authenticated-read'
+                  id='authenticated-read'
+                />
+                <Label
+                  htmlFor='authenticated-read'
+                  className='font-normal cursor-pointer flex-1'
+                >
+                  {t('s3:permissions.authenticated_read', {
+                    defaultValue: '授权读（已认证用户可读）',
+                  })}
                 </Label>
               </div>
             </RadioGroup>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowPermissionsDialog(false)}>
+            <Button
+              variant='outline'
+              onClick={() => setShowPermissionsDialog(false)}
+            >
               {String(t('common:cancel'))}
             </Button>
-            <Button onClick={async () => {
-              if (!permissionsObject || !currentBucket) return;
+            <Button
+              onClick={async () => {
+                if (!permissionsObject || !currentBucket) return;
 
-              try {
-                await S3Service.putObjectAcl(
-                  connectionId,
-                  currentBucket,
-                  permissionsObject.key,
-                  selectedAcl
-                );
-                showMessage.success(String(t('s3:permissions.success')));
-                setShowPermissionsDialog(false);
-                await loadObjects(); // 重新加载以更新对象信息
-              } catch (error) {
-                logger.error('设置权限失败:', error);
-                showMessage.error(String(t('s3:permissions.failed')));
-              }
-            }}>
+                try {
+                  await S3Service.putObjectAcl(
+                    connectionId,
+                    currentBucket,
+                    permissionsObject.key,
+                    selectedAcl
+                  );
+                  showMessage.success(String(t('s3:permissions.success')));
+                  setShowPermissionsDialog(false);
+                  await loadObjects(); // 重新加载以更新对象信息
+                } catch (error) {
+                  logger.error('设置权限失败:', error);
+                  showMessage.error(String(t('s3:permissions.failed')));
+                }
+              }}
+            >
               {String(t('common:confirm'))}
             </Button>
           </DialogFooter>
@@ -2413,20 +2939,22 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       {/* Tags 管理对话框 */}
       <Dialog open={showTagsDialog} onOpenChange={setShowTagsDialog}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className='max-w-2xl'>
           <DialogHeader>
-            <DialogTitle>{t('s3:tags_mgmt.title', { defaultValue: '管理标签' })}</DialogTitle>
-            <DialogDescription>
-              {tagsObject?.name}
-            </DialogDescription>
+            <DialogTitle>
+              {t('s3:tags_mgmt.title', { defaultValue: '管理标签' })}
+            </DialogTitle>
+            <DialogDescription>{tagsObject?.name}</DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4">
+          <div className='py-4 space-y-4'>
             {tagsLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                  <p className="text-sm text-muted-foreground">
-                    {t('s3:tags_mgmt.loading', { defaultValue: '正在加载标签...' })}
+              <div className='flex items-center justify-center py-8'>
+                <div className='text-center'>
+                  <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2'></div>
+                  <p className='text-sm text-muted-foreground'>
+                    {t('s3:tags_mgmt.loading', {
+                      defaultValue: '正在加载标签...',
+                    })}
                   </p>
                 </div>
               </div>
@@ -2434,32 +2962,38 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               <>
                 {objectTags.length > 0 ? (
                   objectTags.map((tag, index) => (
-                    <div key={index} className="flex items-center gap-2">
+                    <div key={index} className='flex items-center gap-2'>
                       <Input
-                        placeholder={t('s3:tags_mgmt.key_placeholder', { defaultValue: '输入标签键' })}
+                        placeholder={t('s3:tags_mgmt.key_placeholder', {
+                          defaultValue: '输入标签键',
+                        })}
                         value={tag.key}
-                        onChange={(e) => {
+                        onChange={e => {
                           const newTags = [...objectTags];
                           newTags[index].key = e.target.value;
                           setObjectTags(newTags);
                         }}
-                        className="flex-1"
+                        className='flex-1'
                       />
                       <Input
-                        placeholder={t('s3:tags_mgmt.value_placeholder', { defaultValue: '输入标签值' })}
+                        placeholder={t('s3:tags_mgmt.value_placeholder', {
+                          defaultValue: '输入标签值',
+                        })}
                         value={tag.value}
-                        onChange={(e) => {
+                        onChange={e => {
                           const newTags = [...objectTags];
                           newTags[index].value = e.target.value;
                           setObjectTags(newTags);
                         }}
-                        className="flex-1"
+                        className='flex-1'
                       />
                       <Button
-                        variant="outline"
-                        size="sm"
+                        variant='outline'
+                        size='sm'
                         onClick={() => {
-                          const newTags = objectTags.filter((_, i) => i !== index);
+                          const newTags = objectTags.filter(
+                            (_, i) => i !== index
+                          );
                           setObjectTags(newTags);
                         }}
                       >
@@ -2468,16 +3002,16 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     </div>
                   ))
                 ) : (
-                  <div className="text-center text-muted-foreground py-8">
+                  <div className='text-center text-muted-foreground py-8'>
                     {t('s3:tags_mgmt.no_tags', { defaultValue: '无标签' })}
                   </div>
                 )}
                 <Button
-                  variant="outline"
+                  variant='outline'
                   onClick={() => {
                     setObjectTags([...objectTags, { key: '', value: '' }]);
                   }}
-                  className="w-full"
+                  className='w-full'
                 >
                   + {t('s3:tags_mgmt.add', { defaultValue: '添加标签' })}
                 </Button>
@@ -2485,44 +3019,46 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowTagsDialog(false)}>
+            <Button variant='outline' onClick={() => setShowTagsDialog(false)}>
               {String(t('common:cancel'))}
             </Button>
-            <Button onClick={async () => {
-              if (!tagsObject || !currentBucket) return;
+            <Button
+              onClick={async () => {
+                if (!tagsObject || !currentBucket) return;
 
-              try {
-                // 将数组形式的tags转换为对象
-                const tagsMap: Record<string, string> = {};
-                objectTags.forEach(tag => {
-                  if (tag.key.trim() && tag.value.trim()) {
-                    tagsMap[tag.key.trim()] = tag.value.trim();
-                  }
-                });
+                try {
+                  // 将数组形式的tags转换为对象
+                  const tagsMap: Record<string, string> = {};
+                  objectTags.forEach(tag => {
+                    if (tag.key.trim() && tag.value.trim()) {
+                      tagsMap[tag.key.trim()] = tag.value.trim();
+                    }
+                  });
 
-                await S3Service.putObjectTagging(
-                  connectionId,
-                  currentBucket,
-                  tagsObject.key,
-                  tagsMap
-                );
+                  await S3Service.putObjectTagging(
+                    connectionId,
+                    currentBucket,
+                    tagsObject.key,
+                    tagsMap
+                  );
 
-                // 更新本地对象状态以显示标签
-                setObjects(prevObjects =>
-                  prevObjects.map(obj =>
-                    obj.key === tagsObject.key
-                      ? { ...obj, tags: tagsMap }
-                      : obj
-                  )
-                );
+                  // 更新本地对象状态以显示标签
+                  setObjects(prevObjects =>
+                    prevObjects.map(obj =>
+                      obj.key === tagsObject.key
+                        ? { ...obj, tags: tagsMap }
+                        : obj
+                    )
+                  );
 
-                showMessage.success(String(t('s3:tags_mgmt.success')));
-                setShowTagsDialog(false);
-              } catch (error) {
-                logger.error('设置标签失败:', error);
-                showMessage.error(String(t('s3:tags_mgmt.failed')));
-              }
-            }}>
+                  showMessage.success(String(t('s3:tags_mgmt.success')));
+                  setShowTagsDialog(false);
+                } catch (error) {
+                  logger.error('设置标签失败:', error);
+                  showMessage.error(String(t('s3:tags_mgmt.failed')));
+                }
+              }}
+            >
               {String(t('common:confirm'))}
             </Button>
           </DialogFooter>
@@ -2532,39 +3068,39 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       {/* 自定义右键菜单 */}
       {contextMenu.visible && contextMenu.object && (
         <div
-          className="fixed bg-background border border-border rounded-md shadow-lg py-1 z-50 min-w-[160px]"
+          className='fixed bg-background border border-border rounded-md shadow-lg py-1 z-50 min-w-[160px]'
           style={{
             left: contextMenu.x,
             top: contextMenu.y,
           }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={e => e.stopPropagation()}
         >
           {/* 重命名 - 文件和文件夹都有 */}
           {currentBucket && (
             <>
               <div
-                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
                 onClick={() => {
                   handleRename(contextMenu.object!);
                   closeContextMenu();
                 }}
               >
-                <Edit2 className="w-4 h-4" />
+                <Edit2 className='w-4 h-4' />
                 {t('s3:rename.label', { defaultValue: '重命名' })}
               </div>
-              <div className="h-px bg-border my-1" />
+              <div className='h-px bg-border my-1' />
             </>
           )}
 
           {/* 下载 - 文件和文件夹都有 */}
           <div
-            className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+            className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
             onClick={() => {
               handleDownload([contextMenu.object!]);
               closeContextMenu();
             }}
           >
-            <Download className="w-4 h-4" />
+            <Download className='w-4 h-4' />
             {t('s3:download.label', { defaultValue: '下载' })}
           </div>
 
@@ -2573,32 +3109,32 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             <>
               {/* 预览 */}
               <div
-                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
                 onClick={() => {
                   setPreviewObject(contextMenu.object);
                   setShowPreviewDialog(true);
                   closeContextMenu();
                 }}
               >
-                <Eye className="w-4 h-4" />
+                <Eye className='w-4 h-4' />
                 {t('s3:preview.label', { defaultValue: '预览' })}
               </div>
 
               {/* 创建分享链接 */}
               <div
-                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
                 onClick={() => {
                   handleGeneratePresignedUrl(contextMenu.object || undefined);
                   closeContextMenu();
                 }}
               >
-                <Link className="w-4 h-4" />
+                <Link className='w-4 h-4' />
                 {t('s3:generate_link', { defaultValue: '生成分享链接' })}
               </div>
 
               {/* 设置标签 */}
               <div
-                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
                 onClick={async () => {
                   setTagsObject(contextMenu.object);
                   setShowTagsDialog(true);
@@ -2609,7 +3145,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   }
                 }}
               >
-                <Tag className="w-4 h-4" />
+                <Tag className='w-4 h-4' />
                 {t('s3:tags_mgmt.label', { defaultValue: '管理标签' })}
               </div>
             </>
@@ -2620,7 +3156,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             <>
               {/* 设置权限 */}
               <div
-                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
                 onClick={() => {
                   setPermissionsObject(contextMenu.object);
                   setSelectedAcl(contextMenu.object!.acl || 'private');
@@ -2628,23 +3164,23 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   closeContextMenu();
                 }}
               >
-                <Shield className="w-4 h-4" />
+                <Shield className='w-4 h-4' />
                 {t('s3:permissions.label', { defaultValue: '设置权限' })}
               </div>
             </>
           )}
 
-          <div className="h-px bg-border my-1" />
+          <div className='h-px bg-border my-1' />
 
           {/* 删除 - 文件和文件夹都有 */}
           <div
-            className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm text-destructive"
+            className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm text-destructive'
             onClick={() => {
               setShowDeleteConfirmDialog(true);
               closeContextMenu();
             }}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className='w-4 h-4' />
             {t('s3:delete.label', { defaultValue: '删除' })}
           </div>
         </div>
