@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
 use aws_config::BehaviorVersion;
 use aws_credential_types::Credentials;
 use aws_sdk_s3::config::SharedCredentialsProvider;
@@ -656,5 +656,102 @@ impl S3ClientManager {
         }
 
         Ok(all_objects)
+    }
+
+    /// 获取对象标签
+    pub async fn get_object_tagging(
+        &self,
+        id: &str,
+        bucket: &str,
+        key: &str,
+    ) -> Result<std::collections::HashMap<String, String>> {
+        let clients = self.clients.read().await;
+        let client = clients
+            .get(id)
+            .ok_or_else(|| anyhow::anyhow!("S3 client not found: {}", id))?;
+
+        let resp = client
+            .get_object_tagging()
+            .bucket(bucket)
+            .key(key)
+            .send()
+            .await
+            .context("Failed to get object tagging")?;
+
+        let mut tags = std::collections::HashMap::new();
+        for tag in resp.tag_set() {
+            tags.insert(tag.key().to_string(), tag.value().to_string());
+        }
+
+        Ok(tags)
+    }
+
+    /// 设置对象标签
+    pub async fn put_object_tagging(
+        &self,
+        id: &str,
+        bucket: &str,
+        key: &str,
+        tags: std::collections::HashMap<String, String>,
+    ) -> Result<()> {
+        let clients = self.clients.read().await;
+        let client = clients
+            .get(id)
+            .ok_or_else(|| anyhow::anyhow!("S3 client not found: {}", id))?;
+
+        use aws_sdk_s3::types::{Tag, Tagging};
+
+        let tag_set: Vec<Tag> = tags
+            .into_iter()
+            .map(|(k, v)| Tag::builder().key(k).value(v).build())
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let tagging = Tagging::builder().set_tag_set(Some(tag_set)).build()?;
+
+        client
+            .put_object_tagging()
+            .bucket(bucket)
+            .key(key)
+            .tagging(tagging)
+            .send()
+            .await
+            .context("Failed to put object tagging")?;
+
+        Ok(())
+    }
+
+    /// 设置对象ACL权限
+    pub async fn put_object_acl(
+        &self,
+        id: &str,
+        bucket: &str,
+        key: &str,
+        acl: &str,
+    ) -> Result<()> {
+        let clients = self.clients.read().await;
+        let client = clients
+            .get(id)
+            .ok_or_else(|| anyhow::anyhow!("S3 client not found: {}", id))?;
+
+        use aws_sdk_s3::types::ObjectCannedAcl;
+
+        let acl_value = match acl {
+            "private" => ObjectCannedAcl::Private,
+            "public-read" => ObjectCannedAcl::PublicRead,
+            "public-read-write" => ObjectCannedAcl::PublicReadWrite,
+            "authenticated-read" => ObjectCannedAcl::AuthenticatedRead,
+            _ => ObjectCannedAcl::Private,
+        };
+
+        client
+            .put_object_acl()
+            .bucket(bucket)
+            .key(key)
+            .acl(acl_value)
+            .send()
+            .await
+            .context("Failed to put object ACL")?;
+
+        Ok(())
     }
 }

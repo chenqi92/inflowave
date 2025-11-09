@@ -207,7 +207,7 @@ const FileThumbnail = React.memo<{
       <img
         src={thumbnailUrl}
         alt={object.name}
-        className="w-full h-24 object-cover rounded-md"
+        className="w-full h-24 object-contain rounded-md bg-muted/20"
         onError={() => setThumbnailError(true)}
       />
     );
@@ -217,7 +217,7 @@ const FileThumbnail = React.memo<{
     return (
       <video
         src={thumbnailUrl}
-        className="w-full h-24 object-cover rounded-md"
+        className="w-full h-24 object-contain rounded-md bg-muted/20"
         onError={() => setThumbnailError(true)}
         preload="metadata"
       />
@@ -475,7 +475,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         const hasValidName = obj.name && obj.name.trim() !== '';
         const isNotDirectory = !obj.isDirectory;
         // 检查是否是文件夹标记对象（key 在 commonPrefixes 中或以 / 结尾）
-        const isNotFolderMarker = !prefixSet.has(obj.key) && !prefixSet.has(obj.key + '/') && !obj.key.endsWith('/');
+        const isNotFolderMarker = !prefixSet.has(obj.key) && !prefixSet.has(`${obj.key  }/`) && !obj.key.endsWith('/');
         return hasValidName && isNotDirectory && isNotFolderMarker;
       });
 
@@ -945,7 +945,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       // 如果是文件夹，确保目标 key 以 / 结尾
       if (item.isDirectory && !destKey.endsWith('/')) {
-        destKey = destKey + '/';
+        destKey = `${destKey  }/`;
       }
 
       try {
@@ -1016,7 +1016,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       // 如果是文件夹，确保新的 key 以 / 结尾
       if (renameObject.isDirectory && !newKey.endsWith('/')) {
-        newKey = newKey + '/';
+        newKey = `${newKey  }/`;
       }
 
       // 复制到新位置
@@ -1129,6 +1129,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
   // 框选处理
   const handleMouseDown = (e: React.MouseEvent) => {
+    // 如果正在调整列宽，不触发框选
+    if (resizingColumn.current) return;
+
     // 只在空白区域开始框选
     if ((e.target as HTMLElement).closest('.object-item')) return;
 
@@ -1148,6 +1151,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
+    // 如果正在调整列宽，不处理框选移动
+    if (resizingColumn.current) return;
+
     if (!isSelecting || !selectionStart) return;
 
     const rect = containerRef.current?.getBoundingClientRect();
@@ -1192,6 +1198,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   };
 
   const handleMouseUp = () => {
+    // 如果正在调整列宽，不处理框选结束
+    if (resizingColumn.current) return;
+
     setIsSelecting(false);
     setSelectionStart(null);
     setSelectionEnd(null);
@@ -1991,9 +2000,22 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               {String(t('common:cancel'))}
             </Button>
             <Button onClick={async () => {
-              // TODO: 实现权限设置逻辑
-              showMessage.success(String(t('s3:permissions.success')));
-              setShowPermissionsDialog(false);
+              if (!permissionsObject || !currentBucket) return;
+
+              try {
+                await S3Service.putObjectAcl(
+                  connectionId,
+                  currentBucket,
+                  permissionsObject.key,
+                  selectedAcl
+                );
+                showMessage.success(String(t('s3:permissions.success')));
+                setShowPermissionsDialog(false);
+                await loadObjects(); // 重新加载以更新对象信息
+              } catch (error) {
+                logger.error('设置权限失败:', error);
+                showMessage.error(String(t('s3:permissions.failed')));
+              }
             }}>
               {String(t('common:confirm'))}
             </Button>
@@ -2066,10 +2088,30 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               {String(t('common:cancel'))}
             </Button>
             <Button onClick={async () => {
-              // TODO: 实现 tags 更新逻辑
-              showMessage.success(String(t('s3:tags_mgmt.success')));
-              setShowTagsDialog(false);
-              await loadObjects();
+              if (!tagsObject || !currentBucket) return;
+
+              try {
+                // 将数组形式的tags转换为对象
+                const tagsMap: Record<string, string> = {};
+                objectTags.forEach(tag => {
+                  if (tag.key.trim() && tag.value.trim()) {
+                    tagsMap[tag.key.trim()] = tag.value.trim();
+                  }
+                });
+
+                await S3Service.putObjectTagging(
+                  connectionId,
+                  currentBucket,
+                  tagsObject.key,
+                  tagsMap
+                );
+                showMessage.success(String(t('s3:tags_mgmt.success')));
+                setShowTagsDialog(false);
+                await loadObjects(); // 重新加载以更新对象信息
+              } catch (error) {
+                logger.error('设置标签失败:', error);
+                showMessage.error(String(t('s3:tags_mgmt.failed')));
+              }
             }}>
               {String(t('common:confirm'))}
             </Button>

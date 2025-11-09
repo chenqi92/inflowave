@@ -75,6 +75,29 @@ pub struct S3SearchRequest {
     pub prefix: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct S3TaggingRequest {
+    pub connection_id: String,
+    pub bucket: String,
+    pub key: String,
+    pub tags: std::collections::HashMap<String, String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct S3GetTaggingRequest {
+    pub connection_id: String,
+    pub bucket: String,
+    pub key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct S3AclRequest {
+    pub connection_id: String,
+    pub bucket: String,
+    pub key: String,
+    pub acl: String, // "private", "public-read", "public-read-write", "authenticated-read"
+}
+
 // 连接S3服务
 #[tauri::command]
 pub async fn s3_connect(
@@ -465,4 +488,46 @@ pub async fn s3_get_bucket_stats(
         "total_count": total_count,
         "bucket_name": bucket
     }))
+}
+
+// 获取对象标签
+#[tauri::command]
+pub async fn s3_get_object_tagging(
+    request: S3GetTaggingRequest,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
+) -> Result<std::collections::HashMap<String, String>, String> {
+    let manager = s3_manager.lock().await;
+
+    manager
+        .get_object_tagging(&request.connection_id, &request.bucket, &request.key)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+// 设置对象标签
+#[tauri::command]
+pub async fn s3_put_object_tagging(
+    request: S3TaggingRequest,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
+) -> Result<(), String> {
+    let manager = s3_manager.lock().await;
+
+    manager
+        .put_object_tagging(&request.connection_id, &request.bucket, &request.key, request.tags)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+// 设置对象ACL权限
+#[tauri::command]
+pub async fn s3_put_object_acl(
+    request: S3AclRequest,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
+) -> Result<(), String> {
+    let manager = s3_manager.lock().await;
+
+    manager
+        .put_object_acl(&request.connection_id, &request.bucket, &request.key, &request.acl)
+        .await
+        .map_err(|e| e.to_string())
 }

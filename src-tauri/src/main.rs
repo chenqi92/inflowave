@@ -1472,6 +1472,9 @@ async fn main() {
             s3_upload_file,
             s3_download_file,
             s3_get_bucket_stats,
+            s3_get_object_tagging,
+            s3_put_object_tagging,
+            s3_put_object_acl,
         ])
         .setup(|app| {
             info!("Application setup started");

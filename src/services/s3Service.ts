@@ -371,4 +371,59 @@ export class S3Service {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   }
+
+  /**
+   * 获取对象标签
+   */
+  static async getObjectTagging(
+    connectionId: string,
+    bucket: string,
+    key: string
+  ): Promise<Record<string, string>> {
+    return await safeTauriInvoke<Record<string, string>>('s3_get_object_tagging', {
+      request: {
+        connection_id: connectionId,
+        bucket,
+        key,
+      },
+    });
+  }
+
+  /**
+   * 设置对象标签
+   */
+  static async putObjectTagging(
+    connectionId: string,
+    bucket: string,
+    key: string,
+    tags: Record<string, string>
+  ): Promise<void> {
+    await safeTauriInvoke<void>('s3_put_object_tagging', {
+      request: {
+        connection_id: connectionId,
+        bucket,
+        key,
+        tags,
+      },
+    });
+  }
+
+  /**
+   * 设置对象ACL权限
+   */
+  static async putObjectAcl(
+    connectionId: string,
+    bucket: string,
+    key: string,
+    acl: 'private' | 'public-read' | 'public-read-write' | 'authenticated-read'
+  ): Promise<void> {
+    await safeTauriInvoke<void>('s3_put_object_acl', {
+      request: {
+        connection_id: connectionId,
+        bucket,
+        key,
+        acl,
+      },
+    });
+  }
 }
