@@ -9,6 +9,7 @@ import type {
 
 interface UseNodeActivateHandlerProps {
     onCreateDataBrowserTab?: (connectionId: string, database: string, table: string) => void;
+    onCreateS3BrowserTab?: (connectionId: string, connectionName: string, defaultBucket?: string) => void;
     openDatabase: (connectionId: string, database: string) => void;
     setManagementNodeDialog: React.Dispatch<React.SetStateAction<ManagementNodeDialogState>>;
     setConnectionDetailDialog: React.Dispatch<React.SetStateAction<ConnectionDetailDialogState>>;
@@ -21,6 +22,7 @@ interface UseNodeActivateHandlerProps {
  */
 export const useNodeActivateHandler = ({
     onCreateDataBrowserTab,
+    onCreateS3BrowserTab,
     openDatabase,
     setManagementNodeDialog,
     setConnectionDetailDialog,
@@ -105,12 +107,22 @@ export const useNodeActivateHandler = ({
                 showMessage.success(`正在打开时间序列 "${table}"`);
             }
         } else if (nodeType === 'connection') {
-            // 连接节点：打开连接详情对话框
-            logger.info(`🔌 [DatabaseExplorer] 双击连接节点，打开详情: ${node.name}`);
-            setConnectionDetailDialog({
-                open: true,
-                connectionId,
-            });
+            // 检查是否为ObjectStorage连接
+            const connectionType = metadata.connectionType || metadata.type;
+            if (connectionType === 'ObjectStorage' && onCreateS3BrowserTab) {
+                // ObjectStorage连接：打开S3浏览器标签
+                logger.info(`📦 [DatabaseExplorer] 双击ObjectStorage节点，打开S3浏览器: ${node.name}`);
+                const defaultBucket = metadata.defaultBucket || metadata.bucket;
+                onCreateS3BrowserTab(connectionId, node.name, defaultBucket);
+                showMessage.success(`正在打开对象存储浏览器`);
+            } else {
+                // 其他连接节点：打开连接详情对话框
+                logger.info(`🔌 [DatabaseExplorer] 双击连接节点，打开详情: ${node.name}`);
+                setConnectionDetailDialog({
+                    open: true,
+                    connectionId,
+                });
+            }
         } else if (
             nodeType === 'function' ||
             nodeType === 'trigger' ||
@@ -131,6 +143,7 @@ export const useNodeActivateHandler = ({
         }
     }, [
         onCreateDataBrowserTab,
+        onCreateS3BrowserTab,
         openDatabase,
         setManagementNodeDialog,
         setConnectionDetailDialog,

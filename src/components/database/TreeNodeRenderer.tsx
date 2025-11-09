@@ -309,6 +309,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   return (
     <div
       {...restTreeProps}
+      data-node-id={data.id}
       ref={(el) => {
         // 合并所有 ref：forwardedRef、nodeRefsMap、treeProps.ref
         if (typeof forwardedRef === 'function') {

@@ -92,6 +92,11 @@ pub enum TreeNodeType {
     // 系统节点
     // SystemDatabase,    // 系统数据库（如 _internal）
     // SystemBucket,      // 系统存储桶（如 _monitoring）
+
+    // Object Storage (S3/MinIO/OSS/COS) 节点类型
+    StorageBucket,     // 存储桶
+    Folder,            // 文件夹
+    File,              // 文件
 }
 
 /// 树节点数据
@@ -867,6 +872,10 @@ impl TreeNodeType {
             TreeNodeType::FunctionGroup => "函数管理，查看和管理用户定义函数",
             TreeNodeType::ConfigManagement => "配置管理，查看和管理系统配置",
             TreeNodeType::VersionManagement => "版本信息，查看IoTDB版本和系统信息",
+            // Object Storage (S3/MinIO/OSS/COS) 描述
+            TreeNodeType::StorageBucket => "存储桶，对象存储的容器",
+            TreeNodeType::Folder => "文件夹，对象存储中的虚拟目录",
+            TreeNodeType::File => "文件，存储在对象存储中的对象",
         }
     }
 }

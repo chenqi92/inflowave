@@ -206,7 +206,7 @@ impl DatabaseClient {
                     "timezone": "UTC"
                 }))
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
         }
     }
 
@@ -346,7 +346,7 @@ impl DatabaseClient {
                 let client = client.lock().await;
                 client.get_devices(database).await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
         }
     }
 
@@ -375,7 +375,7 @@ impl DatabaseClient {
                 };
                 client.get_timeseries(&device_path).await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
         }
     }
 
@@ -447,7 +447,7 @@ impl DatabaseClient {
                 // IoTDB 多协议客户端暂不支持行协议写入
                 Err(anyhow::anyhow!("IoTDB 多协议客户端暂不支持行协议写入"))
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
         }
     }
 
@@ -469,7 +469,7 @@ impl DatabaseClient {
                 let client = client.lock().await;
                 client.detect_version().await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
         }
     }
 
@@ -492,7 +492,7 @@ impl DatabaseClient {
                 let client = client.lock().await;
                 client.get_tree_nodes().await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
         }
     }
 
@@ -516,7 +516,10 @@ impl DatabaseClient {
                 // IoTDB 子节点获取逻辑
                 client.get_tree_children(parent_node_id, node_type, metadata).await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(client) => {
+                // ObjectStorage 子节点获取逻辑
+                client.get_tree_children(parent_node_id, node_type, metadata).await
+            },
         }
     }
 
@@ -531,7 +534,7 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.get_influxdb2_organizations().await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
 
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
@@ -546,7 +549,7 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.get_influxdb2_organization_info(org_name).await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
 
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
@@ -569,7 +572,7 @@ impl DatabaseClient {
                     client.get_influxdb2_buckets().await
                 }
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
 
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
@@ -584,7 +587,7 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.get_influxdb2_bucket_info(bucket_name).await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
 
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
@@ -599,7 +602,7 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.create_influxdb2_bucket(name, org_id, retention_period, description).await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
 
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
@@ -614,7 +617,7 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.delete_influxdb2_bucket(bucket_name).await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
 
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }
@@ -629,7 +632,7 @@ impl DatabaseClient {
             DatabaseClient::InfluxDBUnified(client) => {
                 client.update_influxdb2_bucket_retention(bucket_name, retention_period).await
             },
-            DatabaseClient::ObjectStorage(_) => todo!("ObjectStorage implementation"),
+            DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),
 
             _ => Err(anyhow::anyhow!("此操作仅支持 InfluxDB 2.x/3.x")),
         }

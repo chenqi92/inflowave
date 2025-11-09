@@ -505,6 +505,60 @@ export const useTabOperations = () => {
     updateTab(tabId, { isLoading: true, refreshTrigger: Date.now() });
   };
 
+  // 创建S3浏览器tab（对象存储浏览）
+  const createS3BrowserTab = (connectionId: string, connectionName: string, defaultBucket?: string) => {
+    logger.info(`🆕 [createS3BrowserTab] 开始创建S3浏览Tab:`, {
+      connectionId,
+      connectionName,
+      defaultBucket,
+      currentTabsCount: tabs.length,
+    });
+
+    // 检查是否已存在该连接的S3 tab
+    const existingTab = tabs.find(tab =>
+      tab.type === 's3-browser' &&
+      tab.connectionId === connectionId
+    );
+
+    if (existingTab) {
+      logger.debug(`ℹ️ [createS3BrowserTab] Tab已存在，切换到现有tab:`, existingTab.id);
+      // 如果tab已存在，切换到该tab
+      setActiveKey(existingTab.id);
+      return existingTab;
+    }
+
+    // 如果不存在，创建新tab
+    const title = i18n.isInitialized
+      // @ts-expect-error - i18n.t() with interpolation parameters
+      ? (i18n.t('s3_browser.tab_title', { connection: connectionName }) as string)
+      : `S3 - ${connectionName}`; // 如果 i18n 未初始化，使用简单格式
+
+    const newTab: EditorTab = {
+      id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      title,
+      content: '',
+      type: 's3-browser',
+      modified: false,
+      saved: true,
+      connectionId,
+      connectionName,
+      defaultBucket,
+      closable: false, // S3浏览器tab不能手动关闭
+    };
+
+    logger.debug(`🆕 [createS3BrowserTab] 新Tab信息:`, {
+      id: newTab.id,
+      title: newTab.title,
+      type: newTab.type,
+    });
+
+    addTab(newTab);
+    setActiveKey(newTab.id); // 自动切换到新创建的S3浏览标签页
+
+    logger.debug(`✅ [createS3BrowserTab] Tab创建完成，当前Tab总数: ${tabs.length + 1}`);
+    return newTab;
+  };
+
   // 保存tab内容
   const saveTab = (tabId: string) => {
     updateTab(tabId, { saved: true, modified: false });
@@ -513,6 +567,7 @@ export const useTabOperations = () => {
   return {
     createQueryTab,
     createDataBrowserTab,
+    createS3BrowserTab,
     refreshDataBrowserTab,
     duplicateTab,
     closeOtherTabs,

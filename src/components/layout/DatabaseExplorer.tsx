@@ -81,6 +81,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   refreshTrigger,
   onTableDoubleClick,
   onCreateDataBrowserTab,
+  onCreateS3BrowserTab,
   onCreateQueryTab,
   onCreateAndExecuteQuery,
   onViewChange,
@@ -1608,6 +1609,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   // Node activate handler
   const { handleNodeActivate } = useNodeActivateHandler({
     onCreateDataBrowserTab,
+    onCreateS3BrowserTab,
     openDatabase,
     setManagementNodeDialog,
     setConnectionDetailDialog,

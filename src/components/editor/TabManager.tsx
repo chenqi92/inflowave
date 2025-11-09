@@ -20,10 +20,13 @@ export interface EditorTab {
   workspacePath?: string; // 工作区内部路径
   // 数据浏览相关属性
   connectionId?: string;
+  connectionName?: string;  // S3浏览器连接名称
   database?: string;
   tableName?: string;
+  defaultBucket?: string;  // S3浏览器默认bucket
   isLoading?: boolean; // 🔧 数据加载状态
   refreshTrigger?: number; // 🔧 刷新触发器（时间戳）
+  closable?: boolean; // 是否可以关闭
   // 查询结果相关属性
   queryResult?: any | null;
   queryResults?: any[];

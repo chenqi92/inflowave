@@ -5,7 +5,7 @@
  * 完全替代 DatabaseExplorerContextMenu、TreeContextMenu、DatabaseContextMenu、TableContextMenu
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     ContextMenu,
     ContextMenuContent,
@@ -18,8 +18,8 @@ import {
     ContextMenuSubTrigger,
     ContextMenuShortcut,
 } from '@/components/ui/context-menu';
-import { Popconfirm } from '@/components/ui/popconfirm';
 import { Button } from '@/components/ui/button';
+import { AlertTriangle } from 'lucide-react';
 import {
     Copy,
     RefreshCw,
@@ -80,20 +80,59 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     // 🔧 从 store 实时获取连接状态
     const connectionStatuses = useConnectionStore(state => state.connectionStatuses);
 
-    // 状态管理：用于控制 Popconfirm 的显示
-    const [pendingAction, setPendingAction] = useState<string | null>(null);
-    const [popconfirmOpen, setPopconfirmOpen] = useState(false);
+    // 状态管理：用于控制确认对话框的显示
+    const [confirmDialog, setConfirmDialog] = useState<{
+        action: string;
+        position: { x: number; y: number };
+    } | null>(null);
+    const [loading, setLoading] = useState(false);
+    const confirmDialogRef = useRef<HTMLDivElement>(null);
+
+    // 记录鼠标位置
+    useEffect(() => {
+        const handleMouseDown = (e: MouseEvent) => {
+            (window as any).__lastMousePosition = { x: e.clientX, y: e.clientY };
+        };
+        window.addEventListener('mousedown', handleMouseDown);
+        return () => window.removeEventListener('mousedown', handleMouseDown);
+    }, []);
+
+    // 点击外部关闭确认框
+    useEffect(() => {
+        if (!confirmDialog) return;
+
+        const handleClickOutside = (event: MouseEvent) => {
+            if (confirmDialogRef.current && !confirmDialogRef.current.contains(event.target as Node)) {
+                handleCancel();
+            }
+        };
+
+        // 延迟添加监听器，避免立即触发
+        const timer = setTimeout(() => {
+            document.addEventListener('mousedown', handleClickOutside);
+        }, 100);
+
+        return () => {
+            clearTimeout(timer);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [confirmDialog]);
 
     const handleAction = (action: string) => {
-        // 对于需要确认的操作，显示 Popconfirm
+        // 对于需要确认的操作，显示确认对话框
         const needsConfirmation = ['disconnect', 'delete_connection'].includes(action);
 
         if (needsConfirmation) {
-            setPendingAction(action);
-            // 延迟显示 Popconfirm，等待菜单关闭动画完成
+            // 获取最后的鼠标位置
+            const lastPos = (window as any).__lastMousePosition || { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+            // 延迟显示确认框，等待菜单关闭动画完成
             setTimeout(() => {
-                setPopconfirmOpen(true);
-            }, 100);
+                setConfirmDialog({
+                    action,
+                    position: lastPos
+                });
+            }, 150);
         } else {
             onAction(action, node);
         }
@@ -101,17 +140,20 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
 
     // 确认操作
     const handleConfirm = async () => {
-        if (pendingAction) {
-            onAction(pendingAction, node);
-            setPendingAction(null);
+        if (confirmDialog) {
+            setLoading(true);
+            try {
+                onAction(confirmDialog.action, node);
+            } finally {
+                setLoading(false);
+                setConfirmDialog(null);
+            }
         }
-        setPopconfirmOpen(false);
     };
 
     // 取消操作
     const handleCancel = () => {
-        setPendingAction(null);
-        setPopconfirmOpen(false);
+        setConfirmDialog(null);
     };
 
     // 根据节点类型渲染菜单项
@@ -950,9 +992,9 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
 
     // 获取确认消息和标题
     const getConfirmConfig = () => {
-        if (!pendingAction) return { title: '', message: '' };
+        if (!confirmDialog) return { title: '', message: '' };
 
-        switch (pendingAction) {
+        switch (confirmDialog.action) {
             case 'disconnect':
                 return {
                     title: '确认操作',
@@ -995,24 +1037,85 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                 </ContextMenuContent>
             </ContextMenu>
 
-            {/* Popconfirm for confirmable actions */}
-            {pendingAction && (() => {
+            {/* 固定位置的确认对话框 */}
+            {confirmDialog && (() => {
                 const config = getConfirmConfig();
+                const { position } = confirmDialog;
+
+                // 计算对话框位置
+                const dialogWidth = 288; // w-72 = 18rem = 288px
+                const dialogHeight = 150; // 估计高度
+                const padding = 16;
+
+                // 默认显示在鼠标位置左上方
+                let left = position.x - dialogWidth - 10;
+                let top = position.y - dialogHeight - 10;
+
+                // 如果左侧空间不足，显示在右侧
+                if (left < padding) {
+                    left = position.x + 10;
+                }
+
+                // 如果顶部空间不足，显示在下方
+                if (top < padding) {
+                    top = position.y + 10;
+                }
+
+                // 确保不超出右边界
+                if (left + dialogWidth > window.innerWidth - padding) {
+                    left = window.innerWidth - dialogWidth - padding;
+                }
+
+                // 确保不超出底部边界
+                if (top + dialogHeight > window.innerHeight - padding) {
+                    top = window.innerHeight - dialogHeight - padding;
+                }
+
                 return (
-                    <Popconfirm
-                        title={config.title}
-                        description={config.message}
-                        open={popconfirmOpen}
-                        onConfirm={handleConfirm}
-                        onCancel={handleCancel}
-                        onOpenChange={setPopconfirmOpen}
-                        okText="确定"
-                        cancelText="取消"
-                        okType={pendingAction === 'delete_connection' ? 'danger' : 'primary'}
-                        placement="right"
+                    <div
+                        ref={confirmDialogRef}
+                        className="fixed z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-lg animate-in fade-in-0 zoom-in-95"
+                        style={{
+                            left: `${left}px`,
+                            top: `${top}px`,
+                        }}
                     >
-                        <Button ref={confirmButtonRef} className="hidden" />
-                    </Popconfirm>
+                        <div className="space-y-3">
+                            <div className="flex items-start space-x-3">
+                                <div className="flex-shrink-0 mt-0.5">
+                                    <AlertTriangle className="h-4 w-4 text-orange-500" />
+                                </div>
+                                <div className="flex-1 space-y-1">
+                                    <div className="text-sm font-medium leading-none">
+                                        {config.title}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                        {config.message}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center justify-end space-x-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleCancel}
+                                    disabled={loading}
+                                    className="h-7 px-3 text-xs"
+                                >
+                                    取消
+                                </Button>
+                                <Button
+                                    variant={confirmDialog.action === 'delete_connection' ? 'destructive' : 'default'}
+                                    size="sm"
+                                    onClick={handleConfirm}
+                                    disabled={loading}
+                                    className="h-7 px-3 text-xs"
+                                >
+                                    {loading ? '处理中...' : '确定'}
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
                 );
             })()}
         </>

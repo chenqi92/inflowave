@@ -46,6 +46,7 @@ export interface DatabaseExplorerProps {
     refreshTrigger?: number; // 用于触发刷新
     onTableDoubleClick?: (database: string, table: string, query: string) => void; // 表格双击回调（保留兼容性）
     onCreateDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void; // 创建数据浏览tab回调
+    onCreateS3BrowserTab?: (connectionId: string, connectionName: string, defaultBucket?: string) => void; // 创建S3浏览器tab回调
     onCreateQueryTab?: (query?: string, database?: string, connectionId?: string) => void; // 创建查询标签页回调
     onCreateAndExecuteQuery?: (query: string, database: string, connectionId?: string) => void; // 创建查询标签页并自动执行回调
     onViewChange?: (view: string) => void; // 视图切换回调

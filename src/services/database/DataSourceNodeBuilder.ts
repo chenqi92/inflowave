@@ -51,6 +51,8 @@ export class DataSourceNodeBuilder {
         version: version || 'unknown',
         features,
         connectionName,
+        connectionType: dbType,  // Add connectionType for ObjectStorage detection
+        connectionId,
         isConnected,
         nextLevel: rootLevel.name
       },
