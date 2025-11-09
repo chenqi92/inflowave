@@ -140,7 +140,7 @@ export class S3Service {
     key: string
   ): Promise<void> {
     await safeTauriInvoke<void>('s3_delete_object', {
-      connection_id: connectionId,
+      connectionId,
       bucket,
       key,
     });

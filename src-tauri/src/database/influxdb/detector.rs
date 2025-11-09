@@ -23,29 +23,67 @@ impl InfluxDetector {
         } else {
             format!("http://{}:{}", config.host, config.port)
         };
-        
+
         let client = Self::create_http_client(config)?;
-        
+
         info!("开始探测 InfluxDB 版本: {}", base_url);
-        
+
+        // 优先根据配置的版本信息和 v2_config 来判断
+        if let Some(version) = &config.version {
+            info!("配置中指定版本: {}", version);
+
+            // 如果明确指定为 2.x 或 3.x，且有 v2_config，直接返回对应能力
+            if (version.contains("2.") || version.contains("2x") || version == "2.x") && config.v2_config.is_some() {
+                info!("根据配置直接识别为 InfluxDB 2.x");
+                return Ok(Capability::v2x(version.clone()));
+            }
+
+            if (version.contains("3.") || version.contains("3x") || version == "3.x") && config.v2_config.is_some() {
+                info!("根据配置直接识别为 InfluxDB 3.x");
+                return Ok(Capability::v3x(version.clone(), false));
+            }
+
+            if version.contains("1.") || version.contains("1x") || version == "1.x" {
+                info!("根据配置直接识别为 InfluxDB 1.x");
+                return Ok(Capability::v1x(version.clone()));
+            }
+        }
+
+        // 如果有 v2_config 但没有明确版本，优先尝试 2.x
+        if config.v2_config.is_some() {
+            info!("检测到 v2_config，优先尝试 InfluxDB 2.x");
+
+            // 2. 尝试探测 InfluxDB 2.x
+            if let Ok(capability) = Self::detect_v2x(&client, &base_url, config).await {
+                info!("检测到 InfluxDB 2.x: {}", capability.version);
+                return Ok(capability);
+            }
+
+            // 3. 尝试探测 InfluxDB 3.x
+            if let Ok(capability) = Self::detect_v3x(&client, &base_url, config).await {
+                info!("检测到 InfluxDB 3.x: {}", capability.version);
+                return Ok(capability);
+            }
+        }
+
         // 1. 尝试探测 InfluxDB 1.x
         if let Ok(capability) = Self::detect_v1x(&client, &base_url, config).await {
             info!("检测到 InfluxDB 1.x: {}", capability.version);
             return Ok(capability);
         }
-        
+
         // 2. 尝试探测 InfluxDB 2.x
         if let Ok(capability) = Self::detect_v2x(&client, &base_url, config).await {
             info!("检测到 InfluxDB 2.x: {}", capability.version);
             return Ok(capability);
         }
-        
+
         // 3. 尝试探测 InfluxDB 3.x
         if let Ok(capability) = Self::detect_v3x(&client, &base_url, config).await {
             info!("检测到 InfluxDB 3.x: {}", capability.version);
             return Ok(capability);
         }
-        
+
         Err(anyhow!("无法识别 InfluxDB 版本，请检查连接配置"))
     }
     
@@ -107,45 +145,63 @@ impl InfluxDetector {
     /// 探测 InfluxDB 2.x
     async fn detect_v2x(client: &Client, base_url: &str, config: &ConnectionConfig) -> Result<Capability> {
         debug!("尝试探测 InfluxDB 2.x");
-        
-        // 尝试 /health 端点
-        let health_url = format!("{}/health", base_url);
-        let mut request = client.get(&health_url);
-        
-        // 添加 Token 认证
+
+        // 检查是否有 v2_config
         if let Some(v2_config) = &config.v2_config {
-            request = request.bearer_auth(&v2_config.api_token);
-        }
-        
-        let response = request.send().await?;
-        
-        if response.status().is_success() {
-            let json: Value = response.json().await?;
-            
-            if let Some(version_str) = json["version"].as_str() {
-                if version_str.starts_with('2') {
-                    debug!("检测到 InfluxDB 2.x 版本: {}", version_str);
-                    return Ok(Capability::v2x(version_str.to_string()));
+            debug!("检测到 v2_config，API Token 长度: {}", v2_config.api_token.len());
+
+            // 尝试 /health 端点
+            let health_url = format!("{}/health", base_url);
+            let request = client.get(&health_url)
+                .bearer_auth(&v2_config.api_token);
+
+            match request.send().await {
+                Ok(response) => {
+                    debug!("InfluxDB 2.x /health 响应状态: {}", response.status());
+
+                    if response.status().is_success() {
+                        if let Ok(json) = response.json::<Value>().await {
+                            if let Some(version_str) = json["version"].as_str() {
+                                if version_str.starts_with('2') {
+                                    debug!("检测到 InfluxDB 2.x 版本: {}", version_str);
+                                    return Ok(Capability::v2x(version_str.to_string()));
+                                }
+                            }
+                        }
+                    } else if response.status() == 401 {
+                        debug!("InfluxDB 2.x /health 返回 401，API Token 可能无效或已加密");
+                    }
+                }
+                Err(e) => {
+                    debug!("InfluxDB 2.x /health 请求失败: {}", e);
                 }
             }
+
+            // 尝试 /api/v2/ping 端点
+            let ping_url = format!("{}/api/v2/ping", base_url);
+            let request = client.get(&ping_url)
+                .bearer_auth(&v2_config.api_token);
+
+            match request.send().await {
+                Ok(response) => {
+                    debug!("InfluxDB 2.x /api/v2/ping 响应状态: {}", response.status());
+
+                    if response.status().is_success() {
+                        // 如果 ping 成功，假设是 2.x 版本
+                        debug!("通过 /api/v2/ping 检测到 InfluxDB 2.x");
+                        return Ok(Capability::v2x("2.x".to_string()));
+                    } else if response.status() == 401 {
+                        debug!("InfluxDB 2.x /api/v2/ping 返回 401，API Token 可能无效或已加密");
+                    }
+                }
+                Err(e) => {
+                    debug!("InfluxDB 2.x /api/v2/ping 请求失败: {}", e);
+                }
+            }
+        } else {
+            debug!("未检测到 v2_config，跳过 InfluxDB 2.x 探测");
         }
-        
-        // 尝试 /api/v2/ping 端点
-        let ping_url = format!("{}/api/v2/ping", base_url);
-        let mut request = client.get(&ping_url);
-        
-        if let Some(v2_config) = &config.v2_config {
-            request = request.bearer_auth(&v2_config.api_token);
-        }
-        
-        let response = request.send().await?;
-        
-        if response.status().is_success() {
-            // 如果 ping 成功，假设是 2.x 版本
-            debug!("通过 /api/v2/ping 检测到 InfluxDB 2.x");
-            return Ok(Capability::v2x("2.x".to_string()));
-        }
-        
+
         Err(anyhow!("不是 InfluxDB 2.x"))
     }
     

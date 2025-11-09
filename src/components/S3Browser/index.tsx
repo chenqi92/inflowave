@@ -47,6 +47,7 @@ import {
   ChevronRight,
   Home,
   FolderOpen,
+  Edit2,
 } from 'lucide-react';
 import { S3Service } from '@/services/s3Service';
 import { showMessage } from '@/utils/message';
@@ -306,6 +307,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   // 拖放状态
   const [isDraggingOver, setIsDraggingOver] = useState(false);
 
+  // 右键菜单状态
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    object: S3Object | null;
+  }>({ visible: false, x: 0, y: 0, object: null });
+
   // 加载根级别内容（buckets 或 bucket 内的对象）
   useEffect(() => {
     logger.info(`📦 [S3Browser] useEffect 触发: bucket=${currentBucket}, path=${currentPath}`);
@@ -441,7 +450,16 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
 
       // 过滤掉 objects 中已经是文件夹的项（避免与 commonPrefixes 重复）
       // 同时过滤掉名称为空的对象（通常是文件夹标记对象）
-      let newObjects = result.objects.filter(obj => !obj.isDirectory && obj.name.trim() !== '');
+      // 注意：无论是否标记为目录，只要名称为空就过滤掉
+      // 还要过滤掉那些 key 对应 commonPrefixes 中文件夹的对象（避免同名文件）
+      const prefixSet = new Set(commonPrefixes);
+      let newObjects = result.objects.filter(obj => {
+        const hasValidName = obj.name && obj.name.trim() !== '';
+        const isNotDirectory = !obj.isDirectory;
+        // 检查是否是文件夹标记对象（key 在 commonPrefixes 中）
+        const isNotFolderMarker = !prefixSet.has(obj.key) && !prefixSet.has(obj.key + '/');
+        return hasValidName && isNotDirectory && isNotFolderMarker;
+      });
 
       logger.info(`📦 [S3Browser] 过滤后文件数: ${newObjects.length}`);
 
@@ -1147,6 +1165,43 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     setSelectionEnd(null);
   };
 
+  // 右键菜单处理
+  const handleContextMenu = (e: React.MouseEvent, object: S3Object) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 如果右键的对象不在已选中列表中，只选中这一个
+    if (!selectedObjects.has(object.key)) {
+      setSelectedObjects(new Set([object.key]));
+    }
+
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      object,
+    });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu({ visible: false, x: 0, y: 0, object: null });
+  };
+
+  // 点击其他地方关闭菜单
+  useEffect(() => {
+    const handleClick = () => closeContextMenu();
+    const handleScroll = () => closeContextMenu();
+
+    if (contextMenu.visible) {
+      document.addEventListener('click', handleClick);
+      document.addEventListener('scroll', handleScroll, true);
+      return () => {
+        document.removeEventListener('click', handleClick);
+        document.removeEventListener('scroll', handleScroll, true);
+      };
+    }
+  }, [contextMenu.visible]);
+
   const getBreadcrumbs = (): BreadcrumbItem[] => {
     const items: BreadcrumbItem[] = [];
 
@@ -1462,6 +1517,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     handleObjectSelect(object, index, e);
                   }}
                   onDoubleClick={() => handleObjectClick(object)}
+                  onContextMenu={(e) => handleContextMenu(e, object)}
                 >
                   <td className="p-2">
                     <div className="flex items-center justify-center h-full">
@@ -1546,6 +1602,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   {currentBucket && (
                     <>
                       <ContextMenuItem onClick={() => handleRename(object)}>
+                        <Edit2 className="w-4 h-4 mr-2" />
                         {t('s3:rename.label', { defaultValue: '重命名' })}
                       </ContextMenuItem>
                       <ContextMenuSeparator />
@@ -1785,6 +1842,75 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 自定义右键菜单 */}
+      {contextMenu.visible && contextMenu.object && (
+        <div
+          className="fixed bg-background border border-border rounded-md shadow-lg py-1 z-50 min-w-[160px]"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {currentBucket && (
+            <>
+              <div
+                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                onClick={() => {
+                  handleRename(contextMenu.object!);
+                  closeContextMenu();
+                }}
+              >
+                <Edit2 className="w-4 h-4" />
+                {t('s3:rename.label', { defaultValue: '重命名' })}
+              </div>
+              <div className="h-px bg-border my-1" />
+            </>
+          )}
+          <div
+            className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+            onClick={() => {
+              handleDownload([contextMenu.object!]);
+              closeContextMenu();
+            }}
+          >
+            <Download className="w-4 h-4" />
+            {t('s3:download.label', { defaultValue: '下载' })}
+          </div>
+          <div
+            className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+            onClick={() => {
+              handleCopy();
+              closeContextMenu();
+            }}
+          >
+            <Copy className="w-4 h-4" />
+            {t('s3:copy.label', { defaultValue: '复制' })}
+          </div>
+          <div
+            className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+            onClick={() => {
+              handleCut();
+              closeContextMenu();
+            }}
+          >
+            <Scissors className="w-4 h-4" />
+            {t('s3:cut.label', { defaultValue: '剪切' })}
+          </div>
+          <div className="h-px bg-border my-1" />
+          <div
+            className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm text-destructive"
+            onClick={() => {
+              setShowDeleteConfirmDialog(true);
+              closeContextMenu();
+            }}
+          >
+            <Trash2 className="w-4 h-4" />
+            {t('s3:delete.label', { defaultValue: '删除' })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
