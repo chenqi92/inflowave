@@ -179,7 +179,7 @@
 .database-explorer {
   border-right: 1px solid #e1e4e8;
   background: #fafbfc;
-  padding: 8px;
+  /*padding: 8px;*/
 }
 
 /* 左侧面板与右侧内容区域间距优化 */

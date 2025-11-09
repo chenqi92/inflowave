@@ -1918,7 +1918,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
         {/* 主要内容：数据源树 */}
         <CardContent className='flex-1 overflow-hidden p-0'>
-          <div className='px-2 h-full w-[280px]'>
+          <div className='pl-2 h-full w-full'>
             {/* 使用新的 MultiConnectionTreeView */}
             <MultiConnectionTreeView
               connections={memoizedConnections}

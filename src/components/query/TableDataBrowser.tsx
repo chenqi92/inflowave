@@ -54,6 +54,7 @@ import {
   Copy,
   Square,
   CheckSquare,
+  Filter,
 } from 'lucide-react';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
@@ -2612,6 +2613,31 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           </div>
         }
       >
+        {/* 添加筛选按钮 */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant='outline' size='sm' className='h-8 px-2'>
+              <Filter className='w-3 h-3 mr-1' />
+              {tBrowser('addFilter')}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align='end' className='max-h-80 overflow-y-auto'>
+            <div className='px-2 py-1.5 text-xs font-medium text-muted-foreground'>
+              {tBrowser('selectColumnToFilter')}
+            </div>
+            {columns
+              .filter(col => col !== '#')
+              .map(column => (
+                <DropdownMenuItem
+                  key={column}
+                  onClick={() => addFilter(column)}
+                >
+                  {column}
+                </DropdownMenuItem>
+              ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* 复制选中行按钮 */}
         {selectedRows.size > 0 && (
           <DropdownMenu>
