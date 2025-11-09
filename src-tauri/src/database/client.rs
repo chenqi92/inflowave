@@ -1704,10 +1704,16 @@ impl InfluxDB2Client {
         if node_type == "connection" {
             // 连接节点：返回组织列表
             log::info!("为 InfluxDB 2.x 连接节点获取组织列表");
+
+            // 🔧 修复：包含连接 ID 以确保节点 ID 唯一
+            let connection_id = &self.config.id;
+
             match self.get_organizations().await {
                 Ok(org_names) => {
                     for org_name in org_names {
-                        let org_node = TreeNodeFactory::create_organization(org_name);
+                        let mut org_node = TreeNodeFactory::create_organization(org_name);
+                        // 修改节点 ID 以包含连接 ID
+                        org_node.id = format!("{}/org_{}", connection_id, org_node.name);
                         children.push(org_node);
                     }
                 }
@@ -1717,6 +1723,9 @@ impl InfluxDB2Client {
             }
             return Ok(children);
         }
+
+        // 🔧 修复：包含连接 ID 以确保节点 ID 唯一
+        let connection_id = &self.config.id;
 
         // 解析节点类型（支持大小写和多种格式）
         let parsed_type = match node_type.to_lowercase().as_str() {
@@ -1732,12 +1741,23 @@ impl InfluxDB2Client {
         match parsed_type {
             TreeNodeType::Organization => {
                 // InfluxDB 2.x/3.x: 获取组织下的存储桶
-                let org_name = parent_node_id.strip_prefix("org_").unwrap_or(parent_node_id);
+                // 🔧 修复：从新格式的 parent_node_id 中提取组织名
+                // 新格式: {connection_id}/org_{org_name}
+                let org_name = if let Some(org_part) = parent_node_id.split('/').last() {
+                    org_part.strip_prefix("org_").unwrap_or(org_part)
+                } else {
+                    parent_node_id.strip_prefix("org_").unwrap_or(parent_node_id)
+                };
+
                 match self.get_buckets_for_org(org_name).await {
                     Ok(buckets) => {
                         for bucket_name in buckets {
                             let is_system = bucket_name.starts_with('_');
-                            let bucket_node = TreeNodeFactory::create_bucket(org_name, bucket_name, is_system);
+                            let mut bucket_node = TreeNodeFactory::create_bucket(org_name, bucket_name, is_system);
+                            // 修改节点 ID 以包含连接 ID
+                            bucket_node.id = format!("{}/bucket_{}_{}", connection_id, org_name, bucket_node.metadata.get("bucket_name").and_then(|v| v.as_str()).unwrap_or(&bucket_node.name));
+                            // 修改 parent_id 以匹配新的 organization 节点 ID 格式
+                            bucket_node.parent_id = Some(format!("{}/org_{}", connection_id, org_name));
                             children.push(bucket_node);
                         }
                     }

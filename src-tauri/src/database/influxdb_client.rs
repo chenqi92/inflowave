@@ -246,6 +246,9 @@ impl InfluxDBClient {
                 let databases = self.list_databases().await?;
                 info!("获取到 {} 个数据库", databases.len());
 
+                // 🔧 修复：包含连接 ID 以确保节点 ID 唯一
+                let connection_id = &self.config.id;
+
                 let nodes = databases
                     .into_iter()
                     .map(|db_name| {
@@ -257,7 +260,7 @@ impl InfluxDBClient {
                         };
 
                         crate::models::TreeNode::new(
-                            format!("db_{}", db_name),
+                            format!("{}/db_{}", connection_id, db_name),
                             db_name.clone(),
                             node_type,
                         )
@@ -270,31 +273,40 @@ impl InfluxDBClient {
             }
             "database" | "system_database" => {
                 // 数据库节点：返回表列表
-                // 从 parent_node_id 中提取数据库名
-                if let Some(database) = parent_node_id.strip_prefix("db_") {
-                    info!("为数据库 {} 获取表列表", database);
-                    let measurements = self.list_measurements(database).await?;
-                    info!("获取到 {} 个表", measurements.len());
+                // 🔧 修复：从新格式的 parent_node_id 中提取连接 ID 和数据库名
+                // 新格式: {connection_id}/db_{db_name}
+                if let Some(db_part) = parent_node_id.split('/').last() {
+                    if let Some(database) = db_part.strip_prefix("db_") {
+                        info!("为数据库 {} 获取表列表", database);
+                        let measurements = self.list_measurements(database).await?;
+                        info!("获取到 {} 个表", measurements.len());
 
-                    let nodes = measurements
-                        .into_iter()
-                        .map(|measurement_name| {
-                            crate::models::TreeNode::new(
-                                format!("measurement_{}_{}", database, measurement_name),
-                                measurement_name.clone(),
-                                crate::models::TreeNodeType::Measurement,
-                            )
-                            .with_parent(parent_node_id.to_string())
-                            // 不标记为叶子节点，允许展开查看 tags 和 fields
-                            .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
-                            .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
-                            .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
-                            .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name))
-                        })
-                        .collect();
-                    Ok(nodes)
+                        // 🔧 修复：包含连接 ID 以确保节点 ID 唯一
+                        let connection_id = &self.config.id;
+
+                        let nodes = measurements
+                            .into_iter()
+                            .map(|measurement_name| {
+                                crate::models::TreeNode::new(
+                                    format!("{}/measurement_{}_{}", connection_id, database, measurement_name),
+                                    measurement_name.clone(),
+                                    crate::models::TreeNodeType::Measurement,
+                                )
+                                .with_parent(parent_node_id.to_string())
+                                // 不标记为叶子节点，允许展开查看 tags 和 fields
+                                .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
+                                .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
+                                .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
+                                .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name))
+                            })
+                            .collect();
+                        Ok(nodes)
+                    } else {
+                        warn!("无法从 parent_node_id 提取数据库名: {}", parent_node_id);
+                        Ok(vec![])
+                    }
                 } else {
-                    warn!("无法从 parent_node_id 提取数据库名: {}", parent_node_id);
+                    warn!("无法解析 parent_node_id 格式: {}", parent_node_id);
                     Ok(vec![])
                 }
             }
@@ -302,37 +314,42 @@ impl InfluxDBClient {
                 // 测量节点：返回 Tags 和 Fields 分组
                 info!("为测量节点获取 Tags 和 Fields 分组");
 
-                // 从 parent_node_id 中提取数据库名和测量名
-                // 格式: "measurement_{database}_{measurement_name}"
-                let parts: Vec<&str> = parent_node_id.split('_').collect();
-                if parts.len() >= 3 && parts[0] == "measurement" {
-                    let database = parts[1];
-                    let measurement_name = parts[2..].join("_");
+                // 🔧 修复：从新格式的 parent_node_id 中提取数据库名和测量名
+                // 新格式: "{connection_id}/measurement_{database}_{measurement_name}"
+                if let Some(measurement_part) = parent_node_id.split('/').last() {
+                    let parts: Vec<&str> = measurement_part.split('_').collect();
+                    if parts.len() >= 3 && parts[0] == "measurement" {
+                        let database = parts[1];
+                        let measurement_name = parts[2..].join("_");
 
-                    debug!("解析测量节点: database={}, measurement={}", database, measurement_name);
+                        debug!("解析测量节点: database={}, measurement={}", database, measurement_name);
 
-                    let mut children = Vec::new();
+                        let mut children = Vec::new();
 
-                    // 创建 Tags 分组节点
-                    let tags_group = crate::models::TreeNodeFactory::create_tag_group(parent_node_id.to_string())
-                        .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
-                        .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
-                        .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
-                        .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name.clone()));
-                    children.push(tags_group);
+                        // 创建 Tags 分组节点
+                        let tags_group = crate::models::TreeNodeFactory::create_tag_group(parent_node_id.to_string())
+                            .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
+                            .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
+                            .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
+                            .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name.clone()));
+                        children.push(tags_group);
 
-                    // 创建 Fields 分组节点
-                    let fields_group = crate::models::TreeNodeFactory::create_field_group(parent_node_id.to_string())
-                        .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
-                        .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
-                        .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
-                        .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name));
-                    children.push(fields_group);
+                        // 创建 Fields 分组节点
+                        let fields_group = crate::models::TreeNodeFactory::create_field_group(parent_node_id.to_string())
+                            .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
+                            .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
+                            .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
+                            .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name));
+                        children.push(fields_group);
 
-                    info!("为测量节点创建了 {} 个分组节点", children.len());
-                    Ok(children)
+                        info!("为测量节点创建了 {} 个分组节点", children.len());
+                        Ok(children)
+                    } else {
+                        warn!("无法从 parent_node_id 解析测量信息: {}", parent_node_id);
+                        Ok(vec![])
+                    }
                 } else {
-                    warn!("无法从 parent_node_id 解析测量信息: {}", parent_node_id);
+                    warn!("无法解析 parent_node_id 格式: {}", parent_node_id);
                     Ok(vec![])
                 }
             }
