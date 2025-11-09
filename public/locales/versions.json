@@ -1,0 +1,87 @@
+{
+  "zh-CN": {
+    "common": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "zh-cn-common-v1"
+    },
+    "navigation": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "zh-cn-navigation-v1"
+    },
+    "connections": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "zh-cn-connections-v1"
+    },
+    "query": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "zh-cn-query-v1"
+    },
+    "settings": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "zh-cn-settings-v1"
+    },
+    "errors": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "zh-cn-errors-v1"
+    },
+    "dateTime": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "zh-cn-datetime-v1"
+    },
+    "menu": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "zh-cn-menu-v1"
+    }
+  },
+  "en-US": {
+    "common": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "en-us-common-v1"
+    },
+    "navigation": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "en-us-navigation-v1"
+    },
+    "connections": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "en-us-connections-v1"
+    },
+    "query": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "en-us-query-v1"
+    },
+    "settings": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "en-us-settings-v1"
+    },
+    "errors": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "en-us-errors-v1"
+    },
+    "dateTime": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "en-us-datetime-v1"
+    },
+    "menu": {
+      "version": "1.0.0",
+      "lastModified": "2025-11-09T00:00:00.000Z",
+      "hash": "en-us-menu-v1"
+    }
+  }
+}
+

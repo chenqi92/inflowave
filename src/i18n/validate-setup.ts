@@ -1,127 +1,80 @@
 /**
  * 国际化设置验证脚本
- * 验证所有依赖和配置是否正确安装
+ * 验证配置和资源文件是否正确
  */
 
-// 验证依赖包是否正确安装
-const validateDependencies = () => {
+import { SUPPORTED_LANGUAGES } from './config';
+import i18n from 'i18next';
+
+// 验证运行时依赖（检查是否已加载）
+const validateRuntimeDependencies = () => {
   const results: { name: string; status: 'success' | 'error'; message: string }[] = [];
 
-  try {
-    // 验证 react-i18next
-    require.resolve('react-i18next');
-    results.push({
-      name: 'react-i18next',
-      status: 'success',
-      message: 'Successfully installed and accessible'
-    });
-  } catch (error) {
-    results.push({
-      name: 'react-i18next',
-      status: 'error',
-      message: `Failed to resolve: ${error}`
-    });
-  }
-
-  try {
-    // 验证 i18next
-    require.resolve('i18next');
+  // 检查 i18next 是否已初始化
+  if (i18n.isInitialized) {
     results.push({
       name: 'i18next',
       status: 'success',
-      message: 'Successfully installed and accessible'
+      message: 'i18next is initialized and ready'
     });
-  } catch (error) {
+  } else {
     results.push({
       name: 'i18next',
       status: 'error',
-      message: `Failed to resolve: ${error}`
+      message: 'i18next is not initialized'
     });
   }
 
-  try {
-    // 验证 i18next-browser-languagedetector
-    require.resolve('i18next-browser-languagedetector');
+  // 检查当前语言
+  if (i18n.language) {
     results.push({
-      name: 'i18next-browser-languagedetector',
+      name: 'current language',
       status: 'success',
-      message: 'Successfully installed and accessible'
+      message: `Current language: ${i18n.language}`
     });
-  } catch (error) {
+  } else {
     results.push({
-      name: 'i18next-browser-languagedetector',
+      name: 'current language',
       status: 'error',
-      message: `Failed to resolve: ${error}`
-    });
-  }
-
-  try {
-    // 验证 date-fns
-    require.resolve('date-fns');
-    results.push({
-      name: 'date-fns',
-      status: 'success',
-      message: 'Successfully installed and accessible'
-    });
-  } catch (error) {
-    results.push({
-      name: 'date-fns',
-      status: 'error',
-      message: `Failed to resolve: ${error}`
+      message: 'No language detected'
     });
   }
 
   return results;
 };
 
-// 验证配置文件
+// 验证配置
 const validateConfiguration = () => {
   const results: { name: string; status: 'success' | 'error'; message: string }[] = [];
 
-  try {
-    // 验证 i18n 配置
-    const config = require('./config');
+  // 验证支持的语言
+  if (SUPPORTED_LANGUAGES && SUPPORTED_LANGUAGES.length > 0) {
     results.push({
-      name: 'i18n config',
+      name: 'supported languages',
       status: 'success',
-      message: 'Configuration file loaded successfully'
+      message: `Found ${SUPPORTED_LANGUAGES.length} supported languages: ${SUPPORTED_LANGUAGES.join(', ')}`
     });
-
-    // 验证支持的语言
-    if (config.SUPPORTED_LANGUAGES && config.SUPPORTED_LANGUAGES.length > 0) {
-      results.push({
-        name: 'supported languages',
-        status: 'success',
-        message: `Found ${config.SUPPORTED_LANGUAGES.length} supported languages: ${config.SUPPORTED_LANGUAGES.join(', ')}`
-      });
-    } else {
-      results.push({
-        name: 'supported languages',
-        status: 'error',
-        message: 'No supported languages found in configuration'
-      });
-    }
-  } catch (error) {
+  } else {
     results.push({
-      name: 'i18n config',
+      name: 'supported languages',
       status: 'error',
-      message: `Failed to load configuration: ${error}`
+      message: 'No supported languages found in configuration'
     });
   }
 
-  try {
-    // 验证类型定义
-    const types = require('./types');
+  // 验证 i18next 配置
+  const loadedLanguages = i18n.languages || [];
+  if (loadedLanguages.length > 0) {
     results.push({
-      name: 'type definitions',
+      name: 'loaded languages',
       status: 'success',
-      message: 'Type definitions loaded successfully'
+      message: `i18next has ${loadedLanguages.length} languages loaded: ${loadedLanguages.join(', ')}`
     });
-  } catch (error) {
+  } else {
     results.push({
-      name: 'type definitions',
+      name: 'loaded languages',
       status: 'error',
-      message: `Failed to load type definitions: ${error}`
+      message: 'No languages loaded in i18next'
     });
   }
 
@@ -189,9 +142,9 @@ const validateLanguageResources = async () => {
 export const validateI18nSetup = async () => {
   console.log('🔍 Validating i18n setup...\n');
 
-  // 验证依赖
-  console.log('📦 Checking dependencies...');
-  const dependencyResults = validateDependencies();
+  // 验证运行时依赖
+  console.log('📦 Checking runtime dependencies...');
+  const dependencyResults = validateRuntimeDependencies();
   dependencyResults.forEach(result => {
     const icon = result.status === 'success' ? '✅' : '❌';
     console.log(`${icon} ${result.name}: ${result.message}`);
@@ -206,9 +159,10 @@ export const validateI18nSetup = async () => {
   });
 
   // 验证语言资源（仅在浏览器环境）
+  let resourceResults: { name: string; status: 'success' | 'error'; message: string }[] = [];
   if (typeof window !== 'undefined') {
     console.log('\n🌐 Checking language resources...');
-    const resourceResults = await validateLanguageResources();
+    resourceResults = await validateLanguageResources();
     resourceResults.forEach(result => {
       const icon = result.status === 'success' ? '✅' : '❌';
       console.log(`${icon} ${result.name}: ${result.message}`);
@@ -219,7 +173,7 @@ export const validateI18nSetup = async () => {
   const allResults = [
     ...dependencyResults,
     ...configResults,
-    ...(typeof window !== 'undefined' ? await validateLanguageResources() : [])
+    ...resourceResults
   ];
 
   const successCount = allResults.filter(r => r.status === 'success').length;

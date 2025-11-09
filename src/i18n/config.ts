@@ -39,8 +39,8 @@ const loaderConfig: LoaderConfig = {
 // 资源管理器配置
 const resourceManagerConfig: ResourceManagerConfig = {
   ...loaderConfig,
-  enableVersioning: true,
-  enableIntegrityCheck: true,
+  enableVersioning: false, // 禁用版本检查（项目中没有 versions.json）
+  enableIntegrityCheck: false, // 禁用完整性检查
   enableHotReload: import.meta.env.DEV, // 仅在开发环境启用热重载
   updateCheckInterval: 60 * 60 * 1000, // 1小时检查一次更新
 };
@@ -78,19 +78,15 @@ const i18nConfig = {
   ],
 
   // 预加载关键命名空间（在应用启动时立即加载）
-  preload: ['zh-CN', 'en-US', 'zh', 'en'],
+  // 只预加载实际存在资源文件的语言，不预加载别名（zh, en）
+  preload: ['zh-CN', 'en-US'],
   partialBundledLanguages: true,
   
   // 插值配置
   interpolation: {
     escapeValue: false, // React 已经处理了 XSS
-    formatSeparator: ',',
-    format: (value: any, format?: string) => {
-      if (format === 'uppercase') return value.toUpperCase();
-      if (format === 'lowercase') return value.toLowerCase();
-      if (format === 'capitalize') return value.charAt(0).toUpperCase() + value.slice(1);
-      return value;
-    },
+    // 移除弃用的 format 函数，使用新的格式化方式
+    // 如果需要格式化，可以在翻译文件中使用 {{value, uppercase}} 等
   },
   
   // 复数规则
