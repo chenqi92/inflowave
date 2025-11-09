@@ -1546,7 +1546,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     <span>{t('s3:name')}</span>
                     <div
                       className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('s3:name', 'size', e)}
+                      onMouseDown={(e) => handleColumnResizeStart('name', 'size', e)}
                     />
                   </div>
                 </th>
@@ -1555,7 +1555,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     <span>{t('s3:size')}</span>
                     <div
                       className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('s3:size', !currentBucket ? 'count' : 'modified', e)}
+                      onMouseDown={(e) => handleColumnResizeStart('size', !currentBucket ? 'count' : 'modified', e)}
                     />
                   </div>
                 </th>
@@ -1588,7 +1588,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     <span>{t('s3:modified')}</span>
                     <div
                       className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('s3:modified', null, e)}
+                      onMouseDown={(e) => handleColumnResizeStart('modified', null, e)}
                     />
                   </div>
                 </th>
@@ -1627,29 +1627,33 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     </div>
                   </td>
                   <td className="p-2" style={{ width: columnWidths.name }}>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       {getFileIcon(object)}
-                      <span className="truncate">{object.name}</span>
+                      <span className="truncate" title={object.name}>{object.name}</span>
                     </div>
                   </td>
                   <td className="p-2" style={{ width: columnWidths.size }}>
-                    {object.isDirectory ? '-' : formatBytes(object.size)}
+                    <span className="truncate block" title={object.isDirectory ? '-' : formatBytes(object.size)}>
+                      {object.isDirectory ? '-' : formatBytes(object.size)}
+                    </span>
                   </td>
                   {/* 在根目录显示文件数量 */}
                   {!currentBucket && (
                     <td className="p-2" style={{ width: columnWidths.count }}>
-                      {object.objectCount !== undefined ? object.objectCount : '-'}
+                      <span className="truncate block">
+                        {object.objectCount !== undefined ? object.objectCount : '-'}
+                      </span>
                     </td>
                   )}
                   {/* 在 bucket 内显示标签 */}
                   {currentBucket && (
                     <td className="p-2" style={{ width: columnWidths.tags }}>
                       {object.tags && Object.keys(object.tags).length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1 min-w-0">
                           {Object.entries(object.tags).slice(0, 2).map(([key, value]) => (
                             <span
                               key={key}
-                              className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-primary/10 text-primary"
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-primary/10 text-primary truncate"
                               title={`${key}: ${value}`}
                             >
                               {key}
@@ -1667,7 +1671,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     </td>
                   )}
                   <td className="p-2" style={{ width: columnWidths.modified }}>
-                    {formatDate(object.lastModified)}
+                    <span className="truncate block" title={formatDate(object.lastModified)}>
+                      {formatDate(object.lastModified)}
+                    </span>
                   </td>
                 </tr>
               ))}
