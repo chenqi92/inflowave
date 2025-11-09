@@ -72,6 +72,12 @@ pub async fn get_databases(
 ) -> Result<Vec<String>, String> {
     debug!("处理获取数据库列表命令: {}", connection_id);
 
+    // 🔧 确保连接已建立（如果不存在则自动建立）
+    if let Err(e) = connection_service.connect_to_database(&connection_id).await {
+        error!("自动建立连接失败: {}", e);
+        return Err(format!("建立连接失败: {}", e));
+    }
+
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connection_id).await
         .map_err(|e| {
@@ -1765,6 +1771,12 @@ pub async fn get_tree_children(
     metadata: Option<serde_json::Value>,
 ) -> Result<Vec<crate::models::TreeNode>, String> {
     debug!("处理获取树节点子节点命令: {} - {}", connection_id, parent_node_id);
+
+    // 🔧 确保连接已建立（如果不存在则自动建立）
+    if let Err(e) = connection_service.connect_to_database(&connection_id).await {
+        error!("自动建立连接失败: {}", e);
+        return Err(format!("建立连接失败: {}", e));
+    }
 
     let manager = connection_service.get_manager();
     let client = manager.get_connection(&connection_id).await

@@ -139,15 +139,49 @@ impl ConnectionService {
 
     /// 测试连接
     pub async fn test_connection(&self, connection_id: &str) -> Result<ConnectionTestResult> {
-        debug!("测试连接: {}", connection_id);
+        info!("🔍 测试连接: {}", connection_id);
 
-        self.manager.test_connection(connection_id).await
+        // 首先尝试从manager测试（如果连接已建立）
+        if self.manager.connection_exists(connection_id).await {
+            debug!("连接已在管理器中，直接测试");
+            return self.manager.test_connection(connection_id).await
+                .context("连接测试失败");
+        }
+
+        // 如果连接不在管理器中，从配置创建临时客户端测试
+        debug!("连接不在管理器中，使用配置创建临时客户端测试");
+
+        let config = {
+            let configs = self.configs.read().await;
+            configs.get(connection_id)
+                .ok_or_else(|| anyhow::anyhow!("连接配置不存在: {}", connection_id))?
+                .clone()
+        };
+
+        // 解密密码用于测试
+        let mut runtime_config = config.clone();
+        if let Some(encrypted_password) = &config.password {
+            debug!("🔐 解密密码用于连接测试");
+            let decrypted_password = self.encryption.decrypt_password(encrypted_password)
+                .context("密码解密失败")?;
+            runtime_config.password = Some(decrypted_password);
+        }
+
+        // 使用解密后的配置测试连接
+        self.manager.test_new_connection(runtime_config).await
             .context("连接测试失败")
     }
 
     /// 测试新连接（不需要先保存）
     pub async fn test_new_connection(&self, config: ConnectionConfig) -> Result<ConnectionTestResult> {
-        debug!("测试新连接: {}", config.name);
+        info!("🆕 测试新连接: {}", config.name);
+
+        // 检查密码是否存在
+        if config.password.is_some() {
+            debug!("✓ 密码已提供（应该是明文）");
+        } else {
+            debug!("⚠️  未提供密码");
+        }
 
         self.manager.test_new_connection(config).await
             .context("新连接测试失败")
