@@ -72,6 +72,7 @@ import type { S3Object, S3Bucket, S3BrowserViewConfig } from '@/types/s3';
 import './S3Browser.css';
 import logger from '@/utils/logger';
 import { safeTauriInvoke } from '@/utils/tauri';
+import { open as openInBrowser } from '@tauri-apps/plugin-shell';
 
 // 判断文件是否为图片
 const isImageFile = (object: S3Object): boolean => {
@@ -303,6 +304,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   // 无限滚动加载
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // 预览内容引用
+  const previewContentRef = useRef<HTMLDivElement>(null);
+  const pdfIframeRef = useRef<HTMLIFrameElement>(null);
+  const excelIframeRef = useRef<HTMLIFrameElement>(null);
 
   // 列宽调整
   const resizingColumn = useRef<string | null>(null);
@@ -776,47 +782,59 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     try {
       const extension = object.name.split('.').pop()?.toLowerCase();
 
-      // 图片、视频、音频、PDF：使用 presigned URL
+      // 图片、视频、音频、PDF：下载文件并使用 blob URL
       if (
         isImageFile(object) ||
         isVideoFile(object) ||
         ['mp3', 'wav', 'ogg', 'pdf'].includes(extension || '')
       ) {
-        const result = await S3Service.generatePresignedUrl(
-          connectionId,
-          currentBucket,
-          object.key,
-          'get',
-          300
-        );
-        logger.info('Generated presigned URL for preview:', result.url);
+        try {
+          logger.info('Downloading file for preview:', object.key);
+          const data = await S3Service.downloadObject(
+            connectionId,
+            currentBucket,
+            object.key
+          );
 
-        // 对于图片，使用blob URL以避免CORS和URL编码问题
-        if (isImageFile(object)) {
-          try {
-            const data = await S3Service.downloadObject(
-              connectionId,
-              currentBucket,
-              object.key
-            );
-            // 使用 Uint8Array.slice() 创建新副本，确保类型兼容
-            // 根据扩展名设置正确的 MIME 类型
-            let mimeType = `image/${extension}`;
+          // 根据文件类型设置正确的 MIME 类型
+          let mimeType = 'application/octet-stream';
+
+          if (isImageFile(object)) {
+            mimeType = `image/${extension}`;
             if (extension === 'svg') {
               mimeType = 'image/svg+xml';
             } else if (extension === 'jpg') {
               mimeType = 'image/jpeg';
             }
-            const blob = new Blob([data.slice()], { type: mimeType });
-            const blobUrl = URL.createObjectURL(blob);
-            setPreviewContent(blobUrl);
-          } catch (error) {
-            logger.error('Failed to load image as blob:', error);
-            // 降级到直接使用presigned URL
-            setPreviewContent(result.url);
+          } else if (isVideoFile(object)) {
+            if (extension === 'mp4') {
+              mimeType = 'video/mp4';
+            } else if (extension === 'webm') {
+              mimeType = 'video/webm';
+            } else if (extension === 'ogg') {
+              mimeType = 'video/ogg';
+            }
+          } else if (['mp3', 'wav', 'ogg'].includes(extension || '')) {
+            if (extension === 'mp3') {
+              mimeType = 'audio/mpeg';
+            } else if (extension === 'wav') {
+              mimeType = 'audio/wav';
+            } else if (extension === 'ogg') {
+              mimeType = 'audio/ogg';
+            }
+          } else if (extension === 'pdf') {
+            mimeType = 'application/pdf';
           }
-        } else {
-          setPreviewContent(result.url);
+
+          // 创建 blob URL
+          const blob = new Blob([data.slice()], { type: mimeType });
+          const blobUrl = URL.createObjectURL(blob);
+          setPreviewContent(blobUrl);
+
+          logger.info('Created blob URL for preview:', blobUrl);
+        } catch (error) {
+          logger.error('Failed to load file as blob:', error);
+          throw error;
         }
       }
       // 文本文件：下载并显示内容
@@ -862,7 +880,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         const text = new TextDecoder('utf-8').decode(data);
         setPreviewContent(text);
       }
-      // Excel 文件：解析并显示
+      // Excel 文件：解析并创建 blob URL
       else if (['xlsx', 'xls'].includes(extension || '')) {
         const data = await S3Service.downloadObject(
           connectionId,
@@ -872,7 +890,32 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         const workbook = XLSX.read(data, { type: 'array' });
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
         const html = XLSX.utils.sheet_to_html(firstSheet);
-        setPreviewContent(html);
+
+        // 创建完整的 HTML 文档并转换为 blob URL
+        const fullHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline';">
+  <style>
+    body { margin: 0; padding: 16px; font-family: system-ui, -apple-system, sans-serif; }
+    table { border-collapse: collapse; min-width: 100%; }
+    th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; white-space: nowrap; }
+    th { background-color: #f9fafb; font-weight: 600; }
+    tr:nth-child(even) { background-color: #f9fafb; }
+  </style>
+</head>
+<body>
+  ${html}
+</body>
+</html>`;
+
+        const blob = new Blob([fullHtml], { type: 'text/html' });
+        const blobUrl = URL.createObjectURL(blob);
+        setPreviewContent(blobUrl);
+        logger.info('Created blob URL for Excel preview:', blobUrl);
       }
       // Word/PowerPoint 文件：生成预签名 URL 用于下载提示
       else if (['doc', 'docx', 'ppt', 'pptx'].includes(extension || '')) {
@@ -893,6 +936,123 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       setPreviewLoading(false);
     }
   };
+
+  // 拦截预览内容中的链接点击和导航，使用系统浏览器打开
+  useEffect(() => {
+    if (!showPreviewDialog) return;
+
+    // 拦截链接点击
+    const handleLinkClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const link = target.closest('a');
+
+      if (link && link.href) {
+        if (link.href.startsWith('http://') || link.href.startsWith('https://')) {
+          e.preventDefault();
+          e.stopPropagation();
+          logger.info('Opening link in system browser:', link.href);
+          openInBrowser(link.href).catch(error => {
+            logger.error('Failed to open link in browser:', error);
+            showMessage.error(`Failed to open link: ${error}`);
+          });
+        }
+      }
+    };
+
+    // 阻止窗口导航
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+      logger.warn('Prevented navigation attempt during preview');
+    };
+
+    // 监听所有导航尝试
+    const originalWindowOpen = window.open;
+    window.open = function(...args) {
+      const url = args[0];
+      if (typeof url === 'string' && (url.startsWith('http://') || url.startsWith('https://'))) {
+        logger.info('Intercepted window.open, opening in system browser:', url);
+        openInBrowser(url).catch(error => {
+          logger.error('Failed to open URL in browser:', error);
+        });
+        return null;
+      }
+      return originalWindowOpen.apply(this, args);
+    };
+
+    if (previewContentRef.current) {
+      const previewElement = previewContentRef.current;
+      previewElement.addEventListener('click', handleLinkClick, true);
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      if (previewContentRef.current) {
+        previewContentRef.current.removeEventListener('click', handleLinkClick, true);
+      }
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.open = originalWindowOpen;
+    };
+  }, [showPreviewDialog]);
+
+  // 监控 iframe 导航并阻止外部链接加载
+  useEffect(() => {
+    if (!showPreviewDialog || !previewContent || !previewContent.startsWith('blob:')) return;
+
+    const handlers: Array<{ iframe: HTMLIFrameElement; handler: (event: Event) => void }> = [];
+
+    const createLoadHandler = (iframe: HTMLIFrameElement, originalSrc: string) => {
+      return (event: Event) => {
+        try {
+          const currentSrc = iframe.src;
+
+          // 如果 src 从 blob: 变成了 http/https，说明发生了导航
+          if (originalSrc.startsWith('blob:') &&
+              (currentSrc.startsWith('http://') || currentSrc.startsWith('https://'))) {
+            logger.warn('Detected iframe navigation to:', currentSrc);
+            logger.info('Preventing navigation, opening in system browser instead');
+
+            // 在系统浏览器中打开
+            openInBrowser(currentSrc).catch(error => {
+              logger.error('Failed to open URL in browser:', error);
+              showMessage.error(t('s3:error.operation_failed'));
+            });
+
+            // 立即重置 iframe src 以停止加载
+            iframe.src = originalSrc;
+            logger.info('Reset iframe to original src');
+          }
+        } catch (error) {
+          // 跨域错误是预期的
+          logger.debug('Cross-origin access blocked (expected):', error);
+        }
+      };
+    };
+
+    // 监听 PDF iframe
+    if (pdfIframeRef.current) {
+      const iframe = pdfIframeRef.current;
+      const handler = createLoadHandler(iframe, previewContent);
+      iframe.addEventListener('load', handler);
+      handlers.push({ iframe, handler });
+    }
+
+    // 监听 Excel iframe
+    if (excelIframeRef.current) {
+      const iframe = excelIframeRef.current;
+      const handler = createLoadHandler(iframe, previewContent);
+      iframe.addEventListener('load', handler);
+      handlers.push({ iframe, handler });
+    }
+
+    // 统一清理所有事件监听器
+    return () => {
+      handlers.forEach(({ iframe, handler }) => {
+        iframe.removeEventListener('load', handler);
+      });
+    };
+  }, [showPreviewDialog, previewContent]);
 
   const handleObjectSelect = (
     object: S3Object,
@@ -2319,6 +2479,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             setShowShareInPreview(false);
             setPresignedUrl('');
             setShareExpireTime('');
+
+            // 清理 blob URL 以避免内存泄漏
+            if (previewContent && previewContent.startsWith('blob:')) {
+              URL.revokeObjectURL(previewContent);
+              logger.info('Revoked blob URL:', previewContent);
+            }
+            setPreviewContent(null);
+            setPreviewObject(null);
           }
         }}
       >
@@ -2483,7 +2651,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                 </p>
               </div>
             ) : previewObject && previewContent ? (
-              <div className='p-6'>
+              <div className='p-6' ref={previewContentRef}>
                 {/* 图片预览 */}
                 {isImageFile(previewObject) && (
                   <div className='flex items-center justify-center bg-muted/20 rounded-lg p-6 min-h-[300px]'>
@@ -2531,9 +2699,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                 {previewObject.name.endsWith('.pdf') && (
                   <div className='rounded-xl overflow-hidden border-2 shadow-lg'>
                     <iframe
+                      ref={pdfIframeRef}
                       src={previewContent}
                       className='w-full h-[650px]'
                       title='PDF Preview'
+                      sandbox='allow-scripts allow-same-origin'
+                      referrerPolicy='no-referrer'
+                      allow=''
                     />
                   </div>
                 )}
@@ -2592,10 +2764,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                 {['xlsx', 'xls'].includes(
                   previewObject.name.split('.').pop()?.toLowerCase() || ''
                 ) && (
-                  <div className='rounded-xl overflow-auto border-2 shadow-lg max-h-[600px]'>
-                    <div
-                      className='[&_table]:w-full [&_table]:border-collapse [&_th]:bg-muted/50 [&_th]:p-2 [&_th]:text-left [&_th]:font-medium [&_th]:border [&_td]:p-2 [&_td]:border'
-                      dangerouslySetInnerHTML={{ __html: previewContent }}
+                  <div className='rounded-xl overflow-hidden border-2 shadow-lg max-h-[600px] w-full'>
+                    <iframe
+                      ref={excelIframeRef}
+                      src={previewContent}
+                      className='w-full h-[600px]'
+                      title='Excel Preview'
+                      sandbox='allow-same-origin'
+                      referrerPolicy='no-referrer'
                     />
                   </div>
                 )}
