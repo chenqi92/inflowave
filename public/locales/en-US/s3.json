@@ -10,6 +10,7 @@
   "modified": "Modified",
   "type": "Type",
   "object_count": "Object Count",
+  "tags": "Tags",
   "items": "{{count}} items",
   "selected": "{{count}} selected",
   "load_more": "Load More",
@@ -134,10 +135,34 @@
   },
   "preview": {
     "title": "File Preview",
+    "label": "Preview",
     "loading": "Loading preview...",
     "failed": "Preview failed",
     "no_content": "Unable to preview this file",
     "not_supported": "This file type is not supported for preview",
     "download_to_view": "Please download to view"
+  },
+  "permissions": {
+    "label": "Set Permissions",
+    "title": "Set Permissions",
+    "private": "Private (Read/Write by owner only)",
+    "public_read": "Public Read (Everyone can read)",
+    "public_read_write": "Public Read/Write (Everyone can read and write)",
+    "authenticated_read": "Authenticated Read (Authenticated users can read)",
+    "success": "Permissions set successfully",
+    "failed": "Failed to set permissions"
+  },
+  "tags_mgmt": {
+    "label": "Manage Tags",
+    "title": "Manage Tags",
+    "add": "Add Tag",
+    "key": "Key",
+    "value": "Value",
+    "key_placeholder": "Enter tag key",
+    "value_placeholder": "Enter tag value",
+    "remove": "Remove",
+    "success": "Tags updated successfully",
+    "failed": "Failed to update tags",
+    "no_tags": "No tags"
   }
 }

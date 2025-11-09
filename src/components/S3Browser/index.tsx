@@ -21,6 +21,9 @@ import {
   ContextMenuItem,
   ContextMenuSeparator,
   ContextMenuTrigger,
+  RadioGroup,
+  RadioGroupItem,
+  Label,
 } from '@/components/ui';
 import {
   Upload,
@@ -48,6 +51,9 @@ import {
   Home,
   FolderOpen,
   Edit2,
+  Eye,
+  Tag,
+  Shield,
 } from 'lucide-react';
 import { S3Service } from '@/services/s3Service';
 import { showMessage } from '@/utils/message';
@@ -262,6 +268,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     name: 400,
     size: 150,
     count: 150, // bucket 文件数量列
+    tags: 200, // 标签列
     modified: 200,
   });
 
@@ -314,6 +321,16 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     y: number;
     object: S3Object | null;
   }>({ visible: false, x: 0, y: 0, object: null });
+
+  // 权限设置对话框状态
+  const [showPermissionsDialog, setShowPermissionsDialog] = useState(false);
+  const [permissionsObject, setPermissionsObject] = useState<S3Object | null>(null);
+  const [selectedAcl, setSelectedAcl] = useState<'private' | 'public-read' | 'public-read-write' | 'authenticated-read'>('private');
+
+  // Tags 管理对话框状态
+  const [showTagsDialog, setShowTagsDialog] = useState(false);
+  const [tagsObject, setTagsObject] = useState<S3Object | null>(null);
+  const [objectTags, setObjectTags] = useState<Array<{ key: string; value: string }>>([]);
 
   // 加载根级别内容（buckets 或 bucket 内的对象）
   useEffect(() => {
@@ -452,12 +469,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       // 同时过滤掉名称为空的对象（通常是文件夹标记对象）
       // 注意：无论是否标记为目录，只要名称为空就过滤掉
       // 还要过滤掉那些 key 对应 commonPrefixes 中文件夹的对象（避免同名文件）
+      // 特别注意：过滤掉所有以 / 结尾的 key（文件夹标记对象），因为文件夹已在 commonPrefixes 中表示
       const prefixSet = new Set(commonPrefixes);
       let newObjects = result.objects.filter(obj => {
         const hasValidName = obj.name && obj.name.trim() !== '';
         const isNotDirectory = !obj.isDirectory;
-        // 检查是否是文件夹标记对象（key 在 commonPrefixes 中）
-        const isNotFolderMarker = !prefixSet.has(obj.key) && !prefixSet.has(obj.key + '/');
+        // 检查是否是文件夹标记对象（key 在 commonPrefixes 中或以 / 结尾）
+        const isNotFolderMarker = !prefixSet.has(obj.key) && !prefixSet.has(obj.key + '/') && !obj.key.endsWith('/');
         return hasValidName && isNotDirectory && isNotFolderMarker;
       });
 
@@ -923,7 +941,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     setIsLoading(true);
 
     for (const item of fileOperation.items) {
-      const destKey = currentPath + item.name;
+      let destKey = currentPath + item.name;
+
+      // 如果是文件夹，确保目标 key 以 / 结尾
+      if (item.isDirectory && !destKey.endsWith('/')) {
+        destKey = destKey + '/';
+      }
 
       try {
         if (fileOperation.type === 'copy') {
@@ -989,7 +1012,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     setIsLoading(true);
     try {
       const oldKey = renameObject.key;
-      const newKey = currentPath + newName;
+      let newKey = currentPath + newName;
+
+      // 如果是文件夹，确保新的 key 以 / 结尾
+      if (renameObject.isDirectory && !newKey.endsWith('/')) {
+        newKey = newKey + '/';
+      }
 
       // 复制到新位置
       await S3Service.copyObject(
@@ -1104,6 +1132,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     // 只在空白区域开始框选
     if ((e.target as HTMLElement).closest('.object-item')) return;
 
+    // 不在表头区域触发框选（避免干扰列宽调整）
+    if ((e.target as HTMLElement).closest('thead')) return;
+    if ((e.target as HTMLElement).closest('.column-resizer')) return;
+
     // 右键不触发框选
     if (e.button !== 0) return;
 
@@ -1202,6 +1234,42 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     }
   }, [contextMenu.visible]);
 
+  // 加载文件预览内容
+  useEffect(() => {
+    const loadPreview = async () => {
+      if (!showPreviewDialog || !previewObject || !currentBucket) return;
+
+      setPreviewLoading(true);
+      setPreviewContent(null);
+
+      try {
+        // 只预览文本文件和小文件（<1MB）
+        if (previewObject.size > 1024 * 1024) {
+          setPreviewContent(null);
+          return;
+        }
+
+        // 下载文件内容
+        const data = await S3Service.downloadObject(
+          connectionId,
+          currentBucket,
+          previewObject.key
+        );
+
+        // 尝试将内容转换为文本
+        const text = new TextDecoder('utf-8').decode(data);
+        setPreviewContent(text);
+      } catch (error) {
+        logger.error('文件预览失败:', error);
+        setPreviewContent(null);
+      } finally {
+        setPreviewLoading(false);
+      }
+    };
+
+    loadPreview();
+  }, [showPreviewDialog, previewObject]);
+
   const getBreadcrumbs = (): BreadcrumbItem[] => {
     const items: BreadcrumbItem[] = [];
 
@@ -1250,6 +1318,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   // 列宽调整处理函数
   const handleColumnResizeStart = (columnName: string, nextColumnName: string | null, e: React.MouseEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // 阻止事件冒泡，避免触发容器的框选功能
     resizingColumn.current = columnName;
     startX.current = e.clientX;
     startWidth.current = columnWidths[columnName as keyof typeof columnWidths];
@@ -1493,6 +1562,18 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     </div>
                   </th>
                 )}
+                {/* 在非根目录（bucket 内）显示标签列 */}
+                {currentBucket && (
+                  <th className="text-left p-2" style={{ width: columnWidths.tags }}>
+                    <div className="flex items-center">
+                      <span>{t('s3:tags', { defaultValue: '标签' })}</span>
+                      <div
+                        className="column-resizer"
+                        onMouseDown={(e) => handleColumnResizeStart('tags', 'modified', e)}
+                      />
+                    </div>
+                  </th>
+                )}
                 <th className="text-left p-2" style={{ width: columnWidths.modified }}>
                   <div className="flex items-center">
                     <span>{t('s3:modified')}</span>
@@ -1549,6 +1630,31 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   {!currentBucket && (
                     <td className="p-2" style={{ width: columnWidths.count }}>
                       {object.objectCount !== undefined ? object.objectCount : '-'}
+                    </td>
+                  )}
+                  {/* 在 bucket 内显示标签 */}
+                  {currentBucket && (
+                    <td className="p-2" style={{ width: columnWidths.tags }}>
+                      {object.tags && Object.keys(object.tags).length > 0 ? (
+                        <div className="flex flex-wrap gap-1">
+                          {Object.entries(object.tags).slice(0, 2).map(([key, value]) => (
+                            <span
+                              key={key}
+                              className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-primary/10 text-primary"
+                              title={`${key}: ${value}`}
+                            >
+                              {key}
+                            </span>
+                          ))}
+                          {Object.keys(object.tags).length > 2 && (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-muted text-muted-foreground">
+                              +{Object.keys(object.tags).length - 2}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </td>
                   )}
                   <td className="p-2" style={{ width: columnWidths.modified }}>
@@ -1843,6 +1949,173 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         </DialogContent>
       </Dialog>
 
+      {/* 权限设置对话框 */}
+      <Dialog open={showPermissionsDialog} onOpenChange={setShowPermissionsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('s3:permissions.title', { defaultValue: '设置权限' })}</DialogTitle>
+            <DialogDescription>
+              {permissionsObject?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <RadioGroup value={selectedAcl} onValueChange={(value: any) => setSelectedAcl(value)}>
+              <div className="flex items-center space-x-2 mb-3">
+                <RadioGroupItem value="private" id="private" />
+                <Label htmlFor="private" className="font-normal cursor-pointer flex-1">
+                  {t('s3:permissions.private', { defaultValue: '私有（仅所有者可读写）' })}
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 mb-3">
+                <RadioGroupItem value="public-read" id="public-read" />
+                <Label htmlFor="public-read" className="font-normal cursor-pointer flex-1">
+                  {t('s3:permissions.public_read', { defaultValue: '公开读（所有人可读）' })}
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 mb-3">
+                <RadioGroupItem value="public-read-write" id="public-read-write" />
+                <Label htmlFor="public-read-write" className="font-normal cursor-pointer flex-1">
+                  {t('s3:permissions.public_read_write', { defaultValue: '公开读写（所有人可读写）' })}
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="authenticated-read" id="authenticated-read" />
+                <Label htmlFor="authenticated-read" className="font-normal cursor-pointer flex-1">
+                  {t('s3:permissions.authenticated_read', { defaultValue: '授权读（已认证用户可读）' })}
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPermissionsDialog(false)}>
+              {String(t('common:cancel'))}
+            </Button>
+            <Button onClick={async () => {
+              // TODO: 实现权限设置逻辑
+              showMessage.success(String(t('s3:permissions.success')));
+              setShowPermissionsDialog(false);
+            }}>
+              {String(t('common:confirm'))}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Tags 管理对话框 */}
+      <Dialog open={showTagsDialog} onOpenChange={setShowTagsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{t('s3:tags_mgmt.title', { defaultValue: '管理标签' })}</DialogTitle>
+            <DialogDescription>
+              {tagsObject?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            {objectTags.length > 0 ? (
+              objectTags.map((tag, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    placeholder={t('s3:tags_mgmt.key_placeholder', { defaultValue: '输入标签键' })}
+                    value={tag.key}
+                    onChange={(e) => {
+                      const newTags = [...objectTags];
+                      newTags[index].key = e.target.value;
+                      setObjectTags(newTags);
+                    }}
+                    className="flex-1"
+                  />
+                  <Input
+                    placeholder={t('s3:tags_mgmt.value_placeholder', { defaultValue: '输入标签值' })}
+                    value={tag.value}
+                    onChange={(e) => {
+                      const newTags = [...objectTags];
+                      newTags[index].value = e.target.value;
+                      setObjectTags(newTags);
+                    }}
+                    className="flex-1"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newTags = objectTags.filter((_, i) => i !== index);
+                      setObjectTags(newTags);
+                    }}
+                  >
+                    {t('s3:tags_mgmt.remove', { defaultValue: '移除' })}
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="text-center text-muted-foreground py-8">
+                {t('s3:tags_mgmt.no_tags', { defaultValue: '无标签' })}
+              </div>
+            )}
+            <Button
+              variant="outline"
+              onClick={() => {
+                setObjectTags([...objectTags, { key: '', value: '' }]);
+              }}
+              className="w-full"
+            >
+              + {t('s3:tags_mgmt.add', { defaultValue: '添加标签' })}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowTagsDialog(false)}>
+              {String(t('common:cancel'))}
+            </Button>
+            <Button onClick={async () => {
+              // TODO: 实现 tags 更新逻辑
+              showMessage.success(String(t('s3:tags_mgmt.success')));
+              setShowTagsDialog(false);
+              await loadObjects();
+            }}>
+              {String(t('common:confirm'))}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 文件预览对话框 */}
+      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>{t('s3:preview.title', { defaultValue: '文件预览' })}</DialogTitle>
+            <DialogDescription>
+              {previewObject?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <ScrollArea className="h-[60vh] w-full rounded-md border p-4">
+            {previewLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">
+                    {t('s3:preview.loading', { defaultValue: '正在加载预览...' })}
+                  </p>
+                </div>
+              </div>
+            ) : previewContent ? (
+              <pre className="text-sm whitespace-pre-wrap break-words">
+                {previewContent}
+              </pre>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-sm text-muted-foreground">
+                  {t('s3:preview.not_supported', { defaultValue: '不支持预览此文件类型' })}
+                </p>
+              </div>
+            )}
+          </ScrollArea>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowPreviewDialog(false)}>
+              {String(t('common:close'))}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* 自定义右键菜单 */}
       {contextMenu.visible && contextMenu.object && (
         <div
@@ -1853,6 +2126,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          {/* 重命名 - 文件和文件夹都有 */}
           {currentBucket && (
             <>
               <div
@@ -1868,6 +2142,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
               <div className="h-px bg-border my-1" />
             </>
           )}
+
+          {/* 下载 - 文件和文件夹都有 */}
           <div
             className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
             onClick={() => {
@@ -1878,27 +2154,77 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
             <Download className="w-4 h-4" />
             {t('s3:download.label', { defaultValue: '下载' })}
           </div>
-          <div
-            className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
-            onClick={() => {
-              handleCopy();
-              closeContextMenu();
-            }}
-          >
-            <Copy className="w-4 h-4" />
-            {t('s3:copy.label', { defaultValue: '复制' })}
-          </div>
-          <div
-            className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
-            onClick={() => {
-              handleCut();
-              closeContextMenu();
-            }}
-          >
-            <Scissors className="w-4 h-4" />
-            {t('s3:cut.label', { defaultValue: '剪切' })}
-          </div>
+
+          {/* 文件特有的菜单项 */}
+          {!contextMenu.object.isDirectory && (
+            <>
+              {/* 预览 */}
+              <div
+                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                onClick={() => {
+                  setPreviewObject(contextMenu.object);
+                  setShowPreviewDialog(true);
+                  closeContextMenu();
+                }}
+              >
+                <Eye className="w-4 h-4" />
+                {t('s3:preview.label', { defaultValue: '预览' })}
+              </div>
+
+              {/* 创建分享链接 */}
+              <div
+                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                onClick={() => {
+                  handleGeneratePresignedUrl();
+                  closeContextMenu();
+                }}
+              >
+                <Link className="w-4 h-4" />
+                {t('s3:generate_link', { defaultValue: '生成分享链接' })}
+              </div>
+
+              {/* 设置标签 */}
+              <div
+                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                onClick={() => {
+                  setTagsObject(contextMenu.object);
+                  setObjectTags(
+                    contextMenu.object!.tags
+                      ? Object.entries(contextMenu.object!.tags).map(([key, value]) => ({ key, value }))
+                      : []
+                  );
+                  setShowTagsDialog(true);
+                  closeContextMenu();
+                }}
+              >
+                <Tag className="w-4 h-4" />
+                {t('s3:tags_mgmt.label', { defaultValue: '管理标签' })}
+              </div>
+            </>
+          )}
+
+          {/* 文件夹特有的菜单项 */}
+          {contextMenu.object.isDirectory && (
+            <>
+              {/* 设置权限 */}
+              <div
+                className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm"
+                onClick={() => {
+                  setPermissionsObject(contextMenu.object);
+                  setSelectedAcl(contextMenu.object!.acl || 'private');
+                  setShowPermissionsDialog(true);
+                  closeContextMenu();
+                }}
+              >
+                <Shield className="w-4 h-4" />
+                {t('s3:permissions.label', { defaultValue: '设置权限' })}
+              </div>
+            </>
+          )}
+
           <div className="h-px bg-border my-1" />
+
+          {/* 删除 - 文件和文件夹都有 */}
           <div
             className="px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm text-destructive"
             onClick={() => {

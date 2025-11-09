@@ -57,6 +57,14 @@
 .s3-browser table th {
   position: relative;
   user-select: none;
+  padding: 0 !important; /* 移除 padding，让内部 div 控制 */
+}
+
+.s3-browser table th > div {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0.5rem; /* 恢复 padding */
 }
 
 .s3-browser table th .column-resizer {
@@ -67,7 +75,7 @@
   width: 8px;
   cursor: col-resize;
   transition: background-color 0.15s;
-  z-index: 1;
+  z-index: 10; /* 提高 z-index 确保在其他元素之上 */
 }
 
 /* 分割线的视觉部分 */
