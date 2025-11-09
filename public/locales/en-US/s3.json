@@ -5,12 +5,6 @@
   "generate_link": "Generate Share Link",
   "refresh": "Refresh",
   "search": "Search files...",
-  "upload": "Upload",
-  "download": "Download",
-  "delete": "Delete",
-  "copy": "Copy",
-  "cut": "Cut",
-  "paste": "Paste",
   "name": "Name",
   "size": "Size",
   "modified": "Modified",
@@ -19,14 +13,17 @@
   "selected": "{{count}} selected",
   "load_more": "Load More",
   "upload": {
+    "label": "Upload",
     "success": "Successfully uploaded {{count}} file(s)",
     "failed": "Failed to upload {{count}} file(s)"
   },
   "download": {
+    "label": "Download",
     "no_selection": "Please select files to download",
     "failed": "Failed to download {{name}}"
   },
   "delete": {
+    "label": "Delete",
     "no_selection": "Please select items to delete",
     "confirm_title": "Confirm Delete",
     "confirm_message": "Are you sure you want to delete {{count}} selected item(s)?",
@@ -34,12 +31,15 @@
     "failed": "Failed to delete"
   },
   "copy": {
+    "label": "Copy",
     "copied": "Copied {{count}} item(s) to clipboard"
   },
   "cut": {
+    "label": "Cut",
     "cut": "Cut {{count}} item(s) to clipboard"
   },
   "paste": {
+    "label": "Paste",
     "nothing": "Clipboard is empty",
     "success": "Paste successful",
     "failed": "Failed to paste {{name}}"

@@ -583,7 +583,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         {/* 操作按钮 */}
         <Button size="sm" variant="ghost" onClick={handleUpload} disabled={!selectedBucket}>
           <Upload className="w-4 h-4 mr-1" />
-          {t('upload')}
+          {t('upload.label')}
         </Button>
 
         <Button
@@ -593,7 +593,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           disabled={selectedObjects.size === 0}
         >
           <Download className="w-4 h-4 mr-1" />
-          {t('download')}
+          {t('download.label')}
         </Button>
 
         <Button
@@ -613,7 +613,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           disabled={selectedObjects.size === 0}
         >
           <Trash2 className="w-4 h-4 mr-1" />
-          {t('delete')}
+          {t('delete.label')}
         </Button>
 
         <Button size="sm" variant="ghost" onClick={() => loadObjects()}>
@@ -630,15 +630,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           <DropdownMenuContent>
             <DropdownMenuItem onClick={handleCopy} disabled={selectedObjects.size === 0}>
               <Copy className="w-4 h-4 mr-2" />
-              {t('copy')}
+              {t('copy.label')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleCut} disabled={selectedObjects.size === 0}>
               <Scissors className="w-4 h-4 mr-2" />
-              {t('cut')}
+              {t('cut.label')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handlePaste} disabled={!fileOperation}>
               <Clipboard className="w-4 h-4 mr-2" />
-              {t('paste')}
+              {t('paste.label')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
