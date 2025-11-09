@@ -734,15 +734,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       </div>
 
       {/* 面包屑导航 */}
-      <div className="breadcrumbs px-2 py-1 border-b flex items-center gap-1 text-sm">
+      <div className="breadcrumbs">
         {getBreadcrumbs().map((item, index) => (
           <React.Fragment key={`${item.label}-${index}`}>
-            {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+            {index > 0 && <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />}
             <button
-              className="hover:underline hover:text-primary flex items-center gap-1"
+              className="hover:underline hover:text-primary flex items-center gap-1 text-sm py-0"
               onClick={() => handleBreadcrumbClick(item, index)}
             >
-              {index === 0 && <Home className="w-4 h-4" />}
+              {index === 0 && <Home className="w-3.5 h-3.5" />}
               {item.label}
             </button>
           </React.Fragment>

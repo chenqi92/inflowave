@@ -4,10 +4,14 @@
 
 .s3-browser .toolbar {
   @apply flex items-center gap-2 p-2 border-b bg-muted/30;
+  margin-bottom: 0 !important;
+  padding: 8px !important;
 }
 
 .s3-browser .breadcrumbs {
-  @apply flex items-center gap-1 px-2 py-1 text-sm border-b bg-muted/10;
+  @apply flex items-center gap-1 px-3 border-b bg-muted/10;
+  height: 32px;
+  min-height: 32px;
 }
 
 .s3-browser .statusbar {
