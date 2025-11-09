@@ -88,6 +88,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     pageSize: 100,
   });
 
+  // 列宽状态
+  const [columnWidths, setColumnWidths] = useState({
+    name: 400,
+    size: 150,
+    modified: 200,
+    count: 150, // bucket 文件数量列
+  });
+
   // 分页相关
   const [continuationToken, setcontinuationToken] = useState<string | undefined>();
   const [hasMore, setHasMore] = useState(false);
@@ -99,6 +107,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   // 无限滚动加载
   const loadMoreTriggerRef = useRef<HTMLDivElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // 列宽调整
+  const resizingColumn = useRef<string | null>(null);
+  const startX = useRef<number>(0);
+  const startWidth = useRef<number>(0);
 
   // 对话框状态
   const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
@@ -159,14 +172,28 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       logger.info(`📦 [S3Browser] 加载到 ${bucketList.length} 个 buckets:`, bucketList.map(b => b.name));
       setBuckets(bucketList);
 
-      // 将 buckets 转换为文件夹对象显示
-      let bucketObjects: S3Object[] = bucketList.map(bucket => ({
-        key: `${bucket.name  }/`,
-        name: bucket.name,
-        size: 0,
-        lastModified: bucket.creationDate || new Date(),
-        isDirectory: true,
-      }));
+      // 将 buckets 转换为文件夹对象显示，并获取每个bucket的对象数量
+      const bucketObjectsPromises = bucketList.map(async (bucket) => {
+        let objectCount = 0;
+        try {
+          // 使用原生 API 获取 bucket 统计信息
+          const stats = await S3Service.getBucketStats(connectionId, bucket.name);
+          objectCount = stats.total_count;
+        } catch (error) {
+          logger.warn(`📦 [S3Browser] 获取 bucket ${bucket.name} 对象数量失败:`, error);
+        }
+
+        return {
+          key: `${bucket.name}/`,
+          name: bucket.name,
+          size: 0,
+          lastModified: bucket.creationDate || new Date(),
+          isDirectory: true,
+          objectCount, // 添加对象数量
+        };
+      });
+
+      let bucketObjects: S3Object[] = await Promise.all(bucketObjectsPromises);
 
       // 应用搜索过滤
       if (searchTerm) {
@@ -609,6 +636,55 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     }
   };
 
+  // 列宽调整处理函数
+  const handleColumnResizeStart = (columnName: string, nextColumnName: string | null, e: React.MouseEvent) => {
+    e.preventDefault();
+    resizingColumn.current = columnName;
+    startX.current = e.clientX;
+    startWidth.current = columnWidths[columnName as keyof typeof columnWidths];
+
+    // 保存下一列的初始宽度（如果存在）
+    const nextColumnStartWidth = nextColumnName
+      ? columnWidths[nextColumnName as keyof typeof columnWidths]
+      : 0;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizingColumn.current) return;
+
+      const diff = e.clientX - startX.current;
+      const newWidth = Math.max(80, startWidth.current + diff); // 最小宽度 80px
+
+      // 如果有下一列，同时调整下一列的宽度（保持总宽度不变）
+      if (nextColumnName) {
+        const nextNewWidth = Math.max(80, nextColumnStartWidth - diff);
+
+        // 只有当两列都满足最小宽度要求时才更新
+        if (newWidth >= 80 && nextNewWidth >= 80) {
+          setColumnWidths(prev => ({
+            ...prev,
+            [resizingColumn.current!]: newWidth,
+            [nextColumnName]: nextNewWidth,
+          }));
+        }
+      } else {
+        // 如果没有下一列（最后一列），只调整当前列
+        setColumnWidths(prev => ({
+          ...prev,
+          [resizingColumn.current!]: newWidth,
+        }));
+      }
+    };
+
+    const handleMouseUp = () => {
+      resizingColumn.current = null;
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
   const getFileIcon = (object: S3Object) => {
     if (object.isDirectory) {
       return <Folder className="w-4 h-4" />;
@@ -797,9 +873,45 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     onCheckedChange={handleSelectAll}
                   />
                 </th>
-                <th className="text-left p-2">{t('name')}</th>
-                <th className="text-left p-2">{t('size')}</th>
-                <th className="text-left p-2">{t('modified')}</th>
+                <th className="text-left p-2" style={{ width: columnWidths.name }}>
+                  <div className="flex items-center">
+                    <span>{t('name')}</span>
+                    <div
+                      className="column-resizer"
+                      onMouseDown={(e) => handleColumnResizeStart('name', 'size', e)}
+                    />
+                  </div>
+                </th>
+                <th className="text-left p-2" style={{ width: columnWidths.size }}>
+                  <div className="flex items-center">
+                    <span>{t('size')}</span>
+                    <div
+                      className="column-resizer"
+                      onMouseDown={(e) => handleColumnResizeStart('size', 'modified', e)}
+                    />
+                  </div>
+                </th>
+                <th className="text-left p-2" style={{ width: columnWidths.modified }}>
+                  <div className="flex items-center">
+                    <span>{t('modified')}</span>
+                    <div
+                      className="column-resizer"
+                      onMouseDown={(e) => handleColumnResizeStart('modified', !currentBucket ? 'count' : null, e)}
+                    />
+                  </div>
+                </th>
+                {/* 在根目录显示文件数量列 */}
+                {!currentBucket && (
+                  <th className="text-left p-2" style={{ width: columnWidths.count }}>
+                    <div className="flex items-center">
+                      <span>{t('object_count', { ns: 's3', defaultValue: '对象数量' })}</span>
+                      <div
+                        className="column-resizer"
+                        onMouseDown={(e) => handleColumnResizeStart('count', null, e)}
+                      />
+                    </div>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -816,18 +928,24 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                       onClick={e => e.stopPropagation()}
                     />
                   </td>
-                  <td className="p-2">
+                  <td className="p-2" style={{ width: columnWidths.name }}>
                     <div className="flex items-center gap-2">
                       {getFileIcon(object)}
-                      <span>{object.name}</span>
+                      <span className="truncate">{object.name}</span>
                     </div>
                   </td>
-                  <td className="p-2">
+                  <td className="p-2" style={{ width: columnWidths.size }}>
                     {object.isDirectory ? '-' : formatBytes(object.size)}
                   </td>
-                  <td className="p-2">
+                  <td className="p-2" style={{ width: columnWidths.modified }}>
                     {formatDate(object.lastModified)}
                   </td>
+                  {/* 在根目录显示文件数量 */}
+                  {!currentBucket && (
+                    <td className="p-2" style={{ width: columnWidths.count }}>
+                      {object.objectCount !== undefined ? object.objectCount : '-'}
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

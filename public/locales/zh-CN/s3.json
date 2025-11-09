@@ -9,6 +9,7 @@
   "size": "大小",
   "modified": "修改时间",
   "type": "类型",
+  "object_count": "对象数量",
   "items": "共 {{count}} 项",
   "selected": "已选择 {{count}} 项",
   "load_more": "加载更多",

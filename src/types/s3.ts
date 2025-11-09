@@ -54,6 +54,7 @@ export interface S3Object {
   isDirectory: boolean; // 是否为文件夹
   contentType?: string; // MIME类型
   contentEncoding?: string; // 内容编码
+  objectCount?: number; // 对象数量（仅用于bucket根目录显示）
 }
 
 // S3 文件夹信息（用于文件浏览器树形结构）

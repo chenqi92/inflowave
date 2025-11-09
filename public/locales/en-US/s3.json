@@ -9,6 +9,7 @@
   "size": "Size",
   "modified": "Modified",
   "type": "Type",
+  "object_count": "Object Count",
   "items": "{{count}} items",
   "selected": "{{count}} selected",
   "load_more": "Load More",

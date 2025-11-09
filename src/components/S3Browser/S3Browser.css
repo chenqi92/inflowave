@@ -3,14 +3,14 @@
 }
 
 .s3-browser .toolbar {
-  @apply flex items-center gap-2 p-2 border-b bg-muted/30;
+  @apply flex items-center gap-2 border-b bg-muted/30;
   margin-bottom: 0 !important;
   padding: 8px !important;
+  min-height: 48px;
 }
 
 .s3-browser .breadcrumbs {
   @apply flex items-center gap-1 px-3 border-b bg-muted/10;
-  height: 32px;
   min-height: 32px;
 }
 
@@ -38,6 +38,46 @@
 .s3-browser td,
 .s3-browser th {
   @apply p-2 text-left;
+}
+
+/* 列调整器样式 */
+.s3-browser table th {
+  position: relative;
+  user-select: none;
+}
+
+.s3-browser table th .column-resizer {
+  position: absolute;
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  transition: background-color 0.15s;
+  z-index: 1;
+}
+
+/* 分割线的视觉部分 */
+.s3-browser table th .column-resizer::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: hsl(var(--border));
+  transform: translateX(-50%);
+  transition: all 0.15s;
+}
+
+.s3-browser table th .column-resizer:hover::before {
+  background-color: hsl(var(--primary) / 0.7);
+  width: 2px;
+}
+
+.s3-browser table th .column-resizer:active::before {
+  background-color: hsl(var(--primary));
+  width: 2px;
 }
 
 /* 网格视图样式 */
