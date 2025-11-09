@@ -180,7 +180,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
                 placeholder={t('minValue')}
                 value={filter.value}
                 onChange={e => handleValueChange(e.target.value)}
-                className='w-16 h-7 text-xs'
+                className='w-14 h-6 text-xs px-1.5'
               />
               <span className='text-xs text-muted-foreground'>-</span>
               <Input
@@ -188,7 +188,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
                 placeholder={t('maxValue')}
                 value={filter.value2 || ''}
                 onChange={e => handleValue2Change(e.target.value)}
-                className='w-16 h-7 text-xs'
+                className='w-14 h-6 text-xs px-1.5'
               />
             </div>
           );
@@ -199,7 +199,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
             placeholder={t('numericValue')}
             value={filter.value}
             onChange={e => handleValueChange(e.target.value)}
-            className='w-20 h-7 text-xs'
+            className='w-16 h-6 text-xs px-1.5'
           />
         );
 
@@ -215,7 +215,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
                 placeholder={t('start_time')}
                 showTime
                 size='small'
-                className='w-32'
+                className='w-28'
               />
               <span className='text-xs text-muted-foreground'>-</span>
               <DatePicker
@@ -226,7 +226,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
                 placeholder={t('end_time')}
                 showTime
                 size='small'
-                className='w-32'
+                className='w-28'
               />
             </div>
           );
@@ -238,7 +238,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
             placeholder={t('select_time')}
             showTime
             size='small'
-            className='w-32'
+            className='w-28'
           />
         );
 
@@ -248,7 +248,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
             placeholder={t('enterValue')}
             value={filter.value}
             onChange={e => handleValueChange(e.target.value)}
-            className='w-24 h-7 text-xs'
+            className='w-20 h-6 text-xs px-1.5'
           />
         );
     }
@@ -261,13 +261,17 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
   };
 
   return (
-    <div className='flex items-center gap-2 p-2 border rounded-md bg-background'>
-      <Badge variant='outline' className='text-xs px-2 py-1 flex-shrink-0'>
+    <div className='flex items-center gap-1.5 p-1.5 border rounded-md bg-background flex-nowrap min-w-fit'>
+      <Badge
+        variant='outline'
+        className='text-xs px-1.5 py-0.5 flex-shrink-0 max-w-[120px] truncate'
+        title={filter.column}
+      >
         {filter.column}
       </Badge>
 
       <Select value={filter.operator} onValueChange={handleOperatorChange}>
-        <SelectTrigger className='w-20 h-7 text-xs'>
+        <SelectTrigger className='w-[90px] h-6 text-xs flex-shrink-0'>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -279,17 +283,7 @@ const FilterEditor: React.FC<FilterEditorProps> = ({
         </SelectContent>
       </Select>
 
-      <div onKeyPress={handleKeyPress}>{renderValueInput()}</div>
-
-      <Button
-        variant='outline'
-        size='sm'
-        onClick={onApply}
-        className='h-7 px-2 text-xs flex-shrink-0'
-        title={t('applyFilter')}
-      >
-        {t('apply')}
-      </Button>
+      <div onKeyPress={handleKeyPress} className='flex-shrink-0'>{renderValueInput()}</div>
 
       <Button
         variant='ghost'
@@ -813,10 +807,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           }
           break;
         case 'time_range':
+          // 灵活的时间范围：支持只有开始时间、只有结束时间、或两者都有
           if (filter.value && filter.value2) {
+            // 两者都有：使用范围条件
             whereConditions.push(
               `"${filter.column}" >= '${filter.value}' AND "${filter.column}" <= '${filter.value2}'`
             );
+          } else if (filter.value) {
+            // 只有开始时间：大于等于
+            whereConditions.push(`"${filter.column}" >= '${filter.value}'`);
+          } else if (filter.value2) {
+            // 只有结束时间：小于等于
+            whereConditions.push(`"${filter.column}" <= '${filter.value2}'`);
           }
           break;
       }
@@ -1476,6 +1478,28 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const applyFilters = useCallback(async () => {
     if (columns.length === 0) return;
 
+    // 验证筛选条件
+    const invalidFilters = filters.filter(filter => {
+      // 对于time_range，至少需要有开始或结束时间之一
+      if (filter.operator === 'time_range') {
+        return !filter.value && !filter.value2;
+      }
+      // 对于between，需要同时有value和value2
+      if (filter.operator === 'between') {
+        return !filter.value?.trim() || !filter.value2?.trim();
+      }
+      // 其他操作符需要有value
+      return !filter.value?.trim();
+    });
+
+    if (invalidFilters.length > 0) {
+      const invalidColumns = invalidFilters.map(f => f.column).join(', ');
+      showMessage.warning(
+        tBrowser('invalidFilterWarning', { columns: invalidColumns })
+      );
+      return;
+    }
+
     setCurrentPage(1);
     setLoading(true);
     try {
@@ -1491,21 +1515,62 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       });
 
       if (result && result.data && Array.isArray(result.data) && result.data.length > 0) {
-        setRawData(result.data);
-
-        // 添加序号列 - 直接修改原数组避免创建新引用
-        const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
-        result.data.forEach((record, index) => {
-          if (record && typeof record === 'object') {
-            (record as DataRow)['#'] = offset + index + 1;
-            (record as DataRow)._id = (record as DataRow)._id || `row_${index}`;
-          }
+        logger.debug('筛选后数据:', {
+          数据行数: result.data.length,
+          前3行: result.data.slice(0, 3),
+          列名: result.columns || Object.keys(result.data[0] || {}),
+          数据类型: Array.isArray(result.data[0]) ? '数组格式' : '对象格式'
         });
 
-        setData(result.data);
+        // 处理数据格式：将数组格式转换为对象格式
+        const offset = pageSize > 0 ? (currentPage - 1) * pageSize : 0;
+        const processedData = result.data.map((record: any, index: number) => {
+          if (Array.isArray(record)) {
+            // 数组格式：需要转换为对象格式
+            const obj: any = {};
+
+            // 使用后端实际返回的列名，确保与数据完全匹配
+            const backendColumns = result.columns || [];
+
+            // 只处理有数据的列，避免创建空列
+            const actualColumns = backendColumns.slice(0, record.length);
+
+            // 将数组数据映射到对象，只处理有数据的列
+            actualColumns.forEach((columnName: string, colIndex: number) => {
+              obj[columnName] = record[colIndex] !== undefined ? record[colIndex] : null;
+            });
+
+            // 添加序号和ID
+            obj['#'] = offset + index + 1;
+            obj._id = `row_${offset + index}`;
+
+            return obj;
+          } else if (record && typeof record === 'object') {
+            // 对象格式：直接处理
+            return {
+              ...record,
+              '#': offset + index + 1,
+              _id: (record as DataRow)._id || `row_${index}`,
+            };
+          }
+          return record;
+        });
+
+        logger.debug('处理后数据:', {
+          数据行数: processedData.length,
+          前3行: processedData.slice(0, 3),
+          数据字段: Object.keys(processedData[0] || {})
+        });
+
+        setRawData(processedData);
+        setData(processedData);
       } else {
         setData([]);
         setRawData([]);
+        // 提示用户筛选后没有数据
+        if (filters.length > 0) {
+          showMessage.info(`${tBrowser('noDataAfterFilter')}，${tBrowser('tryAdjustFilter')}`);
+        }
       }
     } catch (error) {
       logger.error('应用过滤器失败:', error);
@@ -1514,7 +1579,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     } finally {
       setLoading(false);
     }
-  }, [connectionId, database, generateQuery, columns, pageSize, currentPage]);
+  }, [connectionId, database, generateQuery, columns, pageSize, currentPage, filters, tBrowser]);
 
   // 初始化 - 使用ref避免重复加载
   const isInitializedRef = useRef(false);
@@ -1829,7 +1894,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             const actualColumns = backendColumns.slice(0, record.length);
 
             // 将数组数据映射到对象，只处理有数据的列
-            actualColumns.forEach((columnName, colIndex) => {
+            actualColumns.forEach((columnName: string, colIndex: number) => {
               obj[columnName] = record[colIndex] !== undefined ? record[colIndex] : null;
             });
 
@@ -1965,7 +2030,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             });
 
             // 将数组数据映射到对象，只处理有数据的列
-            actualColumns.forEach((columnName, colIndex) => {
+            actualColumns.forEach((columnName: string, colIndex: number) => {
               obj[columnName] = record[colIndex] !== undefined ? record[colIndex] : null;
             });
 
@@ -2425,7 +2490,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 移除过滤器
   const removeFilter = (index: number) => {
-    setFilters(filters.filter((_, i) => i !== index));
+    const newFilters = filters.filter((_, i) => i !== index);
+    setFilters(newFilters);
+    // 删除后立即应用筛选
+    setTimeout(() => {
+      applyFilters();
+    }, 0);
   };
 
   // 处理列选择
@@ -2559,6 +2629,32 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         loading={loading}
         showRefresh={true}
         onRefresh={loadData}
+        afterRefreshContent={
+          /* 添加筛选按钮 */
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant='outline' size='sm' className='h-8 px-2'>
+                <Filter className='w-3 h-3 mr-1' />
+                {tBrowser('addFilter')}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='max-h-80 overflow-y-auto'>
+              <div className='px-2 py-1.5 text-xs font-medium text-muted-foreground'>
+                {tBrowser('selectColumnToFilter')}
+              </div>
+              {columns
+                .filter(col => col !== '#')
+                .map(column => (
+                  <DropdownMenuItem
+                    key={column}
+                    onClick={() => addFilter(column)}
+                  >
+                    {column}
+                  </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        }
         showCopy={true}
         selectedCopyFormat={copyFormat}
         onCopyFormatChange={setCopyFormat}
@@ -2613,31 +2709,6 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           </div>
         }
       >
-        {/* 添加筛选按钮 */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant='outline' size='sm' className='h-8 px-2'>
-              <Filter className='w-3 h-3 mr-1' />
-              {tBrowser('addFilter')}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align='end' className='max-h-80 overflow-y-auto'>
-            <div className='px-2 py-1.5 text-xs font-medium text-muted-foreground'>
-              {tBrowser('selectColumnToFilter')}
-            </div>
-            {columns
-              .filter(col => col !== '#')
-              .map(column => (
-                <DropdownMenuItem
-                  key={column}
-                  onClick={() => addFilter(column)}
-                >
-                  {column}
-                </DropdownMenuItem>
-              ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
         {/* 复制选中行按钮 */}
         {selectedRows.size > 0 && (
           <DropdownMenu>
@@ -2669,35 +2740,28 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       {filters.length > 0 && (
         <Card className='flex-shrink-0 border-0 border-b rounded-none bg-background shadow-none'>
           <CardContent className='pt-0 pb-3'>
-            <div className='space-y-2'>
-              <div className='flex items-center justify-between'>
-                <div className='text-sm font-medium text-muted-foreground'>
-                  {tBrowser('filterConditions', { count: filters.length })}
-                </div>
-                <Button
-                  variant='outline'
-                  size='sm'
-                  onClick={applyFilters}
-                  className='h-7 px-3 text-xs'
-                >
-                  {tBrowser('applyAllFilters')}
-                </Button>
-              </div>
-              <div className='flex flex-wrap gap-2'>
-                {filters.map((filter, index) => (
-                  <FilterEditor
-                    key={index}
-                    filter={filter}
-                    onUpdate={updatedFilter =>
-                      updateFilter(index, updatedFilter)
-                    }
-                    onRemove={() => removeFilter(index)}
-                    onApply={applyFilters}
-                    availableOperators={getAvailableOperators(filter.dataType)}
-                    t={tBrowser}
-                  />
-                ))}
-              </div>
+            <div className='flex flex-wrap gap-2 items-center'>
+              {filters.map((filter, index) => (
+                <FilterEditor
+                  key={index}
+                  filter={filter}
+                  onUpdate={updatedFilter =>
+                    updateFilter(index, updatedFilter)
+                  }
+                  onRemove={() => removeFilter(index)}
+                  onApply={applyFilters}
+                  availableOperators={getAvailableOperators(filter.dataType)}
+                  t={tBrowser}
+                />
+              ))}
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={applyFilters}
+                className='h-8 px-3 text-xs'
+              >
+                {tBrowser('apply')}
+              </Button>
             </div>
           </CardContent>
         </Card>

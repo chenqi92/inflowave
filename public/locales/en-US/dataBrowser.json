@@ -63,5 +63,8 @@
   "copyAsJSON": "Copy as JSON",
   "copyAsCSV": "Copy as CSV",
   "filterConditions": "Filter Conditions ({{count}})",
-  "applyAllFilters": "Apply All Filters"
+  "applyAllFilters": "Apply All Filters",
+  "invalidFilterWarning": "Invalid filter conditions for: {{columns}}",
+  "noDataAfterFilter": "No data after filtering",
+  "tryAdjustFilter": "Please try adjusting filter conditions"
 }

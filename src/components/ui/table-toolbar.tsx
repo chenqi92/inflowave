@@ -52,6 +52,7 @@ export interface TableToolbarProps {
     onCopyFormatChange?: (format: CopyFormat) => void;
     className?: string;
     children?: React.ReactNode; // 用于添加额外的工具栏内容
+    afterRefreshContent?: React.ReactNode; // 在刷新按钮之后插入的内容
     // 列选择相关属性
     showColumnSelector?: boolean;
     selectedColumnsCount?: number;
@@ -74,6 +75,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     onCopyFormatChange,
     className,
     children,
+    afterRefreshContent,
     showColumnSelector = false,
     selectedColumnsCount = 0,
     totalColumnsCount = 0,
@@ -119,6 +121,9 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                 <TooltipContent>{t('refresh_data')}</TooltipContent>
                             </Tooltip>
                         )}
+
+                        {/* 刷新按钮之后的额外内容 */}
+                        {afterRefreshContent}
 
                         {/* 复制格式选择器 */}
                         {showCopy && onCopyFormatChange && (

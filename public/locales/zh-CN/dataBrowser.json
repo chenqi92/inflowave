@@ -63,5 +63,8 @@
   "copyAsJSON": "复制为JSON",
   "copyAsCSV": "复制为CSV",
   "filterConditions": "筛选条件 ({{count}})",
-  "applyAllFilters": "应用所有过滤器"
+  "applyAllFilters": "应用所有过滤器",
+  "invalidFilterWarning": "以下列的筛选条件无效，请检查: {{columns}}",
+  "noDataAfterFilter": "筛选后没有数据",
+  "tryAdjustFilter": "请尝试调整筛选条件"
 }

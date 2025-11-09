@@ -927,6 +927,11 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 freezeColumns={0}
                 headerHeight={36}
                 rowHeight={32}
+                onCellEdited={(cell, newValue) => {
+                  // 暂时不实现编辑功能，返回undefined表示不应用编辑
+                  logger.debug('单元格编辑:', { cell, newValue });
+                  return undefined;
+                }}
                 rightElement={undefined}
                 rightElementProps={{
                   fill: false,
