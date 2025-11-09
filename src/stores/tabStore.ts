@@ -239,14 +239,12 @@ export const useTabStore = create<TabStore>()(
                 const number = parseInt(match[1], 10);
                 return {
                   ...tab,
-                  // @ts-expect-error - i18n.t() with interpolation parameters
                   title: i18n.t('query:query_tab_title', { number }) as string,
                 };
               }
             } else if (tab.type === 'data-browser' && tab.tableName && tab.database) {
               return {
                 ...tab,
-                // @ts-expect-error - i18n.t() with interpolation parameters
                 title: i18n.t('query:data_browser_tab_title', {
                   table: tab.tableName,
                   database: tab.database,
@@ -348,7 +346,6 @@ export const useTabOperations = () => {
 
     // 确保使用当前语言的翻译
     const title = i18n.isInitialized
-      // @ts-expect-error - i18n.t() with interpolation parameters
       ? (i18n.t('query:query_tab_title', { number: tabNumber }) as string)
       : `Query-${tabNumber}`; // 如果 i18n 未初始化，使用默认英文
 
@@ -480,7 +477,6 @@ export const useTabOperations = () => {
     // 如果不存在，创建新tab
     // 确保使用当前语言的翻译
     const title = i18n.isInitialized
-      // @ts-expect-error - i18n.t() with interpolation parameters
       ? (i18n.t('query:data_browser_tab_title', { table: tableName, database }) as string)
       : `${tableName} - ${database}`; // 如果 i18n 未初始化，使用简单格式
 

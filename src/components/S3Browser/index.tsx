@@ -1,12 +1,7 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Button,
   Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -44,7 +39,6 @@ import {
   Grid,
   List,
   ChevronRight,
-  ChevronDown,
   Home,
   FolderOpen,
 } from 'lucide-react';
@@ -55,7 +49,6 @@ import { useTranslation as useI18nTranslation } from 'react-i18next';
 import type {
   S3Object,
   S3Bucket,
-  S3ListObjectsResult,
   S3BrowserViewConfig,
 } from '@/types/s3';
 import './S3Browser.css';
@@ -69,6 +62,7 @@ interface S3BrowserProps {
 interface BreadcrumbItem {
   label: string;
   path: string;
+  isBucket?: boolean; // 是否是 bucket 级别
 }
 
 interface FileOperation {
@@ -77,11 +71,11 @@ interface FileOperation {
   sourceBucket: string;
 }
 
-const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) => {
+const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S3' }) => {
   const { t } = useI18nTranslation(['s3', 'common']);
   const [buckets, setBuckets] = useState<S3Bucket[]>([]);
-  const [selectedBucket, setSelectedBucket] = useState<string>('');
-  const [currentPath, setCurrentPath] = useState<string>('');
+  const [currentBucket, setCurrentBucket] = useState<string>(''); // 当前所在的 bucket
+  const [currentPath, setCurrentPath] = useState<string>(''); // 当前路径（bucket内的路径）
   const [objects, setObjects] = useState<S3Object[]>([]);
   const [selectedObjects, setSelectedObjects] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -109,21 +103,17 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
   const [presignedUrl, setPresignedUrl] = useState('');
   const [newFolderName, setNewFolderName] = useState('');
 
-  // 加载buckets
+  // 加载根级别内容（buckets 或 bucket 内的对象）
   useEffect(() => {
-    logger.info(`📦 [S3Browser] useEffect[connectionId] 触发，加载 buckets`);
-    loadBuckets();
-  }, [connectionId]);
-
-  // 加载对象列表
-  useEffect(() => {
-    logger.info(`📦 [S3Browser] useEffect[selectedBucket, currentPath, searchTerm, sortBy] 触发: bucket=${selectedBucket}, path=${currentPath}`);
-    if (selectedBucket) {
-      loadObjects();
+    logger.info(`📦 [S3Browser] useEffect 触发: bucket=${currentBucket}, path=${currentPath}`);
+    if (!currentBucket) {
+      // 在根级别，显示所有 buckets
+      loadBuckets();
     } else {
-      logger.warn(`📦 [S3Browser] selectedBucket 为空，跳过加载对象`);
+      // 在某个 bucket 内，显示对象
+      loadObjects();
     }
-  }, [selectedBucket, currentPath, searchTerm, viewConfig.sortBy]);
+  }, [connectionId, currentBucket, currentPath, searchTerm, viewConfig.sortBy]);
 
   const loadBuckets = async () => {
     try {
@@ -132,30 +122,61 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       const bucketList = await S3Service.listBuckets(connectionId);
       logger.info(`📦 [S3Browser] 加载到 ${bucketList.length} 个 buckets:`, bucketList.map(b => b.name));
       setBuckets(bucketList);
-      if (bucketList.length > 0 && !selectedBucket) {
-        logger.info(`📦 [S3Browser] 自动选择第一个 bucket: ${bucketList[0].name}`);
-        setSelectedBucket(bucketList[0].name);
+
+      // 将 buckets 转换为文件夹对象显示
+      let bucketObjects: S3Object[] = bucketList.map(bucket => ({
+        key: `${bucket.name  }/`,
+        name: bucket.name,
+        size: 0,
+        lastModified: bucket.creationDate || new Date(),
+        isDirectory: true,
+      }));
+
+      // 应用搜索过滤
+      if (searchTerm) {
+        bucketObjects = bucketObjects.filter(obj =>
+          obj.name.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        logger.info(`📦 [S3Browser] 搜索过滤后剩余 ${bucketObjects.length} 个 bucket`);
       }
+
+      // 排序
+      bucketObjects.sort((a, b) => {
+        const field = viewConfig.sortBy.field;
+        const order = viewConfig.sortBy.order === 'asc' ? 1 : -1;
+
+        switch (field) {
+          case 'name':
+            return a.name.localeCompare(b.name) * order;
+          case 'lastModified':
+            return (a.lastModified.getTime() - b.lastModified.getTime()) * order;
+          default:
+            return 0;
+        }
+      });
+
+      setObjects(bucketObjects);
+      logger.info(`📦 [S3Browser] 显示 ${bucketObjects.length} 个 bucket 作为文件夹`);
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载 buckets 失败:`, error);
-      showMessage.error(t('error.load_buckets_failed') + ': ' + error);
+      showMessage.error(`${String(t('error.load_buckets_failed'))}: ${error}`);
     } finally {
       setIsLoading(false);
     }
   };
 
   const loadObjects = async (append: boolean = false) => {
-    if (!selectedBucket) {
-      logger.warn(`📦 [S3Browser] loadObjects 被调用但 selectedBucket 为空`);
+    if (!currentBucket) {
+      logger.warn(`📦 [S3Browser] loadObjects 被调用但 currentBucket 为空`);
       return;
     }
 
     try {
       setIsLoading(true);
-      logger.info(`📦 [S3Browser] 开始加载对象: bucket=${selectedBucket}, path=${currentPath}, append=${append}`);
+      logger.info(`📦 [S3Browser] 开始加载对象: bucket=${currentBucket}, path=${currentPath}, append=${append}`);
       const result = await S3Service.listObjects(
         connectionId,
-        selectedBucket,
+        currentBucket,
         currentPath,
         '/',
         viewConfig.pageSize,
@@ -167,20 +188,26 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       logger.debug(`📦 [S3Browser] 对象列表:`, result.objects.map(o => ({ key: o.key, name: o.name, isDir: o.isDirectory })));
       logger.debug(`📦 [S3Browser] 文件夹前缀:`, commonPrefixes);
 
-      let newObjects = result.objects;
+      // 过滤掉 objects 中已经是文件夹的项（避免与 commonPrefixes 重复）
+      let newObjects = result.objects.filter(obj => !obj.isDirectory);
 
-      // 添加文件夹
+      logger.info(`📦 [S3Browser] 过滤后文件数: ${newObjects.length}`);
+
+      // 添加文件夹（从 commonPrefixes）
       commonPrefixes.forEach(prefix => {
-        newObjects.push({
-          key: prefix,
-          name: prefix.replace(currentPath, '').replace(/\/$/, ''),
-          size: 0,
-          lastModified: new Date(),
-          isDirectory: true,
-        });
+        const folderName = prefix.replace(currentPath, '').replace(/\/$/, '');
+        if (folderName) { // 确保文件夹名称不为空
+          newObjects.push({
+            key: prefix,
+            name: folderName,
+            size: 0,
+            lastModified: new Date(),
+            isDirectory: true,
+          });
+        }
       });
 
-      logger.info(`📦 [S3Browser] 合并后共 ${newObjects.length} 个项目`);
+      logger.info(`📦 [S3Browser] 合并后共 ${newObjects.length} 个项目（${commonPrefixes.length} 个文件夹 + ${result.objects.filter(o => !o.isDirectory).length} 个文件）`);
 
       // 过滤和排序
       if (!viewConfig.showHidden) {
@@ -233,17 +260,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       logger.info(`📦 [S3Browser] 加载完成: hasMore=${result.isTruncated}, nextToken=${result.nextContinuationToken ? '有' : '无'}`);
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载对象失败:`, error);
-      showMessage.error(t('error.load_objects_failed') + ': ' + error);
+      showMessage.error(`${String(t('error.load_objects_failed'))}: ${error}`);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleBucketChange = (bucket: string) => {
-    logger.info(`📦 [S3Browser] Bucket 切换: ${selectedBucket} -> ${bucket}`);
-    setSelectedBucket(bucket);
-    setCurrentPath('');
-    setSelectedObjects(new Set());
   };
 
   const navigateToPath = (path: string) => {
@@ -253,7 +273,17 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
 
   const handleObjectClick = (object: S3Object) => {
     if (object.isDirectory) {
-      navigateToPath(object.key);
+      // 如果当前在根级别（没有选择 bucket），则进入该 bucket
+      if (!currentBucket) {
+        logger.info(`📦 [S3Browser] 进入 bucket: ${object.name}`);
+        setCurrentBucket(object.name);
+        setCurrentPath('');
+        setSelectedObjects(new Set());
+      } else {
+        // 否则进入文件夹
+        logger.info(`📦 [S3Browser] 进入文件夹: ${object.key}`);
+        navigateToPath(object.key);
+      }
     } else {
       // 预览或下载文件
       handleDownload([object]);
@@ -296,7 +326,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         const data = await S3Service.fileToUint8Array(file);
         await S3Service.uploadObject(
           connectionId,
-          selectedBucket,
+          currentBucket,
           key,
           data,
           file.type
@@ -311,12 +341,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
     setIsLoading(false);
 
     if (successCount > 0) {
-      showMessage.success(t('upload.success', { count: successCount }));
+      showMessage.success(String(t('upload.success', { count: successCount })));
       loadObjects();
     }
 
     if (failCount > 0) {
-      showMessage.error(t('upload.failed', { count: failCount }));
+      showMessage.error(String(t('upload.failed', { count: failCount })));
     }
 
     // 清空文件输入
@@ -331,7 +361,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       .filter(Boolean) as S3Object[];
 
     if (toDownload.length === 0) {
-      showMessage.warning(t('download.no_selection'));
+      showMessage.warning(String(t('download.no_selection')));
       return;
     }
 
@@ -343,13 +373,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       try {
         const blob = await S3Service.downloadObjectAsBlob(
           connectionId,
-          selectedBucket,
+          currentBucket,
           object.key,
           object.contentType
         );
         S3Service.triggerDownload(blob, object.name);
       } catch (error) {
-        showMessage.error(t('download.failed', { name: object.name }) + ': ' + error);
+        showMessage.error(`${String(t('download.failed', { name: object.name }))}: ${error}`);
       }
     }
 
@@ -359,7 +389,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
   const handleDelete = async () => {
     const toDelete = Array.from(selectedObjects);
     if (toDelete.length === 0) {
-      showMessage.warning(t('delete.no_selection'));
+      showMessage.warning(String(t('delete.no_selection')));
       return;
     }
 
@@ -369,14 +399,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
     try {
       const deletedKeys = await S3Service.deleteObjects(
         connectionId,
-        selectedBucket,
+        currentBucket,
         toDelete
       );
-      showMessage.success(t('delete.success', { count: deletedKeys.length }));
+      showMessage.success(String(t('delete.success', { count: deletedKeys.length })));
       setSelectedObjects(new Set());
       loadObjects();
     } catch (error) {
-      showMessage.error(t('delete.failed') + ': ' + error);
+      showMessage.error(`${String(t('delete.failed'))}: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -384,7 +414,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
-      showMessage.warning(t('folder.name_required'));
+      showMessage.warning(String(t('folder.name_required')));
       return;
     }
 
@@ -393,12 +423,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
 
     try {
       const folderPath = currentPath + newFolderName.trim();
-      await S3Service.createFolder(connectionId, selectedBucket, folderPath);
-      showMessage.success(t('folder.created'));
+      await S3Service.createFolder(connectionId, currentBucket, folderPath);
+      showMessage.success(String(t('folder.created')));
       setNewFolderName('');
       loadObjects();
     } catch (error) {
-      showMessage.error(t('folder.create_failed') + ': ' + error);
+      showMessage.error(`${String(t('folder.create_failed'))}: ${error}`);
     } finally {
       setIsLoading(false);
     }
@@ -412,9 +442,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
     setFileOperation({
       type: 'copy',
       items,
-      sourceBucket: selectedBucket,
+      sourceBucket: currentBucket,
     });
-    showMessage.info(t('copy.copied', { count: items.length }));
+    showMessage.info(String(t('copy.copied', { count: items.length })));
   };
 
   const handleCut = () => {
@@ -425,14 +455,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
     setFileOperation({
       type: 'cut',
       items,
-      sourceBucket: selectedBucket,
+      sourceBucket: currentBucket,
     });
-    showMessage.info(t('cut.cut', { count: items.length }));
+    showMessage.info(String(t('cut.cut', { count: items.length })));
   };
 
   const handlePaste = async () => {
     if (!fileOperation) {
-      showMessage.warning(t('paste.nothing'));
+      showMessage.warning(String(t('paste.nothing')));
       return;
     }
 
@@ -447,7 +477,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
             connectionId,
             fileOperation.sourceBucket,
             item.key,
-            selectedBucket,
+            currentBucket,
             destKey
           );
         } else {
@@ -455,32 +485,32 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
             connectionId,
             fileOperation.sourceBucket,
             item.key,
-            selectedBucket,
+            currentBucket,
             destKey
           );
         }
       } catch (error) {
-        showMessage.error(t('paste.failed', { name: item.name }) + ': ' + error);
+        showMessage.error(`${String(t('paste.failed', { name: item.name }))}: ${error}`);
       }
     }
 
     setFileOperation(null);
     setIsLoading(false);
     loadObjects();
-    showMessage.success(t('paste.success'));
+    showMessage.success(String(t('paste.success')));
   };
 
   const handleGeneratePresignedUrl = async () => {
     const selected = Array.from(selectedObjects);
     if (selected.length !== 1) {
-      showMessage.warning(t('presigned_url.select_one'));
+      showMessage.warning(String(t('presigned_url.select_one')));
       return;
     }
 
     try {
       const result = await S3Service.generatePresignedUrl(
         connectionId,
-        selectedBucket,
+        currentBucket,
         selected[0],
         'get',
         3600 // 1小时
@@ -488,23 +518,51 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       setPresignedUrl(result.url);
       setShowPresignedUrlDialog(true);
     } catch (error) {
-      showMessage.error(t('presigned_url.failed') + ': ' + error);
+      showMessage.error(`${String(t('presigned_url.failed'))}: ${error}`);
     }
   };
 
   const getBreadcrumbs = (): BreadcrumbItem[] => {
-    const items: BreadcrumbItem[] = [{ label: selectedBucket || 'Root', path: '' }];
+    const items: BreadcrumbItem[] = [];
 
-    if (currentPath) {
-      const parts = currentPath.split('/').filter(Boolean);
-      let path = '';
-      for (const part of parts) {
-        path += part + '/';
-        items.push({ label: part, path });
+    // 根目录
+    items.push({ label: connectionName, path: '', isBucket: false });
+
+    // 如果在某个 bucket 内
+    if (currentBucket) {
+      items.push({ label: currentBucket, path: '', isBucket: true });
+
+      // 如果有路径
+      if (currentPath) {
+        const parts = currentPath.split('/').filter(Boolean);
+        let path = '';
+        for (const part of parts) {
+          path += `${part  }/`;
+          items.push({ label: part, path, isBucket: false });
+        }
       }
     }
 
     return items;
+  };
+
+  const handleBreadcrumbClick = (item: BreadcrumbItem, index: number) => {
+    if (index === 0) {
+      // 返回根目录（显示所有 buckets）
+      logger.info(`📦 [S3Browser] 返回根目录`);
+      setCurrentBucket('');
+      setCurrentPath('');
+      setSelectedObjects(new Set());
+    } else if (item.isBucket) {
+      // 返回 bucket 根目录
+      logger.info(`📦 [S3Browser] 返回 bucket 根目录: ${item.label}`);
+      setCurrentPath('');
+      setSelectedObjects(new Set());
+    } else {
+      // 导航到指定路径
+      logger.info(`📦 [S3Browser] 导航到路径: ${item.path}`);
+      navigateToPath(item.path);
+    }
   };
 
   const getFileIcon = (object: S3Object) => {
@@ -564,24 +622,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
     <div className="s3-browser h-full flex flex-col">
       {/* 工具栏 */}
       <div className="toolbar p-2 border-b flex items-center gap-2">
-        {/* Bucket选择器 */}
-        <Select value={selectedBucket} onValueChange={handleBucketChange}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder={t('select_bucket')} />
-          </SelectTrigger>
-          <SelectContent>
-            {buckets.map(bucket => (
-              <SelectItem key={bucket.name} value={bucket.name}>
-                {bucket.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
         <div className="flex-1" />
 
         {/* 操作按钮 */}
-        <Button size="sm" variant="ghost" onClick={handleUpload} disabled={!selectedBucket}>
+        <Button size="sm" variant="ghost" onClick={handleUpload} disabled={!currentBucket}>
           <Upload className="w-4 h-4 mr-1" />
           {t('upload.label')}
         </Button>
@@ -600,7 +644,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           size="sm"
           variant="ghost"
           onClick={() => setShowCreateFolderDialog(true)}
-          disabled={!selectedBucket}
+          disabled={!currentBucket}
         >
           <FolderPlus className="w-4 h-4 mr-1" />
           {t('new_folder')}
@@ -670,10 +714,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         </div>
 
         {/* 搜索框 */}
-        <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <div className="relative flex items-center">
+          <Search className="absolute left-2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <Input
-            className="pl-8 w-48"
+            className="pl-8 w-48 h-9"
             placeholder={t('search')}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
@@ -683,14 +727,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
 
       {/* 面包屑导航 */}
       <div className="breadcrumbs px-2 py-1 border-b flex items-center gap-1 text-sm">
-        <Home className="w-4 h-4" />
         {getBreadcrumbs().map((item, index) => (
-          <React.Fragment key={item.path}>
-            {index > 0 && <ChevronRight className="w-4 h-4" />}
+          <React.Fragment key={`${item.label}-${index}`}>
+            {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground" />}
             <button
-              className="hover:underline"
-              onClick={() => navigateToPath(item.path)}
+              className="hover:underline hover:text-primary flex items-center gap-1"
+              onClick={() => handleBreadcrumbClick(item, index)}
             >
+              {index === 0 && <Home className="w-4 h-4" />}
               {item.label}
             </button>
           </React.Fragment>
@@ -820,9 +864,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateFolderDialog(false)}>
-              {t('cancel', { ns: 'common' })}
+              {String(t('cancel', { ns: 'common' }))}
             </Button>
-            <Button onClick={handleCreateFolder}>{t('create', { ns: 'common' })}</Button>
+            <Button onClick={handleCreateFolder}>{String(t('create', { ns: 'common' }))}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -838,10 +882,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteConfirmDialog(false)}>
-              {t('cancel', { ns: 'common' })}
+              {String(t('cancel', { ns: 'common' }))}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              {t('delete', { ns: 'common' })}
+              {String(t('delete', { ns: 'common' }))}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -862,13 +906,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
               variant="outline"
               onClick={() => {
                 navigator.clipboard.writeText(presignedUrl);
-                showMessage.success(t('copied', { ns: 'common' }));
+                showMessage.success(String(t('copied', { ns: 'common' })));
               }}
             >
-              {t('copy', { ns: 'common' })}
+              {String(t('copy', { ns: 'common' }))}
             </Button>
             <Button onClick={() => setShowPresignedUrlDialog(false)}>
-              {t('close', { ns: 'common' })}
+              {String(t('close', { ns: 'common' }))}
             </Button>
           </DialogFooter>
         </DialogContent>
