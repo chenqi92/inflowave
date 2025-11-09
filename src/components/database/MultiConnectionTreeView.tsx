@@ -327,6 +327,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
             const error = connectionErrors?.get(connectionId);
             const nodeId = `connection-${connection.id}`;
 
+            // 从 connectionStatuses 获取连接状态
+            const isConnected = status === 'connected';
+
             const connectionNode: TreeNodeData = {
               id: nodeId,
               name: connection.name,
@@ -339,12 +342,12 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
                 connectionType: connection.dbType,
                 host: connection.host,
                 port: connection.port,
-                isConnected: connection.isConnected,
+                isConnected,
                 is_container: true,
               },
               isLoading: status === 'connecting',
               error,
-              isConnected: connection.isConnected,
+              isConnected,
               children: undefined,
             };
             allNodes.push(connectionNode);
@@ -364,7 +367,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           const connectionId = connection.id;
           const status = connectionStatuses?.get(connectionId);
           const error = connectionErrors?.get(connectionId);
-          const isConnected = connection.isConnected;
+          // 从 connectionStatuses 获取连接状态
+          const isConnected = status === 'connected';
           const isLoading = status === 'connecting';
 
           // 调试日志
@@ -407,6 +411,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
             const connectionId = connection.id;
             const status = connectionStatuses?.get(connectionId);
             const error = connectionErrors?.get(connectionId);
+            // 从 connectionStatuses 获取连接状态
+            const isConnected = status === 'connected';
 
             newNodes.push({
               id: nodeId,
@@ -420,12 +426,12 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
                 connectionType: connection.dbType,
                 host: connection.host,
                 port: connection.port,
-                isConnected: connection.isConnected,
+                isConnected,
                 is_container: true,
               },
               isLoading: status === 'connecting',
               error,
-              isConnected: connection.isConnected,
+              isConnected,
               children: undefined,
             });
           }

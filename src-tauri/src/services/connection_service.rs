@@ -118,6 +118,15 @@ impl ConnectionService {
             config.password = Some(encrypted_password);
         }
 
+        // 加密 InfluxDB 2.x/3.x 的 API Token
+        if let Some(ref mut v2_config) = config.v2_config {
+            if !v2_config.api_token.is_empty() {
+                let encrypted_token = self.encryption.encrypt_password(&v2_config.api_token)
+                    .context("API Token 加密失败")?;
+                v2_config.api_token = encrypted_token;
+            }
+        }
+
         // 存储配置
         {
             let mut configs = self.configs.write().await;
@@ -158,13 +167,23 @@ impl ConnectionService {
                 .clone()
         };
 
-        // 解密密码用于测试
+        // 解密密码和 API Token 用于测试
         let mut runtime_config = config.clone();
         if let Some(encrypted_password) = &config.password {
             debug!("🔐 解密密码用于连接测试");
             let decrypted_password = self.encryption.decrypt_password(encrypted_password)
                 .context("密码解密失败")?;
             runtime_config.password = Some(decrypted_password);
+        }
+
+        // 解密 InfluxDB 2.x/3.x 的 API Token
+        if let Some(ref mut v2_config) = runtime_config.v2_config {
+            if !v2_config.api_token.is_empty() {
+                debug!("🔐 解密 API Token 用于连接测试");
+                let decrypted_token = self.encryption.decrypt_password(&v2_config.api_token)
+                    .context("API Token 解密失败")?;
+                v2_config.api_token = decrypted_token;
+            }
         }
 
         // 使用解密后的配置测试连接
@@ -231,6 +250,15 @@ impl ConnectionService {
             config.password = Some(encrypted_password);
         }
 
+        // 加密 InfluxDB 2.x/3.x 的 API Token
+        if let Some(ref mut v2_config) = config.v2_config {
+            if !v2_config.api_token.is_empty() {
+                let encrypted_token = self.encryption.encrypt_password(&v2_config.api_token)
+                    .context("API Token 加密失败")?;
+                v2_config.api_token = encrypted_token;
+            }
+        }
+
         // 更新时间戳
         config.updated_at = Some(chrono::Utc::now());
 
@@ -249,14 +277,23 @@ impl ConnectionService {
         self.manager.remove_connection(&connection_id).await
             .context("移除旧连接失败")?;
         
-        // 解密密码用于连接
+        // 解密密码和 API Token 用于连接
         let mut runtime_config = config.clone();
         if let Some(encrypted_password) = &config.password {
             let decrypted_password = self.encryption.decrypt_password(encrypted_password)
                 .context("密码解密失败")?;
             runtime_config.password = Some(decrypted_password);
         }
-        
+
+        // 解密 InfluxDB 2.x/3.x 的 API Token
+        if let Some(ref mut v2_config) = runtime_config.v2_config {
+            if !v2_config.api_token.is_empty() {
+                let decrypted_token = self.encryption.decrypt_password(&v2_config.api_token)
+                    .context("API Token 解密失败")?;
+                v2_config.api_token = decrypted_token;
+            }
+        }
+
         // 添加新连接
         self.manager.add_connection(runtime_config).await
             .context("添加新连接失败")?;
@@ -425,7 +462,7 @@ impl ConnectionService {
                 .clone()
         };
 
-        // 解密密码用于连接
+        // 解密密码和 API Token 用于连接
         let mut runtime_config = config.clone();
         if let Some(encrypted_password) = &config.password {
             match self.encryption.decrypt_password(encrypted_password) {
@@ -435,6 +472,21 @@ impl ConnectionService {
                 Err(e) => {
                     error!("解密连接密码失败: {} - {}", connection_id, e);
                     return Err(e.into());
+                }
+            }
+        }
+
+        // 解密 InfluxDB 2.x/3.x 的 API Token
+        if let Some(ref mut v2_config) = runtime_config.v2_config {
+            if !v2_config.api_token.is_empty() {
+                match self.encryption.decrypt_password(&v2_config.api_token) {
+                    Ok(decrypted_token) => {
+                        v2_config.api_token = decrypted_token;
+                    }
+                    Err(e) => {
+                        error!("解密 API Token 失败: {} - {}", connection_id, e);
+                        return Err(e.into());
+                    }
                 }
             }
         }
