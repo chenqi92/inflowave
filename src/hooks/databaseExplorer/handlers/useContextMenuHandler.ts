@@ -297,64 +297,8 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
                     }
                     break;
 
-                case 'delete_connection':
-                    if (nodeType === 'connection') {
-                        const connection = getConnection(connectionId);
-                        if (connection) {
-                            // 检查连接是否已打开
-                            if (isConnectionConnected(connectionId)) {
-                                showMessage.warning(tExplorer('closeConnectionBeforeDelete', { name: connection.name }));
-                                logger.warn(`连接 ${connection.name} 处于打开状态，无法删除`);
-                                break;
-                            }
-
-                            const confirmed = await dialog.confirm({
-                                title: tExplorer('deleteConnectionTitle'),
-                                content: tExplorer('deleteConnectionConfirm', { name: connection.name }),
-                            });
-
-                            if (confirmed) {
-                                try {
-                                    logger.debug(`开始删除连接: ${connection.name} (${connectionId})`);
-
-                                    // 先从前端移除该连接，避免虚拟列表渲染错误
-                                    removeConnection(connectionId);
-                                    logger.info('已从前端移除连接');
-
-                                    // 调用后端删除
-                                    await safeTauriInvoke('delete_connection', { connectionId });
-                                    logger.info('后端删除成功');
-
-                                    // 从后端重新加载连接列表以确保状态同步
-                                    const { useConnectionStore } = await import('@/store/connection');
-                                    const { forceRefreshConnections } = useConnectionStore.getState();
-                                    await forceRefreshConnections();
-                                    logger.info('从后端重新加载连接列表成功');
-
-                                    showMessage.success(tExplorer('connectionDeleted', { name: connection.name }));
-
-                                    // 重建树数据
-                                    await buildCompleteTreeData(true);
-                                } catch (deleteError) {
-                                    logger.error('删除连接失败:', deleteError);
-                                    showMessage.error(tExplorer('deleteConnectionFailed', {
-                                        name: connection.name,
-                                        error: String(deleteError)
-                                    }));
-
-                                    // 如果删除失败，重新加载以恢复状态
-                                    const { useConnectionStore } = await import('@/store/connection');
-                                    const { forceRefreshConnections } = useConnectionStore.getState();
-                                    await forceRefreshConnections();
-                                    await buildCompleteTreeData(true);
-                                }
-                            }
-                        } else {
-                            logger.error('连接不存在');
-                            showMessage.error(tExplorer('connectionNotExist'));
-                        }
-                    }
-                    break;
+                // 🔧 delete_connection is now handled by ConnectionMenuHandler
+                // Legacy code removed - see ConnectionMenuHandler.deleteConnection()
 
                 // Database actions
                 case 'open_database':

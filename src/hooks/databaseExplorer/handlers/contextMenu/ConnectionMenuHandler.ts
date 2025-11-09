@@ -197,12 +197,33 @@ export class ConnectionMenuHandler extends BaseMenuHandler {
         await this.deps.disconnectFromDatabase(connectionId);
       }
 
-      // 删除连接
+      // 先从前端移除该连接，避免虚拟列表渲染错误
       this.deps.removeConnection(connectionId);
+      logger.info('已从前端store移除连接');
+
+      // 调用后端删除连接（持久化删除）
+      await this.invokeTauri('delete_connection', { connectionId });
+      logger.info('后端删除连接成功');
+
+      // 从后端重新加载连接列表以确保状态同步
+      const { useConnectionStore } = await import('@/store/connection');
+      const { forceRefreshConnections } = useConnectionStore.getState();
+      await forceRefreshConnections();
+      logger.info('从后端重新加载连接列表成功');
+
       this.showSuccess('delete_connection', `连接 "${connectionName}" 已删除`);
+
+      // 重建树数据
       await this.refreshTree(true);
     } catch (error) {
+      logger.error('删除连接失败:', error);
       this.showError('delete_connection', error);
+
+      // 如果删除失败，重新加载以恢复状态
+      const { useConnectionStore } = await import('@/store/connection');
+      const { forceRefreshConnections } = useConnectionStore.getState();
+      await forceRefreshConnections();
+      await this.refreshTree(true);
     }
   }
 }
