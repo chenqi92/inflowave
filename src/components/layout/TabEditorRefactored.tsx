@@ -326,11 +326,19 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
     // 创建S3浏览器标签 - 使用store中的方法
     const handleCreateS3BrowserTab = useCallback((connectionId: string, connectionName: string, defaultBucket?: string) => {
+      logger.info(`📦 [TabEditorRefactored] handleCreateS3BrowserTab 被调用:`, {
+        connectionId,
+        connectionName,
+        defaultBucket,
+      });
+
       createS3BrowserTab(connectionId, connectionName, defaultBucket);
 
       // 清空查询结果
       onQueryResult?.(null);
       onBatchQueryResults?.([], [], 0);
+
+      logger.info(`📦 [TabEditorRefactored] S3浏览器标签创建完成`);
     }, [createS3BrowserTab, onQueryResult, onBatchQueryResults]);
 
     // 创建带数据库选择的查询标签页

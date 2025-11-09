@@ -1,47 +1,16 @@
 {
   "title": "S3/MinIO File Browser",
   "select_bucket": "Select Bucket",
-  "upload": {
-    "select_files": "Select Files",
-    "drag_drop": "Drag and drop files here to upload",
-    "uploading": "Uploading...",
-    "success": "Successfully uploaded {{count}} file(s)",
-    "failed": "Failed to upload {{count}} file(s)",
-    "progress": "{{percent}}% - {{loaded}} / {{total}}",
-    "cancel": "Cancel Upload"
-  },
-  "download": {
-    "no_selection": "Please select files to download",
-    "downloading": "Downloading...",
-    "success": "Download successful",
-    "failed": "Failed to download {{name}}"
-  },
   "new_folder": "New Folder",
-  "delete": {
-    "no_selection": "Please select items to delete",
-    "confirm_title": "Confirm Delete",
-    "confirm_message": "Are you sure you want to delete {{count}} selected item(s)?",
-    "deleting": "Deleting...",
-    "success": "Successfully deleted {{count}} item(s)",
-    "failed": "Failed to delete"
-  },
-  "copy": {
-    "copied": "Copied {{count}} item(s) to clipboard",
-    "no_selection": "Please select items to copy"
-  },
-  "cut": {
-    "cut": "Cut {{count}} item(s) to clipboard",
-    "no_selection": "Please select items to cut"
-  },
-  "paste": {
-    "nothing": "Clipboard is empty",
-    "pasting": "Pasting...",
-    "success": "Paste successful",
-    "failed": "Failed to paste {{name}}"
-  },
+  "generate_link": "Generate Share Link",
   "refresh": "Refresh",
   "search": "Search files...",
-  "generate_link": "Generate Share Link",
+  "upload": "Upload",
+  "download": "Download",
+  "delete": "Delete",
+  "copy": "Copy",
+  "cut": "Cut",
+  "paste": "Paste",
   "name": "Name",
   "size": "Size",
   "modified": "Modified",
@@ -49,6 +18,32 @@
   "items": "{{count}} items",
   "selected": "{{count}} selected",
   "load_more": "Load More",
+  "upload": {
+    "success": "Successfully uploaded {{count}} file(s)",
+    "failed": "Failed to upload {{count}} file(s)"
+  },
+  "download": {
+    "no_selection": "Please select files to download",
+    "failed": "Failed to download {{name}}"
+  },
+  "delete": {
+    "no_selection": "Please select items to delete",
+    "confirm_title": "Confirm Delete",
+    "confirm_message": "Are you sure you want to delete {{count}} selected item(s)?",
+    "success": "Successfully deleted {{count}} item(s)",
+    "failed": "Failed to delete"
+  },
+  "copy": {
+    "copied": "Copied {{count}} item(s) to clipboard"
+  },
+  "cut": {
+    "cut": "Cut {{count}} item(s) to clipboard"
+  },
+  "paste": {
+    "nothing": "Clipboard is empty",
+    "success": "Paste successful",
+    "failed": "Failed to paste {{name}}"
+  },
   "connection": {
     "type_s3": "Amazon S3",
     "type_minio": "MinIO",

@@ -834,6 +834,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       // 检查是否为目标数据库节点
       // 数据库节点的 nodeType 可能是: database, system_database, database3x, storage_group
       // InfluxDB 2.x 节点类型: bucket, system_bucket, organization
+      // 对象存储节点: connection (当 databaseName === 's3' 时)
       if (
         (node.nodeType === 'database' ||
          node.nodeType === 'system_database' ||
@@ -844,6 +845,16 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
          node.nodeType === 'organization') &&
         node.metadata?.connectionId === connectionId &&
         node.name === databaseName
+      ) {
+        return node;
+      }
+
+      // 特殊处理：对象存储连接节点
+      if (
+        node.nodeType === 'connection' &&
+        node.metadata?.connectionId === connectionId &&
+        databaseName === 's3' &&
+        node.metadata?.connectionType === 'object-storage'
       ) {
         return node;
       }
@@ -918,8 +929,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
                 const connectionId = parts[0];
                 const database = parts.slice(1).join('/');
 
-                // 检查是否为目标数据库/bucket/organization节点
-                if (
+                // 检查是否为目标数据库/bucket/organization/对象存储连接节点
+                const isTargetNode = (
                   (n.nodeType === 'database' ||
                    n.nodeType === 'system_database' ||
                    n.nodeType === 'database3x' ||
@@ -929,7 +940,15 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
                    n.nodeType === 'organization') &&
                   n.metadata?.connectionId === connectionId &&
                   n.name === database
-                ) {
+                ) || (
+                  // 特殊处理：对象存储连接节点
+                  n.nodeType === 'connection' &&
+                  n.metadata?.connectionId === connectionId &&
+                  database === 's3' &&
+                  n.metadata?.connectionType === 'object-storage'
+                );
+
+                if (isTargetNode) {
                   logger.debug(`[关闭节点] 找到节点: ${n.id} (${n.nodeType}), 清除子节点`);
 
                   // 🔧 清除缓存（使用 ref，避免触发渲染）
@@ -1454,18 +1473,32 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           // 连接节点
           const status = connectionStatuses?.get(connectionId);
           const isConnected = status === 'connected';
+          const connectionType = nodeData.metadata?.connectionType;
+          const isObjectStorage = connectionType === 'object-storage';
 
-          logger.debug(`[双击连接节点] connectionId: ${connectionId}, status: ${status}, isConnected: ${isConnected}`);
+          logger.debug(`[双击连接节点] connectionId: ${connectionId}, status: ${status}, isConnected: ${isConnected}, connectionType: ${connectionType}, isObjectStorage: ${isObjectStorage}`);
 
           // 如果有错误或未连接，先建立连接
           if (hasError || !isConnected) {
             logger.debug(`双击未连接的连接节点，建立连接`);
             await handleToggle(item.getId());
+
+            // 对于对象存储节点，连接成功后需要调用 onNodeActivate 创建 S3 浏览器 tab
+            if (isObjectStorage) {
+              logger.debug(`对象存储节点连接成功，调用 onNodeActivate 创建 S3 浏览器 tab`);
+              onNodeActivate?.(nodeData);
+            }
             return;
           }
 
-          // 如果已连接，切换展开/收起
-          if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
+          // 如果已连接
+          if (isObjectStorage) {
+            // 对象存储节点：调用 onNodeActivate 创建 S3 浏览器 tab
+            logger.debug(`双击已连接的对象存储节点，调用 onNodeActivate 创建 S3 浏览器 tab`);
+            onNodeActivate?.(nodeData);
+            return;
+          } else if (nodeData.children !== undefined || loadedNodesRef.current.has(nodeId)) {
+            // 其他连接节点：切换展开/收起
             logger.debug(`双击已连接的连接节点，切换展开/收起`);
             if (item.isExpanded()) {
               item.collapse();

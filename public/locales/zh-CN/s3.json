@@ -1,47 +1,16 @@
 {
   "title": "S3/MinIO 文件浏览器",
   "select_bucket": "选择存储桶",
-  "upload": {
-    "select_files": "选择文件",
-    "drag_drop": "拖拽文件到此处上传",
-    "uploading": "正在上传...",
-    "success": "成功上传 {{count}} 个文件",
-    "failed": "{{count}} 个文件上传失败",
-    "progress": "{{percent}}% - {{loaded}} / {{total}}",
-    "cancel": "取消上传"
-  },
-  "download": {
-    "no_selection": "请选择要下载的文件",
-    "downloading": "正在下载...",
-    "success": "下载成功",
-    "failed": "下载 {{name}} 失败"
-  },
   "new_folder": "新建文件夹",
-  "delete": {
-    "no_selection": "请选择要删除的项目",
-    "confirm_title": "确认删除",
-    "confirm_message": "确定要删除选中的 {{count}} 个项目吗？",
-    "deleting": "正在删除...",
-    "success": "成功删除 {{count}} 个项目",
-    "failed": "删除失败"
-  },
-  "copy": {
-    "copied": "已复制 {{count}} 个项目到剪贴板",
-    "no_selection": "请选择要复制的项目"
-  },
-  "cut": {
-    "cut": "已剪切 {{count}} 个项目到剪贴板",
-    "no_selection": "请选择要剪切的项目"
-  },
-  "paste": {
-    "nothing": "剪贴板为空",
-    "pasting": "正在粘贴...",
-    "success": "粘贴成功",
-    "failed": "粘贴 {{name}} 失败"
-  },
+  "generate_link": "生成分享链接",
   "refresh": "刷新",
   "search": "搜索文件...",
-  "generate_link": "生成分享链接",
+  "upload": "上传",
+  "download": "下载",
+  "delete": "删除",
+  "copy": "复制",
+  "cut": "剪切",
+  "paste": "粘贴",
   "name": "名称",
   "size": "大小",
   "modified": "修改时间",
@@ -49,6 +18,32 @@
   "items": "共 {{count}} 项",
   "selected": "已选择 {{count}} 项",
   "load_more": "加载更多",
+  "upload": {
+    "success": "成功上传 {{count}} 个文件",
+    "failed": "{{count}} 个文件上传失败"
+  },
+  "download": {
+    "no_selection": "请选择要下载的文件",
+    "failed": "下载 {{name}} 失败"
+  },
+  "delete": {
+    "no_selection": "请选择要删除的项目",
+    "confirm_title": "确认删除",
+    "confirm_message": "确定要删除选中的 {{count}} 个项目吗？",
+    "success": "成功删除 {{count}} 个项目",
+    "failed": "删除失败"
+  },
+  "copy": {
+    "copied": "已复制 {{count}} 个项目到剪贴板"
+  },
+  "cut": {
+    "cut": "已剪切 {{count}} 个项目到剪贴板"
+  },
+  "paste": {
+    "nothing": "剪贴板为空",
+    "success": "粘贴成功",
+    "failed": "粘贴 {{name}} 失败"
+  },
   "connection": {
     "type_s3": "Amazon S3",
     "type_minio": "MinIO",

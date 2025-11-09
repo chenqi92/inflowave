@@ -587,13 +587,27 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
         connectionName: string,
         defaultBucket?: string
     ) => {
+        logger.info(`📦 [DataGripStyleLayout] handleCreateS3BrowserTab 被调用:`, {
+            connectionId,
+            connectionName,
+            defaultBucket,
+            currentView,
+            hasTabEditorRef: !!tabEditorRef.current,
+            hasCreateS3BrowserTab: !!tabEditorRef.current?.createS3BrowserTab,
+        });
+
         // 切换到查询视图
+        logger.info(`📦 [DataGripStyleLayout] 切换到查询视图: query`);
         setCurrentView('query');
+
         // 使用TabEditor的引用来创建S3浏览tab
         if (tabEditorRef.current?.createS3BrowserTab) {
+            logger.info(`📦 [DataGripStyleLayout] 调用 tabEditorRef.current.createS3BrowserTab`);
             tabEditorRef.current.createS3BrowserTab(connectionId, connectionName, defaultBucket);
+        } else {
+            logger.error(`❌ [DataGripStyleLayout] tabEditorRef.current 或 createS3BrowserTab 不存在`);
         }
-    }, []);
+    }, [currentView]);
 
     // 处理创建查询标签页事件
     const handleCreateQueryTab = useCallback((query?: string, database?: string, connectionId?: string) => {

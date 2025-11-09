@@ -1,6 +1,7 @@
 use crate::models::{ConnectionConfig, ConnectionStatus, ConnectionTestResult};
 use crate::database::connection::ConnectionManager;
 use crate::database::pool::{ConnectionPool, PoolConfig};
+use crate::database::s3_client::S3ClientManager;
 use crate::utils::encryption::EncryptionService;
 use crate::utils::config::ConfigUtils;
 use anyhow::{Context, Result};
@@ -447,7 +448,11 @@ impl ConnectionService {
     }
 
     /// 建立单个连接（从已加载的配置中）
-    pub async fn establish_single_connection(&self, connection_id: &str) -> Result<()> {
+    pub async fn establish_single_connection(
+        &self,
+        connection_id: &str,
+        s3_manager: Option<Arc<Mutex<S3ClientManager>>>,
+    ) -> Result<()> {
         // 检查连接是否已经存在于管理器中
         if self.manager.connection_exists(connection_id).await {
             debug!("连接已存在于管理器中: {}", connection_id);
@@ -492,8 +497,71 @@ impl ConnectionService {
         }
 
         // 添加到连接管理器（建立连接）
-        self.manager.add_connection(runtime_config).await
+        self.manager.add_connection(runtime_config.clone()).await
             .context("添加连接到管理器失败")?;
+
+        // 如果是对象存储连接，同时在全局 S3ClientManager 中注册
+        if runtime_config.db_type == crate::models::DatabaseType::ObjectStorage {
+            if let Some(s3_mgr) = s3_manager {
+                info!("注册对象存储连接到全局 S3ClientManager: {}", connection_id);
+
+                // 构建 S3ConnectionConfig
+                let s3_connection_config = if let Some(driver_config) = &runtime_config.driver_config {
+                    if let Some(s3_cfg) = &driver_config.s3 {
+                        // 从 S3Config 转换为 S3ConnectionConfig
+                        crate::database::s3_client::S3ConnectionConfig {
+                            endpoint: s3_cfg.endpoint.clone().filter(|e| !e.is_empty()),
+                            region: s3_cfg.region.clone().filter(|r| !r.is_empty()).or(Some("us-east-1".to_string())),
+                            access_key: s3_cfg.access_key.clone().unwrap_or_else(||
+                                runtime_config.username.clone().unwrap_or_default()
+                            ),
+                            secret_key: s3_cfg.secret_key.clone().unwrap_or_else(||
+                                runtime_config.password.clone().unwrap_or_default()
+                            ),
+                            use_ssl: s3_cfg.use_ssl.unwrap_or(true),
+                            path_style: s3_cfg.path_style.unwrap_or(false),
+                            session_token: s3_cfg.session_token.clone().filter(|t| !t.is_empty()),
+                        }
+                    } else {
+                        // 兼容旧版本配置
+                        crate::database::s3_client::S3ConnectionConfig {
+                            endpoint: if !runtime_config.host.is_empty() {
+                                Some(runtime_config.host.clone())
+                            } else {
+                                None
+                            },
+                            region: Some("us-east-1".to_string()),
+                            access_key: runtime_config.username.clone().unwrap_or_default(),
+                            secret_key: runtime_config.password.clone().unwrap_or_default(),
+                            use_ssl: runtime_config.ssl,
+                            path_style: false,
+                            session_token: None,
+                        }
+                    }
+                } else {
+                    // 兼容旧版本配置
+                    crate::database::s3_client::S3ConnectionConfig {
+                        endpoint: if !runtime_config.host.is_empty() {
+                            Some(runtime_config.host.clone())
+                        } else {
+                            None
+                        },
+                        region: Some("us-east-1".to_string()),
+                        access_key: runtime_config.username.clone().unwrap_or_default(),
+                        secret_key: runtime_config.password.clone().unwrap_or_default(),
+                        use_ssl: runtime_config.ssl,
+                        path_style: false,
+                        session_token: None,
+                    }
+                };
+
+                // 在全局管理器中创建客户端
+                let manager = s3_mgr.lock().await;
+                manager.create_client(connection_id, &s3_connection_config).await
+                    .context("在全局 S3ClientManager 中创建客户端失败")?;
+                info!("对象存储连接已注册到全局 S3ClientManager: {}", connection_id);
+            }
+        }
 
         info!("连接建立成功: {}", connection_id);
         Ok(())
@@ -630,7 +698,7 @@ impl ConnectionService {
 
             if config_exists {
                 info!("找到连接配置，尝试建立连接: {}", connection_id);
-                if let Err(e) = self.establish_single_connection(connection_id).await {
+                if let Err(e) = self.establish_single_connection(connection_id, None).await {
                     error!("建立连接失败: {} - {}", connection_id, e);
                     return Err(anyhow::anyhow!("连接 '{}' 建立失败: {}", connection_id, e));
                 }

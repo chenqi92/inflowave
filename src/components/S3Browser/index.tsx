@@ -51,7 +51,7 @@ import {
 import { S3Service } from '@/services/s3Service';
 import { showMessage } from '@/utils/message';
 import { formatBytes, formatDate } from '@/utils/format';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useTranslation as useI18nTranslation } from 'react-i18next';
 import type {
   S3Object,
   S3Bucket,
@@ -78,7 +78,7 @@ interface FileOperation {
 }
 
 const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) => {
-  const { t } = useTranslation();
+  const { t } = useI18nTranslation(['s3', 'common']);
   const [buckets, setBuckets] = useState<S3Bucket[]>([]);
   const [selectedBucket, setSelectedBucket] = useState<string>('');
   const [currentPath, setCurrentPath] = useState<string>('');
@@ -111,36 +111,48 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
 
   // 加载buckets
   useEffect(() => {
+    logger.info(`📦 [S3Browser] useEffect[connectionId] 触发，加载 buckets`);
     loadBuckets();
   }, [connectionId]);
 
   // 加载对象列表
   useEffect(() => {
+    logger.info(`📦 [S3Browser] useEffect[selectedBucket, currentPath, searchTerm, sortBy] 触发: bucket=${selectedBucket}, path=${currentPath}`);
     if (selectedBucket) {
       loadObjects();
+    } else {
+      logger.warn(`📦 [S3Browser] selectedBucket 为空，跳过加载对象`);
     }
   }, [selectedBucket, currentPath, searchTerm, viewConfig.sortBy]);
 
   const loadBuckets = async () => {
     try {
       setIsLoading(true);
+      logger.info(`📦 [S3Browser] 开始加载 buckets, connectionId: ${connectionId}`);
       const bucketList = await S3Service.listBuckets(connectionId);
+      logger.info(`📦 [S3Browser] 加载到 ${bucketList.length} 个 buckets:`, bucketList.map(b => b.name));
       setBuckets(bucketList);
       if (bucketList.length > 0 && !selectedBucket) {
+        logger.info(`📦 [S3Browser] 自动选择第一个 bucket: ${bucketList[0].name}`);
         setSelectedBucket(bucketList[0].name);
       }
     } catch (error) {
-      showMessage.error(t('s3.error.load_buckets_failed') + ': ' + error);
+      logger.error(`📦 [S3Browser] 加载 buckets 失败:`, error);
+      showMessage.error(t('error.load_buckets_failed') + ': ' + error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const loadObjects = async (append: boolean = false) => {
-    if (!selectedBucket) return;
+    if (!selectedBucket) {
+      logger.warn(`📦 [S3Browser] loadObjects 被调用但 selectedBucket 为空`);
+      return;
+    }
 
     try {
       setIsLoading(true);
+      logger.info(`📦 [S3Browser] 开始加载对象: bucket=${selectedBucket}, path=${currentPath}, append=${append}`);
       const result = await S3Service.listObjects(
         connectionId,
         selectedBucket,
@@ -150,10 +162,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         append ? continuationToken : undefined
       );
 
+      const commonPrefixes = result.commonPrefixes || [];
+      logger.info(`📦 [S3Browser] 加载到 ${result.objects.length} 个对象, ${commonPrefixes.length} 个文件夹前缀`);
+      logger.debug(`📦 [S3Browser] 对象列表:`, result.objects.map(o => ({ key: o.key, name: o.name, isDir: o.isDirectory })));
+      logger.debug(`📦 [S3Browser] 文件夹前缀:`, commonPrefixes);
+
       let newObjects = result.objects;
 
       // 添加文件夹
-      result.commonPrefixes.forEach(prefix => {
+      commonPrefixes.forEach(prefix => {
         newObjects.push({
           key: prefix,
           name: prefix.replace(currentPath, '').replace(/\/$/, ''),
@@ -162,6 +179,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           isDirectory: true,
         });
       });
+
+      logger.info(`📦 [S3Browser] 合并后共 ${newObjects.length} 个项目`);
 
       // 过滤和排序
       if (!viewConfig.showHidden) {
@@ -173,6 +192,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           obj.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
+
+      logger.info(`📦 [S3Browser] 过滤后共 ${newObjects.length} 个项目`);
 
       // 排序
       newObjects.sort((a, b) => {
@@ -197,21 +218,29 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       });
 
       if (append) {
-        setObjects(prev => [...prev, ...newObjects]);
+        setObjects(prev => {
+          const updated = [...prev, ...newObjects];
+          logger.info(`📦 [S3Browser] 追加对象，总数: ${updated.length}`);
+          return updated;
+        });
       } else {
+        logger.info(`📦 [S3Browser] 设置对象列表，共 ${newObjects.length} 个项目`);
         setObjects(newObjects);
       }
 
       setcontinuationToken(result.nextContinuationToken);
       setHasMore(result.isTruncated);
+      logger.info(`📦 [S3Browser] 加载完成: hasMore=${result.isTruncated}, nextToken=${result.nextContinuationToken ? '有' : '无'}`);
     } catch (error) {
-      showMessage.error(t('s3.error.load_objects_failed') + ': ' + error);
+      logger.error(`📦 [S3Browser] 加载对象失败:`, error);
+      showMessage.error(t('error.load_objects_failed') + ': ' + error);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleBucketChange = (bucket: string) => {
+    logger.info(`📦 [S3Browser] Bucket 切换: ${selectedBucket} -> ${bucket}`);
     setSelectedBucket(bucket);
     setCurrentPath('');
     setSelectedObjects(new Set());
@@ -282,12 +311,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
     setIsLoading(false);
 
     if (successCount > 0) {
-      showMessage.success(t('s3.upload.success', { count: successCount }));
+      showMessage.success(t('upload.success', { count: successCount }));
       loadObjects();
     }
 
     if (failCount > 0) {
-      showMessage.error(t('s3.upload.failed', { count: failCount }));
+      showMessage.error(t('upload.failed', { count: failCount }));
     }
 
     // 清空文件输入
@@ -302,7 +331,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       .filter(Boolean) as S3Object[];
 
     if (toDownload.length === 0) {
-      showMessage.warning(t('s3.download.no_selection'));
+      showMessage.warning(t('download.no_selection'));
       return;
     }
 
@@ -320,7 +349,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         );
         S3Service.triggerDownload(blob, object.name);
       } catch (error) {
-        showMessage.error(t('s3.download.failed', { name: object.name }) + ': ' + error);
+        showMessage.error(t('download.failed', { name: object.name }) + ': ' + error);
       }
     }
 
@@ -330,7 +359,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
   const handleDelete = async () => {
     const toDelete = Array.from(selectedObjects);
     if (toDelete.length === 0) {
-      showMessage.warning(t('s3.delete.no_selection'));
+      showMessage.warning(t('delete.no_selection'));
       return;
     }
 
@@ -343,11 +372,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         selectedBucket,
         toDelete
       );
-      showMessage.success(t('s3.delete.success', { count: deletedKeys.length }));
+      showMessage.success(t('delete.success', { count: deletedKeys.length }));
       setSelectedObjects(new Set());
       loadObjects();
     } catch (error) {
-      showMessage.error(t('s3.delete.failed') + ': ' + error);
+      showMessage.error(t('delete.failed') + ': ' + error);
     } finally {
       setIsLoading(false);
     }
@@ -355,7 +384,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
-      showMessage.warning(t('s3.folder.name_required'));
+      showMessage.warning(t('folder.name_required'));
       return;
     }
 
@@ -365,11 +394,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
     try {
       const folderPath = currentPath + newFolderName.trim();
       await S3Service.createFolder(connectionId, selectedBucket, folderPath);
-      showMessage.success(t('s3.folder.created'));
+      showMessage.success(t('folder.created'));
       setNewFolderName('');
       loadObjects();
     } catch (error) {
-      showMessage.error(t('s3.folder.create_failed') + ': ' + error);
+      showMessage.error(t('folder.create_failed') + ': ' + error);
     } finally {
       setIsLoading(false);
     }
@@ -385,7 +414,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       items,
       sourceBucket: selectedBucket,
     });
-    showMessage.info(t('s3.copy.copied', { count: items.length }));
+    showMessage.info(t('copy.copied', { count: items.length }));
   };
 
   const handleCut = () => {
@@ -398,12 +427,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       items,
       sourceBucket: selectedBucket,
     });
-    showMessage.info(t('s3.cut.cut', { count: items.length }));
+    showMessage.info(t('cut.cut', { count: items.length }));
   };
 
   const handlePaste = async () => {
     if (!fileOperation) {
-      showMessage.warning(t('s3.paste.nothing'));
+      showMessage.warning(t('paste.nothing'));
       return;
     }
 
@@ -431,20 +460,20 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           );
         }
       } catch (error) {
-        showMessage.error(t('s3.paste.failed', { name: item.name }) + ': ' + error);
+        showMessage.error(t('paste.failed', { name: item.name }) + ': ' + error);
       }
     }
 
     setFileOperation(null);
     setIsLoading(false);
     loadObjects();
-    showMessage.success(t('s3.paste.success'));
+    showMessage.success(t('paste.success'));
   };
 
   const handleGeneratePresignedUrl = async () => {
     const selected = Array.from(selectedObjects);
     if (selected.length !== 1) {
-      showMessage.warning(t('s3.presigned_url.select_one'));
+      showMessage.warning(t('presigned_url.select_one'));
       return;
     }
 
@@ -459,7 +488,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       setPresignedUrl(result.url);
       setShowPresignedUrlDialog(true);
     } catch (error) {
-      showMessage.error(t('s3.presigned_url.failed') + ': ' + error);
+      showMessage.error(t('presigned_url.failed') + ': ' + error);
     }
   };
 
@@ -538,7 +567,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         {/* Bucket选择器 */}
         <Select value={selectedBucket} onValueChange={handleBucketChange}>
           <SelectTrigger className="w-48">
-            <SelectValue placeholder={t('s3.select_bucket')} />
+            <SelectValue placeholder={t('select_bucket')} />
           </SelectTrigger>
           <SelectContent>
             {buckets.map(bucket => (
@@ -554,7 +583,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         {/* 操作按钮 */}
         <Button size="sm" variant="ghost" onClick={handleUpload} disabled={!selectedBucket}>
           <Upload className="w-4 h-4 mr-1" />
-          {t('s3.upload')}
+          {t('upload')}
         </Button>
 
         <Button
@@ -564,7 +593,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           disabled={selectedObjects.size === 0}
         >
           <Download className="w-4 h-4 mr-1" />
-          {t('s3.download')}
+          {t('download')}
         </Button>
 
         <Button
@@ -574,7 +603,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           disabled={!selectedBucket}
         >
           <FolderPlus className="w-4 h-4 mr-1" />
-          {t('s3.new_folder')}
+          {t('new_folder')}
         </Button>
 
         <Button
@@ -584,7 +613,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           disabled={selectedObjects.size === 0}
         >
           <Trash2 className="w-4 h-4 mr-1" />
-          {t('s3.delete')}
+          {t('delete')}
         </Button>
 
         <Button size="sm" variant="ghost" onClick={() => loadObjects()}>
@@ -601,15 +630,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           <DropdownMenuContent>
             <DropdownMenuItem onClick={handleCopy} disabled={selectedObjects.size === 0}>
               <Copy className="w-4 h-4 mr-2" />
-              {t('s3.copy')}
+              {t('copy')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handleCut} disabled={selectedObjects.size === 0}>
               <Scissors className="w-4 h-4 mr-2" />
-              {t('s3.cut')}
+              {t('cut')}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={handlePaste} disabled={!fileOperation}>
               <Clipboard className="w-4 h-4 mr-2" />
-              {t('s3.paste')}
+              {t('paste')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -617,7 +646,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
               disabled={selectedObjects.size !== 1}
             >
               <Link className="w-4 h-4 mr-2" />
-              {t('s3.generate_link')}
+              {t('generate_link')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -645,7 +674,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             className="pl-8 w-48"
-            placeholder={t('s3.search')}
+            placeholder={t('search')}
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
@@ -680,9 +709,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
                     onCheckedChange={handleSelectAll}
                   />
                 </th>
-                <th className="text-left p-2">{t('s3.name')}</th>
-                <th className="text-left p-2">{t('s3.size')}</th>
-                <th className="text-left p-2">{t('s3.modified')}</th>
+                <th className="text-left p-2">{t('name')}</th>
+                <th className="text-left p-2">{t('size')}</th>
+                <th className="text-left p-2">{t('modified')}</th>
               </tr>
             </thead>
             <tbody>
@@ -751,7 +780,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
         {hasMore && (
           <div className="text-center p-4">
             <Button onClick={() => loadObjects(true)} disabled={isLoading}>
-              {t('s3.load_more')}
+              {t('load_more')}
             </Button>
           </div>
         )}
@@ -760,8 +789,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       {/* 状态栏 */}
       <div className="statusbar px-2 py-1 border-t text-sm text-muted-foreground flex justify-between">
         <span>
-          {t('s3.items', { count: objects.length })}
-          {selectedObjects.size > 0 && ` | ${t('s3.selected', { count: selectedObjects.size })}`}
+          {t('items', { count: objects.length })}
+          {selectedObjects.size > 0 && ` | ${t('selected', { count: selectedObjects.size })}`}
         </span>
         <span>{connectionName}</span>
       </div>
@@ -779,11 +808,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('s3.new_folder')}</DialogTitle>
+            <DialogTitle>{t('new_folder')}</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <Input
-              placeholder={t('s3.folder.name_placeholder')}
+              placeholder={t('folder.name_placeholder')}
               value={newFolderName}
               onChange={e => setNewFolderName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
@@ -791,9 +820,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateFolderDialog(false)}>
-              {t('common.cancel')}
+              {t('cancel', { ns: 'common' })}
             </Button>
-            <Button onClick={handleCreateFolder}>{t('common.create')}</Button>
+            <Button onClick={handleCreateFolder}>{t('create', { ns: 'common' })}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -802,17 +831,17 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       <Dialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('s3.delete.confirm_title')}</DialogTitle>
+            <DialogTitle>{t('delete.confirm_title')}</DialogTitle>
             <DialogDescription>
-              {t('s3.delete.confirm_message', { count: selectedObjects.size })}
+              {t('delete.confirm_message', { count: selectedObjects.size })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDeleteConfirmDialog(false)}>
-              {t('common.cancel')}
+              {t('cancel', { ns: 'common' })}
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
-              {t('common.delete')}
+              {t('delete', { ns: 'common' })}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -822,8 +851,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
       <Dialog open={showPresignedUrlDialog} onOpenChange={setShowPresignedUrlDialog}>
         <DialogContent className="max-w-xl">
           <DialogHeader>
-            <DialogTitle>{t('s3.presigned_url.title')}</DialogTitle>
-            <DialogDescription>{t('s3.presigned_url.description')}</DialogDescription>
+            <DialogTitle>{t('presigned_url.title')}</DialogTitle>
+            <DialogDescription>{t('presigned_url.description')}</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Input value={presignedUrl} readOnly className="font-mono text-sm" />
@@ -833,13 +862,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName }) =
               variant="outline"
               onClick={() => {
                 navigator.clipboard.writeText(presignedUrl);
-                showMessage.success(t('common.copied'));
+                showMessage.success(t('copied', { ns: 'common' }));
               }}
             >
-              {t('common.copy')}
+              {t('copy', { ns: 'common' })}
             </Button>
             <Button onClick={() => setShowPresignedUrlDialog(false)}>
-              {t('common.close')}
+              {t('close', { ns: 'common' })}
             </Button>
           </DialogFooter>
         </DialogContent>

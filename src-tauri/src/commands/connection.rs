@@ -1,7 +1,10 @@
 ﻿use crate::models::{ConnectionConfig, ConnectionStatus, ConnectionTestResult};
 use crate::services::ConnectionService;
+use crate::database::s3_client::S3ClientManager;
 use tauri::State;
 use log::{debug, error, info};
+use std::sync::Arc;
+use tokio::sync::Mutex;
 use std::collections::HashMap;
 
 /// 创建连接
@@ -75,12 +78,13 @@ pub async fn initialize_connections(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn establish_connection(
     connection_service: State<'_, ConnectionService>,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
     connection_id: String,
 ) -> Result<bool, String> {
     debug!("建立数据库连接: {}", connection_id);
 
     match connection_service
-        .establish_single_connection(&connection_id)
+        .establish_single_connection(&connection_id, Some(s3_manager.inner().clone()))
         .await
     {
         Ok(_) => {

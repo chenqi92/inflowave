@@ -81,16 +81,26 @@ export const useTabStore = create<TabStore>()(
       },
       
       removeTab: (tabId) => set((state) => {
+        // 查找要删除的 tab
+        const tabToRemove = state.tabs.find(tab => tab.id === tabId);
+
+        // 如果是 S3 浏览器 tab，关闭对应的对象存储节点
+        if (tabToRemove?.type === 's3-browser' && tabToRemove.connectionId) {
+          const { closeObjectStorage } = require('./openedDatabasesStore').useOpenedDatabasesStore.getState();
+          closeObjectStorage(tabToRemove.connectionId);
+          logger.info(`📁 [TabStore] 关闭S3 Tab时同步关闭对象存储节点: ${tabToRemove.connectionId}`);
+        }
+
         const newTabs = state.tabs.filter(tab => tab.id !== tabId);
         let newActiveKey = state.activeKey;
-        
+
         // 如果删除的是当前活跃标签，切换到其他标签
         if (state.activeKey === tabId && newTabs.length > 0) {
           newActiveKey = newTabs[newTabs.length - 1].id;
         } else if (newTabs.length === 0) {
           newActiveKey = '';
         }
-        
+
         return {
           tabs: newTabs,
           activeKey: newActiveKey,
@@ -512,6 +522,7 @@ export const useTabOperations = () => {
       connectionName,
       defaultBucket,
       currentTabsCount: tabs.length,
+      currentActiveKey: activeKey,
     });
 
     // 检查是否已存在该连接的S3 tab
@@ -521,17 +532,18 @@ export const useTabOperations = () => {
     );
 
     if (existingTab) {
-      logger.debug(`ℹ️ [createS3BrowserTab] Tab已存在，切换到现有tab:`, existingTab.id);
+      logger.info(`ℹ️ [createS3BrowserTab] Tab已存在，切换到现有tab:`, {
+        tabId: existingTab.id,
+        tabTitle: existingTab.title,
+      });
       // 如果tab已存在，切换到该tab
       setActiveKey(existingTab.id);
+      logger.info(`✅ [createS3BrowserTab] 已切换到现有Tab: ${existingTab.id}`);
       return existingTab;
     }
 
     // 如果不存在，创建新tab
-    const title = i18n.isInitialized
-      // @ts-expect-error - i18n.t() with interpolation parameters
-      ? (i18n.t('s3_browser.tab_title', { connection: connectionName }) as string)
-      : `S3 - ${connectionName}`; // 如果 i18n 未初始化，使用简单格式
+    const title = connectionName; // 直接使用连接名称作为标题
 
     const newTab: EditorTab = {
       id: `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -543,19 +555,23 @@ export const useTabOperations = () => {
       connectionId,
       connectionName,
       defaultBucket,
-      closable: false, // S3浏览器tab不能手动关闭
+      closable: true, // S3浏览器tab可以关闭，关闭时会同步关闭对象存储节点
     };
 
-    logger.debug(`🆕 [createS3BrowserTab] 新Tab信息:`, {
+    logger.info(`🆕 [createS3BrowserTab] 新Tab信息:`, {
       id: newTab.id,
       title: newTab.title,
       type: newTab.type,
+      connectionId: newTab.connectionId,
     });
 
+    logger.info(`📝 [createS3BrowserTab] 调用 addTab 添加新Tab`);
     addTab(newTab);
+
+    logger.info(`🎯 [createS3BrowserTab] 调用 setActiveKey 切换到新Tab: ${newTab.id}`);
     setActiveKey(newTab.id); // 自动切换到新创建的S3浏览标签页
 
-    logger.debug(`✅ [createS3BrowserTab] Tab创建完成，当前Tab总数: ${tabs.length + 1}`);
+    logger.info(`✅ [createS3BrowserTab] Tab创建完成，当前Tab总数: ${tabs.length + 1}, activeKey: ${newTab.id}`);
     return newTab;
   };
 

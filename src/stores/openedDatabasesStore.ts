@@ -19,6 +19,11 @@ interface OpenedDatabasesState {
   openBucket: (connectionId: string, organization: string, bucket: string) => void;
   closeBucket: (connectionId: string, organization: string, bucket: string) => void;
   isBucketOpened: (connectionId: string, organization: string, bucket: string) => boolean;
+
+  // Object Storage support
+  openObjectStorage: (connectionId: string) => void;
+  closeObjectStorage: (connectionId: string) => void;
+  isObjectStorageOpened: (connectionId: string) => boolean;
 }
 
 export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) => ({
@@ -208,6 +213,51 @@ export const useOpenedDatabasesStore = create<OpenedDatabasesState>((set, get) =
 
   isBucketOpened: (connectionId: string, organization: string, bucket: string) => {
     const key = `${connectionId}/bucket:${organization}/${bucket}`;
+    return get().openedDatabases.has(key);
+  },
+
+  // Object Storage support
+  openObjectStorage: (connectionId: string) => {
+    const key = `${connectionId}/s3`;
+    set((state) => {
+      const newOpenedDatabases = new Set(state.openedDatabases);
+      newOpenedDatabases.add(key);
+      const newOpenedDatabasesList = Array.from(newOpenedDatabases);
+
+      logger.info(`📂 [Store] 打开对象存储: ${key}`, {
+        before: Array.from(state.openedDatabases),
+        after: Array.from(newOpenedDatabases),
+      });
+
+      return {
+        openedDatabases: newOpenedDatabases,
+        openedDatabasesList: newOpenedDatabasesList
+      };
+    });
+  },
+
+  closeObjectStorage: (connectionId: string) => {
+    const key = `${connectionId}/s3`;
+    set((state) => {
+      const newOpenedDatabases = new Set(state.openedDatabases);
+      const wasDeleted = newOpenedDatabases.delete(key);
+      const newOpenedDatabasesList = Array.from(newOpenedDatabases);
+
+      logger.info(`📁 [Store] 关闭对象存储: ${key}`, {
+        wasDeleted,
+        before: Array.from(state.openedDatabases),
+        after: Array.from(newOpenedDatabases),
+      });
+
+      return {
+        openedDatabases: newOpenedDatabases,
+        openedDatabasesList: newOpenedDatabasesList
+      };
+    });
+  },
+
+  isObjectStorageOpened: (connectionId: string) => {
+    const key = `${connectionId}/s3`;
     return get().openedDatabases.has(key);
   },
 }));

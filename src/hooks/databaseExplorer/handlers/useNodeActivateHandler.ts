@@ -33,7 +33,12 @@ export const useNodeActivateHandler = ({
     // Node Activate Handler (Double-click)
     // ============================================================================
     const handleNodeActivate = useCallback(async (node: any) => {
-        logger.debug('🖱️ 双击节点:', node);
+        logger.info('🖱️ [DatabaseExplorer] 双击节点:', {
+            name: node.name,
+            nodeType: node.nodeType,
+            dbType: node.dbType,
+            metadata: node.metadata,
+        });
 
         // 关闭右键菜单（使用 ref 避免依赖 contextMenuOpen）
         if (contextMenuOpenRef.current) {
@@ -45,6 +50,9 @@ export const useNodeActivateHandler = ({
         const connectionId = metadata.connectionId || '';
         const database = metadata.database || metadata.databaseName || '';
         const table = metadata.table || metadata.tableName || '';
+        const connectionType = metadata.connectionType || metadata.type;
+
+        logger.info(`🔍 [DatabaseExplorer] 节点详情: nodeType=${nodeType}, connectionType=${connectionType}, dbType=${node.dbType}`);
 
         // 数据库节点：双击打开数据库
         if (nodeType === 'database' || nodeType === 'system_database') {
@@ -107,17 +115,29 @@ export const useNodeActivateHandler = ({
                 showMessage.success(`正在打开时间序列 "${table}"`);
             }
         } else if (nodeType === 'connection') {
-            // 检查是否为ObjectStorage连接
-            const connectionType = metadata.connectionType || metadata.type;
-            if (connectionType === 'ObjectStorage' && onCreateS3BrowserTab) {
-                // ObjectStorage连接：打开S3浏览器标签
-                logger.info(`📦 [DatabaseExplorer] 双击ObjectStorage节点，打开S3浏览器: ${node.name}`);
+            // 检查是否为对象存储连接
+            logger.info(`🔌 [DatabaseExplorer] 双击连接节点: ${node.name}, connectionType=${connectionType}, dbType=${node.dbType}`);
+
+            if (connectionType === 'object-storage' && onCreateS3BrowserTab) {
+                // 对象存储连接：打开S3浏览器标签
+                logger.info(`📦 [DatabaseExplorer] 识别为对象存储节点，准备打开S3浏览器: ${node.name}`);
                 const defaultBucket = metadata.defaultBucket || metadata.bucket;
+
+                // 打开对象存储节点
+                const { openObjectStorage, isObjectStorageOpened } = useOpenedDatabasesStore.getState();
+                if (!isObjectStorageOpened(connectionId)) {
+                    openObjectStorage(connectionId);
+                    logger.info(`📂 [DatabaseExplorer] 打开对象存储节点: ${connectionId}`);
+                } else {
+                    logger.info(`📂 [DatabaseExplorer] 对象存储节点已打开: ${connectionId}`);
+                }
+
+                logger.info(`📦 [DatabaseExplorer] 调用 onCreateS3BrowserTab: connectionId=${connectionId}, name=${node.name}, bucket=${defaultBucket}`);
                 onCreateS3BrowserTab(connectionId, node.name, defaultBucket);
                 showMessage.success(`正在打开对象存储浏览器`);
             } else {
                 // 其他连接节点：打开连接详情对话框
-                logger.info(`🔌 [DatabaseExplorer] 双击连接节点，打开详情: ${node.name}`);
+                logger.info(`🔌 [DatabaseExplorer] 非对象存储连接，打开详情对话框: ${node.name}`);
                 setConnectionDetailDialog({
                     open: true,
                     connectionId,
