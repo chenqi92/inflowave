@@ -229,8 +229,8 @@ export const useTabStore = create<TabStore>()(
       updateAllTabTitles: () => {
         if (!i18n.isInitialized) return;
 
-        set((state) => ({
-          tabs: state.tabs.map((tab) => {
+        set((state) => {
+          const updatedTabs: EditorTab[] = state.tabs.map((tab): EditorTab => {
             // 只更新查询 tab 和数据浏览 tab 的标题
             if (tab.type === 'query') {
               // 从标题中提取数字（如 "查询-1" 或 "Query-1"）
@@ -240,7 +240,7 @@ export const useTabStore = create<TabStore>()(
                 return {
                   ...tab,
                   title: String(i18n.t('query:query_tab_title', { number })),
-                };
+                } as EditorTab;
               }
             } else if (tab.type === 'data-browser' && tab.tableName && tab.database) {
               return {
@@ -249,11 +249,13 @@ export const useTabStore = create<TabStore>()(
                   table: tab.tableName,
                   database: tab.database,
                 })),
-              };
+              } as EditorTab;
             }
             return tab;
-          }),
-        }));
+          });
+
+          return { tabs: updatedTabs };
+        });
       },
     }),
     {

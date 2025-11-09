@@ -93,6 +93,21 @@
   @apply bg-primary/10 ring-2 ring-primary;
 }
 
+/* 缩略图样式 */
+.s3-browser .thumbnail-container {
+  @apply w-full h-24 flex items-center justify-center overflow-hidden rounded-md bg-muted/20;
+}
+
+.s3-browser .thumbnail-container img,
+.s3-browser .thumbnail-container video {
+  @apply w-full h-full object-cover rounded-md transition-transform;
+}
+
+.s3-browser .thumbnail-container:hover img,
+.s3-browser .thumbnail-container:hover video {
+  @apply scale-110;
+}
+
 /* 文件图标样式 */
 .s3-browser .file-icon {
   @apply w-12 h-12 mb-2;

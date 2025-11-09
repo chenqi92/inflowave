@@ -54,6 +54,162 @@ import type {
 import './S3Browser.css';
 import logger from '@/utils/logger';
 
+// 判断文件是否为图片
+const isImageFile = (object: S3Object): boolean => {
+  if (object.isDirectory) return false;
+  const extension = object.name.split('.').pop()?.toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'gif', 'svg', 'bmp', 'webp'].includes(extension || '');
+};
+
+// 判断文件是否为视频
+const isVideoFile = (object: S3Object): boolean => {
+  if (object.isDirectory) return false;
+  const extension = object.name.split('.').pop()?.toLowerCase();
+  return ['mp4', 'avi', 'mov', 'wmv', 'flv', 'webm', 'mkv'].includes(extension || '');
+};
+
+// 获取文件图标
+const getFileIcon = (object: S3Object) => {
+  if (object.isDirectory) {
+    return <Folder className="w-4 h-4" />;
+  }
+
+  const extension = object.name.split('.').pop()?.toLowerCase();
+  switch (extension) {
+    case 'txt':
+    case 'md':
+    case 'doc':
+    case 'docx':
+    case 'pdf':
+      return <FileText className="w-4 h-4" />;
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+    case 'svg':
+    case 'bmp':
+      return <FileImage className="w-4 h-4" />;
+    case 'mp4':
+    case 'avi':
+    case 'mov':
+    case 'wmv':
+    case 'flv':
+      return <FileVideo className="w-4 h-4" />;
+    case 'mp3':
+    case 'wav':
+    case 'flac':
+    case 'aac':
+      return <FileAudio className="w-4 h-4" />;
+    case 'js':
+    case 'ts':
+    case 'jsx':
+    case 'tsx':
+    case 'py':
+    case 'java':
+    case 'c':
+    case 'cpp':
+    case 'go':
+    case 'rs':
+      return <FileCode className="w-4 h-4" />;
+    case 'zip':
+    case 'rar':
+    case '7z':
+    case 'tar':
+    case 'gz':
+      return <Archive className="w-4 h-4" />;
+    default:
+      return <File className="w-4 h-4" />;
+  }
+};
+
+// 文件缩略图组件 - 移到外部并使用 React.memo 优化
+const FileThumbnail = React.memo<{
+  object: S3Object;
+  connectionId: string;
+  currentBucket: string;
+  viewMode: 'list' | 'grid' | 'tree';
+}>(({ object, connectionId, currentBucket, viewMode }) => {
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [isLoadingThumbnail, setIsLoadingThumbnail] = useState(false);
+  const [thumbnailError, setThumbnailError] = useState(false);
+
+  useEffect(() => {
+    if (!currentBucket || thumbnailError) return;
+
+    // 仅在网格视图下加载缩略图
+    if (viewMode !== 'grid' || (!isImageFile(object) && !isVideoFile(object))) {
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadThumbnail = async () => {
+      try {
+        setIsLoadingThumbnail(true);
+        // 使用 presigned URL 获取预览
+        const result = await S3Service.generatePresignedUrl(
+          connectionId,
+          currentBucket,
+          object.key,
+          'get',
+          300 // 5分钟过期
+        );
+
+        if (!isCancelled) {
+          setThumbnailUrl(result.url);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          logger.warn(`Failed to generate thumbnail for ${object.name}:`, error);
+          setThumbnailError(true);
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadingThumbnail(false);
+        }
+      }
+    };
+
+    loadThumbnail();
+
+    // 清理函数：取消异步操作
+    return () => {
+      isCancelled = true;
+    };
+  }, [object.key, connectionId, currentBucket, viewMode, thumbnailError, object.name]);
+
+  // 如果加载失败或不支持预览，显示图标
+  if (thumbnailError || isLoadingThumbnail) {
+    return getFileIcon(object);
+  }
+
+  if (isImageFile(object) && thumbnailUrl) {
+    return (
+      <img
+        src={thumbnailUrl}
+        alt={object.name}
+        className="w-full h-24 object-cover rounded-md"
+        onError={() => setThumbnailError(true)}
+      />
+    );
+  }
+
+  if (isVideoFile(object) && thumbnailUrl) {
+    return (
+      <video
+        src={thumbnailUrl}
+        className="w-full h-24 object-cover rounded-md"
+        onError={() => setThumbnailError(true)}
+        preload="metadata"
+      />
+    );
+  }
+
+  return getFileIcon(object);
+});
+
+FileThumbnail.displayName = 'FileThumbnail';
+
 interface S3BrowserProps {
   connectionId: string;
   connectionName?: string;
@@ -78,6 +234,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const [currentPath, setCurrentPath] = useState<string>(''); // 当前路径（bucket内的路径）
   const [objects, setObjects] = useState<S3Object[]>([]);
   const [selectedObjects, setSelectedObjects] = useState<Set<string>>(new Set());
+  const [lastSelectedIndex, setLastSelectedIndex] = useState<number>(-1); // 用于 Shift 范围选择
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [viewConfig, setViewConfig] = useState<S3BrowserViewConfig>({
@@ -92,8 +249,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const [columnWidths, setColumnWidths] = useState({
     name: 400,
     size: 150,
-    modified: 200,
     count: 150, // bucket 文件数量列
+    modified: 200,
   });
 
   // 分页相关
@@ -340,6 +497,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const navigateToPath = (path: string) => {
     setCurrentPath(path);
     setSelectedObjects(new Set());
+    setLastSelectedIndex(-1);
   };
 
   const handleObjectClick = (object: S3Object) => {
@@ -350,6 +508,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         setCurrentBucket(object.name);
         setCurrentPath('');
         setSelectedObjects(new Set());
+        setLastSelectedIndex(-1);
       } else {
         // 否则进入文件夹
         logger.info(`📦 [S3Browser] 进入文件夹: ${object.key}`);
@@ -361,13 +520,40 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     }
   };
 
-  const handleObjectSelect = (object: S3Object, selected: boolean) => {
-    const newSelection = new Set(selectedObjects);
-    if (selected) {
-      newSelection.add(object.key);
+  const handleObjectSelect = (
+    object: S3Object,
+    index: number,
+    event: React.MouseEvent | React.ChangeEvent
+  ) => {
+    const isCtrlOrCmd = 'ctrlKey' in event ? event.ctrlKey || event.metaKey : false;
+    const isShift = 'shiftKey' in event ? event.shiftKey : false;
+
+    let newSelection = new Set(selectedObjects);
+
+    if (isShift && lastSelectedIndex !== -1) {
+      // Shift + 点击：范围选择
+      const start = Math.min(lastSelectedIndex, index);
+      const end = Math.max(lastSelectedIndex, index);
+      newSelection = new Set(selectedObjects);
+      for (let i = start; i <= end; i++) {
+        if (objects[i]) {
+          newSelection.add(objects[i].key);
+        }
+      }
+    } else if (isCtrlOrCmd) {
+      // Ctrl/Cmd + 点击：切换单个选择
+      if (newSelection.has(object.key)) {
+        newSelection.delete(object.key);
+      } else {
+        newSelection.add(object.key);
+      }
+      setLastSelectedIndex(index);
     } else {
-      newSelection.delete(object.key);
+      // 普通点击：只选中当前项（清除其他选择）
+      newSelection = new Set([object.key]);
+      setLastSelectedIndex(index);
     }
+
     setSelectedObjects(newSelection);
   };
 
@@ -624,11 +810,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       setCurrentBucket('');
       setCurrentPath('');
       setSelectedObjects(new Set());
+      setLastSelectedIndex(-1);
     } else if (item.isBucket) {
       // 返回 bucket 根目录
       logger.info(`📦 [S3Browser] 返回 bucket 根目录: ${item.label}`);
       setCurrentPath('');
       setSelectedObjects(new Set());
+      setLastSelectedIndex(-1);
     } else {
       // 导航到指定路径
       logger.info(`📦 [S3Browser] 导航到路径: ${item.path}`);
@@ -685,58 +873,6 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
     document.addEventListener('mouseup', handleMouseUp);
   };
 
-  const getFileIcon = (object: S3Object) => {
-    if (object.isDirectory) {
-      return <Folder className="w-4 h-4" />;
-    }
-
-    const extension = object.name.split('.').pop()?.toLowerCase();
-    switch (extension) {
-      case 'txt':
-      case 'md':
-      case 'doc':
-      case 'docx':
-      case 'pdf':
-        return <FileText className="w-4 h-4" />;
-      case 'jpg':
-      case 'jpeg':
-      case 'png':
-      case 'gif':
-      case 'svg':
-      case 'bmp':
-        return <FileImage className="w-4 h-4" />;
-      case 'mp4':
-      case 'avi':
-      case 'mov':
-      case 'wmv':
-      case 'flv':
-        return <FileVideo className="w-4 h-4" />;
-      case 'mp3':
-      case 'wav':
-      case 'flac':
-      case 'aac':
-        return <FileAudio className="w-4 h-4" />;
-      case 'js':
-      case 'ts':
-      case 'jsx':
-      case 'tsx':
-      case 'py':
-      case 'java':
-      case 'c':
-      case 'cpp':
-      case 'go':
-      case 'rs':
-        return <FileCode className="w-4 h-4" />;
-      case 'zip':
-      case 'rar':
-      case '7z':
-      case 'tar':
-      case 'gz':
-        return <Archive className="w-4 h-4" />;
-      default:
-        return <File className="w-4 h-4" />;
-    }
-  };
 
   return (
     <div className="s3-browser h-full flex flex-col">
@@ -887,16 +1023,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                     <span>{t('size')}</span>
                     <div
                       className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('size', 'modified', e)}
-                    />
-                  </div>
-                </th>
-                <th className="text-left p-2" style={{ width: columnWidths.modified }}>
-                  <div className="flex items-center">
-                    <span>{t('modified')}</span>
-                    <div
-                      className="column-resizer"
-                      onMouseDown={(e) => handleColumnResizeStart('modified', !currentBucket ? 'count' : null, e)}
+                      onMouseDown={(e) => handleColumnResizeStart('size', !currentBucket ? 'count' : 'modified', e)}
                     />
                   </div>
                 </th>
@@ -907,24 +1034,48 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                       <span>{t('object_count', { ns: 's3', defaultValue: '对象数量' })}</span>
                       <div
                         className="column-resizer"
-                        onMouseDown={(e) => handleColumnResizeStart('count', null, e)}
+                        onMouseDown={(e) => handleColumnResizeStart('count', 'modified', e)}
                       />
                     </div>
                   </th>
                 )}
+                <th className="text-left p-2" style={{ width: columnWidths.modified }}>
+                  <div className="flex items-center">
+                    <span>{t('modified')}</span>
+                    <div
+                      className="column-resizer"
+                      onMouseDown={(e) => handleColumnResizeStart('modified', null, e)}
+                    />
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {objects.map(object => (
+              {objects.map((object, index) => (
                 <tr
                   key={object.key}
                   className="border-b hover:bg-muted/50 cursor-pointer"
+                  onClick={(e) => {
+                    // 如果点击的是 checkbox，不触发行选择
+                    if ((e.target as HTMLElement).closest('button[role="checkbox"]')) {
+                      return;
+                    }
+                    handleObjectSelect(object, index, e);
+                  }}
                   onDoubleClick={() => handleObjectClick(object)}
                 >
                   <td className="p-2">
                     <Checkbox
                       checked={selectedObjects.has(object.key)}
-                      onCheckedChange={checked => handleObjectSelect(object, checked as boolean)}
+                      onCheckedChange={(checked) => {
+                        // Checkbox 点击时模拟一个带 Ctrl 键的事件（切换选择）
+                        const syntheticEvent = {
+                          ctrlKey: true,
+                          metaKey: false,
+                          shiftKey: false,
+                        } as React.MouseEvent;
+                        handleObjectSelect(object, index, syntheticEvent);
+                      }}
                       onClick={e => e.stopPropagation()}
                     />
                   </td>
@@ -937,22 +1088,22 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   <td className="p-2" style={{ width: columnWidths.size }}>
                     {object.isDirectory ? '-' : formatBytes(object.size)}
                   </td>
-                  <td className="p-2" style={{ width: columnWidths.modified }}>
-                    {formatDate(object.lastModified)}
-                  </td>
                   {/* 在根目录显示文件数量 */}
                   {!currentBucket && (
                     <td className="p-2" style={{ width: columnWidths.count }}>
                       {object.objectCount !== undefined ? object.objectCount : '-'}
                     </td>
                   )}
+                  <td className="p-2" style={{ width: columnWidths.modified }}>
+                    {formatDate(object.lastModified)}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         ) : (
           <div className="grid grid-cols-6 gap-2 p-2">
-            {objects.map(object => (
+            {objects.map((object, index) => (
               <div
                 key={object.key}
                 className={`
@@ -961,13 +1112,22 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
                   ${selectedObjects.has(object.key) ? 'bg-muted' : ''}
                 `}
                 onDoubleClick={() => handleObjectClick(object)}
-                onClick={() => handleObjectSelect(object, !selectedObjects.has(object.key))}
+                onClick={(e) => handleObjectSelect(object, index, e)}
               >
-                <div className="text-4xl mb-2">
+                <div className="w-full mb-2 flex items-center justify-center min-h-[96px]">
                   {object.isDirectory ? (
                     <FolderOpen className="w-12 h-12" />
+                  ) : (isImageFile(object) || isVideoFile(object)) ? (
+                    <FileThumbnail
+                      object={object}
+                      connectionId={connectionId}
+                      currentBucket={currentBucket}
+                      viewMode={viewConfig.viewMode}
+                    />
                   ) : (
-                    getFileIcon(object)
+                    <div className="text-4xl">
+                      {getFileIcon(object)}
+                    </div>
                   )}
                 </div>
                 <div className="text-sm text-center truncate w-full" title={object.name}>
