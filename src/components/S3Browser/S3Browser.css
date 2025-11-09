@@ -20,7 +20,6 @@
 
 /* 文件列表样式 */
 .s3-browser table {
-  @apply w-full;
   table-layout: fixed; /* 固定表格布局，防止列宽自动调整 */
 }
 

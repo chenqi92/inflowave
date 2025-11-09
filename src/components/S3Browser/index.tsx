@@ -54,6 +54,15 @@ import {
   Eye,
   Tag,
   Shield,
+  Image as ImageIcon,
+  Video,
+  Music,
+  Code,
+  Table,
+  Clock,
+  HardDrive,
+  Share2,
+  FileX,
 } from 'lucide-react';
 import { S3Service } from '@/services/s3Service';
 import { showMessage } from '@/utils/message';
@@ -305,6 +314,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
   const [previewObject, setPreviewObject] = useState<S3Object | null>(null);
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [showShareInPreview, setShowShareInPreview] = useState(false);
 
   // 重命名状态
   const [showRenameDialog, setShowRenameDialog] = useState(false);
@@ -1598,7 +1608,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
         )}
         <ScrollArea ref={scrollAreaRef} className="h-full">
         {viewConfig.viewMode === 'list' ? (
-          <table className="w-full">
+          <table>
             <thead className="sticky top-0 bg-background z-10">
               <tr className="border-b">
                 <th className="text-left p-2" style={{ width: '48px', minWidth: '48px', maxWidth: '48px' }}>
@@ -1966,115 +1976,341 @@ const S3Browser: React.FC<S3BrowserProps> = ({ connectionId, connectionName = 'S
       </Dialog>
 
       {/* 文件预览对话框 */}
-      <Dialog open={showPreviewDialog} onOpenChange={setShowPreviewDialog}>
-        <DialogContent className="max-w-5xl max-h-[90vh]">
-          <DialogHeader>
-            <DialogTitle>{previewObject?.name || ''}</DialogTitle>
-          </DialogHeader>
-          {/* 文件信息和标签 */}
-          {previewObject && (
-            <div className="space-y-2 px-6 pb-2">
-              <div className="text-sm text-muted-foreground">
-                {formatBytes(previewObject.size)}
-                {previewObject.lastModified && (
-                  <> • {previewObject.lastModified.toLocaleString()}</>
-                )}
-              </div>
-              {/* 标签显示 */}
-              {previewObject.tags && Object.keys(previewObject.tags).length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-1">
-                  {Object.entries(previewObject.tags).map(([key, value]) => (
-                    <span
-                      key={key}
-                      className="inline-flex items-center px-2 py-1 rounded text-xs bg-primary/10 text-primary"
-                      title={`${key}: ${value}`}
-                    >
-                      <Tag className="w-3 h-3 mr-1" />
-                      {key}: {value}
+      <Dialog
+        open={showPreviewDialog}
+        onOpenChange={(open) => {
+          setShowPreviewDialog(open);
+          if (!open) {
+            // 关闭时重置状态
+            setShowShareInPreview(false);
+            setPresignedUrl('');
+            setShareExpireTime('');
+          }
+        }}
+      >
+        <DialogContent className="max-w-6xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+          {/* 顶部标题栏 */}
+          <div className="flex items-start gap-3 px-6 pt-6 pb-4 border-b bg-muted/30">
+            {/* 文件类型图标 */}
+            <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+              {previewObject && isImageFile(previewObject) && <ImageIcon className="w-6 h-6 text-primary" />}
+              {previewObject && isVideoFile(previewObject) && <Video className="w-6 h-6 text-primary" />}
+              {previewObject && ['mp3', 'wav', 'ogg'].includes(
+                previewObject.name.split('.').pop()?.toLowerCase() || ''
+              ) && <Music className="w-6 h-6 text-primary" />}
+              {previewObject && previewObject.name.endsWith('.pdf') && <FileText className="w-6 h-6 text-primary" />}
+              {previewObject && ['txt', 'md', 'json', 'xml', 'csv', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css'].includes(
+                previewObject.name.split('.').pop()?.toLowerCase() || ''
+              ) && <Code className="w-6 h-6 text-primary" />}
+              {previewObject && ['xlsx', 'xls'].includes(
+                previewObject.name.split('.').pop()?.toLowerCase() || ''
+              ) && <Table className="w-6 h-6 text-primary" />}
+              {previewObject && !isImageFile(previewObject) && !isVideoFile(previewObject) &&
+                !['mp3', 'wav', 'ogg', 'pdf', 'txt', 'md', 'json', 'xml', 'csv', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css', 'xlsx', 'xls'].some(ext =>
+                  previewObject.name.toLowerCase().endsWith(`.${  ext}`)
+                ) && <File className="w-6 h-6 text-primary" />}
+            </div>
+
+            {/* 文件信息 */}
+            <div className="flex-1 min-w-0">
+              <DialogTitle className="text-lg font-semibold truncate mb-1.5">
+                {previewObject?.name || ''}
+              </DialogTitle>
+              {previewObject && (
+                <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5">
+                    <HardDrive className="w-3.5 h-3.5" />
+                    {formatBytes(previewObject.size)}
+                  </span>
+                  {previewObject.lastModified && (
+                    <span className="inline-flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      {previewObject.lastModified.toLocaleString()}
                     </span>
-                  ))}
+                  )}
+                  <span className="inline-flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5" />
+                    {previewObject.name.split('.').pop()?.toUpperCase() || 'Unknown'}
+                  </span>
                 </div>
               )}
             </div>
+
+            {/* 快捷操作按钮 */}
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => previewObject && handleDownload([previewObject])}
+                title={String(t('s3:download.label'))}
+              >
+                <Download className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => {
+                  if (previewObject) {
+                    setShareObject(previewObject);
+                    setShowPresignedUrlDialog(true);
+                    setShowPreviewDialog(false);
+                  }
+                }}
+                title={String(t('s3:generate_link'))}
+              >
+                <Share2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* 标签区域 */}
+          {previewObject && previewObject.tags && Object.keys(previewObject.tags).length > 0 && (
+            <div className="px-6 py-3 border-b bg-background/50">
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(previewObject.tags).map(([key, value]) => (
+                  <span
+                    key={key}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-muted/50 border hover:bg-muted transition-colors"
+                    title={`${key}: ${value}`}
+                  >
+                    <Tag className="w-3 h-3 text-primary" />
+                    <span className="text-muted-foreground">{key}:</span>
+                    <span className="font-semibold">{value}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
-          <ScrollArea className="max-h-[70vh] w-full">
+
+          {/* 预览内容区域 */}
+          <ScrollArea className="flex-1" style={{ maxHeight: 'calc(90vh - 200px)' }}>
             {previewLoading ? (
-              <div className="flex items-center justify-center p-8">
-                <RefreshCw className="w-8 h-8 animate-spin" />
+              <div className="flex flex-col items-center justify-center p-20">
+                <RefreshCw className="w-10 h-10 animate-spin text-primary mb-4" />
+                <p className="text-sm text-muted-foreground">{t('s3:preview.loading')}</p>
               </div>
             ) : previewObject && previewContent ? (
-              <div className="w-full">
+              <div className="p-6">
                 {/* 图片预览 */}
                 {isImageFile(previewObject) && (
-                  <img
-                    src={previewContent}
-                    alt={previewObject.name}
-                    className="w-full h-auto rounded-md"
-                  />
+                  <div className="flex items-center justify-center bg-muted/20 rounded-lg p-6 min-h-[300px]">
+                    <img
+                      src={previewContent}
+                      alt={previewObject.name}
+                      className="max-w-full h-auto rounded-md shadow-xl"
+                      style={{ maxHeight: '65vh' }}
+                    />
+                  </div>
                 )}
 
                 {/* 视频预览 */}
                 {isVideoFile(previewObject) && (
-                  <video
-                    src={previewContent}
-                    controls
-                    className="w-full h-auto rounded-md"
-                  />
+                  <div className="bg-black rounded-xl overflow-hidden shadow-xl">
+                    <video
+                      src={previewContent}
+                      controls
+                      className="w-full h-auto"
+                      style={{ maxHeight: '65vh' }}
+                    />
+                  </div>
                 )}
 
                 {/* 音频预览 */}
                 {['mp3', 'wav', 'ogg'].includes(
                   previewObject.name.split('.').pop()?.toLowerCase() || ''
                 ) && (
-                  <audio src={previewContent} controls className="w-full" />
+                  <div className="flex flex-col items-center justify-center p-12 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 rounded-xl">
+                    <div className="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mb-6">
+                      <Music className="w-10 h-10 text-primary" />
+                    </div>
+                    <h3 className="text-lg font-medium mb-6">{previewObject.name}</h3>
+                    <audio src={previewContent} controls className="w-full max-w-lg shadow-lg" />
+                  </div>
                 )}
 
                 {/* PDF预览 */}
                 {previewObject.name.endsWith('.pdf') && (
-                  <iframe
-                    src={previewContent}
-                    className="w-full h-[600px] rounded-md"
-                    title="PDF Preview"
-                  />
+                  <div className="rounded-xl overflow-hidden border-2 shadow-lg">
+                    <iframe
+                      src={previewContent}
+                      className="w-full h-[650px]"
+                      title="PDF Preview"
+                    />
+                  </div>
                 )}
 
                 {/* 文本/代码预览 */}
                 {['txt', 'md', 'json', 'xml', 'csv', 'js', 'jsx', 'ts', 'tsx', 'py', 'java', 'c', 'cpp', 'go', 'rs', 'html', 'css'].includes(
                   previewObject.name.split('.').pop()?.toLowerCase() || ''
                 ) && (
-                  <pre className="p-4 bg-muted rounded-md overflow-auto text-sm">
-                    <code>{previewContent}</code>
-                  </pre>
+                  <div className="rounded-xl overflow-hidden border-2 shadow-lg">
+                    <div className="bg-muted/50 px-4 py-2 border-b flex items-center gap-2">
+                      <Code className="w-4 h-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {previewObject.name.split('.').pop()?.toUpperCase()}
+                      </span>
+                    </div>
+                    <pre className="p-6 bg-muted/30 overflow-auto text-sm font-mono leading-relaxed max-h-[600px]">
+                      <code>{previewContent}</code>
+                    </pre>
+                  </div>
                 )}
 
                 {/* Excel预览 */}
                 {['xlsx', 'xls'].includes(
                   previewObject.name.split('.').pop()?.toLowerCase() || ''
                 ) && (
-                  <div
-                    className="overflow-auto"
-                    dangerouslySetInnerHTML={{ __html: previewContent }}
-                  />
+                  <div className="rounded-xl overflow-auto border-2 shadow-lg max-h-[600px]">
+                    <div
+                      className="[&_table]:w-full [&_table]:border-collapse [&_th]:bg-muted/50 [&_th]:p-2 [&_th]:text-left [&_th]:font-medium [&_th]:border [&_td]:p-2 [&_td]:border"
+                      dangerouslySetInnerHTML={{ __html: previewContent }}
+                    />
+                  </div>
                 )}
               </div>
             ) : (
-              <div className="text-center p-8 text-muted-foreground">
-                {t('s3:preview.no_content', { defaultValue: '无法预览此文件' })}
+              <div className="flex flex-col items-center justify-center p-20 text-center">
+                <div className="w-20 h-20 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+                  <FileX className="w-10 h-10 text-muted-foreground" />
+                </div>
+                <p className="text-base font-medium mb-2">
+                  {t('s3:preview.not_supported', { defaultValue: '不支持预览此文件类型' })}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {t('s3:preview.download_to_view', { defaultValue: '请下载后查看' })}
+                </p>
               </div>
             )}
           </ScrollArea>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => previewObject && handleDownload([previewObject])}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {t('s3:download.label')}
-            </Button>
-            <Button onClick={() => setShowPreviewDialog(false)}>
-              {String(t('common:close'))}
-            </Button>
-          </DialogFooter>
+
+          {/* 底部操作栏 / 分享表单 */}
+          {showShareInPreview ? (
+            <div className="border-t bg-muted/20">
+              <div className="px-6 py-4 space-y-4">
+                {/* 分享表单标题 */}
+                <div className="flex items-center gap-2">
+                  <Share2 className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold">{t('s3:presigned_url.title')}</h3>
+                </div>
+
+                {/* 过期时间设置 */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">{t('s3:presigned_url.active_for')}</Label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        value={shareDays}
+                        onChange={(e) => setShareDays(Math.max(0, parseInt(e.target.value) || 0))}
+                        className="w-20 text-center"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {t('s3:presigned_url.days')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="23"
+                        value={shareHours}
+                        onChange={(e) => setShareHours(Math.max(0, Math.min(23, parseInt(e.target.value) || 0)))}
+                        className="w-20 text-center"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {t('s3:presigned_url.hours')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={shareMinutes}
+                        onChange={(e) => setShareMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
+                        className="w-20 text-center"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {t('s3:presigned_url.minutes')}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 显示过期时间 */}
+                {shareExpireTime && (
+                  <div className="text-sm text-muted-foreground flex items-center gap-2 px-3 py-2 bg-muted/50 rounded-md">
+                    <Clock className="w-4 h-4" />
+                    {t('s3:presigned_url.expire_at')}: {shareExpireTime}
+                  </div>
+                )}
+
+                {/* 生成的URL */}
+                {presignedUrl && (
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">{t('s3:presigned_url.title')}</Label>
+                    <div className="relative">
+                      <Input
+                        value={presignedUrl}
+                        readOnly
+                        className="font-mono text-xs pr-10"
+                      />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="absolute right-1 top-1 h-7 w-7 p-0"
+                        onClick={() => {
+                          navigator.clipboard.writeText(presignedUrl);
+                          showMessage.success(String(t('common:copied')));
+                        }}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* 操作按钮 */}
+                <div className="flex items-center justify-end gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowShareInPreview(false);
+                      setPresignedUrl('');
+                      setShareExpireTime('');
+                    }}
+                  >
+                    {String(t('common:cancel'))}
+                  </Button>
+                  {!presignedUrl ? (
+                    <Button onClick={generateShareUrl}>
+                      <Share2 className="w-4 h-4 mr-2" />
+                      {String(t('s3:presigned_url.generate'))}
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() => {
+                        navigator.clipboard.writeText(presignedUrl);
+                        showMessage.success(String(t('common:copied')));
+                      }}
+                    >
+                      <Copy className="w-4 h-4 mr-2" />
+                      {String(t('common:copy'))}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-muted/20">
+              <Button onClick={() => setShowPreviewDialog(false)}>
+                {String(t('common:close'))}
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
