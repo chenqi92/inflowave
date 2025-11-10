@@ -117,16 +117,22 @@ export class ErrorHandler {
       } catch (error) {
         lastError = error as Error;
 
-        // 最后一次尝试失败
-        if (attempt === maxRetries) {
-          this.handleError({
-            type: context.type,
-            message: `Failed after ${maxRetries} retries: ${lastError.message}`,
-            language: context.language,
-            key: context.key,
-            originalError: lastError,
-            context: { attempts: attempt + 1 },
-          });
+        // 检查是否是不应该重试的错误（如 404）
+        const shouldNotRetry = this.shouldNotRetry(lastError);
+
+        // 如果是不应该重试的错误，或者是最后一次尝试失败
+        if (shouldNotRetry || attempt === maxRetries) {
+          // 只在非 404 错误时记录错误
+          if (!shouldNotRetry) {
+            this.handleError({
+              type: context.type,
+              message: `Failed after ${maxRetries} retries: ${lastError.message}`,
+              language: context.language,
+              key: context.key,
+              originalError: lastError,
+              context: { attempts: attempt + 1 },
+            });
+          }
           throw lastError;
         }
 
@@ -145,6 +151,21 @@ export class ErrorHandler {
     }
 
     throw lastError;
+  }
+
+  /**
+   * 判断错误是否不应该重试
+   */
+  private shouldNotRetry(error: Error): boolean {
+    const message = error.message.toLowerCase();
+    // 404 错误、语法错误等不应该重试
+    return (
+      message.includes('404') ||
+      message.includes('not found') ||
+      message.includes('unexpected token') ||
+      message.includes('is not valid json') ||
+      message.includes('<!doctype')
+    );
   }
 
   /**

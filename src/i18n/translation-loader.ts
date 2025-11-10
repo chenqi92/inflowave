@@ -205,14 +205,23 @@ export class TranslationLoader {
    * 加载单个命名空间资源
    */
   private async loadNamespaceResource(language: string, namespace: string): Promise<LanguageResource> {
-    const url = `${this.config.resourcePath}/${language}/${namespace}.json`;
+    // 语言代码映射，确保使用正确的文件路径
+    const languageMap: Record<string, string> = {
+      'zh': 'zh-CN',
+      'en': 'en-US',
+    };
+    const mappedLanguage = languageMap[language] || language;
+
+    const url = `${this.config.resourcePath}/${mappedLanguage}/${namespace}.json`;
     const statsKey = `${language}:${namespace}`;
-    
+
+    logger.debug(`[TranslationLoader] Loading resource: ${url} (original language: ${language})`);
+
     // 使用错误处理器的重试机制
     return errorHandler.withRetry(
       async () => {
         const startTime = Date.now();
-        
+
         try {
           const response = await fetch(url, {
             method: 'GET',

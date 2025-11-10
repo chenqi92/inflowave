@@ -11,8 +11,8 @@ import { ResourceManager, type ResourceManagerConfig } from './resource-manager'
 import type { LanguageDetectionConfig, LoaderConfig } from './types';
 import logger from '@/utils/logger';
 
-// 支持的语言列表（包含简化的语言代码以避免警告）
-export const SUPPORTED_LANGUAGES = ['zh-CN', 'en-US', 'zh', 'en'] as const;
+// 支持的语言列表（只使用完整的语言代码，避免加载不存在的资源）
+export const SUPPORTED_LANGUAGES = ['zh-CN', 'en-US'] as const;
 
 // 默认语言
 export const DEFAULT_LANGUAGE = 'zh-CN';
@@ -61,8 +61,12 @@ const i18nConfig = {
   // 回退语言
   fallbackLng: FALLBACK_LANGUAGE,
 
-  // 支持的语言
+  // 支持的语言（严格模式，只允许列表中的语言）
   supportedLngs: SUPPORTED_LANGUAGES,
+
+  // 加载选项
+  load: 'currentOnly' as const, // 只加载当前语言，不加载语言变体
+  nonExplicitSupportedLngs: false, // 不自动添加语言变体到支持列表
 
   // 命名空间
   defaultNS: 'common',
@@ -131,7 +135,9 @@ const i18nConfig = {
       // 使用映射后的语言代码或原始代码
       const mappedLng = languageMap[lng] || lng;
 
-      return `${loaderConfig.resourcePath}/${mappedLng}/${ns}.json`;
+      const path = `${loaderConfig.resourcePath}/${mappedLng}/${ns}.json`;
+      logger.debug(`[i18n] Loading resource: ${path} (original lng: ${lng})`);
+      return path;
     },
     addPath: `${loaderConfig.resourcePath}/{{lng}}/{{ns}}.json`,
     allowMultiLoading: false,
@@ -195,6 +201,12 @@ const initI18n = async () => {
         key,
         result: res,
       });
+    });
+
+    // 添加 failedLoading 事件监听器，处理资源加载失败
+    i18n.on('failedLoading', (lng: string, ns: string, msg: string) => {
+      // 只记录警告，不抛出错误，让 i18next 使用回退语言
+      logger.warn(`⚠️ [i18n] Failed to load namespace "${ns}" for language "${lng}": ${msg}`);
     });
     
     // 智能预加载语言资源
