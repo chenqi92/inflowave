@@ -21,6 +21,7 @@
 /* 文件列表样式 */
 .s3-browser table {
   table-layout: fixed; /* 固定表格布局，防止列宽自动调整 */
+  width: 100%;
 }
 
 .s3-browser thead {
@@ -40,19 +41,30 @@
 .s3-browser th {
   @apply p-2 text-left align-middle; /* 添加 align-middle 确保垂直居中 */
   height: 40px; /* 固定单元格高度 */
-  max-width: 0; /* 配合 truncate 使文本截断生效 */
+  overflow: hidden; /* 隐藏溢出内容 */
+  text-overflow: ellipsis; /* 文本溢出显示省略号 */
+  white-space: nowrap; /* 不换行 */
 }
 
 /* 确保 checkbox 单元格内容垂直居中 */
 .s3-browser td:first-child,
 .s3-browser th:first-child {
   @apply align-middle;
-  max-width: none; /* checkbox 列不需要截断 */
+  overflow: visible; /* checkbox 列不需要截断 */
+  white-space: normal; /* checkbox 列允许正常显示 */
 }
 
 /* 确保 checkbox 容器不影响行高 */
 .s3-browser td:first-child > div {
   @apply h-full;
+}
+
+/* 确保文本列可以正确截断 */
+.s3-browser td > div,
+.s3-browser td > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 列调整器样式 */

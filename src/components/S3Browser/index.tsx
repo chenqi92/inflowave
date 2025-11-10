@@ -16,6 +16,7 @@ import {
   DialogTitle,
   Checkbox,
   ScrollArea,
+  ScrollBar,
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
@@ -1548,9 +1549,16 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             }}
           />
         )}
-        <ScrollArea ref={scrollAreaRef} className='h-full'>
+        <ScrollArea ref={scrollAreaRef} className='h-full w-full'>
           {viewConfig.viewMode === 'list' ? (
-            <table className='w-full' style={{ tableLayout: 'fixed' }}>
+            <div className='w-full'>
+              <table
+                className='w-full'
+                style={{
+                  tableLayout: 'fixed',
+                  minWidth: `${48 + columnWidths.name + columnWidths.size + (currentBucket ? 0 : columnWidths.count) + columnWidths.modified}px`
+                }}
+              >
               <thead className='sticky top-0 bg-background z-10'>
                 <tr className='border-b'>
                   <th
@@ -1626,12 +1634,42 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                     className='text-left p-2'
                     style={{ width: columnWidths.modified }}
                   >
-                    <span>{t('s3:modified')}</span>
+                    <div className='flex items-center'>
+                      <span>{t('s3:modified')}</span>
+                    </div>
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {objects.map((object, index) => (
+                {isLoading && objects.length === 0 ? (
+                  // 骨架屏加载状态
+                  Array.from({ length: 10 }).map((_, index) => (
+                    <tr key={`skeleton-${index}`} className='border-b'>
+                      <td className='p-2'>
+                        <div className='flex items-center justify-center'>
+                          <div className='w-4 h-4 bg-muted animate-pulse rounded' />
+                        </div>
+                      </td>
+                      <td className='p-2'>
+                        <div className='flex items-center gap-2'>
+                          <div className='w-4 h-4 bg-muted animate-pulse rounded' />
+                          <div className='h-4 bg-muted animate-pulse rounded flex-1' />
+                        </div>
+                      </td>
+                      <td className='p-2'>
+                        <div className='h-4 bg-muted animate-pulse rounded w-20' />
+                      </td>
+                      {!currentBucket && (
+                        <td className='p-2'>
+                          <div className='h-4 bg-muted animate-pulse rounded w-16' />
+                        </td>
+                      )}
+                      <td className='p-2'>
+                        <div className='h-4 bg-muted animate-pulse rounded w-32' />
+                      </td>
+                    </tr>
+                  ))
+                ) : objects.map((object, index) => (
                   <tr
                     key={object.key}
                     className='border-b hover:bg-muted/50 cursor-pointer object-item'
@@ -1712,7 +1750,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                   </tr>
                 ))}
               </tbody>
-            </table>
+              </table>
+            </div>
           ) : (
             <div className='grid grid-cols-6 gap-2 p-2'>
               {objects.map((object, index) => (
@@ -1806,6 +1845,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               )}
             </div>
           )}
+          <ScrollBar orientation="horizontal" />
         </ScrollArea>
       </div>
 
