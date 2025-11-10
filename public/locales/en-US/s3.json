@@ -85,10 +85,12 @@
     "name": "Bucket Name",
     "region": "Bucket Region",
     "created": "Bucket created successfully",
-    "deleted": "Bucket deleted successfully",
+    "deleted": "Successfully deleted {{count}} bucket(s)",
     "create_failed": "Failed to create bucket",
-    "delete_failed": "Failed to delete bucket",
-    "empty_confirm": "Are you sure you want to delete this bucket? All files will be permanently deleted."
+    "delete_failed": "Failed to delete {{count}} bucket(s)",
+    "empty_confirm": "Are you sure you want to delete this bucket? All files will be permanently deleted.",
+    "delete_confirm_title": "Confirm Delete Bucket",
+    "delete_confirm_message": "Are you sure you want to delete the selected {{count}} bucket(s)? This operation will delete all data and cannot be undone!"
   },
   "folder": {
     "name_placeholder": "Folder name",

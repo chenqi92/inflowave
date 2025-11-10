@@ -225,6 +225,18 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   >([]);
   const [tagsLoading, setTagsLoading] = useState(false);
 
+  // 用于跟踪正在进行的 bucket stats 请求
+  const bucketStatsRequestsRef = useRef<Map<string, boolean>>(new Map());
+  // 用于标识当前的加载会话，当会话改变时，之前的请求结果会被忽略
+  const loadSessionRef = useRef<number>(0);
+
+  // 组件卸载时取消所有正在进行的请求
+  useEffect(() => {
+    return () => {
+      cancelAllBucketStatsRequests();
+    };
+  }, []);
+
   // 加载根级别内容（buckets 或 bucket 内的对象）
   useEffect(() => {
     logger.info(
@@ -235,6 +247,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       loadBuckets();
     } else {
       // 在某个 bucket 内，显示对象
+      // 取消 bucket stats 请求，因为我们要进入某个 bucket 了
+      cancelAllBucketStatsRequests();
       loadObjects();
     }
   }, [connectionId, currentBucket, currentPath, searchTerm, viewConfig.sortBy]);
@@ -275,9 +289,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
   const loadBuckets = async () => {
     try {
+      // 取消之前所有正在进行的 bucket stats 请求
+      cancelAllBucketStatsRequests();
+
+      // 创建新的加载会话
+      const currentSession = ++loadSessionRef.current;
+
       setIsLoading(true);
       logger.info(
-        `📦 [S3Browser] 开始加载 buckets, connectionId: ${connectionId}`
+        `📦 [S3Browser] 开始加载 buckets (session: ${currentSession}), connectionId: ${connectionId}`
       );
       const bucketList = await S3Service.listBuckets(connectionId);
       logger.info(
@@ -334,14 +354,26 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
       // 在后台异步加载每个 bucket 的对象数量
       bucketList.forEach(async bucket => {
+        // 标记这个请求正在进行
+        bucketStatsRequestsRef.current.set(bucket.name, true);
+
         try {
           logger.info(
-            `📦 [S3Browser] 开始加载 bucket ${bucket.name} 的对象数量`
+            `📦 [S3Browser] 开始加载 bucket ${bucket.name} 的对象数量 (session: ${currentSession})`
           );
           const stats = await S3Service.getBucketStats(
             connectionId,
             bucket.name
           );
+
+          // 检查这个请求是否已被取消（通过检查会话ID和请求Map）
+          if (loadSessionRef.current !== currentSession ||
+              !bucketStatsRequestsRef.current.has(bucket.name)) {
+            logger.info(
+              `📦 [S3Browser] bucket ${bucket.name} 的请求已被取消，忽略结果`
+            );
+            return;
+          }
 
           // 更新对应 bucket 的对象数量
           setObjects(prevObjects =>
@@ -356,6 +388,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             `📦 [S3Browser] bucket ${bucket.name} 对象数量: ${stats.total_count}`
           );
         } catch (error) {
+          // 检查请求是否已被取消
+          if (loadSessionRef.current !== currentSession ||
+              !bucketStatsRequestsRef.current.has(bucket.name)) {
+            logger.info(
+              `📦 [S3Browser] bucket ${bucket.name} 的请求已被取消，忽略错误`
+            );
+            return;
+          }
+
           logger.warn(
             `📦 [S3Browser] 获取 bucket ${bucket.name} 对象数量失败:`,
             error
@@ -368,6 +409,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                 : obj
             )
           );
+        } finally {
+          // 请求完成，从 Map 中移除
+          bucketStatsRequestsRef.current.delete(bucket.name);
         }
       });
     } catch (error) {
@@ -528,6 +572,19 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     }
   };
 
+  // 取消所有正在进行的 bucket stats 请求
+  const cancelAllBucketStatsRequests = () => {
+    const count = bucketStatsRequestsRef.current.size;
+    if (count > 0) {
+      logger.info(
+        `📦 [S3Browser] 取消 ${count} 个正在进行的 bucket stats 请求`
+      );
+      bucketStatsRequestsRef.current.clear();
+      // 增加会话ID，使得所有旧请求的响应被忽略
+      loadSessionRef.current++;
+    }
+  };
+
   const navigateToPath = (path: string) => {
     setCurrentPath(path);
     setSelectedObjects(new Set());
@@ -539,6 +596,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       // 如果当前在根级别（没有选择 bucket），则进入该 bucket
       if (!currentBucket) {
         logger.info(`📦 [S3Browser] 进入 bucket: ${object.name}`);
+        // 立即显示加载状态，清空旧内容
+        setIsLoading(true);
+        setObjects([]);
         setCurrentBucket(object.name);
         setCurrentPath('');
         setSelectedObjects(new Set());
@@ -546,6 +606,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       } else {
         // 否则进入文件夹
         logger.info(`📦 [S3Browser] 进入文件夹: ${object.key}`);
+        // 立即显示加载状态，清空旧内容
+        setIsLoading(true);
+        setObjects([]);
         navigateToPath(object.key);
       }
     } else {
@@ -796,13 +859,71 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     }
 
     setShowDeleteConfirmDialog(false);
+
+    // 如果在根目录，删除的是 bucket
+    if (!currentBucket) {
+      await handleDeleteBuckets(toDelete);
+    } else {
+      // 否则删除的是对象
+      await handleDeleteObjects(toDelete);
+    }
+  };
+
+  // 删除 bucket
+  const handleDeleteBuckets = async (bucketKeys: string[]) => {
+    // 先取消所有正在进行的 bucket stats 请求
+    cancelAllBucketStatsRequests();
+
+    setIsLoading(true);
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const key of bucketKeys) {
+      // bucket 的 key 格式是 "bucketName/"，需要去掉末尾的 /
+      const bucketName = key.replace(/\/$/, '');
+      try {
+        await S3Service.deleteBucket(connectionId, bucketName);
+        successCount++;
+        logger.info(`📦 [S3Browser] 成功删除 bucket: ${bucketName}`);
+      } catch (error) {
+        failCount++;
+        logger.error(`📦 [S3Browser] 删除 bucket ${bucketName} 失败:`, error);
+      }
+    }
+
+    setIsLoading(false);
+    setSelectedObjects(new Set());
+
+    if (successCount > 0) {
+      showMessage.success(
+        String(t('s3:bucket.deleted', {
+          defaultValue: `成功删除 ${successCount} 个存储桶`,
+          count: successCount
+        }))
+      );
+      // 重新加载 bucket 列表
+      loadBuckets();
+    }
+
+    if (failCount > 0) {
+      showMessage.error(
+        String(t('s3:bucket.delete_failed', {
+          defaultValue: `${failCount} 个存储桶删除失败`,
+          count: failCount
+        }))
+      );
+    }
+  };
+
+  // 删除对象
+  const handleDeleteObjects = async (objectKeys: string[]) => {
     setIsLoading(true);
 
     try {
       const deletedKeys = await S3Service.deleteObjects(
         connectionId,
         currentBucket,
-        toDelete
+        objectKeys
       );
       showMessage.success(
         String(t('s3:delete.success', { count: deletedKeys.length }))
@@ -1325,6 +1446,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     if (index === 0) {
       // 返回根目录（显示所有 buckets）
       logger.info(`📦 [S3Browser] 返回根目录`);
+      // 立即显示加载状态，清空旧内容
+      setIsLoading(true);
+      setObjects([]);
       setCurrentBucket('');
       setCurrentPath('');
       setSelectedObjects(new Set());
@@ -1332,12 +1456,18 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     } else if (item.isBucket) {
       // 返回 bucket 根目录
       logger.info(`📦 [S3Browser] 返回 bucket 根目录: ${item.label}`);
+      // 立即显示加载状态，清空旧内容
+      setIsLoading(true);
+      setObjects([]);
       setCurrentPath('');
       setSelectedObjects(new Set());
       setLastSelectedIndex(-1);
     } else {
       // 导航到指定路径
       logger.info(`📦 [S3Browser] 导航到路径: ${item.path}`);
+      // 立即显示加载状态，清空旧内容
+      setIsLoading(true);
+      setObjects([]);
       navigateToPath(item.path);
     }
   };
@@ -1903,9 +2033,18 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('s3:delete.confirm_title')}</DialogTitle>
+            <DialogTitle>
+              {!currentBucket
+                ? t('s3:bucket.delete_confirm_title', { defaultValue: '确认删除存储桶' })
+                : t('s3:delete.confirm_title')}
+            </DialogTitle>
             <DialogDescription>
-              {t('s3:delete.confirm_message', { count: selectedObjects.size })}
+              {!currentBucket
+                ? t('s3:bucket.delete_confirm_message', {
+                    defaultValue: `确定要删除选中的 ${selectedObjects.size} 个存储桶吗？此操作将删除所有数据且不可撤销！`,
+                    count: selectedObjects.size
+                  })
+                : t('s3:delete.confirm_message', { count: selectedObjects.size })}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
