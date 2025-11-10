@@ -1,10 +1,9 @@
 use aes_gcm::{
-    aead::{Aead, KeyInit},
-    Aes256Gcm, Nonce,
+    aead::{Aead, AeadCore, KeyInit, OsRng},
+    Aes256Gcm, Nonce, Key,
 };
 use anyhow::{Context, Result};
 use base64::{Engine as _, engine::general_purpose};
-use rand::RngCore;
 use std::sync::Arc;
 use log::debug;
 
@@ -29,22 +28,20 @@ impl EncryptionService {
         debug!("加密密码");
 
         // 生成随机 nonce
-        let mut nonce_bytes = [0u8; 12];
-        rand::rng().fill_bytes(&mut nonce_bytes);
-        let nonce = Nonce::from_slice(&nonce_bytes);
-        
+        let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
+
         // 加密
         let ciphertext = self.cipher
-            .encrypt(nonce, password.as_bytes())
+            .encrypt(&nonce, password.as_bytes())
             .map_err(|e| anyhow::anyhow!("加密失败: {}", e))?;
-        
+
         // 组合 nonce 和密文
-        let mut result = nonce_bytes.to_vec();
+        let mut result = nonce.to_vec();
         result.extend_from_slice(&ciphertext);
-        
+
         // Base64 编码
         let encoded = general_purpose::STANDARD.encode(&result);
-        
+
         debug!("密码加密成功");
         Ok(encoded)
     }
@@ -65,10 +62,10 @@ impl EncryptionService {
         // 分离 nonce 和密文
         let (nonce_bytes, ciphertext) = encrypted_data.split_at(12);
         let nonce = Nonce::from_slice(nonce_bytes);
-        
+
         // 解密
         let plaintext = self.cipher
-            .decrypt(nonce, ciphertext)
+            .decrypt(&nonce, ciphertext)
             .map_err(|e| anyhow::anyhow!("解密失败: {}", e))?;
         
         let password = String::from_utf8(plaintext)
@@ -79,7 +76,7 @@ impl EncryptionService {
     }
 
     /// 生成或加载密钥
-    fn generate_or_load_key() -> Result<aes_gcm::Key<Aes256Gcm>> {
+    fn generate_or_load_key() -> Result<Key<Aes256Gcm>> {
         // 在实际应用中，应该从安全的地方加载密钥
         // 这里为了简化，使用固定的密钥生成方式
 
@@ -88,7 +85,7 @@ impl EncryptionService {
             return Err(anyhow::anyhow!("密钥长度必须为 32 字节"));
         }
 
-        Ok(*aes_gcm::Key::<Aes256Gcm>::from_slice(key_material))
+        Ok(*Key::<Aes256Gcm>::from_slice(key_material))
     }
 
     /// 验证加密服务
