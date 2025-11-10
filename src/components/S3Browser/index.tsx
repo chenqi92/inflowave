@@ -364,7 +364,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       setHasMore(false);
 
       // 在后台异步加载每个 bucket 的对象数量和权限
-      bucketList.forEach(async bucket => {
+      // 使用 Promise.all 实现真正的并行加载
+      const loadBucketStatsPromises = bucketList.map(async bucket => {
         // 标记这个请求正在进行
         bucketStatsRequestsRef.current.set(bucket.name, true);
 
@@ -403,51 +404,57 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             logger.info(
               `📦 [S3Browser] bucket ${bucket.name} 的请求已被取消，忽略结果`
             );
-            return;
+            return null;
           }
 
-          // 更新对应 bucket 的对象数量和权限
-          setObjects(prevObjects =>
-            prevObjects.map(obj =>
-              obj.name === bucket.name
-                ? {
-                    ...obj,
-                    objectCount: stats.total_count,
-                    acl: acl as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read'
-                  }
-                : obj
-            )
-          );
+          return {
+            bucketName: bucket.name,
+            stats,
+            acl
+          };
+        } catch (error) {
+          logger.error(`加载 bucket ${bucket.name} 统计信息失败:`, error);
+          bucketStatsRequestsRef.current.delete(bucket.name);
+          return null;
+        }
+      });
+
+      // 等待所有 bucket 的统计信息加载完成，然后批量更新
+      Promise.all(loadBucketStatsPromises).then(results => {
+        // 过滤掉 null 结果（被取消或失败的请求）
+        const validResults = results.filter(r => r !== null);
+
+        if (validResults.length > 0 && loadSessionRef.current === currentSession) {
+          setObjects(prevObjects => {
+            const updatedObjects = [...prevObjects];
+            validResults.forEach(result => {
+              const index = updatedObjects.findIndex(obj => obj.name === result!.bucketName);
+              if (index !== -1) {
+                updatedObjects[index] = {
+                  ...updatedObjects[index],
+                  objectCount: result!.stats.total_count,
+                  acl: result!.acl as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read'
+                };
+              }
+            });
+            return updatedObjects;
+          });
 
           logger.info(
-            `📦 [S3Browser] bucket ${bucket.name} 对象数量: ${stats.total_count}, 权限: ${acl}`
+            `📦 [S3Browser] 批量更新了 ${validResults.length} 个 bucket 的统计信息`
           );
-        } catch (error) {
-          // 检查请求是否已被取消
-          if (loadSessionRef.current !== currentSession ||
-              !bucketStatsRequestsRef.current.has(bucket.name)) {
-            logger.info(
-              `📦 [S3Browser] bucket ${bucket.name} 的请求已被取消，忽略错误`
-            );
-            return;
-          }
-
-          logger.warn(
-            `📦 [S3Browser] 获取 bucket ${bucket.name} 信息失败:`,
-            error
-          );
-          // 加载失败时设置默认值
-          setObjects(prevObjects =>
-            prevObjects.map(obj =>
-              obj.name === bucket.name
-                ? { ...obj, objectCount: 0, acl: 'private' as const }
-                : obj
-            )
-          );
-        } finally {
-          // 请求完成，从 Map 中移除
-          bucketStatsRequestsRef.current.delete(bucket.name);
         }
+
+        // 清理所有请求标记
+        bucketList.forEach(bucket => {
+          bucketStatsRequestsRef.current.delete(bucket.name);
+        });
+      }).catch(error => {
+        logger.error('批量加载 bucket 统计信息失败:', error);
+        // 清理所有请求标记
+        bucketList.forEach(bucket => {
+          bucketStatsRequestsRef.current.delete(bucket.name);
+        });
       });
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载 buckets 失败:`, error);
