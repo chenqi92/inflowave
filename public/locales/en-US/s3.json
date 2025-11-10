@@ -15,6 +15,7 @@
   "selected": "{{count}} selected",
   "load_more": "Load More",
   "scroll_to_load_more": "Scroll down to load more",
+  "loading": "Loading...",
   "upload": {
     "label": "Upload",
     "success": "Successfully uploaded {{count}} file(s)",

@@ -286,34 +286,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       );
       setBuckets(bucketList);
 
-      // 将 buckets 转换为文件夹对象显示，并获取每个bucket的对象数量
-      const bucketObjectsPromises = bucketList.map(async bucket => {
-        let objectCount = 0;
-        try {
-          // 使用原生 API 获取 bucket 统计信息
-          const stats = await S3Service.getBucketStats(
-            connectionId,
-            bucket.name
-          );
-          objectCount = stats.total_count;
-        } catch (error) {
-          logger.warn(
-            `📦 [S3Browser] 获取 bucket ${bucket.name} 对象数量失败:`,
-            error
-          );
-        }
-
-        return {
-          key: `${bucket.name}/`,
-          name: bucket.name,
-          size: 0,
-          lastModified: bucket.creationDate || new Date(),
-          isDirectory: true,
-          objectCount, // 添加对象数量
-        };
-      });
-
-      let bucketObjects: S3Object[] = await Promise.all(bucketObjectsPromises);
+      // 先快速显示 bucket 列表，对象数量设为 undefined（表示加载中）
+      let bucketObjects: S3Object[] = bucketList.map(bucket => ({
+        key: `${bucket.name}/`,
+        name: bucket.name,
+        size: 0,
+        lastModified: bucket.creationDate || new Date(),
+        isDirectory: true,
+        objectCount: undefined, // 初始为 undefined，表示正在加载
+      }));
 
       // 应用搜索过滤
       if (searchTerm) {
@@ -342,18 +323,58 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         }
       });
 
+      // 立即显示 bucket 列表
       setObjects(bucketObjects);
+      setIsLoading(false);
       logger.info(
         `📦 [S3Browser] 显示 ${bucketObjects.length} 个 bucket 作为文件夹`
       );
       // Buckets 列表没有分页，所以没有更多内容
       setHasMore(false);
+
+      // 在后台异步加载每个 bucket 的对象数量
+      bucketList.forEach(async bucket => {
+        try {
+          logger.info(
+            `📦 [S3Browser] 开始加载 bucket ${bucket.name} 的对象数量`
+          );
+          const stats = await S3Service.getBucketStats(
+            connectionId,
+            bucket.name
+          );
+
+          // 更新对应 bucket 的对象数量
+          setObjects(prevObjects =>
+            prevObjects.map(obj =>
+              obj.name === bucket.name
+                ? { ...obj, objectCount: stats.total_count }
+                : obj
+            )
+          );
+
+          logger.info(
+            `📦 [S3Browser] bucket ${bucket.name} 对象数量: ${stats.total_count}`
+          );
+        } catch (error) {
+          logger.warn(
+            `📦 [S3Browser] 获取 bucket ${bucket.name} 对象数量失败:`,
+            error
+          );
+          // 加载失败时设置为 0
+          setObjects(prevObjects =>
+            prevObjects.map(obj =>
+              obj.name === bucket.name
+                ? { ...obj, objectCount: 0 }
+                : obj
+            )
+          );
+        }
+      });
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载 buckets 失败:`, error);
       showMessage.error(
         `${String(t('s3:error.load_buckets_failed'))}: ${error}`
       );
-    } finally {
       setIsLoading(false);
     }
   };
@@ -1732,10 +1753,17 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                     {/* 在根目录显示文件数量 */}
                     {!currentBucket && (
                       <td className='p-2' style={{ width: columnWidths.count }}>
-                        <span className='truncate block'>
-                          {object.objectCount !== undefined
-                            ? object.objectCount
-                            : '-'}
+                        <span className='truncate block flex items-center gap-1'>
+                          {object.objectCount !== undefined ? (
+                            object.objectCount
+                          ) : (
+                            <>
+                              <span className='inline-block w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
+                              <span className='text-muted-foreground text-xs'>
+                                {t('s3:loading', { defaultValue: '加载中...' })}
+                              </span>
+                            </>
+                          )}
                         </span>
                       </td>
                     )}
