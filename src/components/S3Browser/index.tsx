@@ -132,6 +132,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     name: 400,
     size: 150,
     count: 150, // bucket 文件数量列
+    permissions: 150, // bucket 权限列
     modified: 200,
   });
 
@@ -306,7 +307,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       );
       setBuckets(bucketList);
 
-      // 先快速显示 bucket 列表，对象数量设为 undefined（表示加载中）
+      // 先快速显示 bucket 列表，对象数量和权限设为 undefined（表示加载中）
       let bucketObjects: S3Object[] = bucketList.map(bucket => ({
         key: `${bucket.name}/`,
         name: bucket.name,
@@ -314,6 +315,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         lastModified: bucket.creationDate || new Date(),
         isDirectory: true,
         objectCount: undefined, // 初始为 undefined，表示正在加载
+        acl: undefined, // 初始为 undefined，表示正在加载
       }));
 
       // 应用搜索过滤
@@ -352,19 +354,24 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       // Buckets 列表没有分页，所以没有更多内容
       setHasMore(false);
 
-      // 在后台异步加载每个 bucket 的对象数量
+      // 在后台异步加载每个 bucket 的对象数量和权限
       bucketList.forEach(async bucket => {
         // 标记这个请求正在进行
         bucketStatsRequestsRef.current.set(bucket.name, true);
 
         try {
           logger.info(
-            `📦 [S3Browser] 开始加载 bucket ${bucket.name} 的对象数量 (session: ${currentSession})`
+            `📦 [S3Browser] 开始加载 bucket ${bucket.name} 的对象数量和权限 (session: ${currentSession})`
           );
-          const stats = await S3Service.getBucketStats(
-            connectionId,
-            bucket.name
-          );
+
+          // 并行加载对象数量和权限
+          const [stats, acl] = await Promise.all([
+            S3Service.getBucketStats(connectionId, bucket.name),
+            S3Service.getBucketAcl(connectionId, bucket.name).catch(err => {
+              logger.warn(`获取 bucket ${bucket.name} 权限失败:`, err);
+              return 'private'; // 默认为私有
+            })
+          ]);
 
           // 检查这个请求是否已被取消（通过检查会话ID和请求Map）
           if (loadSessionRef.current !== currentSession ||
@@ -375,17 +382,21 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             return;
           }
 
-          // 更新对应 bucket 的对象数量
+          // 更新对应 bucket 的对象数量和权限
           setObjects(prevObjects =>
             prevObjects.map(obj =>
               obj.name === bucket.name
-                ? { ...obj, objectCount: stats.total_count }
+                ? {
+                    ...obj,
+                    objectCount: stats.total_count,
+                    acl: acl as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read'
+                  }
                 : obj
             )
           );
 
           logger.info(
-            `📦 [S3Browser] bucket ${bucket.name} 对象数量: ${stats.total_count}`
+            `📦 [S3Browser] bucket ${bucket.name} 对象数量: ${stats.total_count}, 权限: ${acl}`
           );
         } catch (error) {
           // 检查请求是否已被取消
@@ -398,14 +409,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           }
 
           logger.warn(
-            `📦 [S3Browser] 获取 bucket ${bucket.name} 对象数量失败:`,
+            `📦 [S3Browser] 获取 bucket ${bucket.name} 信息失败:`,
             error
           );
-          // 加载失败时设置为 0
+          // 加载失败时设置默认值
           setObjects(prevObjects =>
             prevObjects.map(obj =>
               obj.name === bucket.name
-                ? { ...obj, objectCount: 0 }
+                ? { ...obj, objectCount: 0, acl: 'private' as const }
                 : obj
             )
           );
@@ -562,6 +573,34 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       logger.info(
         `📦 [S3Browser] 加载完成: hasMore=${result.isTruncated}, nextToken=${result.nextContinuationToken ? '有' : '无'}`
       );
+
+      // 在后台异步加载每个对象的权限
+      newObjects.forEach(async obj => {
+        try {
+          const acl = await S3Service.getObjectAcl(connectionId, currentBucket, obj.key);
+
+          // 更新对应对象的权限
+          setObjects(prevObjects =>
+            prevObjects.map(o =>
+              o.key === obj.key
+                ? { ...o, acl: acl as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' }
+                : o
+            )
+          );
+
+          logger.info(`📦 [S3Browser] 对象 ${obj.name} 权限: ${acl}`);
+        } catch (error) {
+          logger.warn(`📦 [S3Browser] 获取对象 ${obj.name} 权限失败:`, error);
+          // 加载失败时设置为私有
+          setObjects(prevObjects =>
+            prevObjects.map(o =>
+              o.key === obj.key
+                ? { ...o, acl: 'private' as const }
+                : o
+            )
+          );
+        }
+      });
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载对象失败:`, error);
       showMessage.error(
@@ -1193,6 +1232,68 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     }
   };
 
+  // 权限设置处理
+  const handleSetPermissions = async () => {
+    if (!permissionsObject) return;
+
+    try {
+      setIsLoading(true);
+
+      // 如果在根目录，设置的是 bucket 权限
+      if (!currentBucket) {
+        const bucketName = permissionsObject.name;
+        await S3Service.putBucketAcl(connectionId, bucketName, selectedAcl);
+        showMessage.success(
+          String(t('s3:permissions.bucket_updated', {
+            defaultValue: '存储桶权限已更新',
+            bucket: bucketName
+          }))
+        );
+
+        // 更新本地状态
+        setObjects(prevObjects =>
+          prevObjects.map(obj =>
+            obj.name === bucketName
+              ? { ...obj, acl: selectedAcl }
+              : obj
+          )
+        );
+      } else {
+        // 设置对象权限
+        await S3Service.putObjectAcl(
+          connectionId,
+          currentBucket,
+          permissionsObject.key,
+          selectedAcl
+        );
+        showMessage.success(
+          String(t('s3:permissions.object_updated', {
+            defaultValue: '对象权限已更新'
+          }))
+        );
+
+        // 更新本地状态
+        setObjects(prevObjects =>
+          prevObjects.map(obj =>
+            obj.key === permissionsObject.key
+              ? { ...obj, acl: selectedAcl }
+              : obj
+          )
+        );
+      }
+
+      setShowPermissionsDialog(false);
+      setPermissionsObject(null);
+    } catch (error) {
+      logger.error('设置权限失败:', error);
+      showMessage.error(
+        `${String(t('s3:permissions.update_failed', { defaultValue: '权限更新失败' }))}: ${error}`
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 刷新处理
   const handleRefresh = () => {
     if (!currentBucket) {
@@ -1775,12 +1876,29 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                         <div
                           className='column-resizer'
                           onMouseDown={e =>
-                            handleColumnResizeStart('count', 'modified', e)
+                            handleColumnResizeStart('count', 'permissions', e)
                           }
                         />
                       </div>
                     </th>
                   )}
+                  {/* 权限列 */}
+                  <th
+                    className='text-left p-2'
+                    style={{ width: columnWidths.permissions || '150px' }}
+                  >
+                    <div className='flex items-center'>
+                      <span>
+                        {t('s3:permissions.label', { defaultValue: '权限' })}
+                      </span>
+                      <div
+                        className='column-resizer'
+                        onMouseDown={e =>
+                          handleColumnResizeStart('permissions', 'modified', e)
+                        }
+                      />
+                    </div>
+                  </th>
                   <th
                     className='text-left p-2'
                     style={{ width: columnWidths.modified }}
@@ -1815,6 +1933,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                           <div className='h-4 bg-muted animate-pulse rounded w-16' />
                         </td>
                       )}
+                      <td className='p-2'>
+                        <div className='h-4 bg-muted animate-pulse rounded w-24' />
+                      </td>
                       <td className='p-2'>
                         <div className='h-4 bg-muted animate-pulse rounded w-32' />
                       </td>
@@ -1897,6 +2018,28 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                         </span>
                       </td>
                     )}
+                    {/* 显示权限 */}
+                    <td className='p-2' style={{ width: columnWidths.permissions }}>
+                      <span className='truncate block flex items-center gap-1'>
+                        {object.acl !== undefined ? (
+                          <span className={`px-2 py-1 rounded text-xs ${
+                            object.acl === 'private' ? 'bg-gray-100 text-gray-700' :
+                            object.acl === 'public-read' ? 'bg-blue-100 text-blue-700' :
+                            object.acl === 'public-read-write' ? 'bg-orange-100 text-orange-700' :
+                            'bg-green-100 text-green-700'
+                          }`}>
+                            {t(`s3:permissions.${object.acl}`, { defaultValue: object.acl })}
+                          </span>
+                        ) : (
+                          <>
+                            <span className='inline-block w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
+                            <span className='text-muted-foreground text-xs'>
+                              {t('s3:loading', { defaultValue: '加载中...' })}
+                            </span>
+                          </>
+                        )}
+                      </span>
+                    </td>
                     <td className='p-2' style={{ width: columnWidths.modified }}>
                       <span
                         className='truncate block'
@@ -2843,6 +2986,100 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         </DialogContent>
       </Dialog>
 
+      {/* 权限设置对话框 */}
+      <Dialog open={showPermissionsDialog} onOpenChange={setShowPermissionsDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t('s3:permissions.dialog_title', { defaultValue: '设置访问权限' })}
+            </DialogTitle>
+            <DialogDescription>
+              {!currentBucket
+                ? t('s3:permissions.bucket_description', {
+                    defaultValue: `设置存储桶 "${permissionsObject?.name}" 的访问权限`,
+                    bucket: permissionsObject?.name
+                  })
+                : t('s3:permissions.object_description', {
+                    defaultValue: `设置对象 "${permissionsObject?.name}" 的访问权限`,
+                    object: permissionsObject?.name
+                  })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className='py-4'>
+            <RadioGroup value={selectedAcl} onValueChange={(value) => setSelectedAcl(value as any)}>
+              <div className='space-y-3'>
+                <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
+                  <RadioGroupItem value='private' id='acl-private' />
+                  <Label htmlFor='acl-private' className='flex-1 cursor-pointer'>
+                    <div className='font-medium'>
+                      {t('s3:permissions.private', { defaultValue: '私有' })}
+                    </div>
+                    <div className='text-sm text-muted-foreground'>
+                      {t('s3:permissions.private_desc', {
+                        defaultValue: '只有所有者可以访问'
+                      })}
+                    </div>
+                  </Label>
+                </div>
+
+                <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
+                  <RadioGroupItem value='public-read' id='acl-public-read' />
+                  <Label htmlFor='acl-public-read' className='flex-1 cursor-pointer'>
+                    <div className='font-medium'>
+                      {t('s3:permissions.public-read', { defaultValue: '公共读' })}
+                    </div>
+                    <div className='text-sm text-muted-foreground'>
+                      {t('s3:permissions.public-read_desc', {
+                        defaultValue: '所有人可以读取，只有所有者可以写入'
+                      })}
+                    </div>
+                  </Label>
+                </div>
+
+                <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
+                  <RadioGroupItem value='public-read-write' id='acl-public-read-write' />
+                  <Label htmlFor='acl-public-read-write' className='flex-1 cursor-pointer'>
+                    <div className='font-medium'>
+                      {t('s3:permissions.public-read-write', { defaultValue: '公共读写' })}
+                    </div>
+                    <div className='text-sm text-muted-foreground'>
+                      {t('s3:permissions.public-read-write_desc', {
+                        defaultValue: '所有人可以读取和写入（不推荐）'
+                      })}
+                    </div>
+                  </Label>
+                </div>
+
+                <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
+                  <RadioGroupItem value='authenticated-read' id='acl-authenticated-read' />
+                  <Label htmlFor='acl-authenticated-read' className='flex-1 cursor-pointer'>
+                    <div className='font-medium'>
+                      {t('s3:permissions.authenticated-read', { defaultValue: '认证用户读' })}
+                    </div>
+                    <div className='text-sm text-muted-foreground'>
+                      {t('s3:permissions.authenticated-read_desc', {
+                        defaultValue: '已认证的用户可以读取'
+                      })}
+                    </div>
+                  </Label>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => setShowPermissionsDialog(false)}
+            >
+              {String(t('common:cancel'))}
+            </Button>
+            <Button onClick={handleSetPermissions}>
+              {String(t('common:confirm'))}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Tags 管理对话框 */}
       <Dialog open={showTagsDialog} onOpenChange={setShowTagsDialog}>
         <DialogContent className='max-w-2xl'>
@@ -3057,24 +3294,19 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             </>
           )}
 
-          {/* 文件夹特有的菜单项 */}
-          {contextMenu.object.isDirectory && (
-            <>
-              {/* 设置权限 */}
-              <div
-                className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
-                onClick={() => {
-                  setPermissionsObject(contextMenu.object);
-                  setSelectedAcl(contextMenu.object!.acl || 'private');
-                  setShowPermissionsDialog(true);
-                  closeContextMenu();
-                }}
-              >
-                <Shield className='w-4 h-4' />
-                {t('s3:permissions.label', { defaultValue: '设置权限' })}
-              </div>
-            </>
-          )}
+          {/* 设置权限 - 所有对象都可以设置权限 */}
+          <div
+            className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
+            onClick={() => {
+              setPermissionsObject(contextMenu.object);
+              setSelectedAcl(contextMenu.object!.acl || 'private');
+              setShowPermissionsDialog(true);
+              closeContextMenu();
+            }}
+          >
+            <Shield className='w-4 h-4' />
+            {t('s3:permissions.label', { defaultValue: '设置权限' })}
+          </div>
 
           <div className='h-px bg-border my-1' />
 

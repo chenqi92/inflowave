@@ -177,5 +177,22 @@
     "success": "Tags updated successfully",
     "failed": "Failed to update tags",
     "no_tags": "No tags"
+  },
+  "permissions": {
+    "label": "Set Permissions",
+    "dialog_title": "Set Access Permissions",
+    "bucket_description": "Set access permissions for bucket \"{{bucket}}\"",
+    "object_description": "Set access permissions for object \"{{object}}\"",
+    "bucket_updated": "Bucket permissions updated successfully",
+    "object_updated": "Object permissions updated successfully",
+    "update_failed": "Failed to update permissions",
+    "private": "Private",
+    "private_desc": "Only the owner has access",
+    "public-read": "Public Read",
+    "public-read_desc": "Everyone can read, only owner can write",
+    "public-read-write": "Public Read-Write",
+    "public-read-write_desc": "Everyone can read and write (not recommended)",
+    "authenticated-read": "Authenticated Read",
+    "authenticated-read_desc": "Authenticated users can read"
   }
 }

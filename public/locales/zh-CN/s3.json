@@ -177,5 +177,22 @@
     "success": "标签更新成功",
     "failed": "标签更新失败",
     "no_tags": "无标签"
+  },
+  "permissions": {
+    "label": "设置权限",
+    "dialog_title": "设置访问权限",
+    "bucket_description": "设置存储桶 \"{{bucket}}\" 的访问权限",
+    "object_description": "设置对象 \"{{object}}\" 的访问权限",
+    "bucket_updated": "存储桶权限已更新",
+    "object_updated": "对象权限已更新",
+    "update_failed": "权限更新失败",
+    "private": "私有",
+    "private_desc": "只有所有者可以访问",
+    "public-read": "公共读",
+    "public-read_desc": "所有人可以读取，只有所有者可以写入",
+    "public-read-write": "公共读写",
+    "public-read-write_desc": "所有人可以读取和写入（不推荐）",
+    "authenticated-read": "认证用户读",
+    "authenticated-read_desc": "已认证的用户可以读取"
   }
 }

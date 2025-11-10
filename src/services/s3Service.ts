@@ -409,6 +409,23 @@ export class S3Service {
   }
 
   /**
+   * 获取对象ACL权限
+   */
+  static async getObjectAcl(
+    connectionId: string,
+    bucket: string,
+    key: string
+  ): Promise<string> {
+    return await safeTauriInvoke<string>('s3_get_object_acl', {
+      request: {
+        connection_id: connectionId,
+        bucket,
+        key,
+      },
+    });
+  }
+
+  /**
    * 设置对象ACL权限
    */
   static async putObjectAcl(
@@ -422,6 +439,38 @@ export class S3Service {
         connection_id: connectionId,
         bucket,
         key,
+        acl,
+      },
+    });
+  }
+
+  /**
+   * 获取 bucket ACL 权限
+   */
+  static async getBucketAcl(
+    connectionId: string,
+    bucket: string
+  ): Promise<string> {
+    return await safeTauriInvoke<string>('s3_get_bucket_acl', {
+      request: {
+        connection_id: connectionId,
+        bucket,
+      },
+    });
+  }
+
+  /**
+   * 设置 bucket ACL 权限
+   */
+  static async putBucketAcl(
+    connectionId: string,
+    bucket: string,
+    acl: 'private' | 'public-read' | 'public-read-write' | 'authenticated-read'
+  ): Promise<void> {
+    await safeTauriInvoke<void>('s3_put_bucket_acl', {
+      request: {
+        connection_id: connectionId,
+        bucket,
         acl,
       },
     });

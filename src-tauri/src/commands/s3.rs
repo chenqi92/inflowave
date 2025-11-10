@@ -98,6 +98,26 @@ pub struct S3AclRequest {
     pub acl: String, // "private", "public-read", "public-read-write", "authenticated-read"
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct S3GetObjectAclRequest {
+    pub connection_id: String,
+    pub bucket: String,
+    pub key: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct S3BucketAclRequest {
+    pub connection_id: String,
+    pub bucket: String,
+    pub acl: String, // "private", "public-read", "public-read-write", "authenticated-read"
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct S3GetBucketAclRequest {
+    pub connection_id: String,
+    pub bucket: String,
+}
+
 // 连接S3服务
 #[tauri::command]
 pub async fn s3_connect(
@@ -518,6 +538,20 @@ pub async fn s3_put_object_tagging(
         .map_err(|e| e.to_string())
 }
 
+// 获取对象ACL权限
+#[tauri::command]
+pub async fn s3_get_object_acl(
+    request: S3GetObjectAclRequest,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
+) -> Result<String, String> {
+    let manager = s3_manager.lock().await;
+
+    manager
+        .get_object_acl(&request.connection_id, &request.bucket, &request.key)
+        .await
+        .map_err(|e| e.to_string())
+}
+
 // 设置对象ACL权限
 #[tauri::command]
 pub async fn s3_put_object_acl(
@@ -528,6 +562,34 @@ pub async fn s3_put_object_acl(
 
     manager
         .put_object_acl(&request.connection_id, &request.bucket, &request.key, &request.acl)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+// 获取 bucket ACL 权限
+#[tauri::command]
+pub async fn s3_get_bucket_acl(
+    request: S3GetBucketAclRequest,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
+) -> Result<String, String> {
+    let manager = s3_manager.lock().await;
+
+    manager
+        .get_bucket_acl(&request.connection_id, &request.bucket)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+// 设置 bucket ACL 权限
+#[tauri::command]
+pub async fn s3_put_bucket_acl(
+    request: S3BucketAclRequest,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
+) -> Result<(), String> {
+    let manager = s3_manager.lock().await;
+
+    manager
+        .put_bucket_acl(&request.connection_id, &request.bucket, &request.acl)
         .await
         .map_err(|e| e.to_string())
 }

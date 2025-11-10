@@ -720,6 +720,68 @@ impl S3ClientManager {
         Ok(())
     }
 
+    /// 获取对象ACL权限
+    pub async fn get_object_acl(
+        &self,
+        id: &str,
+        bucket: &str,
+        key: &str,
+    ) -> Result<String> {
+        let clients = self.clients.read().await;
+        let client = clients
+            .get(id)
+            .ok_or_else(|| anyhow::anyhow!("S3 client not found: {}", id))?;
+
+        let resp = client
+            .get_object_acl()
+            .bucket(bucket)
+            .key(key)
+            .send()
+            .await
+            .context("Failed to get object ACL")?;
+
+        // 解析 ACL 权限，返回简化的权限字符串
+        let grants = resp.grants();
+
+        let mut has_public_read = false;
+        let mut has_public_write = false;
+        let mut has_public_full_control = false;
+        let mut has_authenticated_read = false;
+
+        for grant in grants {
+            if let Some(grantee) = grant.grantee() {
+                if let Some(uri) = grantee.uri() {
+                    if let Some(permission) = grant.permission() {
+                        // 检查是否授予了所有用户（公共）权限
+                        if uri.contains("AllUsers") {
+                            match permission.as_str() {
+                                "READ" => has_public_read = true,
+                                "WRITE" => has_public_write = true,
+                                "FULL_CONTROL" => has_public_full_control = true,
+                                _ => {}
+                            }
+                        }
+                        // 检查是否授予了认证用户权限
+                        if uri.contains("AuthenticatedUsers") && permission.as_str() == "READ" {
+                            has_authenticated_read = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 根据权限组合返回结果
+        if has_public_full_control || (has_public_read && has_public_write) {
+            Ok("public-read-write".to_string())
+        } else if has_public_read {
+            Ok("public-read".to_string())
+        } else if has_authenticated_read {
+            Ok("authenticated-read".to_string())
+        } else {
+            Ok("private".to_string())
+        }
+    }
+
     /// 设置对象ACL权限
     pub async fn put_object_acl(
         &self,
@@ -751,6 +813,90 @@ impl S3ClientManager {
             .send()
             .await
             .context("Failed to put object ACL")?;
+
+        Ok(())
+    }
+
+    /// 获取 bucket ACL 权限
+    pub async fn get_bucket_acl(&self, id: &str, bucket: &str) -> Result<String> {
+        let clients = self.clients.read().await;
+        let client = clients
+            .get(id)
+            .ok_or_else(|| anyhow::anyhow!("S3 client not found: {}", id))?;
+
+        let resp = client
+            .get_bucket_acl()
+            .bucket(bucket)
+            .send()
+            .await
+            .context("Failed to get bucket ACL")?;
+
+        // 解析 ACL 权限，返回简化的权限字符串
+        let grants = resp.grants();
+
+        let mut has_public_read = false;
+        let mut has_public_write = false;
+        let mut has_public_full_control = false;
+        let mut has_authenticated_read = false;
+
+        for grant in grants {
+            if let Some(grantee) = grant.grantee() {
+                if let Some(uri) = grantee.uri() {
+                    if let Some(permission) = grant.permission() {
+                        // 检查是否授予了所有用户（公共）权限
+                        if uri.contains("AllUsers") {
+                            match permission.as_str() {
+                                "READ" => has_public_read = true,
+                                "WRITE" => has_public_write = true,
+                                "FULL_CONTROL" => has_public_full_control = true,
+                                _ => {}
+                            }
+                        }
+                        // 检查是否授予了认证用户权限
+                        if uri.contains("AuthenticatedUsers") && permission.as_str() == "READ" {
+                            has_authenticated_read = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 根据权限组合返回结果
+        if has_public_full_control || (has_public_read && has_public_write) {
+            Ok("public-read-write".to_string())
+        } else if has_public_read {
+            Ok("public-read".to_string())
+        } else if has_authenticated_read {
+            Ok("authenticated-read".to_string())
+        } else {
+            Ok("private".to_string())
+        }
+    }
+
+    /// 设置 bucket ACL 权限
+    pub async fn put_bucket_acl(&self, id: &str, bucket: &str, acl: &str) -> Result<()> {
+        let clients = self.clients.read().await;
+        let client = clients
+            .get(id)
+            .ok_or_else(|| anyhow::anyhow!("S3 client not found: {}", id))?;
+
+        use aws_sdk_s3::types::BucketCannedAcl;
+
+        let acl_value = match acl {
+            "private" => BucketCannedAcl::Private,
+            "public-read" => BucketCannedAcl::PublicRead,
+            "public-read-write" => BucketCannedAcl::PublicReadWrite,
+            "authenticated-read" => BucketCannedAcl::AuthenticatedRead,
+            _ => BucketCannedAcl::Private,
+        };
+
+        client
+            .put_bucket_acl()
+            .bucket(bucket)
+            .acl(acl_value)
+            .send()
+            .await
+            .context("Failed to put bucket ACL")?;
 
         Ok(())
     }
