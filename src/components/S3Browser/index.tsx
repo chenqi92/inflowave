@@ -1316,6 +1316,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           throw new Error('该服务商不支持设置对象权限');
         }
 
+        // 检查是否是文件夹
+        if (permissionsObject.isDirectory) {
+          throw new Error('文件夹不支持设置权限。S3 中的文件夹是虚拟的，只有实际的对象（文件）才能设置权限。');
+        }
+
         await S3Service.putObjectAcl(
           connectionId,
           currentBucket,
@@ -3294,8 +3299,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             </>
           )}
 
-          {/* 设置权限 - 根据服务商能力动态显示 */}
-          {((!currentBucket && capabilities.bucketAcl) || (currentBucket && capabilities.objectAcl)) && (
+          {/* 设置权限 - 根据服务商能力动态显示，文件夹不支持设置权限 */}
+          {((!currentBucket && capabilities.bucketAcl) ||
+            (currentBucket && capabilities.objectAcl && !contextMenu.object?.isDirectory)) && (
             <div
               className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
               onClick={() => {

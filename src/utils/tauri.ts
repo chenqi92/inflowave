@@ -130,6 +130,11 @@ const VOID_COMMANDS = new Set([
   's3_copy_object',
   's3_move_object',
   's3_create_folder',
+  's3_put_bucket_acl',
+  's3_put_bucket_policy',
+  's3_put_object_acl',
+  's3_put_object_tags',
+  's3_delete_object_tags',
 
   // Legacy/deprecated
   'reset_settings',
