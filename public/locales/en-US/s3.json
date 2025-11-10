@@ -193,6 +193,9 @@
     "public-read-write": "Public Read-Write",
     "public-read-write_desc": "Everyone can read and write (not recommended)",
     "authenticated-read": "Authenticated Read",
-    "authenticated-read_desc": "Authenticated users can read"
+    "authenticated-read_desc": "Authenticated users can read",
+    "not_supported": "Current provider does not support ACL permissions",
+    "use_alternative": "Please use {{alternative}} for access control",
+    "no_acl_support": "This provider does not support ACL functionality"
   }
 }

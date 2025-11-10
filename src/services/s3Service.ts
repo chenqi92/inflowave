@@ -475,4 +475,36 @@ export class S3Service {
       },
     });
   }
+
+  /**
+   * 获取 bucket policy
+   */
+  static async getBucketPolicy(
+    connectionId: string,
+    bucket: string
+  ): Promise<string> {
+    return await safeTauriInvoke<string>('s3_get_bucket_policy', {
+      request: {
+        connection_id: connectionId,
+        bucket,
+      },
+    });
+  }
+
+  /**
+   * 设置 bucket policy
+   */
+  static async putBucketPolicy(
+    connectionId: string,
+    bucket: string,
+    access: 'private' | 'public-read' | 'public-read-write'
+  ): Promise<void> {
+    await safeTauriInvoke<void>('s3_put_bucket_policy', {
+      request: {
+        connection_id: connectionId,
+        bucket,
+        acl: access,  // 复用 acl 字段传递 access level
+      },
+    });
+  }
 }

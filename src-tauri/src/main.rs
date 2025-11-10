@@ -1478,6 +1478,8 @@ async fn main() {
             s3_put_object_acl,
             s3_get_bucket_acl,
             s3_put_bucket_acl,
+            s3_get_bucket_policy,
+            s3_put_bucket_policy,
         ])
         .setup(|app| {
             info!("Application setup started");

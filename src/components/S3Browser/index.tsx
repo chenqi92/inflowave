@@ -69,11 +69,13 @@ import { S3Service } from '@/services/s3Service';
 import { showMessage } from '@/utils/message';
 import { formatBytes, formatDate } from '@/utils/format';
 import { t } from '@/i18n/translate';
-import type { S3Object, S3Bucket, S3BrowserViewConfig } from '@/types/s3';
+import type { S3Object, S3Bucket, S3BrowserViewConfig, S3Provider } from '@/types/s3';
+import { getProviderCapabilities, isFeatureSupported, getSupportedAcls } from '@/types/s3-provider';
 import './S3Browser.css';
 import logger from '@/utils/logger';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { open as openInBrowser } from '@tauri-apps/plugin-shell';
+import { useConnectionStore } from '@/store/connection';
 
 // 导入重构后的模块
 import {
@@ -231,6 +233,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   // 用于标识当前的加载会话，当会话改变时，之前的请求结果会被忽略
   const loadSessionRef = useRef<number>(0);
 
+  // 获取连接配置和服务商类型
+  const { getConnection } = useConnectionStore();
+  const connection = getConnection(connectionId);
+  const provider = (connection?.driverConfig?.s3?.provider || 's3') as S3Provider;
+  const capabilities = getProviderCapabilities(provider);
+  const supportedAcls = getSupportedAcls(provider);
+
   // 组件卸载时取消所有正在进行的请求
   useEffect(() => {
     return () => {
@@ -365,12 +374,27 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           );
 
           // 并行加载对象数量和权限
-          const [stats, acl] = await Promise.all([
-            S3Service.getBucketStats(connectionId, bucket.name),
-            S3Service.getBucketAcl(connectionId, bucket.name).catch(err => {
+          // 根据服务商推荐的访问控制方式选择使用 ACL 还是 Bucket Policy
+          const getPermissions = async () => {
+            try {
+              if (capabilities.preferredAccessControl === 'policy' && capabilities.bucketPolicy) {
+                // 优先使用 Bucket Policy
+                return await S3Service.getBucketPolicy(connectionId, bucket.name);
+              } else if (capabilities.bucketAcl) {
+                // 使用 ACL
+                return await S3Service.getBucketAcl(connectionId, bucket.name);
+              } else {
+                return 'private';
+              }
+            } catch (err) {
               logger.warn(`获取 bucket ${bucket.name} 权限失败:`, err);
               return 'private'; // 默认为私有
-            })
+            }
+          };
+
+          const [stats, acl] = await Promise.all([
+            S3Service.getBucketStats(connectionId, bucket.name),
+            getPermissions()
           ]);
 
           // 检查这个请求是否已被取消（通过检查会话ID和请求Map）
@@ -1242,13 +1266,34 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       // 如果在根目录，设置的是 bucket 权限
       if (!currentBucket) {
         const bucketName = permissionsObject.name;
-        await S3Service.putBucketAcl(connectionId, bucketName, selectedAcl);
-        showMessage.success(
-          String(t('s3:permissions.bucket_updated', {
-            defaultValue: '存储桶权限已更新',
-            bucket: bucketName
-          }))
-        );
+
+        // 根据服务商推荐的访问控制方式选择使用 ACL 还是 Bucket Policy
+        if (capabilities.preferredAccessControl === 'policy' && capabilities.bucketPolicy) {
+          // 使用 Bucket Policy
+          // 注意：Bucket Policy 不支持 authenticated-read，需要转换
+          const policyAccess = selectedAcl === 'authenticated-read' ? 'private' : selectedAcl;
+          if (policyAccess !== 'private' && policyAccess !== 'public-read' && policyAccess !== 'public-read-write') {
+            throw new Error(`Bucket Policy 不支持 ${selectedAcl} 权限`);
+          }
+          await S3Service.putBucketPolicy(connectionId, bucketName, policyAccess);
+          showMessage.success(
+            String(t('s3:permissions.bucket_updated', {
+              defaultValue: '存储桶权限已更新（使用 Bucket Policy）',
+              bucket: bucketName
+            }))
+          );
+        } else if (capabilities.bucketAcl) {
+          // 使用 ACL
+          await S3Service.putBucketAcl(connectionId, bucketName, selectedAcl);
+          showMessage.success(
+            String(t('s3:permissions.bucket_updated', {
+              defaultValue: '存储桶权限已更新',
+              bucket: bucketName
+            }))
+          );
+        } else {
+          throw new Error('该服务商不支持设置 bucket 权限');
+        }
 
         // 更新本地状态
         setObjects(prevObjects =>
@@ -1259,7 +1304,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           )
         );
       } else {
-        // 设置对象权限
+        // 设置对象权限（对象权限通常只支持 ACL）
+        if (!capabilities.objectAcl) {
+          throw new Error('该服务商不支持设置对象权限');
+        }
+
         await S3Service.putObjectAcl(
           connectionId,
           currentBucket,
@@ -1642,7 +1691,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           size='sm'
           variant='ghost'
           onClick={handleUpload}
-          disabled={!currentBucket}
+          disabled={!currentBucket || !capabilities.uploadObject}
         >
           <Upload className='w-4 h-4 mr-1' />
           {t('s3:upload.label')}
@@ -1652,7 +1701,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           size='sm'
           variant='ghost'
           onClick={() => handleDownload()}
-          disabled={selectedObjects.size === 0}
+          disabled={selectedObjects.size === 0 || !capabilities.downloadObject}
         >
           <Download className='w-4 h-4 mr-1' />
           {t('s3:download.label')}
@@ -1662,7 +1711,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           size='sm'
           variant='ghost'
           onClick={handleCreateFolder}
-          disabled={!currentBucket}
+          disabled={!currentBucket || !capabilities.createFolder}
         >
           <FolderPlus className='w-4 h-4 mr-1' />
           {t('s3:new_folder')}
@@ -1672,7 +1721,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           size='sm'
           variant='ghost'
           onClick={() => setShowDeleteConfirmDialog(true)}
-          disabled={selectedObjects.size === 0}
+          disabled={selectedObjects.size === 0 || (!currentBucket ? !capabilities.deleteBucket : !capabilities.deleteObject)}
         >
           <Trash2 className='w-4 h-4 mr-1' />
           {t('s3:delete.label')}
@@ -1692,26 +1741,29 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           <DropdownMenuContent>
             <DropdownMenuItem
               onClick={handleCopy}
-              disabled={selectedObjects.size === 0}
+              disabled={selectedObjects.size === 0 || !capabilities.copyObject}
             >
               <Copy className='w-4 h-4 mr-2' />
               {t('s3:copy.label')}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={handleCut}
-              disabled={selectedObjects.size === 0}
+              disabled={selectedObjects.size === 0 || !capabilities.moveObject}
             >
               <Scissors className='w-4 h-4 mr-2' />
               {t('s3:cut.label')}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handlePaste} disabled={!fileOperation}>
+            <DropdownMenuItem
+              onClick={handlePaste}
+              disabled={!fileOperation || (fileOperation.type === 'copy' ? !capabilities.copyObject : !capabilities.moveObject)}
+            >
               <Clipboard className='w-4 h-4 mr-2' />
               {t('s3:paste.label')}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => handleGeneratePresignedUrl()}
-              disabled={selectedObjects.size !== 1}
+              disabled={selectedObjects.size !== 1 || !capabilities.presignedUrl}
             >
               <Link className='w-4 h-4 mr-2' />
               {t('s3:generate_link')}
@@ -1882,23 +1934,25 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                       </div>
                     </th>
                   )}
-                  {/* 权限列 */}
-                  <th
-                    className='text-left p-2'
-                    style={{ width: columnWidths.permissions || '150px' }}
-                  >
-                    <div className='flex items-center'>
-                      <span>
-                        {t('s3:permissions.label', { defaultValue: '权限' })}
-                      </span>
-                      <div
-                        className='column-resizer'
-                        onMouseDown={e =>
-                          handleColumnResizeStart('permissions', 'modified', e)
-                        }
-                      />
-                    </div>
-                  </th>
+                  {/* 权限列 - 根据服务商能力动态显示 */}
+                  {((!currentBucket && capabilities.bucketAcl) || (currentBucket && capabilities.objectAcl)) && (
+                    <th
+                      className='text-left p-2'
+                      style={{ width: columnWidths.permissions || '150px' }}
+                    >
+                      <div className='flex items-center'>
+                        <span>
+                          {t('s3:permissions.label', { defaultValue: '权限' })}
+                        </span>
+                        <div
+                          className='column-resizer'
+                          onMouseDown={e =>
+                            handleColumnResizeStart('permissions', 'modified', e)
+                          }
+                        />
+                      </div>
+                    </th>
+                  )}
                   <th
                     className='text-left p-2'
                     style={{ width: columnWidths.modified }}
@@ -1933,9 +1987,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                           <div className='h-4 bg-muted animate-pulse rounded w-16' />
                         </td>
                       )}
-                      <td className='p-2'>
-                        <div className='h-4 bg-muted animate-pulse rounded w-24' />
-                      </td>
+                      {((!currentBucket && capabilities.bucketAcl) || (currentBucket && capabilities.objectAcl)) && (
+                        <td className='p-2'>
+                          <div className='h-4 bg-muted animate-pulse rounded w-24' />
+                        </td>
+                      )}
                       <td className='p-2'>
                         <div className='h-4 bg-muted animate-pulse rounded w-32' />
                       </td>
@@ -2018,28 +2074,30 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                         </span>
                       </td>
                     )}
-                    {/* 显示权限 */}
-                    <td className='p-2' style={{ width: columnWidths.permissions }}>
-                      <span className='truncate block flex items-center gap-1'>
-                        {object.acl !== undefined ? (
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            object.acl === 'private' ? 'bg-gray-100 text-gray-700' :
-                            object.acl === 'public-read' ? 'bg-blue-100 text-blue-700' :
-                            object.acl === 'public-read-write' ? 'bg-orange-100 text-orange-700' :
-                            'bg-green-100 text-green-700'
-                          }`}>
-                            {t(`s3:permissions.${object.acl}`, { defaultValue: object.acl })}
-                          </span>
-                        ) : (
-                          <>
-                            <span className='inline-block w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
-                            <span className='text-muted-foreground text-xs'>
-                              {t('s3:loading', { defaultValue: '加载中...' })}
+                    {/* 显示权限 - 根据服务商能力动态显示 */}
+                    {((!currentBucket && capabilities.bucketAcl) || (currentBucket && capabilities.objectAcl)) && (
+                      <td className='p-2' style={{ width: columnWidths.permissions }}>
+                        <span className='truncate block flex items-center gap-1'>
+                          {object.acl !== undefined ? (
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              object.acl === 'private' ? 'bg-gray-100 text-gray-700' :
+                              object.acl === 'public-read' ? 'bg-blue-100 text-blue-700' :
+                              object.acl === 'public-read-write' ? 'bg-orange-100 text-orange-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>
+                              {t(`s3:permissions.${object.acl}`, { defaultValue: object.acl })}
                             </span>
-                          </>
-                        )}
-                      </span>
-                    </td>
+                          ) : (
+                            <>
+                              <span className='inline-block w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
+                              <span className='text-muted-foreground text-xs'>
+                                {t('s3:loading', { defaultValue: '加载中...' })}
+                              </span>
+                            </>
+                          )}
+                        </span>
+                      </td>
+                    )}
                     <td className='p-2' style={{ width: columnWidths.modified }}>
                       <span
                         className='truncate block'
@@ -2884,109 +2942,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         </DialogContent>
       </Dialog>
 
-      {/* 权限设置对话框 */}
-      <Dialog
-        open={showPermissionsDialog}
-        onOpenChange={setShowPermissionsDialog}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {t('s3:permissions.title', { defaultValue: '设置权限' })}
-            </DialogTitle>
-            <DialogDescription>{permissionsObject?.name}</DialogDescription>
-          </DialogHeader>
-          <div className='py-4'>
-            <RadioGroup
-              value={selectedAcl}
-              onValueChange={(value: any) => setSelectedAcl(value)}
-            >
-              <div className='flex items-center space-x-2 mb-3'>
-                <RadioGroupItem value='private' id='private' />
-                <Label
-                  htmlFor='private'
-                  className='font-normal cursor-pointer flex-1'
-                >
-                  {t('s3:permissions.private', {
-                    defaultValue: '私有（仅所有者可读写）',
-                  })}
-                </Label>
-              </div>
-              <div className='flex items-center space-x-2 mb-3'>
-                <RadioGroupItem value='public-read' id='public-read' />
-                <Label
-                  htmlFor='public-read'
-                  className='font-normal cursor-pointer flex-1'
-                >
-                  {t('s3:permissions.public_read', {
-                    defaultValue: '公开读（所有人可读）',
-                  })}
-                </Label>
-              </div>
-              <div className='flex items-center space-x-2 mb-3'>
-                <RadioGroupItem
-                  value='public-read-write'
-                  id='public-read-write'
-                />
-                <Label
-                  htmlFor='public-read-write'
-                  className='font-normal cursor-pointer flex-1'
-                >
-                  {t('s3:permissions.public_read_write', {
-                    defaultValue: '公开读写（所有人可读写）',
-                  })}
-                </Label>
-              </div>
-              <div className='flex items-center space-x-2'>
-                <RadioGroupItem
-                  value='authenticated-read'
-                  id='authenticated-read'
-                />
-                <Label
-                  htmlFor='authenticated-read'
-                  className='font-normal cursor-pointer flex-1'
-                >
-                  {t('s3:permissions.authenticated_read', {
-                    defaultValue: '授权读（已认证用户可读）',
-                  })}
-                </Label>
-              </div>
-            </RadioGroup>
-          </div>
-          <DialogFooter>
-            <Button
-              variant='outline'
-              onClick={() => setShowPermissionsDialog(false)}
-            >
-              {String(t('common:cancel'))}
-            </Button>
-            <Button
-              onClick={async () => {
-                if (!permissionsObject || !currentBucket) return;
-
-                try {
-                  await S3Service.putObjectAcl(
-                    connectionId,
-                    currentBucket,
-                    permissionsObject.key,
-                    selectedAcl
-                  );
-                  showMessage.success(String(t('s3:permissions.success')));
-                  setShowPermissionsDialog(false);
-                  await loadObjects(); // 重新加载以更新对象信息
-                } catch (error) {
-                  logger.error('设置权限失败:', error);
-                  showMessage.error(String(t('s3:permissions.failed')));
-                }
-              }}
-            >
-              {String(t('common:confirm'))}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 权限设置对话框 */}
+      {/* 权限设置对话框 - 根据服务商支持的 ACL 类型动态显示 */}
       <Dialog open={showPermissionsDialog} onOpenChange={setShowPermissionsDialog}>
         <DialogContent>
           <DialogHeader>
@@ -3006,65 +2962,93 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             </DialogDescription>
           </DialogHeader>
           <div className='py-4'>
-            <RadioGroup value={selectedAcl} onValueChange={(value) => setSelectedAcl(value as any)}>
-              <div className='space-y-3'>
-                <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
-                  <RadioGroupItem value='private' id='acl-private' />
-                  <Label htmlFor='acl-private' className='flex-1 cursor-pointer'>
-                    <div className='font-medium'>
-                      {t('s3:permissions.private', { defaultValue: '私有' })}
-                    </div>
-                    <div className='text-sm text-muted-foreground'>
-                      {t('s3:permissions.private_desc', {
-                        defaultValue: '只有所有者可以访问'
-                      })}
-                    </div>
-                  </Label>
-                </div>
-
-                <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
-                  <RadioGroupItem value='public-read' id='acl-public-read' />
-                  <Label htmlFor='acl-public-read' className='flex-1 cursor-pointer'>
-                    <div className='font-medium'>
-                      {t('s3:permissions.public-read', { defaultValue: '公共读' })}
-                    </div>
-                    <div className='text-sm text-muted-foreground'>
-                      {t('s3:permissions.public-read_desc', {
-                        defaultValue: '所有人可以读取，只有所有者可以写入'
-                      })}
-                    </div>
-                  </Label>
-                </div>
-
-                <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
-                  <RadioGroupItem value='public-read-write' id='acl-public-read-write' />
-                  <Label htmlFor='acl-public-read-write' className='flex-1 cursor-pointer'>
-                    <div className='font-medium'>
-                      {t('s3:permissions.public-read-write', { defaultValue: '公共读写' })}
-                    </div>
-                    <div className='text-sm text-muted-foreground'>
-                      {t('s3:permissions.public-read-write_desc', {
-                        defaultValue: '所有人可以读取和写入（不推荐）'
-                      })}
-                    </div>
-                  </Label>
-                </div>
-
-                <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
-                  <RadioGroupItem value='authenticated-read' id='acl-authenticated-read' />
-                  <Label htmlFor='acl-authenticated-read' className='flex-1 cursor-pointer'>
-                    <div className='font-medium'>
-                      {t('s3:permissions.authenticated-read', { defaultValue: '认证用户读' })}
-                    </div>
-                    <div className='text-sm text-muted-foreground'>
-                      {t('s3:permissions.authenticated-read_desc', {
-                        defaultValue: '已认证的用户可以读取'
-                      })}
-                    </div>
-                  </Label>
-                </div>
+            {supportedAcls.length === 0 ? (
+              <div className='text-center py-8 text-muted-foreground'>
+                <Shield className='w-12 h-12 mx-auto mb-3 opacity-50' />
+                <p className='font-medium mb-2'>
+                  {t('s3:permissions.not_supported', { defaultValue: '当前服务商不支持 ACL 权限' })}
+                </p>
+                <p className='text-sm'>
+                  {capabilities.alternatives?.['ACL']
+                    ? t('s3:permissions.use_alternative', {
+                        defaultValue: `请使用 ${capabilities.alternatives['ACL']} 进行访问控制`,
+                        alternative: capabilities.alternatives['ACL']
+                      })
+                    : t('s3:permissions.no_acl_support', {
+                        defaultValue: '该服务商不支持 ACL 功能'
+                      })
+                  }
+                </p>
               </div>
-            </RadioGroup>
+            ) : (
+              <RadioGroup value={selectedAcl} onValueChange={(value) => setSelectedAcl(value as any)}>
+                <div className='space-y-3'>
+                  {supportedAcls.includes('private') && (
+                    <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
+                      <RadioGroupItem value='private' id='acl-private' />
+                      <Label htmlFor='acl-private' className='flex-1 cursor-pointer'>
+                        <div className='font-medium'>
+                          {t('s3:permissions.private', { defaultValue: '私有' })}
+                        </div>
+                        <div className='text-sm text-muted-foreground'>
+                          {t('s3:permissions.private_desc', {
+                            defaultValue: '只有所有者可以访问'
+                          })}
+                        </div>
+                      </Label>
+                    </div>
+                  )}
+
+                  {supportedAcls.includes('public-read') && (
+                    <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
+                      <RadioGroupItem value='public-read' id='acl-public-read' />
+                      <Label htmlFor='acl-public-read' className='flex-1 cursor-pointer'>
+                        <div className='font-medium'>
+                          {t('s3:permissions.public-read', { defaultValue: '公共读' })}
+                        </div>
+                        <div className='text-sm text-muted-foreground'>
+                          {t('s3:permissions.public-read_desc', {
+                            defaultValue: '所有人可以读取，只有所有者可以写入'
+                          })}
+                        </div>
+                      </Label>
+                    </div>
+                  )}
+
+                  {supportedAcls.includes('public-read-write') && (
+                    <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
+                      <RadioGroupItem value='public-read-write' id='acl-public-read-write' />
+                      <Label htmlFor='acl-public-read-write' className='flex-1 cursor-pointer'>
+                        <div className='font-medium'>
+                          {t('s3:permissions.public-read-write', { defaultValue: '公共读写' })}
+                        </div>
+                        <div className='text-sm text-muted-foreground'>
+                          {t('s3:permissions.public-read-write_desc', {
+                            defaultValue: '所有人可以读取和写入（不推荐）'
+                          })}
+                        </div>
+                      </Label>
+                    </div>
+                  )}
+
+                  {supportedAcls.includes('authenticated-read') && (
+                    <div className='flex items-start space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer'>
+                      <RadioGroupItem value='authenticated-read' id='acl-authenticated-read' />
+                      <Label htmlFor='acl-authenticated-read' className='flex-1 cursor-pointer'>
+                        <div className='font-medium'>
+                          {t('s3:permissions.authenticated-read', { defaultValue: '认证用户读' })}
+                        </div>
+                        <div className='text-sm text-muted-foreground'>
+                          {t('s3:permissions.authenticated-read_desc', {
+                            defaultValue: '已认证的用户可以读取'
+                          })}
+                        </div>
+                      </Label>
+                    </div>
+                  )}
+                </div>
+              </RadioGroup>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -3073,7 +3057,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             >
               {String(t('common:cancel'))}
             </Button>
-            <Button onClick={handleSetPermissions}>
+            <Button
+              onClick={handleSetPermissions}
+              disabled={supportedAcls.length === 0}
+            >
               {String(t('common:confirm'))}
             </Button>
           </DialogFooter>
@@ -3235,17 +3222,19 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             </>
           )}
 
-          {/* 下载 - 文件和文件夹都有 */}
-          <div
-            className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
-            onClick={() => {
-              handleDownload([contextMenu.object!]);
-              closeContextMenu();
-            }}
-          >
-            <Download className='w-4 h-4' />
-            {t('s3:download.label', { defaultValue: '下载' })}
-          </div>
+          {/* 下载 - 根据服务商能力显示 */}
+          {capabilities.downloadObject && (
+            <div
+              className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
+              onClick={() => {
+                handleDownload([contextMenu.object!]);
+                closeContextMenu();
+              }}
+            >
+              <Download className='w-4 h-4' />
+              {t('s3:download.label', { defaultValue: '下载' })}
+            </div>
+          )}
 
           {/* 文件特有的菜单项 */}
           {!contextMenu.object.isDirectory && (
@@ -3263,64 +3252,74 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                 {t('s3:preview.label', { defaultValue: '预览' })}
               </div>
 
-              {/* 创建分享链接 */}
-              <div
-                className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
-                onClick={() => {
-                  handleGeneratePresignedUrl(contextMenu.object || undefined);
-                  closeContextMenu();
-                }}
-              >
-                <Link className='w-4 h-4' />
-                {t('s3:generate_link', { defaultValue: '生成分享链接' })}
-              </div>
+              {/* 创建分享链接 - 根据服务商能力显示 */}
+              {capabilities.presignedUrl && (
+                <div
+                  className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
+                  onClick={() => {
+                    handleGeneratePresignedUrl(contextMenu.object || undefined);
+                    closeContextMenu();
+                  }}
+                >
+                  <Link className='w-4 h-4' />
+                  {t('s3:generate_link', { defaultValue: '生成分享链接' })}
+                </div>
+              )}
 
-              {/* 设置标签 */}
-              <div
-                className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
-                onClick={async () => {
-                  setTagsObject(contextMenu.object);
-                  setShowTagsDialog(true);
-                  closeContextMenu();
-                  // 异步获取标签
-                  if (contextMenu.object) {
-                    await fetchObjectTags(contextMenu.object);
-                  }
-                }}
-              >
-                <Tag className='w-4 h-4' />
-                {t('s3:tags_mgmt.label', { defaultValue: '管理标签' })}
-              </div>
+              {/* 设置标签 - 根据服务商能力显示 */}
+              {capabilities.tagging && (
+                <div
+                  className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
+                  onClick={async () => {
+                    setTagsObject(contextMenu.object);
+                    setShowTagsDialog(true);
+                    closeContextMenu();
+                    // 异步获取标签
+                    if (contextMenu.object) {
+                      await fetchObjectTags(contextMenu.object);
+                    }
+                  }}
+                >
+                  <Tag className='w-4 h-4' />
+                  {t('s3:tags_mgmt.label', { defaultValue: '管理标签' })}
+                </div>
+              )}
             </>
           )}
 
-          {/* 设置权限 - 所有对象都可以设置权限 */}
-          <div
-            className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
-            onClick={() => {
-              setPermissionsObject(contextMenu.object);
-              setSelectedAcl(contextMenu.object!.acl || 'private');
-              setShowPermissionsDialog(true);
-              closeContextMenu();
-            }}
-          >
-            <Shield className='w-4 h-4' />
-            {t('s3:permissions.label', { defaultValue: '设置权限' })}
-          </div>
+          {/* 设置权限 - 根据服务商能力动态显示 */}
+          {((!currentBucket && capabilities.bucketAcl) || (currentBucket && capabilities.objectAcl)) && (
+            <div
+              className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
+              onClick={() => {
+                setPermissionsObject(contextMenu.object);
+                setSelectedAcl(contextMenu.object!.acl || 'private');
+                setShowPermissionsDialog(true);
+                closeContextMenu();
+              }}
+            >
+              <Shield className='w-4 h-4' />
+              {t('s3:permissions.label', { defaultValue: '设置权限' })}
+            </div>
+          )}
 
           <div className='h-px bg-border my-1' />
 
-          {/* 删除 - 文件和文件夹都有 */}
-          <div
-            className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm text-destructive'
-            onClick={() => {
-              setShowDeleteConfirmDialog(true);
-              closeContextMenu();
-            }}
-          >
-            <Trash2 className='w-4 h-4' />
-            {t('s3:delete.label', { defaultValue: '删除' })}
-          </div>
+          {/* 删除 - 根据服务商能力和对象类型显示 */}
+          {((!currentBucket && capabilities.deleteBucket) ||
+            (currentBucket && contextMenu.object.isDirectory && capabilities.deleteFolder) ||
+            (currentBucket && !contextMenu.object.isDirectory && capabilities.deleteObject)) && (
+            <div
+              className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm text-destructive'
+              onClick={() => {
+                setShowDeleteConfirmDialog(true);
+                closeContextMenu();
+              }}
+            >
+              <Trash2 className='w-4 h-4' />
+              {t('s3:delete.label', { defaultValue: '删除' })}
+            </div>
+          )}
         </div>
       )}
     </div>

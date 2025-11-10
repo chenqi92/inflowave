@@ -10,7 +10,7 @@ import { getProxyConfigSection } from './proxyConfig';
  */
 export interface ObjectStorageConfig extends BaseConnectionConfig {
   dbType: 'object-storage';
-  objectStorageProvider: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos' | 'qiniu-kodo' | 'upyun' | 'github' | 'smms' | 'imgur';
+  objectStorageProvider: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos' | 'qiniu-kodo' | 'upyun' | 'github' | 'smms' | 'imgur' | 'cloudflare-r2' | 'digitalocean-spaces' | 'backblaze-b2' | 'wasabi';
   s3Endpoint?: string;
   s3Region?: string;
   s3AccessKey?: string;
@@ -61,6 +61,10 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
     return [
       { value: 's3', label: 'Amazon S3' },
       { value: 'minio', label: 'MinIO' },
+      { value: 'cloudflare-r2', label: 'Cloudflare R2' },
+      { value: 'digitalocean-spaces', label: 'DigitalOcean Spaces' },
+      { value: 'backblaze-b2', label: 'Backblaze B2' },
+      { value: 'wasabi', label: 'Wasabi' },
       { value: 'aliyun-oss', label: t('object_storage.aliyun_oss') },
       { value: 'tencent-cos', label: t('object_storage.tencent_cos') },
       { value: 'qiniu-kodo', label: t('object_storage.qiniu_kodo') },
@@ -83,6 +87,31 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           { value: 'eu-west-1', label: 'Europe (Ireland)' },
           { value: 'ap-southeast-1', label: 'Asia Pacific (Singapore)' },
           { value: 'ap-northeast-1', label: 'Asia Pacific (Tokyo)' }
+        ];
+      case 'cloudflare-r2':
+        return [
+          { value: 'auto', label: 'Automatic' }
+        ];
+      case 'digitalocean-spaces':
+        return [
+          { value: 'nyc3', label: 'New York 3' },
+          { value: 'sfo3', label: 'San Francisco 3' },
+          { value: 'sgp1', label: 'Singapore 1' },
+          { value: 'fra1', label: 'Frankfurt 1' }
+        ];
+      case 'backblaze-b2':
+        return [
+          { value: 'us-west-001', label: 'US West (California)' },
+          { value: 'us-west-002', label: 'US West (Arizona)' },
+          { value: 'eu-central-003', label: 'EU Central (Amsterdam)' }
+        ];
+      case 'wasabi':
+        return [
+          { value: 'us-east-1', label: 'US East 1 (N. Virginia)' },
+          { value: 'us-east-2', label: 'US East 2 (N. Virginia)' },
+          { value: 'us-west-1', label: 'US West 1 (Oregon)' },
+          { value: 'eu-central-1', label: 'EU Central 1 (Amsterdam)' },
+          { value: 'ap-northeast-1', label: 'AP Northeast 1 (Tokyo)' }
         ];
       case 'aliyun-oss':
         return [
@@ -137,35 +166,35 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       id: 'storage',
       title: t('object_storage.settings'),
       fields: [
-        // S3/MinIO/OSS/COS - Endpoint (内网端点)
+        // S3/MinIO/OSS/COS/R2/Spaces/B2/Wasabi - Endpoint (内网端点)
         {
           name: 's3Endpoint',
           label: t('object_storage.endpoint'),
           type: 'text',
-          visible: (formData: any) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos'].includes(formData.objectStorageProvider),
+          visible: (formData: any) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider),
           placeholder: 'https://s3.amazonaws.com',
           description: t('object_storage.endpoint_description'),
           validation: (value: string, formData: any) => {
-            if (['minio'].includes(formData.objectStorageProvider) && !value?.trim()) {
+            if (['minio', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('object_storage.endpoint_required');
             }
           }
         },
-        // S3/OSS/COS/七牛云 - Region
+        // S3/OSS/COS/七牛云/R2/Spaces/B2/Wasabi - Region
         {
           name: 's3Region',
           label: t('object_storage.region'),
           type: 'select',
           required: true,
           options: (formData: any) => this.getRegionOptions(formData.objectStorageProvider || 's3'),
-          visible: (formData) => ['s3', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
+          visible: (formData) => ['s3', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider),
           validation: (value: string, formData: any) => {
-            if (['s3', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
+            if (['s3', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('object_storage.region_required');
             }
           }
         },
-        // S3/MinIO/OSS/COS/七牛云/又拍云 - Bucket/服务名 (可选)
+        // S3/MinIO/OSS/COS/七牛云/又拍云/R2/Spaces/B2/Wasabi - Bucket/服务名 (可选)
         {
           name: 'bucket',
           label: (formData: any) => {
@@ -176,7 +205,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           },
           type: 'text',
           required: false,  // 改为非必填
-          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun'].includes(formData.objectStorageProvider),
+          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider),
           placeholder: t('object_storage.bucket_placeholder_optional'),
           description: t('object_storage.bucket_description_optional'),
           // 移除验证，因为现在是可选字段
@@ -258,32 +287,32 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
       id: 'auth',
       title: t('object_storage.auth_settings'),
       fields: [
-        // S3/MinIO/阿里云OSS/腾讯云COS/七牛云 - Access Key
+        // S3/MinIO/阿里云OSS/腾讯云COS/七牛云/R2/Spaces/B2/Wasabi - Access Key
         {
           name: 's3AccessKey',
           label: t('object_storage.access_key'),
           type: 'text',
           required: true,
-          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
+          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider),
           placeholder: t('object_storage.access_key_placeholder'),
           width: 'half',
           validation: (value: string, formData: any) => {
-            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
+            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('object_storage.access_key_required');
             }
           }
         },
-        // S3/MinIO/阿里云OSS/腾讯云COS/七牛云 - Secret Key
+        // S3/MinIO/阿里云OSS/腾讯云COS/七牛云/R2/Spaces/B2/Wasabi - Secret Key
         {
           name: 's3SecretKey',
           label: t('object_storage.secret_key'),
           type: 'password',
           required: true,
-          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider),
+          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider),
           placeholder: t('object_storage.secret_key_placeholder'),
           width: 'half',
           validation: (value: string, formData: any) => {
-            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo'].includes(formData.objectStorageProvider) && !value?.trim()) {
+            if (['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider) && !value?.trim()) {
               return t('object_storage.secret_key_required');
             }
           }
@@ -421,13 +450,13 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           placeholder: t('object_storage.url_suffix_placeholder'),
           description: t('object_storage.url_suffix_description')
         },
-        // S3/MinIO 特有选项
+        // S3/MinIO/R2/Spaces/B2/Wasabi 特有选项
         {
           name: 's3UseSSL',
           label: t('object_storage.use_ssl'),
           type: 'switch',
           defaultValue: true,
-          visible: (formData) => ['s3', 'minio'].includes(formData.objectStorageProvider),
+          visible: (formData) => ['s3', 'minio', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider),
           description: t('object_storage.use_ssl_description')
         },
         {
@@ -435,7 +464,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           label: t('object_storage.path_style'),
           type: 'switch',
           defaultValue: false,
-          visible: (formData) => ['s3', 'minio'].includes(formData.objectStorageProvider),
+          visible: (formData) => ['s3', 'minio', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider),
           description: t('object_storage.path_style_description')
         },
         // Imgur 代理

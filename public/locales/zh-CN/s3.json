@@ -193,6 +193,9 @@
     "public-read-write": "公共读写",
     "public-read-write_desc": "所有人可以读取和写入（不推荐）",
     "authenticated-read": "认证用户读",
-    "authenticated-read_desc": "已认证的用户可以读取"
+    "authenticated-read_desc": "已认证的用户可以读取",
+    "not_supported": "当前服务商不支持 ACL 权限",
+    "use_alternative": "请使用 {{alternative}} 进行访问控制",
+    "no_acl_support": "该服务商不支持 ACL 功能"
   }
 }

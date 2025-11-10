@@ -70,7 +70,7 @@ export interface DatabaseDriverConfig {
   };
   iotdb?: IoTDBConfig;
   s3?: {
-    provider?: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos' | 'qiniu-kodo' | 'upyun' | 'github' | 'smms' | 'imgur'; // 对象存储服务商
+    provider?: 's3' | 'minio' | 'aliyun-oss' | 'tencent-cos' | 'qiniu-kodo' | 'upyun' | 'github' | 'smms' | 'imgur' | 'cloudflare-r2' | 'digitalocean-spaces' | 'backblaze-b2' | 'wasabi'; // 对象存储服务商
     endpoint?: string; // 自定义端点（用于MinIO等S3兼容服务）
     region?: string; // AWS区域
     accessKey?: string;

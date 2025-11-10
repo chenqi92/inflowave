@@ -593,3 +593,31 @@ pub async fn s3_put_bucket_acl(
         .await
         .map_err(|e| e.to_string())
 }
+
+// 获取 bucket policy
+#[tauri::command]
+pub async fn s3_get_bucket_policy(
+    request: S3GetBucketAclRequest,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
+) -> Result<String, String> {
+    let manager = s3_manager.lock().await;
+
+    manager
+        .get_bucket_policy(&request.connection_id, &request.bucket)
+        .await
+        .map_err(|e| e.to_string())
+}
+
+// 设置 bucket policy
+#[tauri::command]
+pub async fn s3_put_bucket_policy(
+    request: S3BucketAclRequest,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
+) -> Result<(), String> {
+    let manager = s3_manager.lock().await;
+
+    manager
+        .put_bucket_policy(&request.connection_id, &request.bucket, &request.acl)
+        .await
+        .map_err(|e| e.to_string())
+}

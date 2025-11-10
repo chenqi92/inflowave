@@ -2,8 +2,12 @@
  * S3/MinIO 相关类型定义
  */
 
+// 导出服务商相关类型
+export * from './s3-provider';
+
 // S3 连接配置
 export interface S3ConnectionConfig {
+  provider?: string; // 服务商类型
   endpoint?: string;
   region?: string;
   accessKey: string;

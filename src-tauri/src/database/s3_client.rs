@@ -748,8 +748,21 @@ impl S3ClientManager {
         let mut has_public_full_control = false;
         let mut has_authenticated_read = false;
 
+        // 调试日志：打印所有 grants
+        log::debug!("Object '{}/{}' ACL grants count: {}", bucket, key, grants.len());
+
         for grant in grants {
             if let Some(grantee) = grant.grantee() {
+                // 调试日志：打印 grantee 信息
+                log::debug!(
+                    "Grant - Type: {:?}, URI: {:?}, ID: {:?}, DisplayName: {:?}, Permission: {:?}",
+                    grantee.r#type(),
+                    grantee.uri(),
+                    grantee.id(),
+                    grantee.display_name(),
+                    grant.permission()
+                );
+
                 if let Some(uri) = grantee.uri() {
                     if let Some(permission) = grant.permission() {
                         // 检查是否授予了所有用户（公共）权限
@@ -771,15 +784,18 @@ impl S3ClientManager {
         }
 
         // 根据权限组合返回结果
-        if has_public_full_control || (has_public_read && has_public_write) {
-            Ok("public-read-write".to_string())
+        let result = if has_public_full_control || (has_public_read && has_public_write) {
+            "public-read-write".to_string()
         } else if has_public_read {
-            Ok("public-read".to_string())
+            "public-read".to_string()
         } else if has_authenticated_read {
-            Ok("authenticated-read".to_string())
+            "authenticated-read".to_string()
         } else {
-            Ok("private".to_string())
-        }
+            "private".to_string()
+        };
+
+        log::debug!("Object '{}/{}' ACL result: {}", bucket, key, result);
+        Ok(result)
     }
 
     /// 设置对象ACL权限
@@ -839,8 +855,21 @@ impl S3ClientManager {
         let mut has_public_full_control = false;
         let mut has_authenticated_read = false;
 
+        // 调试日志：打印所有 grants
+        log::debug!("Bucket '{}' ACL grants count: {}", bucket, grants.len());
+
         for grant in grants {
             if let Some(grantee) = grant.grantee() {
+                // 调试日志：打印 grantee 信息
+                log::debug!(
+                    "Grant - Type: {:?}, URI: {:?}, ID: {:?}, DisplayName: {:?}, Permission: {:?}",
+                    grantee.r#type(),
+                    grantee.uri(),
+                    grantee.id(),
+                    grantee.display_name(),
+                    grant.permission()
+                );
+
                 if let Some(uri) = grantee.uri() {
                     if let Some(permission) = grant.permission() {
                         // 检查是否授予了所有用户（公共）权限
@@ -862,15 +891,18 @@ impl S3ClientManager {
         }
 
         // 根据权限组合返回结果
-        if has_public_full_control || (has_public_read && has_public_write) {
-            Ok("public-read-write".to_string())
+        let result = if has_public_full_control || (has_public_read && has_public_write) {
+            "public-read-write".to_string()
         } else if has_public_read {
-            Ok("public-read".to_string())
+            "public-read".to_string()
         } else if has_authenticated_read {
-            Ok("authenticated-read".to_string())
+            "authenticated-read".to_string()
         } else {
-            Ok("private".to_string())
-        }
+            "private".to_string()
+        };
+
+        log::debug!("Bucket '{}' ACL result: {}", bucket, result);
+        Ok(result)
     }
 
     /// 设置 bucket ACL 权限
@@ -897,6 +929,109 @@ impl S3ClientManager {
             .send()
             .await
             .context("Failed to put bucket ACL")?;
+
+        Ok(())
+    }
+
+    /// 获取 bucket policy
+    pub async fn get_bucket_policy(&self, id: &str, bucket: &str) -> Result<String> {
+        let clients = self.clients.read().await;
+        let client = clients
+            .get(id)
+            .ok_or_else(|| anyhow::anyhow!("S3 client not found: {}", id))?;
+
+        let resp = client
+            .get_bucket_policy()
+            .bucket(bucket)
+            .send()
+            .await
+            .context("Failed to get bucket policy")?;
+
+        let policy = resp.policy().unwrap_or("");
+
+        log::debug!("Bucket '{}' policy: {}", bucket, policy);
+
+        // 解析 policy JSON 判断是否为公共访问
+        if policy.is_empty() {
+            return Ok("private".to_string());
+        }
+
+        // 简单判断：如果 policy 包含 "Principal": "*" 和 "s3:GetObject"，则为 public-read
+        if policy.contains(r#""Principal":"*"#) || policy.contains(r#""Principal":{"AWS":"*"}"#) || policy.contains(r#""Principal":{"AWS":["*"]}"#) {
+            if policy.contains("s3:GetObject") {
+                if policy.contains("s3:PutObject") || policy.contains("s3:DeleteObject") {
+                    return Ok("public-read-write".to_string());
+                } else {
+                    return Ok("public-read".to_string());
+                }
+            }
+        }
+
+        Ok("private".to_string())
+    }
+
+    /// 设置 bucket policy
+    pub async fn put_bucket_policy(&self, id: &str, bucket: &str, access: &str) -> Result<()> {
+        let clients = self.clients.read().await;
+        let client = clients
+            .get(id)
+            .ok_or_else(|| anyhow::anyhow!("S3 client not found: {}", id))?;
+
+        let policy = match access {
+            "private" => {
+                // 删除 bucket policy
+                client
+                    .delete_bucket_policy()
+                    .bucket(bucket)
+                    .send()
+                    .await
+                    .context("Failed to delete bucket policy")?;
+                return Ok(());
+            }
+            "public-read" => {
+                format!(
+                    r#"{{
+  "Version": "2012-10-17",
+  "Statement": [
+    {{
+      "Effect": "Allow",
+      "Principal": {{"AWS": ["*"]}},
+      "Action": ["s3:GetObject"],
+      "Resource": ["arn:aws:s3:::{}/*"]
+    }}
+  ]
+}}"#,
+                    bucket
+                )
+            }
+            "public-read-write" => {
+                format!(
+                    r#"{{
+  "Version": "2012-10-17",
+  "Statement": [
+    {{
+      "Effect": "Allow",
+      "Principal": {{"AWS": ["*"]}},
+      "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
+      "Resource": ["arn:aws:s3:::{}/*"]
+    }}
+  ]
+}}"#,
+                    bucket
+                )
+            }
+            _ => {
+                return Err(anyhow::anyhow!("Unsupported access level for bucket policy: {}", access));
+            }
+        };
+
+        client
+            .put_bucket_policy()
+            .bucket(bucket)
+            .policy(policy)
+            .send()
+            .await
+            .context("Failed to put bucket policy")?;
 
         Ok(())
     }
