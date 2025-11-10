@@ -238,7 +238,26 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   const connection = getConnection(connectionId);
   const provider = (connection?.driverConfig?.s3?.provider || 's3') as S3Provider;
   const capabilities = getProviderCapabilities(provider);
-  const supportedAcls = getSupportedAcls(provider);
+  const allSupportedAcls = getSupportedAcls(provider);
+
+  // 根据对象类型获取可用的 ACL 选项
+  // Bucket: 所有服务商支持的 ACL（包括 authenticated-read）
+  // 文件夹/对象: 只有 private, public-read, public-read-write
+  const getAvailableAcls = (isBucket: boolean) => {
+    if (isBucket) {
+      return allSupportedAcls;
+    } else {
+      // 对象和文件夹只支持基本的 ACL，不包括 authenticated-read
+      return allSupportedAcls.filter(acl =>
+        acl === 'private' || acl === 'public-read' || acl === 'public-read-write'
+      );
+    }
+  };
+
+  // 当前权限对话框中可用的 ACL 选项
+  const supportedAcls = permissionsObject
+    ? getAvailableAcls(!currentBucket) // 如果没有 currentBucket，说明是在设置 bucket 权限
+    : allSupportedAcls;
 
   // 组件卸载时取消所有正在进行的请求
   useEffect(() => {
@@ -1314,11 +1333,6 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         // 设置对象权限（对象权限通常只支持 ACL）
         if (!capabilities.objectAcl) {
           throw new Error('该服务商不支持设置对象权限');
-        }
-
-        // 检查是否是文件夹
-        if (permissionsObject.isDirectory) {
-          throw new Error('文件夹不支持设置权限。S3 中的文件夹是虚拟的，只有实际的对象（文件）才能设置权限。');
         }
 
         await S3Service.putObjectAcl(
@@ -3299,14 +3313,24 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             </>
           )}
 
-          {/* 设置权限 - 根据服务商能力动态显示，文件夹不支持设置权限 */}
+          {/* 设置权限 - 根据服务商能力动态显示 */}
           {((!currentBucket && capabilities.bucketAcl) ||
-            (currentBucket && capabilities.objectAcl && !contextMenu.object?.isDirectory)) && (
+            (currentBucket && capabilities.objectAcl)) && (
             <div
               className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
               onClick={() => {
-                setPermissionsObject(contextMenu.object);
-                setSelectedAcl(contextMenu.object!.acl || 'private');
+                const obj = contextMenu.object!;
+                setPermissionsObject(obj);
+
+                // 获取可用的 ACL 选项
+                const isBucket = !currentBucket;
+                const availableAcls = getAvailableAcls(isBucket);
+
+                // 如果当前 ACL 在可用选项中，使用当前值；否则默认为 'private'
+                const currentAcl = obj.acl || 'private';
+                const initialAcl = availableAcls.includes(currentAcl) ? currentAcl : 'private';
+
+                setSelectedAcl(initialAcl);
                 setShowPermissionsDialog(true);
                 closeContextMenu();
               }}
