@@ -60,7 +60,7 @@ export interface S3Object {
   contentEncoding?: string; // 内容编码
   objectCount?: number; // 对象数量（仅用于bucket根目录显示）
   tags?: Record<string, string>; // 对象标签
-  acl?: 'private' | 'public-read' | 'public-read-write' | 'authenticated-read'; // 访问控制列表
+  acl?: 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' | null; // 访问控制列表，null 表示无权限信息
 }
 
 // S3 文件夹信息（用于文件浏览器树形结构）

@@ -766,7 +766,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               } catch (error) {
                 logger.warn(`📦 [S3Browser] 获取对象 ${obj.name} 权限失败:`, error);
                 permissionFailureCacheRef.current.add(cacheKey);
-                return { key: obj.key, acl: 'private' as const, success: false };
+                // 返回 null 表示无权限信息，而不是默认 'private'
+                return { key: obj.key, acl: null, success: false };
               }
             })
           );
@@ -777,24 +778,23 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             return;
           }
 
-          // 批量更新状态
-          const aclMap = new Map<string, string>();
+          // 批量更新状态 - 包括失败的情况（设置为 null 表示无权限信息）
+          const aclMap = new Map<string, string | null>();
           results.forEach(result => {
             if (result.status === 'fulfilled') {
               aclMap.set(result.value.key, result.value.acl);
             }
           });
 
-          if (aclMap.size > 0) {
-            setObjects(prevObjects =>
-              prevObjects.map(o =>
-                aclMap.has(o.key)
-                  ? { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' }
-                  : o
-              )
-            );
-            logger.info(`📦 [S3Browser] 批量更新了 ${aclMap.size} 个对象的权限`);
-          }
+          // 总是更新对象，即使所有权限获取都失败了
+          setObjects(prevObjects =>
+            prevObjects.map(o =>
+              aclMap.has(o.key)
+                ? { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' | null }
+                : o
+            )
+          );
+          logger.info(`📦 [S3Browser] 批量更新了 ${aclMap.size} 个对象的权限`);
           return;
         }
 
@@ -833,7 +833,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                 } catch (error) {
                   logger.warn(`📦 [S3Browser] 获取对象 ${obj.name} 权限失败:`, error);
                   permissionFailureCacheRef.current.add(cacheKey);
-                  return { key: obj.key, acl: 'private' as const, success: false };
+                  // 返回 null 表示无权限信息，而不是默认 'private'
+                  return { key: obj.key, acl: null, success: false };
                 }
               })
             );
@@ -844,24 +845,23 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               return;
             }
 
-            // 批量更新状态（一次性更新所有结果，避免多次渲染）
-            const aclMap = new Map<string, string>();
+            // 批量更新状态 - 包括失败的情况（设置为 null 表示无权限信息）
+            const aclMap = new Map<string, string | null>();
             results.forEach(result => {
               if (result.status === 'fulfilled') {
                 aclMap.set(result.value.key, result.value.acl);
               }
             });
 
-            if (aclMap.size > 0) {
-              setObjects(prevObjects =>
-                prevObjects.map(o =>
-                  aclMap.has(o.key)
-                    ? { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' }
-                    : o
-                )
-              );
-              logger.debug(`📦 [S3Browser] 批量更新了 ${aclMap.size} 个对象的权限`);
-            }
+            // 总是更新对象，即使所有权限获取都失败了
+            setObjects(prevObjects =>
+              prevObjects.map(o =>
+                aclMap.has(o.key)
+                  ? { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' | null }
+                  : o
+              )
+            );
+            logger.debug(`📦 [S3Browser] 批量更新了 ${aclMap.size} 个对象的权限`);
           }
         }
 
@@ -2330,14 +2330,20 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                       <td className='p-2' style={{ width: columnWidths.permissions }}>
                         <span className='truncate block flex items-center gap-1'>
                           {object.acl !== undefined ? (
-                            <span className={`px-2 py-1 rounded text-xs ${
-                              object.acl === 'private' ? 'bg-gray-100 text-gray-700' :
-                              object.acl === 'public-read' ? 'bg-blue-100 text-blue-700' :
-                              object.acl === 'public-read-write' ? 'bg-orange-100 text-orange-700' :
-                              'bg-green-100 text-green-700'
-                            }`}>
-                              {t(`s3:permissions.${object.acl}`, { defaultValue: object.acl })}
-                            </span>
+                            object.acl === null ? (
+                              <span className='px-2 py-1 rounded text-xs bg-gray-50 text-gray-500'>
+                                {t('s3:permissions.no_permission_info', { defaultValue: '无权限信息' })}
+                              </span>
+                            ) : (
+                              <span className={`px-2 py-1 rounded text-xs ${
+                                object.acl === 'private' ? 'bg-gray-100 text-gray-700' :
+                                object.acl === 'public-read' ? 'bg-blue-100 text-blue-700' :
+                                object.acl === 'public-read-write' ? 'bg-orange-100 text-orange-700' :
+                                'bg-green-100 text-green-700'
+                              }`}>
+                                {t(`s3:permissions.${object.acl}`, { defaultValue: object.acl })}
+                              </span>
+                            )
                           ) : (
                             <>
                               <span className='inline-block w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin' />
