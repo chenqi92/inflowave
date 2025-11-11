@@ -109,19 +109,6 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
   // Store hooks
   const { connections } = useConnectionStore();
   const { openedDatabases } = useOpenedDatabasesStore();
-  
-  // 响应式布局计算 - 始终显示所有内容
-  const layout = useMemo(() => {
-    return {
-      showHeader: true,      // 始终显示头部
-      showStats: true,       // 始终显示统计
-      showCharts: true,      // 始终显示图表
-      showDetailed: true,    // 始终显示详细内容
-      isNarrow: false,       // 不使用窄屏模式
-      isVeryNarrow: false,   // 不使用极窄屏模式
-      gridCols: 1,           // 使用单列布局以适应侧边栏
-    };
-  }, []);
 
   // 获取性能数据
   const fetchPerformanceData = useCallback(async () => {
@@ -270,85 +257,63 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
     <div ref={containerRef} className={`w-full h-full border-r border-border bg-background ${className}`}>
       <div className="h-full w-full flex flex-col">
         {/* 头部控制栏 */}
-        {layout.showHeader && (
-          <div className={`${layout.isNarrow ? 'p-2' : 'p-4'} border-b border-border flex-shrink-0`}>
-            {/* 自动刷新控制 - 只在非窄屏显示 */}
-            {!layout.isNarrow && (
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <Switch
-                    id="auto-refresh"
-                    checked={autoRefresh}
-                    onCheckedChange={setAutoRefresh}
-                  />
-                  <Label htmlFor="auto-refresh" className="text-sm">
-                    {t('auto_refresh')}
-                  </Label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={timeRange}
-                    onValueChange={(value: '1h' | '6h' | '24h') => {
-                      setTimeRange(value);
-                      // 重新获取历史数据
-                      if (selectedDataSource) {
-                        fetchHistoryData(selectedDataSource, value);
-                      } else if (metricsData.length > 0) {
-                        const firstDataSource = metricsData[0];
-                        const datasourceKey = `${firstDataSource.connectionId}/${firstDataSource.databaseName}`;
-                        fetchHistoryData(datasourceKey, value);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-[100px] h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1h">{t('time_range_1h')}</SelectItem>
-                      <SelectItem value="6h">{t('time_range_6h')}</SelectItem>
-                      <SelectItem value="24h">{t('time_range_24h')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Badge variant="outline" className="text-xs">
-                    {overallStats.activeConnections}/{overallStats.totalConnections} {t('active')}
-                  </Badge>
-                </div>
-              </div>
-            )}
-
-            {/* 窄屏时的简化状态显示 */}
-            {layout.isNarrow && (
-              <div className="flex items-center justify-center">
-                <Badge variant="outline" className="text-xs">
-                  {overallStats.activeConnections}/{overallStats.totalConnections}
-                </Badge>
-              </div>
-            )}
+        <div className="p-4 border-b border-border flex-shrink-0">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="auto-refresh"
+                checked={autoRefresh}
+                onCheckedChange={setAutoRefresh}
+              />
+              <Label htmlFor="auto-refresh" className="text-sm">
+                {t('auto_refresh')}
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Select
+                value={timeRange}
+                onValueChange={(value: '1h' | '6h' | '24h') => {
+                  setTimeRange(value);
+                  // 重新获取历史数据
+                  if (selectedDataSource) {
+                    fetchHistoryData(selectedDataSource, value);
+                  } else if (metricsData.length > 0) {
+                    const firstDataSource = metricsData[0];
+                    const datasourceKey = `${firstDataSource.connectionId}/${firstDataSource.databaseName}`;
+                    fetchHistoryData(datasourceKey, value);
+                  }
+                }}
+              >
+                <SelectTrigger className="w-[100px] h-7 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1h">{t('time_range_1h')}</SelectItem>
+                  <SelectItem value="6h">{t('time_range_6h')}</SelectItem>
+                  <SelectItem value="24h">{t('time_range_24h')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <Badge variant="outline" className="text-xs">
+                {overallStats.activeConnections}/{overallStats.totalConnections} {t('active')}
+              </Badge>
+            </div>
           </div>
-        )}
+        </div>
 
         {/* 主要内容区域 */}
         <div className="flex-1 overflow-y-auto">
           {metricsData.length === 0 ? (
-            <div className={`${layout.isNarrow ? 'p-3' : 'p-6'} text-center`}>
-              <Database className={`${layout.isNarrow ? 'w-8 h-8' : 'w-12 h-12'} mx-auto mb-4 text-muted-foreground/50`} />
-              {!layout.isNarrow && (
-                <>
-                  <h3 className="text-lg font-medium mb-2">{t('no_datasource')}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {t('no_datasource_desc')}
-                  </p>
-                </>
-              )}
-              {layout.isNarrow && (
-                <p className="text-xs text-muted-foreground">{t('no_data')}</p>
-              )}
+            <div className="p-6 text-center">
+              <Database className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="text-lg font-medium mb-2">{t('no_datasource')}</h3>
+              <p className="text-sm text-muted-foreground">
+                {t('no_datasource_desc')}
+              </p>
             </div>
           ) : (
             <div className="p-4 space-y-6 w-full min-w-[280px]">
               {/* 总体统计卡片 - 固定2列布局 */}
-              {layout.showStats && (
-                <div className="grid grid-cols-2 gap-3 w-full">
+              <div className="grid grid-cols-2 gap-3 w-full">
                   <Card className="flex-shrink-0">
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2">
@@ -421,10 +386,9 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                     </CardContent>
                   </Card>
                 </div>
-              )}
 
               {/* 健康状态分布 */}
-              {layout.showCharts && healthDistribution.length > 0 && (
+              {healthDistribution.length > 0 && (
                 <Card className="flex-shrink-0 w-full min-w-[280px]">
                   <CardHeader className="pb-2 flex-shrink-0">
                     <CardTitle className="text-sm flex items-center gap-2">
@@ -468,7 +432,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
               )}
 
               {/* 性能趋势图表 */}
-              {layout.showDetailed && historyData.length > 0 && (
+              {historyData.length > 0 && (
                 <>
                   <Card className="flex-shrink-0 w-full min-w-[280px]">
                     <CardHeader className="pb-2 flex-shrink-0">
@@ -695,7 +659,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                         </div>
 
                         {/* 展开的详细信息 */}
-                        {isSelected && layout.showDetailed && (
+                        {isSelected && (
                           <div className="mt-3 pt-3 border-t border-border space-y-2">
                             <div className="text-xs">
                               <div className="font-medium mb-1">性能指标</div>
