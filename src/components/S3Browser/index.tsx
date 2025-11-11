@@ -742,15 +742,27 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         const CONCURRENT_LIMIT = 5; // 最多同时5个请求
         const SMALL_LIST_THRESHOLD = 20; // 少于20个对象时直接并发加载
 
-        // 过滤出需要加载权限的对象（排除已缓存失败的）
+        // 过滤出需要加载权限的对象（排除已缓存失败的和文件夹）
         const objectsToLoad = newObjects.filter(obj => {
+          // 跳过文件夹，因为文件夹的 ACL 获取可能不被支持
+          if (obj.isDirectory) {
+            return false;
+          }
           const cacheKey = `object:${currentBucket}:${obj.key}`;
           return !permissionFailureCacheRef.current.has(cacheKey);
         });
 
         // 如果对象数量很少，直接并发加载所有权限
         if (objectsToLoad.length === 0) {
-          logger.debug(`📦 [S3Browser] 所有对象权限已缓存，跳过加载`);
+          logger.debug(`📦 [S3Browser] 所有对象权限已缓存或为文件夹，跳过加载`);
+          // 将文件夹的 acl 设置为 null，表示不支持权限信息
+          setObjects(prevObjects =>
+            prevObjects.map(o =>
+              o.isDirectory && o.acl === undefined
+                ? { ...o, acl: null }
+                : o
+            )
+          );
           return;
         }
 
@@ -787,12 +799,16 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           });
 
           // 总是更新对象，即使所有权限获取都失败了
+          // 同时将文件夹的 acl 设置为 null
           setObjects(prevObjects =>
-            prevObjects.map(o =>
-              aclMap.has(o.key)
-                ? { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' | null }
-                : o
-            )
+            prevObjects.map(o => {
+              if (aclMap.has(o.key)) {
+                return { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' | null };
+              } else if (o.isDirectory && o.acl === undefined) {
+                return { ...o, acl: null };
+              }
+              return o;
+            })
           );
           logger.info(`📦 [S3Browser] 批量更新了 ${aclMap.size} 个对象的权限`);
           return;
@@ -854,12 +870,16 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             });
 
             // 总是更新对象，即使所有权限获取都失败了
+            // 同时将文件夹的 acl 设置为 null
             setObjects(prevObjects =>
-              prevObjects.map(o =>
-                aclMap.has(o.key)
-                  ? { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' | null }
-                  : o
-              )
+              prevObjects.map(o => {
+                if (aclMap.has(o.key)) {
+                  return { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' | null };
+                } else if (o.isDirectory && o.acl === undefined) {
+                  return { ...o, acl: null };
+                }
+                return o;
+              })
             );
             logger.debug(`📦 [S3Browser] 批量更新了 ${aclMap.size} 个对象的权限`);
           }

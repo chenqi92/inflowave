@@ -123,12 +123,13 @@ pub async fn get_connection(
 #[tauri::command]
 pub async fn update_connection(
     connection_service: State<'_, ConnectionService>,
+    s3_manager: State<'_, Arc<Mutex<S3ClientManager>>>,
     config: ConnectionConfig,
 ) -> Result<(), String> {
     debug!("处理更新连接命令: {}", config.name);
-    
+
     connection_service
-        .update_connection(config)
+        .update_connection(config, Some(s3_manager.inner().clone()))
         .await
         .map_err(|e| {
             error!("更新连接失败: {}", e);

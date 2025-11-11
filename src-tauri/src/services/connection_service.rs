@@ -388,7 +388,11 @@ impl ConnectionService {
     }
 
     /// 更新连接
-    pub async fn update_connection(&self, mut config: ConnectionConfig) -> Result<()> {
+    pub async fn update_connection(
+        &self,
+        mut config: ConnectionConfig,
+        s3_manager: Option<Arc<Mutex<S3ClientManager>>>,
+    ) -> Result<()> {
         debug!("更新连接: {}", config.name);
 
         let connection_id = config.id.clone();
@@ -542,14 +546,79 @@ impl ConnectionService {
         // 移除旧连接
         self.manager.remove_connection(&connection_id).await
             .context("移除旧连接失败")?;
-        
+
         // 解密所有敏感字段用于连接
         let runtime_config = self.decrypt_sensitive_fields(&config)?;
 
         // 添加新连接
-        self.manager.add_connection(runtime_config).await
+        self.manager.add_connection(runtime_config.clone()).await
             .context("添加新连接失败")?;
-        
+
+        // 如果是对象存储连接，同时更新全局 S3ClientManager
+        if runtime_config.db_type == crate::models::DatabaseType::ObjectStorage {
+            if let Some(s3_mgr) = s3_manager {
+                info!("更新全局 S3ClientManager 中的对象存储连接: {}", connection_id);
+
+                // 构建 S3ConnectionConfig
+                let s3_connection_config = if let Some(ref driver_config) = runtime_config.driver_config {
+                    if let Some(ref s3_cfg) = driver_config.s3 {
+                        crate::database::s3_client::S3ConnectionConfig {
+                            endpoint: s3_cfg.endpoint.clone().filter(|e| !e.is_empty()),
+                            region: s3_cfg.region.clone().filter(|r| !r.is_empty()).or(Some("us-east-1".to_string())),
+                            access_key: s3_cfg.access_key.clone().unwrap_or_else(||
+                                runtime_config.username.clone().unwrap_or_default()
+                            ),
+                            secret_key: s3_cfg.secret_key.clone().unwrap_or_else(||
+                                runtime_config.password.clone().unwrap_or_default()
+                            ),
+                            use_ssl: s3_cfg.use_ssl.unwrap_or(true),
+                            path_style: s3_cfg.path_style.unwrap_or(false),
+                            session_token: s3_cfg.session_token.clone().filter(|t| !t.is_empty()),
+                            custom_domain: s3_cfg.custom_domain.clone().filter(|d| !d.is_empty()),
+                        }
+                    } else {
+                        // 兼容旧版本配置
+                        crate::database::s3_client::S3ConnectionConfig {
+                            endpoint: if !runtime_config.host.is_empty() {
+                                Some(runtime_config.host.clone())
+                            } else {
+                                None
+                            },
+                            region: Some("us-east-1".to_string()),
+                            access_key: runtime_config.username.clone().unwrap_or_default(),
+                            secret_key: runtime_config.password.clone().unwrap_or_default(),
+                            use_ssl: runtime_config.ssl,
+                            path_style: false,
+                            session_token: None,
+                            custom_domain: None,
+                        }
+                    }
+                } else {
+                    // 兼容旧版本配置
+                    crate::database::s3_client::S3ConnectionConfig {
+                        endpoint: if !runtime_config.host.is_empty() {
+                            Some(runtime_config.host.clone())
+                        } else {
+                            None
+                        },
+                        region: Some("us-east-1".to_string()),
+                        access_key: runtime_config.username.clone().unwrap_or_default(),
+                        secret_key: runtime_config.password.clone().unwrap_or_default(),
+                        use_ssl: runtime_config.ssl,
+                        path_style: false,
+                        session_token: None,
+                        custom_domain: None,
+                    }
+                };
+
+                // 在全局管理器中创建/更新客户端
+                let manager = s3_mgr.lock().await;
+                manager.create_client(&connection_id, &s3_connection_config).await
+                    .context("在全局 S3ClientManager 中更新客户端失败")?;
+                info!("对象存储连接已更新到全局 S3ClientManager: {}", connection_id);
+            }
+        }
+
         info!("连接 '{}' 更新成功", config.name);
         Ok(())
     }
