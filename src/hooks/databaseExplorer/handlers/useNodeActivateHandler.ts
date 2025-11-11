@@ -134,7 +134,7 @@ export const useNodeActivateHandler = ({
 
                 logger.info(`📦 [DatabaseExplorer] 调用 onCreateS3BrowserTab: connectionId=${connectionId}, name=${node.name}, bucket=${defaultBucket}`);
                 onCreateS3BrowserTab(connectionId, node.name, defaultBucket);
-                showMessage.success(`正在打开对象存储浏览器`);
+                showMessage.success(`正在打开对象存储面板`);
             } else {
                 // 其他连接节点：打开连接详情对话框
                 logger.info(`🔌 [DatabaseExplorer] 非对象存储连接，打开详情对话框: ${node.name}`);

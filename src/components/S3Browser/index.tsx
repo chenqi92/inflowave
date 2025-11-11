@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import {
   Button,
@@ -273,7 +273,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   }, []);
 
   // 加载根级别内容（buckets 或 bucket 内的对象）
-  // 注意：使用 sortBy 的具体字段而不是整个对象，避免因对象引用变化导致重复触发
+  // 注意：不包含 sortBy 依赖项，因为排序在前端完成，不需要重新加载数据
   useEffect(() => {
     logger.info(
       `📦 [S3Browser] useEffect 触发: bucket=${currentBucket}, path=${currentPath}`
@@ -288,7 +288,37 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       loadObjects();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionId, currentBucket, currentPath, searchTerm, viewConfig.sortBy.field, viewConfig.sortBy.order]);
+  }, [connectionId, currentBucket, currentPath, searchTerm]);
+
+  // 对 objects 进行排序（使用 useMemo 避免不必要的重新排序）
+  const sortedObjects = useMemo(() => {
+    const sorted = [...objects];
+
+    sorted.sort((a, b) => {
+      // 在 bucket 内时，文件夹优先
+      if (currentBucket && a.isDirectory !== b.isDirectory) {
+        return a.isDirectory ? -1 : 1;
+      }
+
+      const field = viewConfig.sortBy.field;
+      const order = viewConfig.sortBy.order === 'asc' ? 1 : -1;
+
+      switch (field) {
+        case 'name':
+          return a.name.localeCompare(b.name) * order;
+        case 'size':
+          return (a.size - b.size) * order;
+        case 'lastModified':
+          return (
+            (a.lastModified.getTime() - b.lastModified.getTime()) * order
+          );
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [objects, viewConfig.sortBy.field, viewConfig.sortBy.order, currentBucket]);
 
   // 无限滚动：使用 IntersectionObserver 监听触发器元素
   useEffect(() => {
@@ -372,22 +402,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         );
       }
 
-      // 排序
-      bucketObjects.sort((a, b) => {
-        const field = viewConfig.sortBy.field;
-        const order = viewConfig.sortBy.order === 'asc' ? 1 : -1;
-
-        switch (field) {
-          case 'name':
-            return a.name.localeCompare(b.name) * order;
-          case 'lastModified':
-            return (
-              (a.lastModified.getTime() - b.lastModified.getTime()) * order
-            );
-          default:
-            return 0;
-        }
-      });
+      // 注意：排序逻辑已移至 useMemo，不在这里执行
 
       // 立即显示 bucket 列表
       setObjects(bucketObjects);
@@ -494,12 +509,18 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         bucketList.forEach(bucket => {
           bucketStatsRequestsRef.current.delete(bucket.name);
         });
+
+        // 重置加载标志（在统计信息加载完成后）
+        isLoadingBucketsRef.current = false;
       }).catch(error => {
         logger.error('批量加载 bucket 统计信息失败:', error);
         // 清理所有请求标记
         bucketList.forEach(bucket => {
           bucketStatsRequestsRef.current.delete(bucket.name);
         });
+
+        // 重置加载标志（即使失败也要重置）
+        isLoadingBucketsRef.current = false;
       });
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载 buckets 失败:`, error);
@@ -507,8 +528,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         `${String(t('s3:error.load_buckets_failed'))}: ${error}`
       );
       setIsLoading(false);
-    } finally {
-      // 重置加载标志
+      // 重置加载标志（发生异常时）
       isLoadingBucketsRef.current = false;
     }
   };
@@ -610,29 +630,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
       logger.info(`📦 [S3Browser] 过滤后共 ${newObjects.length} 个项目`);
 
-      // 排序
-      newObjects.sort((a, b) => {
-        // 文件夹优先
-        if (a.isDirectory !== b.isDirectory) {
-          return a.isDirectory ? -1 : 1;
-        }
-
-        const field = viewConfig.sortBy.field;
-        const order = viewConfig.sortBy.order === 'asc' ? 1 : -1;
-
-        switch (field) {
-          case 'name':
-            return a.name.localeCompare(b.name) * order;
-          case 'size':
-            return (a.size - b.size) * order;
-          case 'lastModified':
-            return (
-              (a.lastModified.getTime() - b.lastModified.getTime()) * order
-            );
-          default:
-            return 0;
-        }
-      });
+      // 注意：排序逻辑已移至 useMemo，不在这里执行
 
       if (append) {
         setObjects(prev => {
@@ -951,7 +949,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
   const handleSelectAll = (selected: boolean) => {
     if (selected) {
-      setSelectedObjects(new Set(objects.map(obj => obj.key)));
+      setSelectedObjects(new Set(sortedObjects.map(obj => obj.key)));
     } else {
       setSelectedObjects(new Set());
     }
@@ -2048,8 +2046,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                     <div className='flex items-center justify-center'>
                       <Checkbox
                         checked={
-                          objects.length > 0 &&
-                          selectedObjects.size === objects.length
+                          sortedObjects.length > 0 &&
+                          selectedObjects.size === sortedObjects.length
                         }
                         onCheckedChange={handleSelectAll}
                       />
@@ -2136,7 +2134,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {isLoading && objects.length === 0 ? (
+                {isLoading && sortedObjects.length === 0 ? (
                   // 骨架屏加载状态
                   Array.from({ length: 10 }).map((_, index) => (
                     <tr key={`skeleton-${index}`} className='border-b'>
@@ -2169,7 +2167,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                       </td>
                     </tr>
                   ))
-                ) : objects.map((object, index) => (
+                ) : sortedObjects.map((object, index) => (
                   <tr
                     key={object.key}
                     className='border-b hover:bg-muted/50 cursor-pointer object-item'
@@ -2285,7 +2283,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             </div>
           ) : (
             <div className='grid grid-cols-6 gap-2 p-2'>
-              {objects.map((object, index) => (
+              {sortedObjects.map((object, index) => (
                 <ContextMenu key={object.key}>
                   <ContextMenuTrigger asChild>
                     <div
@@ -2383,7 +2381,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       {/* 状态栏 */}
       <div className='statusbar px-2 py-1 border-t text-sm text-muted-foreground flex justify-between'>
         <span>
-          {t('s3:items', { count: objects.length })}
+          {t('s3:items', { count: sortedObjects.length })}
           {selectedObjects.size > 0 &&
             ` | ${t('s3:selected', { count: selectedObjects.size })}`}
         </span>
