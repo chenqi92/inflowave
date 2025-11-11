@@ -125,7 +125,8 @@ export default defineConfig({
             'i18next-browser-languagedetector',
             'date-fns',
         ],
-        force: true, // 强制重新构建依赖
+        // 移除 force: true，使用缓存加速启动
+        // 只在依赖变更或出现问题时才需要手动清理缓存: npm run clean:cache
     },
 
     // Worker配置

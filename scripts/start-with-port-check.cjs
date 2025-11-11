@@ -144,12 +144,12 @@ async function startApp() {
         let command;
 
         if (args.includes('--dev') || args.includes('dev')) {
-            command = `npm run copy-docs && tauri dev`;
+            command = `tauri dev`;
         } else if (args.includes('--build') || args.includes('build')) {
             command = `npm run copy-docs && tauri build`;
         } else {
             // 默认开发模式
-            command = `npm run copy-docs && tauri dev`;
+            command = `tauri dev`;
         }
 
         // 启动应用，让 Vite 自己处理端口

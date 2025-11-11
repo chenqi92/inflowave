@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -8,6 +9,7 @@ const __dirname = path.dirname(__filename);
 // 源目录和目标目录
 const sourceDir = path.join(__dirname, '..', 'user-docs');
 const targetDir = path.join(__dirname, '..', 'public', 'user-docs');
+const cacheFile = path.join(targetDir, '.copy-cache.json');
 
 // 确保目标目录存在
 if (!fs.existsSync(path.join(__dirname, '..', 'public'))) {
@@ -18,18 +20,60 @@ if (!fs.existsSync(targetDir)) {
   fs.mkdirSync(targetDir, { recursive: true });
 }
 
-// 复制文件的函数
-function copyFile(src, dest) {
+// 计算文件哈希
+function getFileHash(filePath) {
   try {
-    fs.copyFileSync(src, dest);
-    console.log(`✅ 复制: ${path.basename(src)}`);
+    const content = fs.readFileSync(filePath);
+    return crypto.createHash('md5').update(content).digest('hex');
+  } catch {
+    return null;
+  }
+}
+
+// 加载缓存
+function loadCache() {
+  try {
+    if (fs.existsSync(cacheFile)) {
+      return JSON.parse(fs.readFileSync(cacheFile, 'utf8'));
+    }
+  } catch {
+    // 忽略缓存加载错误
+  }
+  return {};
+}
+
+// 保存缓存
+function saveCache(cache) {
+  try {
+    fs.writeFileSync(cacheFile, JSON.stringify(cache, null, 2));
   } catch (error) {
-    console.error(`❌ 复制失败: ${path.basename(src)}`, error.message);
+    console.warn('⚠️  缓存保存失败:', error.message);
+  }
+}
+
+// 复制文件的函数（带缓存检查）
+function copyFile(src, dest, cache, fileName) {
+  try {
+    const srcHash = getFileHash(src);
+    const destHash = getFileHash(dest);
+
+    // 如果文件内容相同且缓存匹配，跳过复制
+    if (srcHash && destHash && srcHash === destHash && cache[fileName] === srcHash) {
+      return false; // 未复制
+    }
+
+    fs.copyFileSync(src, dest);
+    cache[fileName] = srcHash;
+    return true; // 已复制
+  } catch (error) {
+    console.error(`❌ 复制失败: ${fileName}`, error.message);
+    return false;
   }
 }
 
 // 复制所有 .md 文件
 function copyUserDocs() {
+  const startTime = Date.now();
   console.log('📚 开始复制用户文档...');
 
   if (!fs.existsSync(sourceDir)) {
@@ -45,13 +89,26 @@ function copyUserDocs() {
     return;
   }
 
+  const cache = loadCache();
+  let copiedCount = 0;
+  let skippedCount = 0;
+
   mdFiles.forEach(file => {
     const srcPath = path.join(sourceDir, file);
     const destPath = path.join(targetDir, file);
-    copyFile(srcPath, destPath);
+
+    if (copyFile(srcPath, destPath, cache, file)) {
+      console.log(`✅ 复制: ${file}`);
+      copiedCount++;
+    } else {
+      skippedCount++;
+    }
   });
 
-  console.log(`✨ 完成！共复制 ${mdFiles.length} 个文档文件`);
+  saveCache(cache);
+
+  const duration = Date.now() - startTime;
+  console.log(`✨ 完成！共 ${mdFiles.length} 个文档文件 (复制: ${copiedCount}, 跳过: ${skippedCount}, 耗时: ${duration}ms)`);
 }
 
 // 执行复制

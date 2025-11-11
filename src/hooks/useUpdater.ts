@@ -88,15 +88,24 @@ export const useUpdater = (): UseUpdaterReturn => {
   // 初始化更新服务
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
 
     const initializeUpdater = async () => {
       try {
         await updaterService.initialize();
-        
-        // 初始化完成后进行一次检查
-        if (mounted) {
-          await checkForUpdates();
-        }
+
+        // 延迟检查更新，避免阻塞应用启动
+        // 等待应用完全加载后再检查（5秒后）
+        timeoutId = setTimeout(async () => {
+          if (mounted) {
+            try {
+              await checkForUpdates();
+            } catch (error) {
+              logger.warn('Background update check failed:', error);
+              // 更新检查失败不影响应用使用
+            }
+          }
+        }, 5000); // 延迟5秒
       } catch (error) {
         logger.error('Failed to initialize updater:', error);
       }
@@ -106,6 +115,9 @@ export const useUpdater = (): UseUpdaterReturn => {
 
     return () => {
       mounted = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
   }, [checkForUpdates]);
 

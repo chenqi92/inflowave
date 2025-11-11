@@ -104,6 +104,9 @@ public/*
 !public/locales
 !public/.gitkeep
 
+# 文档复制缓存
+public/user-docs/.copy-cache.json
+
 # Storybook build outputs
 .out
 .storybook-out
