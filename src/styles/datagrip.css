@@ -175,6 +175,36 @@
   border-color: hsl(var(--primary) / 0.9);
 }
 
+/* 工具栏按钮增强 hover 效果 - 确保 hover 背景色覆盖整个按钮区域 */
+.datagrip-toolbar button {
+  transition: all 0.2s ease;
+  /* 确保背景色覆盖整个按钮区域 */
+  box-sizing: border-box !important;
+  background-clip: border-box !important;
+  /* 移除可能导致背景色缩小的 line-height */
+  line-height: 1 !important;
+}
+
+.datagrip-toolbar button:hover:not(:disabled) {
+  /* 强制背景色覆盖整个按钮区域，包括所有 padding 和完整高度 */
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+  box-shadow: 0 1px 3px hsl(var(--foreground) / 0.1);
+  /* 确保背景色从边框盒开始绘制，覆盖完整高度 */
+  background-origin: border-box !important;
+}
+
+/* 确保按钮内的所有子元素不影响背景色范围 */
+.datagrip-toolbar button > * {
+  position: relative;
+  z-index: 1;
+}
+
+.datagrip-toolbar button:active:not(:disabled) {
+  transform: scale(0.98);
+  background-color: hsl(var(--accent) / 0.8) !important;
+}
+
 /* 数据库浏览器样式 */
 .database-explorer {
   border-right: 1px solid #e1e4e8;
