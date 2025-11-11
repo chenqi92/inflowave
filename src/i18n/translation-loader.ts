@@ -504,30 +504,28 @@ export class TranslationLoader {
 
   /**
    * 设置轮询监听器（浏览器环境）
+   *
+   * 注意：轮询会导致每30秒加载所有翻译资源（26个文件），严重影响性能
+   * 已禁用轮询功能，改为仅在手动触发时重新加载
    */
   private setupPollingWatcher(): void {
-    // 在开发环境下每30秒检查一次资源更新
-    if (process.env.NODE_ENV === 'development') {
-      setInterval(async () => {
-        try {
-          const languages = ['zh-CN', 'en-US'];
-          for (const language of languages) {
-            const cached = this.cacheManager.get(language);
-            if (cached) {
-              // 检查资源是否有更新
-              const fresh = await this.loadLanguageResources(language);
-              if (JSON.stringify(cached) !== JSON.stringify(fresh)) {
-                logger.info(`Language resource updated: ${language}`);
-                this.cacheManager.set(language, fresh);
-                this.triggerHotUpdate(language, fresh);
-              }
-            }
-          }
-        } catch (error) {
-          logger.warn('Polling watcher error:', error);
-        }
-      }, 30000);
-    }
+    logger.info('[TranslationLoader] 🚫 Polling watcher disabled for performance optimization');
+    logger.info('[TranslationLoader] 💡 Translation resources will be cached and only reload on manual trigger');
+
+    // 完全禁用轮询功能
+    // 原因：
+    // 1. 每30秒加载26个翻译文件（13个zh-CN + 13个en-US）会产生大量不必要的网络请求
+    // 2. 即使资源没有变化，也会执行完整的加载和比较过程
+    // 3. 在生产环境中，翻译资源通常不会频繁变化
+    // 4. 如果需要更新翻译，可以通过刷新页面或手动调用 reloadLanguage() 方法
+
+    // 如果将来需要启用热重载，建议使用以下优化方案：
+    // 1. 使用 WebSocket 或 Server-Sent Events 进行推送式更新
+    // 2. 使用 HEAD 请求检查 ETag 或 Last-Modified，而不是完整加载
+    // 3. 增加轮询间隔（例如5分钟或更长）
+    // 4. 仅在用户活跃时进行检查
+
+    return;
   }
 
   /**

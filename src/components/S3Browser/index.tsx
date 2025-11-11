@@ -232,6 +232,12 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   const bucketStatsRequestsRef = useRef<Map<string, boolean>>(new Map());
   // 用于标识当前的加载会话，当会话改变时，之前的请求结果会被忽略
   const loadSessionRef = useRef<number>(0);
+  // 用于防止短时间内重复加载
+  const isLoadingBucketsRef = useRef<boolean>(false);
+  // 用于缓存权限检查失败的 bucket/object，避免重复请求
+  const permissionFailureCacheRef = useRef<Set<string>>(new Set());
+  // 用于标识当前的对象权限加载会话
+  const objectPermissionsSessionRef = useRef<number>(0);
 
   // 获取连接配置和服务商类型
   const { getConnection } = useConnectionStore();
@@ -267,6 +273,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   }, []);
 
   // 加载根级别内容（buckets 或 bucket 内的对象）
+  // 注意：使用 sortBy 的具体字段而不是整个对象，避免因对象引用变化导致重复触发
   useEffect(() => {
     logger.info(
       `📦 [S3Browser] useEffect 触发: bucket=${currentBucket}, path=${currentPath}`
@@ -280,7 +287,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       cancelAllBucketStatsRequests();
       loadObjects();
     }
-  }, [connectionId, currentBucket, currentPath, searchTerm, viewConfig.sortBy]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionId, currentBucket, currentPath, searchTerm, viewConfig.sortBy.field, viewConfig.sortBy.order]);
 
   // 无限滚动：使用 IntersectionObserver 监听触发器元素
   useEffect(() => {
@@ -317,7 +325,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   }, [hasMore, isLoading, currentBucket]);
 
   const loadBuckets = async () => {
+    // 防止短时间内重复加载
+    if (isLoadingBucketsRef.current) {
+      logger.info('📦 [S3Browser] 跳过重复的 loadBuckets 调用（已在加载中）');
+      return;
+    }
+
     try {
+      isLoadingBucketsRef.current = true;
+
       // 取消之前所有正在进行的 bucket stats 请求
       cancelAllBucketStatsRequests();
 
@@ -396,6 +412,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           // 并行加载对象数量和权限
           // 根据服务商推荐的访问控制方式选择使用 ACL 还是 Bucket Policy
           const getPermissions = async () => {
+            const cacheKey = `bucket:${bucket.name}`;
+
+            // 检查是否已经缓存了失败结果
+            if (permissionFailureCacheRef.current.has(cacheKey)) {
+              logger.debug(`📦 [S3Browser] 使用缓存的权限失败结果: ${bucket.name}`);
+              return 'private';
+            }
+
             try {
               if (capabilities.preferredAccessControl === 'policy' && capabilities.bucketPolicy) {
                 // 优先使用 Bucket Policy
@@ -408,6 +432,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               }
             } catch (err) {
               logger.warn(`获取 bucket ${bucket.name} 权限失败:`, err);
+              // 缓存失败结果，避免重复请求
+              permissionFailureCacheRef.current.add(cacheKey);
               return 'private'; // 默认为私有
             }
           };
@@ -481,6 +507,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         `${String(t('s3:error.load_buckets_failed'))}: ${error}`
       );
       setIsLoading(false);
+    } finally {
+      // 重置加载标志
+      isLoadingBucketsRef.current = false;
     }
   };
 
@@ -624,32 +653,145 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         `📦 [S3Browser] 加载完成: hasMore=${result.isTruncated}, nextToken=${result.nextContinuationToken ? '有' : '无'}`
       );
 
-      // 在后台异步加载每个对象的权限
-      newObjects.forEach(async obj => {
-        try {
-          const acl = await S3Service.getObjectAcl(connectionId, currentBucket, obj.key);
+      // 🔧 性能优化：批量加载对象权限，限制并发数量
+      // 使用并发控制避免同时发起大量请求导致CPU飙升
+      const loadObjectPermissionsInBatches = async () => {
+        // 创建新的加载会话，取消之前的权限加载
+        const currentPermissionsSession = ++objectPermissionsSessionRef.current;
 
-          // 更新对应对象的权限
-          setObjects(prevObjects =>
-            prevObjects.map(o =>
-              o.key === obj.key
-                ? { ...o, acl: acl as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' }
-                : o
-            )
-          );
+        const BATCH_SIZE = 10; // 每批处理10个对象
+        const CONCURRENT_LIMIT = 5; // 最多同时5个请求
+        const SMALL_LIST_THRESHOLD = 20; // 少于20个对象时直接并发加载
 
-          logger.info(`📦 [S3Browser] 对象 ${obj.name} 权限: ${acl}`);
-        } catch (error) {
-          logger.warn(`📦 [S3Browser] 获取对象 ${obj.name} 权限失败:`, error);
-          // 加载失败时设置为私有
-          setObjects(prevObjects =>
-            prevObjects.map(o =>
-              o.key === obj.key
-                ? { ...o, acl: 'private' as const }
-                : o
-            )
-          );
+        // 过滤出需要加载权限的对象（排除已缓存失败的）
+        const objectsToLoad = newObjects.filter(obj => {
+          const cacheKey = `object:${currentBucket}:${obj.key}`;
+          return !permissionFailureCacheRef.current.has(cacheKey);
+        });
+
+        // 如果对象数量很少，直接并发加载所有权限
+        if (objectsToLoad.length === 0) {
+          logger.debug(`📦 [S3Browser] 所有对象权限已缓存，跳过加载`);
+          return;
         }
+
+        if (objectsToLoad.length <= SMALL_LIST_THRESHOLD) {
+          logger.info(`📦 [S3Browser] 对象数量较少（${objectsToLoad.length}），直接并发加载所有权限`);
+
+          const results = await Promise.allSettled(
+            objectsToLoad.map(async obj => {
+              const cacheKey = `object:${currentBucket}:${obj.key}`;
+              try {
+                const acl = await S3Service.getObjectAcl(connectionId, currentBucket, obj.key);
+                return { key: obj.key, acl, success: true };
+              } catch (error) {
+                logger.warn(`📦 [S3Browser] 获取对象 ${obj.name} 权限失败:`, error);
+                permissionFailureCacheRef.current.add(cacheKey);
+                return { key: obj.key, acl: 'private' as const, success: false };
+              }
+            })
+          );
+
+          // 检查会话是否已被取消
+          if (objectPermissionsSessionRef.current !== currentPermissionsSession) {
+            logger.info(`📦 [S3Browser] 权限加载会话 ${currentPermissionsSession} 已被取消，忽略结果`);
+            return;
+          }
+
+          // 批量更新状态
+          const aclMap = new Map<string, string>();
+          results.forEach(result => {
+            if (result.status === 'fulfilled') {
+              aclMap.set(result.value.key, result.value.acl);
+            }
+          });
+
+          if (aclMap.size > 0) {
+            setObjects(prevObjects =>
+              prevObjects.map(o =>
+                aclMap.has(o.key)
+                  ? { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' }
+                  : o
+              )
+            );
+            logger.info(`📦 [S3Browser] 批量更新了 ${aclMap.size} 个对象的权限`);
+          }
+          return;
+        }
+
+        logger.info(`📦 [S3Browser] 开始批量加载 ${objectsToLoad.length} 个对象的权限（并发限制: ${CONCURRENT_LIMIT}, session: ${currentPermissionsSession}）`);
+
+        // 分批处理
+        for (let i = 0; i < objectsToLoad.length; i += BATCH_SIZE) {
+          // 检查会话是否已被取消
+          if (objectPermissionsSessionRef.current !== currentPermissionsSession) {
+            logger.info(`📦 [S3Browser] 权限加载会话 ${currentPermissionsSession} 已被取消`);
+            return;
+          }
+
+          const batch = objectsToLoad.slice(i, i + BATCH_SIZE);
+
+          // 限制并发数量
+          const chunks: typeof batch[] = [];
+          for (let j = 0; j < batch.length; j += CONCURRENT_LIMIT) {
+            chunks.push(batch.slice(j, j + CONCURRENT_LIMIT));
+          }
+
+          // 逐个chunk处理
+          for (const chunk of chunks) {
+            // 再次检查会话
+            if (objectPermissionsSessionRef.current !== currentPermissionsSession) {
+              logger.info(`📦 [S3Browser] 权限加载会话 ${currentPermissionsSession} 已被取消`);
+              return;
+            }
+
+            const results = await Promise.allSettled(
+              chunk.map(async obj => {
+                const cacheKey = `object:${currentBucket}:${obj.key}`;
+                try {
+                  const acl = await S3Service.getObjectAcl(connectionId, currentBucket, obj.key);
+                  return { key: obj.key, acl, success: true };
+                } catch (error) {
+                  logger.warn(`📦 [S3Browser] 获取对象 ${obj.name} 权限失败:`, error);
+                  permissionFailureCacheRef.current.add(cacheKey);
+                  return { key: obj.key, acl: 'private' as const, success: false };
+                }
+              })
+            );
+
+            // 最后一次检查会话
+            if (objectPermissionsSessionRef.current !== currentPermissionsSession) {
+              logger.info(`📦 [S3Browser] 权限加载会话 ${currentPermissionsSession} 已被取消，忽略结果`);
+              return;
+            }
+
+            // 批量更新状态（一次性更新所有结果，避免多次渲染）
+            const aclMap = new Map<string, string>();
+            results.forEach(result => {
+              if (result.status === 'fulfilled') {
+                aclMap.set(result.value.key, result.value.acl);
+              }
+            });
+
+            if (aclMap.size > 0) {
+              setObjects(prevObjects =>
+                prevObjects.map(o =>
+                  aclMap.has(o.key)
+                    ? { ...o, acl: aclMap.get(o.key) as 'private' | 'public-read' | 'public-read-write' | 'authenticated-read' }
+                    : o
+                )
+              );
+              logger.debug(`📦 [S3Browser] 批量更新了 ${aclMap.size} 个对象的权限`);
+            }
+          }
+        }
+
+        logger.info(`📦 [S3Browser] 权限加载完成 (session: ${currentPermissionsSession})`);
+      };
+
+      // 异步执行权限加载，不阻塞主流程
+      loadObjectPermissionsInBatches().catch(error => {
+        logger.error('批量加载对象权限失败:', error);
       });
     } catch (error) {
       logger.error(`📦 [S3Browser] 加载对象失败:`, error);
@@ -1371,6 +1513,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
   // 刷新处理
   const handleRefresh = () => {
+    // 清除权限失败缓存，重新尝试获取权限
+    permissionFailureCacheRef.current.clear();
+    logger.info('📦 [S3Browser] 清除权限失败缓存');
+
     if (!currentBucket) {
       loadBuckets();
     } else {

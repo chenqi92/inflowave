@@ -100,9 +100,13 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
   // 添加渲染计数器（仅在开发环境的 DEBUG 级别）
   const renderCountRef = useRef(0);
+  const prevItemsCountRef = useRef(0); // 用于跟踪节点数量变化
   if (import.meta.env.DEV) {
     renderCountRef.current++;
-    logger.render(`MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
+    // 🔧 性能优化：减少日志输出频率，只在每10次渲染时记录一次
+    if (renderCountRef.current % 10 === 0) {
+      logger.render(`MultiConnectionTreeView 重新渲染 (第 ${renderCountRef.current} 次)`);
+    }
   }
 
   // 调试：打印 connectionStatuses（仅 DEBUG 级别）
@@ -1719,15 +1723,16 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     );
   }
 
-  // 移除渲染日志，避免性能影响
-  // logger.render('[MultiConnectionTreeView] 渲染，treeData 节点数:', treeData.length);
-
   // 获取所有可见的树节点项
   // 直接调用 tree.getItems()，不使用 useMemo
   // 因为 tree.rebuildTree() 在 useEffect 中调用，useMemo 会在 useEffect 之前计算，导致拿到旧值
   const items = tree.getItems();
-  logger.debug(`[MultiConnectionTreeView] tree.getItems() 返回 ${items.length} 个节点, expandedNodeIds:`, expandedNodeIds, 'treeData.length:', treeData.length);
-  logger.debug(`[MultiConnectionTreeView] tree.getState().selectedItems:`, tree.getState().selectedItems);
+  // 🔧 性能优化：减少日志输出，只在节点数量变化时记录
+  if (import.meta.env.DEV && items.length !== prevItemsCountRef.current) {
+    logger.debug(`[MultiConnectionTreeView] tree.getItems() 返回 ${items.length} 个节点, expandedNodeIds:`, expandedNodeIds, 'treeData.length:', treeData.length);
+    logger.debug(`[MultiConnectionTreeView] tree.getState().selectedItems:`, tree.getState().selectedItems);
+    prevItemsCountRef.current = items.length;
+  }
 
   // 渲染单个节点的函数
   // 🔧 修复 ESLint 错误：不使用 useCallback，因为 items 在每次渲染时都会变化
@@ -1808,7 +1813,8 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     );
   };
 
-  logger.debug(`[MultiConnectionTreeView] 渲染树，节点数: ${items.length}, treeData: ${treeData.length}`);
+  // 🔧 性能优化：移除每次渲染的日志输出，减少性能开销
+  // logger.debug(`[MultiConnectionTreeView] 渲染树，节点数: ${items.length}, treeData: ${treeData.length}`);
 
   return (
     <div ref={containerRef} className={`h-full w-full ${className}`} {...tree.getContainerProps()}>
