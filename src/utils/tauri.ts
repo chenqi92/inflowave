@@ -60,6 +60,7 @@ const VOID_COMMANDS = new Set([
   'create_dir',
   'delete_file',
   'close_app',
+  'rebuild_native_menu',
 
   // Settings
   'update_app_settings',
