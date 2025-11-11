@@ -20,6 +20,7 @@ pub struct S3ConnectionConfig {
     pub use_ssl: bool,
     pub path_style: bool,
     pub session_token: Option<String>,
+    pub custom_domain: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,12 +68,14 @@ pub struct S3PresignedUrlResult {
 #[derive(Debug)]
 pub struct S3ClientManager {
     clients: Arc<RwLock<HashMap<String, Arc<Client>>>>,
+    configs: Arc<RwLock<HashMap<String, S3ConnectionConfig>>>,
 }
 
 impl S3ClientManager {
     pub fn new() -> Self {
         Self {
             clients: Arc::new(RwLock::new(HashMap::new())),
+            configs: Arc::new(RwLock::new(HashMap::new())),
         }
     }
 
@@ -145,6 +148,10 @@ impl S3ClientManager {
         let mut clients = self.clients.write().await;
         clients.insert(id.to_string(), client);
 
+        // 存储配置信息（包括 custom_domain）
+        let mut configs = self.configs.write().await;
+        configs.insert(id.to_string(), config.clone());
+
         Ok(())
     }
 
@@ -159,7 +166,19 @@ impl S3ClientManager {
     pub async fn remove_client(&self, id: &str) -> Result<()> {
         let mut clients = self.clients.write().await;
         clients.remove(id);
+
+        let mut configs = self.configs.write().await;
+        configs.remove(id);
+
         Ok(())
+    }
+
+    pub async fn get_config(&self, id: &str) -> Result<S3ConnectionConfig> {
+        let configs = self.configs.read().await;
+        configs
+            .get(id)
+            .cloned()
+            .ok_or_else(|| anyhow!("S3 config not found: {}", id))
     }
 
     pub async fn test_connection(&self, id: &str) -> Result<bool> {
@@ -608,7 +627,32 @@ impl S3ClientManager {
             _ => return Err(anyhow!("Unsupported presigned URL operation: {}", operation)),
         };
 
-        let url = presigned_request.uri().to_string();
+        let mut url = presigned_request.uri().to_string();
+
+        // 如果配置了自定义域名，替换 URL 中的 endpoint 为 customDomain
+        if let Ok(config) = self.get_config(id).await {
+            if let Some(custom_domain) = &config.custom_domain {
+                if !custom_domain.is_empty() {
+                    // 解析原始 URL
+                    if let Ok(parsed_url) = url::Url::parse(&url) {
+                        // 获取原始主机名
+                        if let Some(original_host) = parsed_url.host_str() {
+                            // 解析自定义域名
+                            let custom_domain_clean = custom_domain
+                                .trim_start_matches("http://")
+                                .trim_start_matches("https://")
+                                .trim_end_matches('/');
+
+                            // 替换主机名，保留路径和查询参数
+                            url = url.replace(original_host, custom_domain_clean);
+
+                            log::info!("使用自定义域名替换预签名URL: {} -> {}", original_host, custom_domain_clean);
+                        }
+                    }
+                }
+            }
+        }
+
         let expires_at = Utc::now() + chrono::Duration::seconds(expires_in_seconds as i64);
 
         Ok(S3PresignedUrlResult {

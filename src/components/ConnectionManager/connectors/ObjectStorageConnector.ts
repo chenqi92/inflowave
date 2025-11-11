@@ -438,7 +438,7 @@ export class ObjectStorageConnector extends BaseConnector<ObjectStorageConfig> {
           name: 'customDomain',
           label: t('object_storage.custom_domain'),
           type: 'text',
-          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun', 'github'].includes(formData.objectStorageProvider),
+          visible: (formData) => ['s3', 'minio', 'aliyun-oss', 'tencent-cos', 'qiniu-kodo', 'upyun', 'github', 'cloudflare-r2', 'digitalocean-spaces', 'backblaze-b2', 'wasabi'].includes(formData.objectStorageProvider),
           placeholder: t('object_storage.custom_domain_placeholder'),
           description: t('object_storage.custom_domain_description')
         },

@@ -43,6 +43,7 @@ impl S3DatabaseClient {
                     use_ssl: s3.use_ssl.unwrap_or(true),
                     path_style: s3.path_style.unwrap_or(false),
                     session_token: s3.session_token.filter(|t| !t.is_empty()),
+                    custom_domain: s3.custom_domain.filter(|d| !d.is_empty()),
                 }
             } else {
                 return Err(anyhow!("缺少S3配置信息"));
@@ -57,6 +58,7 @@ impl S3DatabaseClient {
                 use_ssl: config.ssl,
                 path_style: false,
                 session_token: None,
+                custom_domain: None,
             }
         };
 

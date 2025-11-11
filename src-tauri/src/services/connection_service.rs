@@ -752,6 +752,7 @@ impl ConnectionService {
                             use_ssl: s3_cfg.use_ssl.unwrap_or(true),
                             path_style: s3_cfg.path_style.unwrap_or(false),
                             session_token: s3_cfg.session_token.clone().filter(|t| !t.is_empty()),
+                            custom_domain: s3_cfg.custom_domain.clone().filter(|d| !d.is_empty()),
                         }
                     } else {
                         // 兼容旧版本配置
@@ -767,6 +768,7 @@ impl ConnectionService {
                             use_ssl: runtime_config.ssl,
                             path_style: false,
                             session_token: None,
+                            custom_domain: None,
                         }
                     }
                 } else {
@@ -783,6 +785,7 @@ impl ConnectionService {
                         use_ssl: runtime_config.ssl,
                         path_style: false,
                         session_token: None,
+                        custom_domain: None,
                     }
                 };
 
