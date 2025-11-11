@@ -634,19 +634,54 @@ impl S3ClientManager {
             if let Some(custom_domain) = &config.custom_domain {
                 if !custom_domain.is_empty() {
                     // 解析原始 URL
-                    if let Ok(parsed_url) = url::Url::parse(&url) {
-                        // 获取原始主机名
-                        if let Some(original_host) = parsed_url.host_str() {
-                            // 解析自定义域名
-                            let custom_domain_clean = custom_domain
-                                .trim_start_matches("http://")
-                                .trim_start_matches("https://")
-                                .trim_end_matches('/');
+                    if let Ok(mut parsed_url) = url::Url::parse(&url) {
+                        // 解析自定义域名
+                        let custom_domain_clean = custom_domain
+                            .trim_start_matches("http://")
+                            .trim_start_matches("https://")
+                            .trim_end_matches('/');
 
-                            // 替换主机名，保留路径和查询参数
-                            url = url.replace(original_host, custom_domain_clean);
+                        // 获取原始的 host:port
+                        let original_host_port = if let Some(port) = parsed_url.port() {
+                            format!("{}:{}", parsed_url.host_str().unwrap_or(""), port)
+                        } else {
+                            parsed_url.host_str().unwrap_or("").to_string()
+                        };
 
-                            log::info!("使用自定义域名替换预签名URL: {} -> {}", original_host, custom_domain_clean);
+                        // 解析自定义域名，可能包含端口
+                        let (custom_host, custom_port) = if let Some(colon_pos) = custom_domain_clean.rfind(':') {
+                            // 检查冒号后面是否是数字（端口）
+                            let potential_port = &custom_domain_clean[colon_pos + 1..];
+                            if potential_port.chars().all(|c| c.is_ascii_digit()) {
+                                let host = &custom_domain_clean[..colon_pos];
+                                let port = potential_port.parse::<u16>().ok();
+                                (host.to_string(), port)
+                            } else {
+                                (custom_domain_clean.to_string(), None)
+                            }
+                        } else {
+                            (custom_domain_clean.to_string(), None)
+                        };
+
+                        // 设置新的主机名和端口
+                        if let Err(_) = parsed_url.set_host(Some(&custom_host)) {
+                            log::warn!("设置自定义域名主机失败");
+                        } else {
+                            if let Some(port) = custom_port {
+                                if let Err(_) = parsed_url.set_port(Some(port)) {
+                                    log::warn!("设置自定义域名端口失败");
+                                }
+                            } else {
+                                // 如果自定义域名没有指定端口，移除端口（使用默认端口）
+                                let _ = parsed_url.set_port(None);
+                            }
+
+                            url = parsed_url.to_string();
+                            log::info!("使用自定义域名替换预签名URL: {} -> {}:{}",
+                                original_host_port,
+                                custom_host,
+                                custom_port.map(|p| p.to_string()).unwrap_or_else(|| "default".to_string())
+                            );
                         }
                     }
                 }

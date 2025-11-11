@@ -3520,8 +3520,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               <div
                 className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
                 onClick={() => {
-                  setPreviewObject(contextMenu.object);
-                  setShowPreviewDialog(true);
+                  handlePreviewFile(contextMenu.object);
                   closeContextMenu();
                 }}
               >
