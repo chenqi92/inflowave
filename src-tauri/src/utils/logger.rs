@@ -176,11 +176,13 @@ fn setup_logging(log_dir: &PathBuf) -> Result<()> {
     };
 
     // 环境过滤器 - 默认 info 级别
+    // 优化：降低 AWS SDK 的日志级别，减少日志输出
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| {
             if cfg!(debug_assertions) {
-                println!("🔍 [Logger] 使用 DEBUG 级别");
-                EnvFilter::new("debug")
+                println!("🔍 [Logger] 使用 DEBUG 级别（AWS SDK 使用 INFO 级别）");
+                // 应用级别使用 debug，但 AWS SDK 相关的库使用 info
+                EnvFilter::new("debug,aws_smithy_runtime=info,aws_runtime=info,aws_sdk_s3=info")
             } else {
                 println!("🔍 [Logger] 使用 INFO 级别");
                 EnvFilter::new("info")

@@ -90,6 +90,40 @@ import { FileThumbnail, getFileIcon } from './components/FileThumbnail';
 import { setupPreviewNavigationGuard, cleanupNavigationGuard, type NavigationGuardCleanup } from './utils/navigationGuard';
 import { generatePreviewContent, loadObjectTags, cleanupBlobUrl } from './utils/previewHandler';
 
+// ============================================================================
+// 模块级别的加载状态管理（跨组件实例共享）
+// ============================================================================
+interface ConnectionLoadingState {
+  isLoadingBuckets: boolean;
+  loadSession: number;
+  bucketStatsRequests: Map<string, boolean>;
+  permissionFailureCache: Set<string>;
+  objectPermissionsSession: number;
+}
+
+// 使用 Map 存储每个连接的加载状态
+const connectionLoadingStates = new Map<string, ConnectionLoadingState>();
+
+// 获取或创建连接的加载状态
+function getConnectionLoadingState(connectionId: string): ConnectionLoadingState {
+  if (!connectionLoadingStates.has(connectionId)) {
+    connectionLoadingStates.set(connectionId, {
+      isLoadingBuckets: false,
+      loadSession: 0,
+      bucketStatsRequests: new Map(),
+      permissionFailureCache: new Set(),
+      objectPermissionsSession: 0,
+    });
+  }
+  return connectionLoadingStates.get(connectionId)!;
+}
+
+// 清理连接的加载状态（当连接断开时调用）
+export function clearConnectionLoadingState(connectionId: string): void {
+  connectionLoadingStates.delete(connectionId);
+  logger.info(`📦 [S3Browser] 清理连接 ${connectionId} 的加载状态`);
+}
+
 interface S3BrowserProps {
   connectionId: string;
   connectionName?: string;
@@ -228,16 +262,29 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   >([]);
   const [tagsLoading, setTagsLoading] = useState(false);
 
-  // 用于跟踪正在进行的 bucket stats 请求
-  const bucketStatsRequestsRef = useRef<Map<string, boolean>>(new Map());
-  // 用于标识当前的加载会话，当会话改变时，之前的请求结果会被忽略
-  const loadSessionRef = useRef<number>(0);
-  // 用于防止短时间内重复加载
-  const isLoadingBucketsRef = useRef<boolean>(false);
-  // 用于缓存权限检查失败的 bucket/object，避免重复请求
-  const permissionFailureCacheRef = useRef<Set<string>>(new Set());
-  // 用于标识当前的对象权限加载会话
-  const objectPermissionsSessionRef = useRef<number>(0);
+  // 获取当前连接的加载状态（模块级别，跨组件实例共享）
+  // 这样即使组件被卸载并重新挂载，加载状态也不会丢失
+  const loadingStateRef = useRef(getConnectionLoadingState(connectionId));
+
+  // 为了方便访问，创建快捷引用
+  const isLoadingBucketsRef = {
+    get current() { return loadingStateRef.current.isLoadingBuckets; },
+    set current(value: boolean) { loadingStateRef.current.isLoadingBuckets = value; }
+  };
+  const loadSessionRef = {
+    get current() { return loadingStateRef.current.loadSession; },
+    set current(value: number) { loadingStateRef.current.loadSession = value; }
+  };
+  const bucketStatsRequestsRef = {
+    get current() { return loadingStateRef.current.bucketStatsRequests; }
+  };
+  const permissionFailureCacheRef = {
+    get current() { return loadingStateRef.current.permissionFailureCache; }
+  };
+  const objectPermissionsSessionRef = {
+    get current() { return loadingStateRef.current.objectPermissionsSession; },
+    set current(value: number) { loadingStateRef.current.objectPermissionsSession = value; }
+  };
 
   // 获取连接配置和服务商类型
   const { getConnection } = useConnectionStore();
@@ -272,14 +319,37 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     };
   }, []);
 
+  // 组件挂载和卸载日志
+  useEffect(() => {
+    const componentId = Math.random().toString(36).substring(7);
+    logger.info(`📦 [S3Browser] 组件挂载 (ID: ${componentId})`);
+
+    return () => {
+      logger.info(`📦 [S3Browser] 组件卸载 (ID: ${componentId})`);
+
+      // 🔧 修复：组件卸载时，如果还在加载中，重置加载状态
+      // 这样下次挂载时可以重新加载
+      if (isLoadingBucketsRef.current) {
+        logger.warn(`📦 [S3Browser] 组件卸载时仍在加载中，重置加载状态`);
+        isLoadingBucketsRef.current = false;
+      }
+    };
+  }, []);
+
   // 加载根级别内容（buckets 或 bucket 内的对象）
   // 注意：不包含 sortBy 依赖项，因为排序在前端完成，不需要重新加载数据
   useEffect(() => {
     logger.info(
-      `📦 [S3Browser] useEffect 触发: bucket=${currentBucket}, path=${currentPath}`
+      `📦 [S3Browser] useEffect 触发: bucket=${currentBucket}, path=${currentPath}, isLoading=${isLoadingBucketsRef.current}`
     );
+
+    // ✅ 在 useEffect 内部检查加载状态，防止并发调用
     if (!currentBucket) {
       // 在根级别，显示所有 buckets
+      if (isLoadingBucketsRef.current) {
+        logger.warn('📦 [S3Browser] ⚠️ useEffect: 跳过重复的 loadBuckets 调用（已在加载中）');
+        return;
+      }
       loadBuckets();
     } else {
       // 在某个 bucket 内，显示对象
@@ -355,24 +425,35 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   }, [hasMore, isLoading, currentBucket]);
 
   const loadBuckets = async () => {
-    // 防止短时间内重复加载
+    // 防止短时间内重复加载 - 必须在最开始就设置标志
     if (isLoadingBucketsRef.current) {
-      logger.info('📦 [S3Browser] 跳过重复的 loadBuckets 调用（已在加载中）');
+      logger.warn('📦 [S3Browser] ⚠️ 跳过重复的 loadBuckets 调用（已在加载中）', {
+        connectionId,
+        currentSession: loadSessionRef.current,
+        stackTrace: new Error().stack?.split('\n').slice(0, 5).join('\n')
+      });
       return;
     }
 
+    // ✅ 立即设置加载标志，防止并发调用
+    isLoadingBucketsRef.current = true;
+
+    // 创建新的加载会话
+    const currentSession = ++loadSessionRef.current;
+
+    logger.info(
+      `📦 [S3Browser] 🚀 loadBuckets 开始 (session: ${currentSession}), connectionId: ${connectionId}, 调用栈:`,
+      new Error().stack?.split('\n').slice(0, 5).join('\n')
+    );
+
     try {
-      isLoadingBucketsRef.current = true;
 
       // 取消之前所有正在进行的 bucket stats 请求
       cancelAllBucketStatsRequests();
 
-      // 创建新的加载会话
-      const currentSession = ++loadSessionRef.current;
-
       setIsLoading(true);
       logger.info(
-        `📦 [S3Browser] 开始加载 buckets (session: ${currentSession}), connectionId: ${connectionId}`
+        `📦 [S3Browser] 📡 调用 S3Service.listBuckets (session: ${currentSession}), connectionId: ${connectionId}`
       );
       const bucketList = await S3Service.listBuckets(connectionId);
       logger.info(

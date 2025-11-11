@@ -165,8 +165,9 @@ impl S3ClientManager {
     pub async fn test_connection(&self, id: &str) -> Result<bool> {
         let client = self.get_client(id).await?;
 
-        // 尝试列出buckets来测试连接和认证
-        match client.list_buckets().send().await {
+        // 优化：使用 ListBuckets 但设置 max-buckets=1 来减少数据传输
+        // 这比完整的 list_buckets() 更轻量，同时仍能测试连接和认证
+        match client.list_buckets().max_buckets(1).send().await {
             Ok(_) => {
                 log::info!("S3 connection test successful");
                 Ok(true)

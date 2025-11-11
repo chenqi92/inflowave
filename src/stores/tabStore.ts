@@ -1,3 +1,4 @@
+import React from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { EditorTab } from '@/components/editor/TabManager';
@@ -307,9 +308,12 @@ export const useTabStore = create<TabStore>()(
 );
 
 // 便捷的hook，用于获取当前活跃的tab
+// 🔧 使用 useMemo 优化，避免返回新的对象引用导致组件重新挂载
 export const useCurrentTab = () => {
   const { tabs, activeKey } = useTabStore();
-  return tabs.find(tab => tab.id === activeKey) || null;
+  return React.useMemo(() => {
+    return tabs.find(tab => tab.id === activeKey) || null;
+  }, [tabs, activeKey]);
 };
 
 // 便捷的hook，用于tab操作

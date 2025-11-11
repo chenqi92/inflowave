@@ -784,7 +784,7 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     return (
         <Layout className='h-screen bg-background flex flex-col overflow-hidden'>
             {/* 主工具栏 - 统一背景，移除边框分割线 */}
-            <Header className='h-9 px-2 bg-background flex items-center flex-shrink-0'>
+            <Header className='h-10 px-2 bg-background flex items-center mt-2 flex-shrink-0'>
                 <MainToolbar
                     currentView={currentView}
                     onViewChange={handleViewChange}

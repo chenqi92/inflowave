@@ -448,23 +448,27 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
           {/* 编辑器内容 */}
           <div className='flex-1 min-h-0'>
-            {tabs.length > 0 ? (
-              currentTab ? (
-                currentTab.type === 'data-browser' ? (
+            {tabs.map(tab => (
+              <div
+                key={tab.id}
+                className='h-full'
+                style={{ display: tab.id === activeKey ? 'block' : 'none' }}
+              >
+                {tab.type === 'data-browser' ? (
                   <TableDataBrowser
-                    connectionId={currentTab.connectionId!}
-                    database={currentTab.database!}
-                    tableName={currentTab.tableName!}
+                    connectionId={tab.connectionId!}
+                    database={tab.database!}
+                    tableName={tab.tableName!}
                   />
-                ) : currentTab.type === 's3-browser' ? (
+                ) : tab.type === 's3-browser' ? (
                   <S3Browser
-                    connectionId={currentTab.connectionId!}
-                    connectionName={currentTab.connectionName || currentTab.title}
+                    connectionId={tab.connectionId!}
+                    connectionName={tab.connectionName || tab.title}
                   />
                 ) : (
-                  <div className="h-full flex flex-col overflow-hidden">
-                    {/* 查询工具栏 - 仅在查询类型tab中显示 */}
-                    {currentTab.type === 'query' && (
+                  tab.type === 'query' && (
+                    <div className="h-full flex flex-col overflow-hidden">
+                      {/* 查询工具栏 - 仅在查询类型tab中显示 */}
                       <QueryToolbar
                         selectedConnectionId={activeConnectionId}
                         selectedDatabase={selectedDatabase}
@@ -481,81 +485,60 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                         loading={loading}
                         disabled={false}
                       />
-                    )}
 
-                    <div className="flex-1 min-h-0 overflow-hidden">
-                      <EditorManager
-                        ref={editorManagerRef}
-                        currentTab={currentTab}
-                        selectedDatabase={selectedDatabase}
-                        databases={databases}
-                        onContentChange={(content) => {
-                          // 🔧 使用ref中的当前Tab ID，避免闭包问题
-                          const tabId = currentTabIdRef.current || currentTab.id;
-                          logger.info(`📝 EditorManager onContentChange: tabId=${tabId}, currentTab.id=${currentTab.id}`);
-                          handleTabContentChange(tabId, content);
-                        }}
-                        onExecuteQuery={executeQuery}
-                      />
+                      <div className="flex-1 min-h-0 overflow-hidden">
+                        <EditorManager
+                          ref={editorManagerRef}
+                          currentTab={tab}
+                          selectedDatabase={selectedDatabase}
+                          databases={databases}
+                          onContentChange={(content) => {
+                            // 🔧 使用ref中的当前Tab ID，避免闭包问题
+                            const tabId = currentTabIdRef.current || tab.id;
+                            logger.info(`📝 EditorManager onContentChange: tabId=${tabId}, tab.id=${tab.id}`);
+                            handleTabContentChange(tabId, content);
+                          }}
+                          onExecuteQuery={executeQuery}
+                        />
+                      </div>
                     </div>
-                  </div>
-                )
-              ) : (
-                <div className='h-full flex items-center justify-center text-muted-foreground border-0 shadow-none'>
-                  <div className='text-center'>
-                    <FileText className='w-12 h-12 mx-auto mb-4' />
-                    <p className="mb-4">请选择一个标签页</p>
-                    <Button
-                      variant='default'
-                      onClick={() => setActiveKey(tabs[tabs.length - 1].id)}
-                      className='mt-2'
-                    >
-                      <FileText className='w-4 h-4 mr-2' />
-                      打开最后一个标签页
-                    </Button>
-                  </div>
-                </div>
-              )
-            ) : (
+                  )
+                )}
+              </div>
+            ))}
+
+            {tabs.length === 0 && (
               <div className='h-full flex items-center justify-center text-muted-foreground border-0 shadow-none'>
                 <div className='text-center'>
                   <FileText className='w-12 h-12 mx-auto mb-4' />
-                  <p className="mb-4">暂无打开的文件</p>
-                  <div className="flex gap-2 justify-center">
-                    <Button
-                      variant='default'
-                      onClick={() => createNewTab()}
-                    >
-                      <Plus className='w-4 h-4 mr-2' />
-                      新建查询
-                    </Button>
-                    <Button
-                      variant='outline'
-                      onClick={openFile}
-                    >
-                      <FolderOpen className='w-4 h-4 mr-2' />
-                      打开文件
-                    </Button>
-                  </div>
+                  <p className="mb-4">没有打开的标签页</p>
+                  <Button
+                    variant='default'
+                    onClick={() => createNewTab('query')}
+                    className='mt-2'
+                  >
+                    <FileText className='w-4 h-4 mr-2' />
+                    创建新标签页
+                  </Button>
                 </div>
               </div>
             )}
           </div>
-
-          {/* 数据导出对话框 */}
-          <DataExportDialog
-            open={showExportDialog}
-            onClose={() => setShowExportDialog(false)}
-            connections={connections}
-            currentConnection={activeConnectionId || undefined}
-            currentDatabase={selectedDatabase}
-            query={currentTab?.content}
-            onSuccess={result => {
-              showMessage.success('数据导出成功');
-              setShowExportDialog(false);
-            }}
-          />
         </div>
+
+        {/* 数据导出对话框 */}
+        <DataExportDialog
+          open={showExportDialog}
+          onClose={() => setShowExportDialog(false)}
+          connections={connections}
+          currentConnection={activeConnectionId || undefined}
+          currentDatabase={selectedDatabase}
+          query={currentTab?.content}
+          onSuccess={result => {
+            showMessage.success('数据导出成功');
+            setShowExportDialog(false);
+          }}
+        />
       </TooltipProvider>
     );
   }
