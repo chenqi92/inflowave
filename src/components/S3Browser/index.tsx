@@ -2439,10 +2439,38 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                         <ContextMenuSeparator />
                       </>
                     )}
-                    <ContextMenuItem onClick={() => handleDownload([object])}>
-                      <Download className='w-4 h-4 mr-2' />
-                      {t('s3:download.label', { defaultValue: '下载' })}
-                    </ContextMenuItem>
+                    {capabilities.downloadObject && (
+                      <ContextMenuItem onClick={() => handleDownload([object])}>
+                        <Download className='w-4 h-4 mr-2' />
+                        {t('s3:download.label', { defaultValue: '下载' })}
+                      </ContextMenuItem>
+                    )}
+                    {/* 文件特有的菜单项 */}
+                    {!object.isDirectory && (
+                      <>
+                        <ContextMenuItem onClick={() => handlePreviewFile(object)}>
+                          <Eye className='w-4 h-4 mr-2' />
+                          {t('s3:preview.label', { defaultValue: '预览' })}
+                        </ContextMenuItem>
+                        {capabilities.presignedUrl && (
+                          <ContextMenuItem onClick={() => handleGeneratePresignedUrl(object)}>
+                            <Link className='w-4 h-4 mr-2' />
+                            {t('s3:generate_link', { defaultValue: '生成分享链接' })}
+                          </ContextMenuItem>
+                        )}
+                        {capabilities.tagging && (
+                          <ContextMenuItem onClick={async () => {
+                            setTagsObject(object);
+                            setShowTagsDialog(true);
+                            // 异步获取标签
+                            await fetchObjectTags(object);
+                          }}>
+                            <Tag className='w-4 h-4 mr-2' />
+                            {t('s3:tags_mgmt.label', { defaultValue: '管理标签' })}
+                          </ContextMenuItem>
+                        )}
+                      </>
+                    )}
                     <ContextMenuItem onClick={handleCopy}>
                       <Copy className='w-4 h-4 mr-2' />
                       {t('s3:copy.label', { defaultValue: '复制' })}
@@ -2451,13 +2479,36 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                       <Scissors className='w-4 h-4 mr-2' />
                       {t('s3:cut.label', { defaultValue: '剪切' })}
                     </ContextMenuItem>
+                    {/* 设置权限 - 根据服务商能力动态显示 */}
+                    {((!currentBucket && capabilities.bucketAcl) ||
+                      (currentBucket && capabilities.objectAcl)) && (
+                      <ContextMenuItem onClick={() => {
+                        setPermissionsObject(object);
+                        // 获取可用的 ACL 选项
+                        const isBucket = !currentBucket;
+                        const availableAcls = getAvailableAcls(isBucket);
+                        // 如果当前 ACL 在可用选项中，使用当前值；否则默认为 'private'
+                        const currentAcl = object.acl || 'private';
+                        const initialAcl = availableAcls.includes(currentAcl) ? currentAcl : 'private';
+                        setSelectedAcl(initialAcl);
+                        setShowPermissionsDialog(true);
+                      }}>
+                        <Shield className='w-4 h-4 mr-2' />
+                        {t('s3:permissions.label', { defaultValue: '设置权限' })}
+                      </ContextMenuItem>
+                    )}
                     <ContextMenuSeparator />
-                    <ContextMenuItem
-                      onClick={() => setShowDeleteConfirmDialog(true)}
-                    >
-                      <Trash2 className='w-4 h-4 mr-2' />
-                      {t('s3:delete.label', { defaultValue: '删除' })}
-                    </ContextMenuItem>
+                    {/* 删除 - 根据服务商能力和对象类型显示 */}
+                    {((!currentBucket && capabilities.deleteBucket) ||
+                      (currentBucket && object.isDirectory && capabilities.deleteFolder) ||
+                      (currentBucket && !object.isDirectory && capabilities.deleteObject)) && (
+                      <ContextMenuItem
+                        onClick={() => setShowDeleteConfirmDialog(true)}
+                      >
+                        <Trash2 className='w-4 h-4 mr-2' />
+                        {t('s3:delete.label', { defaultValue: '删除' })}
+                      </ContextMenuItem>
+                    )}
                   </ContextMenuContent>
                 </ContextMenu>
               ))}
@@ -3520,7 +3571,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               <div
                 className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
                 onClick={() => {
-                  handlePreviewFile(contextMenu.object);
+                  if (contextMenu.object) {
+                    handlePreviewFile(contextMenu.object);
+                  }
                   closeContextMenu();
                 }}
               >
