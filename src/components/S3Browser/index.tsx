@@ -2078,20 +2078,32 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
       {/* 面包屑导航 */}
       <div className='breadcrumbs'>
-        {getBreadcrumbs().map((item, index) => (
-          <React.Fragment key={`${item.label}-${index}`}>
-            {index > 0 && (
-              <ChevronRight className='w-3.5 h-3.5 text-muted-foreground' />
-            )}
-            <button
-              className='hover:underline hover:text-primary flex items-center gap-1 text-sm py-0'
-              onClick={() => handleBreadcrumbClick(item, index)}
-            >
-              {index === 0 && <Home className='w-3.5 h-3.5' />}
-              {item.label}
-            </button>
-          </React.Fragment>
-        ))}
+        {getBreadcrumbs().map((item, index, array) => {
+          // 面包屑的最后一项（当前位置）不可点击
+          const isCurrentLocation = index === array.length - 1;
+
+          return (
+            <React.Fragment key={`${item.label}-${index}`}>
+              {index > 0 && (
+                <ChevronRight className='w-3.5 h-3.5 text-muted-foreground' />
+              )}
+              {isCurrentLocation ? (
+                <span className='flex items-center gap-1 text-sm py-0 text-foreground font-medium'>
+                  {index === 0 && <Home className='w-3.5 h-3.5' />}
+                  {item.label}
+                </span>
+              ) : (
+                <button
+                  className='hover:underline hover:text-primary flex items-center gap-1 text-sm py-0'
+                  onClick={() => handleBreadcrumbClick(item, index)}
+                >
+                  {index === 0 && <Home className='w-3.5 h-3.5' />}
+                  {item.label}
+                </button>
+              )}
+            </React.Fragment>
+          );
+        })}
       </div>
 
       {/* 文件列表 */}
@@ -3615,6 +3627,30 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               )}
             </>
           )}
+
+          {/* 复制 */}
+          <div
+            className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
+            onClick={() => {
+              handleCopy();
+              closeContextMenu();
+            }}
+          >
+            <Copy className='w-4 h-4' />
+            {t('s3:copy.label', { defaultValue: '复制' })}
+          </div>
+
+          {/* 剪切 */}
+          <div
+            className='px-3 py-2 hover:bg-muted cursor-pointer flex items-center gap-2 text-sm'
+            onClick={() => {
+              handleCut();
+              closeContextMenu();
+            }}
+          >
+            <Scissors className='w-4 h-4' />
+            {t('s3:cut.label', { defaultValue: '剪切' })}
+          </div>
 
           {/* 设置权限 - 根据服务商能力动态显示 */}
           {((!currentBucket && capabilities.bucketAcl) ||
