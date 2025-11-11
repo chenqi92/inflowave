@@ -45,6 +45,15 @@ export interface DataGripLayoutRef {
 const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                                                                      children,
                                                                  }) => {
+    // 添加组件挂载/卸载日志
+    const componentIdRef = React.useRef(`DataGripLayout-${Math.random().toString(36).substr(2, 9)}`);
+    React.useEffect(() => {
+        logger.info(`🏗️ [DataGripStyleLayout] 组件挂载 (ID: ${componentIdRef.current})`);
+        return () => {
+            logger.info(`🏗️ [DataGripStyleLayout] 组件卸载 (ID: ${componentIdRef.current})`);
+        };
+    }, []);
+
     // 🔧 使用 userPreferencesStore 替代废弃的 useUserPreferences hook
     const { preferences, updateWorkspace } = useUserPreferencesStore();
     // 🔧 获取Tab状态，用于判断是否有Tab
@@ -694,11 +703,8 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
     );
 
     // 中间栏根据当前视图显示不同内容
-    const mainContent = useMemo(() => {
-
-
-        // 默认显示查询面板内容
-        return (
+    // 🔧 移除 useMemo 以避免 TabEditorRefactored 被不必要地卸载/重新挂载
+    const mainContent = (
             <div className='h-full'>
                 <ResizablePanelGroup direction='vertical'>
                     {/* 上半部分：编辑器 */}
@@ -769,17 +775,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                 </ResizablePanelGroup>
             </div>
         );
-    }, [
-        currentView,
-        bottomPanelCollapsed,
-        bottomPanelSize,
-        activeTabType,
-        queryResult,
-        queryResults,
-        executedQueries,
-        executionTime,
-        currentTimeRange,
-    ]);
 
     return (
         <Layout className='h-screen bg-background flex flex-col overflow-hidden'>
@@ -840,7 +835,6 @@ const DataGripStyleLayout: React.FC<DataGripStyleLayoutProps> = ({
                             >
                                 <div className='h-full bg-background flex flex-col'>
                                     <div
-                                        key={`view-${currentView}`}
                                         className='h-full transition-all duration-200 ease-in-out'
                                         style={{
                                             // 确保内容在视图切换时保持稳定

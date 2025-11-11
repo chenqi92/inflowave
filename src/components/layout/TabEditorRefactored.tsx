@@ -55,6 +55,15 @@ export interface TabEditorRef {
 
 const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
   ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, expandedDatabases = [], currentTimeRange }, ref) => {
+    // 添加组件挂载/卸载日志
+    const componentIdRef = React.useRef(`TabEditor-${Math.random().toString(36).substr(2, 9)}`);
+    React.useEffect(() => {
+      logger.info(`🏗️ [TabEditorRefactored] 组件挂载 (ID: ${componentIdRef.current})`);
+      return () => {
+        logger.info(`🏗️ [TabEditorRefactored] 组件卸载 (ID: ${componentIdRef.current})`);
+      };
+    }, []);
+
     const location = useLocation();
     const { activeConnectionId, connections, setActiveConnection } = useConnectionStore();
     const { openedDatabasesList } = useOpenedDatabasesStore();
@@ -76,6 +85,15 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
     const { createQueryTab, createDataBrowserTab, createS3BrowserTab, saveTab, removeTab, updateTab } = useTabOperations();
 
     const [databases, setDatabases] = useState<string[]>([]);
+
+    // 监控 tabs 数组的变化
+    const tabsRef = React.useRef(tabs);
+    React.useEffect(() => {
+      if (tabsRef.current !== tabs) {
+        logger.debug(`📊 [TabEditor] tabs 数组引用变化: ${tabsRef.current.length} -> ${tabs.length}, 是否同一对象: ${tabsRef.current === tabs}`);
+        tabsRef.current = tabs;
+      }
+    }, [tabs]);
 
     // 初始化时间范围
     React.useEffect(() => {
@@ -448,25 +466,28 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
 
           {/* 编辑器内容 */}
           <div className='flex-1 min-h-0'>
-            {tabs.map(tab => (
-              <div
-                key={tab.id}
-                className='h-full'
-                style={{ display: tab.id === activeKey ? 'block' : 'none' }}
-              >
-                {tab.type === 'data-browser' ? (
+            {tabs.map(tab => {
+              const isActive = tab.id === activeKey;
+              logger.debug(`🎨 [TabEditor] 渲染 tab: ${tab.id}, type: ${tab.type}, isActive: ${isActive}`);
+              return (
+                <div
+                  key={tab.id}
+                  className='h-full'
+                  style={{ display: isActive ? 'block' : 'none' }}
+                >
+                  {tab.type === 'data-browser' ? (
                   <TableDataBrowser
                     connectionId={tab.connectionId!}
                     database={tab.database!}
                     tableName={tab.tableName!}
                   />
-                ) : tab.type === 's3-browser' ? (
-                  <S3Browser
-                    connectionId={tab.connectionId!}
-                    connectionName={tab.connectionName || tab.title}
-                  />
-                ) : (
-                  tab.type === 'query' && (
+                  ) : tab.type === 's3-browser' ? (
+                    <S3Browser
+                      connectionId={tab.connectionId!}
+                      connectionName={tab.connectionName || tab.title}
+                    />
+                  ) : (
+                    tab.type === 'query' && (
                     <div className="h-full flex flex-col overflow-hidden">
                       {/* 查询工具栏 - 仅在查询类型tab中显示 */}
                       <QueryToolbar
@@ -502,10 +523,11 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
                         />
                       </div>
                     </div>
-                  )
-                )}
-              </div>
-            ))}
+                    )
+                  )}
+                </div>
+              );
+            })}
 
             {tabs.length === 0 && (
               <div className='h-full flex items-center justify-center text-muted-foreground border-0 shadow-none'>
