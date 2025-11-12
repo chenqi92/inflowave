@@ -1613,7 +1613,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           }
           return;
         } else {
-          // 数据库节点
+          // 数据库节点和存储组节点
           const database = nodeData.name;
           const isActivated = isDatabaseOpened ? isDatabaseOpened(connectionId, database) : false;
 

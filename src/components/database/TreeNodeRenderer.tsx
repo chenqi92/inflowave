@@ -148,6 +148,12 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
     const database = data.name;
     isActivated = isDatabaseOpened(connectionId, database);
     log.debug(`[TreeNodeRenderer] 数据库节点 ${database} isActivated: ${isActivated}, connectionId: ${connectionId}`);
+  } else if (data.nodeType === 'storage_group' && isDatabaseOpened) {
+    // IoTDB 存储组节点 - 与 database 节点行为一致
+    const connectionId = data.metadata?.connectionId || '';
+    const storageGroup = data.name;
+    isActivated = isDatabaseOpened(connectionId, storageGroup);
+    log.debug(`[TreeNodeRenderer] 存储组节点 ${storageGroup} isActivated: ${isActivated}, connectionId: ${connectionId}`);
   } else if (data.nodeType === 'organization' && isDatabaseOpened) {
     // InfluxDB 2.x Organization 节点
     const connectionId = data.metadata?.connectionId || '';
