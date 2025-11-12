@@ -408,7 +408,7 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
         canQuery: true,
         canDoubleClick: true,
         hasActivationState: false,
-        doubleClickAction: 'toggle', // 设备节点双击展开/收起
+        doubleClickAction: 'open_tab', // 设备节点双击打开数据浏览器
         contextMenuType: 'data',
         description: '设备，包含多个时间序列'
       };
@@ -556,6 +556,19 @@ export function getNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = f
     };
   }
 
+  // IoTDB 设备节点（必须在通用容器节点判断之前，因为设备节点的 isContainer 为 true）
+  if (normalized === 'device') {
+    return {
+      canExpand: true,
+      canQuery: true,
+      canDoubleClick: true,
+      hasActivationState: false,
+      doubleClickAction: 'open_tab', // 双击打开数据浏览器
+      contextMenuType: 'data',
+      description: 'IoTDB 设备节点'
+    };
+  }
+
   // 需要打开数据查询tab的节点（measurement、table、timeseries）
   if (normalized === 'measurement' || normalized === 'table' ||
       normalized === 'timeseries' || normalized === 'aligned_timeseries') {
@@ -570,9 +583,9 @@ export function getNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = f
     };
   }
 
-  // 普通容器节点（tag_group、field_group、device等）
+  // 普通容器节点（tag_group、field_group等）
   if (normalized === 'tag_group' || normalized === 'field_group' ||
-      normalized === 'device' || normalized === 'retention_policy' || isContainer) {
+      normalized === 'retention_policy' || isContainer) {
     return {
       canExpand: true,
       canQuery: false,

@@ -768,14 +768,11 @@ impl IoTDBOfficialClient {
                     }
                 }
 
-                if items.is_empty() {
-                    items.push("Version Information".to_string());
-                }
-
                 Ok(items)
             }
-            Err(_) => {
-                Ok(vec!["Version Information".to_string()])
+            Err(e) => {
+                warn!("获取版本信息失败: {}", e);
+                Ok(vec![])
             }
         }
     }
@@ -802,14 +799,11 @@ impl IoTDBOfficialClient {
                     }
                 }
 
-                if templates.is_empty() {
-                    templates.push("No Templates Found".to_string());
-                }
-
                 Ok(templates)
             }
-            Err(_) => {
-                Ok(vec!["Schema Templates".to_string()])
+            Err(e) => {
+                warn!("获取模式模板失败: {}", e);
+                Ok(vec![])
             }
         }
     }
@@ -836,14 +830,11 @@ impl IoTDBOfficialClient {
                     }
                 }
 
-                if functions.is_empty() {
-                    functions.push("No Functions Found".to_string());
-                }
-
                 Ok(functions)
             }
-            Err(_) => {
-                Ok(vec!["Built-in Functions".to_string(), "User-defined Functions".to_string()])
+            Err(e) => {
+                warn!("获取函数列表失败: {}", e);
+                Ok(vec![])
             }
         }
     }
@@ -870,20 +861,17 @@ impl IoTDBOfficialClient {
                     }
                 }
 
-                if triggers.is_empty() {
-                    triggers.push("No Triggers Found".to_string());
-                }
-
                 Ok(triggers)
             }
-            Err(_) => {
-                Ok(vec!["No Triggers Found".to_string()])
+            Err(e) => {
+                warn!("获取触发器列表失败: {}", e);
+                Ok(vec![])
             }
         }
     }
 
     /// 获取树子节点
-    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str, _metadata: Option<&serde_json::Value>) -> Result<Vec<crate::models::TreeNode>> {
+    pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str, parent_metadata: Option<&serde_json::Value>) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::{TreeNode, TreeNodeType};
 
         debug!("获取树子节点: {} ({})", parent_node_id, node_type);
@@ -991,31 +979,76 @@ impl IoTDBOfficialClient {
                 let storage_group_name = parent_node_id.strip_prefix("sg_").unwrap_or(parent_node_id);
                 let devices = self.get_devices(storage_group_name).await?;
                 for device in devices {
+                    // 使用设备的完整路径作为节点ID，而不是添加sg_前缀
+                    // device 已经是完整路径，如 "root.factory.workshop2.conveyor01"
                     let child = TreeNode::new(
-                        format!("{}_{}", parent_node_id, device.replace(".", "_")),
-                        device,
+                        device.replace(".", "_"),  // 使用设备路径本身，只替换点号
+                        device.clone(),
                         TreeNodeType::Device,
                     )
                     .with_parent(parent_node_id.to_string())
-                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(false))
-                    .with_metadata("node_category".to_string(), serde_json::Value::String("data_node".to_string()));
+                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(true))  // 设备是容器节点，可以展开
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("data_node".to_string()))
+                    .with_metadata("devicePath".to_string(), serde_json::Value::String(device.clone()))
+                    .with_metadata("storageGroup".to_string(), serde_json::Value::String(storage_group_name.to_string()));
                     children.push(child);
                 }
             }
             "Device" | "device" => {
                 // 设备节点的子节点（时间序列）
-                let device_path = parent_node_id;
-                let timeseries = self.get_timeseries(device_path).await?;
+                // 从 metadata 中获取真实的设备路径和存储组
+                let (device_path, storage_group) = if let Some(metadata) = &parent_metadata {
+                    let device_path = if let Some(device_path_value) = metadata.get("devicePath") {
+                        device_path_value.as_str().unwrap_or(parent_node_id).to_string()
+                    } else {
+                        // 后备方案：将下划线替换回点号
+                        parent_node_id.replace("_", ".")
+                    };
+
+                    let storage_group = if let Some(sg_value) = metadata.get("storageGroup") {
+                        sg_value.as_str().unwrap_or("").to_string()
+                    } else {
+                        // 后备方案：从设备路径中提取存储组（前两段）
+                        let parts: Vec<&str> = device_path.split('.').collect();
+                        if parts.len() >= 2 {
+                            format!("{}.{}", parts[0], parts[1])
+                        } else {
+                            String::new()
+                        }
+                    };
+
+                    (device_path, storage_group)
+                } else {
+                    // 后备方案：将下划线替换回点号
+                    let device_path = parent_node_id.replace("_", ".");
+                    let parts: Vec<&str> = device_path.split('.').collect();
+                    let storage_group = if parts.len() >= 2 {
+                        format!("{}.{}", parts[0], parts[1])
+                    } else {
+                        String::new()
+                    };
+                    (device_path, storage_group)
+                };
+
+                debug!("获取设备 {} 的时间序列（节点ID: {}, 存储组: {}）", device_path, parent_node_id, storage_group);
+                let timeseries = self.get_timeseries(&device_path).await?;
                 for ts in timeseries {
+                    // 构建完整的时间序列路径
+                    let full_timeseries_path = format!("{}.{}", device_path, ts);
+
                     let child = TreeNode::new(
                         format!("{}_{}", parent_node_id, ts.replace(".", "_")),
-                        ts,
+                        ts.clone(),
                         TreeNodeType::Timeseries,
                     )
                     .with_parent(parent_node_id.to_string())
                     .as_leaf()
                     .with_metadata("is_container".to_string(), serde_json::Value::Bool(false))
-                    .with_metadata("node_category".to_string(), serde_json::Value::String("data_leaf".to_string()));
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("data_leaf".to_string()))
+                    .with_metadata("devicePath".to_string(), serde_json::Value::String(device_path.to_string()))
+                    .with_metadata("timeseriesPath".to_string(), serde_json::Value::String(full_timeseries_path))
+                    .with_metadata("measurement".to_string(), serde_json::Value::String(ts.clone()))
+                    .with_metadata("storageGroup".to_string(), serde_json::Value::String(storage_group.clone()));
                     children.push(child);
                 }
             }
@@ -1034,8 +1067,38 @@ impl IoTDBOfficialClient {
     }
 
     /// 获取时间序列
-    pub async fn get_timeseries(&self, _device_path: &str) -> Result<Vec<String>> {
-        Ok(vec!["temperature".to_string(), "humidity".to_string()])
+    pub async fn get_timeseries(&self, device_path: &str) -> Result<Vec<String>> {
+        debug!("获取设备 {} 的时间序列", device_path);
+
+        // 执行 SHOW TIMESERIES 查询
+        let query = format!("SHOW TIMESERIES {}.*", device_path);
+        debug!("时间序列查询: {}", query);
+
+        let result = self.execute_query(&query, None).await?;
+
+        let mut timeseries = Vec::new();
+
+        // 解析查询结果
+        if let Some(results) = result.results.first() {
+            if let Some(series_list) = &results.series {
+                for series in series_list {
+                    for row in &series.values {
+                        if let Some(timeseries_path) = row.first() {
+                            if let Some(path_str) = timeseries_path.as_str() {
+                                // 从完整路径中提取测点名（最后一部分）
+                                // 例如：root.test.device1.temperature -> temperature
+                                if let Some(measurement) = path_str.split('.').last() {
+                                    timeseries.push(measurement.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        info!("设备 {} 的时间序列: {:?}", device_path, timeseries);
+        Ok(timeseries)
     }
 
     /// 解析时间戳数据

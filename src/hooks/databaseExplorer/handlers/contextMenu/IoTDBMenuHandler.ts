@@ -73,10 +73,15 @@ export class DeviceMenuHandler extends BaseMenuHandler {
 
   private async viewDeviceData(connectionId: string, devicePath: string): Promise<void> {
     try {
+      // IoTDB 使用完整路径，不需要单独的数据库参数
+      // 但是为了兼容性，我们从设备路径中提取存储组
+      const parts = devicePath.split('.');
+      const storageGroup = parts.length >= 2 ? `${parts[0]}.${parts[1]}` : '';
+
       const query = `SELECT * FROM ${devicePath} LIMIT 1000;`;
-      
+
       if (this.deps.onCreateAndExecuteQuery) {
-        this.deps.onCreateAndExecuteQuery(query, '', connectionId);
+        this.deps.onCreateAndExecuteQuery(query, storageGroup, connectionId);
       }
 
       this.showSuccess('view_device_data', `正在查询设备 "${devicePath}" 的数据`);
@@ -200,11 +205,14 @@ export class TimeseriesMenuHandler extends BaseMenuHandler {
       const measurement = parts[parts.length - 1];
       const devicePath = parts.slice(0, -1).join('.');
 
+      // 提取存储组（前两段）
+      const storageGroup = parts.length >= 2 ? `${parts[0]}.${parts[1]}` : '';
+
       // 生成正确的 IoTDB SQL: SELECT measurement FROM devicePath LIMIT 1000
       const query = `SELECT ${measurement} FROM ${devicePath} LIMIT 1000;`;
 
       if (this.deps.onCreateAndExecuteQuery) {
-        this.deps.onCreateAndExecuteQuery(query, '', connectionId);
+        this.deps.onCreateAndExecuteQuery(query, storageGroup, connectionId);
       }
 
       this.showSuccess('query_timeseries', `正在查询时间序列 "${timeseriesPath}"`);

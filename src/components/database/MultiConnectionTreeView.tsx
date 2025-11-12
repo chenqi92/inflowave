@@ -1385,8 +1385,36 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         logger.debug(`双击节点，打开数据浏览器: ${nodeType}`);
 
         const connectionId = nodeData.metadata?.connectionId || '';
-        const database = nodeData.metadata?.database || nodeData.metadata?.databaseName || '';
-        const tableName = nodeData.metadata?.table || nodeData.metadata?.tableName || nodeData.name;
+
+        // 🔧 IoTDB 节点特殊处理
+        let database = '';
+        let tableName = '';
+
+        if (normalized === 'device') {
+          // IoTDB 设备节点
+          database = nodeData.metadata?.storageGroup || nodeData.metadata?.storage_group || '';
+          tableName = nodeData.metadata?.devicePath || nodeData.metadata?.device_path || nodeData.name;
+        } else if (normalized === 'timeseries' || normalized === 'aligned_timeseries') {
+          // IoTDB 时间序列节点 - 打开其所属设备的数据浏览器
+          database = nodeData.metadata?.storageGroup || nodeData.metadata?.storage_group || '';
+          tableName = nodeData.metadata?.devicePath || nodeData.metadata?.device_path || '';
+
+          // 如果 metadata 中没有 devicePath，从 timeseriesPath 中提取
+          if (!tableName) {
+            const timeseriesPath = nodeData.metadata?.timeseriesPath || nodeData.metadata?.timeseries_path || nodeData.name;
+            const parts = timeseriesPath.split('.');
+            if (parts.length >= 2) {
+              tableName = parts.slice(0, -1).join('.');
+              if (!database) {
+                database = parts.length >= 2 ? `${parts[0]}.${parts[1]}` : '';
+              }
+            }
+          }
+        } else {
+          // 其他节点类型（InfluxDB measurement、table等）
+          database = nodeData.metadata?.database || nodeData.metadata?.databaseName || '';
+          tableName = nodeData.metadata?.table || nodeData.metadata?.tableName || nodeData.name;
+        }
 
         // 🔧 生成唯一的 tab key，用于防止重复创建
         const tabKey = `${connectionId}/${database}/${tableName}`;

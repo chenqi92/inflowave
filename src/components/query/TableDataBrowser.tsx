@@ -966,9 +966,20 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       // IoTDB查询
       logger.debug('🔧 [IoTDB] 使用IoTDB查询语法，连接类型:', dbType);
 
-      // 构建字段列表
-      const fieldList = fullFieldPaths.length > 0 ? fullFieldPaths.join(', ') : '*';
+      // 构建字段列表 - IoTDB SELECT 语句中字段名不能包含 root. 前缀
+      // 需要从完整路径中提取相对字段名
+      let fieldList = '*';
+      if (fullFieldPaths.length > 0) {
+        const relativeFieldNames = fullFieldPaths.map(path => {
+          // 从完整路径中提取最后一部分作为字段名
+          // 例如: root.city.environment.station01.pm25 -> pm25
+          const parts = path.split('.');
+          return parts[parts.length - 1];
+        });
+        fieldList = relativeFieldNames.join(', ');
+      }
 
+      logger.debug('🔧 [TableDataBrowser] 执行数据查询:', `SELECT ${fieldList} FROM ${tableName}`);
       query = `SELECT ${fieldList} FROM ${tableName}`;
 
       // 添加搜索条件

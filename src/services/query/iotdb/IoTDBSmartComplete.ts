@@ -257,22 +257,20 @@ export class IoTDBSmartComplete extends SmartComplete {
       }));
   }
 
-  // 模拟数据获取方法（实际实现中应该调用后端）
+  // 获取存储组列表
   private async getStorageGroups(connection: DatabaseConnection): Promise<string[]> {
-    // 实现实际的存储组获取逻辑
     try {
       const storageGroups = await safeTauriInvoke<string[]>('get_iotdb_storage_groups', {
         connectionId: connection.id
       });
       return storageGroups;
     } catch (error) {
-      logger.warn('获取存储组失败，使用默认值:', error);
-      return ['root.sg1', 'root.sg2', 'root.vehicle', 'root.factory'];
+      logger.warn('获取存储组失败:', error);
+      return [];
     }
   }
 
   private async getDevices(connection: DatabaseConnection, context: CompletionContext): Promise<string[]> {
-    // 实现实际的设备获取逻辑
     try {
       const devices = await safeTauriInvoke<string[]>('get_iotdb_devices', {
         connectionId: connection.id,
@@ -280,8 +278,8 @@ export class IoTDBSmartComplete extends SmartComplete {
       });
       return devices;
     } catch (error) {
-      logger.warn('获取设备失败，使用默认值:', error);
-      return ['root.sg1.d1', 'root.sg1.d2', 'root.sg2.d1', 'root.vehicle.d1'];
+      logger.warn('获取设备失败:', error);
+      return [];
     }
   }
 
@@ -295,12 +293,8 @@ export class IoTDBSmartComplete extends SmartComplete {
       });
       return timeseries;
     } catch (error) {
-      logger.warn('获取时间序列失败，使用默认值:', error);
-      return [
-        'root.sg1.d1.s1', 'root.sg1.d1.s2', 'root.sg1.d2.s1',
-        'root.sg2.d1.temperature', 'root.sg2.d1.humidity',
-        'root.vehicle.d1.speed', 'root.vehicle.d1.fuel'
-      ];
+      logger.warn('获取时间序列失败:', error);
+      return [];
     }
   }
 
