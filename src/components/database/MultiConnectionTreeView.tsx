@@ -1311,15 +1311,30 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   // 🔧 防止双击时重复触发的 ref
   const loadingTabsRef = useRef<Set<string>>(new Set());
 
-  // 🔧 监听 tabs 的 loading 状态变化，清除 loadingTabsRef 中的标记
+  // 🔧 监听 tabs 的 loading 状态变化和关闭事件，清除 loadingTabsRef 中的标记
   useEffect(() => {
+    // 收集当前所有 data-browser tab 的 key
+    const currentTabKeys = new Set<string>();
+
     allTabs.forEach(tab => {
-      if (tab.type === 'data-browser' && !tab.isLoading) {
+      if (tab.type === 'data-browser') {
         const tabKey = `${tab.connectionId}/${tab.database}/${tab.tableName}`;
-        if (loadingTabsRef.current.has(tabKey)) {
+        currentTabKeys.add(tabKey);
+
+        // 如果 tab 加载完成，清除 loading 标记
+        if (!tab.isLoading && loadingTabsRef.current.has(tabKey)) {
           logger.debug(`[Tab加载完成] 清除 loading 标记: ${tabKey}`);
           loadingTabsRef.current.delete(tabKey);
         }
+      }
+    });
+
+    // 清除已关闭 tab 的 loading 标记
+    const loadingKeys = Array.from(loadingTabsRef.current);
+    loadingKeys.forEach(tabKey => {
+      if (!currentTabKeys.has(tabKey)) {
+        logger.debug(`[Tab已关闭] 清除 loading 标记: ${tabKey}`);
+        loadingTabsRef.current.delete(tabKey);
       }
     });
   }, [allTabs]);
@@ -1466,18 +1481,11 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         });
 
         if (existingTab) {
-          // 🔧 如果tab已存在，切换到该tab并触发刷新
-          logger.debug(`Tab已存在，切换到该tab并刷新: ${existingTab.id}`);
-
-          // 🔧 标记该表正在加载
-          loadingTabsRef.current.add(tabKey);
+          // 🔧 如果tab已存在，只切换到该tab，不刷新
+          logger.debug(`Tab已存在，切换到该tab: ${existingTab.id}`);
 
           // 切换到该tab
           setActiveKey(existingTab.id);
-
-          // 触发tab刷新（设置 loading 状态）
-          refreshDataBrowserTab(existingTab.id);
-          logger.debug(`触发tab刷新: ${existingTab.id}`);
         } else {
           // 🔧 标记该表正在加载
           loadingTabsRef.current.add(tabKey);
