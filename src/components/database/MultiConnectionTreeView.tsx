@@ -1038,9 +1038,14 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
             // 先加载子节点，然后再展开节点
             // 这样可以确保展开时子节点已经加载，箭头会正确显示
             if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
-              logger.debug(`[打开数据库] 触发子节点加载: ${nodeId}`);
-              // 加载子节点后会自动展开（在 handleToggle 的回调中）
-              handleToggleRef.current(nodeId);
+              // 🔧 检查节点是否已经在加载中，避免重复加载
+              if (!nodeLoadingStates.has(nodeId)) {
+                logger.debug(`[打开数据库] 触发子节点加载: ${nodeId}`);
+                // 加载子节点后会自动展开（在 handleToggle 的回调中）
+                handleToggleRef.current(nodeId);
+              } else {
+                logger.debug(`[打开数据库] 节点已在加载中，跳过: ${nodeId}`);
+              }
             } else {
               // 如果子节点已加载，直接展开
               if (!item.isExpanded()) {
@@ -1091,8 +1096,13 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
             // 🔧 修复：先加载子节点，然后再展开
             // 如果子节点未加载，先触发加载（加载完成后会自动展开）
             if (nodeData.children === undefined && !loadedNodesRef.current.has(nodeId)) {
-              logger.debug(`[自动展开] 触发子节点加载: ${nodeId}`);
-              handleToggleRef.current(nodeId);
+              // 🔧 检查节点是否已经在加载中，避免重复加载
+              if (!nodeLoadingStates.has(nodeId)) {
+                logger.debug(`[自动展开] 触发子节点加载: ${nodeId}`);
+                handleToggleRef.current(nodeId);
+              } else {
+                logger.debug(`[自动展开] 节点已在加载中，跳过: ${nodeId}`);
+              }
             } else {
               // 如果子节点已加载，直接展开
               logger.debug(`[自动展开] 子节点已加载，直接展开: ${nodeId}`);

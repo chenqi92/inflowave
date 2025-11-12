@@ -10,7 +10,7 @@ use crate::database::iotdb::drivers::official_thrift::OfficialThriftClient;
 use anyhow::Result;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use log::{debug, info, warn};
+use log::{debug, info, trace, warn};
 
 /// IoTDB 官方客户端包装器
 #[derive(Debug)]
@@ -160,9 +160,9 @@ impl IoTDBOfficialClient {
             // 解析IoTDB查询数据集
             if let Some(query_data_set) = response.query_data_set {
                 debug!("开始解析IoTDB查询数据集");
-                debug!("时间数据长度: {} 字节", query_data_set.time.len());
-                debug!("值列表数量: {}", query_data_set.value_list.len());
-                debug!("位图列表数量: {}", query_data_set.bitmap_list.len());
+                trace!("时间数据长度: {} 字节", query_data_set.time.len());
+                trace!("值列表数量: {}", query_data_set.value_list.len());
+                trace!("位图列表数量: {}", query_data_set.bitmap_list.len());
 
                 // 检查是否有query_result字段（某些IoTDB版本可能使用这个字段）
                 if let Some(ref query_result) = response.query_result {
@@ -170,9 +170,9 @@ impl IoTDBOfficialClient {
 
                     // 使用query_result解析数据
                     for (row_index, row_data) in query_result.iter().enumerate() {
-                        debug!("解析第 {} 行，数据长度: {} 字节", row_index, row_data.len());
+                        trace!("解析第 {} 行，数据长度: {} 字节", row_index, row_data.len());
                         if row_data.len() > 0 {
-                            debug!("第 {} 行数据前16字节: {:?}", row_index, &row_data[..std::cmp::min(16, row_data.len())]);
+                            trace!("第 {} 行数据前16字节: {:?}", row_index, &row_data[..std::cmp::min(16, row_data.len())]);
                         }
 
                         let row_values = self.parse_query_result_row(row_data, &columns, &data_types)?;
@@ -200,7 +200,7 @@ impl IoTDBOfficialClient {
                             Vec::new()
                         };
 
-                        debug!("解析到 {} 个时间戳", timestamps.len());
+                        trace!("解析到 {} 个时间戳", timestamps.len());
 
                         // 确定行数
                         let row_count = if !timestamps.is_empty() {
@@ -241,7 +241,7 @@ impl IoTDBOfficialClient {
                                 let data_type = data_types.get(col_index).map(|s| s.as_str()).unwrap_or("TEXT");
                                 let bitmap = bitmap_list.get(col_index);
 
-                                debug!("解析第 {} 行，第 {} 列，数据类型: {}, 数据长度: {} 字节",
+                                trace!("解析第 {} 行，第 {} 列，数据类型: {}, 数据长度: {} 字节",
                                        row_index, col_index, data_type, column_data.len());
 
                                 let value = self.parse_column_value(
@@ -251,11 +251,11 @@ impl IoTDBOfficialClient {
                                     bitmap
                                 )?;
 
-                                debug!("第 {} 行，第 {} 列解析结果: {:?}", row_index, col_index, value);
+                                trace!("第 {} 行，第 {} 列解析结果: {:?}", row_index, col_index, value);
                                 row_values.push(value);
                             }
 
-                            debug!("第 {} 行完整数据: {:?}", row_index, row_values);
+                            trace!("第 {} 行完整数据: {:?}", row_index, row_values);
                             rows.push(row_values);
                         }
                     }
@@ -1103,7 +1103,7 @@ impl IoTDBOfficialClient {
 
     /// 解析时间戳数据
     fn parse_time_data(&self, time_data: &[u8]) -> Result<Vec<i64>> {
-        debug!("解析时间戳数据，长度: {} 字节", time_data.len());
+        trace!("解析时间戳数据，长度: {} 字节", time_data.len());
 
         let mut timestamps = Vec::new();
         let mut offset = 0;
@@ -1119,7 +1119,7 @@ impl IoTDBOfficialClient {
             offset += 8;
         }
 
-        debug!("解析到 {} 个时间戳", timestamps.len());
+        trace!("解析到 {} 个时间戳", timestamps.len());
         Ok(timestamps)
     }
 
@@ -1157,7 +1157,7 @@ impl IoTDBOfficialClient {
     fn is_null_value(&self, bitmap: &[u8], row_index: usize) -> bool {
         // 如果bitmap为空，假设所有值都有效
         if bitmap.is_empty() {
-            debug!("Bitmap为空，假设所有值都有效，行索引: {}", row_index);
+            trace!("Bitmap为空，假设所有值都有效，行索引: {}", row_index);
             return false;
         }
 
@@ -1172,19 +1172,19 @@ impl IoTDBOfficialClient {
             let has_any_set_bits = bitmap.iter().any(|&b| b != 0);
             if !has_any_set_bits {
                 // 如果bitmap全为0，可能表示所有值都有效（IoTDB的某些版本行为）
-                debug!("Bitmap全为0，假设所有值都有效，行索引: {}", row_index);
+                trace!("Bitmap全为0，假设所有值都有效，行索引: {}", row_index);
                 return false;
             }
 
             // 从多次日志分析发现，IoTDB的bitmap行为不一致
             // 有时候全为255时有数据，有时候248时部分有数据
             // 最安全的做法是：如果有原始数据，就尝试解析，忽略bitmap
-            debug!("忽略bitmap检查，直接尝试解析数据，行索引: {}, 字节值: {}, 位掩码: {}",
+            trace!("忽略bitmap检查，直接尝试解析数据，行索引: {}, 字节值: {}, 位掩码: {}",
                    row_index, byte_value, bit_mask);
             false // 总是返回false，表示数据有效
         } else {
             // 如果没有bitmap数据，假设值有效
-            debug!("Bitmap索引超出范围，假设值有效，行索引: {}", row_index);
+            trace!("Bitmap索引超出范围，假设值有效，行索引: {}", row_index);
             false
         }
     }
@@ -1262,7 +1262,7 @@ impl IoTDBOfficialClient {
 
     /// 解析文本值
     fn parse_text_value(&self, data: &[u8], row_index: usize) -> Result<serde_json::Value> {
-        debug!("解析文本值，行索引: {}, 数据长度: {} 字节", row_index, data.len());
+        trace!("解析文本值，行索引: {}, 数据长度: {} 字节", row_index, data.len());
 
         // 如果数据长度为0，直接返回null
         if data.is_empty() {
@@ -1277,11 +1277,11 @@ impl IoTDBOfficialClient {
             if let Some(null_pos) = text.find('\0') {
                 let clean_text = &text[..null_pos];
                 if !clean_text.is_empty() {
-                    debug!("直接解析文本成功: '{}'", clean_text);
+                    trace!("直接解析文本成功: '{}'", clean_text);
                     return Ok(serde_json::Value::String(clean_text.to_string()));
                 }
             } else if !text.is_empty() {
-                debug!("直接解析文本成功: '{}'", text);
+                trace!("直接解析文本成功: '{}'", text);
                 return Ok(serde_json::Value::String(text.to_string()));
             }
         }
@@ -1292,7 +1292,7 @@ impl IoTDBOfficialClient {
         // 跳过前面的字符串
         for i in 0..row_index {
             if offset + 4 > data.len() {
-                debug!("跳过第 {} 行时数据不足，offset: {}, 数据长度: {}", i, offset, data.len());
+                trace!("跳过第 {} 行时数据不足，offset: {}, 数据长度: {}", i, offset, data.len());
                 return Ok(serde_json::Value::Null);
             }
 
@@ -1302,7 +1302,7 @@ impl IoTDBOfficialClient {
                 length_bytes[0], length_bytes[1], length_bytes[2], length_bytes[3]
             ]) as usize;
 
-            debug!("跳过第 {} 行，字符串长度: {}, offset: {}", i, length, offset);
+            trace!("跳过第 {} 行，字符串长度: {}, offset: {}", i, length, offset);
 
             // 检查长度是否合理
             if length > data.len() || length > 1024 * 1024 {
@@ -1320,7 +1320,7 @@ impl IoTDBOfficialClient {
                 length_bytes[0], length_bytes[1], length_bytes[2], length_bytes[3]
             ]) as usize;
 
-            debug!("目标行 {} 字符串长度: {}, offset: {}", row_index, length, offset);
+            trace!("目标行 {} 字符串长度: {}, offset: {}", row_index, length, offset);
 
             // 检查长度是否合理
             if length > data.len() || length > 1024 * 1024 {
@@ -1333,10 +1333,10 @@ impl IoTDBOfficialClient {
             if offset + length <= data.len() {
                 let text_bytes = &data[offset..offset + length];
                 if let Ok(text) = std::str::from_utf8(text_bytes) {
-                    debug!("成功解析文本: '{}'", text);
+                    trace!("成功解析文本: '{}'", text);
                     Ok(serde_json::Value::String(text.to_string()))
                 } else {
-                    debug!("UTF-8解析失败");
+                    trace!("UTF-8解析失败");
                     Ok(serde_json::Value::Null)
                 }
             } else {
