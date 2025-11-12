@@ -189,8 +189,20 @@ export class TimeseriesMenuHandler extends BaseMenuHandler {
 
   private async queryTimeseries(connectionId: string, timeseriesPath: string): Promise<void> {
     try {
-      const query = `SELECT ${timeseriesPath} LIMIT 1000;`;
-      
+      // IoTDB 时间序列路径格式: root.storage_group.device.measurement
+      // 需要提取设备路径和测点名来生成正确的 SQL
+      const parts = timeseriesPath.split('.');
+      if (parts.length < 2) {
+        throw new Error(`无效的时间序列路径: ${timeseriesPath}`);
+      }
+
+      // 最后一部分是测点名，其余部分是设备路径
+      const measurement = parts[parts.length - 1];
+      const devicePath = parts.slice(0, -1).join('.');
+
+      // 生成正确的 IoTDB SQL: SELECT measurement FROM devicePath LIMIT 1000
+      const query = `SELECT ${measurement} FROM ${devicePath} LIMIT 1000;`;
+
       if (this.deps.onCreateAndExecuteQuery) {
         this.deps.onCreateAndExecuteQuery(query, '', connectionId);
       }

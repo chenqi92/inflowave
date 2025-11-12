@@ -125,9 +125,22 @@ export const useNodeActivateHandler = ({
             }
         } else if (nodeType === 'timeseries' || nodeType === 'aligned_timeseries') {
             // IoTDB 时间序列节点：创建数据浏览器标签页
-            if (onCreateDataBrowserTab) {
-                onCreateDataBrowserTab(connectionId, database, table);
-                showMessage.success(`正在打开时间序列 "${table}"`);
+            // 时间序列路径格式: root.storage_group.device.measurement
+            // 需要提取设备路径作为 table 参数
+            const timeseriesPath = table || node.name;
+            const parts = timeseriesPath.split('.');
+
+            if (parts.length >= 2) {
+                // 提取设备路径（去掉最后的测点名）
+                const devicePath = parts.slice(0, -1).join('.');
+
+                if (onCreateDataBrowserTab) {
+                    onCreateDataBrowserTab(connectionId, database, devicePath);
+                    showMessage.success(`正在打开时间序列 "${timeseriesPath}"`);
+                }
+            } else {
+                logger.warn(`无效的时间序列路径: ${timeseriesPath}`);
+                showMessage.error(`无效的时间序列路径: ${timeseriesPath}`);
             }
         } else if (nodeType === 'connection') {
             // 检查是否为对象存储连接

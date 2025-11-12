@@ -1081,9 +1081,16 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                       tableName.startsWith('root.') || database.startsWith('root.'); // 后备判断
 
       // 获取字段键
-      const fieldKeysQuery = isIoTDB
-        ? `SHOW TIMESERIES ${tableName}.**`
-        : `SHOW FIELD KEYS FROM "${tableName}"`;
+      let fieldKeysQuery: string;
+      if (isIoTDB) {
+        // IoTDB: 需要构建完整的设备路径
+        // tableName 可能是完整路径（root.xxx.device）或者只是设备名
+        const fullPath = tableName.startsWith('root.') ? tableName : `${database}.${tableName}`;
+        fieldKeysQuery = `SHOW TIMESERIES ${fullPath}.**`;
+      } else {
+        // InfluxDB: 使用表名
+        fieldKeysQuery = `SHOW FIELD KEYS FROM "${tableName}"`;
+      }
 
       logger.debug(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 执行字段查询:`, fieldKeysQuery);
       logger.debug(`🔧 连接信息:`, {
@@ -1091,7 +1098,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         dbType,
         detectedType,
         tableName,
-        database
+        database,
+        fullPath: isIoTDB ? (tableName.startsWith('root.') ? tableName : `${database}.${tableName}`) : tableName
       });
 
       const fieldResult = await safeTauriInvoke<QueryResult>('execute_query', {
