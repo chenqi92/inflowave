@@ -75,7 +75,7 @@ impl IoTDBOfficialClient {
 
     /// 确保连接可用
     async fn ensure_connected(&self) -> Result<()> {
-        let mut client_guard = self.client.lock().await;
+        let client_guard = self.client.lock().await;
 
         // 检查客户端是否存在以及会话是否有效
         let needs_reconnect = if let Some(client) = client_guard.as_ref() {
