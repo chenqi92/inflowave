@@ -200,6 +200,11 @@
   z-index: 1;
 }
 
+/* 确保角标（Badge）保持绝对定位，不受上面规则影响 */
+.datagrip-toolbar button > [class*="absolute"] {
+  position: absolute !important;
+}
+
 .datagrip-toolbar button:active:not(:disabled) {
   transform: scale(0.98);
   background-color: hsl(var(--accent) / 0.8) !important;

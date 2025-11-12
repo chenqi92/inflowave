@@ -91,16 +91,16 @@ const QuickSettings: React.FC = () => {
           className='h-8 min-w-12 px-1.5 py-0.5 flex flex-col items-center justify-center gap-0.5 relative'
           title={t('quick_settings')}
         >
-          <Shield className='w-3.5 h-3.5' />
-          <span className='text-[10px] whitespace-nowrap'>{t('quick_settings_panel.title')}</span>
           {dangerousOpsCount > 0 && (
             <Badge
               variant='destructive'
-              className='absolute -top-0.5 -right-0.5 h-3.5 w-3.5 p-0 text-[9px] flex items-center justify-center min-w-[14px] rounded-full'
+              className='absolute top-0 right-0 h-3.5 w-3.5 p-0 text-[9px] rounded-full -translate-y-1/2 translate-x-1/2 z-10 justify-center'
             >
               {dangerousOpsCount}
             </Badge>
           )}
+          <Shield className='w-3.5 h-3.5' />
+          <span className='text-[10px] whitespace-nowrap'>{t('quick_settings_panel.title')}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className='w-80' align='end'>

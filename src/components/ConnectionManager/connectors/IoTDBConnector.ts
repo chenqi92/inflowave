@@ -210,7 +210,7 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
       port: 6667,
       database: 'root',
       username: 'root',
-      password: 'root',
+      password: '',
       sessionPoolSize: 5,
       enableCompression: false,
       timeZone: 'Asia/Shanghai',
