@@ -240,13 +240,16 @@ export const ICON_MAPPING: Record<TreeNodeType, IconConfig> = {
   // IoTDB 特有
   'storage_group': {
     fileName: 'storage-group.svg',
+    openFileName: 'storage-group_cur.svg',
     description: '存储组',
     databases: ['iotdb'],
+    isOpenable: true,  // 存储组可以打开/关闭，类似于database
   },
   'device': {
     fileName: 'device.svg',
     description: '设备',
     databases: ['iotdb'],
+    // 设备节点不设置 openFileName，始终使用同一个图标
   },
   'timeseries': {
     fileName: 'timeseries.svg',

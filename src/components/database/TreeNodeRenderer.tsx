@@ -401,10 +401,13 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
         <DatabaseIcon
           nodeType={normalizedNodeType}
           isOpen={
-            // 对于数据库节点，只使用 isActivated（数据库是否被打开）
+            // 对于数据库节点和存储组节点，只使用 isActivated（是否被打开/激活）
+            // 对于设备节点，不使用 isOpen 状态（始终使用同一个图标）
             // 对于其他容器节点，使用 isNodeExpanded（节点是否展开）
-            normalizedNodeType.includes('database')
+            normalizedNodeType.includes('database') || normalizedNodeType === 'storage_group'
               ? isActivated
+              : normalizedNodeType === 'device'
+              ? false  // 设备节点始终使用同一个图标
               : (isActivated || isNodeExpanded)
           }
           isConnected={isConnected}

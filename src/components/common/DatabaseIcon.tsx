@@ -106,7 +106,7 @@ const getFunctionalIconPath = (nodeType: TreeNodeType, theme: 'light' | 'dark', 
 
     // IoTDB 特有
     'storage_group': isOpen ? 'storage-group_cur.svg' : 'storage-group.svg',
-    'device': isOpen ? 'device_cur.svg' : 'device.svg',
+    'device': 'device.svg',  // 设备节点始终使用同一个图标，不区分展开/收起状态
     'timeseries': 'timeseries.svg',
     'aligned_timeseries': 'aligned-timeseries.svg',
     'attribute_group': isOpen ? 'attribute-group_cur.svg' : 'attribute-group.svg',
