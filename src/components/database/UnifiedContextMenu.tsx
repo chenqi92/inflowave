@@ -38,6 +38,7 @@ import {
     Eye,
     Activity,
     FolderOpen,
+    FolderClosed,
     FolderX,
     Search,
     Code,
@@ -449,14 +450,30 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     // ============================================================================
     // 存储组节点菜单 (IoTDB)
     // ============================================================================
-    const renderStorageGroupMenu = (metadata: Record<string, any>) => (
-        <>
-            <ContextMenuLabel>{t('context_menu.storage_group_operations')}</ContextMenuLabel>
-            <ContextMenuItem onSelect={() => handleAction('refresh_database')}>
-                <RefreshCw className="w-4 h-4 mr-2"/>
-                {t('context_menu.refresh_storage_group')}
-            </ContextMenuItem>
-            <ContextMenuSeparator/>
+    const renderStorageGroupMenu = (metadata: Record<string, any>) => {
+        const connectionId = metadata.connectionId || '';
+        const storageGroup = metadata.database || metadata.databaseName || node?.name || '';
+        const isOpened = isDatabaseOpened?.(connectionId, storageGroup) || false;
+
+        return (
+            <>
+                <ContextMenuLabel>{t('context_menu.storage_group_operations')}</ContextMenuLabel>
+                {!isOpened ? (
+                    <ContextMenuItem onSelect={() => handleAction('open_database')}>
+                        <FolderOpen className="w-4 h-4 mr-2"/>
+                        {t('context_menu.open_storage_group')}
+                    </ContextMenuItem>
+                ) : (
+                    <ContextMenuItem onSelect={() => handleAction('close_database')}>
+                        <FolderClosed className="w-4 h-4 mr-2"/>
+                        {t('context_menu.close_storage_group')}
+                    </ContextMenuItem>
+                )}
+                <ContextMenuItem onSelect={() => handleAction('refresh_database')}>
+                    <RefreshCw className="w-4 h-4 mr-2"/>
+                    {t('context_menu.refresh_storage_group')}
+                </ContextMenuItem>
+                <ContextMenuSeparator/>
 
             <ContextMenuLabel>{t('context_menu.device_management')}</ContextMenuLabel>
             <ContextMenuItem onSelect={() => handleAction('create_device')}>
@@ -484,8 +501,18 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                 <Copy className="w-4 h-4 mr-2"/>
                 {t('context_menu.copy_storage_group_name')}
             </ContextMenuItem>
+            <ContextMenuSeparator/>
+
+            <ContextMenuItem
+                onSelect={() => handleAction('delete_database')}
+                className="text-destructive focus:text-destructive"
+            >
+                <Trash2 className="w-4 h-4 mr-2"/>
+                {t('context_menu.delete_storage_group')}
+            </ContextMenuItem>
         </>
-    );
+        );
+    };
 
     // ============================================================================
     // 表/测量节点菜单

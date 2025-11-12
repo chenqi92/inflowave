@@ -98,6 +98,21 @@ export const useNodeActivateHandler = ({
             return;
         }
 
+        // IoTDB 存储组节点：双击打开存储组
+        if (nodeType === 'storage_group') {
+            const storageGroup = node.name;
+            logger.info(`📂 [DatabaseExplorer] 双击存储组节点，打开存储组: ${storageGroup}`);
+            const key = `${connectionId}/${storageGroup}`;
+            const openedDatabases = useOpenedDatabasesStore.getState().openedDatabases;
+            if (!openedDatabases.has(key)) {
+                openDatabase(connectionId, storageGroup);
+                showMessage.success(`已打开存储组 "${storageGroup}"`);
+            } else {
+                logger.info(`📂 [DatabaseExplorer] 存储组已打开，跳过: ${storageGroup}`);
+            }
+            return;
+        }
+
         // 容器节点（connection 等）已经由 MultiConnectionTreeView 的 handleToggle 处理
         // 这里只处理叶子节点
 

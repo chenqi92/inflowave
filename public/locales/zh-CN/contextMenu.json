@@ -32,6 +32,17 @@
   "databaseExportInDevelopment": "数据库 \"{{database}}\" 结构导出功能开发中...",
   "filterDescription": "筛选 {{column}} {{operator}} {{value}}",
   "aggregateDescription": "{{func}} 聚合查询: {{column}}",
+  "storage_group_operations": "存储组操作",
+  "device_management": "设备管理",
+  "data_management": "数据管理",
+  "refresh_storage_group": "刷新存储组",
+  "open_storage_group": "打开存储组",
+  "close_storage_group": "关闭存储组",
+  "create_device": "创建设备",
+  "show_devices": "显示所有设备",
+  "storage_group_info": "存储组信息",
+  "copy_storage_group_name": "复制存储组名",
+  "delete_storage_group": "删除存储组",
   "actions": {
     "test_connection": {
       "label": "测试连接",

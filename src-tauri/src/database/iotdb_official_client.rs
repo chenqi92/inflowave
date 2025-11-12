@@ -39,8 +39,14 @@ impl IoTDBOfficialClient {
     async fn connect(&self) -> Result<()> {
         let mut client_guard = self.client.lock().await;
 
-        if client_guard.is_some() {
-            return Ok(()); // 已经连接
+        // 检查是否已经连接且会话有效
+        if let Some(client) = client_guard.as_ref() {
+            if client.is_connected() {
+                debug!("IoTDB连接已存在且会话有效，跳过重新连接");
+                return Ok(()); // 已经连接且会话有效
+            } else {
+                warn!("IoTDB会话已失效，需要重新连接");
+            }
         }
 
         info!("连接到IoTDB服务器: {}:{}", self.config.host, self.config.port);
@@ -57,19 +63,28 @@ impl IoTDBOfficialClient {
         thrift_client.connect().await
             .map_err(|e| anyhow::anyhow!("连接IoTDB服务器失败: {}", e))?;
 
-        thrift_client.open_session().await
+        let session_id = thrift_client.open_session().await
             .map_err(|e| anyhow::anyhow!("打开IoTDB会话失败: {}", e))?;
 
+        info!("IoTDB连接建立成功，会话ID: {}", session_id);
+
         *client_guard = Some(thrift_client);
-        info!("IoTDB连接建立成功");
 
         Ok(())
     }
 
     /// 确保连接可用
     async fn ensure_connected(&self) -> Result<()> {
-        let client_guard = self.client.lock().await;
-        if client_guard.is_none() {
+        let mut client_guard = self.client.lock().await;
+
+        // 检查客户端是否存在以及会话是否有效
+        let needs_reconnect = if let Some(client) = client_guard.as_ref() {
+            !client.is_connected()
+        } else {
+            true
+        };
+
+        if needs_reconnect {
             drop(client_guard);
             self.connect().await?;
         }
@@ -876,6 +891,24 @@ impl IoTDBOfficialClient {
         let mut children = Vec::new();
 
         match node_type {
+            "connection" => {
+                // 连接节点：返回存储组列表
+                debug!("为 IoTDB 连接节点获取存储组列表");
+                let storage_groups = self.get_databases().await?;
+                debug!("获取到 {} 个存储组", storage_groups.len());
+
+                for storage_group in storage_groups {
+                    let child = TreeNode::new(
+                        format!("sg_{}", storage_group),
+                        storage_group.clone(),
+                        TreeNodeType::StorageGroup,
+                    )
+                    .with_parent(parent_node_id.to_string())
+                    .with_metadata("is_container".to_string(), serde_json::Value::Bool(true))
+                    .with_metadata("node_category".to_string(), serde_json::Value::String("data_container".to_string()));
+                    children.push(child);
+                }
+            }
             "SystemInfo" | "system_info" => {
                 // 系统信息节点的子节点
                 let items = self.get_system_info_items().await?;

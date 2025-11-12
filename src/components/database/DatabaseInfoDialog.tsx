@@ -245,7 +245,7 @@ ${measurements.length > 20 ? `\n... 还有 ${measurements.length - 20} 个` : ''
                     <div className="flex items-center gap-2">
                       <BarChart3 className="w-4 h-4 text-purple-500" />
                       <span className="text-sm text-muted-foreground">数据点数量:</span>
-                      <Badge variant="secondary">{stats.pointCount.toLocaleString()}</Badge>
+                      <Badge variant="secondary">{stats.pointCount?.toLocaleString() || '0'}</Badge>
                     </div>
                     <div className="flex items-center gap-2">
                       <HardDrive className="w-4 h-4 text-orange-500" />

@@ -228,14 +228,15 @@ impl OfficialThriftClient {
 
         debug!("执行更新语句: {}", sql);
 
-        // 生成唯一的StatementId
-        let statement_id = self.statement_id_counter.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        // 先请求一个有效的StatementId（与查询语句一样）
+        let statement_id = self.request_statement_id(session_id).await?;
+        debug!("获取到StatementId: {}", statement_id);
 
         // 构建更新请求
         let request = TSExecuteStatementReq::new(
             session_id,
             sql.to_string(),
-            statement_id,
+            statement_id, // 使用请求到的statement_id
             Some(1000), // fetch_size
             Some(60000), // timeout (60秒)
             Some(false), // enable_redirect_query

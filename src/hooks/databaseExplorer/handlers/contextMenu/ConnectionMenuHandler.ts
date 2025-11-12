@@ -27,9 +27,16 @@ export class ConnectionMenuHandler extends BaseMenuHandler {
         break;
 
       case 'create_database':
-        // 只有 InfluxDB 1.x 支持创建数据库
-        if (this.isInfluxDB1x(connection)) {
-          this.openDialog('create_database', true);
+        // InfluxDB 1.x 和 IoTDB 支持创建数据库/存储组
+        if (this.isInfluxDB1x(connection) || this.isIoTDB(connection)) {
+          // 使用 setDialogStates 正确传递 connectionId
+          this.deps.setDialogStates((prev: any) => ({
+            ...prev,
+            createDatabase: {
+              open: true,
+              connectionId,
+            },
+          }));
         } else {
           this.showError(action, new Error('当前数据库版本不支持创建数据库操作'));
         }
