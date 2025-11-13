@@ -115,6 +115,14 @@ export interface DialogStates {
         table: string;
         data: any;
     };
+    tagValues?: {
+        open: boolean;
+        connectionId: string;
+        database: string;
+        table: string;
+        tag: string;
+        values: string[];
+    };
 }
 
 /**

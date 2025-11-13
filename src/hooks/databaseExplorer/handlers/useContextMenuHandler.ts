@@ -43,6 +43,7 @@ interface UseContextMenuHandlerProps {
     setDialogStates: React.Dispatch<React.SetStateAction<DialogStates>>;
     handleConnectionToggle: (connectionId: string) => Promise<void>;
     handleOpenConnectionDialog: (connection: ConnectionConfig) => void;
+    onCreateQueryTab?: (query?: string, database?: string, connectionId?: string) => void;
     onCreateAndExecuteQuery?: (query: string, database: string, connectionId: string) => void;
     onCreateDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
     generateQuery: (table: string, connectionId?: string) => string;
@@ -83,6 +84,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
         setDialogStates,
         handleConnectionToggle,
         handleOpenConnectionDialog,
+        onCreateQueryTab,
         onCreateAndExecuteQuery,
         onCreateDataBrowserTab,
         generateQuery,
@@ -117,6 +119,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
             setDialogStates,
             handleConnectionToggle,
             handleOpenConnectionDialog,
+            onCreateQueryTab,
             onCreateAndExecuteQuery,
             onCreateDataBrowserTab,
             generateQuery,
@@ -147,6 +150,7 @@ export const useContextMenuHandler = (props: UseContextMenuHandlerProps) => {
         setDialogStates,
         handleConnectionToggle,
         handleOpenConnectionDialog,
+        onCreateQueryTab,
         onCreateAndExecuteQuery,
         onCreateDataBrowserTab,
         generateQuery,

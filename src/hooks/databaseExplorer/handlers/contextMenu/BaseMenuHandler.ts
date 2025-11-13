@@ -47,6 +47,7 @@ export interface MenuHandlerDependencies {
   handleOpenConnectionDialog: (connection: any) => void;
   
   // 查询操作
+  onCreateQueryTab?: (query?: string, database?: string, connectionId?: string) => void;
   onCreateAndExecuteQuery?: (query: string, database: string, connectionId: string) => void;
   onCreateDataBrowserTab?: (connectionId: string, database: string, tableName: string) => void;
   generateQuery: (table: string, connectionId?: string) => string;

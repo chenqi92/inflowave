@@ -1655,6 +1655,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     setDialogStates,
     handleConnectionToggle: connectionHandlers.handleConnectionToggle,
     handleOpenConnectionDialog,
+    onCreateQueryTab,
     onCreateAndExecuteQuery,
     onCreateDataBrowserTab,
     generateQuery,

@@ -693,10 +693,6 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                 <Tags className="w-4 h-4 mr-2"/>
                 {t('context_menu.show_tag_values')}
             </ContextMenuItem>
-            <ContextMenuItem onSelect={() => handleAction('tag_cardinality')}>
-                <BarChart className="w-4 h-4 mr-2"/>
-                {t('context_menu.tag_cardinality')}
-            </ContextMenuItem>
             <ContextMenuSeparator/>
 
             <ContextMenuLabel>{t('context_menu.query_generation')}</ContextMenuLabel>

@@ -12,6 +12,7 @@ import QueryBuilder from '@/components/query/QueryBuilder';
 import TableListDialog from '@/components/database/TableListDialog';
 import TableStatisticsDialog from '@/components/database/TableStatisticsDialog';
 import DataPreviewDialog from '@/components/database/DataPreviewDialog';
+import TagValuesDialog from '@/components/database/TagValuesDialog';
 import type {
     DialogStates,
     DatabaseInfoDialogState,
@@ -308,6 +309,31 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     database={dialogStates.dataPreview.database}
                     table={dialogStates.dataPreview.table}
                     data={dialogStates.dataPreview.data}
+                />
+            )}
+
+            {/* 标签值对话框 */}
+            {dialogStates.tagValues && (
+                <TagValuesDialog
+                    open={dialogStates.tagValues.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            tagValues: {
+                                open: false,
+                                connectionId: '',
+                                database: '',
+                                table: '',
+                                tag: '',
+                                values: [],
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.tagValues.connectionId}
+                    database={dialogStates.tagValues.database}
+                    table={dialogStates.tagValues.table}
+                    tag={dialogStates.tagValues.tag}
+                    values={dialogStates.tagValues.values}
                 />
             )}
         </>

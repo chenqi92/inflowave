@@ -108,10 +108,6 @@ export class TagMenuHandler extends BaseMenuHandler {
         await this.showTagValues(connectionId, database, table, tag);
         break;
 
-      case 'tag_cardinality':
-        await this.showTagCardinality(connectionId, database, table, tag);
-        break;
-
       case 'generate_filter_query':
         await this.generateFilterQuery(connectionId, database, table, tag);
         break;
@@ -183,29 +179,6 @@ export class TagMenuHandler extends BaseMenuHandler {
   }
 
   /**
-   * 显示标签基数
-   */
-  private async showTagCardinality(
-    connectionId: string,
-    database: string,
-    table: string,
-    tag: string
-  ): Promise<void> {
-    try {
-      const cardinality = await this.invokeTauri<number>('get_tag_cardinality', {
-        connectionId,
-        database,
-        table,
-        tag,
-      });
-
-      this.showSuccess('tag_cardinality', `标签 "${tag}" 的基数为 ${cardinality}`);
-    } catch (error) {
-      this.showError('tag_cardinality', error);
-    }
-  }
-
-  /**
    * 生成筛选查询
    */
   private async generateFilterQuery(
@@ -217,7 +190,15 @@ export class TagMenuHandler extends BaseMenuHandler {
     try {
       // InfluxDB 1.x 正确语法：SELECT * FROM "measurement" WHERE "tag" = '<value>' AND time > now() - 1h LIMIT 1000
       const query = `SELECT * FROM "${table}" WHERE "${tag}" = '<value>' AND time > now() - 1h LIMIT 1000`;
-      await this.copyToClipboard(query, 'generate_filter_query');
+
+      // 创建查询标签页并填充查询内容（不执行）
+      if (this.deps.onCreateQueryTab) {
+        this.deps.onCreateQueryTab(query, database, connectionId);
+        this.showSuccess('generate_filter_query', `已生成筛选查询，请将 '<value>' 替换为实际值`);
+      } else {
+        // 如果没有 onCreateQueryTab 回调，则复制到剪贴板
+        await this.copyToClipboard(query, 'generate_filter_query');
+      }
     } catch (error) {
       this.showError('generate_filter_query', error);
     }
