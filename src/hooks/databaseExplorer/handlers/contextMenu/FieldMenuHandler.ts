@@ -16,24 +16,12 @@ export class FieldMenuHandler extends BaseMenuHandler {
         await this.queryField(connectionId, database, table, field);
         break;
 
-      case 'field_details':
-        await this.showFieldDetails(connectionId, database, table, field);
-        break;
-
       case 'field_max':
       case 'field_min':
       case 'field_avg':
       case 'field_sum':
       case 'field_count':
         await this.executeAggregateFunction(connectionId, database, table, field, action);
-        break;
-
-      case 'field_stats':
-        await this.showFieldStatistics(connectionId, database, table, field);
-        break;
-
-      case 'field_distribution':
-        await this.showFieldDistribution(connectionId, database, table, field);
         break;
 
       case 'copy_field_name':
@@ -55,8 +43,9 @@ export class FieldMenuHandler extends BaseMenuHandler {
     field: string
   ): Promise<void> {
     try {
-      const query = `SELECT "${field}" FROM "${database}"."${table}" LIMIT 1000;`;
-      
+      // InfluxDB 1.x 正确语法：SELECT "field" FROM "measurement" WHERE time > now() - 1h LIMIT 1000
+      const query = `SELECT "${field}" FROM "${table}" WHERE time > now() - 1h LIMIT 1000`;
+
       if (this.deps.onCreateAndExecuteQuery) {
         this.deps.onCreateAndExecuteQuery(query, database, connectionId);
       }
@@ -64,39 +53,6 @@ export class FieldMenuHandler extends BaseMenuHandler {
       this.showSuccess('query_field', `正在查询字段 "${field}"`);
     } catch (error) {
       this.showError('query_field', error);
-    }
-  }
-
-  /**
-   * 显示字段详情
-   */
-  private async showFieldDetails(
-    connectionId: string,
-    database: string,
-    table: string,
-    field: string
-  ): Promise<void> {
-    try {
-      const details = await this.invokeTauri<any>('get_field_details', {
-        connectionId,
-        database,
-        table,
-        field,
-      });
-
-      this.deps.setDialogStates((prev: any) => ({
-        ...prev,
-        fieldDetails: {
-          open: true,
-          connectionId,
-          database,
-          table,
-          field,
-          details,
-        },
-      }));
-    } catch (error) {
-      this.showError('field_details', error);
     }
   }
 
@@ -120,7 +76,8 @@ export class FieldMenuHandler extends BaseMenuHandler {
       };
 
       const func = functionMap[action];
-      const query = `SELECT ${func}("${field}") FROM "${database}"."${table}";`;
+      // InfluxDB 1.x 正确语法：SELECT MAX("field") FROM "measurement" WHERE time > now() - 1h
+      const query = `SELECT ${func}("${field}") FROM "${table}" WHERE time > now() - 1h`;
 
       if (this.deps.onCreateAndExecuteQuery) {
         this.deps.onCreateAndExecuteQuery(query, database, connectionId);
@@ -132,71 +89,7 @@ export class FieldMenuHandler extends BaseMenuHandler {
     }
   }
 
-  /**
-   * 显示字段统计信息
-   */
-  private async showFieldStatistics(
-    connectionId: string,
-    database: string,
-    table: string,
-    field: string
-  ): Promise<void> {
-    try {
-      const stats = await this.invokeTauri<any>('get_field_statistics', {
-        connectionId,
-        database,
-        table,
-        field,
-      });
 
-      this.deps.setDialogStates((prev: any) => ({
-        ...prev,
-        fieldStatistics: {
-          open: true,
-          connectionId,
-          database,
-          table,
-          field,
-          stats,
-        },
-      }));
-    } catch (error) {
-      this.showError('field_stats', error);
-    }
-  }
-
-  /**
-   * 显示字段数值分布
-   */
-  private async showFieldDistribution(
-    connectionId: string,
-    database: string,
-    table: string,
-    field: string
-  ): Promise<void> {
-    try {
-      const distribution = await this.invokeTauri<any>('get_field_distribution', {
-        connectionId,
-        database,
-        table,
-        field,
-      });
-
-      this.deps.setDialogStates((prev: any) => ({
-        ...prev,
-        fieldDistribution: {
-          open: true,
-          connectionId,
-          database,
-          table,
-          field,
-          distribution,
-        },
-      }));
-    } catch (error) {
-      this.showError('field_distribution', error);
-    }
-  }
 }
 
 /**
@@ -211,20 +104,12 @@ export class TagMenuHandler extends BaseMenuHandler {
         await this.queryTag(connectionId, database, table, tag);
         break;
 
-      case 'tag_details':
-        await this.showTagDetails(connectionId, database, table, tag);
-        break;
-
       case 'tag_values':
         await this.showTagValues(connectionId, database, table, tag);
         break;
 
       case 'tag_cardinality':
         await this.showTagCardinality(connectionId, database, table, tag);
-        break;
-
-      case 'tag_distribution':
-        await this.showTagDistribution(connectionId, database, table, tag);
         break;
 
       case 'generate_filter_query':
@@ -250,8 +135,9 @@ export class TagMenuHandler extends BaseMenuHandler {
     tag: string
   ): Promise<void> {
     try {
-      const query = `SELECT * FROM "${database}"."${table}" WHERE "${tag}" != '' LIMIT 1000;`;
-      
+      // InfluxDB 1.x 正确语法：SELECT * FROM "measurement" WHERE "tag" != '' AND time > now() - 1h LIMIT 1000
+      const query = `SELECT * FROM "${table}" WHERE "${tag}" != '' AND time > now() - 1h LIMIT 1000`;
+
       if (this.deps.onCreateAndExecuteQuery) {
         this.deps.onCreateAndExecuteQuery(query, database, connectionId);
       }
@@ -259,39 +145,6 @@ export class TagMenuHandler extends BaseMenuHandler {
       this.showSuccess('query_tag', `正在查询标签 "${tag}"`);
     } catch (error) {
       this.showError('query_tag', error);
-    }
-  }
-
-  /**
-   * 显示标签详情
-   */
-  private async showTagDetails(
-    connectionId: string,
-    database: string,
-    table: string,
-    tag: string
-  ): Promise<void> {
-    try {
-      const details = await this.invokeTauri<any>('get_tag_details', {
-        connectionId,
-        database,
-        table,
-        tag,
-      });
-
-      this.deps.setDialogStates((prev: any) => ({
-        ...prev,
-        tagDetails: {
-          open: true,
-          connectionId,
-          database,
-          table,
-          tag,
-          details,
-        },
-      }));
-    } catch (error) {
-      this.showError('tag_details', error);
     }
   }
 
@@ -305,11 +158,12 @@ export class TagMenuHandler extends BaseMenuHandler {
     tag: string
   ): Promise<void> {
     try {
+      // 后端命令参数名是 tagKey 而不是 tag
       const values = await this.invokeTauri<string[]>('get_tag_values', {
         connectionId,
         database,
-        table,
-        tag,
+        tagKey: tag,
+        measurement: table,
       });
 
       this.deps.setDialogStates((prev: any) => ({
@@ -352,39 +206,6 @@ export class TagMenuHandler extends BaseMenuHandler {
   }
 
   /**
-   * 显示标签值分布
-   */
-  private async showTagDistribution(
-    connectionId: string,
-    database: string,
-    table: string,
-    tag: string
-  ): Promise<void> {
-    try {
-      const distribution = await this.invokeTauri<any>('get_tag_distribution', {
-        connectionId,
-        database,
-        table,
-        tag,
-      });
-
-      this.deps.setDialogStates((prev: any) => ({
-        ...prev,
-        tagDistribution: {
-          open: true,
-          connectionId,
-          database,
-          table,
-          tag,
-          distribution,
-        },
-      }));
-    } catch (error) {
-      this.showError('tag_distribution', error);
-    }
-  }
-
-  /**
    * 生成筛选查询
    */
   private async generateFilterQuery(
@@ -394,7 +215,8 @@ export class TagMenuHandler extends BaseMenuHandler {
     tag: string
   ): Promise<void> {
     try {
-      const query = `SELECT * FROM "${database}"."${table}" WHERE "${tag}" = '<value>' LIMIT 1000;`;
+      // InfluxDB 1.x 正确语法：SELECT * FROM "measurement" WHERE "tag" = '<value>' AND time > now() - 1h LIMIT 1000
+      const query = `SELECT * FROM "${table}" WHERE "${tag}" = '<value>' AND time > now() - 1h LIMIT 1000`;
       await this.copyToClipboard(query, 'generate_filter_query');
     } catch (error) {
       this.showError('generate_filter_query', error);

@@ -311,45 +311,86 @@ impl InfluxDBClient {
                 }
             }
             "measurement" => {
-                // 测量节点：返回 Tags 和 Fields 分组
-                info!("为测量节点获取 Tags 和 Fields 分组");
+                // 测量节点：直接返回所有 Tags 和 Fields
+                info!("为测量节点获取 Tags 和 Fields");
 
                 // 🔧 修复：从新格式的 parent_node_id 中提取数据库名和测量名
                 // 新格式: "{connection_id}/measurement_{database}_{measurement_name}"
-                if let Some(measurement_part) = parent_node_id.split('/').last() {
-                    let parts: Vec<&str> = measurement_part.split('_').collect();
-                    if parts.len() >= 3 && parts[0] == "measurement" {
-                        let database = parts[1];
-                        let measurement_name = parts[2..].join("_");
+                // 注意：database 和 measurement_name 可能包含下划线，需要从 metadata 中获取
+                if let Some(_metadata) = _metadata {
+                    let database = _metadata.get("database")
+                        .or_else(|| _metadata.get("databaseName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
+                    let measurement_name = _metadata.get("measurement")
+                        .or_else(|| _metadata.get("tableName"))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("");
 
-                        debug!("解析测量节点: database={}, measurement={}", database, measurement_name);
-
-                        let mut children = Vec::new();
-
-                        // 创建 Tags 分组节点
-                        let tags_group = crate::models::TreeNodeFactory::create_tag_group(parent_node_id.to_string())
-                            .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
-                            .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
-                            .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
-                            .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name.clone()));
-                        children.push(tags_group);
-
-                        // 创建 Fields 分组节点
-                        let fields_group = crate::models::TreeNodeFactory::create_field_group(parent_node_id.to_string())
-                            .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
-                            .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.clone()))
-                            .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
-                            .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name));
-                        children.push(fields_group);
-
-                        info!("为测量节点创建了 {} 个分组节点", children.len());
-                        Ok(children)
-                    } else {
-                        warn!("无法从 parent_node_id 解析测量信息: {}", parent_node_id);
-                        Ok(vec![])
+                    if database.is_empty() || measurement_name.is_empty() {
+                        warn!("无法从 metadata 获取数据库名或测量名: {:?}", _metadata);
+                        return Ok(vec![]);
                     }
+
+                    debug!("从 metadata 解析测量节点: database={}, measurement={}", database, measurement_name);
+
+                    let mut children = Vec::new();
+
+                    // 直接获取并添加所有标签节点
+                    match self.get_tag_keys(database, measurement_name).await {
+                        Ok(tags) => {
+                            for tag_info in tags {
+                                let tag_node = crate::models::TreeNodeFactory::create_tag(tag_info.name.clone(), parent_node_id.to_string())
+                                    .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
+                                    .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.to_string()))
+                                    .with_metadata("tag".to_string(), serde_json::Value::String(tag_info.name.clone()))
+                                    .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
+                                    .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name.to_string()))
+                                    .with_metadata("tagName".to_string(), serde_json::Value::String(tag_info.name));
+                                children.push(tag_node);
+                            }
+                            info!("获取到 {} 个标签", children.len());
+                        }
+                        Err(e) => {
+                            warn!("获取标签列表失败: {}", e);
+                        }
+                    }
+
+                    // 直接获取并添加所有字段节点
+                    match self.get_field_keys(database, measurement_name).await {
+                        Ok(fields) => {
+                            for field_info in fields {
+                                let field_type_str = match field_info.field_type {
+                                    crate::models::FieldType::Float => "float",
+                                    crate::models::FieldType::Integer => "integer",
+                                    crate::models::FieldType::String => "string",
+                                    crate::models::FieldType::Boolean => "boolean",
+                                };
+
+                                let field_node = crate::models::TreeNodeFactory::create_field(
+                                    field_info.name.clone(),
+                                    parent_node_id.to_string(),
+                                    field_type_str.to_string()
+                                )
+                                .with_metadata("database".to_string(), serde_json::Value::String(database.to_string()))
+                                .with_metadata("measurement".to_string(), serde_json::Value::String(measurement_name.to_string()))
+                                .with_metadata("field".to_string(), serde_json::Value::String(field_info.name.clone()))
+                                .with_metadata("databaseName".to_string(), serde_json::Value::String(database.to_string()))
+                                .with_metadata("tableName".to_string(), serde_json::Value::String(measurement_name.to_string()))
+                                .with_metadata("fieldName".to_string(), serde_json::Value::String(field_info.name));
+                                children.push(field_node);
+                            }
+                            info!("获取到 {} 个字段", children.len());
+                        }
+                        Err(e) => {
+                            warn!("获取字段列表失败: {}", e);
+                        }
+                    }
+
+                    info!("为测量节点创建了 {} 个子节点（tags + fields）", children.len());
+                    Ok(children)
                 } else {
-                    warn!("无法解析 parent_node_id 格式: {}", parent_node_id);
+                    warn!("measurement 节点缺少 metadata: {}", parent_node_id);
                     Ok(vec![])
                 }
             }

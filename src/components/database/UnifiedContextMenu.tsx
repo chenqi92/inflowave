@@ -642,10 +642,6 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                 <Search className="w-4 h-4 mr-2"/>
                 {t('context_menu.query_field_data')}
             </ContextMenuItem>
-            <ContextMenuItem onSelect={() => handleAction('field_details')}>
-                <Info className="w-4 h-4 mr-2"/>
-                {t('context_menu.field_statistics')}
-            </ContextMenuItem>
             <ContextMenuSeparator/>
 
             <ContextMenuLabel>{t('context_menu.aggregate_operations')}</ContextMenuLabel>
@@ -672,14 +668,6 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                     </ContextMenuItem>
                 </ContextMenuSubContent>
             </ContextMenuSub>
-            <ContextMenuItem onSelect={() => handleAction('field_stats')}>
-                <TrendingUp className="w-4 h-4 mr-2"/>
-                {t('context_menu.field_stats')}
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={() => handleAction('field_distribution')}>
-                <BarChart className="w-4 h-4 mr-2"/>
-                {t('context_menu.visualize_field')}
-            </ContextMenuItem>
             <ContextMenuSeparator/>
 
             <ContextMenuLabel>{t('context_menu.copy_operations')}</ContextMenuLabel>
@@ -699,33 +687,22 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
             <ContextMenuLabel>{t('context_menu.tag_operations')}</ContextMenuLabel>
             <ContextMenuItem onSelect={() => handleAction('query_tag')}>
                 <Search className="w-4 h-4 mr-2"/>
-                {t('context_menu.query_tag_values')}
+                {t('context_menu.query_data')}
             </ContextMenuItem>
-            <ContextMenuItem onSelect={() => handleAction('tag_details')}>
-                <Info className="w-4 h-4 mr-2"/>
-                {t('context_menu.tag_statistics')}
-            </ContextMenuItem>
-            <ContextMenuSeparator/>
-
-            <ContextMenuLabel>{t('context_menu.tag_operations')}</ContextMenuLabel>
             <ContextMenuItem onSelect={() => handleAction('tag_values')}>
                 <Tags className="w-4 h-4 mr-2"/>
-                {t('context_menu.query_tag_values')}
+                {t('context_menu.show_tag_values')}
             </ContextMenuItem>
             <ContextMenuItem onSelect={() => handleAction('tag_cardinality')}>
                 <BarChart className="w-4 h-4 mr-2"/>
-                {t('context_menu.tag_statistics')}
-            </ContextMenuItem>
-            <ContextMenuItem onSelect={() => handleAction('tag_distribution')}>
-                <TrendingUp className="w-4 h-4 mr-2"/>
-                {t('context_menu.tag_statistics')}
+                {t('context_menu.tag_cardinality')}
             </ContextMenuItem>
             <ContextMenuSeparator/>
 
             <ContextMenuLabel>{t('context_menu.query_generation')}</ContextMenuLabel>
             <ContextMenuItem onSelect={() => handleAction('generate_filter_query')}>
                 <Filter className="w-4 h-4 mr-2"/>
-                {t('context_menu.query_tag_values')}
+                {t('context_menu.generate_filter_query')}
             </ContextMenuItem>
             <ContextMenuSeparator/>
 
