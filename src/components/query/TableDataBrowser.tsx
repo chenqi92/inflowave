@@ -1606,17 +1606,26 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 初始化 - 使用ref避免重复加载
   const isInitializedRef = useRef(false);
+  const isFetchingSchemaRef = useRef(false); // 防止重复获取表结构
 
   useEffect(() => {
     logger.debug('[TableDataBrowser] fetchTableSchema useEffect触发:', {
       isInitialized: isInitializedRef.current,
+      isFetchingSchema: isFetchingSchemaRef.current,
       connectionId,
       database,
       tableName
     });
 
+    // 如果正在获取表结构，跳过
+    if (isFetchingSchemaRef.current) {
+      logger.debug('[TableDataBrowser] 跳过：正在获取表结构中');
+      return;
+    }
+
     // 每次表名变化时都重新获取表结构
     isInitializedRef.current = true;
+    isFetchingSchemaRef.current = true;
 
     logger.debug('[TableDataBrowser] 开始获取表结构:', {
       connectionId,
@@ -1624,8 +1633,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       tableName
     });
 
-    fetchTableSchema();
-  }, [fetchTableSchema]);
+    fetchTableSchema().finally(() => {
+      isFetchingSchemaRef.current = false;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connectionId, database, tableName]); // 只依赖实际的参数，不依赖函数引用
 
   // 监听表名变化，清理状态但不重置初始化标志
   useEffect(() => {
@@ -1700,7 +1712,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
       });
     }
-  }, [currentTab?.refreshTrigger, columns.length, currentTab?.id, updateTab, fetchTotalCount, loadData, tableName]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTab?.refreshTrigger, columns.length]); // 只依赖触发器和列数，避免函数引用变化导致重复执行
 
   // 统一的列宽度计算函数 - 优化字段名显示
   const calculateColumnWidth = useCallback((column: string): number => {

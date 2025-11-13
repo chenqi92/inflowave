@@ -155,7 +155,46 @@ impl IoTDBOfficialClient {
             let data_types: Vec<String> = response.data_type_list.unwrap_or_default();
             let mut rows: Vec<Vec<serde_json::Value>> = Vec::new();
 
-            debug!("查询响应 - 列数: {}, 数据类型: {:?}", columns.len(), data_types);
+            debug!("查询响应 - 原始列数: {}, 列名: {:?}", columns.len(), columns);
+            debug!("数据类型: {:?}", data_types);
+
+            // 对于IoTDB的SELECT *查询，需要处理列名
+            // IoTDB可能返回两种格式：
+            // 1. [Time, root.xxx.yyy.field1, root.xxx.yyy.field2, ...] - 完整路径
+            // 2. [Time, root.xxx.yyy, field1, field2, ...] - 表名 + 短字段名
+            // 我们需要检测并处理第二种情况
+
+            let table_name_column_index = if columns.len() > 1 {
+                // 检查第二列是否是表名（以root.开头但不是完整的时间序列路径）
+                if let Some(second_col) = columns.get(1) {
+                    // 如果第二列以root.开头，且第三列不以root.开头，说明第二列是表名
+                    if second_col.starts_with("root.") {
+                        if columns.len() > 2 {
+                            if let Some(third_col) = columns.get(2) {
+                                if !third_col.starts_with("root.") {
+                                    // 第二列是表名，第三列是短字段名
+                                    debug!("检测到表名列（格式2）: {}", second_col);
+                                    Some(1)
+                                } else {
+                                    // 第二列和第三列都是完整路径，没有表名列
+                                    None
+                                }
+                            } else {
+                                None
+                            }
+                        } else {
+                            // 只有两列，无法判断
+                            None
+                        }
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            } else {
+                None
+            };
 
             // 解析IoTDB查询数据集
             if let Some(query_data_set) = response.query_data_set {
@@ -226,22 +265,29 @@ impl IoTDBOfficialClient {
                         for row_index in 0..row_count {
                             let mut row_values = Vec::new();
 
-                            // 添加时间戳列（如果查询包含时间戳且有时间数据）
+                            // IoTDB的数据结构：
+                            // columns: [Time, 表名或字段1, 字段2, ...]
+                            // value_list: [字段1数据, 字段2数据, ...] (不包含Time)
+                            // time: [时间戳数组]
+
+                            // 第一列：添加时间戳（如果有时间数据）
                             if !timestamps.is_empty() && row_index < timestamps.len() {
-                                // 检查第一列是否是时间列
-                                if columns.first().map(|c| c.to_lowercase()).as_deref() == Some("time") {
-                                    row_values.push(serde_json::Value::Number(
-                                        serde_json::Number::from(timestamps[row_index])
-                                    ));
-                                }
+                                row_values.push(serde_json::Value::Number(
+                                    serde_json::Number::from(timestamps[row_index])
+                                ));
+                                trace!("第 {} 行，添加时间戳: {}", row_index, timestamps[row_index]);
+                            } else if columns.first().map(|c| c.to_lowercase()).as_deref() == Some("time") {
+                                // 如果第一列是time但没有时间数据，添加null
+                                row_values.push(serde_json::Value::Null);
+                                trace!("第 {} 行，时间戳为空，添加null", row_index);
                             }
 
-                            // 解析每列的数据
+                            // 后续列：解析value_list中的数据
                             for (col_index, column_data) in value_list.iter().enumerate() {
                                 let data_type = data_types.get(col_index).map(|s| s.as_str()).unwrap_or("TEXT");
                                 let bitmap = bitmap_list.get(col_index);
 
-                                trace!("解析第 {} 行，第 {} 列，数据类型: {}, 数据长度: {} 字节",
+                                trace!("解析第 {} 行，第 {} 列（value_list索引），数据类型: {}, 数据长度: {} 字节",
                                        row_index, col_index, data_type, column_data.len());
 
                                 let value = self.parse_column_value(
@@ -255,7 +301,7 @@ impl IoTDBOfficialClient {
                                 row_values.push(value);
                             }
 
-                            trace!("第 {} 行完整数据: {:?}", row_index, row_values);
+                            trace!("第 {} 行完整数据（共{}列）: {:?}", row_index, row_values.len(), row_values);
                             rows.push(row_values);
                         }
                     }
@@ -268,14 +314,42 @@ impl IoTDBOfficialClient {
 
             result.row_count = Some(rows.len());
 
+            // 如果检测到表名列，需要过滤掉
+            let (final_columns, final_rows) = if let Some(table_col_idx) = table_name_column_index {
+                debug!("过滤表名列，索引: {}", table_col_idx);
+
+                // 过滤列名
+                let filtered_columns: Vec<String> = columns.iter()
+                    .enumerate()
+                    .filter(|(idx, _)| *idx != table_col_idx)
+                    .map(|(_, col)| col.clone())
+                    .collect();
+
+                // 过滤每行数据
+                let filtered_rows: Vec<Vec<serde_json::Value>> = rows.iter()
+                    .map(|row| {
+                        row.iter()
+                            .enumerate()
+                            .filter(|(idx, _)| *idx != table_col_idx)
+                            .map(|(_, val)| val.clone())
+                            .collect()
+                    })
+                    .collect();
+
+                debug!("过滤后 - 列数: {}, 列名: {:?}", filtered_columns.len(), filtered_columns);
+                (filtered_columns, filtered_rows)
+            } else {
+                (columns, rows)
+            };
+
             // 构造series格式的结果
-            if !columns.is_empty() {
+            if !final_columns.is_empty() {
                 use crate::models::{QueryResultItem, Series};
 
                 let series = Series {
                     name: database.unwrap_or("default").to_string(),
-                    columns,
-                    values: rows,
+                    columns: final_columns,
+                    values: final_rows,
                     tags: None,
                 };
 
@@ -320,8 +394,20 @@ impl IoTDBOfficialClient {
                                 debug!("处理series: {}, 行数: {}", series.name, series.values.len());
                                 for (row_index, row) in series.values.iter().enumerate() {
                                     debug!("处理第 {} 行: {:?}", row_index, row);
-                                    if let Some(db_name) = row.first() {
-                                        if let Some(name_str) = db_name.as_str() {
+
+                                    // IoTDB 查询结果格式：
+                                    // SHOW STORAGE GROUP/DATABASES 返回: [Time, Database, ...]
+                                    // 第一列是时间戳，第二列是存储组名称
+                                    let db_name = if row.len() > 1 {
+                                        // 尝试从第二列获取（SHOW STORAGE GROUP/DATABASES）
+                                        row.get(1)
+                                    } else {
+                                        // 如果只有一列，从第一列获取
+                                        row.first()
+                                    };
+
+                                    if let Some(db_value) = db_name {
+                                        if let Some(name_str) = db_value.as_str() {
                                             debug!("找到存储组: {}", name_str);
                                             databases.push(name_str.to_string());
                                         }
@@ -874,7 +960,10 @@ impl IoTDBOfficialClient {
     pub async fn get_tree_children(&self, parent_node_id: &str, node_type: &str, parent_metadata: Option<&serde_json::Value>) -> Result<Vec<crate::models::TreeNode>> {
         use crate::models::{TreeNode, TreeNodeType};
 
-        debug!("获取树子节点: {} ({})", parent_node_id, node_type);
+        info!("========== 获取树子节点开始 ==========");
+        info!("父节点ID: {}", parent_node_id);
+        info!("节点类型: {}", node_type);
+        info!("元数据: {:?}", parent_metadata);
 
         let mut children = Vec::new();
 
@@ -977,7 +1066,11 @@ impl IoTDBOfficialClient {
             "StorageGroup" | "storage_group" => {
                 // 存储组节点的子节点（设备）
                 let storage_group_name = parent_node_id.strip_prefix("sg_").unwrap_or(parent_node_id);
+                info!("获取存储组 {} 的设备列表", storage_group_name);
+
                 let devices = self.get_devices(storage_group_name).await?;
+                info!("获取到 {} 个设备: {:?}", devices.len(), devices);
+
                 for device in devices {
                     // 使用设备的完整路径作为节点ID，而不是添加sg_前缀
                     // device 已经是完整路径，如 "root.factory.workshop2.conveyor01"
@@ -993,6 +1086,7 @@ impl IoTDBOfficialClient {
                     .with_metadata("storageGroup".to_string(), serde_json::Value::String(storage_group_name.to_string()));
                     children.push(child);
                 }
+                info!("存储组 {} 生成了 {} 个设备节点", storage_group_name, children.len());
             }
             "Device" | "device" => {
                 // 设备节点的子节点（时间序列）
@@ -1057,7 +1151,10 @@ impl IoTDBOfficialClient {
             }
         }
 
-        debug!("为节点 {} 生成了 {} 个子节点", parent_node_id, children.len());
+        info!("========== 获取树子节点完成 ==========");
+        info!("父节点ID: {}", parent_node_id);
+        info!("节点类型: {}", node_type);
+        info!("子节点数量: {}", children.len());
         Ok(children)
     }
 

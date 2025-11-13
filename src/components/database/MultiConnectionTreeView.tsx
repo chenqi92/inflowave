@@ -240,13 +240,11 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     } else {
       dataLoaderRef.current.updateData(treeData, filterSystemNodes);
       logger.debug('[MultiConnectionTreeView] TreeDataLoader 已更新，调用 tree.rebuildTree()');
-      logger.debug('[MultiConnectionTreeView] 当前 expandedNodeIds:', expandedNodeIds);
-      logger.debug('[MultiConnectionTreeView] tree.getState().expandedItems:', tree.getState?.()?.expandedItems);
       tree.rebuildTree();
       logger.debug('[MultiConnectionTreeView] rebuildTree 后 tree.getItems().length:', tree.getItems().length);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [treeData, tree, expandedNodeIds, useVersionAwareFilter]); // 添加 useVersionAwareFilter 依赖
+  }, [treeData, tree, useVersionAwareFilter]); // 移除 expandedNodeIds 依赖，避免无限循环
 
   // 跟踪需要自动展开的数据库节点
   const nodesToAutoExpandRef = useRef<Set<string>>(new Set());
@@ -453,14 +451,28 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
 
   // 懒加载子节点
   const handleToggle = useCallback(async (nodeId: string) => {
+    logger.info(`[handleToggle] ========== 开始处理节点: ${nodeId} ==========`);
+
     const item = tree.getItemInstance(nodeId);
-    if (!item) return;
+    if (!item) {
+      logger.warn(`[handleToggle] 节点实例不存在: ${nodeId}`);
+      return;
+    }
 
     const nodeData = item.getItemData();
+    logger.info(`[handleToggle] 节点数据:`, {
+      id: nodeData.id,
+      name: nodeData.name,
+      nodeType: nodeData.nodeType,
+      hasChildren: nodeData.children !== undefined,
+      childrenCount: nodeData.children?.length,
+      isLoading: nodeData.isLoading,
+    });
 
     // 🔧 防止重复触发：如果节点正在 loading，直接返回
     if (nodeLoadingStates.get(nodeId)) {
-      logger.debug(`[Loading] 节点 ${nodeId} 正在加载中，忽略重复触发`);
+      logger.warn(`[Loading] ⚠️ 节点 ${nodeId} 正在加载中，忽略重复触发`);
+      logger.warn(`[Loading] 当前 loading 节点列表:`, Array.from(nodeLoadingStates.keys()));
       return;
     }
 
