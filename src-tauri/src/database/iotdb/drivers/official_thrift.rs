@@ -117,7 +117,35 @@ impl OfficialThriftClient {
         self.session_id = Some(session_id);
         info!("会话打开成功，会话ID: {}", session_id);
 
+        // 验证会话是否真正可用（通过请求一个StatementId）
+        match self.verify_session(session_id).await {
+            Ok(_) => {
+                info!("会话验证成功，会话ID: {}", session_id);
+            }
+            Err(e) => {
+                warn!("会话验证失败: {}，但会话已打开", e);
+                // 不返回错误，因为会话已经打开，可能是验证方法的问题
+            }
+        }
+
         Ok(session_id)
+    }
+
+    /// 验证会话是否可用
+    async fn verify_session(&mut self, session_id: i64) -> Result<()> {
+        debug!("验证会话是否可用，会话ID: {}", session_id);
+
+        // 尝试请求一个StatementId来验证会话
+        match self.request_statement_id(session_id).await {
+            Ok(statement_id) => {
+                debug!("会话验证成功，获得StatementId: {}", statement_id);
+                Ok(())
+            }
+            Err(e) => {
+                warn!("会话验证失败: {}", e);
+                Err(e)
+            }
+        }
     }
 
     /// 关闭会话
@@ -160,13 +188,35 @@ impl OfficialThriftClient {
 
         debug!("执行查询语句: {}", sql);
 
-        // 先请求一个有效的StatementId
-        let statement_id = self.request_statement_id(session_id).await?;
+        // 先请求一个有效的StatementId，如果失败则尝试重新连接
+        let statement_id = match self.request_statement_id(session_id).await {
+            Ok(id) => id,
+            Err(e) => {
+                // 如果请求StatementId失败，可能是会话已失效
+                warn!("请求StatementId失败，尝试重新打开会话: {}", e);
+
+                // 尝试重新连接和打开会话
+                self.connect().await
+                    .context("重新连接失败")?;
+
+                let new_session_id = self.open_session().await
+                    .context("重新打开会话失败")?;
+
+                // 使用新会话ID重新请求StatementId
+                self.request_statement_id(new_session_id).await
+                    .context("重新请求StatementId失败")?
+            }
+        };
+
         debug!("获取到StatementId: {}", statement_id);
+
+        // 使用当前会话ID（可能是新的）
+        let current_session_id = self.session_id
+            .ok_or_else(|| anyhow::anyhow!("会话ID丢失"))?;
 
         // 构建查询请求
         let request = TSExecuteStatementReq::new(
-            session_id,
+            current_session_id,
             sql.to_string(),
             statement_id, // 使用请求到的statement_id
             Some(1000), // fetch_size
@@ -228,13 +278,35 @@ impl OfficialThriftClient {
 
         debug!("执行更新语句: {}", sql);
 
-        // 先请求一个有效的StatementId（与查询语句一样）
-        let statement_id = self.request_statement_id(session_id).await?;
+        // 先请求一个有效的StatementId，如果失败则尝试重新连接
+        let statement_id = match self.request_statement_id(session_id).await {
+            Ok(id) => id,
+            Err(e) => {
+                // 如果请求StatementId失败，可能是会话已失效
+                warn!("请求StatementId失败，尝试重新打开会话: {}", e);
+
+                // 尝试重新连接和打开会话
+                self.connect().await
+                    .context("重新连接失败")?;
+
+                let new_session_id = self.open_session().await
+                    .context("重新打开会话失败")?;
+
+                // 使用新会话ID重新请求StatementId
+                self.request_statement_id(new_session_id).await
+                    .context("重新请求StatementId失败")?
+            }
+        };
+
         debug!("获取到StatementId: {}", statement_id);
+
+        // 使用当前会话ID（可能是新的）
+        let current_session_id = self.session_id
+            .ok_or_else(|| anyhow::anyhow!("会话ID丢失"))?;
 
         // 构建更新请求
         let request = TSExecuteStatementReq::new(
-            session_id,
+            current_session_id,
             sql.to_string(),
             statement_id, // 使用请求到的statement_id
             Some(1000), // fetch_size
@@ -324,10 +396,27 @@ impl OfficialThriftClient {
         let client = self.client.as_mut()
             .ok_or_else(|| anyhow::anyhow!("Thrift客户端未初始化"))?;
 
+        debug!("请求StatementId，会话ID: {}", session_id);
+
         // 请求一个新的StatementId
         let statement_id = client.request_statement_id(session_id)
-            .map_err(|e| anyhow::anyhow!("请求StatementId失败: {}", e))?;
+            .map_err(|e| {
+                let error_msg = format!("{}", e);
+                warn!("请求StatementId失败: {}, 会话ID: {}", error_msg, session_id);
 
+                // 如果错误是 "not open"，说明会话未打开或已关闭
+                if error_msg.contains("not open") {
+                    warn!("会话未打开或已关闭，需要重新建立连接");
+                    // 清除会话ID，强制下次重新连接
+                    self.session_id = None;
+                    self.connected = false;
+                    anyhow::anyhow!("会话已失效，请重新连接。错误详情: {}", error_msg)
+                } else {
+                    anyhow::anyhow!("请求StatementId失败: {}", error_msg)
+                }
+            })?;
+
+        debug!("成功获取StatementId: {}", statement_id);
         Ok(statement_id)
     }
 
