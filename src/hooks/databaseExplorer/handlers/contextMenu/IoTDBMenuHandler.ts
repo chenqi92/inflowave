@@ -78,6 +78,7 @@ export class DeviceMenuHandler extends BaseMenuHandler {
       const parts = devicePath.split('.');
       const storageGroup = parts.length >= 2 ? `${parts[0]}.${parts[1]}` : '';
 
+      // IoTDB 的 SELECT * 会自动包含 time 列
       const query = `SELECT * FROM ${devicePath} LIMIT 1000;`;
 
       if (this.deps.onCreateAndExecuteQuery) {

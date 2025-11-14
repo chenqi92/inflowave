@@ -728,6 +728,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     const isIoTDB = tableName.startsWith('root.');
     const tableRef = isIoTDB ? tableName : `"${tableName}"`;
 
+    // IoTDB 的 SELECT * 会自动包含 time 列
     let query = `SELECT *
                  FROM ${tableRef}`;
 
@@ -867,7 +868,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     let query: string;
 
     if (isIoTDB) {
-      // 对于IoTDB，使用SELECT *查询但需要特殊处理返回的数据
+      // 对于IoTDB，SELECT * 会自动包含 time 列
       logger.debug('🔧 [IoTDB] 使用SELECT *查询，连接类型:', dbType, '检测类型:', detectedType);
       logger.debug('🔧 [IoTDB] 字段路径:', fullFieldPaths);
 
@@ -1397,12 +1398,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               if (Array.isArray(row) && validColumns.length > 0) {
                 try {
                   if (isIoTDB) {
-                    // IoTDB 特殊处理：validColumns 是短字段名，resultColumns 是完整路径
-                    // 需要建立映射关系
+                    // IoTDB 特殊处理：
+                    // - resultColumns 是完整路径：["root.city.environment.station01.pm25", ...]
+                    // - validColumns 是短字段名：["pm25", "co2", ...]
+                    // - row 数据结构：[时间戳, 字段1值, 字段2值, ...]
+                    // 注意：row 的第一个元素是时间戳（已经在上面添加到 record['time'] 了）
+                    // 所以需要从 row[1] 开始映射到 validColumns[0]
                     validColumns.forEach((shortName: string, idx: number) => {
-                      // 方法1：通过索引直接映射（因为顺序是一致的）
-                      if (idx < row.length) {
-                        record[shortName] = row[idx];
+                      // row[0] 是时间戳，row[1] 对应 validColumns[0]
+                      const rowIndex = idx + 1;
+                      if (rowIndex < row.length) {
+                        record[shortName] = row[rowIndex];
                       }
                     });
                   } else {

@@ -233,13 +233,15 @@ impl IoTDBOfficialClient {
 
                     if !time_data.is_empty() || !value_list.is_empty() {
                         // 尝试解析时间戳
+                        debug!("时间数据长度: {} 字节, value_list数量: {}", time_data.len(), value_list.len());
                         let timestamps = if !time_data.is_empty() {
                             self.parse_time_data(time_data)?
                         } else {
+                            debug!("⚠️ 时间数据为空，无法解析时间戳");
                             Vec::new()
                         };
 
-                        trace!("解析到 {} 个时间戳", timestamps.len());
+                        debug!("解析到 {} 个时间戳", timestamps.len());
 
                         // 确定行数
                         let row_count = if !timestamps.is_empty() {
@@ -279,7 +281,8 @@ impl IoTDBOfficialClient {
                             } else if columns.first().map(|c| c.to_lowercase()).as_deref() == Some("time") {
                                 // 如果第一列是time但没有时间数据，添加null
                                 row_values.push(serde_json::Value::Null);
-                                trace!("第 {} 行，时间戳为空，添加null", row_index);
+                                warn!("⚠️ 第 {} 行，时间戳为空，添加null。timestamps长度: {}, 第一列: {:?}",
+                                      row_index, timestamps.len(), columns.first());
                             }
 
                             // 后续列：解析value_list中的数据
@@ -1186,11 +1189,20 @@ impl IoTDBOfficialClient {
         let mut timeseries = Vec::new();
 
         // 解析查询结果
+        // SHOW TIMESERIES 返回格式：[Time, Timeseries, Alias, Database, DataType, ...]
+        // 第0列是时间戳，第1列是时间序列路径
         if let Some(results) = result.results.first() {
             if let Some(series_list) = &results.series {
                 for series in series_list {
                     for row in &series.values {
-                        if let Some(timeseries_path) = row.first() {
+                        // 从第二列获取时间序列路径（第一列是时间戳）
+                        let timeseries_path = if row.len() > 1 {
+                            row.get(1)
+                        } else {
+                            row.first()
+                        };
+
+                        if let Some(timeseries_path) = timeseries_path {
                             if let Some(path_str) = timeseries_path.as_str() {
                                 // 从完整路径中提取测点名（最后一部分）
                                 // 例如：root.test.device1.temperature -> temperature

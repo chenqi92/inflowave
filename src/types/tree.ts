@@ -417,9 +417,9 @@ export function getIoTDBNodeBehavior(nodeType: TreeNodeType, isContainer: boolea
       return {
         canExpand: false,
         canQuery: true,
-        canDoubleClick: true,
+        canDoubleClick: false, // 时间序列是叶子节点，不应该双击打开tab
         hasActivationState: false,
-        doubleClickAction: 'open_tab', // 时间序列双击打开数据tab
+        doubleClickAction: 'none', // 时间序列不支持双击操作
         contextMenuType: 'data',
         description: '时间序列，存储具体的传感器数据'
       };
@@ -569,9 +569,9 @@ export function getNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = f
     };
   }
 
-  // 需要打开数据查询tab的节点（measurement、table、timeseries）
-  if (normalized === 'measurement' || normalized === 'table' ||
-      normalized === 'timeseries' || normalized === 'aligned_timeseries') {
+  // 需要打开数据查询tab的节点（measurement、table）
+  // 注意：timeseries 是叶子节点，不应该打开数据tab
+  if (normalized === 'measurement' || normalized === 'table') {
     return {
       canExpand: true, // measurement可能有tags/fields子节点
       canQuery: true,
@@ -580,6 +580,19 @@ export function getNodeBehavior(nodeType: TreeNodeType, isContainer: boolean = f
       doubleClickAction: 'open_tab', // 双击打开数据tab
       contextMenuType: 'data',
       description: '数据表/测量节点'
+    };
+  }
+
+  // IoTDB 时间序列节点（叶子节点，不应该双击打开tab）
+  if (normalized === 'timeseries' || normalized === 'aligned_timeseries') {
+    return {
+      canExpand: false,
+      canQuery: true,
+      canDoubleClick: false, // 时间序列是叶子节点，不应该双击打开tab
+      hasActivationState: false,
+      doubleClickAction: 'none', // 时间序列不支持双击操作
+      contextMenuType: 'data',
+      description: '时间序列，存储具体的传感器数据'
     };
   }
 
