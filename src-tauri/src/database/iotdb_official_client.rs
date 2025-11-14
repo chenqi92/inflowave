@@ -506,9 +506,19 @@ impl IoTDBOfficialClient {
                                 for (row_index, row) in series.values.iter().enumerate() {
                                     debug!("处理设备第 {} 行: {:?}", row_index, row);
 
-                                    // 处理设备查询结果：第一列是设备名
-                                    if let Some(device_name) = row.first() {
-                                        if let Some(name_str) = device_name.as_str() {
+                                    // IoTDB 查询结果格式：
+                                    // SHOW DEVICES 返回: [Time, Device, IsAligned, Template, TTL(ms)]
+                                    // 第一列是时间戳，第二列是设备名称
+                                    let device_name = if row.len() > 1 {
+                                        // 尝试从第二列获取（SHOW DEVICES）
+                                        row.get(1)
+                                    } else {
+                                        // 如果只有一列，从第一列获取
+                                        row.first()
+                                    };
+
+                                    if let Some(device_value) = device_name {
+                                        if let Some(name_str) = device_value.as_str() {
                                             if !name_str.is_empty() {
                                                 debug!("找到设备: {}", name_str);
                                                 if !tables.contains(&name_str.to_string()) {

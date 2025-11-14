@@ -1123,25 +1123,43 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
       logger.debug(`🔧 [${isIoTDB ? 'IoTDB' : 'InfluxDB'}] 字段查询结果:`, fieldResult);
 
-      // 获取标签键
-      const tagKeysQuery = isIoTDB
-        ? `SHOW DEVICES ${tableName}`
-        : `SHOW TAG KEYS FROM "${tableName}"`;
-      const tagResult = await safeTauriInvoke<QueryResult>('execute_query', {
-        request: {
-          connection_id: connectionId,
-          database,
-          query: tagKeysQuery,
-        },
-      });
-
       const fieldKeys: string[] = [];
       const tagKeys: string[] = [];
 
+      // 获取标签键（仅对 InfluxDB）
+      // IoTDB 不需要标签键，因为设备本身就是表
+      if (!isIoTDB) {
+        const tagKeysQuery = `SHOW TAG KEYS FROM "${tableName}"`;
+        const tagResult = await safeTauriInvoke<QueryResult>('execute_query', {
+          request: {
+            connection_id: connectionId,
+            database,
+            query: tagKeysQuery,
+          },
+        });
+
+        // 处理标签键结果
+        if (tagResult.results?.[0]?.series?.[0]?.values) {
+          tagKeys.push(
+            ...tagResult.results[0].series[0].values
+              .map((row: any[]) => row[0])
+              .filter((col: any) => col !== null && col !== undefined && col !== '')
+              .map((col: any) => String(col))
+          );
+        }
+      }
+
       // 处理字段键结果
       if (fieldResult.results?.[0]?.series?.[0]?.values) {
+        // IoTDB 的 SHOW TIMESERIES 查询返回格式：
+        // [Time, Timeseries, Alias, Database, DataType, ...]
+        // 第0列是时间戳，第1列是时间序列名称
         const timeseriesPaths = fieldResult.results[0].series[0].values
-          .map((row: any[]) => row[0])
+          .map((row: any[]) => {
+            // 对于 IoTDB，从第1列获取时间序列名称
+            // 对于 InfluxDB，从第0列获取字段名
+            return isIoTDB ? (row.length > 1 ? row[1] : row[0]) : row[0];
+          })
           .filter((col: any) => col !== null && col !== undefined && col !== '')
           .map((col: any) => String(col));
 
@@ -1192,15 +1210,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
         }
       }
 
-      // 处理标签键结果
-      if (tagResult.results?.[0]?.series?.[0]?.values) {
-        tagKeys.push(
-          ...tagResult.results[0].series[0].values
-            .map((row: any[]) => row[0])
-            .filter((col: any) => col !== null && col !== undefined && col !== '')
-            .map((col: any) => String(col))
-        );
-      }
+
 
       // 合并所有列：序号、时间、标签键、字段键，并去重
       const allColumns = ['#', 'time', ...new Set([...tagKeys, ...fieldKeys])];
@@ -1385,23 +1395,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
               // 添加其他列数据，只处理有效列
               if (Array.isArray(row) && validColumns.length > 0) {
-                if (isIoTDB) {
-                  // IoTDB特殊处理：SELECT *查询返回的数据结构
-                  // 第0列：表名（跳过）
-                  // 第1-N列：字段数据
-                  validColumns.forEach((col: string, colIdx: number) => {
-                    // 跳过第0列（表名），从第1列开始映射字段数据
-                    const dataIndex = colIdx + 1;
-                    if (dataIndex < row.length) {
-                      record[col] = row[dataIndex];
-                    } else {
-                      record[col] = null;
-                    }
-                  });
-
-                } else {
-                  // 非IoTDB的正常处理
-                  try {
+                try {
+                  if (isIoTDB) {
+                    // IoTDB 特殊处理：validColumns 是短字段名，resultColumns 是完整路径
+                    // 需要建立映射关系
+                    validColumns.forEach((shortName: string, idx: number) => {
+                      // 方法1：通过索引直接映射（因为顺序是一致的）
+                      if (idx < row.length) {
+                        record[shortName] = row[idx];
+                      }
+                    });
+                  } else {
+                    // 非 IoTDB：列名直接匹配
                     validColumns.forEach((col: string) => {
                       // 找到该列在原始列数组中的索引
                       const colIndex = resultColumns.indexOf(col);
@@ -1409,16 +1414,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                         record[col] = row[colIndex];
                       }
                     });
-                  } catch (colError) {
-                    logger.error('🔧 [TableDataBrowser] 列映射失败:', {
-                      error: colError,
-                      validColumns,
-                      resultColumns,
-                      row,
-                      rowIndex: index
-                    });
-                    throw colError;
                   }
+                } catch (colError) {
+                  logger.error('🔧 [TableDataBrowser] 列映射失败:', {
+                    error: colError,
+                    validColumns,
+                    resultColumns,
+                    row,
+                    rowIndex: index,
+                    isIoTDB
+                  });
+                  throw colError;
                 }
               }
               return record;
