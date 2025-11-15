@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { cn } from '@/lib/utils';
-import { Minus, Plus } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import { Button } from './button';
 import { readFromClipboard } from '@/utils/clipboard';
 
@@ -273,7 +273,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
 
     const getStepperControls = () => {
       if (!controls || disabled) return null;
-      
+
       // 控制按钮始终在最右侧
       return (
         <div className="absolute right-1 top-1/2 -translate-y-1/2 flex flex-col z-10">
@@ -287,7 +287,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
               max !== undefined && actualValue !== null && actualValue >= max
             }
           >
-            <Plus className='h-2 w-2' />
+            <ChevronUp className='h-3 w-3' />
           </Button>
           <Button
             type='button'
@@ -299,7 +299,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
               min !== undefined && actualValue !== null && actualValue <= min
             }
           >
-            <Minus className='h-2 w-2' />
+            <ChevronDown className='h-3 w-3' />
           </Button>
         </div>
       );
