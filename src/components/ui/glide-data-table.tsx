@@ -904,13 +904,27 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
               {(() => {
                 // 计算实际需要的宽度和高度
                 const rowMarkerWidth = 48; // 行标记的宽度
-                const totalColumnsWidth = gridColumns.reduce((sum, col) => sum + (col.width || 150), 0);
-                const actualTableWidth = Math.min(totalColumnsWidth + rowMarkerWidth + 2, containerWidth); // +2 for borders
+                const scrollbarWidth = 12; // 预留滚动条宽度
+                // 从原始columns中获取宽度信息
+                const totalColumnsWidth = effectiveColumnOrder.reduce((sum, colKey) => {
+                  const column = columns.find(c => c.key === colKey);
+                  const customWidth = columnWidths.get(colKey);
+                  const width = customWidth || column?.width || 120;
+                  return sum + width;
+                }, 0);
+
+                // 计算实际表格宽度，考虑到滚动条
+                const contentWidth = totalColumnsWidth + rowMarkerWidth;
+                const needsVerticalScroll = processedData.length > 100;
+                const actualTableWidth = Math.min(
+                  contentWidth + (needsVerticalScroll ? scrollbarWidth : 0) + 2,
+                  containerWidth
+                );
 
                 const headerHeight = 36;
                 const rowHeight = 32;
                 const actualDataHeight = headerHeight + (rowHeight * Math.min(processedData.length, 100)); // 最多显示100行，避免太高
-                const actualTableHeight = Math.min(actualDataHeight, containerHeight - (pagination ? 60 : 0));
+                const actualTableHeight = Math.min(actualDataHeight + 2, containerHeight - (pagination ? 60 : 0));
 
                 // 判断是否需要显示为紧凑表格
                 const isCompactWidth = actualTableWidth < containerWidth;
@@ -930,24 +944,29 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
                 if (isCompactWidth || isCompactHeight) {
                   // 紧凑显示模式：使用包装器限制尺寸
+                  const borderWidth = 1;
+                  const wrapperWidth = isCompactWidth ? actualTableWidth : containerWidth;
+                  const wrapperHeight = actualTableHeight;
+
                   return (
                     <div
                       style={{
-                        width: isCompactWidth ? actualTableWidth : '100%',
-                        height: actualTableHeight,
+                        width: wrapperWidth,
+                        height: wrapperHeight,
                         position: 'relative',
-                        border: '1px solid var(--border)',
+                        border: `${borderWidth}px solid var(--border)`,
                         borderRadius: '0',
                         overflow: 'hidden', // 隐藏外部溢出，让DataEditor处理内部滚动
                         backgroundColor: 'var(--background)',
+                        boxSizing: 'border-box',
                       }}
                     >
                       <DataEditor
                         getCellContent={getCellContent}
                         columns={gridColumns}
                         rows={processedData.length}
-                        width={actualTableWidth}
-                        height={actualTableHeight}
+                        width={wrapperWidth - (borderWidth * 2)}
+                        height={wrapperHeight - (borderWidth * 2)}
                         smoothScrollX={true}
                         smoothScrollY={true}
                         overscrollX={0}
@@ -972,6 +991,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                         freezeColumns={0}
                         headerHeight={36}
                         rowHeight={32}
+                        drawFocusRing={false}
+                        fillHandle={false}
                         onCellEdited={(cell, newValue) => {
                           // 暂时不实现编辑功能，返回undefined表示不应用编辑
                           logger.debug('单元格编辑:', { cell, newValue });
@@ -1045,6 +1066,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                       freezeColumns={0}
                       headerHeight={36}
                       rowHeight={32}
+                      drawFocusRing={false}
+                      fillHandle={false}
                       onCellEdited={(cell, newValue) => {
                         // 暂时不实现编辑功能，返回undefined表示不应用编辑
                         logger.debug('单元格编辑:', { cell, newValue });
