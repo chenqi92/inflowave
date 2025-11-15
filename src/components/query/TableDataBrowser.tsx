@@ -1801,35 +1801,87 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTab?.refreshTrigger, columns.length]); // 只依赖触发器和列数，避免函数引用变化导致重复执行
 
-  // 统一的列宽度计算函数 - 优化字段名显示
-  const calculateColumnWidth = useCallback((column: string): number => {
+  // 统一的列宽度计算函数 - 根据数据内容和表头自动调整
+  const calculateColumnWidth = useCallback((column: string, sampleData?: DataRow[]): number => {
     // 安全检查：确保column不为null或undefined
     if (!column || typeof column !== 'string') {
       return 150; // 默认宽度
     }
 
+    // 固定宽度的特殊列
     if (column === '_actions') return 48;
     if (column === '_select') return 48;
     if (column === '#') return 80;
-    if (column === 'time') return 200;
 
-    // 更精确的列宽度计算，确保字段名完整显示
-    // 使用更大的字符宽度系数，并增加padding空间
-    const charWidth = 12; // 增加字符宽度
-    const padding = 40; // 增加padding空间（包括排序图标等）
-    const baseWidth = Math.max(150, column.length * charWidth + padding);
-    return Math.min(baseWidth, 400); // 增加最大宽度到400px
+    // Time列特殊处理，考虑格式化后的日期字符串长度
+    if (column === 'Time' || column === 'time') {
+      // 格式化日期示例："2025-01-15 10:30:45" 约19个字符
+      const charWidth = 8;
+      const padding = 40;
+      return Math.max(200, 19 * charWidth + padding);
+    }
+
+    // 计算表头宽度
+    const charWidth = 8; // 字符平均宽度（像素）
+    const padding = 40; // padding空间（包括排序图标等）
+    const headerWidth = column.length * charWidth + padding;
+
+    // 如果有数据样本，计算数据内容的最大宽度
+    let maxDataWidth = 0;
+    if (sampleData && sampleData.length > 0) {
+      // 采样前10行数据
+      const sampleRows = sampleData.slice(0, 10);
+
+      sampleRows.forEach(row => {
+        const value = row[column];
+        if (value != null) {
+          // 转换为字符串并计算长度
+          let displayValue = String(value);
+
+          // 对于Time列，需要考虑格式化后的长度
+          if ((column === 'Time' || column === 'time') && typeof value === 'number') {
+            // 格式化时间戳为日期字符串
+            try {
+              displayValue = new Date(value).toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+              });
+            } catch (e) {
+              // 格式化失败则使用原始值
+              displayValue = String(value);
+            }
+          }
+
+          const contentWidth = displayValue.length * charWidth;
+          maxDataWidth = Math.max(maxDataWidth, contentWidth);
+        }
+      });
+    }
+
+    // 取表头宽度和数据宽度的最大值
+    const calculatedWidth = Math.max(headerWidth, maxDataWidth) + padding;
+
+    // 设置合理的最小值和最大值
+    const minWidth = 120;
+    const maxWidth = 500;
+
+    return Math.min(Math.max(calculatedWidth, minWidth), maxWidth);
   }, []);
 
   // 初始化列宽度
   const initializeColumnWidths = useCallback(
-    (cols: string[]) => {
+    (cols: string[], sampleData?: DataRow[]) => {
       const widths: Record<string, number> = {};
       // 安全检查：确保cols是数组且每个元素都是有效的字符串
       if (Array.isArray(cols)) {
         cols.forEach(col => {
           if (col && typeof col === 'string') {
-            widths[col] = calculateColumnWidth(col);
+            widths[col] = calculateColumnWidth(col, sampleData);
           }
         });
       }
@@ -1878,6 +1930,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       initializeColumnWidths(columns); // 初始化列宽度（包含序号列用于宽度计算）
     }
   }, [columns, initializeColumnWidths]);
+
+  // 当数据更新时，重新计算列宽以适应数据内容
+  useEffect(() => {
+    if (data.length > 0 && columns.length > 0) {
+      logger.debug('🔧 [TableDataBrowser] 数据已加载，重新计算列宽', {
+        数据行数: data.length,
+        列数: columns.length
+      });
+      initializeColumnWidths(columns, data);
+    }
+  }, [data.length, columns.length, initializeColumnWidths, data, columns]); // 添加必要的依赖
 
   // 处理页面变化 - 直接传递新页码参数
   const handlePageChange = useCallback((page: number) => {
@@ -2906,13 +2969,18 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           data={sortedData}
           columns={columnOrder
             .filter(col => col !== '#' && selectedColumns.includes(col))
-            .map(col => {
+            .map((col, index, array) => {
               // 对于IoTDB，保持Time列的大写形式以匹配数据键名
               const columnKey = col === 'Time' ? 'Time' : col;
+              const isLastColumn = index === array.length - 1;
+              // 最后一列增加额外的右侧padding，确保内容完整显示且分隔线容易拖动
+              const baseWidth = columnWidths[col] || 120;
+              const width = isLastColumn ? baseWidth + 50 : baseWidth;
+
               return {
                 key: columnKey,
                 title: col,
-                width: columnWidths[col] || 120,
+                width,
                 sortable: true,
                 filterable: true,
                 render:
