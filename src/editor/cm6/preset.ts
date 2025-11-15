@@ -255,15 +255,36 @@ function createClipboardKeybindings(): KeyBinding[] {
       },
     },
     // Paste: Mod-v
-    // For desktop apps, let the browser/CodeMirror handle paste naturally
-    // Don't override the default paste behavior
+    // Use Tauri's clipboard API to read and insert text
     {
       key: 'Mod-v',
       run: (view) => {
-        logger.info('📋 [Clipboard] Paste keybinding triggered - using native paste');
-        // Return false to let CodeMirror's default paste handler work
-        // This will use the browser's native clipboard API
-        return false;
+        logger.info('📋 [Clipboard] Paste keybinding triggered - reading from clipboard');
+
+        // Use Promise without async/await to satisfy Command type
+        readText()
+          .then((text) => {
+            if (text) {
+              logger.info('📋 [Clipboard] Got text from clipboard:', text.length, 'chars');
+
+              // Insert the text at the current cursor position
+              const selection = view.state.selection.main;
+              view.dispatch({
+                changes: { from: selection.from, to: selection.to, insert: text },
+                selection: { anchor: selection.from + text.length },
+              });
+
+              logger.debug('✅ [Clipboard] Paste successful');
+            } else {
+              logger.debug('⚠️ [Clipboard] No text in clipboard');
+            }
+          })
+          .catch((err) => {
+            logger.error('❌ [Clipboard] Paste failed:', err);
+          });
+
+        // Return true immediately to prevent default behavior
+        return true;
       },
     },
   ];
