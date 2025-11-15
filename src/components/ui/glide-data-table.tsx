@@ -878,7 +878,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
       {/* 数据表格 - 移除圆角 */}
       <div ref={containerRef} className="flex-1 min-h-0 flex flex-col border rounded-none overflow-hidden bg-background">
-        <div className="flex-1 min-h-0 relative">
+        <div className="flex-1 min-h-0 relative overflow-auto">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-background">
               <div className="text-muted-foreground">加载中...</div>
@@ -895,40 +895,45 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 containerHeight,
                 计算后高度: containerHeight - (pagination ? 60 : 0),
               })}
-              <DataEditor
-                getCellContent={getCellContent}
-                columns={gridColumns}
-                rows={processedData.length}
-                width={(() => {
-                  // 计算所有列的总宽度
-                  const totalColumnsWidth = gridColumns.reduce((sum, col) => {
-                    return sum + ((col as any).width || 120);
-                  }, 0);
-
-                  // 行标记（序号）的宽度约为48px
-                  const rowMarkersWidth = 48;
-
-                  // 总宽度 = 列宽总和 + 行标记宽度
-                  return totalColumnsWidth + rowMarkersWidth;
-                })()}
-                height={(() => {
-                  // 根据实际数据行数计算所需高度
-                  const headerHeight = 36;
-                  const rowHeight = 32;
-                  const paginationHeight = pagination ? 60 : 0;
-                  const padding = 20; // 额外的padding空间
-
-                  // 计算显示所有数据需要的高度
-                  const contentHeight = headerHeight + (processedData.length * rowHeight) + padding;
-
-                  // 取实际内容高度和容器可用高度的较小值
-                  const maxHeight = containerHeight - paginationHeight;
-
-                  // 如果数据量少，使用内容高度；否则使用容器高度以启用滚动
-                  return Math.min(contentHeight, maxHeight);
-                })()}
+              <div
+                style={{
+                  display: 'inline-block',
+                  minWidth: (() => {
+                    // 计算所有列的总宽度
+                    const totalColumnsWidth = gridColumns.reduce((sum, col) => {
+                      return sum + ((col as any).width || 120);
+                    }, 0);
+                    // 行标记（序号）的宽度，包括左侧的checkbox和边距
+                    const rowMarkersWidth = 42;
+                    // 总宽度 = 列宽总和 + 行标记宽度 + 边框
+                    return totalColumnsWidth + rowMarkersWidth + 2;
+                  })(),
+                  height: (() => {
+                    // 根据实际数据行数计算所需高度
+                    const headerHeight = 36;
+                    const rowHeight = 32;
+                    const paginationHeight = pagination ? 60 : 0;
+                    // 计算内容高度（表头 + 数据行 + 边框）
+                    const contentHeight = headerHeight + (processedData.length * rowHeight) + 2;
+                    const maxHeight = containerHeight - paginationHeight;
+                    return Math.min(contentHeight, maxHeight);
+                  })(),
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '4px',
+                  overflow: 'hidden',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <DataEditor
+                  getCellContent={getCellContent}
+                  columns={gridColumns}
+                  rows={processedData.length}
+                  width="100%"
+                height="100%"
                 smoothScrollX={true}
                 smoothScrollY={true}
+                overscrollX={0}
+                overscrollY={0}
                 rowMarkers="both"
                 onHeaderClicked={onHeaderClicked}
                 onColumnResize={handleColumnResize}
@@ -987,6 +992,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
               fontFamily: "Inter, system-ui, sans-serif",
                 }}
               />
+              </div>
             </>
           )}
         </div>
