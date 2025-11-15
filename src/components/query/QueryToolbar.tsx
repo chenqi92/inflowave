@@ -78,12 +78,18 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
   // 获取连接的显示信息
   const getConnectionDisplayInfo = (conn: any) => {
     const status = conn.id ? connectionStatuses[conn.id] : null;
-    const version = conn.version || 'Unknown';
     const statusIcon = status?.status === 'connected' ? '●' : '○';
     const statusColor = status?.status === 'connected' ? 'text-green-500' : 'text-red-500';
 
+    // 🔧 只对 InfluxDB 显示版本号，其他数据库不显示
+    // InfluxDB 有多个版本 (1.x, 2.x, 3.x)，版本号对用户很重要
+    // 其他数据库（IoTDB、对象存储等）不需要显示版本号
+    const isInfluxDB = conn.dbType === 'influxdb';
+    const version = conn.version || 'Unknown';
+    const label = isInfluxDB ? `${conn.name} (${version})` : conn.name;
+
     return {
-      label: `${conn.name} (${version})`,
+      label,
       value: conn.id,
       version: conn.version,
       statusIcon,
