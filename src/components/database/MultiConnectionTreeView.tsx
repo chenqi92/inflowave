@@ -470,7 +470,12 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     });
 
     // 🔧 防止重复触发：如果节点正在 loading，直接返回
-    if (nodeLoadingStates.get(nodeId)) {
+    // 对于连接节点，需要同时检查 connectionStatus 和 nodeLoadingStates
+    const isCurrentlyLoading = nodeLoadingStates.get(nodeId) ||
+      (nodeData.nodeType === 'connection' &&
+       connectionStatuses?.get(nodeData.metadata?.connectionId) === 'connecting');
+
+    if (isCurrentlyLoading) {
       logger.warn(`[Loading] ⚠️ 节点 ${nodeId} 正在加载中，忽略重复触发`);
       logger.warn(`[Loading] 当前 loading 节点列表:`, Array.from(nodeLoadingStates.keys()));
       return;
@@ -484,15 +489,29 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       if (!isConnected && onConnectionToggle) {
         logger.debug(`连接节点未连接，先建立连接: ${connectionId}`);
 
-        // 不再设置 loading 状态，避免触发额外的重新渲染
+        // 🔧 设置节点 loading 状态，确保在连接和子节点加载完成前都显示 loading
+        setNodeLoadingStates(prev => {
+          const newMap = new Map(prev);
+          newMap.set(nodeId, true);
+          logger.debug(`[Loading] 设置连接节点 ${nodeId} loading 状态为 true（连接中）`);
+          return newMap;
+        });
+
         try {
           // 建立连接
           await onConnectionToggle(connectionId);
           logger.info(`连接建立成功，继续加载子节点: ${connectionId}`);
           // 连接建立后，继续加载子节点（不要 return）
+          // 注意：不要在这里清除 loading 状态，等子节点加载完成后再清除
         } catch (err) {
           logger.error('连接失败:', err);
-          // 🔧 连接失败后，取消节点选中状态，避免保持选中效果
+          // 🔧 连接失败后，清除 loading 状态并取消节点选中状态
+          setNodeLoadingStates(prev => {
+            const newMap = new Map(prev);
+            newMap.delete(nodeId);
+            logger.debug(`[Loading] 清除连接节点 ${nodeId} loading 状态（连接失败）`);
+            return newMap;
+          });
           tree.setSelectedItems([]);
           return;
         }
@@ -502,6 +521,16 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // 如果节点已经加载过（在缓存中），直接返回，让 Headless Tree 处理展开/收起
     if (loadedNodesRef.current.has(nodeId)) {
       logger.debug(`使用缓存: ${nodeId}`);
+      // 🔧 清除可能存在的 loading 状态（例如连接成功后，子节点已在缓存中）
+      setNodeLoadingStates(prev => {
+        if (prev.has(nodeId)) {
+          const newMap = new Map(prev);
+          newMap.delete(nodeId);
+          logger.debug(`[Loading] 清除节点 ${nodeId} loading 状态（使用缓存）`);
+          return newMap;
+        }
+        return prev;
+      });
       return;
     }
 
@@ -510,6 +539,16 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // children === [] 表示已加载但为空，不需要重新加载
     if (nodeData.children !== undefined) {
       logger.info(`节点已加载，跳过: ${nodeId}`);
+      // 🔧 清除可能存在的 loading 状态
+      setNodeLoadingStates(prev => {
+        if (prev.has(nodeId)) {
+          const newMap = new Map(prev);
+          newMap.delete(nodeId);
+          logger.debug(`[Loading] 清除节点 ${nodeId} loading 状态（已加载）`);
+          return newMap;
+        }
+        return prev;
+      });
       return;
     }
 

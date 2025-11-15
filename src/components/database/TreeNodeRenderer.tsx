@@ -204,12 +204,16 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
   let error = data.error;
 
   if (data.nodeType === 'connection') {
-    isLoading = connectionStatus === 'connecting';
+    // 🔧 连接节点的 loading 状态：需要同时考虑连接状态和子节点加载状态
+    // 1. connectionStatus === 'connecting' 表示正在建立连接
+    // 2. nodeLoadingStates?.get(data.id) 表示连接成功后正在加载子节点
+    const loadingFromState = nodeLoadingStates?.get(data.id) ?? false;
+    isLoading = connectionStatus === 'connecting' || loadingFromState;
     error = connectionError;
 
     // 添加调试日志
     if (isLoading) {
-      log.debug(`[TreeNodeRenderer] 连接节点 ${data.id} (${data.name}) 正在连接，connectionStatus=${connectionStatus}`);
+      log.debug(`[TreeNodeRenderer] 连接节点 ${data.id} (${data.name}) loading 状态: connectionStatus=${connectionStatus}, loadingFromState=${loadingFromState}`);
     }
   } else if (data.nodeType === 'database' || data.nodeType === 'system_database') {
     isLoading = databaseLoading ?? false;
