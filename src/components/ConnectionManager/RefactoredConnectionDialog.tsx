@@ -765,16 +765,25 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
             )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-3 h-8">
-                <TabsTrigger value="general" className="text-[11px] h-7">
+              <TabsList className="inline-flex h-9 items-center justify-start w-full bg-transparent p-0 mb-3 border-b border-border rounded-none">
+                <TabsTrigger
+                  value="general"
+                  className="text-[11px] h-9 px-3 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:scale-100 data-[state=active]:text-primary hover:bg-transparent hover:text-foreground"
+                >
                   <Database className="w-3 h-3 mr-1" />
                   {tConn('dialog.general_tab')}
                 </TabsTrigger>
-                <TabsTrigger value="advanced" className="text-[11px] h-7">
+                <TabsTrigger
+                  value="advanced"
+                  className="text-[11px] h-9 px-3 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:scale-100 data-[state=active]:text-primary hover:bg-transparent hover:text-foreground"
+                >
                   <Settings className="w-3 h-3 mr-1" />
                   {tConn('dialog.advanced_tab')}
                 </TabsTrigger>
-                <TabsTrigger value="proxy" className="text-[11px] h-7">
+                <TabsTrigger
+                  value="proxy"
+                  className="text-[11px] h-9 px-3 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:scale-100 data-[state=active]:text-primary hover:bg-transparent hover:text-foreground"
+                >
                   <Network className="w-3 h-3 mr-1" />
                   {tConn('dialog.proxy_tab')}
                 </TabsTrigger>
