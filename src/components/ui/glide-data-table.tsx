@@ -899,7 +899,18 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 getCellContent={getCellContent}
                 columns={gridColumns}
                 rows={processedData.length}
-                width="100%"
+                width={(() => {
+                  // 计算所有列的总宽度
+                  const totalColumnsWidth = gridColumns.reduce((sum, col) => {
+                    return sum + ((col as any).width || 120);
+                  }, 0);
+
+                  // 行标记（序号）的宽度约为48px
+                  const rowMarkersWidth = 48;
+
+                  // 总宽度 = 列宽总和 + 行标记宽度
+                  return totalColumnsWidth + rowMarkersWidth;
+                })()}
                 height={(() => {
                   // 根据实际数据行数计算所需高度
                   const headerHeight = 36;
