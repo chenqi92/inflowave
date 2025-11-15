@@ -158,74 +158,79 @@ export interface GlideDataTableProps {
 
 // 主组件
 export const GlideDataTable: React.FC<GlideDataTableProps> = ({
-  data,
-  columns,
-  loading = false,
-  pagination = { current: 1, pageSize: 500, total: 0 },
-  searchable = true,
-  filterable = true,
-  sortable = true,
-  exportable = true,
-  columnManagement = true,
-  showToolbar = true,
-  className,
-  title,
-  selectedColumns: externalSelectedColumns,
-  columnOrder: externalColumnOrder,
-  onSearch,
-  onFilter,
-  onSort,
-  onPageChange,
-  onExport,
-  onColumnChange,
-  onRowSelect,
-  onLoadMore,
-  hasNextPage = false,
-  isLoadingMore = false,
-  totalCount,
-  height = 600,
-  maxHeight = 800,
-  tableName,
-  dataSourceType = 'generic',
-  database,
-  copyFormat = 'insert',
-}) => {
+                                                                data,
+                                                                columns,
+                                                                loading = false,
+                                                                pagination = { current: 1, pageSize: 500, total: 0 },
+                                                                searchable = true,
+                                                                filterable = true,
+                                                                sortable = true,
+                                                                exportable = true,
+                                                                columnManagement = true,
+                                                                showToolbar = true,
+                                                                className,
+                                                                title,
+                                                                selectedColumns: externalSelectedColumns,
+                                                                columnOrder: externalColumnOrder,
+                                                                onSearch,
+                                                                onFilter,
+                                                                onSort,
+                                                                onPageChange,
+                                                                onExport,
+                                                                onColumnChange,
+                                                                onRowSelect,
+                                                                onLoadMore,
+                                                                hasNextPage = false,
+                                                                isLoadingMore = false,
+                                                                totalCount,
+                                                                height = 600,
+                                                                maxHeight = 800,
+                                                                tableName,
+                                                                dataSourceType = 'generic',
+                                                                database,
+                                                                copyFormat = 'insert',
+                                                              }) => {
   // 状态管理
   const [searchText, setSearchText] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [filters, setFilters] = useState<FilterConfig[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
+  const [containerWidth, setContainerWidth] = useState(800);
   // 列宽管理：存储用户自定义的列宽
   const [columnWidths, setColumnWidths] = useState<Map<string, number>>(new Map());
   const { t } = useTranslation('query');
 
-  // 动态计算容器高度
+  // 动态计算容器尺寸
   useEffect(() => {
-    const updateHeight = () => {
+    const updateDimensions = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const availableHeight = rect.height;
+        const availableWidth = rect.width;
         if (availableHeight > 0) {
           setContainerHeight(availableHeight);
+        }
+        if (availableWidth > 0) {
+          setContainerWidth(availableWidth);
         }
       }
     };
 
     // 延迟执行以确保 DOM 已渲染
-    const timer = setTimeout(updateHeight, 100);
+    const timer = setTimeout(updateDimensions, 100);
 
-    window.addEventListener('resize', updateHeight);
+    window.addEventListener('resize', updateDimensions);
 
     // 使用 ResizeObserver 监听容器大小变化
-    const resizeObserver = new ResizeObserver(updateHeight);
+    const resizeObserver = new ResizeObserver(updateDimensions);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', updateHeight);
+      window.removeEventListener('resize', updateDimensions);
       resizeObserver.disconnect();
     };
   }, []);
@@ -336,6 +341,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       if (column) {
         const isSorted = sortConfig?.column === column.key;
         const sortDirection = isSorted ? sortConfig.direction : undefined;
+        const isLastColumn = index === effectiveColumnOrder.length - 1;
 
         // 优先使用用户自定义的列宽，否则使用配置的默认宽度
         const customWidth = columnWidths.get(colKey);
@@ -345,7 +351,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           title: `${column.title}${isSorted ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}`,
           width,
           id: column.key,
-          grow: 0, // 不自动扩展列，右侧留空白区域
+          grow: 0, // 不自动扩展，保持固定宽度
         } as GridColumn);
       }
     });
@@ -561,27 +567,27 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       case 'influxdb3':
         // InfluxDB 使用 Line Protocol 格式，这里生成标准 SQL 作为参考
         // 实际使用时需要转换为 Line Protocol
-        { const columnList = columnNames.map(col => `"${col}"`).join(', ');
+      { const columnList = columnNames.map(col => `"${col}"`).join(', ');
         const valueList = values.join(', ');
         return `-- InfluxDB Line Protocol format required\nINSERT INTO "${table}" (${columnList}) VALUES (${valueList});`; }
 
       case 'iotdb':
         // IoTDB 使用特殊的插入语法
-        { const iotdbColumns = columnNames.map(col => `${table}.${col}`).join(', ');
+      { const iotdbColumns = columnNames.map(col => `${table}.${col}`).join(', ');
         const iotdbValues = values.join(', ');
         return `INSERT INTO ${table} (${iotdbColumns}) VALUES (${iotdbValues});`; }
 
       case 'mysql':
       case 'postgresql':
         // MySQL 和 PostgreSQL 使用标准 SQL
-        { const stdColumnList = columnNames.map(col => `\`${col}\``).join(', ');
+      { const stdColumnList = columnNames.map(col => `\`${col}\``).join(', ');
         const stdValueList = values.join(', ');
         return `INSERT INTO \`${table}\` (${stdColumnList}) VALUES (${stdValueList});`; }
 
       case 'generic':
       default:
         // 通用 SQL 格式
-        { const genericColumnList = columnNames.map(col => `"${col}"`).join(', ');
+      { const genericColumnList = columnNames.map(col => `"${col}"`).join(', ');
         const genericValueList = values.join(', ');
         return `INSERT INTO "${table}" (${genericColumnList}) VALUES (${genericValueList});`; }
     }
@@ -626,42 +632,42 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     switch (format) {
       case 'text':
         // 文本格式：制表符分隔
-        return `${columnNames.join('\t')  }\n${ 
-               rows.map(row => row.map(v => v ?? '').join('\t')).join('\n')}`;
+        return `${columnNames.join('\t')  }\n${
+          rows.map(row => row.map(v => v ?? '').join('\t')).join('\n')}`;
 
       case 'csv':
         // CSV格式
-        { const escapeCsv = (val: any) => {
-          if (val === null || val === undefined) return '';
-          const str = String(val);
-          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-            return `"${str.replace(/"/g, '""')}"`;
-          }
-          return str;
-        };
-        return `${columnNames.map(escapeCsv).join(',')  }\n${ 
-               rows.map(row => row.map(escapeCsv).join(',')).join('\n')}`; }
+      { const escapeCsv = (val: any) => {
+        if (val === null || val === undefined) return '';
+        const str = String(val);
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return `"${str.replace(/"/g, '""')}"`;
+        }
+        return str;
+      };
+        return `${columnNames.map(escapeCsv).join(',')  }\n${
+          rows.map(row => row.map(escapeCsv).join(',')).join('\n')}`; }
 
       case 'json':
         // JSON格式
-        { const jsonData = rows.map(row => {
-          const obj: Record<string, any> = {};
-          columnNames.forEach((col, idx) => {
-            obj[col] = row[idx];
-          });
-          return obj;
+      { const jsonData = rows.map(row => {
+        const obj: Record<string, any> = {};
+        columnNames.forEach((col, idx) => {
+          obj[col] = row[idx];
         });
+        return obj;
+      });
         return JSON.stringify(jsonData, null, 2); }
 
       case 'markdown':
         // Markdown表格格式
         return `| ${  columnNames.join(' | ')  } |\n` +
-               `| ${  columnNames.map(() => '---').join(' | ')  } |\n${ 
-               rows.map(row => `| ${  row.map(v => v ?? '').join(' | ')  } |`).join('\n')}`;
+          `| ${  columnNames.map(() => '---').join(' | ')  } |\n${
+            rows.map(row => `| ${  row.map(v => v ?? '').join(' | ')  } |`).join('\n')}`;
 
       case 'insert':
         // INSERT SQL格式
-        { const table = tableName || 'table_name';
+      { const table = tableName || 'table_name';
         const sqlStatements: string[] = [];
         rows.forEach(row => {
           const values = row.map(val => formatValueForSQL(val, dataSourceType));
@@ -878,7 +884,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
       {/* 数据表格 - 移除圆角 */}
       <div ref={containerRef} className="flex-1 min-h-0 flex flex-col border rounded-none overflow-hidden bg-background">
-        <div className="flex-1 min-h-0 relative overflow-auto">
+        <div className="flex-1 min-h-0 relative">
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center bg-background">
               <div className="text-muted-foreground">加载中...</div>
@@ -895,104 +901,191 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 containerHeight,
                 计算后高度: containerHeight - (pagination ? 60 : 0),
               })}
-              <div
-                style={{
-                  display: 'inline-block',
-                  minWidth: (() => {
-                    // 计算所有列的总宽度
-                    const totalColumnsWidth = gridColumns.reduce((sum, col) => {
-                      return sum + ((col as any).width || 120);
-                    }, 0);
-                    // 行标记（序号）的宽度，包括左侧的checkbox和边距
-                    const rowMarkersWidth = 42;
-                    // 总宽度 = 列宽总和 + 行标记宽度 + 边框
-                    return totalColumnsWidth + rowMarkersWidth + 2;
-                  })(),
-                  height: (() => {
-                    // 根据实际数据行数计算所需高度
-                    const headerHeight = 36;
-                    const rowHeight = 32;
-                    const paginationHeight = pagination ? 60 : 0;
-                    // 计算内容高度（表头 + 数据行 + 边框）
-                    const contentHeight = headerHeight + (processedData.length * rowHeight) + 2;
-                    const maxHeight = containerHeight - paginationHeight;
-                    return Math.min(contentHeight, maxHeight);
-                  })(),
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '4px',
-                  overflow: 'hidden',
-                  boxSizing: 'border-box',
-                }}
-              >
-                <DataEditor
-                  getCellContent={getCellContent}
-                  columns={gridColumns}
-                  rows={processedData.length}
-                  width="100%"
-                height="100%"
-                smoothScrollX={true}
-                smoothScrollY={true}
-                overscrollX={0}
-                overscrollY={0}
-                rowMarkers="both"
-                onHeaderClicked={onHeaderClicked}
-                onColumnResize={handleColumnResize}
-                onColumnResizeEnd={handleColumnResizeEnd}
-                onVisibleRegionChanged={handleVisibleRegionChanged}
-                gridSelection={gridSelection}
-                onGridSelectionChange={setGridSelection}
-                minColumnWidth={80}
-                maxColumnWidth={800}
-                maxColumnAutoWidth={500}
-                keybindings={{
-                  copy: false,  // 禁用默认复制，使用自定义处理
-                  paste: false,
-                  selectAll: true,
-                  selectRow: true,
-                  selectColumn: true,
-                }}
-                freezeColumns={0}
-                headerHeight={36}
-                rowHeight={32}
-                onCellEdited={(cell, newValue) => {
-                  // 暂时不实现编辑功能，返回undefined表示不应用编辑
-                  logger.debug('单元格编辑:', { cell, newValue });
-                  return undefined;
-                }}
-                rightElement={undefined}
-                rightElementProps={{
-                  fill: false,
-                  sticky: false,
-                }}
-                theme={{
-              accentColor: getCSSVariable('--primary', '#0066cc'),
-              accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
-              accentLight: getCSSVariable('--accent', '#f0f9ff'),
-              textDark: getCSSVariable('--foreground', '#09090b'),
-              textMedium: getCSSVariable('--muted-foreground', '#71717a'),
-              textLight: getCSSVariable('--muted-foreground', '#a1a1aa'),
-              textBubble: getCSSVariable('--foreground', '#09090b'),
-              bgIconHeader: getCSSVariable('--muted-foreground', '#71717a'),
-              fgIconHeader: getCSSVariable('--background', '#ffffff'),
-              textHeader: getCSSVariable('--foreground', '#09090b'),
-              textHeaderSelected: getCSSVariable('--primary-foreground', '#ffffff'),
-              bgCell: getCSSVariable('--background', '#ffffff'),
-              bgCellMedium: getCSSVariable('--muted', '#f4f4f5'),
-              bgHeader: getCSSVariable('--muted', '#f4f4f5'),
-              bgHeaderHasFocus: getCSSVariable('--muted', '#f4f4f5'),
-              bgHeaderHovered: getCSSVariable('--accent', '#f0f9ff'),
-              bgBubble: getCSSVariable('--background', '#ffffff'),
-              bgBubbleSelected: getCSSVariable('--primary', '#0066cc'),
-              bgSearchResult: getCSSVariable('--accent', '#f0f9ff'),
-              borderColor: getCSSVariable('--border', '#e4e4e7'),
-              drilldownBorder: getCSSVariable('--border', '#e4e4e7'),
-              linkColor: getCSSVariable('--primary', '#0066cc'),
-              headerFontStyle: "600 14px",
-              baseFontStyle: "14px",
-              fontFamily: "Inter, system-ui, sans-serif",
-                }}
-              />
-              </div>
+              {(() => {
+                // 计算实际需要的宽度和高度
+                const rowMarkerWidth = 48; // 行标记的宽度
+                const totalColumnsWidth = gridColumns.reduce((sum, col) => sum + (col.width || 150), 0);
+                const actualTableWidth = Math.min(totalColumnsWidth + rowMarkerWidth + 2, containerWidth); // +2 for borders
+
+                const headerHeight = 36;
+                const rowHeight = 32;
+                const actualDataHeight = headerHeight + (rowHeight * Math.min(processedData.length, 100)); // 最多显示100行，避免太高
+                const actualTableHeight = Math.min(actualDataHeight, containerHeight - (pagination ? 60 : 0));
+
+                // 判断是否需要显示为紧凑表格
+                const isCompactWidth = actualTableWidth < containerWidth;
+                const isCompactHeight = actualDataHeight < (containerHeight - (pagination ? 60 : 0));
+
+                logger.info('📊 表格尺寸计算:', {
+                  totalColumnsWidth,
+                  actualTableWidth,
+                  containerWidth,
+                  actualDataHeight,
+                  actualTableHeight,
+                  containerHeight,
+                  isCompactWidth,
+                  isCompactHeight,
+                  rowCount: processedData.length
+                });
+
+                if (isCompactWidth || isCompactHeight) {
+                  // 紧凑显示模式：使用包装器限制尺寸
+                  return (
+                    <div
+                      style={{
+                        width: isCompactWidth ? actualTableWidth : '100%',
+                        height: actualTableHeight,
+                        position: 'relative',
+                        border: '1px solid var(--border)',
+                        borderRadius: '0',
+                        overflow: 'hidden', // 隐藏外部溢出，让DataEditor处理内部滚动
+                        backgroundColor: 'var(--background)',
+                      }}
+                    >
+                      <DataEditor
+                        getCellContent={getCellContent}
+                        columns={gridColumns}
+                        rows={processedData.length}
+                        width={actualTableWidth}
+                        height={actualTableHeight}
+                        smoothScrollX={true}
+                        smoothScrollY={true}
+                        overscrollX={0}
+                        overscrollY={0}
+                        rowMarkers="both"
+                        onHeaderClicked={onHeaderClicked}
+                        onColumnResize={handleColumnResize}
+                        onColumnResizeEnd={handleColumnResizeEnd}
+                        onVisibleRegionChanged={handleVisibleRegionChanged}
+                        gridSelection={gridSelection}
+                        onGridSelectionChange={setGridSelection}
+                        minColumnWidth={80}
+                        maxColumnWidth={800}
+                        maxColumnAutoWidth={500}
+                        keybindings={{
+                          copy: false,  // 禁用默认复制，使用自定义处理
+                          paste: false,
+                          selectAll: true,
+                          selectRow: true,
+                          selectColumn: true,
+                        }}
+                        freezeColumns={0}
+                        headerHeight={36}
+                        rowHeight={32}
+                        onCellEdited={(cell, newValue) => {
+                          // 暂时不实现编辑功能，返回undefined表示不应用编辑
+                          logger.debug('单元格编辑:', { cell, newValue });
+                          return undefined;
+                        }}
+                        rightElement={undefined}
+                        rightElementProps={{
+                          fill: false,
+                          sticky: false,
+                        }}
+                        theme={{
+                          accentColor: getCSSVariable('--primary', '#0066cc'),
+                          accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
+                          accentLight: getCSSVariable('--accent', '#f0f9ff'),
+                          textDark: getCSSVariable('--foreground', '#09090b'),
+                          textMedium: getCSSVariable('--muted-foreground', '#71717a'),
+                          textLight: getCSSVariable('--muted-foreground', '#a1a1aa'),
+                          textBubble: getCSSVariable('--foreground', '#09090b'),
+                          bgIconHeader: getCSSVariable('--muted-foreground', '#71717a'),
+                          fgIconHeader: getCSSVariable('--background', '#ffffff'),
+                          textHeader: getCSSVariable('--foreground', '#09090b'),
+                          textHeaderSelected: getCSSVariable('--primary-foreground', '#ffffff'),
+                          bgCell: getCSSVariable('--background', '#ffffff'),
+                          bgCellMedium: getCSSVariable('--muted', '#f4f4f5'),
+                          bgHeader: getCSSVariable('--muted', '#f4f4f5'),
+                          bgHeaderHasFocus: getCSSVariable('--muted', '#f4f4f5'),
+                          bgHeaderHovered: getCSSVariable('--accent', '#f0f9ff'),
+                          bgBubble: getCSSVariable('--background', '#ffffff'),
+                          bgBubbleSelected: getCSSVariable('--primary', '#0066cc'),
+                          bgSearchResult: getCSSVariable('--accent', '#f0f9ff'),
+                          borderColor: getCSSVariable('--border', '#e4e4e7'),
+                          drilldownBorder: getCSSVariable('--border', '#e4e4e7'),
+                          linkColor: getCSSVariable('--primary', '#0066cc'),
+                          headerFontStyle: "600 14px",
+                          baseFontStyle: "14px",
+                          fontFamily: "Inter, system-ui, sans-serif",
+                        }}
+                      />
+                    </div>
+                  );
+                } else {
+                  // 完全填充模式：表格占满容器
+                  return (
+                    <DataEditor
+                      getCellContent={getCellContent}
+                      columns={gridColumns}
+                      rows={processedData.length}
+                      width="100%"
+                      height={containerHeight - (pagination ? 60 : 0)}
+                      smoothScrollX={true}
+                      smoothScrollY={true}
+                      overscrollX={0}
+                      overscrollY={0}
+                      rowMarkers="both"
+                      onHeaderClicked={onHeaderClicked}
+                      onColumnResize={handleColumnResize}
+                      onColumnResizeEnd={handleColumnResizeEnd}
+                      onVisibleRegionChanged={handleVisibleRegionChanged}
+                      gridSelection={gridSelection}
+                      onGridSelectionChange={setGridSelection}
+                      minColumnWidth={80}
+                      maxColumnWidth={800}
+                      maxColumnAutoWidth={500}
+                      keybindings={{
+                        copy: false,  // 禁用默认复制，使用自定义处理
+                        paste: false,
+                        selectAll: true,
+                        selectRow: true,
+                        selectColumn: true,
+                      }}
+                      freezeColumns={0}
+                      headerHeight={36}
+                      rowHeight={32}
+                      onCellEdited={(cell, newValue) => {
+                        // 暂时不实现编辑功能，返回undefined表示不应用编辑
+                        logger.debug('单元格编辑:', { cell, newValue });
+                        return undefined;
+                      }}
+                      rightElement={undefined}
+                      rightElementProps={{
+                        fill: false,
+                        sticky: false,
+                      }}
+                      theme={{
+                        accentColor: getCSSVariable('--primary', '#0066cc'),
+                        accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
+                        accentLight: getCSSVariable('--accent', '#f0f9ff'),
+                        textDark: getCSSVariable('--foreground', '#09090b'),
+                        textMedium: getCSSVariable('--muted-foreground', '#71717a'),
+                        textLight: getCSSVariable('--muted-foreground', '#a1a1aa'),
+                        textBubble: getCSSVariable('--foreground', '#09090b'),
+                        bgIconHeader: getCSSVariable('--muted-foreground', '#71717a'),
+                        fgIconHeader: getCSSVariable('--background', '#ffffff'),
+                        textHeader: getCSSVariable('--foreground', '#09090b'),
+                        textHeaderSelected: getCSSVariable('--primary-foreground', '#ffffff'),
+                        bgCell: getCSSVariable('--background', '#ffffff'),
+                        bgCellMedium: getCSSVariable('--muted', '#f4f4f5'),
+                        bgHeader: getCSSVariable('--muted', '#f4f4f5'),
+                        bgHeaderHasFocus: getCSSVariable('--muted', '#f4f4f5'),
+                        bgHeaderHovered: getCSSVariable('--accent', '#f0f9ff'),
+                        bgBubble: getCSSVariable('--background', '#ffffff'),
+                        bgBubbleSelected: getCSSVariable('--primary', '#0066cc'),
+                        bgSearchResult: getCSSVariable('--accent', '#f0f9ff'),
+                        borderColor: getCSSVariable('--border', '#e4e4e7'),
+                        drilldownBorder: getCSSVariable('--border', '#e4e4e7'),
+                        linkColor: getCSSVariable('--primary', '#0066cc'),
+                        headerFontStyle: "600 14px",
+                        baseFontStyle: "14px",
+                        fontFamily: "Inter, system-ui, sans-serif",
+                      }}
+                    />
+                  );
+                }
+              })()}
             </>
           )}
         </div>
