@@ -16,13 +16,13 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Switch,
   Textarea,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from '@/components/ui';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   CheckCircle,
@@ -344,6 +344,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               step={field.step}
               placeholder={field.placeholder}
               disabled={disabled}
+              controls={false}
               className={`h-7 text-xs ${error ? 'border-destructive' : ''}`}
             />
             {field.description && (
@@ -405,21 +406,22 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
       case 'switch':
         return (
-          <div key={field.name} className="flex items-center justify-between space-x-2 py-0.5">
+          <div key={field.name} className="flex items-center space-x-2 py-0.5">
+            <Checkbox
+              id={field.name}
+              checked={value || false}
+              onCheckedChange={(checked) => handleFieldChange(field.name, checked)}
+              disabled={disabled}
+              className="h-3.5 w-3.5 shrink-0"
+            />
             <div className="flex-1">
-              <Label htmlFor={field.name} className="text-[11px]">
+              <Label htmlFor={field.name} className="text-[11px] cursor-pointer leading-tight">
                 {fieldLabel}
               </Label>
               {field.description && (
                 <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{field.description}</p>
               )}
             </div>
-            <Switch
-              id={field.name}
-              checked={value || false}
-              onCheckedChange={(checked) => handleFieldChange(field.name, checked)}
-              disabled={disabled}
-            />
           </div>
         );
 
