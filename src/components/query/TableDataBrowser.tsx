@@ -2982,13 +2982,29 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 render:
                   col.toLowerCase() === 'time'
                     ? (value: any) => {
-                        // 处理IoTDB的时间戳（13位毫秒）
                         if (value) {
                           try {
-                            // 如果是数字类型，直接使用
-                            const timestamp = typeof value === 'number' ? value : parseInt(value);
-                            if (!isNaN(timestamp)) {
-                              return new Date(timestamp).toLocaleString('zh-CN', {
+                            let date: Date | null = null;
+
+                            if (typeof value === 'number') {
+                              // IoTDB: 数字时间戳（毫秒）
+                              date = new Date(value);
+                            } else if (typeof value === 'string') {
+                              // InfluxDB: RFC3339/ISO 8601 字符串
+                              // 先尝试直接解析字符串格式
+                              date = new Date(value);
+
+                              // 如果解析失败（Invalid Date），尝试作为数字字符串
+                              if (isNaN(date.getTime())) {
+                                const timestamp = parseInt(value);
+                                if (!isNaN(timestamp)) {
+                                  date = new Date(timestamp);
+                                }
+                              }
+                            }
+
+                            if (date && !isNaN(date.getTime())) {
+                              return date.toLocaleString('zh-CN', {
                                 year: 'numeric',
                                 month: '2-digit',
                                 day: '2-digit',

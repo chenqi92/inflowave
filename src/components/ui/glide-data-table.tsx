@@ -491,7 +491,9 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         // 如果是 React 元素，尝试提取文本内容
         displayValue = String(cellValue || '');
       }
-    } else if (column.id === 'time' && cellValue) {
+    } else if (column.id && typeof column.id === 'string' && column.id.toLowerCase() === 'time' && cellValue) {
+      // 支持 InfluxDB 的 'time' 和 IoTDB 的 'Time'
+      // InfluxDB 返回 RFC3339 字符串，IoTDB 返回毫秒时间戳
       displayValue = new Date(cellValue).toLocaleString();
     } else {
       displayValue = String(cellValue !== null && cellValue !== undefined ? cellValue : '');
