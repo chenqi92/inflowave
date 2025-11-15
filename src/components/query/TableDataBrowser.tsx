@@ -1898,28 +1898,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     return sortDataClientSide(data, sortColumn, sortDirection);
   }, [data, sortColumn, sortDirection, sortDataClientSide]);
 
-  // 处理时间列排序变化 - 添加防抖避免频繁查询
-  const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
-
-  useEffect(() => {
-    if (sortColumn === 'time' && columns.length > 0 && isInitializedRef.current) {
-      // 清除之前的定时器
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-
-      // 延迟执行，避免快速切换时的重复查询
-      timeoutRef.current = setTimeout(() => {
-        loadData();
-      }, 100);
-    }
-
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [sortColumn, sortDirection, columns.length]); // 移除loadData依赖，避免函数引用变化
+  // 注意：时间列排序现在使用客户端排序，不再需要监听sortColumn变化来重新查询数据
+  // 这个useEffect已被移除，以避免不必要的服务器端查询
+  // 所有列的排序都在handleSort函数中通过客户端排序处理
 
   // 初始化选中的列（默认全选，但排除序号列）
   useEffect(() => {
@@ -2638,13 +2619,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     setSortDirection(newDirection);
     setCurrentPage(1);
 
-    // 如果是时间列，重新查询数据（服务器端排序）
-    if (column === 'time') {
-      // 时间列排序会触发 loadData 通过 useEffect
-      return;
-    }
-
-    // 非时间列使用客户端排序
+    // 所有列都使用客户端排序，包括时间列
+    // 这样可以避免因排序触发不必要的服务器端查询
+    // 也避免了在有筛选条件时重新查询导致的数据丢失问题
     if (rawData.length > 0) {
       const sortedData = sortDataClientSide(rawData, column, newDirection);
       setData(sortedData);
