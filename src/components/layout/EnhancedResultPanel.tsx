@@ -2554,13 +2554,31 @@ const EnhancedResultPanel: React.FC<EnhancedResultPanelProps> = ({
                           return {
                             key: column,
                             title: column,
-                            width: column === 'time' ? 180 : 120,
+                            width: column.toLowerCase() === 'time' ? 180 : 120,
                             sortable: true,
                             filterable: true,
                             render:
-                              column === 'time'
-                                ? (value: any) =>
-                                    value ? new Date(value).toLocaleString() : '-'
+                              column.toLowerCase() === 'time'
+                                ? (value: any) => {
+                                    if (!value) return '-';
+                                    try {
+                                      const timestamp = typeof value === 'number' ? value : parseInt(value);
+                                      if (!isNaN(timestamp)) {
+                                        return new Date(timestamp).toLocaleString('zh-CN', {
+                                          year: 'numeric',
+                                          month: '2-digit',
+                                          day: '2-digit',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                          second: '2-digit',
+                                          hour12: false
+                                        });
+                                      }
+                                    } catch (e) {
+                                      logger.debug('时间格式化失败:', e);
+                                    }
+                                    return value;
+                                  }
                                 : undefined,
                           };
                         })}

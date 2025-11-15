@@ -1204,7 +1204,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
 
       // 合并所有列：序号、时间、标签键、字段键，并去重
-      const allColumns = ['#', 'time', ...new Set([...tagKeys, ...fieldKeys])];
+      // 对于IoTDB，使用大写的'Time'以匹配数据中的键名
+      const timeColumnName = isIoTDB ? 'Time' : 'time';
+      const allColumns = ['#', timeColumnName, ...new Set([...tagKeys, ...fieldKeys])];
 
       logger.debug('🔧 [TableDataBrowser] 设置列状态:', {
         设置前columns长度: columns.length,
@@ -1335,6 +1337,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           // 对于IoTDB，需要特殊处理列名
           if (isIoTDB) {
             logger.debug('🔧 [IoTDB] 原始查询返回的列名:', validColumns);
+            logger.debug('🔧 [IoTDB] 原始列数据：', resultColumns);
             logger.debug('🔧 [IoTDB] 字段路径:', fullFieldPaths);
 
             // IoTDB的SELECT *查询可能返回两种列结构：
@@ -1360,6 +1363,9 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               logger.debug('🔧 [IoTDB] 构建的显示列名（包含Time）:', iotdbColumns);
               logger.debug('🔧 [IoTDB] 原始列顺序:', validColumns);
               validColumns = iotdbColumns;
+
+              // 确保resultColumns也保持同步（用于后续的数据映射）
+              // resultColumns保持原始值不变，因为它用于映射数据
             } else if (validColumns[0]?.startsWith('root.') &&
                        validColumns.length > 1 &&
                        !validColumns[1]?.startsWith('root.')) {
@@ -1369,7 +1375,17 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
               validColumns = validColumns.slice(1);
             } else if (validColumns.every(col => col?.includes('.'))) {
               // 所有列都是完整路径，提取短名称
+              // 但是后端可能添加了Time列，需要检查
               const iotdbColumns: string[] = [];
+
+              // 检查后端是否添加了Time列（通过数据长度判断）
+              const hasTimeInData = values[0] && values[0].length > validColumns.length;
+              if (hasTimeInData) {
+                logger.debug('🔧 [IoTDB] 检测到数据中包含Time列（数据长度大于列数）');
+                iotdbColumns.push('Time');
+                // 后端在数据开头插入了时间戳，需要相应调整
+              }
+
               validColumns.forEach(colName => {
                 if (colName) {
                   const fieldName = colName.split('.').pop();
@@ -1420,25 +1436,55 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                     // - validColumns 是处理后的短名称：["Time", "field1", ...]
                     // - row 数据与resultColumns对应，需要根据resultColumns的顺序映射到validColumns
 
-                    // 建立从resultColumns到validColumns的映射
-                    resultColumns.forEach((originalCol: string, idx: number) => {
-                      if (idx < row.length) {
-                        let targetColName: string;
+                    // 检查是否有Time列
+                    const hasTimeInColumns = resultColumns[0]?.toLowerCase() === 'time';
+                    const hasTimeInValidColumns = validColumns[0] === 'Time';
 
-                        // 处理列名映射
-                        if (originalCol.toLowerCase() === 'time') {
-                          targetColName = 'Time';
-                        } else if (originalCol.includes('.')) {
-                          // 提取短名称
-                          targetColName = originalCol.split('.').pop() || originalCol;
-                        } else {
-                          targetColName = originalCol;
-                        }
-
-                        // 将数据映射到正确的列名
-                        record[targetColName] = row[idx];
-                      }
+                    logger.debug('🔧 [IoTDB] Time列检测:', {
+                      hasTimeInColumns,
+                      hasTimeInValidColumns,
+                      resultColumns第一列: resultColumns[0],
+                      validColumns第一列: validColumns[0],
+                      数据长度: row.length,
+                      列数: resultColumns.length,
+                      第一个数据值: row[0]
                     });
+
+                    // 如果validColumns有Time但resultColumns没有，说明后端添加了Time列到数据中
+                    if (hasTimeInValidColumns && !hasTimeInColumns) {
+                      logger.debug('🔧 [IoTDB] 检测到后端添加的Time列，手动映射时间戳');
+                      // 第一个数据是时间戳
+                      if (row.length > 0) {
+                        record['Time'] = row[0];
+                        logger.debug('🔧 [IoTDB] 映射Time值:', row[0]);
+                        // 其余数据对应其他列（跳过第一个时间戳）
+                        validColumns.slice(1).forEach((col: string, idx: number) => {
+                          if (idx + 1 < row.length) {
+                            record[col] = row[idx + 1];
+                          }
+                        });
+                      }
+                    } else {
+                      // 正常映射：建立从resultColumns到validColumns的映射
+                      resultColumns.forEach((originalCol: string, idx: number) => {
+                        if (idx < row.length) {
+                          let targetColName: string;
+
+                          // 处理列名映射
+                          if (originalCol.toLowerCase() === 'time') {
+                            targetColName = 'Time';
+                          } else if (originalCol.includes('.')) {
+                            // 提取短名称
+                            targetColName = originalCol.split('.').pop() || originalCol;
+                          } else {
+                            targetColName = originalCol;
+                          }
+
+                          // 将数据映射到正确的列名
+                          record[targetColName] = row[idx];
+                        }
+                      });
+                    }
                   } else {
                     // 非 IoTDB：列名直接匹配
                     validColumns.forEach((col: string) => {
@@ -1794,7 +1840,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 使用 useMemo 处理排序后的数据，避免不必要的重新计算
   const sortedData = useMemo(() => {
-    if (!sortColumn || sortColumn === 'time' || sortColumn === '#') {
+    if (!sortColumn || sortColumn.toLowerCase() === 'time' || sortColumn === '#') {
       return data;
     }
     return sortDataClientSide(data, sortColumn, sortDirection);
@@ -2860,18 +2906,43 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           data={sortedData}
           columns={columnOrder
             .filter(col => col !== '#' && selectedColumns.includes(col))
-            .map(col => ({
-              key: col,
-              title: col,
-              width: columnWidths[col] || 120,
-              sortable: true,
-              filterable: true,
-              render:
-                col === 'time'
-                  ? (value: any) =>
-                      value ? new Date(value).toLocaleString() : '-'
-                  : undefined,
-            }))}
+            .map(col => {
+              // 对于IoTDB，保持Time列的大写形式以匹配数据键名
+              const columnKey = col === 'Time' ? 'Time' : col;
+              return {
+                key: columnKey,
+                title: col,
+                width: columnWidths[col] || 120,
+                sortable: true,
+                filterable: true,
+                render:
+                  col.toLowerCase() === 'time'
+                    ? (value: any) => {
+                        // 处理IoTDB的时间戳（13位毫秒）
+                        if (value) {
+                          try {
+                            // 如果是数字类型，直接使用
+                            const timestamp = typeof value === 'number' ? value : parseInt(value);
+                            if (!isNaN(timestamp)) {
+                              return new Date(timestamp).toLocaleString('zh-CN', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                                hour12: false
+                              });
+                            }
+                          } catch (e) {
+                            logger.debug('时间格式化失败:', e);
+                          }
+                        }
+                        return '-';
+                      }
+                    : undefined,
+              };
+            })}
           loading={loading}
           pagination={{
             current: currentPage,
