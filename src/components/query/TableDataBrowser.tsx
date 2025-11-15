@@ -2969,18 +2969,14 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           data={sortedData}
           columns={columnOrder
             .filter(col => col !== '#' && selectedColumns.includes(col))
-            .map((col, index, array) => {
+            .map(col => {
               // 对于IoTDB，保持Time列的大写形式以匹配数据键名
               const columnKey = col === 'Time' ? 'Time' : col;
-              const isLastColumn = index === array.length - 1;
-              // 最后一列增加额外的右侧padding，确保内容完整显示且分隔线容易拖动
-              const baseWidth = columnWidths[col] || 120;
-              const width = isLastColumn ? baseWidth + 50 : baseWidth;
 
               return {
                 key: columnKey,
                 title: col,
-                width,
+                width: columnWidths[col] || 120,
                 sortable: true,
                 filterable: true,
                 render:

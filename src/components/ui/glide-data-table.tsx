@@ -336,20 +336,16 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       if (column) {
         const isSorted = sortConfig?.column === column.key;
         const sortDirection = isSorted ? sortConfig.direction : undefined;
-        const isLastColumn = index === effectiveColumnOrder.length - 1;
 
         // 优先使用用户自定义的列宽，否则使用配置的默认宽度
         const customWidth = columnWidths.get(colKey);
         const width = customWidth || column.width || 120;
 
-        // 如果用户手动调整了最后一列的宽度，禁用 grow 以保持用户设置
-        const hasCustomWidth = columnWidths.has(colKey);
-
         cols.push({
           title: `${column.title}${isSorted ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}`,
           width,
           id: column.key,
-          grow: isLastColumn && !hasCustomWidth ? 1 : 0, // 让最后一列自动扩展填充剩余空间（除非用户手动调整过）
+          grow: 0, // 不自动扩展列，右侧留空白区域
         } as GridColumn);
       }
     });
@@ -904,7 +900,22 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 columns={gridColumns}
                 rows={processedData.length}
                 width="100%"
-                height={containerHeight - (pagination ? 60 : 0)} // 为分页控件预留空间
+                height={(() => {
+                  // 根据实际数据行数计算所需高度
+                  const headerHeight = 36;
+                  const rowHeight = 32;
+                  const paginationHeight = pagination ? 60 : 0;
+                  const padding = 20; // 额外的padding空间
+
+                  // 计算显示所有数据需要的高度
+                  const contentHeight = headerHeight + (processedData.length * rowHeight) + padding;
+
+                  // 取实际内容高度和容器可用高度的较小值
+                  const maxHeight = containerHeight - paginationHeight;
+
+                  // 如果数据量少，使用内容高度；否则使用容器高度以启用滚动
+                  return Math.min(contentHeight, maxHeight);
+                })()}
                 smoothScrollX={true}
                 smoothScrollY={true}
                 rowMarkers="both"
