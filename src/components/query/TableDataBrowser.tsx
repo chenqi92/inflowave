@@ -967,21 +967,11 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
       // IoTDB查询
       logger.debug('🔧 [IoTDB] 使用IoTDB查询语法，连接类型:', dbType);
 
-      // 构建字段列表 - IoTDB SELECT 语句中字段名不能包含 root. 前缀
-      // 需要从完整路径中提取相对字段名
-      let fieldList = '*';
-      if (fullFieldPaths.length > 0) {
-        const relativeFieldNames = fullFieldPaths.map(path => {
-          // 从完整路径中提取最后一部分作为字段名
-          // 例如: root.city.environment.station01.pm25 -> pm25
-          const parts = path.split('.');
-          return parts[parts.length - 1];
-        });
-        fieldList = relativeFieldNames.join(', ');
-      }
-
-      logger.debug('🔧 [TableDataBrowser] 执行数据查询:', `SELECT ${fieldList} FROM ${tableName}`);
-      query = `SELECT ${fieldList} FROM ${tableName}`;
+      // 为了保证列顺序一致，IoTDB始终使用SELECT *
+      // IoTDB在使用指定字段查询时，返回的列顺序可能与SELECT *不同
+      // 这会导致数据错位问题
+      logger.debug('🔧 [TableDataBrowser] 执行数据查询:', `SELECT * FROM ${tableName}`);
+      query = `SELECT * FROM ${tableName}`;
 
       // 添加搜索条件
       if (searchText.trim()) {
@@ -1347,30 +1337,57 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             logger.debug('🔧 [IoTDB] 原始查询返回的列名:', validColumns);
             logger.debug('🔧 [IoTDB] 字段路径:', fullFieldPaths);
 
-            // IoTDB的SELECT *查询返回的列结构：
-            // 第1列：表名（需要过滤掉）
-            // 第2-N列：字段数据
+            // IoTDB的SELECT *查询可能返回两种列结构：
+            // 1. [Time, root.xxx.field1, root.xxx.field2, ...] - 完整路径格式
+            // 2. [root.xxx, field1, field2, ...] - 表名列 + 短字段名格式
 
-            // 从完整路径中提取字段名作为显示列名
-            const iotdbColumns: string[] = [];
-            fullFieldPaths.forEach(path => {
-              const fieldName = path.split('.').pop(); // 获取最后一部分作为字段名
-              if (fieldName) {
-                iotdbColumns.push(fieldName);
-              }
-            });
+            // 检查第一列是否是Time
+            const hasTimeColumn = validColumns[0]?.toLowerCase() === 'time';
 
-            logger.debug('🔧 [IoTDB] 构建的显示列名:', iotdbColumns);
-            logger.debug('🔧 [IoTDB] 后端返回的列名:', validColumns);
+            if (hasTimeColumn) {
+              // 如果有Time列，保留原始顺序，只转换列名为短名称
+              const iotdbColumns: string[] = validColumns.map((colName, idx) => {
+                if (idx === 0 && colName.toLowerCase() === 'time') {
+                  return 'Time';
+                } else if (colName && colName.includes('.')) {
+                  // 提取短名称
+                  return colName.split('.').pop() || colName;
+                } else {
+                  return colName;
+                }
+              });
+
+              logger.debug('🔧 [IoTDB] 构建的显示列名（包含Time）:', iotdbColumns);
+              logger.debug('🔧 [IoTDB] 原始列顺序:', validColumns);
+              validColumns = iotdbColumns;
+            } else if (validColumns[0]?.startsWith('root.') &&
+                       validColumns.length > 1 &&
+                       !validColumns[1]?.startsWith('root.')) {
+              // 格式2：第一列是表名，后面是短字段名
+              // 这种情况需要过滤掉表名列
+              logger.debug('🔧 [IoTDB] 检测到表名列格式，过滤表名列');
+              validColumns = validColumns.slice(1);
+            } else if (validColumns.every(col => col?.includes('.'))) {
+              // 所有列都是完整路径，提取短名称
+              const iotdbColumns: string[] = [];
+              validColumns.forEach(colName => {
+                if (colName) {
+                  const fieldName = colName.split('.').pop();
+                  if (fieldName) {
+                    iotdbColumns.push(fieldName);
+                  }
+                }
+              });
+              logger.debug('🔧 [IoTDB] 所有列都是完整路径，转换为短名称:', iotdbColumns);
+              validColumns = iotdbColumns;
+            }
+
             logger.debug('🔧 [IoTDB] 列数分析:', {
-              后端返回列数: validColumns.length,
-              字段路径数量: fullFieldPaths.length,
-              构建的显示列数: iotdbColumns.length,
-              预期结构: '表名列 + 字段列'
+              后端返回列数: resultColumns.length,
+              处理后列数: validColumns.length,
+              数据行列数: values[0]?.length || 0,
+              最终列名: validColumns
             });
-
-            // 使用构建的显示列名（不包含表名列）
-            validColumns = iotdbColumns;
           }
 
           logger.debug('🔧 [TableDataBrowser] 列名过滤:', {
@@ -1399,16 +1416,27 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
                 try {
                   if (isIoTDB) {
                     // IoTDB 特殊处理：
-                    // - resultColumns 是完整路径：["root.city.environment.station01.pm25", ...]
-                    // - validColumns 是短字段名：["pm25", "co2", ...]
-                    // - row 数据结构：[时间戳, 字段1值, 字段2值, ...]
-                    // 注意：row 的第一个元素是时间戳（已经在上面添加到 record['time'] 了）
-                    // 所以需要从 row[1] 开始映射到 validColumns[0]
-                    validColumns.forEach((shortName: string, idx: number) => {
-                      // row[0] 是时间戳，row[1] 对应 validColumns[0]
-                      const rowIndex = idx + 1;
-                      if (rowIndex < row.length) {
-                        record[shortName] = row[rowIndex];
+                    // - resultColumns 是原始列名：["Time", "root.xxx.field1", ...] 或不包含Time
+                    // - validColumns 是处理后的短名称：["Time", "field1", ...]
+                    // - row 数据与resultColumns对应，需要根据resultColumns的顺序映射到validColumns
+
+                    // 建立从resultColumns到validColumns的映射
+                    resultColumns.forEach((originalCol: string, idx: number) => {
+                      if (idx < row.length) {
+                        let targetColName: string;
+
+                        // 处理列名映射
+                        if (originalCol.toLowerCase() === 'time') {
+                          targetColName = 'Time';
+                        } else if (originalCol.includes('.')) {
+                          // 提取短名称
+                          targetColName = originalCol.split('.').pop() || originalCol;
+                        } else {
+                          targetColName = originalCol;
+                        }
+
+                        // 将数据映射到正确的列名
+                        record[targetColName] = row[idx];
                       }
                     });
                   } else {

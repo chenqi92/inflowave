@@ -135,34 +135,9 @@ export const useNodeActivateHandler = ({
                 showMessage.success(`正在打开设备 "${devicePath}"`);
             }
         } else if (nodeType === 'timeseries' || nodeType === 'aligned_timeseries') {
-            // IoTDB 时间序列节点：创建数据浏览器标签页
-            // 优先从 metadata 中获取设备路径和存储组
-            const devicePath = metadata.devicePath || metadata.device_path;
-            const storageGroup = metadata.storageGroup || metadata.storage_group;
-            const timeseriesPath = metadata.timeseriesPath || metadata.timeseries_path || table || node.name;
-
-            if (devicePath) {
-                // 使用 metadata 中的设备路径和存储组
-                const dbParam = storageGroup || database;
-                if (onCreateDataBrowserTab) {
-                    onCreateDataBrowserTab(connectionId, dbParam, devicePath);
-                    showMessage.success(`正在打开时间序列 "${timeseriesPath}"`);
-                }
-            } else {
-                // 后备方案：从时间序列路径中提取设备路径和存储组
-                const parts = timeseriesPath.split('.');
-                if (parts.length >= 2) {
-                    const extractedDevicePath = parts.slice(0, -1).join('.');
-                    const extractedStorageGroup = parts.length >= 2 ? `${parts[0]}.${parts[1]}` : '';
-                    if (onCreateDataBrowserTab) {
-                        onCreateDataBrowserTab(connectionId, extractedStorageGroup || database, extractedDevicePath);
-                        showMessage.success(`正在打开时间序列 "${timeseriesPath}"`);
-                    }
-                } else {
-                    logger.warn(`无效的时间序列路径: ${timeseriesPath}`);
-                    showMessage.error(`无效的时间序列路径: ${timeseriesPath}`);
-                }
-            }
+            // IoTDB 时间序列节点：不应该打开数据浏览器，这是叶子节点
+            logger.debug(`📊 [DatabaseExplorer] 时间序列节点 ${node.name} 不支持双击操作`);
+            return;
         } else if (nodeType === 'connection') {
             // 检查是否为对象存储连接
             logger.info(`🔌 [DatabaseExplorer] 双击连接节点: ${node.name}, connectionType=${connectionType}, dbType=${node.dbType}`);

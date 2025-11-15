@@ -151,7 +151,7 @@ impl IoTDBOfficialClient {
             result.execution_time = Some(execution_time);
 
             // 解析响应数据
-            let columns: Vec<String> = response.columns.unwrap_or_default();
+            let mut columns: Vec<String> = response.columns.unwrap_or_default();
             let data_types: Vec<String> = response.data_type_list.unwrap_or_default();
             let mut rows: Vec<Vec<serde_json::Value>> = Vec::new();
 
@@ -164,7 +164,7 @@ impl IoTDBOfficialClient {
             // 2. [Time, root.xxx.yyy, field1, field2, ...] - 表名 + 短字段名
             // 我们需要检测并处理第二种情况
 
-            let table_name_column_index = if columns.len() > 1 {
+            let mut table_name_column_index = if columns.len() > 1 {
                 // 检查第二列是否是表名（以root.开头但不是完整的时间序列路径）
                 if let Some(second_col) = columns.get(1) {
                     // 如果第二列以root.开头，且第三列不以root.开头，说明第二列是表名
@@ -264,25 +264,44 @@ impl IoTDBOfficialClient {
 
                         debug!("最终确定行数: {}", row_count);
 
+                        // 检查是否需要添加Time列
+                        let has_time_column = columns.first()
+                            .map(|c| c.to_lowercase() == "time")
+                            .unwrap_or(false);
+
+                        // 如果有时间戳数据但列名中没有Time列，添加Time列到开头
+                        if !has_time_column && !timestamps.is_empty() {
+                            debug!("查询结果不包含Time列但有时间戳数据，添加Time列");
+                            columns.insert(0, "Time".to_string());
+
+                            // 更新table_name_column_index，因为插入了Time列，所有索引都需要加1
+                            if let Some(ref mut idx) = table_name_column_index {
+                                *idx += 1;
+                                debug!("更新table_name_column_index为: {}", *idx);
+                            }
+                        }
+
                         for row_index in 0..row_count {
                             let mut row_values = Vec::new();
 
                             // IoTDB的数据结构：
-                            // columns: [Time, 表名或字段1, 字段2, ...]
+                            // columns: 可能包含Time列，也可能不包含（如SELECT * FROM device）
                             // value_list: [字段1数据, 字段2数据, ...] (不包含Time)
                             // time: [时间戳数组]
 
-                            // 第一列：添加时间戳（如果有时间数据）
-                            if !timestamps.is_empty() && row_index < timestamps.len() {
-                                row_values.push(serde_json::Value::Number(
-                                    serde_json::Number::from(timestamps[row_index])
-                                ));
-                                trace!("第 {} 行，添加时间戳: {}", row_index, timestamps[row_index]);
-                            } else if columns.first().map(|c| c.to_lowercase()).as_deref() == Some("time") {
-                                // 如果第一列是time但没有时间数据，添加null
-                                row_values.push(serde_json::Value::Null);
-                                warn!("⚠️ 第 {} 行，时间戳为空，添加null。timestamps长度: {}, 第一列: {:?}",
-                                      row_index, timestamps.len(), columns.first());
+                            // 如果有Time列（无论是原始的还是添加的），都需要添加时间戳数据
+                            if has_time_column || !timestamps.is_empty() {
+                                if !timestamps.is_empty() && row_index < timestamps.len() {
+                                    row_values.push(serde_json::Value::Number(
+                                        serde_json::Number::from(timestamps[row_index])
+                                    ));
+                                    trace!("第 {} 行，添加时间戳: {}", row_index, timestamps[row_index]);
+                                } else {
+                                    row_values.push(serde_json::Value::Null);
+                                    if !timestamps.is_empty() {
+                                        warn!("⚠️ 第 {} 行，时间戳索引越界，添加null", row_index);
+                                    }
+                                }
                             }
 
                             // 后续列：解析value_list中的数据

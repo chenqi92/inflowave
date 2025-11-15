@@ -1418,7 +1418,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     // 根据节点行为配置决定双击行为
     switch (behaviorConfig.doubleClickAction) {
       case 'open_tab': {
-        // 打开数据查询tab（measurement、table、timeseries等）
+        // 打开数据查询tab（measurement、table、device等）
         logger.debug(`双击节点，打开数据浏览器: ${nodeType}`);
 
         const connectionId = nodeData.metadata?.connectionId || '';
@@ -1432,21 +1432,9 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           database = nodeData.metadata?.storageGroup || nodeData.metadata?.storage_group || '';
           tableName = nodeData.metadata?.devicePath || nodeData.metadata?.device_path || nodeData.name;
         } else if (normalized === 'timeseries' || normalized === 'aligned_timeseries') {
-          // IoTDB 时间序列节点 - 打开其所属设备的数据浏览器
-          database = nodeData.metadata?.storageGroup || nodeData.metadata?.storage_group || '';
-          tableName = nodeData.metadata?.devicePath || nodeData.metadata?.device_path || '';
-
-          // 如果 metadata 中没有 devicePath，从 timeseriesPath 中提取
-          if (!tableName) {
-            const timeseriesPath = nodeData.metadata?.timeseriesPath || nodeData.metadata?.timeseries_path || nodeData.name;
-            const parts = timeseriesPath.split('.');
-            if (parts.length >= 2) {
-              tableName = parts.slice(0, -1).join('.');
-              if (!database) {
-                database = parts.length >= 2 ? `${parts[0]}.${parts[1]}` : '';
-              }
-            }
-          }
+          // IoTDB 时间序列节点不应该打开数据tab
+          logger.debug(`时间序列节点 ${nodeData.name} 不支持双击打开数据tab`);
+          return;
         } else {
           // 其他节点类型（InfluxDB measurement、table等）
           database = nodeData.metadata?.database || nodeData.metadata?.databaseName || '';
@@ -1692,7 +1680,12 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
         return;
       }
 
-      case 'none':
+      case 'none': {
+        // 节点不支持双击操作（如timeseries节点）
+        logger.debug(`节点 ${nodeType} 不支持双击操作，忽略`);
+        return;
+      }
+
       default: {
         // 其他节点：通知父组件（可能打开详情对话框等）
         logger.debug(`双击节点，通知父组件: ${nodeType}`);
