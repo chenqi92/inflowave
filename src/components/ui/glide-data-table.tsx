@@ -904,17 +904,28 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
               {(() => {
                 // 计算实际需要的宽度和高度
                 const rowMarkerWidth = 48; // 行标记的宽度
+                const scrollbarWidth = 17; // 滚动条宽度（dvn-scroller默认预留）
+
                 // 类型安全地访问width属性
                 const totalColumnsWidth = gridColumns.reduce((sum, col) => {
                   const width = 'width' in col ? col.width : 150;
                   return sum + width;
                 }, 0);
-                const actualTableWidth = Math.min(totalColumnsWidth + rowMarkerWidth + 2, containerWidth); // +2 for borders
 
                 const headerHeight = 36;
                 const rowHeight = 32;
                 // 计算实际内容高度，需要包含所有行
                 const actualDataHeight = headerHeight + (rowHeight * Math.min(processedData.length, 100));
+
+                // 判断是否需要垂直滚动条
+                const needsVerticalScroll = actualDataHeight > (containerHeight - (pagination ? 60 : 0));
+
+                // 计算表格实际宽度，如果不需要垂直滚动条，就不预留滚动条空间
+                const actualTableWidth = Math.min(
+                  totalColumnsWidth + rowMarkerWidth + (needsVerticalScroll ? scrollbarWidth : 0),
+                  containerWidth
+                );
+
                 // 表格容器高度需要稍微大一点，确保边框和内容都能显示
                 const actualTableHeight = Math.min(actualDataHeight + 4, containerHeight - (pagination ? 60 : 0));
 
@@ -936,14 +947,16 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
                 if (isCompactWidth || isCompactHeight) {
                   // 紧凑显示模式：使用包装器限制尺寸
+                  const dataEditorWidth = isCompactWidth ? totalColumnsWidth + rowMarkerWidth : containerWidth;
                   return (
                     <div
                       style={{
-                        width: isCompactWidth ? actualTableWidth : '100%',
+                        width: isCompactWidth ? dataEditorWidth : '100%',
                         height: actualTableHeight,
                         position: 'relative',
                         backgroundColor: 'var(--background)',
                         boxSizing: 'border-box',
+                        overflow: 'hidden', // 确保不会溢出
                       }}
                     >
                       {/* 外层边框容器，使用伪元素确保边框显示 */}
@@ -960,7 +973,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                         getCellContent={getCellContent}
                         columns={gridColumns}
                         rows={processedData.length}
-                        width={isCompactWidth ? actualTableWidth : containerWidth}
+                        width={dataEditorWidth}
                         height={actualTableHeight}
                         smoothScrollX={true}
                         smoothScrollY={true}
