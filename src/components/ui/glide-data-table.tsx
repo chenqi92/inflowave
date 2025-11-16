@@ -713,29 +713,17 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           const popoverWidth = 250;
           const popoverHeight = 300;
 
-          // 计算筛选图标左边缘的屏幕位置
-          // 使用 bounds 和 localX 计算图标的绝对位置
-          let filterIconScreenX = 0;
-          let filterIconScreenY = 0;
+          // bounds.x 和 bounds.y 已经是相对于viewport的绝对坐标
+          // filterIconStartX 是筛选图标相对于列起始位置的偏移
+          let filterIconScreenX = bounds.x + filterIconStartX;
+          let filterIconScreenY = bounds.y + bounds.height + 2;
 
-          // 找到 canvas 元素
-          const canvas = containerRef.current?.querySelector('canvas');
-          if (canvas) {
-            const canvasRect = canvas.getBoundingClientRect();
-
-            // 筛选图标在屏幕上的位置 = canvas左边距 + 列的x偏移 + 图标相对列的x偏移
-            filterIconScreenX = canvasRect.left + bounds.x + filterIconStartX;
-            // Y坐标：表头底部
-            filterIconScreenY = canvasRect.top + bounds.y + bounds.height + 2;
-
-            logger.info('位置计算详情:', {
-              canvas位置: { left: canvasRect.left, top: canvasRect.top },
-              列bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
-              filterIconStartX,
-              计算后的X: filterIconScreenX,
-              计算后的Y: filterIconScreenY,
-            });
-          }
+          logger.info('位置计算详情:', {
+            列bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+            filterIconStartX,
+            计算后的X: filterIconScreenX,
+            计算后的Y: filterIconScreenY,
+          });
 
           // 边界检测：确保面板不会超出视口
           const viewportWidth = window.innerWidth;
