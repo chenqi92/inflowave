@@ -953,6 +953,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                       overscrollX={0}
                       overscrollY={0}
                       rowMarkers="both"
+                      rowMarkerWidth={rowMarkerWidth}
                       onHeaderClicked={onHeaderClicked}
                       onColumnResize={handleColumnResize}
                       onColumnResizeEnd={handleColumnResizeEnd}
