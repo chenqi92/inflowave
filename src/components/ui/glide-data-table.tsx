@@ -884,15 +884,16 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         </Card>
       )}
 
-      {/* 数据表格 - 移除圆角 */}
-      <div ref={containerRef} className="flex-1 min-h-0 flex flex-col border rounded-none overflow-hidden bg-background">
-        <div className="flex-1 min-h-0 relative">
+      {/* 数据表格 - 使用外层滚动容器 */}
+      <div ref={containerRef} className="flex-1 min-h-0 flex flex-col border rounded-none bg-background">
+        {/* 可滚动内容区域 - 滚动条固定在容器边缘 */}
+        <div className="flex-1 min-h-0 overflow-auto">
           {loading ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-background">
+            <div className="flex items-center justify-center h-full bg-background">
               <div className="text-muted-foreground">加载中...</div>
             </div>
           ) : processedData.length === 0 ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-background">
+            <div className="flex items-center justify-center h-full bg-background">
               <div className="text-muted-foreground">暂无数据</div>
             </div>
           ) : (
@@ -901,12 +902,13 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 gridColumns数: gridColumns.length,
                 rows: processedData.length,
                 containerHeight,
-                计算后高度: containerHeight - (pagination ? 60 : 0),
+                containerWidth,
               })}
               {(() => {
-                // 计算实际需要的宽度和高度
-                const rowMarkerWidth = 48; // 行标记的宽度
-                const scrollbarWidth = 17; // 滚动条宽度（dvn-scroller默认预留）
+                // 计算表格实际大小
+                const rowMarkerWidth = 48;
+                const headerHeight = 36;
+                const rowHeight = 32;
 
                 // 类型安全地访问width属性
                 const totalColumnsWidth = gridColumns.reduce((sum, col) => {
@@ -914,144 +916,40 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                   return sum + width;
                 }, 0);
 
-                const headerHeight = 36;
-                const rowHeight = 32;
-                // 计算实际内容高度，需要包含所有行
-                const actualDataHeight = headerHeight + (rowHeight * Math.min(processedData.length, 100));
+                // 表格实际宽度（所有列宽 + 行标记）
+                const tableWidth = totalColumnsWidth + rowMarkerWidth;
 
-                // 判断是否需要垂直滚动条
-                const needsVerticalScroll = actualDataHeight > (containerHeight - (pagination ? 60 : 0));
+                // 表格实际高度（表头 + 所有行）
+                const tableHeight = headerHeight + (rowHeight * processedData.length);
 
-                // 计算表格实际宽度，如果不需要垂直滚动条，就不预留滚动条空间
-                const actualTableWidth = Math.min(
-                  totalColumnsWidth + rowMarkerWidth + (needsVerticalScroll ? scrollbarWidth : 0),
-                  containerWidth
-                );
-
-                // 表格容器高度需要稍微大一点，确保边框和内容都能显示
-                const actualTableHeight = Math.min(actualDataHeight + 4, containerHeight - (pagination ? 60 : 0));
-
-                // 判断是否需要显示为紧凑表格
-                const isCompactWidth = actualTableWidth < containerWidth;
-                const isCompactHeight = actualDataHeight < (containerHeight - (pagination ? 60 : 0));
-
-                logger.info('📊 表格尺寸计算:', {
+                logger.info('📊 表格实际尺寸:', {
                   totalColumnsWidth,
-                  actualTableWidth,
+                  tableWidth,
+                  tableHeight,
+                  rowCount: processedData.length,
                   containerWidth,
-                  actualDataHeight,
-                  actualTableHeight,
                   containerHeight,
-                  isCompactWidth,
-                  isCompactHeight,
-                  rowCount: processedData.length
                 });
 
-                if (isCompactWidth || isCompactHeight) {
-                  // 紧凑显示模式：使用包装器限制尺寸
-                  const dataEditorWidth = isCompactWidth ? totalColumnsWidth + rowMarkerWidth : containerWidth;
-                  return (
-                    <div
-                      style={{
-                        width: isCompactWidth ? dataEditorWidth : '100%',
-                        height: actualTableHeight,
-                        position: 'relative',
-                        backgroundColor: 'var(--background)',
-                        boxSizing: 'border-box',
-                        overflow: 'hidden', // 确保不会溢出
-                      }}
-                    >
-                      {/* 外层边框容器，使用伪元素确保边框显示 */}
-                      <div
-                        style={{
-                          position: 'absolute',
-                          inset: 0,
-                          border: '1px solid var(--border)',
-                          pointerEvents: 'none',
-                          zIndex: 1,
-                        }}
-                      />
-                      <DataEditor
-                        getCellContent={getCellContent}
-                        columns={gridColumns}
-                        rows={processedData.length}
-                        width={dataEditorWidth}
-                        height={actualTableHeight}
-                        smoothScrollX={true}
-                        smoothScrollY={true}
-                        overscrollX={0}
-                        overscrollY={0}
-                        rowMarkers="both"
-                        onHeaderClicked={onHeaderClicked}
-                        onColumnResize={handleColumnResize}
-                        onColumnResizeEnd={handleColumnResizeEnd}
-                        onVisibleRegionChanged={handleVisibleRegionChanged}
-                        gridSelection={gridSelection}
-                        onGridSelectionChange={setGridSelection}
-                        minColumnWidth={80}
-                        maxColumnWidth={800}
-                        maxColumnAutoWidth={500}
-                        keybindings={{
-                          copy: false,  // 禁用默认复制，使用自定义处理
-                          paste: false,
-                          selectAll: true,
-                          selectRow: true,
-                          selectColumn: true,
-                        }}
-                        freezeColumns={0}
-                        headerHeight={36}
-                        rowHeight={32}
-                        onCellEdited={(cell, newValue) => {
-                          // 暂时不实现编辑功能，返回undefined表示不应用编辑
-                          logger.debug('单元格编辑:', { cell, newValue });
-                          return undefined;
-                        }}
-                        rightElement={undefined}
-                        rightElementProps={{
-                          fill: false,
-                          sticky: false,
-                        }}
-                        theme={{
-                          accentColor: getCSSVariable('--primary', '#0066cc'),
-                          accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
-                          accentLight: getCSSVariable('--accent', '#f0f9ff'),
-                          textDark: getCSSVariable('--foreground', '#09090b'),
-                          textMedium: getCSSVariable('--muted-foreground', '#71717a'),
-                          textLight: getCSSVariable('--muted-foreground', '#a1a1aa'),
-                          textBubble: getCSSVariable('--foreground', '#09090b'),
-                          bgIconHeader: getCSSVariable('--muted-foreground', '#71717a'),
-                          fgIconHeader: getCSSVariable('--background', '#ffffff'),
-                          textHeader: getCSSVariable('--foreground', '#09090b'),
-                          textHeaderSelected: getCSSVariable('--primary-foreground', '#ffffff'),
-                          bgCell: getCSSVariable('--background', '#ffffff'),
-                          bgCellMedium: getCSSVariable('--muted', '#f4f4f5'),
-                          bgHeader: getCSSVariable('--muted', '#f4f4f5'),
-                          bgHeaderHasFocus: getCSSVariable('--muted', '#f4f4f5'),
-                          bgHeaderHovered: getCSSVariable('--accent', '#f0f9ff'),
-                          bgBubble: getCSSVariable('--background', '#ffffff'),
-                          bgBubbleSelected: getCSSVariable('--primary', '#0066cc'),
-                          bgSearchResult: getCSSVariable('--accent', '#f0f9ff'),
-                          borderColor: getCSSVariable('--border', '#e4e4e7'),
-                          drilldownBorder: getCSSVariable('--border', '#e4e4e7'),
-                          linkColor: getCSSVariable('--primary', '#0066cc'),
-                          headerFontStyle: "600 14px",
-                          baseFontStyle: "14px",
-                          fontFamily: "Inter, system-ui, sans-serif",
-                        }}
-                      />
-                    </div>
-                  );
-                } else {
-                  // 完全填充模式：表格占满容器
-                  return (
+                // 统一的渲染模式：DataEditor 以实际内容大小渲染，外层容器提供滚动
+                return (
+                  <div
+                    style={{
+                      width: tableWidth,
+                      height: tableHeight,
+                      position: 'relative',
+                      backgroundColor: 'var(--background)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
                     <DataEditor
                       getCellContent={getCellContent}
                       columns={gridColumns}
                       rows={processedData.length}
-                      width="100%"
-                      height={containerHeight - (pagination ? 60 : 0)}
-                      smoothScrollX={true}
-                      smoothScrollY={true}
+                      width={tableWidth}
+                      height={tableHeight}
+                      smoothScrollX={false}
+                      smoothScrollY={false}
                       overscrollX={0}
                       overscrollY={0}
                       rowMarkers="both"
@@ -1065,7 +963,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                       maxColumnWidth={800}
                       maxColumnAutoWidth={500}
                       keybindings={{
-                        copy: false,  // 禁用默认复制，使用自定义处理
+                        copy: false,
                         paste: false,
                         selectAll: true,
                         selectRow: true,
@@ -1075,7 +973,6 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                       headerHeight={36}
                       rowHeight={32}
                       onCellEdited={(cell, newValue) => {
-                        // 暂时不实现编辑功能，返回undefined表示不应用编辑
                         logger.debug('单元格编辑:', { cell, newValue });
                         return undefined;
                       }}
@@ -1112,8 +1009,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                         fontFamily: "Inter, system-ui, sans-serif",
                       }}
                     />
-                  );
-                }
+                  </div>
+                );
               })()}
             </>
           )}
