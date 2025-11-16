@@ -29,7 +29,7 @@
     height: 100%;
     background-color: hsl(var(--border));
     pointer-events: none;
-    z-index: 100;
+    z-index: 10;
   }
 
   .glide-table-border-fix::before {
@@ -41,7 +41,7 @@
     height: 1px;
     background-color: hsl(var(--border));
     pointer-events: none;
-    z-index: 100;
+    z-index: 10;
   }
 
   /* 强制禁用DataEditor内部的滚动条 */
