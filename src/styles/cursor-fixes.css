@@ -1,12 +1,44 @@
 /* 鼠标指针修复样式 - 桌面应用适配 */
 
-/* 
+/*
  * 桌面应用中，只有真正可交互的元素才应该显示手型指针
  * 其他元素应该使用默认箭头指针，符合桌面软件的用户体验习惯
  */
 
-/* 全局重置 - 移除不必要的手型指针 */
-/* 注意：这个规则可能过于激进，先注释掉，使用更精确的规则 */
+/* 全局重置 - 强制所有 cursor-pointer 使用默认箭头指针 */
+.cursor-pointer {
+  cursor: default !important;
+}
+
+/* Glide Data Grid 特定修复 - 只修复表头和行标记的 cursor */
+/* 强制覆盖 pointer cursor，但保留 resize cursors */
+
+/* 强制wrapper和所有子元素默认使用默认指针 */
+.glide-table-border-fix,
+.glide-table-border-fix *,
+.glide-table-border-fix canvas {
+  cursor: default !important;
+}
+
+/* 保留所有resize cursors - 使用更高优先级 */
+.glide-table-border-fix canvas[style*="col-resize"],
+.glide-table-border-fix canvas[style*="ew-resize"] {
+  cursor: col-resize !important;
+}
+
+.glide-table-border-fix canvas[style*="row-resize"],
+.glide-table-border-fix canvas[style*="ns-resize"] {
+  cursor: row-resize !important;
+}
+
+.glide-table-border-fix canvas[style*="nw-resize"],
+.glide-table-border-fix canvas[style*="se-resize"],
+.glide-table-border-fix canvas[style*="ne-resize"],
+.glide-table-border-fix canvas[style*="sw-resize"] {
+  cursor: inherit !important;
+}
+
+/* 旧的全局重置规则（保留但注释） */
 /*
 *:not(button):not([role="button"]):not(a):not(input):not(select):not(textarea) {
   cursor: default !important;

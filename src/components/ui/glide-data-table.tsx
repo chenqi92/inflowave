@@ -237,6 +237,46 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     };
   }, []);
 
+  // 强制覆盖Glide Data Grid的cursor样式 - 使用持续性策略
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    // 函数：强制覆盖pointer cursor
+    const overrideCursor = () => {
+      const canvases = container.querySelectorAll('canvas');
+      canvases.forEach((canvas) => {
+        const htmlCanvas = canvas as HTMLCanvasElement;
+        const currentCursor = htmlCanvas.style.cursor;
+
+        // 只覆盖pointer cursor，保留所有resize cursors
+        if (currentCursor === 'pointer') {
+          htmlCanvas.style.cursor = 'default';
+        }
+      });
+    };
+
+    // 初始执行
+    overrideCursor();
+
+    // 使用setInterval持续检查和覆盖（每50ms检查一次）
+    const intervalId = setInterval(overrideCursor, 50);
+
+    // 同时使用MutationObserver作为补充
+    const observer = new MutationObserver(overrideCursor);
+    observer.observe(container, {
+      attributes: true,
+      attributeFilter: ['style'],
+      subtree: true,
+      childList: true,
+    });
+
+    return () => {
+      clearInterval(intervalId);
+      observer.disconnect();
+    };
+  }, []);
+
   // 列管理
   const effectiveSelectedColumns = useMemo(() => {
     if (externalSelectedColumns) return externalSelectedColumns;
@@ -399,6 +439,84 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     });
     // 注意：不再保存到 localStorage，刷新后恢复为自动计算值
   }, []);
+
+  // 列拖动建议处理 - 允许列重新排序并实时更新选中效果
+  const handleColumnProposeMove = useCallback((startIndex: number, endIndex: number): boolean => {
+    logger.debug('🔧 [GlideDataTable] 列拖动建议:', {
+      startIndex,
+      endIndex,
+      startColumn: gridColumns[startIndex]?.id,
+      endColumn: gridColumns[endIndex]?.id
+    });
+
+    // 使用函数式setState避免依赖gridSelection
+    setGridSelection(prevSelection => {
+      // 如果有列选中，需要重新映射列索引以跟随拖动
+      if (prevSelection.columns.length > 0) {
+        const newColumns = CompactSelection.empty();
+
+        // 重新映射所有选中的列索引
+        prevSelection.columns.toArray().forEach(colIndex => {
+          let newIndex = colIndex;
+
+          // 如果是被拖动的列
+          if (colIndex === startIndex) {
+            newIndex = endIndex;
+          }
+          // 如果在拖动范围内，需要相应调整
+          else if (startIndex < endIndex) {
+            // 向右拖动：startIndex+1 到 endIndex 之间的列都要左移
+            if (colIndex > startIndex && colIndex <= endIndex) {
+              newIndex = colIndex - 1;
+            }
+          } else {
+            // 向左拖动：endIndex 到 startIndex-1 之间的列都要右移
+            if (colIndex >= endIndex && colIndex < startIndex) {
+              newIndex = colIndex + 1;
+            }
+          }
+
+          newColumns.add(newIndex);
+        });
+
+        return {
+          ...prevSelection,
+          columns: newColumns
+        };
+      }
+
+      return prevSelection;
+    });
+
+    // 返回 true 允许拖动
+    return true;
+  }, [gridColumns]);
+
+  // 列拖动完成处理 - 仅在拖动结束时更新父组件
+  const handleColumnMoved = useCallback((startIndex: number, endIndex: number) => {
+    logger.info('🔄 [GlideDataTable] 列拖动完成:', {
+      startIndex,
+      endIndex,
+      startColumn: gridColumns[startIndex]?.id,
+      endColumn: gridColumns[endIndex]?.id
+    });
+
+    // 计算新的列顺序
+    const newOrder = [...effectiveColumnOrder];
+    const [movedColumn] = newOrder.splice(startIndex, 1);
+    newOrder.splice(endIndex, 0, movedColumn);
+
+    logger.debug('🔄 [GlideDataTable] 新列顺序:', {
+      oldOrder: effectiveColumnOrder,
+      newOrder,
+      movedColumn
+    });
+
+    // 通知父组件列顺序已更改
+    if (onColumnChange) {
+      onColumnChange(effectiveSelectedColumns, newOrder);
+    }
+  }, [gridColumns, effectiveColumnOrder, effectiveSelectedColumns, onColumnChange]);
 
   // 懒加载：检测滚动到底部
   const handleVisibleRegionChanged = useCallback((range: any) => {
@@ -1300,6 +1418,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                       onHeaderClicked={onHeaderClicked}
                       onColumnResize={handleColumnResize}
                       onColumnResizeEnd={handleColumnResizeEnd}
+                      onColumnProposeMove={handleColumnProposeMove}
+                      onColumnMoved={handleColumnMoved}
                       onVisibleRegionChanged={handleVisibleRegionChanged}
                       gridSelection={gridSelection}
                       onGridSelectionChange={setGridSelection}
