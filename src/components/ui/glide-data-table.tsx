@@ -31,6 +31,11 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Checkbox,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  ScrollArea,
 } from '@/components/ui';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -65,6 +70,7 @@ const getCSSVariable = (variable: string, fallback: string = '#000000'): string 
   }
 };
 
+
 // 数据行类型
 export interface DataRow {
   [key: string]: any;
@@ -87,7 +93,7 @@ export interface ColumnConfig {
 // 排序配置类型
 export interface SortConfig {
   column: string;
-  direction: 'asc' | 'desc';
+  direction: 'asc' | 'desc' | null; // null 表示无排序
 }
 
 // 筛选配置类型
@@ -112,6 +118,145 @@ export type DataSourceType = 'influxdb1' | 'influxdb2' | 'influxdb3' | 'iotdb' |
 
 // 复制格式类型
 export type CopyFormat = 'text' | 'insert' | 'markdown' | 'json' | 'csv';
+
+// 筛选弹框组件属性
+interface ColumnFilterPopoverProps {
+  column: string;
+  uniqueValues: string[];
+  selectedValues: Set<string>;
+  onApply: (selectedValues: Set<string>) => void;
+  onClear: () => void;
+  onClose: () => void;
+}
+
+// 筛选弹框组件
+const ColumnFilterPopover: React.FC<ColumnFilterPopoverProps> = ({
+  column,
+  uniqueValues,
+  selectedValues,
+  onApply,
+  onClear,
+  onClose,
+}) => {
+  const [tempSelectedValues, setTempSelectedValues] = useState<Set<string>>(new Set(selectedValues));
+  const [searchText, setSearchText] = useState('');
+
+  // 过滤后的值列表
+  const filteredValues = useMemo(() => {
+    if (!searchText) return uniqueValues;
+    return uniqueValues.filter(value =>
+      value.toLowerCase().includes(searchText.toLowerCase())
+    );
+  }, [uniqueValues, searchText]);
+
+  // 切换值选中状态
+  const toggleValue = (value: string) => {
+    setTempSelectedValues(prev => {
+      const next = new Set(prev);
+      if (next.has(value)) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
+      return next;
+    });
+  };
+
+  // 全选
+  const selectAll = () => {
+    setTempSelectedValues(new Set(filteredValues));
+  };
+
+  // 清空选择
+  const clearAll = () => {
+    setTempSelectedValues(new Set());
+  };
+
+  return (
+    <div className="p-2 min-w-[200px] max-w-[300px]" onClick={(e) => e.stopPropagation()}>
+      {/* 搜索框 */}
+      <div className="mb-2">
+        <Input
+          placeholder="搜索..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          className="h-7 text-xs"
+        />
+      </div>
+
+      {/* 操作按钮 */}
+      <div className="flex gap-1 mb-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-6 px-2 text-xs flex-1"
+          onClick={selectAll}
+        >
+          全选
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-6 px-2 text-xs flex-1"
+          onClick={clearAll}
+        >
+          清空
+        </Button>
+      </div>
+
+      {/* 值列表 */}
+      <ScrollArea className="h-[200px] border rounded p-1">
+        <div className="space-y-1">
+          {filteredValues.length === 0 ? (
+            <div className="text-xs text-muted-foreground text-center py-2">
+              无匹配项
+            </div>
+          ) : (
+            filteredValues.map((value, index) => (
+              <div
+                key={index}
+                className="flex items-center space-x-2 p-1 hover:bg-accent rounded cursor-pointer"
+                onClick={() => toggleValue(value)}
+              >
+                <Checkbox
+                  checked={tempSelectedValues.has(value)}
+                  onCheckedChange={() => toggleValue(value)}
+                  className="h-3 w-3"
+                />
+                <span className="text-xs flex-1 truncate" title={value}>
+                  {value || '(空)'}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </ScrollArea>
+
+      {/* 底部按钮 */}
+      <div className="flex gap-1 mt-2">
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 px-2 text-xs flex-1"
+          onClick={() => {
+            onClear();
+          }}
+        >
+          清除筛选
+        </Button>
+        <Button
+          size="sm"
+          className="h-7 px-2 text-xs flex-1"
+          onClick={() => {
+            onApply(tempSelectedValues);
+          }}
+        >
+          确定
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 // 组件属性
 export interface GlideDataTableProps {
@@ -198,6 +343,10 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   const [searchText, setSearchText] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [filters, setFilters] = useState<FilterConfig[]>([]);
+  // 列筛选状态：记录每列选中的值（用于类Excel筛选）
+  const [columnFilters, setColumnFilters] = useState<Map<string, Set<string>>>(new Map());
+  // 筛选弹框状态
+  const [filterPopover, setFilterPopover] = useState<{ column: string; x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
   const [containerWidth, setContainerWidth] = useState(800);
@@ -383,8 +532,26 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       }
     });
 
+    // 列筛选（类Excel筛选）
+    if (columnFilters.size > 0) {
+      result = result.filter(row => {
+        // 检查每个列筛选条件
+        for (const [column, selectedValues] of columnFilters.entries()) {
+          if (selectedValues.size === 0) continue; // 如果没有选中任何值，跳过该列筛选
+
+          const cellValue = String(row[column] ?? ''); // 转换为字符串，null/undefined 转为空字符串
+
+          // 如果当前行的值不在选中的值集合中，过滤掉该行
+          if (!selectedValues.has(cellValue)) {
+            return false;
+          }
+        }
+        return true;
+      });
+    }
+
     // 排序
-    if (sortConfig) {
+    if (sortConfig && sortConfig.direction !== null) {
       result.sort((a, b) => {
         const aVal = a[sortConfig.column];
         const bVal = b[sortConfig.column];
@@ -406,7 +573,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     }
 
     return result;
-  }, [data, searchText, filters, sortConfig, columns.length, pagination]);
+  }, [data, searchText, filters, sortConfig, columnFilters, columns.length, pagination]);
 
   // 转换为 Glide Data Grid 格式的列定义
   const gridColumns: GridColumn[] = useMemo(() => {
@@ -417,7 +584,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       const column = columns.find(c => c.key === colKey);
       if (column) {
         const isSorted = sortConfig?.column === column.key;
-        const sortDirection = isSorted ? sortConfig.direction : undefined;
+        const sortDirection = isSorted ? (sortConfig?.direction ?? undefined) : undefined;
         const isLastColumn = index === effectiveColumnOrder.length - 1;
 
         // 优先使用用户手动调整的列宽（会话内），否则使用自动计算的宽度
@@ -449,24 +616,150 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     });
   }, [data, columns, processedData, gridColumns]);
 
-  // 排序处理
+  // 三态排序处理：null -> asc -> desc -> null
   const handleSort = useCallback((columnKey: string) => {
-    const newDirection: 'asc' | 'desc' = sortConfig?.column === columnKey && sortConfig.direction === 'asc' ? 'desc' : 'asc';
-    const newSortConfig = { column: columnKey, direction: newDirection };
+    let newDirection: 'asc' | 'desc' | null = 'asc';
+
+    if (sortConfig?.column === columnKey) {
+      // 同一列：asc -> desc -> null
+      if (sortConfig.direction === 'asc') {
+        newDirection = 'desc';
+      } else if (sortConfig.direction === 'desc') {
+        newDirection = null;
+      } else {
+        newDirection = 'asc';
+      }
+    } else {
+      // 不同列：从 asc 开始
+      newDirection = 'asc';
+    }
+
+    const newSortConfig = newDirection === null ? null : { column: columnKey, direction: newDirection };
     setSortConfig(newSortConfig);
     onSort?.(newSortConfig);
   }, [sortConfig, onSort]);
 
-  // 列头点击处理
-  const onHeaderClicked = useCallback((col: number) => {
+  // 列头点击处理 - 根据点击位置触发不同的操作
+  const onHeaderClicked = useCallback((col: number, event: any) => {
     const column = gridColumns[col];
     if (!column) return;
 
-    const columnConfig = columns.find(c => c.key === column.id);
-    if (sortable && columnConfig?.sortable !== false) {
-      handleSort(column.id as string);
+    const columnId = column.id as string;
+    const columnConfig = columns.find(c => c.key === columnId);
+
+    // 使用 event.bounds 获取列的实际边界(这个坐标是相对于整个 canvas 的)
+    const bounds = event.bounds;
+    if (!bounds) {
+      logger.warn('未找到 bounds 信息');
+      return;
     }
-  }, [gridColumns, columns, sortable, handleSort]);
+
+    // 获取点击相对于列的 X 坐标
+    const localX = event.localEventX; // 这是相对于列起始位置的 X 坐标
+    const colWidth = bounds.width;
+
+    // 与 drawHeader 保持一致的参数
+    const padding = 8;
+    const iconSize = 20;
+    const iconSpacing = 4;
+    const sortIconWidth = iconSize;
+    const filterIconWidth = iconSize;
+
+    // 计算排序图标位置（右对齐，相对于列起始位置）
+    const sortIconStartX = colWidth - padding - sortIconWidth;
+    const sortIconEndX = colWidth - padding;
+
+    // 计算筛选图标位置（需要测量文本宽度）
+    const tempCanvas = document.createElement('canvas');
+    const ctx = tempCanvas.getContext('2d');
+    if (ctx) {
+      // 设置与表头相同的字体
+      ctx.font = '600 13px Inter, system-ui, sans-serif';
+
+      // 计算显示文本（与 drawHeader 中的逻辑一致）
+      const maxTextWidth = colWidth - padding * 2 - sortIconWidth - filterIconWidth - iconSpacing * 2;
+      let displayText = column.title;
+      let textWidth = ctx.measureText(displayText).width;
+
+      if (textWidth > maxTextWidth) {
+        while (textWidth > maxTextWidth && displayText.length > 0) {
+          displayText = displayText.slice(0, -1);
+          textWidth = ctx.measureText(displayText + '...').width;
+        }
+        displayText += '...';
+      }
+
+      // 筛选图标在文本后面（相对于列起始位置）
+      const textX = padding;
+      const filterIconStartX = textX + ctx.measureText(displayText).width + iconSpacing;
+      const filterIconEndX = filterIconStartX + filterIconWidth;
+
+      logger.debug('表头点击', {
+        列: columnId,
+        'localX (相对列)': localX,
+        列宽: colWidth,
+        排序图标范围: [sortIconStartX, sortIconEndX],
+        筛选图标范围: [filterIconStartX, filterIconEndX],
+        显示文本: displayText,
+        bounds: bounds
+      });
+
+      // 判断点击了哪个区域（排序图标优先，因为在最右侧）
+      if (localX >= sortIconStartX && localX <= sortIconEndX) {
+        // 点击了排序图标
+        logger.info('✅ 点击了排序图标');
+        if (sortable && columnConfig?.sortable !== false) {
+          handleSort(columnId);
+        }
+        return;
+      } else if (localX >= filterIconStartX && localX <= filterIconEndX) {
+        // 点击了筛选图标
+        logger.info('✅ 点击了筛选图标');
+        if (filterable && columnConfig?.filterable !== false) {
+          setFilterPopover({
+            column: columnId,
+            x: event.clientX,
+            y: event.clientY
+          });
+        }
+        return;
+      }
+    }
+    // 其他区域不做处理
+    logger.debug('点击了表头其他区域');
+  }, [gridColumns, columns, sortable, filterable, handleSort]);
+
+  // 获取指定列的所有唯一值（用于筛选）
+  const getColumnUniqueValues = useCallback((columnKey: string): string[] => {
+    const uniqueValues = new Set<string>();
+    data.forEach(row => {
+      const value = String(row[columnKey] ?? '');
+      uniqueValues.add(value);
+    });
+    return Array.from(uniqueValues).sort();
+  }, [data]);
+
+  // 应用列筛选
+  const applyColumnFilter = useCallback((columnKey: string, selectedValues: Set<string>) => {
+    setColumnFilters(prev => {
+      const next = new Map(prev);
+      if (selectedValues.size === 0) {
+        next.delete(columnKey);
+      } else {
+        next.set(columnKey, selectedValues);
+      }
+      return next;
+    });
+  }, []);
+
+  // 清除列筛选
+  const clearColumnFilter = useCallback((columnKey: string) => {
+    setColumnFilters(prev => {
+      const next = new Map(prev);
+      next.delete(columnKey);
+      return next;
+    });
+  }, []);
 
   // 列宽调整处理（拖动过程中实时更新）
   const handleColumnResize = useCallback((
@@ -1202,31 +1495,148 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     };
   }, []);
 
-  // 自定义表头绘制 - 修复列选中时表头背景的左侧1像素偏移问题
-  const drawHeader = useCallback<DrawHeaderCallback>((args, drawContent) => {
-    const { ctx, column, theme, rect, isSelected } = args;
 
-    // 如果列被选中，我们需要自定义绘制以修复左侧1像素偏移
+  // 自定义表头绘制 - 添加筛选和排序图标
+  const drawHeader = useCallback<DrawHeaderCallback>((args, drawContent) => {
+    const { ctx, column, theme, rect, isSelected, spriteManager } = args;
+
+    // 绘制背景
     if (isSelected) {
-      // 绘制选中状态的背景色 - 确保从 rect.x 开始，没有偏移
       ctx.fillStyle = theme.accentLight;
       ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-
-      // 绘制列标题文本
-      ctx.fillStyle = theme.textHeader;
-      ctx.font = theme.headerFontStyle;
-      ctx.textBaseline = 'middle';
-
-      // 文本位置：左侧留出 padding
-      const textX = rect.x + 8; // 8px padding
-      const textY = rect.y + rect.height / 2;
-
-      ctx.fillText(column.title, textX, textY);
     } else {
-      // 非选中状态使用默认绘制
-      drawContent();
+      ctx.fillStyle = theme.bgHeader;
+      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
     }
-  }, []);
+
+    // 获取当前列的配置
+    const columnId = column.id as string;
+    const columnConfig = columns.find(c => c.key === columnId);
+
+    // 如果是行号列（第一列，通常没有配置或key为特殊值），只绘制背景，不绘制内容
+    if (!columnConfig) {
+      // 这是行号列或其他特殊列，只绘制背景即可
+      return;
+    }
+
+    // 绘制列标题文本
+    ctx.fillStyle = theme.textHeader;
+    ctx.font = theme.headerFontStyle;
+    ctx.textBaseline = 'middle';
+
+    const padding = 8;
+    const iconSpacing = 4; // 图标与文本的间距
+    const iconSize = 20; // 图标大小
+    const sortIconWidth = iconSize; // 排序图标区域宽度
+    const filterIconWidth = iconSize; // 筛选图标区域宽度
+
+    // 计算文本位置
+    const textX = rect.x + padding;
+    const textY = rect.y + rect.height / 2;
+
+    // 绘制列名（可能需要截断以适应图标）
+    const maxTextWidth = rect.width - padding * 2 - sortIconWidth - filterIconWidth - iconSpacing * 2;
+    let displayText = column.title;
+    let textWidth = ctx.measureText(displayText).width;
+
+    // 如果文本太长，添加省略号
+    if (textWidth > maxTextWidth) {
+      while (textWidth > maxTextWidth && displayText.length > 0) {
+        displayText = displayText.slice(0, -1);
+        textWidth = ctx.measureText(displayText + '...').width;
+      }
+      displayText += '...';
+    }
+
+    ctx.fillText(displayText, textX, textY);
+
+    // 绘制筛选图标（紧跟在列名后面）
+    if (filterable && columnConfig?.filterable !== false) {
+      const filterX = textX + ctx.measureText(displayText).width + iconSpacing;
+      const filterY = textY - iconSize / 2;
+      const isFilterActive = columnFilters.has(columnId) && columnFilters.get(columnId)!.size > 0;
+
+      // 手动绘制筛选图标（确保使用正确的颜色）
+      ctx.save();
+      ctx.strokeStyle = theme.textHeader; // 使用与文本相同的颜色
+      ctx.lineWidth = 1.5; // 优化线条粗细
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (isFilterActive) {
+        // 实心漏斗
+        ctx.fillStyle = theme.textHeader;
+        ctx.beginPath();
+        ctx.moveTo(filterX + 4, filterY + 5);
+        ctx.lineTo(filterX + 16, filterY + 5);
+        ctx.lineTo(filterX + 11.5, filterY + 11);
+        ctx.lineTo(filterX + 11.5, filterY + 16);
+        ctx.lineTo(filterX + 8.5, filterY + 14.5);
+        ctx.lineTo(filterX + 8.5, filterY + 11);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // 线框漏斗
+        ctx.beginPath();
+        ctx.moveTo(filterX + 4, filterY + 5);
+        ctx.lineTo(filterX + 16, filterY + 5);
+        ctx.lineTo(filterX + 11.5, filterY + 11);
+        ctx.lineTo(filterX + 11.5, filterY + 16);
+        ctx.lineTo(filterX + 8.5, filterY + 14.5);
+        ctx.lineTo(filterX + 8.5, filterY + 11);
+        ctx.closePath();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // 绘制排序图标（右对齐）
+    if (sortable && columnConfig?.sortable !== false) {
+      const sortX = rect.x + rect.width - padding - sortIconWidth;
+      const sortY = textY - iconSize / 2;
+      const sortDirection = sortConfig?.column === columnId ? (sortConfig?.direction ?? null) : null;
+
+      // 手动绘制排序图标（确保使用正确的颜色）
+      ctx.save();
+      ctx.strokeStyle = theme.textHeader; // 使用与文本相同的颜色
+      ctx.lineWidth = 1.5; // 优化线条粗细
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      if (sortDirection === null) {
+        // 默认状态：上下箭头
+        // 上箭头
+        ctx.beginPath();
+        ctx.moveTo(sortX + 6, sortY + 7);
+        ctx.lineTo(sortX + 10, sortY + 3);
+        ctx.lineTo(sortX + 14, sortY + 7);
+        ctx.stroke();
+        // 下箭头
+        ctx.beginPath();
+        ctx.moveTo(sortX + 6, sortY + 13);
+        ctx.lineTo(sortX + 10, sortY + 17);
+        ctx.lineTo(sortX + 14, sortY + 13);
+        ctx.stroke();
+      } else if (sortDirection === 'asc') {
+        // 升序：只显示上箭头
+        ctx.beginPath();
+        ctx.moveTo(sortX + 6, sortY + 13);
+        ctx.lineTo(sortX + 10, sortY + 8);
+        ctx.lineTo(sortX + 14, sortY + 13);
+        ctx.stroke();
+      } else {
+        // 降序：只显示下箭头
+        ctx.beginPath();
+        ctx.moveTo(sortX + 6, sortY + 7);
+        ctx.lineTo(sortX + 10, sortY + 12);
+        ctx.lineTo(sortX + 14, sortY + 7);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // 不调用 drawContent()，避免绘制默认的排序图标
+  }, [columns, sortConfig, columnFilters, sortable, filterable]);
 
   // 使用全局键盘事件监听复制
   useEffect(() => {
@@ -1743,6 +2153,42 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           </div>
         )}
       </div>
+
+      {/* 筛选弹框 */}
+      {filterPopover && (
+        <div
+          className="fixed z-50 bg-background border rounded-md shadow-lg"
+          style={{
+            left: filterPopover.x,
+            top: filterPopover.y,
+            minWidth: '200px',
+            maxWidth: '300px',
+          }}
+        >
+          <ColumnFilterPopover
+            column={filterPopover.column}
+            uniqueValues={getColumnUniqueValues(filterPopover.column)}
+            selectedValues={columnFilters.get(filterPopover.column) || new Set()}
+            onApply={(selectedValues) => {
+              applyColumnFilter(filterPopover.column, selectedValues);
+              setFilterPopover(null);
+            }}
+            onClear={() => {
+              clearColumnFilter(filterPopover.column);
+              setFilterPopover(null);
+            }}
+            onClose={() => setFilterPopover(null)}
+          />
+        </div>
+      )}
+
+      {/* 点击外部关闭弹框 */}
+      {filterPopover && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => setFilterPopover(null)}
+        />
+      )}
     </div>
   );
 };

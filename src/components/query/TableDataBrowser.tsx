@@ -489,7 +489,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
   const [pageSize, setPageSize] = useState(500);
   const [filters, setFilters] = useState<ColumnFilter[]>([]);
   const [sortColumn, setSortColumn] = useState<string>('');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | null>('desc');
   const [searchText, setSearchText] = useState<string>('');
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [fullFieldPaths, setFullFieldPaths] = useState<string[]>([]);
@@ -831,10 +831,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     }
 
     // 添加排序 - InfluxDB只支持按时间排序
-    if (sortColumn === 'time') {
+    if (sortColumn === 'time' && sortDirection) {
       query += ` ORDER BY time ${sortDirection.toUpperCase()}`;
     } else {
-      // 对于非时间列，使用默认时间排序，客户端排序将在数据加载后处理
+      // 对于非时间列或无排序时，使用默认时间排序，客户端排序将在数据加载后处理
       query += ` ORDER BY time DESC`;
     }
 
@@ -918,10 +918,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 添加排序 - IoTDB不支持ORDER BY，InfluxDB支持按时间排序
     if (!isIoTDB) {
-      if (sortColumn === 'time') {
+      if (sortColumn === 'time' && sortDirection) {
         query += ` ORDER BY time ${sortDirection.toUpperCase()}`;
       } else {
-        // 对于非时间列，使用默认时间排序，客户端排序将在数据加载后处理
+        // 对于非时间列或无排序时，使用默认时间排序，客户端排序将在数据加载后处理
         query += ` ORDER BY time DESC`;
       }
     }
@@ -1038,10 +1038,10 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
     // 添加排序 - IoTDB不支持ORDER BY，InfluxDB支持按时间排序
     if (!isIoTDB) {
-      if (sortColumn === 'time') {
+      if (sortColumn === 'time' && sortDirection) {
         query += ` ORDER BY time ${sortDirection.toUpperCase()}`;
       } else {
-        // 对于非时间列，使用默认时间排序，客户端排序将在数据加载后处理
+        // 对于非时间列或无排序时，使用默认时间排序，客户端排序将在数据加载后处理
         query += ` ORDER BY time DESC`;
       }
     }
@@ -1893,7 +1893,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
 
   // 使用 useMemo 处理排序后的数据，避免不必要的重新计算
   const sortedData = useMemo(() => {
-    if (!sortColumn || sortColumn.toLowerCase() === 'time' || sortColumn === '#') {
+    if (!sortColumn || !sortDirection || sortColumn.toLowerCase() === 'time' || sortColumn === '#') {
       return data;
     }
     return sortDataClientSide(data, sortColumn, sortDirection);
@@ -3025,12 +3025,12 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
           selectedColumns={selectedColumns}
           columnOrder={columnOrder}
           onSort={sortConfig => {
-            if (sortConfig) {
+            if (sortConfig && sortConfig.direction !== null) {
               setSortColumn(sortConfig.column);
               setSortDirection(sortConfig.direction);
             } else {
               setSortColumn('');
-              setSortDirection('desc');
+              setSortDirection(null);
             }
           }}
           onPageChange={(page, size) => {
