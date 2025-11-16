@@ -44,6 +44,16 @@
     z-index: 100;
   }
 
+  /* 强制禁用DataEditor内部的滚动条 */
+  .glide-table-border-fix .dvn-scroller {
+    overflow: hidden !important;
+  }
+
+  /* 隐藏DataEditor内部可能产生滚动条的元素 */
+  .glide-table-border-fix .dvn-scroll-inner {
+    overflow: hidden !important;
+  }
+
   /* 网格背景效果 */
   .bg-grid-white\/5 {
     background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),

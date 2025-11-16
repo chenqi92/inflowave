@@ -206,8 +206,10 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const updateDimensions = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        const availableHeight = rect.height;
-        const availableWidth = rect.width;
+        // containerRef有1px border，overflow-auto容器的可用空间需要减去border
+        const borderWidth = 2; // 上下或左右各1px
+        const availableHeight = rect.height - borderWidth;
+        const availableWidth = rect.width - borderWidth;
         if (availableHeight > 0) {
           setContainerHeight(availableHeight);
         }
@@ -932,15 +934,15 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 });
 
                 // 统一的渲染模式：DataEditor 以实际内容大小渲染，外层容器提供滚动
+                // wrapper div提供border（通过CSS伪元素），宽高由DataEditor撑开
                 return (
                   <div
                     className="glide-table-border-fix"
                     style={{
-                      width: tableWidth,
-                      height: tableHeight,
+                      display: 'inline-block', // 让div大小由内容（DataEditor）决定
                       position: 'relative',
                       backgroundColor: 'var(--background)',
-                      border: '1px solid var(--border)',
+                      overflow: 'hidden', // 隐藏DataEditor内部可能的滚动条
                     }}
                   >
                     <DataEditor
@@ -983,6 +985,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                         fill: false,
                         sticky: false,
                       }}
+                      trailingRowOptions={undefined}
+                      fillHandle={false}
                       theme={{
                         accentColor: getCSSVariable('--primary', '#0066cc'),
                         accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
