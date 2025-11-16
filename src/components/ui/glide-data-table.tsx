@@ -237,33 +237,80 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     };
   }, []);
 
-  // 强制覆盖Glide Data Grid的cursor样式 - 使用持续性策略
+  // 强制覆盖Glide Data Grid的cursor样式 - 智能策略
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // 函数：强制覆盖pointer cursor
-    const overrideCursor = () => {
+    // 白名单：这些cursor永远不覆盖
+    const preservedCursors = [
+      'col-resize',
+      'row-resize',
+      'ew-resize',
+      'ns-resize',
+      'nw-resize',
+      'ne-resize',
+      'se-resize',
+      'sw-resize',
+      'nesw-resize',
+      'nwse-resize',
+      'move',
+      'grab',
+      'grabbing',
+    ];
+
+    // 函数：智能处理cursor - 覆盖pointer，主动保护resize
+    const smartCursorHandler = () => {
       const canvases = container.querySelectorAll('canvas');
       canvases.forEach((canvas) => {
         const htmlCanvas = canvas as HTMLCanvasElement;
         const currentCursor = htmlCanvas.style.cursor;
 
-        // 只覆盖pointer cursor，保留所有resize cursors
-        if (currentCursor === 'pointer') {
+        // 策略1: 如果是resize cursor，确保它不被CSS的default覆盖
+        if (preservedCursors.includes(currentCursor)) {
+          // 什么都不做，让resize cursor保持
+          return;
+        }
+
+        // 策略2: 如果是pointer或空值，强制设置为default
+        if (currentCursor === 'pointer' || currentCursor === '' || !currentCursor) {
+          htmlCanvas.style.cursor = 'default';
+        }
+
+        // 策略3: 检查计算样式，如果CSS已经设置了default但Glide试图设置pointer
+        const computedStyle = window.getComputedStyle(htmlCanvas);
+        if (computedStyle.cursor === 'pointer') {
           htmlCanvas.style.cursor = 'default';
         }
       });
     };
 
     // 初始执行
-    overrideCursor();
+    smartCursorHandler();
 
-    // 使用setInterval持续检查和覆盖（每50ms检查一次）
-    const intervalId = setInterval(overrideCursor, 50);
+    // 使用setInterval，间隔更短以快速响应cursor变化
+    const intervalId = setInterval(smartCursorHandler, 16); // ~60fps
 
-    // 同时使用MutationObserver作为补充
-    const observer = new MutationObserver(overrideCursor);
+    // 使用MutationObserver监听style变化，立即响应
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+          const target = mutation.target as HTMLCanvasElement;
+          const currentCursor = target.style.cursor;
+
+          // 如果检测到Glide设置了resize cursor，立即跳过不处理
+          if (preservedCursors.includes(currentCursor)) {
+            return;
+          }
+
+          // 如果检测到pointer，立即覆盖为default
+          if (currentCursor === 'pointer') {
+            target.style.cursor = 'default';
+          }
+        }
+      });
+    });
+
     observer.observe(container, {
       attributes: true,
       attributeFilter: ['style'],
