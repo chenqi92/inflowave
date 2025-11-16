@@ -13,6 +13,7 @@ import {
   Item,
   GridSelection,
   CompactSelection,
+  type DrawHeaderCallback,
 } from '@glideapps/glide-data-grid';
 import { cn } from '@/lib/utils';
 import {
@@ -1201,6 +1202,32 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     };
   }, []);
 
+  // 自定义表头绘制 - 修复列选中时表头背景的左侧1像素偏移问题
+  const drawHeader = useCallback<DrawHeaderCallback>((args, drawContent) => {
+    const { ctx, column, theme, rect, isSelected } = args;
+
+    // 如果列被选中，我们需要自定义绘制以修复左侧1像素偏移
+    if (isSelected) {
+      // 绘制选中状态的背景色 - 确保从 rect.x 开始，没有偏移
+      ctx.fillStyle = theme.accentLight;
+      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+
+      // 绘制列标题文本
+      ctx.fillStyle = theme.textHeader;
+      ctx.font = theme.headerFontStyle;
+      ctx.textBaseline = 'middle';
+
+      // 文本位置：左侧留出 padding
+      const textX = rect.x + 8; // 8px padding
+      const textY = rect.y + rect.height / 2;
+
+      ctx.fillText(column.title, textX, textY);
+    } else {
+      // 非选中状态使用默认绘制
+      drawContent();
+    }
+  }, []);
+
   // 使用全局键盘事件监听复制
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1497,6 +1524,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                       freezeColumns={0}
                       headerHeight={36}
                       rowHeight={32}
+                      drawHeader={drawHeader}
                       onCellEdited={(cell, newValue) => {
                         logger.debug('单元格编辑:', { cell, newValue });
                         return undefined;
