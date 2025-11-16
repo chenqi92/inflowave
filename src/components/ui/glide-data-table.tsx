@@ -152,6 +152,8 @@ export interface GlideDataTableProps {
   database?: string;
   // 复制格式（用于快捷键复制）
   copyFormat?: CopyFormat;
+  // 是否允许拖动列来重新排序（默认false）
+  enableColumnReorder?: boolean;
 }
 
 
@@ -189,6 +191,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                                                                 dataSourceType = 'generic',
                                                                 database,
                                                                 copyFormat = 'insert',
+                                                                enableColumnReorder = false,
                                                               }) => {
   // 状态管理
   const [searchText, setSearchText] = useState('');
@@ -1470,8 +1473,10 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                       onHeaderClicked={onHeaderClicked}
                       onColumnResize={handleColumnResize}
                       onColumnResizeEnd={handleColumnResizeEnd}
-                      onColumnProposeMove={handleColumnProposeMove}
-                      onColumnMoved={handleColumnMoved}
+                      {...(enableColumnReorder ? {
+                        onColumnProposeMove: handleColumnProposeMove,
+                        onColumnMoved: handleColumnMoved,
+                      } : {})}
                       onVisibleRegionChanged={handleVisibleRegionChanged}
                       gridSelection={gridSelection}
                       onGridSelectionChange={setGridSelection}

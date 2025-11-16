@@ -3061,6 +3061,7 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
             setSelectedColumns(visibleColumns);
             setColumnOrder(newColumnOrder);
           }}
+          enableColumnReorder={true}
           onLoadMore={loadMoreData}
           hasNextPage={(() => {
             const hasNext = pageSize === -1 && querySettings.enable_lazy_loading && data.length < totalCount;
