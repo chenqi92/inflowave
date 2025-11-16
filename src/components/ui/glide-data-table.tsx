@@ -1370,7 +1370,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                           width: '100%',
                           height: '100%',
                           pointerEvents: 'none',
-                          zIndex: 9,
+                          zIndex: 50,
                         }}
                       >
                         {selectionBorders.map((border, borderIndex) => (
@@ -1392,8 +1392,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                               style={{
                                 position: 'absolute',
                                 left: `${border.outerBorder.left}px`,
-                                top: `${border.outerBorder.top + border.outerBorder.height}px`,
-                                width: `${border.outerBorder.width}px`,
+                                top: `${border.outerBorder.top + border.outerBorder.height - 1}px`,
+                                width: `${border.outerBorder.width + 1}px`,
                                 height: '1px',
                                 backgroundColor: getCSSVariable('--primary', '#0066cc'),
                               }}
@@ -1413,10 +1413,10 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                             <div
                               style={{
                                 position: 'absolute',
-                                left: `${border.outerBorder.left + border.outerBorder.width}px`,
+                                left: `${border.outerBorder.left + border.outerBorder.width - 1}px`,
                                 top: `${border.outerBorder.top}px`,
                                 width: '1px',
-                                height: `${border.outerBorder.height}px`,
+                                height: `${border.outerBorder.height + 1}px`,
                                 backgroundColor: getCSSVariable('--primary', '#0066cc'),
                               }}
                             />
