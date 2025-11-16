@@ -689,6 +689,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       let xPos = rowMarkerWidth;
       for (let i = 0; i < colIndex; i++) {
         const col = gridColumns[i];
+        if (!col || typeof col !== 'object') continue;
         const colWidth = ('width' in col ? col.width : 150) as number;
         xPos += colWidth;
       }
@@ -1369,7 +1370,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                           width: '100%',
                           height: '100%',
                           pointerEvents: 'none',
-                          zIndex: 10,
+                          zIndex: 9,
                         }}
                       >
                         {selectionBorders.map((border, borderIndex) => (
