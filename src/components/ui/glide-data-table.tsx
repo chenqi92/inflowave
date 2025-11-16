@@ -32,9 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
   Checkbox,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
   ScrollArea,
 } from '@/components/ui';
 import { toast } from 'sonner';
@@ -680,7 +677,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       if (textWidth > maxTextWidth) {
         while (textWidth > maxTextWidth && displayText.length > 0) {
           displayText = displayText.slice(0, -1);
-          textWidth = ctx.measureText(displayText + '...').width;
+          textWidth = ctx.measureText(`${displayText  }...`).width;
         }
         displayText += '...';
       }
@@ -697,7 +694,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         排序图标范围: [sortIconStartX, sortIconEndX],
         筛选图标范围: [filterIconStartX, filterIconEndX],
         显示文本: displayText,
-        bounds: bounds
+        bounds
       });
 
       // 判断点击了哪个区域（排序图标优先，因为在最右侧）
@@ -710,12 +707,60 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         return;
       } else if (localX >= filterIconStartX && localX <= filterIconEndX) {
         // 点击了筛选图标
-        logger.info('✅ 点击了筛选图标');
+        logger.info('✅ 点击了筛选图标', { event对象: event });
         if (filterable && columnConfig?.filterable !== false) {
+          // 筛选面板尺寸（用于边界检测）
+          const popoverWidth = 250;
+          const popoverHeight = 300;
+
+          // 计算筛选图标左边缘的屏幕位置
+          // 使用 bounds 和 localX 计算图标的绝对位置
+          let filterIconScreenX = 0;
+          let filterIconScreenY = 0;
+
+          // 找到 canvas 元素
+          const canvas = containerRef.current?.querySelector('canvas');
+          if (canvas) {
+            const canvasRect = canvas.getBoundingClientRect();
+
+            // 筛选图标在屏幕上的位置 = canvas左边距 + 列的x偏移 + 图标相对列的x偏移
+            filterIconScreenX = canvasRect.left + bounds.x + filterIconStartX;
+            // Y坐标：表头底部
+            filterIconScreenY = canvasRect.top + bounds.y + bounds.height + 2;
+
+            logger.info('位置计算详情:', {
+              canvas位置: { left: canvasRect.left, top: canvasRect.top },
+              列bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
+              filterIconStartX,
+              计算后的X: filterIconScreenX,
+              计算后的Y: filterIconScreenY,
+            });
+          }
+
+          // 边界检测：确保面板不会超出视口
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+
+          // 右边界检测：如果右侧空间不足，向左对齐
+          if (filterIconScreenX + popoverWidth > viewportWidth) {
+            filterIconScreenX = viewportWidth - popoverWidth - 10;
+          }
+
+          // 底部边界检测：如果底部空间不足，向上显示
+          if (filterIconScreenY + popoverHeight > viewportHeight) {
+            filterIconScreenY = filterIconScreenY - bounds.height - popoverHeight - 4;
+          }
+
+          logger.info('最终位置:', {
+            x: filterIconScreenX,
+            y: filterIconScreenY,
+            视口: { width: viewportWidth, height: viewportHeight }
+          });
+
           setFilterPopover({
             column: columnId,
-            x: event.clientX,
-            y: event.clientY
+            x: filterIconScreenX,
+            y: filterIconScreenY
           });
         }
         return;
@@ -1539,7 +1584,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     if (textWidth > maxTextWidth) {
       while (textWidth > maxTextWidth && displayText.length > 0) {
         displayText = displayText.slice(0, -1);
-        textWidth = ctx.measureText(displayText + '...').width;
+        textWidth = ctx.measureText(`${displayText  }...`).width;
       }
       displayText += '...';
     }
