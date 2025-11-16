@@ -675,12 +675,9 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
   // 计算选中区域的边框和内部分割线位置
   const selectionBorders = useMemo(() => {
-    if (!gridSelection?.current?.range) {
+    if (!gridSelection) {
       return null;
     }
-
-    const { range } = gridSelection.current;
-    const { x: startCol, y: startRow, width: colCount, height: rowCount } = range;
 
     // 单元格尺寸配置
     const rowHeight = 32;
@@ -698,62 +695,241 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       return xPos;
     };
 
-    const x1 = getColumnX(startCol);
-    const x2 = getColumnX(startCol + colCount);
-    const y1 = headerHeight + startRow * rowHeight;
-    const y2 = headerHeight + (startRow + rowCount) * rowHeight;
-
-    // 外边框矩形
-    const outerBorder = {
-      left: x1,
-      top: y1,
-      width: x2 - x1,
-      height: y2 - y1,
-    };
-
-    // 内部分割线
-    const innerLines: Array<{
-      type: 'vertical' | 'horizontal';
-      x?: number;
-      y1?: number;
-      y2?: number;
-      y?: number;
-      x1?: number;
-      x2?: number;
+    const borders: Array<{
+      outerBorder: { left: number; top: number; width: number; height: number };
+      innerLines: Array<{
+        type: 'vertical' | 'horizontal';
+        x?: number;
+        y1?: number;
+        y2?: number;
+        y?: number;
+        x1?: number;
+        x2?: number;
+      }>;
     }> = [];
 
-    // 垂直分割线（列之间）
-    if (colCount > 1) {
-      for (let i = 1; i < colCount; i++) {
-        const col = startCol + i;
-        const x = getColumnX(col);
+    // 处理单元格范围选择
+    if (gridSelection.current?.range) {
+      const { range } = gridSelection.current;
+      const { x: startCol, y: startRow, width: colCount, height: rowCount } = range;
 
-        innerLines.push({
-          type: 'vertical',
-          x,
-          y1,
-          y2,
-        });
+      const x1 = getColumnX(startCol);
+      const x2 = getColumnX(startCol + colCount);
+      const y1 = headerHeight + startRow * rowHeight;
+      const y2 = headerHeight + (startRow + rowCount) * rowHeight;
+
+      const outerBorder = {
+        left: x1,
+        top: y1,
+        width: x2 - x1,
+        height: y2 - y1,
+      };
+
+      const innerLines: Array<{
+        type: 'vertical' | 'horizontal';
+        x?: number;
+        y1?: number;
+        y2?: number;
+        y?: number;
+        x1?: number;
+        x2?: number;
+      }> = [];
+
+      // 垂直分割线（列之间）
+      if (colCount > 1) {
+        for (let i = 1; i < colCount; i++) {
+          const col = startCol + i;
+          const x = getColumnX(col);
+          innerLines.push({
+            type: 'vertical',
+            x,
+            y1,
+            y2,
+          });
+        }
+      }
+
+      // 水平分割线（行之间）
+      if (rowCount > 1) {
+        for (let i = 1; i < rowCount; i++) {
+          const row = startRow + i;
+          const y = headerHeight + row * rowHeight;
+          innerLines.push({
+            type: 'horizontal',
+            y,
+            x1,
+            x2,
+          });
+        }
+      }
+
+      borders.push({ outerBorder, innerLines });
+    }
+
+    // 处理列选择 - 合并连续的列
+    if (gridSelection.columns && typeof gridSelection.columns.length === 'number' && gridSelection.columns.length > 0) {
+      // 收集所有选中的列索引
+      const selectedCols: number[] = [];
+      for (const colIdx of gridSelection.columns) {
+        selectedCols.push(colIdx);
+      }
+      selectedCols.sort((a, b) => a - b);
+
+      // 将连续的列分组
+      const colRanges: Array<{ start: number; end: number }> = [];
+      let rangeStart = selectedCols[0];
+      let rangeEnd = selectedCols[0];
+
+      for (let i = 1; i < selectedCols.length; i++) {
+        if (selectedCols[i] === rangeEnd + 1) {
+          rangeEnd = selectedCols[i];
+        } else {
+          colRanges.push({ start: rangeStart, end: rangeEnd });
+          rangeStart = selectedCols[i];
+          rangeEnd = selectedCols[i];
+        }
+      }
+      colRanges.push({ start: rangeStart, end: rangeEnd });
+
+      // 为每个连续的列范围创建边框
+      for (const range of colRanges) {
+        const x1 = getColumnX(range.start);
+        const x2 = getColumnX(range.end + 1);
+        const y1 = headerHeight;
+        const y2 = headerHeight + (data?.length || 0) * rowHeight;
+        const colCount = range.end - range.start + 1;
+
+        const outerBorder = {
+          left: x1,
+          top: y1,
+          width: x2 - x1,
+          height: y2 - y1,
+        };
+
+        const innerLines: Array<{
+          type: 'vertical' | 'horizontal';
+          x?: number;
+          y1?: number;
+          y2?: number;
+          y?: number;
+          x1?: number;
+          x2?: number;
+        }> = [];
+
+        // 垂直分割线（列之间）
+        if (colCount > 1) {
+          for (let i = 1; i < colCount; i++) {
+            const col = range.start + i;
+            const x = getColumnX(col);
+            innerLines.push({
+              type: 'vertical',
+              x,
+              y1,
+              y2,
+            });
+          }
+        }
+
+        // 水平分割线（行之间）
+        if (data && data.length > 1) {
+          for (let i = 1; i < data.length; i++) {
+            const y = headerHeight + i * rowHeight;
+            innerLines.push({
+              type: 'horizontal',
+              y,
+              x1,
+              x2,
+            });
+          }
+        }
+
+        borders.push({ outerBorder, innerLines });
       }
     }
 
-    // 水平分割线（行之间）
-    if (rowCount > 1) {
-      for (let i = 1; i < rowCount; i++) {
-        const row = startRow + i;
-        const y = headerHeight + row * rowHeight;
+    // 处理行选择 - 合并连续的行
+    if (gridSelection.rows && typeof gridSelection.rows.length === 'number' && gridSelection.rows.length > 0) {
+      // 收集所有选中的行索引
+      const selectedRows: number[] = [];
+      for (const rowIdx of gridSelection.rows) {
+        selectedRows.push(rowIdx);
+      }
+      selectedRows.sort((a, b) => a - b);
 
-        innerLines.push({
-          type: 'horizontal',
-          y,
-          x1,
-          x2,
-        });
+      // 将连续的行分组
+      const rowRanges: Array<{ start: number; end: number }> = [];
+      let rangeStart = selectedRows[0];
+      let rangeEnd = selectedRows[0];
+
+      for (let i = 1; i < selectedRows.length; i++) {
+        if (selectedRows[i] === rangeEnd + 1) {
+          rangeEnd = selectedRows[i];
+        } else {
+          rowRanges.push({ start: rangeStart, end: rangeEnd });
+          rangeStart = selectedRows[i];
+          rangeEnd = selectedRows[i];
+        }
+      }
+      rowRanges.push({ start: rangeStart, end: rangeEnd });
+
+      // 为每个连续的行范围创建边框
+      for (const range of rowRanges) {
+        const x1 = rowMarkerWidth;
+        const x2 = getColumnX(gridColumns.length);
+        const y1 = headerHeight + range.start * rowHeight;
+        const y2 = headerHeight + (range.end + 1) * rowHeight;
+        const rowCount = range.end - range.start + 1;
+
+        const outerBorder = {
+          left: x1,
+          top: y1,
+          width: x2 - x1,
+          height: y2 - y1,
+        };
+
+        const innerLines: Array<{
+          type: 'vertical' | 'horizontal';
+          x?: number;
+          y1?: number;
+          y2?: number;
+          y?: number;
+          x1?: number;
+          x2?: number;
+        }> = [];
+
+        // 垂直分割线（列之间）
+        if (gridColumns.length > 1) {
+          for (let i = 1; i < gridColumns.length; i++) {
+            const x = getColumnX(i);
+            innerLines.push({
+              type: 'vertical',
+              x,
+              y1,
+              y2,
+            });
+          }
+        }
+
+        // 水平分割线（行之间）
+        if (rowCount > 1) {
+          for (let i = 1; i < rowCount; i++) {
+            const row = range.start + i;
+            const y = headerHeight + row * rowHeight;
+            innerLines.push({
+              type: 'horizontal',
+              y,
+              x1,
+              x2,
+            });
+          }
+        }
+
+        borders.push({ outerBorder, innerLines });
       }
     }
 
-    return { outerBorder, innerLines };
-  }, [gridSelection, gridColumns]);
+    return borders.length > 0 ? borders : null;
+  }, [gridSelection, gridColumns, data]);
 
   // 使用全局键盘事件监听复制
   useEffect(() => {
@@ -1083,46 +1259,50 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                           zIndex: 10,
                         }}
                       >
-                        {/* 外边框 */}
-                        <div
-                          style={{
-                            position: 'absolute',
-                            left: `${selectionBorders.outerBorder.left}px`,
-                            top: `${selectionBorders.outerBorder.top}px`,
-                            width: `${selectionBorders.outerBorder.width}px`,
-                            height: `${selectionBorders.outerBorder.height}px`,
-                            border: `2px solid ${getCSSVariable('--primary', '#0066cc')}`,
-                            boxSizing: 'border-box',
-                          }}
-                        />
+                        {selectionBorders.map((border, borderIndex) => (
+                          <React.Fragment key={`border-${borderIndex}`}>
+                            {/* 外边框 */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                left: `${border.outerBorder.left}px`,
+                                top: `${border.outerBorder.top}px`,
+                                width: `${border.outerBorder.width}px`,
+                                height: `${border.outerBorder.height}px`,
+                                border: `2px solid ${getCSSVariable('--primary', '#0066cc')}`,
+                                boxSizing: 'border-box',
+                              }}
+                            />
 
-                        {/* 内部分割线 */}
-                        {selectionBorders.innerLines.map((line, index) => (
-                          line.type === 'vertical' ? (
-                            <div
-                              key={`grid-v-${index}`}
-                              style={{
-                                position: 'absolute',
-                                left: `${line.x}px`,
-                                top: `${line.y1}px`,
-                                width: '2px',
-                                height: `${(line.y2! - line.y1!)}px`,
-                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
-                              }}
-                            />
-                          ) : (
-                            <div
-                              key={`grid-h-${index}`}
-                              style={{
-                                position: 'absolute',
-                                left: `${line.x1}px`,
-                                top: `${line.y}px`,
-                                width: `${(line.x2! - line.x1!)}px`,
-                                height: '2px',
-                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
-                              }}
-                            />
-                          )
+                            {/* 内部分割线 */}
+                            {border.innerLines.map((line, lineIndex) => (
+                              line.type === 'vertical' ? (
+                                <div
+                                  key={`border-${borderIndex}-v-${lineIndex}`}
+                                  style={{
+                                    position: 'absolute',
+                                    left: `${line.x}px`,
+                                    top: `${line.y1}px`,
+                                    width: '2px',
+                                    height: `${(line.y2! - line.y1!)}px`,
+                                    backgroundColor: getCSSVariable('--primary', '#0066cc'),
+                                  }}
+                                />
+                              ) : (
+                                <div
+                                  key={`border-${borderIndex}-h-${lineIndex}`}
+                                  style={{
+                                    position: 'absolute',
+                                    left: `${line.x1}px`,
+                                    top: `${line.y}px`,
+                                    width: `${(line.x2! - line.x1!)}px`,
+                                    height: '2px',
+                                    backgroundColor: getCSSVariable('--primary', '#0066cc'),
+                                  }}
+                                />
+                              )
+                            ))}
+                          </React.Fragment>
                         ))}
                       </div>
                     )}
