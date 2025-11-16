@@ -197,7 +197,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
   const [containerWidth, setContainerWidth] = useState(800);
-  // 列宽管理：存储用户自定义的列宽
+  // 列宽管理：仅在当前会话中保存用户调整的列宽，不持久化到 localStorage
   const [columnWidths, setColumnWidths] = useState<Map<string, number>>(new Map());
   const { t } = useTranslation('query');
 
@@ -250,27 +250,6 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     return order.filter(key => validColumnKeys.has(key));
   }, [externalColumnOrder, effectiveSelectedColumns, columns]);
 
-  // 从 localStorage 加载保存的列宽
-  useEffect(() => {
-    const widths = new Map<string, number>();
-    columns.forEach(col => {
-      try {
-        const key = `glide-table-column-width-${col.key}`;
-        const saved = localStorage.getItem(key);
-        if (saved) {
-          const width = parseInt(saved);
-          if (!isNaN(width) && width > 0) {
-            widths.set(col.key, width);
-          }
-        }
-      } catch (error) {
-        logger.warn('从 localStorage 加载列宽失败:', error);
-      }
-    });
-    if (widths.size > 0) {
-      setColumnWidths(widths);
-    }
-  }, [columns]);
 
   // 数据处理
   const processedData = useMemo(() => {
@@ -345,7 +324,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         const sortDirection = isSorted ? sortConfig.direction : undefined;
         const isLastColumn = index === effectiveColumnOrder.length - 1;
 
-        // 优先使用用户自定义的列宽，否则使用配置的默认宽度
+        // 优先使用用户手动调整的列宽（会话内），否则使用自动计算的宽度
         const customWidth = columnWidths.get(colKey);
         const width = customWidth || column.width || 120;
 
@@ -407,7 +386,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     });
   }, []);
 
-  // 列宽调整结束处理（拖动结束时保存到 localStorage）
+  // 列宽调整结束处理（仅记录日志，不保存到 localStorage）
   const handleColumnResizeEnd = useCallback((
     column: GridColumn,
     newSize: number,
@@ -418,14 +397,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       新宽度: newSize,
       列索引: colIndex
     });
-
-    // 保存到 localStorage 以持久化用户偏好
-    try {
-      const key = `glide-table-column-width-${column.id}`;
-      localStorage.setItem(key, String(newSize));
-    } catch (error) {
-      logger.warn('保存列宽到 localStorage 失败:', error);
-    }
+    // 注意：不再保存到 localStorage，刷新后恢复为自动计算值
   }, []);
 
   // 懒加载：检测滚动到底部

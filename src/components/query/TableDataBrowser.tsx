@@ -1864,7 +1864,8 @@ const TableDataBrowser: React.FC<TableDataBrowserProps> = ({
     }
 
     // 取表头宽度和数据宽度的最大值
-    const calculatedWidth = Math.max(headerWidth, maxDataWidth) + padding;
+    // headerWidth已包含padding，maxDataWidth需要加padding
+    const calculatedWidth = Math.max(headerWidth, maxDataWidth + padding);
 
     // 设置合理的最小值和最大值
     const minWidth = 120;
