@@ -580,19 +580,15 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const cols: GridColumn[] = [];
 
     // 数据列
-    effectiveColumnOrder.forEach((colKey, index) => {
+    effectiveColumnOrder.forEach((colKey) => {
       const column = columns.find(c => c.key === colKey);
       if (column) {
-        const isSorted = sortConfig?.column === column.key;
-        const sortDirection = isSorted ? (sortConfig?.direction ?? undefined) : undefined;
-        const isLastColumn = index === effectiveColumnOrder.length - 1;
-
         // 优先使用用户手动调整的列宽（会话内），否则使用自动计算的宽度
         const customWidth = columnWidths.get(colKey);
         const width = customWidth || column.width || 120;
 
         cols.push({
-          title: `${column.title}${isSorted ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}`,
+          title: column.title, // 移除排序箭头，使用自定义的排序图标
           width,
           id: column.key,
           grow: 0, // 不自动扩展，保持固定宽度
@@ -601,7 +597,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     });
 
     return cols;
-  }, [columns, effectiveColumnOrder, sortConfig, columnWidths]);
+  }, [columns, effectiveColumnOrder, columnWidths]);
 
   // 调试：打印组件接收到的数据
   useEffect(() => {
