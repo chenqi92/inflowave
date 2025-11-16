@@ -708,62 +708,65 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       }>;
     }> = [];
 
-    // 处理单元格范围选择
+    // 处理单元格范围选择（但不包括单个单元格，避免双边框）
     if (gridSelection.current?.range) {
       const { range } = gridSelection.current;
       const { x: startCol, y: startRow, width: colCount, height: rowCount } = range;
 
-      const x1 = getColumnX(startCol);
-      const x2 = getColumnX(startCol + colCount);
-      const y1 = headerHeight + startRow * rowHeight;
-      const y2 = headerHeight + (startRow + rowCount) * rowHeight;
+      // 只在选中多个单元格时才绘制自定义边框，单个单元格使用Glide默认边框
+      if (colCount > 1 || rowCount > 1) {
+        const x1 = getColumnX(startCol);
+        const x2 = getColumnX(startCol + colCount);
+        const y1 = headerHeight + startRow * rowHeight;
+        const y2 = headerHeight + (startRow + rowCount) * rowHeight;
 
-      const outerBorder = {
-        left: x1,
-        top: y1,
-        width: x2 - x1,
-        height: y2 - y1,
-      };
+        const outerBorder = {
+          left: x1,
+          top: y1,
+          width: x2 - x1,
+          height: y2 - y1,
+        };
 
-      const innerLines: Array<{
-        type: 'vertical' | 'horizontal';
-        x?: number;
-        y1?: number;
-        y2?: number;
-        y?: number;
-        x1?: number;
-        x2?: number;
-      }> = [];
+        const innerLines: Array<{
+          type: 'vertical' | 'horizontal';
+          x?: number;
+          y1?: number;
+          y2?: number;
+          y?: number;
+          x1?: number;
+          x2?: number;
+        }> = [];
 
-      // 垂直分割线（列之间）
-      if (colCount > 1) {
-        for (let i = 1; i < colCount; i++) {
-          const col = startCol + i;
-          const x = getColumnX(col);
-          innerLines.push({
-            type: 'vertical',
-            x,
-            y1,
-            y2,
-          });
+        // 垂直分割线（列之间）
+        if (colCount > 1) {
+          for (let i = 1; i < colCount; i++) {
+            const col = startCol + i;
+            const x = getColumnX(col);
+            innerLines.push({
+              type: 'vertical',
+              x,
+              y1,
+              y2,
+            });
+          }
         }
-      }
 
-      // 水平分割线（行之间）
-      if (rowCount > 1) {
-        for (let i = 1; i < rowCount; i++) {
-          const row = startRow + i;
-          const y = headerHeight + row * rowHeight;
-          innerLines.push({
-            type: 'horizontal',
-            y,
-            x1,
-            x2,
-          });
+        // 水平分割线（行之间）
+        if (rowCount > 1) {
+          for (let i = 1; i < rowCount; i++) {
+            const row = startRow + i;
+            const y = headerHeight + row * rowHeight;
+            innerLines.push({
+              type: 'horizontal',
+              y,
+              x1,
+              x2,
+            });
+          }
         }
-      }
 
-      borders.push({ outerBorder, innerLines });
+        borders.push({ outerBorder, innerLines });
+      }
     }
 
     // 处理列选择 - 合并连续的列
@@ -931,6 +934,99 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     return borders.length > 0 ? borders : null;
   }, [gridSelection, gridColumns, data]);
 
+  // 拖动选择时的自动滚动功能
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const scrollableContainer = container.querySelector('.flex-1.min-h-0.overflow-auto') as HTMLElement;
+    if (!scrollableContainer) return;
+
+    let isDragging = false;
+    let animationFrameId: number | null = null;
+    let mouseX = 0;
+    let mouseY = 0;
+
+    const handleMouseDown = () => {
+      isDragging = true;
+    };
+
+    const handleMouseUp = () => {
+      isDragging = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+
+      const rect = scrollableContainer.getBoundingClientRect();
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+
+      // 开始自动滚动检测
+      if (!animationFrameId) {
+        animationFrameId = requestAnimationFrame(autoScroll);
+      }
+    };
+
+    const autoScroll = () => {
+      const rect = scrollableContainer.getBoundingClientRect();
+      const edgeSize = 50; // 靠近边缘多少像素时开始滚动
+      const scrollSpeed = 10; // 滚动速度
+
+      let scrollX = 0;
+      let scrollY = 0;
+
+      // 检测鼠标是否靠近右边缘
+      if (mouseX > rect.right - edgeSize) {
+        scrollX = scrollSpeed;
+      }
+      // 检测鼠标是否靠近左边缘
+      else if (mouseX < rect.left + edgeSize) {
+        scrollX = -scrollSpeed;
+      }
+
+      // 检测鼠标是否靠近下边缘
+      if (mouseY > rect.bottom - edgeSize) {
+        scrollY = scrollSpeed;
+      }
+      // 检测鼠标是否靠近上边缘
+      else if (mouseY < rect.top + edgeSize) {
+        scrollY = -scrollSpeed;
+      }
+
+      // 执行滚动
+      if (scrollX !== 0 || scrollY !== 0) {
+        scrollableContainer.scrollLeft += scrollX;
+        scrollableContainer.scrollTop += scrollY;
+
+        // 继续动画
+        if (isDragging) {
+          animationFrameId = requestAnimationFrame(autoScroll);
+        }
+      } else {
+        animationFrameId = null;
+      }
+    };
+
+    // 添加事件监听
+    container.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      container.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleMouseMove);
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, []);
+
   // 使用全局键盘事件监听复制
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -1071,6 +1167,19 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
+      {/* 修复鼠标样式 */}
+      <style>{`
+        .dvn-scroller .dvn-underlay canvas,
+        .dvn-scroller .dvn-underlay {
+          cursor: default !important;
+        }
+        .gdg-header-cell {
+          cursor: default !important;
+        }
+        .gdg-row-marker {
+          cursor: default !important;
+        }
+      `}</style>
       {/* 工具栏 */}
       {showToolbar && (
         <Card className="mb-4">
@@ -1193,6 +1302,10 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                       onVisibleRegionChanged={handleVisibleRegionChanged}
                       gridSelection={gridSelection}
                       onGridSelectionChange={setGridSelection}
+                      rangeSelect="multi-rect"
+                      columnSelect="multi"
+                      rowSelect="multi"
+                      rowSelectionMode="multi"
                       minColumnWidth={80}
                       maxColumnWidth={800}
                       maxColumnAutoWidth={500}
@@ -1261,16 +1374,49 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                       >
                         {selectionBorders.map((border, borderIndex) => (
                           <React.Fragment key={`border-${borderIndex}`}>
-                            {/* 外边框 */}
+                            {/* 外边框 - 拆分为四条边 */}
+                            {/* 上边框 */}
                             <div
                               style={{
                                 position: 'absolute',
                                 left: `${border.outerBorder.left}px`,
                                 top: `${border.outerBorder.top}px`,
                                 width: `${border.outerBorder.width}px`,
+                                height: '1px',
+                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
+                              }}
+                            />
+                            {/* 下边框 */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                left: `${border.outerBorder.left}px`,
+                                top: `${border.outerBorder.top + border.outerBorder.height}px`,
+                                width: `${border.outerBorder.width}px`,
+                                height: '1px',
+                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
+                              }}
+                            />
+                            {/* 左边框 */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                left: `${border.outerBorder.left}px`,
+                                top: `${border.outerBorder.top}px`,
+                                width: '1px',
                                 height: `${border.outerBorder.height}px`,
-                                border: `2px solid ${getCSSVariable('--primary', '#0066cc')}`,
-                                boxSizing: 'border-box',
+                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
+                              }}
+                            />
+                            {/* 右边框 */}
+                            <div
+                              style={{
+                                position: 'absolute',
+                                left: `${border.outerBorder.left + border.outerBorder.width}px`,
+                                top: `${border.outerBorder.top}px`,
+                                width: '1px',
+                                height: `${border.outerBorder.height}px`,
+                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
                               }}
                             />
 
@@ -1283,7 +1429,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                                     position: 'absolute',
                                     left: `${line.x}px`,
                                     top: `${line.y1}px`,
-                                    width: '2px',
+                                    width: '1px',
                                     height: `${(line.y2! - line.y1!)}px`,
                                     backgroundColor: getCSSVariable('--primary', '#0066cc'),
                                   }}
@@ -1296,7 +1442,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                                     left: `${line.x1}px`,
                                     top: `${line.y}px`,
                                     width: `${(line.x2! - line.x1!)}px`,
-                                    height: '2px',
+                                    height: '1px',
                                     backgroundColor: getCSSVariable('--primary', '#0066cc'),
                                   }}
                                 />
