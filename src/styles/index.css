@@ -19,6 +19,31 @@
 
 /* 查询页面优化样式 */
 @layer components {
+  /* Glide Data Grid 边框修复 - 使用伪元素添加底部和右侧边框 */
+  .glide-table-border-fix::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 1px;
+    height: 100%;
+    background-color: hsl(var(--border));
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  .glide-table-border-fix::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 1px;
+    background-color: hsl(var(--border));
+    pointer-events: none;
+    z-index: 100;
+  }
+
   /* 网格背景效果 */
   .bg-grid-white\/5 {
     background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),

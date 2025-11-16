@@ -934,6 +934,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 // 统一的渲染模式：DataEditor 以实际内容大小渲染，外层容器提供滚动
                 return (
                   <div
+                    className="glide-table-border-fix"
                     style={{
                       width: tableWidth,
                       height: tableHeight,
