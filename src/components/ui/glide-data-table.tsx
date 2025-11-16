@@ -242,7 +242,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const container = containerRef.current;
     if (!container) return;
 
-    // 白名单：这些cursor永远不覆盖
+    // 白名单：只保留resize cursor，不覆盖
     const preservedCursors = [
       'col-resize',
       'row-resize',
@@ -254,12 +254,17 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       'sw-resize',
       'nesw-resize',
       'nwse-resize',
-      'move',
-      'grab',
-      'grabbing',
     ];
 
-    // 函数：智能处理cursor - 覆盖pointer，主动保护resize
+    // 需要覆盖为default的cursor列表
+    const cursorsToCoverToDefault = [
+      'pointer',
+      'grab',
+      'grabbing',
+      'move',
+    ];
+
+    // 函数：智能处理cursor - 覆盖pointer/grab/grabbing，主动保护resize
     const smartCursorHandler = () => {
       const canvases = container.querySelectorAll('canvas');
       canvases.forEach((canvas) => {
@@ -272,14 +277,14 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           return;
         }
 
-        // 策略2: 如果是pointer或空值，强制设置为default
-        if (currentCursor === 'pointer' || currentCursor === '' || !currentCursor) {
+        // 策略2: 如果是需要覆盖的cursor或空值，强制设置为default
+        if (cursorsToCoverToDefault.includes(currentCursor) || currentCursor === '' || !currentCursor) {
           htmlCanvas.style.cursor = 'default';
         }
 
-        // 策略3: 检查计算样式，如果CSS已经设置了default但Glide试图设置pointer
+        // 策略3: 检查计算样式，如果CSS已经设置了default但Glide试图设置不需要的cursor
         const computedStyle = window.getComputedStyle(htmlCanvas);
-        if (computedStyle.cursor === 'pointer') {
+        if (cursorsToCoverToDefault.includes(computedStyle.cursor)) {
           htmlCanvas.style.cursor = 'default';
         }
       });
@@ -303,8 +308,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
             return;
           }
 
-          // 如果检测到pointer，立即覆盖为default
-          if (currentCursor === 'pointer') {
+          // 如果检测到需要覆盖的cursor（pointer/grab/grabbing/move），立即覆盖为default
+          if (cursorsToCoverToDefault.includes(currentCursor)) {
             target.style.cursor = 'default';
           }
         }
