@@ -673,6 +673,88 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     gridSelectionRef.current = gridSelection;
   }, [gridSelection]);
 
+  // 计算选中区域的边框和内部分割线位置
+  const selectionBorders = useMemo(() => {
+    if (!gridSelection?.current?.range) {
+      return null;
+    }
+
+    const { range } = gridSelection.current;
+    const { x: startCol, y: startRow, width: colCount, height: rowCount } = range;
+
+    // 单元格尺寸配置
+    const rowHeight = 32;
+    const headerHeight = 36;
+    const rowMarkerWidth = 48;
+
+    // 计算列的 X 坐标
+    const getColumnX = (colIndex: number) => {
+      let xPos = rowMarkerWidth;
+      for (let i = 0; i < colIndex; i++) {
+        const col = gridColumns[i];
+        const colWidth = ('width' in col ? col.width : 150) as number;
+        xPos += colWidth;
+      }
+      return xPos;
+    };
+
+    const x1 = getColumnX(startCol);
+    const x2 = getColumnX(startCol + colCount);
+    const y1 = headerHeight + startRow * rowHeight;
+    const y2 = headerHeight + (startRow + rowCount) * rowHeight;
+
+    // 外边框矩形
+    const outerBorder = {
+      left: x1,
+      top: y1,
+      width: x2 - x1,
+      height: y2 - y1,
+    };
+
+    // 内部分割线
+    const innerLines: Array<{
+      type: 'vertical' | 'horizontal';
+      x?: number;
+      y1?: number;
+      y2?: number;
+      y?: number;
+      x1?: number;
+      x2?: number;
+    }> = [];
+
+    // 垂直分割线（列之间）
+    if (colCount > 1) {
+      for (let i = 1; i < colCount; i++) {
+        const col = startCol + i;
+        const x = getColumnX(col);
+
+        innerLines.push({
+          type: 'vertical',
+          x,
+          y1,
+          y2,
+        });
+      }
+    }
+
+    // 水平分割线（行之间）
+    if (rowCount > 1) {
+      for (let i = 1; i < rowCount; i++) {
+        const row = startRow + i;
+        const y = headerHeight + row * rowHeight;
+
+        innerLines.push({
+          type: 'horizontal',
+          y,
+          x1,
+          x2,
+        });
+      }
+    }
+
+    return { outerBorder, innerLines };
+  }, [gridSelection, gridColumns]);
+
   // 使用全局键盘事件监听复制
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -987,6 +1069,63 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                         fontFamily: "Inter, system-ui, sans-serif",
                       }}
                     />
+
+                    {/* 选中区域边框和内部分割线覆盖层 */}
+                    {selectionBorders && (
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: 0,
+                          left: 0,
+                          width: '100%',
+                          height: '100%',
+                          pointerEvents: 'none',
+                          zIndex: 10,
+                        }}
+                      >
+                        {/* 外边框 */}
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: `${selectionBorders.outerBorder.left}px`,
+                            top: `${selectionBorders.outerBorder.top}px`,
+                            width: `${selectionBorders.outerBorder.width}px`,
+                            height: `${selectionBorders.outerBorder.height}px`,
+                            border: `2px solid ${getCSSVariable('--primary', '#0066cc')}`,
+                            boxSizing: 'border-box',
+                          }}
+                        />
+
+                        {/* 内部分割线 */}
+                        {selectionBorders.innerLines.map((line, index) => (
+                          line.type === 'vertical' ? (
+                            <div
+                              key={`grid-v-${index}`}
+                              style={{
+                                position: 'absolute',
+                                left: `${line.x}px`,
+                                top: `${line.y1}px`,
+                                width: '2px',
+                                height: `${(line.y2! - line.y1!)}px`,
+                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
+                              }}
+                            />
+                          ) : (
+                            <div
+                              key={`grid-h-${index}`}
+                              style={{
+                                position: 'absolute',
+                                left: `${line.x1}px`,
+                                top: `${line.y}px`,
+                                width: `${(line.x2! - line.x1!)}px`,
+                                height: '2px',
+                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
+                              }}
+                            />
+                          )
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
