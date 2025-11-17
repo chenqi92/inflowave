@@ -116,140 +116,131 @@ export type DataSourceType = 'influxdb1' | 'influxdb2' | 'influxdb3' | 'iotdb' |
 // 复制格式类型
 export type CopyFormat = 'text' | 'insert' | 'markdown' | 'json' | 'csv';
 
+// 筛选值项类型
+interface FilterValueItem {
+  value: string;
+  count: number;
+}
+
 // 筛选弹框组件属性
 interface ColumnFilterPopoverProps {
   column: string;
-  uniqueValues: string[];
+  valueItems: FilterValueItem[];
   selectedValues: Set<string>;
-  onApply: (selectedValues: Set<string>) => void;
-  onClear: () => void;
+  onFilterChange: (selectedValues: Set<string>) => void;
   onClose: () => void;
 }
 
 // 筛选弹框组件
 const ColumnFilterPopover: React.FC<ColumnFilterPopoverProps> = ({
   column,
-  uniqueValues,
+  valueItems,
   selectedValues,
-  onApply,
-  onClear,
+  onFilterChange,
   onClose,
 }) => {
-  const [tempSelectedValues, setTempSelectedValues] = useState<Set<string>>(new Set(selectedValues));
   const [searchText, setSearchText] = useState('');
 
   // 过滤后的值列表
-  const filteredValues = useMemo(() => {
-    if (!searchText) return uniqueValues;
-    return uniqueValues.filter(value =>
-      value.toLowerCase().includes(searchText.toLowerCase())
+  const filteredItems = useMemo(() => {
+    if (!searchText) return valueItems;
+    return valueItems.filter(item =>
+      item.value.toLowerCase().includes(searchText.toLowerCase())
     );
-  }, [uniqueValues, searchText]);
+  }, [valueItems, searchText]);
 
-  // 切换值选中状态
+  // 切换值选中状态 - 立即触发筛选
   const toggleValue = (value: string) => {
-    setTempSelectedValues(prev => {
-      const next = new Set(prev);
-      if (next.has(value)) {
-        next.delete(value);
-      } else {
-        next.add(value);
-      }
-      return next;
-    });
-  };
-
-  // 全选
-  const selectAll = () => {
-    setTempSelectedValues(new Set(filteredValues));
-  };
-
-  // 清空选择
-  const clearAll = () => {
-    setTempSelectedValues(new Set());
+    const next = new Set(selectedValues);
+    if (next.has(value)) {
+      next.delete(value);
+    } else {
+      next.add(value);
+    }
+    // 立即触发筛选
+    onFilterChange(next);
   };
 
   return (
-    <div className="p-2 min-w-[200px] max-w-[300px]" onClick={(e) => e.stopPropagation()}>
+    <div className="p-0 min-w-[250px] max-w-[350px]" onClick={(e) => e.stopPropagation()}>
       {/* 搜索框 */}
-      <div className="mb-2">
+      <div className="p-2 pb-0">
         <Input
           placeholder="搜索..."
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
-          className="h-7 text-xs"
+          className="h-8 text-xs"
         />
       </div>
 
-      {/* 操作按钮 */}
-      <div className="flex gap-1 mb-2">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-6 px-2 text-xs flex-1"
-          onClick={selectAll}
-        >
-          全选
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-6 px-2 text-xs flex-1"
-          onClick={clearAll}
-        >
-          清空
-        </Button>
-      </div>
-
-      {/* 值列表 */}
-      <ScrollArea className="h-[200px] border rounded p-1">
-        <div className="space-y-1">
-          {filteredValues.length === 0 ? (
-            <div className="text-xs text-muted-foreground text-center py-2">
-              无匹配项
-            </div>
-          ) : (
-            filteredValues.map((value, index) => (
-              <div
-                key={index}
-                className="flex items-center space-x-2 p-1 hover:bg-accent rounded cursor-pointer"
-                onClick={() => toggleValue(value)}
-              >
-                <Checkbox
-                  checked={tempSelectedValues.has(value)}
-                  onCheckedChange={() => toggleValue(value)}
-                  className="h-3 w-3"
-                />
-                <span className="text-xs flex-1 truncate" title={value}>
-                  {value || '(空)'}
-                </span>
-              </div>
-            ))
-          )}
+      {/* 表格结构 */}
+      <div className="mt-2">
+        {/* 表头 */}
+        <div className="grid grid-cols-[32px_1fr_60px] gap-2 px-3 py-2 bg-muted border-y text-xs font-medium text-muted-foreground">
+          <div className="flex items-center justify-center">
+            <Checkbox
+              checked={selectedValues.size === filteredItems.length && filteredItems.length > 0}
+              ref={(el) => {
+                if (el) {
+                  // 设置半选状态：有部分选中但不是全部选中
+                  const input = el.querySelector('input');
+                  if (input) {
+                    input.indeterminate = selectedValues.size > 0 && selectedValues.size < filteredItems.length;
+                  }
+                }
+              }}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  // 全选（只选中当前过滤后的项）
+                  const allFilteredValues = new Set(selectedValues);
+                  filteredItems.forEach(item => allFilteredValues.add(item.value));
+                  onFilterChange(allFilteredValues);
+                } else {
+                  // 清空（只清空当前过滤后的项）
+                  const remainingValues = new Set(selectedValues);
+                  filteredItems.forEach(item => remainingValues.delete(item.value));
+                  onFilterChange(remainingValues);
+                }
+              }}
+              className="h-3.5 w-3.5"
+            />
+          </div>
+          <div>值</div>
+          <div className="text-right">计数</div>
         </div>
-      </ScrollArea>
 
-      {/* 底部按钮 */}
-      <div className="flex gap-1 mt-2">
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-7 px-2 text-xs flex-1"
-          onClick={() => {
-            onClear();
-          }}
-        >
-          清除筛选
-        </Button>
-        <Button
-          size="sm"
-          className="h-7 px-2 text-xs flex-1"
-          onClick={() => {
-            onApply(tempSelectedValues);
-          }}
-        >
-          确定
-        </Button>
+        {/* 值列表 */}
+        <ScrollArea className="h-[240px]">
+          <div>
+            {filteredItems.length === 0 ? (
+              <div className="text-xs text-muted-foreground text-center py-4">
+                无匹配项
+              </div>
+            ) : (
+              filteredItems.map((item, index) => (
+                <div
+                  key={index}
+                  className="grid grid-cols-[32px_1fr_60px] gap-2 px-3 py-1.5 hover:bg-accent cursor-pointer border-b border-border/50 last:border-0"
+                  onClick={() => toggleValue(item.value)}
+                >
+                  <div className="flex items-center justify-center">
+                    <Checkbox
+                      checked={selectedValues.has(item.value)}
+                      onCheckedChange={() => toggleValue(item.value)}
+                      className="h-3.5 w-3.5"
+                    />
+                  </div>
+                  <div className="text-xs truncate flex items-center" title={item.value}>
+                    {item.value || '(空)'}
+                  </div>
+                  <div className="text-xs text-muted-foreground text-right flex items-center justify-end">
+                    {item.count}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </ScrollArea>
       </div>
     </div>
   );
@@ -758,14 +749,18 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     logger.debug('点击了表头其他区域');
   }, [gridColumns, columns, sortable, filterable, handleSort]);
 
-  // 获取指定列的所有唯一值（用于筛选）
-  const getColumnUniqueValues = useCallback((columnKey: string): string[] => {
-    const uniqueValues = new Set<string>();
+  // 获取指定列的所有唯一值及其计数（用于筛选）
+  const getColumnValueItems = useCallback((columnKey: string): FilterValueItem[] => {
+    const valueCounts = new Map<string, number>();
     data.forEach(row => {
       const value = String(row[columnKey] ?? '');
-      uniqueValues.add(value);
+      valueCounts.set(value, (valueCounts.get(value) || 0) + 1);
     });
-    return Array.from(uniqueValues).sort();
+
+    // 转换为数组并按值排序
+    return Array.from(valueCounts.entries())
+      .map(([value, count]) => ({ value, count }))
+      .sort((a, b) => a.value.localeCompare(b.value));
   }, [data]);
 
   // 应用列筛选
@@ -1627,13 +1622,14 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
       // 手动绘制排序图标（确保使用正确的颜色）
       ctx.save();
-      ctx.strokeStyle = theme.textHeader; // 使用与文本相同的颜色
-      ctx.lineWidth = 1.5; // 优化线条粗细
+      ctx.fillStyle = theme.textHeader; // 使用与文本相同的颜色
+      ctx.strokeStyle = theme.textHeader;
+      ctx.lineWidth = 1.5;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
       if (sortDirection === null) {
-        // 默认状态：上下箭头
+        // 默认状态：上下箭头（线框）
         // 上箭头
         ctx.beginPath();
         ctx.moveTo(sortX + 6, sortY + 7);
@@ -1647,19 +1643,21 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         ctx.lineTo(sortX + 14, sortY + 13);
         ctx.stroke();
       } else if (sortDirection === 'asc') {
-        // 升序：只显示上箭头
+        // 升序：实心向上三角形
         ctx.beginPath();
-        ctx.moveTo(sortX + 6, sortY + 13);
-        ctx.lineTo(sortX + 10, sortY + 8);
-        ctx.lineTo(sortX + 14, sortY + 13);
-        ctx.stroke();
+        ctx.moveTo(sortX + 10, sortY + 6);    // 顶点
+        ctx.lineTo(sortX + 15, sortY + 14);   // 右下角
+        ctx.lineTo(sortX + 5, sortY + 14);    // 左下角
+        ctx.closePath();
+        ctx.fill();
       } else {
-        // 降序：只显示下箭头
+        // 降序：实心向下三角形
         ctx.beginPath();
-        ctx.moveTo(sortX + 6, sortY + 7);
-        ctx.lineTo(sortX + 10, sortY + 12);
-        ctx.lineTo(sortX + 14, sortY + 7);
-        ctx.stroke();
+        ctx.moveTo(sortX + 10, sortY + 14);   // 底部顶点
+        ctx.lineTo(sortX + 15, sortY + 6);    // 右上角
+        ctx.lineTo(sortX + 5, sortY + 6);     // 左上角
+        ctx.closePath();
+        ctx.fill();
       }
       ctx.restore();
     }
@@ -2190,21 +2188,14 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           style={{
             left: filterPopover.x,
             top: filterPopover.y,
-            minWidth: '200px',
-            maxWidth: '300px',
           }}
         >
           <ColumnFilterPopover
             column={filterPopover.column}
-            uniqueValues={getColumnUniqueValues(filterPopover.column)}
+            valueItems={getColumnValueItems(filterPopover.column)}
             selectedValues={columnFilters.get(filterPopover.column) || new Set()}
-            onApply={(selectedValues) => {
+            onFilterChange={(selectedValues) => {
               applyColumnFilter(filterPopover.column, selectedValues);
-              setFilterPopover(null);
-            }}
-            onClear={() => {
-              clearColumnFilter(filterPopover.column);
-              setFilterPopover(null);
             }}
             onClose={() => setFilterPopover(null)}
           />
