@@ -768,7 +768,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     drawContent();
 
     const { ctx, rect, col, row } = args;
-    const selection = gridSelectionRef.current;
+    // 直接使用 gridSelection 而不是 ref，避免异步更新导致的延迟
+    const selection = gridSelection;
     const borderColor = getCSSVariable('--primary', '#0066cc');
 
     // 调试日志 - 只在第一个单元格输出
