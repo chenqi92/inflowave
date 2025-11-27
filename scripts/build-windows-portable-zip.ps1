@@ -158,10 +158,10 @@ Requirements:
 
 Notes:
 ------
-- Settings are stored in: %APPDATA%\com.kkape.inflowave
+- Settings are stored in: %APPDATA%\inflowave
 - This portable version works the same as the installed version
 
-For more information, visit: https://github.com/kkape/inflowave
+For more information, visit: https://github.com/chenqi92/inflowave
 "@
     $readmePath = Join-Path $appDir "README.txt"
     Set-Content -Path $readmePath -Value $readmeContent -Encoding UTF8
