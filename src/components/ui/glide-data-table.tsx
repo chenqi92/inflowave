@@ -703,6 +703,157 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     gridSelectionRef.current = gridSelection;
   }, [gridSelection]);
 
+  // 判断是否处于多选状态
+  const isMultiSelection = useCallback((selection: GridSelection): boolean => {
+    if (!selection.current?.range) return false;
+    const { width, height } = selection.current.range;
+    return width > 1 || height > 1;
+  }, []);
+
+  // 处理单元格点击 - 修复多选时点击当前单元格的行为
+  const onCellClicked = useCallback((cell: Item, event: any) => {
+    const [col, row] = cell;
+    const selection = gridSelectionRef.current;
+
+    // 检查是否处于多选状态
+    if (isMultiSelection(selection)) {
+      const currentCell = selection.current?.cell;
+
+      // 如果点击的是当前单元格（多选的起始单元格），重置为单选该单元格
+      if (currentCell && currentCell[0] === col && currentCell[1] === row) {
+        logger.debug('🔧 [GlideDataTable] 多选状态下点击当前单元格，重置为单选');
+
+        // 手动设置选择状态为只选中这一个单元格
+        setGridSelection({
+          columns: CompactSelection.empty(),
+          rows: CompactSelection.empty(),
+          current: {
+            cell: [col, row],
+            range: { x: col, y: row, width: 1, height: 1 },
+            rangeStack: [],
+          },
+        });
+
+        // 阻止默认行为（进入编辑模式）
+        return true;
+      }
+    }
+
+    return false; // 不拦截，使用默认行为
+  }, [isMultiSelection]);
+
+  // 自定义单元格绘制 - 在选中区域内绘制内边框
+  const drawCell = useCallback((
+    args: {
+      ctx: CanvasRenderingContext2D;
+      cell: GridCell;
+      theme: any;
+      rect: { x: number; y: number; width: number; height: number };
+      col: number;
+      row: number;
+      hoverAmount: number;
+      hoverX: number | undefined;
+      hoverY: number | undefined;
+      highlighted: boolean;
+      imageLoader: any;
+    },
+    drawContent: () => void
+  ) => {
+    // 先绘制默认内容
+    drawContent();
+
+    const { ctx, rect, col, row, theme } = args;
+    const selection = gridSelectionRef.current;
+
+    if (!selection?.current?.range) return;
+
+    const { range, cell: currentCell } = selection.current;
+    const { x: startCol, y: startRow, width: colCount, height: rowCount } = range;
+
+    // 只在选中多个单元格时才绘制内边框
+    if (colCount <= 1 && rowCount <= 1) return;
+
+    // 检查当前单元格是否在选中范围内
+    const inSelectionX = col >= startCol && col < startCol + colCount;
+    const inSelectionY = row >= startRow && row < startRow + rowCount;
+
+    if (!inSelectionX || !inSelectionY) return;
+
+    // 检查是否是当前单元格（Glide 会为它绘制额外边框）
+    const isCurrentCell = currentCell && col === currentCell[0] && row === currentCell[1];
+
+    // 获取主题色
+    const borderColor = getCSSVariable('--primary', '#0066cc');
+    const bgColor = theme?.bgCell || getCSSVariable('--background', '#ffffff');
+
+    // 如果是当前单元格，先用背景色覆盖 Glide 默认绘制的额外边框
+    if (isCurrentCell) {
+      ctx.save();
+      ctx.strokeStyle = bgColor;
+      ctx.lineWidth = 3;
+
+      // 覆盖四边的默认边框（除了选中区域的外边框）
+      const isLeftEdge = col === startCol;
+      const isRightEdge = col === startCol + colCount - 1;
+      const isTopEdge = row === startRow;
+      const isBottomEdge = row === startRow + rowCount - 1;
+
+      // 用背景色覆盖内部边框（不是选中区域边界的边）
+      if (!isLeftEdge) {
+        ctx.beginPath();
+        ctx.moveTo(rect.x + 1, rect.y + 1);
+        ctx.lineTo(rect.x + 1, rect.y + rect.height - 1);
+        ctx.stroke();
+      }
+      if (!isRightEdge) {
+        ctx.beginPath();
+        ctx.moveTo(rect.x + rect.width - 1, rect.y + 1);
+        ctx.lineTo(rect.x + rect.width - 1, rect.y + rect.height - 1);
+        ctx.stroke();
+      }
+      if (!isTopEdge) {
+        ctx.beginPath();
+        ctx.moveTo(rect.x + 1, rect.y + 1);
+        ctx.lineTo(rect.x + rect.width - 1, rect.y + 1);
+        ctx.stroke();
+      }
+      if (!isBottomEdge) {
+        ctx.beginPath();
+        ctx.moveTo(rect.x + 1, rect.y + rect.height - 1);
+        ctx.lineTo(rect.x + rect.width - 1, rect.y + rect.height - 1);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    ctx.save();
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 2; // 加粗边框线
+
+    // 绘制内部分割线
+    const isNotRightmostCol = col < startCol + colCount - 1;
+    const isNotBottomRow = row < startRow + rowCount - 1;
+
+    // 右边框（列分割线）- 所有非最右列的单元格都绘制
+    if (isNotRightmostCol) {
+      ctx.beginPath();
+      ctx.moveTo(Math.floor(rect.x + rect.width) + 0.5, rect.y);
+      ctx.lineTo(Math.floor(rect.x + rect.width) + 0.5, rect.y + rect.height);
+      ctx.stroke();
+    }
+
+    // 下边框（行分割线）- 所有非最底行的单元格都绘制
+    if (isNotBottomRow) {
+      ctx.beginPath();
+      ctx.moveTo(rect.x, Math.floor(rect.y + rect.height) + 0.5);
+      ctx.lineTo(rect.x + rect.width, Math.floor(rect.y + rect.height) + 0.5);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }, []);
+
   // 使用全局键盘事件监听复制
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -922,6 +1073,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 onVisibleRegionChanged={handleVisibleRegionChanged}
                 gridSelection={gridSelection}
                 onGridSelectionChange={setGridSelection}
+                onCellClicked={onCellClicked}
                 minColumnWidth={80}
                 maxColumnWidth={800}
                 maxColumnAutoWidth={500}
@@ -935,6 +1087,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 freezeColumns={0}
                 headerHeight={36}
                 rowHeight={32}
+                drawCell={drawCell}
                 rightElement={undefined}
                 rightElementProps={{
                   fill: false,
