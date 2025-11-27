@@ -747,7 +747,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     return false; // 不拦截，使用默认行为
   }, [isMultiSelection]);
 
-  // 自定义单元格绘制 - 在选中区域内绘制内边框和加粗外边框
+  // 自定义单元格绘制 - 在选中区域内绘制边框
   const drawCell = useCallback((
     args: {
       ctx: CanvasRenderingContext2D;
@@ -769,7 +769,114 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
     const { ctx, rect, col, row } = args;
     const selection = gridSelectionRef.current;
+    const borderColor = getCSSVariable('--primary', '#0066cc');
 
+    // 调试日志 - 只在第一个单元格输出
+    if (col === 0 && row === 0) {
+      logger.debug('🎨 [drawCell] 选择状态:', {
+        hasColumns: selection?.columns?.length > 0,
+        columnsLength: selection?.columns?.length,
+        hasRows: selection?.rows?.length > 0,
+        rowsLength: selection?.rows?.length,
+        hasRange: !!selection?.current?.range,
+      });
+    }
+
+    // 处理列选择（使用与 range 选择相同的绘制方式）
+    if (selection?.columns && selection.columns.length > 0) {
+      const selectedCols = selection.columns.toArray();
+      const isColSelected = selectedCols.includes(col);
+
+      if (isColSelected) {
+        ctx.save();
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1;
+
+        const isLeftColSelected = selectedCols.includes(col - 1);
+        const isRightColSelected = selectedCols.includes(col + 1);
+        const totalRows = processedData.length;
+
+        // 右边框（列分割线或外边框）- 使用单元格边缘位置
+        ctx.beginPath();
+        ctx.moveTo(Math.floor(rect.x + rect.width), rect.y);
+        ctx.lineTo(Math.floor(rect.x + rect.width), rect.y + rect.height);
+        ctx.stroke();
+
+        // 下边框（行分割线或外边框）- 使用单元格边缘位置
+        ctx.beginPath();
+        ctx.moveTo(rect.x, Math.floor(rect.y + rect.height));
+        ctx.lineTo(rect.x + rect.width, Math.floor(rect.y + rect.height));
+        ctx.stroke();
+
+        // 左边框（只在第一个选中列绘制外边框）
+        if (!isLeftColSelected) {
+          ctx.beginPath();
+          ctx.moveTo(Math.floor(rect.x), rect.y);
+          ctx.lineTo(Math.floor(rect.x), rect.y + rect.height);
+          ctx.stroke();
+        }
+
+        // 上边框（只在第一行绘制外边框）
+        if (row === 0) {
+          ctx.beginPath();
+          ctx.moveTo(rect.x, Math.floor(rect.y));
+          ctx.lineTo(rect.x + rect.width, Math.floor(rect.y));
+          ctx.stroke();
+        }
+
+        ctx.restore();
+        return;
+      }
+    }
+
+    // 处理行选择（使用与 range 选择相同的绘制方式）
+    if (selection?.rows && selection.rows.length > 0) {
+      const selectedRows = selection.rows.toArray();
+      const isRowSelected = selectedRows.includes(row);
+
+      if (isRowSelected) {
+        ctx.save();
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1;
+
+        const isTopRowSelected = selectedRows.includes(row - 1);
+        const isBottomRowSelected = selectedRows.includes(row + 1);
+        const totalCols = gridColumns.length;
+
+        // 右边框（列分割线或外边框）- 使用单元格边缘位置
+        ctx.beginPath();
+        ctx.moveTo(Math.floor(rect.x + rect.width), rect.y);
+        ctx.lineTo(Math.floor(rect.x + rect.width), rect.y + rect.height);
+        ctx.stroke();
+
+        // 下边框（行分割线或外边框）- 使用单元格边缘位置
+        ctx.beginPath();
+        ctx.moveTo(rect.x, Math.floor(rect.y + rect.height));
+        ctx.lineTo(rect.x + rect.width, Math.floor(rect.y + rect.height));
+        ctx.stroke();
+
+        // 上边框（只在第一个选中行绘制外边框）
+        if (!isTopRowSelected) {
+          ctx.beginPath();
+          ctx.moveTo(rect.x, Math.floor(rect.y));
+          ctx.lineTo(rect.x + rect.width, Math.floor(rect.y));
+          ctx.stroke();
+        }
+
+        // 左边框（只在第一列绘制外边框）
+        if (col === 0) {
+          ctx.beginPath();
+          ctx.moveTo(Math.floor(rect.x), rect.y);
+          ctx.lineTo(Math.floor(rect.x), rect.y + rect.height);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+        return;
+      }
+    }
+
+    // 处理范围选择
     if (!selection?.current?.range) return;
 
     const { range } = selection.current;
@@ -783,9 +890,6 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const inSelectionY = row >= startRow && row < startRow + rowCount;
 
     if (!inSelectionX || !inSelectionY) return;
-
-    // 获取主题色
-    const borderColor = getCSSVariable('--primary', '#0066cc');
 
     ctx.save();
     ctx.strokeStyle = borderColor;
@@ -812,7 +916,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     }
 
     ctx.restore();
-  }, []);
+  }, [gridSelection]);
 
   // 使用全局键盘事件监听复制
   useEffect(() => {
