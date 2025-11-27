@@ -42,6 +42,7 @@ class Logger {
   private maxFileSizeMB = 10; // 默认10MB
   private maxFiles = 5; // 默认保留5个文件
   private currentFileSize = 0; // 当前文件大小（字节）
+  private isWritingLog = false; // 防止日志写入递归
   private originalConsole: {
     log: typeof console.log;
     info: typeof console.info;
@@ -256,6 +257,12 @@ ${'='.repeat(80)}
       return;
     }
 
+    // 防止递归调用
+    if (this.isWritingLog) {
+      return;
+    }
+
+    this.isWritingLog = true;
     const logsToWrite = [...this.logBuffer];
     this.logBuffer = [];
 
@@ -263,6 +270,8 @@ ${'='.repeat(80)}
       await this.writeLogEntries(logsToWrite);
     } catch (error) {
       this.originalConsole.error('写入日志失败:', error);
+    } finally {
+      this.isWritingLog = false;
     }
   }
 
@@ -291,6 +300,7 @@ ${'='.repeat(80)}
 
   /**
    * 检查并轮转日志文件
+   * 注意：此方法中的所有日志都使用 originalConsole 而不是 logger 方法，避免循环依赖
    */
   private async checkAndRotateLog(newContentSize: number): Promise<void> {
     try {
@@ -301,16 +311,23 @@ ${'='.repeat(80)}
         return;
       }
 
-      const fileInfo = await FileOperations.getFileInfo(this.logFilePath);
-      this.currentFileSize = fileInfo.size;
+      // 尝试获取文件信息，如果失败则跳过大小检查
+      try {
+        const fileInfo = await FileOperations.getFileInfo(this.logFilePath);
+        this.currentFileSize = fileInfo.size;
+      } catch {
+        // 获取文件信息失败，使用缓存的大小或跳过检查
+        // 不记录错误，避免循环
+        return;
+      }
 
       // 检查是否超过大小限制
       const maxSizeBytes = this.maxFileSizeMB * 1024 * 1024;
       if (this.currentFileSize + newContentSize > maxSizeBytes) {
         await this.rotateLogFile();
       }
-    } catch (error) {
-      this.originalConsole.warn('检查日志文件大小失败:', error);
+    } catch {
+      // 静默失败，不使用 logger 避免循环
     }
   }
 

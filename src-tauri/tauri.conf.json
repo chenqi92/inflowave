@@ -46,6 +46,9 @@
       "nsis",
       "msi"
     ],
+    "resources": [
+      "../docs/release-notes/*"
+    ],
     "icon": [
       "icons/icon.png",
       "icons/32x32.png",

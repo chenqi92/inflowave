@@ -475,53 +475,82 @@ pub async fn update_updater_settings(
 
 /// 读取发布说明文件
 #[command]
-pub async fn read_release_notes_file(path: String) -> Result<String, String> {
-    let full_path = if path.starts_with("docs/") {
-        // 相对于项目根目录的路径
+pub async fn read_release_notes_file(app_handle: tauri::AppHandle, path: String) -> Result<String, String> {
+    // 尝试多个可能的路径
+    let possible_paths = vec![
+        // 1. 应用资源目录（打包后的路径）
+        app_handle.path().resource_dir()
+            .ok()
+            .map(|p| p.join(&path)),
+        // 2. 应用数据目录
+        app_handle.path().app_data_dir()
+            .ok()
+            .map(|p| p.join(&path)),
+        // 3. 当前工作目录（开发环境）
         std::env::current_dir()
-            .map_err(|e| format!("Failed to get current directory: {}", e))?
-            .join(&path)
-    } else {
-        std::path::PathBuf::from(&path)
-    };
+            .ok()
+            .map(|p| p.join(&path)),
+        // 4. 可执行文件所在目录
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|p| p.join(&path))),
+    ];
 
-    tokio::fs::read_to_string(&full_path)
-        .await
-        .map_err(|e| format!("Failed to read file {}: {}", path, e))
-}
-
-/// 列出发布说明文件
-#[command]
-pub async fn list_release_notes_files() -> Result<Vec<String>, String> {
-    let notes_dir = std::env::current_dir()
-        .map_err(|e| format!("Failed to get current directory: {}", e))?
-        .join("docs/release-notes");
-
-    if !notes_dir.exists() {
-        return Ok(vec![]);
-    }
-
-    let mut files = Vec::new();
-    let mut entries = tokio::fs::read_dir(&notes_dir)
-        .await
-        .map_err(|e| format!("Failed to read directory: {}", e))?;
-
-    while let Some(entry) = entries.next_entry()
-        .await
-        .map_err(|e| format!("Failed to read directory entry: {}", e))? {
-        
-        let path = entry.path();
-        if path.is_file() && path.extension().map_or(false, |ext| ext == "md") {
-            if let Some(file_name) = path.file_name() {
-                if let Some(file_name_str) = file_name.to_str() {
-                    files.push(file_name_str.to_string());
-                }
+    for possible_path in possible_paths.into_iter().flatten() {
+        if possible_path.exists() {
+            if let Ok(content) = tokio::fs::read_to_string(&possible_path).await {
+                return Ok(content);
             }
         }
     }
 
-    files.sort();
-    Ok(files)
+    Err(format!("Release notes file not found: {}", path))
+}
+
+/// 列出发布说明文件
+#[command]
+pub async fn list_release_notes_files(app_handle: tauri::AppHandle) -> Result<Vec<String>, String> {
+    let sub_path = "docs/release-notes";
+
+    // 尝试多个可能的路径
+    let possible_paths = vec![
+        app_handle.path().resource_dir()
+            .ok()
+            .map(|p| p.join(sub_path)),
+        app_handle.path().app_data_dir()
+            .ok()
+            .map(|p| p.join(sub_path)),
+        std::env::current_dir()
+            .ok()
+            .map(|p| p.join(sub_path)),
+        std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|p| p.join(sub_path))),
+    ];
+
+    for notes_dir in possible_paths.into_iter().flatten() {
+        if notes_dir.exists() {
+            let mut files = Vec::new();
+            if let Ok(mut entries) = tokio::fs::read_dir(&notes_dir).await {
+                while let Ok(Some(entry)) = entries.next_entry().await {
+                    let path = entry.path();
+                    if path.is_file() && path.extension().map_or(false, |ext| ext == "md") {
+                        if let Some(file_name) = path.file_name() {
+                            if let Some(file_name_str) = file_name.to_str() {
+                                files.push(file_name_str.to_string());
+                            }
+                        }
+                    }
+                }
+            }
+            if !files.is_empty() {
+                files.sort();
+                return Ok(files);
+            }
+        }
+    }
+
+    Ok(vec![])
 }
 
 /// 检查是否支持内置更新（仅Windows平台）

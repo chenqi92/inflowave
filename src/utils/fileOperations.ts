@@ -124,6 +124,8 @@ export class FileOperations {
    * 获取文件信息
    * @param path 文件路径
    * @returns 文件信息
+   *
+   * 注意：此方法不使用 logger 来避免循环依赖（logger 会调用此方法检查日志文件大小）
    */
   static async getFileInfo(path: string): Promise<{
     size: number;
@@ -132,8 +134,6 @@ export class FileOperations {
     isFile: boolean;
     isDir: boolean;
   }> {
-
-
     try {
       const result = await safeTauriInvoke<{
         size: number;
@@ -152,7 +152,9 @@ export class FileOperations {
         }
       );
     } catch (error) {
-      logger.error(`获取文件信息失败 ${path}:`, error);
+      // 使用 console.error 而不是 logger.error 来避免循环依赖
+      // logger 的 checkAndRotateLog 会调用此方法，如果这里使用 logger 会导致无限循环
+      console.error(`获取文件信息失败 ${path}:`, error);
       throw error;
     }
   }

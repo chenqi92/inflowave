@@ -94,8 +94,10 @@ class ReleaseNotesService {
    */
   private async loadLocalReleaseNotes(version: string): Promise<string | null> {
     try {
+      // 规范化版本号格式：确保有 v 前缀
+      const normalizedVersion = version.startsWith('v') ? version : `v${version}`;
       // 尝试读取 docs/release-notes/{version}.md
-      const filePath = `docs/release-notes/${version}.md`;
+      const filePath = `docs/release-notes/${normalizedVersion}.md`;
       const content = await safeTauriInvoke<string>('read_release_notes_file', { 
         path: filePath 
       });
@@ -121,8 +123,10 @@ class ReleaseNotesService {
    */
   private async fetchRemoteReleaseNotes(version: string): Promise<ReleaseNote | null> {
     try {
+      // 规范化版本号格式：确保有 v 前缀
+      const normalizedVersion = version.startsWith('v') ? version : `v${version}`;
       const response = await fetch(
-        `https://api.github.com/repos/chenqi92/inflowave/releases/tags/v${version}`,
+        `https://api.github.com/repos/chenqi92/inflowave/releases/tags/${normalizedVersion}`,
         {
           headers: {
             'Accept': 'application/vnd.github.v3+json',
