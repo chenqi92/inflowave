@@ -175,81 +175,106 @@ const migrateLanguageCode = () => {
   }
 };
 
+// 标记是否已初始化，防止重复初始化
+let isI18nInitialized = false;
+let initializationPromise: Promise<typeof i18n> | null = null;
+
 // 初始化 i18next
 const initI18n = async () => {
-  try {
-    // 迁移旧的语言代码
-    migrateLanguageCode();
-
-    // 初始化资源管理器
-    await resourceManager.initialize();
-
-    // 使用 HTTP 后端和 React 集成初始化 i18next
-    await i18n
-      .use(Backend)
-      .use(initReactI18next)
-      .init(i18nConfig);
-
-    logger.info('i18next initialized successfully with language:', i18n.language);
-
-    // 添加 missingKey 事件监听器，将缺失的键值打印到 frontend.log
-    i18n.on('missingKey', (lngs: readonly string[], namespace: string, key: string, res: string) => {
-      // 记录到 frontend.log
-      logger.warn(`🔑 [i18n] Missing translation key: "${key}" in namespace "${namespace}" for language(s) "${lngs.join(', ')}"`, {
-        languages: lngs,
-        namespace,
-        key,
-        result: res,
-      });
-    });
-
-    // 添加 failedLoading 事件监听器，处理资源加载失败
-    i18n.on('failedLoading', (lng: string, ns: string, msg: string) => {
-      // 只记录警告，不抛出错误，让 i18next 使用回退语言
-      logger.warn(`⚠️ [i18n] Failed to load namespace "${ns}" for language "${lng}": ${msg}`);
-    });
-    
-    // 智能预加载语言资源
-    if (loaderConfig.enableLazyLoading) {
-      // 使用智能预加载策略
-      resourceManager.smartPreload(
-        [...SUPPORTED_LANGUAGES],
-        i18n.language
-      ).then(results => {
-        const successful = results.filter(r => r.success);
-        logger.debug(`✅ [i18n] Smart preload completed: ${successful.length}/${results.length} languages loaded`);
-        
-        // 记录当前语言使用
-        resourceManager.recordLanguageUsage(i18n.language);
-      }).catch(error => {
-        logger.warn('⚠️ [i18n] Smart preload failed:', error);
-      });
-    }
-    
-    // 检查资源更新（非阻塞）
-    if (resourceManagerConfig.enableVersioning) {
-      resourceManager.checkForUpdates([...SUPPORTED_LANGUAGES]).then(updates => {
-        const hasUpdates = updates.some(u => u.hasUpdate);
-        if (hasUpdates) {
-          logger.info('Language resource updates available:', updates);
-          
-          // 触发更新可用事件
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('i18n-updates-available', {
-              detail: { updates }
-            }));
-          }
-        }
-      }).catch(error => {
-        logger.warn('Failed to check for updates:', error);
-      });
-    }
-    
+  // 🛡️ 防止重复初始化
+  if (isI18nInitialized) {
+    logger.debug('[i18n] Already initialized, skipping...');
     return i18n;
-  } catch (error) {
-    logger.error('Failed to initialize i18next:', error);
-    throw error;
   }
+
+  // 🛡️ 如果正在初始化中，返回已有的 Promise
+  if (initializationPromise) {
+    logger.debug('[i18n] Initialization in progress, waiting...');
+    return initializationPromise;
+  }
+
+  initializationPromise = (async () => {
+    try {
+      // 迁移旧的语言代码
+      migrateLanguageCode();
+
+      // 初始化资源管理器
+      await resourceManager.initialize();
+
+      // 使用 HTTP 后端和 React 集成初始化 i18next
+      await i18n
+        .use(Backend)
+        .use(initReactI18next)
+        .init(i18nConfig);
+
+      logger.info('i18next initialized successfully with language:', i18n.language);
+
+      // 添加 missingKey 事件监听器，将缺失的键值打印到 frontend.log
+      i18n.on('missingKey', (lngs: readonly string[], namespace: string, key: string, res: string) => {
+        // 记录到 frontend.log
+        logger.warn(`🔑 [i18n] Missing translation key: "${key}" in namespace "${namespace}" for language(s) "${lngs.join(', ')}"`, {
+          languages: lngs,
+          namespace,
+          key,
+          result: res,
+        });
+      });
+
+      // 添加 failedLoading 事件监听器，处理资源加载失败
+      i18n.on('failedLoading', (lng: string, ns: string, msg: string) => {
+        // 只记录警告，不抛出错误，让 i18next 使用回退语言
+        logger.warn(`⚠️ [i18n] Failed to load namespace "${ns}" for language "${lng}": ${msg}`);
+      });
+
+      // 智能预加载语言资源
+      if (loaderConfig.enableLazyLoading) {
+        // 使用智能预加载策略
+        resourceManager.smartPreload(
+          [...SUPPORTED_LANGUAGES],
+          i18n.language
+        ).then(results => {
+          const successful = results.filter(r => r.success);
+          logger.debug(`✅ [i18n] Smart preload completed: ${successful.length}/${results.length} languages loaded`);
+
+          // 记录当前语言使用
+          resourceManager.recordLanguageUsage(i18n.language);
+        }).catch(error => {
+          logger.warn('⚠️ [i18n] Smart preload failed:', error);
+        });
+      }
+
+      // 检查资源更新（非阻塞）
+      if (resourceManagerConfig.enableVersioning) {
+        resourceManager.checkForUpdates([...SUPPORTED_LANGUAGES]).then(updates => {
+          const hasUpdates = updates.some(u => u.hasUpdate);
+          if (hasUpdates) {
+            logger.info('Language resource updates available:', updates);
+
+            // 触发更新可用事件
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('i18n-updates-available', {
+                detail: { updates }
+              }));
+            }
+          }
+        }).catch(error => {
+          logger.warn('Failed to check for updates:', error);
+        });
+      }
+
+      // ✅ 标记初始化完成
+      isI18nInitialized = true;
+
+      return i18n;
+    } catch (error) {
+      // 初始化失败时，清除 Promise 以便重试
+      initializationPromise = null;
+      logger.error('Failed to initialize i18next:', error);
+      throw error;
+    }
+  })();
+
+  return initializationPromise;
 };
 
 // 导出配置和初始化函数

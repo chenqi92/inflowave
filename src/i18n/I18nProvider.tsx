@@ -8,7 +8,7 @@
  * 4. 支持 Suspense 和错误边界
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useI18nStore, initI18nStore } from './store';
 import initI18n from './config';
 import type { I18nContextValue, I18nProviderProps, I18nError } from './types';
@@ -103,6 +103,9 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
 }) => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [initError, setInitError] = useState<Error | null>(null);
+
+  // 🛡️ 防止 StrictMode 或重渲染导致的重复初始化
+  const initializationStarted = useRef(false);
   
   // 从 store 获取状态和方法
   const {
@@ -165,9 +168,14 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
   }, [defaultLanguage, setLanguage]);
 
   // 组件挂载时初始化（只执行一次）
+  // 使用 ref 防止 StrictMode 导致的重复初始化
   useEffect(() => {
-    initializeI18n();
-  }, [initializeI18n]);
+    if (!initializationStarted.current) {
+      initializationStarted.current = true;
+      initializeI18n();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ============================================================================
   // 错误处理
