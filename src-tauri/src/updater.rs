@@ -89,27 +89,57 @@ pub fn compare_versions(current: &str, latest: &str) -> Result<i32> {
 
 /// 从GitHub API获取最新版本信息
 async fn fetch_latest_release() -> Result<GitHubRelease> {
-    let client = reqwest::Client::new();
+    use std::time::Duration;
+
+    // 创建带超时的客户端
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(30))
+        .connect_timeout(Duration::from_secs(10))
+        .build()
+        .context("Failed to create HTTP client")?;
+
+    log::info!("正在检查更新，请求 GitHub API: {}/latest", GITHUB_API_URL);
 
     // 首先尝试获取 latest release
-    let latest_response = client
+    let latest_response = match client
         .get(&format!("{}/latest", GITHUB_API_URL))
         .header("User-Agent", USER_AGENT)
         .header("Accept", "application/vnd.github.v3+json")
         .send()
         .await
-        .context("Failed to fetch latest release information")?;
+    {
+        Ok(response) => response,
+        Err(e) => {
+            // 详细的错误信息
+            let error_msg = if e.is_timeout() {
+                "请求超时，请检查网络连接".to_string()
+            } else if e.is_connect() {
+                "无法连接到 GitHub，请检查网络或代理设置".to_string()
+            } else if e.is_request() {
+                format!("请求错误: {}", e)
+            } else {
+                format!("网络错误: {}", e)
+            };
+            log::error!("GitHub API 请求失败: {}", error_msg);
+            return Err(anyhow::anyhow!(error_msg));
+        }
+    };
+
+    log::debug!("GitHub API 响应状态: {}", latest_response.status());
 
     if latest_response.status().is_success() {
         let release: GitHubRelease = latest_response
             .json()
             .await
             .context("Failed to parse latest release JSON")?;
+        log::info!("获取到最新版本: {}", release.tag_name);
         return Ok(release);
     }
 
     // 如果 latest 端点失败（404），尝试获取所有 releases 并选择最新的
-    if latest_response.status() == 404 {
+    if latest_response.status() == reqwest::StatusCode::NOT_FOUND {
+        log::info!("latest release 不存在，尝试获取所有 releases");
+
         let all_releases_response = client
             .get(GITHUB_API_URL)
             .header("User-Agent", USER_AGENT)
@@ -119,10 +149,16 @@ async fn fetch_latest_release() -> Result<GitHubRelease> {
             .context("Failed to fetch all releases")?;
 
         if !all_releases_response.status().is_success() {
-            return Err(anyhow::anyhow!(
-                "GitHub API request failed with status: {}",
-                all_releases_response.status()
-            ));
+            let status = all_releases_response.status();
+            let error_msg = if status == reqwest::StatusCode::NOT_FOUND {
+                "GitHub 仓库不存在或未发布任何版本".to_string()
+            } else if status == reqwest::StatusCode::FORBIDDEN {
+                "GitHub API 访问被限制，请稍后再试".to_string()
+            } else {
+                format!("GitHub API 请求失败: HTTP {}", status)
+            };
+            log::error!("{}", error_msg);
+            return Err(anyhow::anyhow!(error_msg));
         }
 
         let releases: Vec<GitHubRelease> = all_releases_response
@@ -130,32 +166,50 @@ async fn fetch_latest_release() -> Result<GitHubRelease> {
             .await
             .context("Failed to parse releases JSON")?;
 
+        if releases.is_empty() {
+            log::warn!("仓库尚未发布任何版本");
+            return Err(anyhow::anyhow!("当前仓库尚未发布任何版本"));
+        }
+
         // 找到最新的非预发布版本
         let latest_release = releases
             .into_iter()
             .filter(|r| !r.prerelease && !r.draft)
             .max_by(|a, b| a.published_at.cmp(&b.published_at))
-            .ok_or_else(|| anyhow::anyhow!("No stable releases found"))?;
+            .ok_or_else(|| anyhow::anyhow!("没有找到稳定版本（所有版本均为预发布或草稿）"))?;
 
+        log::info!("从所有 releases 中找到最新稳定版本: {}", latest_release.tag_name);
         return Ok(latest_release);
     }
 
     // 其他错误
-    Err(anyhow::anyhow!(
-        "GitHub API request failed with status: {}",
-        latest_response.status()
-    ))
+    let status = latest_response.status();
+    let error_msg = if status == reqwest::StatusCode::FORBIDDEN {
+        "GitHub API 访问频率超限，请稍后再试".to_string()
+    } else if status == reqwest::StatusCode::UNAUTHORIZED {
+        "GitHub API 认证失败".to_string()
+    } else {
+        format!("GitHub API 请求失败: HTTP {}", status)
+    };
+    log::error!("{}", error_msg);
+    Err(anyhow::anyhow!(error_msg))
 }
 
 /// 检查是否有可用更新
 #[command]
 pub async fn check_for_app_updates(app_handle: AppHandle) -> Result<UpdateInfo, String> {
     let current_version = get_current_version();
-    
+    log::info!("开始检查更新，当前版本: {}", current_version);
+
     // 获取最新版本信息
-    let latest_release = fetch_latest_release()
-        .await
-        .map_err(|e| format!("Failed to check for updates: {}", e))?;
+    let latest_release = match fetch_latest_release().await {
+        Ok(release) => release,
+        Err(e) => {
+            let error_msg = e.to_string();
+            log::error!("检查更新失败: {}", error_msg);
+            return Err(error_msg);
+        }
+    };
 
     // 跳过预发布版本和草稿
     if latest_release.prerelease || latest_release.draft {
