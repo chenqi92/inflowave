@@ -82,12 +82,35 @@ class ConsoleLogger {
     }
   }
 
+  /**
+   * 格式化时间戳为本地时间（ISO格式但使用本地时区）
+   */
+  private formatLocalTimestamp(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+
+    // 获取时区偏移（分钟）
+    const tzOffset = -date.getTimezoneOffset();
+    const tzHours = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
+    const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
+    const tzSign = tzOffset >= 0 ? '+' : '-';
+
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${tzSign}${tzHours}:${tzMinutes}`;
+  }
+
   private async writeSessionStart(): Promise<void> {
+    const now = new Date();
+    const localTime = this.formatLocalTimestamp(now);
     const sessionInfo = `
 ${'='.repeat(80)}
 === 前端日志会话开始 ===
 Session ID: ${this.sessionId}
-时间: ${new Date().toISOString()}
+时间: ${localTime}
 User Agent: ${navigator.userAgent}
 URL: ${window.location.href}
 ${'='.repeat(80)}
@@ -276,7 +299,7 @@ ${'='.repeat(80)}
   }
 
   private formatLogEntry(entry: ConsoleLogEntry): string {
-    const timestamp = entry.timestamp.toISOString();
+    const timestamp = this.formatLocalTimestamp(entry.timestamp);
     const levelStr = entry.level.toUpperCase().padEnd(5);
 
     let formatted = `[${timestamp}] [${levelStr}] ${entry.message}`;

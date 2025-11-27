@@ -181,6 +181,81 @@ impl S3ClientManager {
             .ok_or_else(|| anyhow!("S3 config not found: {}", id))
     }
 
+    /// 创建一个使用自定义域名作为端点的临时S3客户端
+    /// 用于生成预签名URL时确保签名与自定义域名匹配
+    async fn create_presign_client(
+        &self,
+        config: &S3ConnectionConfig,
+        custom_domain: &str,
+    ) -> Result<Arc<Client>> {
+        // 创建凭证
+        let credentials = if let Some(token) = &config.session_token {
+            Credentials::new(
+                &config.access_key,
+                &config.secret_key,
+                Some(token.clone()),
+                None,
+                "s3-presign-client",
+            )
+        } else {
+            Credentials::new(
+                &config.access_key,
+                &config.secret_key,
+                None,
+                None,
+                "s3-presign-client",
+            )
+        };
+
+        // 创建AWS配置
+        let mut sdk_config = aws_config::defaults(BehaviorVersion::latest())
+            .credentials_provider(SharedCredentialsProvider::new(credentials));
+
+        // 设置区域
+        if let Some(region) = &config.region {
+            sdk_config = sdk_config.region(aws_config::Region::new(region.clone()));
+        } else {
+            sdk_config = sdk_config.region(aws_config::Region::new("us-east-1"));
+        }
+
+        // 清理自定义域名，移除可能的协议前缀
+        let custom_domain_clean = custom_domain
+            .trim_start_matches("http://")
+            .trim_start_matches("https://")
+            .trim_end_matches('/');
+
+        // 根据use_ssl确定协议，构建端点URL
+        let endpoint_url = if config.use_ssl {
+            format!("https://{}", custom_domain_clean)
+        } else {
+            format!("http://{}", custom_domain_clean)
+        };
+
+        log::info!(
+            "创建预签名临时客户端，使用自定义域名端点: {}",
+            endpoint_url
+        );
+
+        // 创建S3客户端配置
+        // 对于自定义域名，强制使用 path-style（如 https://domain.com/bucket/key）
+        // 而不是 virtual-hosted-style（如 https://bucket.domain.com/key）
+        // 因为自定义域名通常通过反向代理配置，不支持动态子域名方式
+        let s3_config_builder = Config::builder()
+            .behavior_version(BehaviorVersion::latest())
+            .force_path_style(true)
+            .endpoint_url(endpoint_url);
+
+        // 从SDK配置构建
+        let sdk_config = sdk_config.load().await;
+        let s3_config = s3_config_builder
+            .credentials_provider(sdk_config.credentials_provider().unwrap().clone())
+            .region(sdk_config.region().cloned())
+            .build();
+
+        let client = Arc::new(Client::from_conf(s3_config));
+        Ok(client)
+    }
+
     pub async fn test_connection(&self, id: &str) -> Result<bool> {
         let client = self.get_client(id).await?;
 
@@ -598,8 +673,24 @@ impl S3ClientManager {
         operation: &str,
         expires_in_seconds: u64,
     ) -> Result<S3PresignedUrlResult> {
-        let client = self.get_client(id).await?;
+        let config = self.get_config(id).await?;
         let expires_in = std::time::Duration::from_secs(expires_in_seconds);
+
+        // 如果配置了自定义域名，创建一个使用自定义域名作为端点的临时客户端
+        // 这样签名会基于自定义域名计算，而不是内网端点
+        let client = if let Some(ref custom_domain) = config.custom_domain {
+            if !custom_domain.is_empty() {
+                log::info!(
+                    "使用自定义域名 {} 生成预签名URL",
+                    custom_domain
+                );
+                self.create_presign_client(&config, custom_domain).await?
+            } else {
+                self.get_client(id).await?
+            }
+        } else {
+            self.get_client(id).await?
+        };
 
         let presigned_request = match operation {
             "get" => {
@@ -627,68 +718,10 @@ impl S3ClientManager {
             _ => return Err(anyhow!("Unsupported presigned URL operation: {}", operation)),
         };
 
-        let mut url = presigned_request.uri().to_string();
-
-        // 如果配置了自定义域名，替换 URL 中的 endpoint 为 customDomain
-        if let Ok(config) = self.get_config(id).await {
-            if let Some(custom_domain) = &config.custom_domain {
-                if !custom_domain.is_empty() {
-                    // 解析原始 URL
-                    if let Ok(mut parsed_url) = url::Url::parse(&url) {
-                        // 解析自定义域名
-                        let custom_domain_clean = custom_domain
-                            .trim_start_matches("http://")
-                            .trim_start_matches("https://")
-                            .trim_end_matches('/');
-
-                        // 获取原始的 host:port
-                        let original_host_port = if let Some(port) = parsed_url.port() {
-                            format!("{}:{}", parsed_url.host_str().unwrap_or(""), port)
-                        } else {
-                            parsed_url.host_str().unwrap_or("").to_string()
-                        };
-
-                        // 解析自定义域名，可能包含端口
-                        let (custom_host, custom_port) = if let Some(colon_pos) = custom_domain_clean.rfind(':') {
-                            // 检查冒号后面是否是数字（端口）
-                            let potential_port = &custom_domain_clean[colon_pos + 1..];
-                            if potential_port.chars().all(|c| c.is_ascii_digit()) {
-                                let host = &custom_domain_clean[..colon_pos];
-                                let port = potential_port.parse::<u16>().ok();
-                                (host.to_string(), port)
-                            } else {
-                                (custom_domain_clean.to_string(), None)
-                            }
-                        } else {
-                            (custom_domain_clean.to_string(), None)
-                        };
-
-                        // 设置新的主机名和端口
-                        if let Err(_) = parsed_url.set_host(Some(&custom_host)) {
-                            log::warn!("设置自定义域名主机失败");
-                        } else {
-                            if let Some(port) = custom_port {
-                                if let Err(_) = parsed_url.set_port(Some(port)) {
-                                    log::warn!("设置自定义域名端口失败");
-                                }
-                            } else {
-                                // 如果自定义域名没有指定端口，移除端口（使用默认端口）
-                                let _ = parsed_url.set_port(None);
-                            }
-
-                            url = parsed_url.to_string();
-                            log::info!("使用自定义域名替换预签名URL: {} -> {}:{}",
-                                original_host_port,
-                                custom_host,
-                                custom_port.map(|p| p.to_string()).unwrap_or_else(|| "default".to_string())
-                            );
-                        }
-                    }
-                }
-            }
-        }
-
+        let url = presigned_request.uri().to_string();
         let expires_at = Utc::now() + chrono::Duration::seconds(expires_in_seconds as i64);
+
+        log::info!("生成预签名URL: {}", url);
 
         Ok(S3PresignedUrlResult {
             url,

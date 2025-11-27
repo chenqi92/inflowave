@@ -877,6 +877,65 @@ pub async fn get_file_info(path: String) -> Result<FileInfo, String> {
     }
 }
 
+/// 环境感知的获取文件信息（安全版本，文件不存在时返回默认值而非错误）
+/// 开发环境：相对于项目根目录
+/// 生产环境：相对于应用数据目录
+#[tauri::command]
+pub async fn get_file_info_env(app: tauri::AppHandle, path: String) -> Result<FileInfo, String> {
+    let resolved_path = resolve_path(&app, &path)?;
+    // debug!("获取文件信息 [环境感知]: {} -> {:?}", path, resolved_path);
+
+    // 如果文件不存在，返回默认的文件信息（size=0）
+    // 这样可以避免日志系统在文件不存在时抛出错误导致应用无法启动
+    if !resolved_path.exists() {
+        return Ok(FileInfo {
+            size: 0,
+            modified: chrono::Utc::now().to_rfc3339(),
+            created: chrono::Utc::now().to_rfc3339(),
+            is_file: false,
+            is_dir: false,
+        });
+    }
+
+    match std::fs::metadata(&resolved_path) {
+        Ok(metadata) => {
+            let modified = metadata.modified()
+                .map(|time| {
+                    let datetime: chrono::DateTime<chrono::Utc> = time.into();
+                    datetime.to_rfc3339()
+                })
+                .unwrap_or_else(|_| chrono::Utc::now().to_rfc3339());
+
+            let created = metadata.created()
+                .map(|time| {
+                    let datetime: chrono::DateTime<chrono::Utc> = time.into();
+                    datetime.to_rfc3339()
+                })
+                .unwrap_or_else(|_| chrono::Utc::now().to_rfc3339());
+
+            Ok(FileInfo {
+                size: metadata.len(),
+                modified,
+                created,
+                is_file: metadata.is_file(),
+                is_dir: metadata.is_dir(),
+            })
+        }
+        Err(e) => {
+            // 即使获取元数据失败，也返回默认值而不是错误
+            // 这样可以保证日志系统的稳定性
+            warn!("获取文件信息失败: {:?}: {}，返回默认值", resolved_path, e);
+            Ok(FileInfo {
+                size: 0,
+                modified: chrono::Utc::now().to_rfc3339(),
+                created: chrono::Utc::now().to_rfc3339(),
+                is_file: false,
+                is_dir: false,
+            })
+        }
+    }
+}
+
 /// 显示消息对话框
 #[tauri::command]
 pub async fn show_message_dialog(

@@ -47,6 +47,9 @@ const DialogContent = React.forwardRef<
           ...style,
         }}
         onPointerDownOutside={disableOutsideClick ? (e) => e.preventDefault() : undefined}
+        // 设置 aria-describedby={undefined} 来消除 Radix UI 的无障碍警告
+        // 当需要描述时，使用 DialogDescription 组件会自动覆盖此设置
+        aria-describedby={undefined}
         {...props}
       >
         {children}

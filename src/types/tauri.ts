@@ -43,6 +43,15 @@ export interface FileInfo {
   isDir: boolean;
 }
 
+// Rust 端返回的文件信息（snake_case 命名）
+export interface FileInfoRust {
+  size: number;
+  modified: string;
+  created: string;
+  is_file: boolean;
+  is_dir: boolean;
+}
+
 // 数据验证相关类型
 export interface DataValidationResult {
   valid: boolean;
@@ -93,6 +102,7 @@ export interface TauriCommandMap {
   'write_binary_file': void;
   'get_downloads_dir': string;
   'get_file_info': FileInfo;
+  'get_file_info_env': FileInfoRust;
 
   // 数据操作命令
   'validate_data_format': boolean;

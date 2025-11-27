@@ -1251,6 +1251,7 @@ async fn main() {
             delete_file_env,
             file_exists_env,
             create_dir_env,
+            get_file_info_env,
 
             // Data write operations
             write_data,
