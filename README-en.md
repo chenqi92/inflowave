@@ -62,6 +62,15 @@ Visit the [Releases page](https://github.com/chenqi92/inflowave/releases/latest)
   - ✅ For Windows 7/8/10/11 (32-bit/64-bit)
   - ✅ User-friendly installation wizard (NSIS)
 
+- **Portable (64-bit)**: 📥 **[InfloWave_0.8.5_x64_portable.zip](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x64_portable.zip)**
+  - ✅ No installation required, extract and run
+  - ✅ Perfect for USB drives or environments without admin rights
+  - ✅ No registry changes, no system impact
+
+- **Portable (32-bit)**: 📥 **[InfloWave_0.8.5_x86_portable.zip](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x86_portable.zip)**
+  - ✅ No installation required, extract and run
+  - ✅ For 32-bit systems
+
 #### macOS Users
 
 **How to Identify Your Mac Type?**
@@ -80,6 +89,15 @@ Visit the [Releases page](https://github.com/chenqi92/inflowave/releases/latest)
   - ✅ Macs released before 2020
   - ✅ Compatible with macOS 10.15 or higher
   - ⚠️ Not compatible with Apple Silicon chips
+
+**Portable (No Installation Required)**
+- **Apple Silicon**: 📥 **[InfloWave_aarch64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_aarch64.app.tar.gz)**
+  - ✅ Extract and run directly, no installation needed
+  - 📋 Usage: `tar -xzf InfloWave_aarch64.app.tar.gz && open InfloWave.app`
+
+- **Intel Mac**: 📥 **[InfloWave_x64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_x64.app.tar.gz)**
+  - ✅ Extract and run directly, no installation needed
+  - 📋 Usage: `tar -xzf InfloWave_x64.app.tar.gz && open InfloWave.app`
 
 #### Linux Users
 

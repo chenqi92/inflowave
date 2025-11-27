@@ -319,8 +319,8 @@ jobs:
           Write-Output "Building Windows Portable ZIP packages..."
           Write-Output "Target: ${{ matrix.rust_target }}"
 
-          # Use our portable build script
-          powershell -ExecutionPolicy Bypass -File scripts/build-windows-portable.ps1 -Target ${{ matrix.rust_target }} -Verbose
+          # Use our portable ZIP build script (creates extract-and-run ZIP package)
+          powershell -ExecutionPolicy Bypass -File scripts/build-windows-portable-zip.ps1 -Target ${{ matrix.rust_target }} -SkipBuild -Verbose
 
       - name: Build Windows MSIX (Microsoft Store) - Info Only
         if: matrix.platform == 'windows-latest'
@@ -511,12 +511,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
-      # Windows ZIP 文件上传到 Release
-      - name: Upload Windows ZIP to Release
+      # Windows Portable ZIP 文件上传到 Release
+      - name: Upload Windows Portable ZIP to Release
         if: matrix.platform == 'windows-latest' && steps.windows_zip_build.outcome == 'success'
         shell: pwsh
         run: |
-          Write-Output "Uploading Windows ZIP files to Release..."
+          Write-Output "Uploading Windows Portable ZIP files to Release..."
 
           # 查找 ZIP 文件
           $zipFiles = @()
@@ -526,11 +526,13 @@ jobs:
             "src-tauri\target\bundle\zip\*.zip"
           )
 
+          Write-Output "Searching for ZIP files in:"
           foreach ($path in $searchPaths) {
+            Write-Output "  - $path"
             $files = Get-ChildItem $path -ErrorAction SilentlyContinue
             if ($files) {
+              Write-Output "    Found $($files.Count) file(s)"
               $zipFiles += $files
-              break
             }
           }
 
@@ -538,15 +540,26 @@ jobs:
             foreach ($zipFile in $zipFiles) {
               $fileName = $zipFile.Name
               $filePath = $zipFile.FullName
+              $fileSize = [math]::Round($zipFile.Length / 1MB, 2)
 
-              Write-Output "Uploading ZIP file: $fileName"
+              Write-Output "Uploading ZIP file: $fileName ($fileSize MB)"
 
               # 使用 GitHub CLI 上传文件到 Release
               gh release upload "v${{ needs.detect-version.outputs.version }}" "$filePath" --clobber
+
+              if ($LASTEXITCODE -eq 0) {
+                Write-Output "  ✅ Uploaded successfully: $fileName"
+              } else {
+                Write-Output "  ⚠️ Upload may have failed for: $fileName"
+              }
             }
-            Write-Output "Windows ZIP files uploaded successfully"
+            Write-Output "Windows Portable ZIP files upload completed"
           } else {
             Write-Output "⚠️ No ZIP files found to upload"
+            Write-Output "Listing bundle directory contents for debugging:"
+            Get-ChildItem "src-tauri\target" -Recurse -Include "*.zip" -ErrorAction SilentlyContinue | ForEach-Object {
+              Write-Output "  Found: $($_.FullName)"
+            }
           }
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}

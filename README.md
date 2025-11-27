@@ -62,6 +62,15 @@
   - ✅ 适用于 Windows 7/8/10/11 (32位/64位)
   - ✅ 用户友好的安装向导 (NSIS)
 
+- **便携版 (64位)**: 📥 **[InfloWave_0.8.5_x64_portable.zip](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x64_portable.zip)**
+  - ✅ 免安装，解压即用
+  - ✅ 适合 U 盘携带或无管理员权限场景
+  - ✅ 不写入注册表，不影响系统
+
+- **便携版 (32位)**: 📥 **[InfloWave_0.8.5_x86_portable.zip](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x86_portable.zip)**
+  - ✅ 免安装，解压即用
+  - ✅ 适用于 32 位系统
+
 #### macOS 用户
 
 **如何判断你的 Mac 类型？**
@@ -80,6 +89,15 @@
   - ✅ 2020年前发布的 Mac
   - ✅ 兼容 macOS 10.15 或更高版本
   - ⚠️ 不支持 Apple Silicon 芯片
+
+**便携版 (免安装)**
+- **Apple Silicon**: 📥 **[InfloWave_aarch64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_aarch64.app.tar.gz)**
+  - ✅ 解压后直接运行，无需安装
+  - 📋 使用方法: `tar -xzf InfloWave_aarch64.app.tar.gz && open InfloWave.app`
+
+- **Intel Mac**: 📥 **[InfloWave_x64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_x64.app.tar.gz)**
+  - ✅ 解压后直接运行，无需安装
+  - 📋 使用方法: `tar -xzf InfloWave_x64.app.tar.gz && open InfloWave.app`
 
 #### Linux 用户
 
