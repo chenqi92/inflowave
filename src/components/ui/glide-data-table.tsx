@@ -13,7 +13,6 @@ import {
   Item,
   GridSelection,
   CompactSelection,
-  type DrawHeaderCallback,
 } from '@glideapps/glide-data-grid';
 import { cn } from '@/lib/utils';
 import {
@@ -31,8 +30,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Checkbox,
-  ScrollArea,
 } from '@/components/ui';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
@@ -67,7 +64,6 @@ const getCSSVariable = (variable: string, fallback: string = '#000000'): string 
   }
 };
 
-
 // 数据行类型
 export interface DataRow {
   [key: string]: any;
@@ -90,7 +86,7 @@ export interface ColumnConfig {
 // 排序配置类型
 export interface SortConfig {
   column: string;
-  direction: 'asc' | 'desc' | null; // null 表示无排序
+  direction: 'asc' | 'desc';
 }
 
 // 筛选配置类型
@@ -115,136 +111,6 @@ export type DataSourceType = 'influxdb1' | 'influxdb2' | 'influxdb3' | 'iotdb' |
 
 // 复制格式类型
 export type CopyFormat = 'text' | 'insert' | 'markdown' | 'json' | 'csv';
-
-// 筛选值项类型
-interface FilterValueItem {
-  value: string;
-  count: number;
-}
-
-// 筛选弹框组件属性
-interface ColumnFilterPopoverProps {
-  column: string;
-  valueItems: FilterValueItem[];
-  selectedValues: Set<string>;
-  onFilterChange: (selectedValues: Set<string>) => void;
-  onClose: () => void;
-}
-
-// 筛选弹框组件
-const ColumnFilterPopover: React.FC<ColumnFilterPopoverProps> = ({
-  column,
-  valueItems,
-  selectedValues,
-  onFilterChange,
-  onClose,
-}) => {
-  const [searchText, setSearchText] = useState('');
-
-  // 过滤后的值列表
-  const filteredItems = useMemo(() => {
-    if (!searchText) return valueItems;
-    return valueItems.filter(item =>
-      item.value.toLowerCase().includes(searchText.toLowerCase())
-    );
-  }, [valueItems, searchText]);
-
-  // 切换值选中状态 - 立即触发筛选
-  const toggleValue = (value: string) => {
-    const next = new Set(selectedValues);
-    if (next.has(value)) {
-      next.delete(value);
-    } else {
-      next.add(value);
-    }
-    // 立即触发筛选
-    onFilterChange(next);
-  };
-
-  return (
-    <div className="p-0 min-w-[250px] max-w-[350px]" onClick={(e) => e.stopPropagation()}>
-      {/* 搜索框 */}
-      <div className="p-2 pb-0">
-        <Input
-          placeholder="搜索..."
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          className="h-8 text-xs"
-        />
-      </div>
-
-      {/* 表格结构 */}
-      <div className="mt-2">
-        {/* 表头 */}
-        <div className="grid grid-cols-[32px_1fr_60px] gap-2 px-3 py-2 bg-muted border-y text-xs font-medium text-muted-foreground">
-          <div className="flex items-center justify-center">
-            <Checkbox
-              checked={selectedValues.size === filteredItems.length && filteredItems.length > 0}
-              ref={(el) => {
-                if (el) {
-                  // 设置半选状态：有部分选中但不是全部选中
-                  const input = el.querySelector('input');
-                  if (input) {
-                    input.indeterminate = selectedValues.size > 0 && selectedValues.size < filteredItems.length;
-                  }
-                }
-              }}
-              onCheckedChange={(checked) => {
-                if (checked) {
-                  // 全选（只选中当前过滤后的项）
-                  const allFilteredValues = new Set(selectedValues);
-                  filteredItems.forEach(item => allFilteredValues.add(item.value));
-                  onFilterChange(allFilteredValues);
-                } else {
-                  // 清空（只清空当前过滤后的项）
-                  const remainingValues = new Set(selectedValues);
-                  filteredItems.forEach(item => remainingValues.delete(item.value));
-                  onFilterChange(remainingValues);
-                }
-              }}
-              className="h-3.5 w-3.5"
-            />
-          </div>
-          <div>值</div>
-          <div className="text-right">计数</div>
-        </div>
-
-        {/* 值列表 */}
-        <ScrollArea className="h-[240px]">
-          <div>
-            {filteredItems.length === 0 ? (
-              <div className="text-xs text-muted-foreground text-center py-4">
-                无匹配项
-              </div>
-            ) : (
-              filteredItems.map((item, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-[32px_1fr_60px] gap-2 px-3 py-1.5 hover:bg-accent cursor-pointer border-b border-border/50 last:border-0"
-                  onClick={() => toggleValue(item.value)}
-                >
-                  <div className="flex items-center justify-center">
-                    <Checkbox
-                      checked={selectedValues.has(item.value)}
-                      onCheckedChange={() => toggleValue(item.value)}
-                      className="h-3.5 w-3.5"
-                    />
-                  </div>
-                  <div className="text-xs truncate flex items-center" title={item.value}>
-                    {item.value || '(空)'}
-                  </div>
-                  <div className="text-xs text-muted-foreground text-right flex items-center justify-end">
-                    {item.count}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
-      </div>
-    </div>
-  );
-};
 
 // 组件属性
 export interface GlideDataTableProps {
@@ -286,187 +152,89 @@ export interface GlideDataTableProps {
   database?: string;
   // 复制格式（用于快捷键复制）
   copyFormat?: CopyFormat;
-  // 是否允许拖动列来重新排序（默认false）
+  // 列排序（用于列重排序）
   enableColumnReorder?: boolean;
+  onColumnOrderChange?: (newOrder: string[]) => void;
+  // 列宽变化回调
+  onColumnWidthChange?: (columnKey: string, width: number) => void;
 }
 
 
 
 // 主组件
 export const GlideDataTable: React.FC<GlideDataTableProps> = ({
-                                                                data,
-                                                                columns,
-                                                                loading = false,
-                                                                pagination = { current: 1, pageSize: 500, total: 0 },
-                                                                searchable = true,
-                                                                filterable = true,
-                                                                sortable = true,
-                                                                exportable = true,
-                                                                columnManagement = true,
-                                                                showToolbar = true,
-                                                                className,
-                                                                title,
-                                                                selectedColumns: externalSelectedColumns,
-                                                                columnOrder: externalColumnOrder,
-                                                                onSearch,
-                                                                onFilter,
-                                                                onSort,
-                                                                onPageChange,
-                                                                onExport,
-                                                                onColumnChange,
-                                                                onRowSelect,
-                                                                onLoadMore,
-                                                                hasNextPage = false,
-                                                                isLoadingMore = false,
-                                                                totalCount,
-                                                                height = 600,
-                                                                maxHeight = 800,
-                                                                tableName,
-                                                                dataSourceType = 'generic',
-                                                                database,
-                                                                copyFormat = 'insert',
-                                                                enableColumnReorder = false,
-                                                              }) => {
+  data,
+  columns,
+  loading = false,
+  pagination = { current: 1, pageSize: 500, total: 0 },
+  searchable = true,
+  filterable = true,
+  sortable = true,
+  exportable = true,
+  columnManagement = true,
+  showToolbar = true,
+  className,
+  title,
+  selectedColumns: externalSelectedColumns,
+  columnOrder: externalColumnOrder,
+  onSearch,
+  onFilter,
+  onSort,
+  onPageChange,
+  onExport,
+  onColumnChange,
+  onRowSelect,
+  onLoadMore,
+  hasNextPage = false,
+  isLoadingMore = false,
+  totalCount,
+  height = 600,
+  maxHeight = 800,
+  tableName,
+  dataSourceType = 'generic',
+  database,
+  copyFormat = 'insert',
+  enableColumnReorder = false,
+  onColumnOrderChange,
+  onColumnWidthChange,
+}) => {
   // 状态管理
   const [searchText, setSearchText] = useState('');
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
   const [filters, setFilters] = useState<FilterConfig[]>([]);
-  // 列筛选状态：记录每列选中的值（用于类Excel筛选）
-  const [columnFilters, setColumnFilters] = useState<Map<string, Set<string>>>(new Map());
-  // 筛选弹框状态
-  const [filterPopover, setFilterPopover] = useState<{ column: string; x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerHeight, setContainerHeight] = useState(600);
-  const [containerWidth, setContainerWidth] = useState(800);
-  // 列宽管理：仅在当前会话中保存用户调整的列宽，不持久化到 localStorage
+  // 列宽管理：存储用户自定义的列宽
   const [columnWidths, setColumnWidths] = useState<Map<string, number>>(new Map());
   const { t } = useTranslation('query');
 
-  // 动态计算容器尺寸
+  // 动态计算容器高度
   useEffect(() => {
-    const updateDimensions = () => {
+    const updateHeight = () => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
-        // containerRef有1px border，overflow-auto容器的可用空间需要减去border
-        const borderWidth = 2; // 上下或左右各1px
-        const availableHeight = rect.height - borderWidth;
-        const availableWidth = rect.width - borderWidth;
+        const availableHeight = rect.height;
         if (availableHeight > 0) {
           setContainerHeight(availableHeight);
-        }
-        if (availableWidth > 0) {
-          setContainerWidth(availableWidth);
         }
       }
     };
 
     // 延迟执行以确保 DOM 已渲染
-    const timer = setTimeout(updateDimensions, 100);
+    const timer = setTimeout(updateHeight, 100);
 
-    window.addEventListener('resize', updateDimensions);
+    window.addEventListener('resize', updateHeight);
 
     // 使用 ResizeObserver 监听容器大小变化
-    const resizeObserver = new ResizeObserver(updateDimensions);
+    const resizeObserver = new ResizeObserver(updateHeight);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
 
     return () => {
       clearTimeout(timer);
-      window.removeEventListener('resize', updateDimensions);
+      window.removeEventListener('resize', updateHeight);
       resizeObserver.disconnect();
-    };
-  }, []);
-
-  // 强制覆盖Glide Data Grid的cursor样式 - 智能策略
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    // 白名单：只保留resize cursor，不覆盖
-    const preservedCursors = [
-      'col-resize',
-      'row-resize',
-      'ew-resize',
-      'ns-resize',
-      'nw-resize',
-      'ne-resize',
-      'se-resize',
-      'sw-resize',
-      'nesw-resize',
-      'nwse-resize',
-    ];
-
-    // 需要覆盖为default的cursor列表
-    const cursorsToCoverToDefault = [
-      'pointer',
-      'grab',
-      'grabbing',
-      'move',
-    ];
-
-    // 函数：智能处理cursor - 覆盖pointer/grab/grabbing，主动保护resize
-    const smartCursorHandler = () => {
-      const canvases = container.querySelectorAll('canvas');
-      canvases.forEach((canvas) => {
-        const htmlCanvas = canvas as HTMLCanvasElement;
-        const currentCursor = htmlCanvas.style.cursor;
-
-        // 策略1: 如果是resize cursor，确保它不被CSS的default覆盖
-        if (preservedCursors.includes(currentCursor)) {
-          // 什么都不做，让resize cursor保持
-          return;
-        }
-
-        // 策略2: 如果是需要覆盖的cursor或空值，强制设置为default
-        if (cursorsToCoverToDefault.includes(currentCursor) || currentCursor === '' || !currentCursor) {
-          htmlCanvas.style.cursor = 'default';
-        }
-
-        // 策略3: 检查计算样式，如果CSS已经设置了default但Glide试图设置不需要的cursor
-        const computedStyle = window.getComputedStyle(htmlCanvas);
-        if (cursorsToCoverToDefault.includes(computedStyle.cursor)) {
-          htmlCanvas.style.cursor = 'default';
-        }
-      });
-    };
-
-    // 初始执行
-    smartCursorHandler();
-
-    // 使用setInterval，间隔更短以快速响应cursor变化
-    const intervalId = setInterval(smartCursorHandler, 16); // ~60fps
-
-    // 使用MutationObserver监听style变化，立即响应
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-          const target = mutation.target as HTMLCanvasElement;
-          const currentCursor = target.style.cursor;
-
-          // 如果检测到Glide设置了resize cursor，立即跳过不处理
-          if (preservedCursors.includes(currentCursor)) {
-            return;
-          }
-
-          // 如果检测到需要覆盖的cursor（pointer/grab/grabbing/move），立即覆盖为default
-          if (cursorsToCoverToDefault.includes(currentCursor)) {
-            target.style.cursor = 'default';
-          }
-        }
-      });
-    });
-
-    observer.observe(container, {
-      attributes: true,
-      attributeFilter: ['style'],
-      subtree: true,
-      childList: true,
-    });
-
-    return () => {
-      clearInterval(intervalId);
-      observer.disconnect();
     };
   }, []);
 
@@ -483,6 +251,27 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     return order.filter(key => validColumnKeys.has(key));
   }, [externalColumnOrder, effectiveSelectedColumns, columns]);
 
+  // 从 localStorage 加载保存的列宽
+  useEffect(() => {
+    const widths = new Map<string, number>();
+    columns.forEach(col => {
+      try {
+        const key = `glide-table-column-width-${col.key}`;
+        const saved = localStorage.getItem(key);
+        if (saved) {
+          const width = parseInt(saved);
+          if (!isNaN(width) && width > 0) {
+            widths.set(col.key, width);
+          }
+        }
+      } catch (error) {
+        logger.warn('从 localStorage 加载列宽失败:', error);
+      }
+    });
+    if (widths.size > 0) {
+      setColumnWidths(widths);
+    }
+  }, [columns]);
 
   // 数据处理
   const processedData = useMemo(() => {
@@ -520,26 +309,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       }
     });
 
-    // 列筛选（类Excel筛选）
-    if (columnFilters.size > 0) {
-      result = result.filter(row => {
-        // 检查每个列筛选条件
-        for (const [column, selectedValues] of columnFilters.entries()) {
-          if (selectedValues.size === 0) continue; // 如果没有选中任何值，跳过该列筛选
-
-          const cellValue = String(row[column] ?? ''); // 转换为字符串，null/undefined 转为空字符串
-
-          // 如果当前行的值不在选中的值集合中，过滤掉该行
-          if (!selectedValues.has(cellValue)) {
-            return false;
-          }
-        }
-        return true;
-      });
-    }
-
     // 排序
-    if (sortConfig && sortConfig.direction !== null) {
+    if (sortConfig) {
       result.sort((a, b) => {
         const aVal = a[sortConfig.column];
         const bVal = b[sortConfig.column];
@@ -561,31 +332,38 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     }
 
     return result;
-  }, [data, searchText, filters, sortConfig, columnFilters, columns.length, pagination]);
+  }, [data, searchText, filters, sortConfig, columns.length, pagination]);
 
   // 转换为 Glide Data Grid 格式的列定义
   const gridColumns: GridColumn[] = useMemo(() => {
     const cols: GridColumn[] = [];
 
     // 数据列
-    effectiveColumnOrder.forEach((colKey) => {
+    effectiveColumnOrder.forEach((colKey, index) => {
       const column = columns.find(c => c.key === colKey);
       if (column) {
-        // 优先使用用户手动调整的列宽（会话内），否则使用自动计算的宽度
+        const isSorted = sortConfig?.column === column.key;
+        const sortDirection = isSorted ? sortConfig.direction : undefined;
+        const isLastColumn = index === effectiveColumnOrder.length - 1;
+
+        // 优先使用用户自定义的列宽，否则使用配置的默认宽度
         const customWidth = columnWidths.get(colKey);
         const width = customWidth || column.width || 120;
 
+        // 如果用户手动调整了最后一列的宽度，禁用 grow 以保持用户设置
+        const hasCustomWidth = columnWidths.has(colKey);
+
         cols.push({
-          title: column.title, // 移除排序箭头，使用自定义的排序图标
+          title: `${column.title}${isSorted ? (sortDirection === 'asc' ? ' ↑' : ' ↓') : ''}`,
           width,
           id: column.key,
-          grow: 0, // 不自动扩展，保持固定宽度
+          grow: isLastColumn && !hasCustomWidth ? 1 : 0, // 让最后一列自动扩展填充剩余空间（除非用户手动调整过）
         } as GridColumn);
       }
     });
 
     return cols;
-  }, [columns, effectiveColumnOrder, columnWidths]);
+  }, [columns, effectiveColumnOrder, sortConfig, columnWidths]);
 
   // 调试：打印组件接收到的数据
   useEffect(() => {
@@ -600,190 +378,24 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     });
   }, [data, columns, processedData, gridColumns]);
 
-  // 三态排序处理：null -> asc -> desc -> null
+  // 排序处理
   const handleSort = useCallback((columnKey: string) => {
-    let newDirection: 'asc' | 'desc' | null = 'asc';
-
-    if (sortConfig?.column === columnKey) {
-      // 同一列：asc -> desc -> null
-      if (sortConfig.direction === 'asc') {
-        newDirection = 'desc';
-      } else if (sortConfig.direction === 'desc') {
-        newDirection = null;
-      } else {
-        newDirection = 'asc';
-      }
-    } else {
-      // 不同列：从 asc 开始
-      newDirection = 'asc';
-    }
-
-    const newSortConfig = newDirection === null ? null : { column: columnKey, direction: newDirection };
+    const newDirection: 'asc' | 'desc' = sortConfig?.column === columnKey && sortConfig.direction === 'asc' ? 'desc' : 'asc';
+    const newSortConfig = { column: columnKey, direction: newDirection };
     setSortConfig(newSortConfig);
     onSort?.(newSortConfig);
   }, [sortConfig, onSort]);
 
-  // 列头点击处理 - 根据点击位置触发不同的操作
-  const onHeaderClicked = useCallback((col: number, event: any) => {
+  // 列头点击处理
+  const onHeaderClicked = useCallback((col: number) => {
     const column = gridColumns[col];
     if (!column) return;
 
-    const columnId = column.id as string;
-    const columnConfig = columns.find(c => c.key === columnId);
-
-    // 使用 event.bounds 获取列的实际边界(这个坐标是相对于整个 canvas 的)
-    const bounds = event.bounds;
-    if (!bounds) {
-      logger.warn('未找到 bounds 信息');
-      return;
+    const columnConfig = columns.find(c => c.key === column.id);
+    if (sortable && columnConfig?.sortable !== false) {
+      handleSort(column.id as string);
     }
-
-    // 获取点击相对于列的 X 坐标
-    const localX = event.localEventX; // 这是相对于列起始位置的 X 坐标
-    const colWidth = bounds.width;
-
-    // 与 drawHeader 保持一致的参数
-    const padding = 8;
-    const iconSize = 20;
-    const iconSpacing = 4;
-    const sortIconWidth = iconSize;
-    const filterIconWidth = iconSize;
-
-    // 计算排序图标位置（右对齐，相对于列起始位置）
-    const sortIconStartX = colWidth - padding - sortIconWidth;
-    const sortIconEndX = colWidth - padding;
-
-    // 计算筛选图标位置（需要测量文本宽度）
-    const tempCanvas = document.createElement('canvas');
-    const ctx = tempCanvas.getContext('2d');
-    if (ctx) {
-      // 设置与表头相同的字体
-      ctx.font = '600 13px Inter, system-ui, sans-serif';
-
-      // 计算显示文本（与 drawHeader 中的逻辑一致）
-      const maxTextWidth = colWidth - padding * 2 - sortIconWidth - filterIconWidth - iconSpacing * 2;
-      let displayText = column.title;
-      let textWidth = ctx.measureText(displayText).width;
-
-      if (textWidth > maxTextWidth) {
-        while (textWidth > maxTextWidth && displayText.length > 0) {
-          displayText = displayText.slice(0, -1);
-          textWidth = ctx.measureText(`${displayText  }...`).width;
-        }
-        displayText += '...';
-      }
-
-      // 筛选图标在文本后面（相对于列起始位置）
-      const textX = padding;
-      const filterIconStartX = textX + ctx.measureText(displayText).width + iconSpacing;
-      const filterIconEndX = filterIconStartX + filterIconWidth;
-
-      logger.debug('表头点击', {
-        列: columnId,
-        'localX (相对列)': localX,
-        列宽: colWidth,
-        排序图标范围: [sortIconStartX, sortIconEndX],
-        筛选图标范围: [filterIconStartX, filterIconEndX],
-        显示文本: displayText,
-        bounds
-      });
-
-      // 判断点击了哪个区域（排序图标优先，因为在最右侧）
-      if (localX >= sortIconStartX && localX <= sortIconEndX) {
-        // 点击了排序图标
-        logger.info('✅ 点击了排序图标');
-        if (sortable && columnConfig?.sortable !== false) {
-          handleSort(columnId);
-        }
-        return;
-      } else if (localX >= filterIconStartX && localX <= filterIconEndX) {
-        // 点击了筛选图标
-        logger.info('✅ 点击了筛选图标', { event对象: event });
-        if (filterable && columnConfig?.filterable !== false) {
-          // 筛选面板尺寸（用于边界检测）
-          const popoverWidth = 250;
-          const popoverHeight = 300;
-
-          // bounds.x 和 bounds.y 已经是相对于viewport的绝对坐标
-          // filterIconStartX 是筛选图标相对于列起始位置的偏移
-          let filterIconScreenX = bounds.x + filterIconStartX;
-          let filterIconScreenY = bounds.y + bounds.height + 2;
-
-          logger.info('位置计算详情:', {
-            列bounds: { x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height },
-            filterIconStartX,
-            计算后的X: filterIconScreenX,
-            计算后的Y: filterIconScreenY,
-          });
-
-          // 边界检测：确保面板不会超出视口
-          const viewportWidth = window.innerWidth;
-          const viewportHeight = window.innerHeight;
-
-          // 右边界检测：如果右侧空间不足，向左对齐
-          if (filterIconScreenX + popoverWidth > viewportWidth) {
-            filterIconScreenX = viewportWidth - popoverWidth - 10;
-          }
-
-          // 底部边界检测：如果底部空间不足，向上显示
-          if (filterIconScreenY + popoverHeight > viewportHeight) {
-            filterIconScreenY = filterIconScreenY - bounds.height - popoverHeight - 4;
-          }
-
-          logger.info('最终位置:', {
-            x: filterIconScreenX,
-            y: filterIconScreenY,
-            视口: { width: viewportWidth, height: viewportHeight }
-          });
-
-          setFilterPopover({
-            column: columnId,
-            x: filterIconScreenX,
-            y: filterIconScreenY
-          });
-        }
-        return;
-      }
-    }
-    // 其他区域不做处理
-    logger.debug('点击了表头其他区域');
-  }, [gridColumns, columns, sortable, filterable, handleSort]);
-
-  // 获取指定列的所有唯一值及其计数（用于筛选）
-  const getColumnValueItems = useCallback((columnKey: string): FilterValueItem[] => {
-    const valueCounts = new Map<string, number>();
-    data.forEach(row => {
-      const value = String(row[columnKey] ?? '');
-      valueCounts.set(value, (valueCounts.get(value) || 0) + 1);
-    });
-
-    // 转换为数组并按值排序
-    return Array.from(valueCounts.entries())
-      .map(([value, count]) => ({ value, count }))
-      .sort((a, b) => a.value.localeCompare(b.value));
-  }, [data]);
-
-  // 应用列筛选
-  const applyColumnFilter = useCallback((columnKey: string, selectedValues: Set<string>) => {
-    setColumnFilters(prev => {
-      const next = new Map(prev);
-      if (selectedValues.size === 0) {
-        next.delete(columnKey);
-      } else {
-        next.set(columnKey, selectedValues);
-      }
-      return next;
-    });
-  }, []);
-
-  // 清除列筛选
-  const clearColumnFilter = useCallback((columnKey: string) => {
-    setColumnFilters(prev => {
-      const next = new Map(prev);
-      next.delete(columnKey);
-      return next;
-    });
-  }, []);
+  }, [gridColumns, columns, sortable, handleSort]);
 
   // 列宽调整处理（拖动过程中实时更新）
   const handleColumnResize = useCallback((
@@ -799,7 +411,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     });
   }, []);
 
-  // 列宽调整结束处理（仅记录日志，不保存到 localStorage）
+  // 列宽调整结束处理（拖动结束时保存到 localStorage）
   const handleColumnResizeEnd = useCallback((
     column: GridColumn,
     newSize: number,
@@ -810,86 +422,15 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       新宽度: newSize,
       列索引: colIndex
     });
-    // 注意：不再保存到 localStorage，刷新后恢复为自动计算值
-  }, []);
 
-  // 列拖动建议处理 - 允许列重新排序并实时更新选中效果
-  const handleColumnProposeMove = useCallback((startIndex: number, endIndex: number): boolean => {
-    logger.debug('🔧 [GlideDataTable] 列拖动建议:', {
-      startIndex,
-      endIndex,
-      startColumn: gridColumns[startIndex]?.id,
-      endColumn: gridColumns[endIndex]?.id
-    });
-
-    // 使用函数式setState避免依赖gridSelection
-    setGridSelection(prevSelection => {
-      // 如果有列选中，需要重新映射列索引以跟随拖动
-      if (prevSelection.columns.length > 0) {
-        const newColumns = CompactSelection.empty();
-
-        // 重新映射所有选中的列索引
-        prevSelection.columns.toArray().forEach(colIndex => {
-          let newIndex = colIndex;
-
-          // 如果是被拖动的列
-          if (colIndex === startIndex) {
-            newIndex = endIndex;
-          }
-          // 如果在拖动范围内，需要相应调整
-          else if (startIndex < endIndex) {
-            // 向右拖动：startIndex+1 到 endIndex 之间的列都要左移
-            if (colIndex > startIndex && colIndex <= endIndex) {
-              newIndex = colIndex - 1;
-            }
-          } else {
-            // 向左拖动：endIndex 到 startIndex-1 之间的列都要右移
-            if (colIndex >= endIndex && colIndex < startIndex) {
-              newIndex = colIndex + 1;
-            }
-          }
-
-          newColumns.add(newIndex);
-        });
-
-        return {
-          ...prevSelection,
-          columns: newColumns
-        };
-      }
-
-      return prevSelection;
-    });
-
-    // 返回 true 允许拖动
-    return true;
-  }, [gridColumns]);
-
-  // 列拖动完成处理 - 仅在拖动结束时更新父组件
-  const handleColumnMoved = useCallback((startIndex: number, endIndex: number) => {
-    logger.info('🔄 [GlideDataTable] 列拖动完成:', {
-      startIndex,
-      endIndex,
-      startColumn: gridColumns[startIndex]?.id,
-      endColumn: gridColumns[endIndex]?.id
-    });
-
-    // 计算新的列顺序
-    const newOrder = [...effectiveColumnOrder];
-    const [movedColumn] = newOrder.splice(startIndex, 1);
-    newOrder.splice(endIndex, 0, movedColumn);
-
-    logger.debug('🔄 [GlideDataTable] 新列顺序:', {
-      oldOrder: effectiveColumnOrder,
-      newOrder,
-      movedColumn
-    });
-
-    // 通知父组件列顺序已更改
-    if (onColumnChange) {
-      onColumnChange(effectiveSelectedColumns, newOrder);
+    // 保存到 localStorage 以持久化用户偏好
+    try {
+      const key = `glide-table-column-width-${column.id}`;
+      localStorage.setItem(key, String(newSize));
+    } catch (error) {
+      logger.warn('保存列宽到 localStorage 失败:', error);
     }
-  }, [gridColumns, effectiveColumnOrder, effectiveSelectedColumns, onColumnChange]);
+  }, []);
 
   // 懒加载：检测滚动到底部
   const handleVisibleRegionChanged = useCallback((range: any) => {
@@ -956,9 +497,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         // 如果是 React 元素，尝试提取文本内容
         displayValue = String(cellValue || '');
       }
-    } else if (column.id && typeof column.id === 'string' && column.id.toLowerCase() === 'time' && cellValue) {
-      // 支持 InfluxDB 的 'time' 和 IoTDB 的 'Time'
-      // InfluxDB 返回 RFC3339 字符串，IoTDB 返回毫秒时间戳
+    } else if (column.id === 'time' && cellValue) {
       displayValue = new Date(cellValue).toLocaleString();
     } else {
       displayValue = String(cellValue !== null && cellValue !== undefined ? cellValue : '');
@@ -1034,27 +573,27 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       case 'influxdb3':
         // InfluxDB 使用 Line Protocol 格式，这里生成标准 SQL 作为参考
         // 实际使用时需要转换为 Line Protocol
-      { const columnList = columnNames.map(col => `"${col}"`).join(', ');
+        { const columnList = columnNames.map(col => `"${col}"`).join(', ');
         const valueList = values.join(', ');
         return `-- InfluxDB Line Protocol format required\nINSERT INTO "${table}" (${columnList}) VALUES (${valueList});`; }
 
       case 'iotdb':
         // IoTDB 使用特殊的插入语法
-      { const iotdbColumns = columnNames.map(col => `${table}.${col}`).join(', ');
+        { const iotdbColumns = columnNames.map(col => `${table}.${col}`).join(', ');
         const iotdbValues = values.join(', ');
         return `INSERT INTO ${table} (${iotdbColumns}) VALUES (${iotdbValues});`; }
 
       case 'mysql':
       case 'postgresql':
         // MySQL 和 PostgreSQL 使用标准 SQL
-      { const stdColumnList = columnNames.map(col => `\`${col}\``).join(', ');
+        { const stdColumnList = columnNames.map(col => `\`${col}\``).join(', ');
         const stdValueList = values.join(', ');
         return `INSERT INTO \`${table}\` (${stdColumnList}) VALUES (${stdValueList});`; }
 
       case 'generic':
       default:
         // 通用 SQL 格式
-      { const genericColumnList = columnNames.map(col => `"${col}"`).join(', ');
+        { const genericColumnList = columnNames.map(col => `"${col}"`).join(', ');
         const genericValueList = values.join(', ');
         return `INSERT INTO "${table}" (${genericColumnList}) VALUES (${genericValueList});`; }
     }
@@ -1099,42 +638,42 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     switch (format) {
       case 'text':
         // 文本格式：制表符分隔
-        return `${columnNames.join('\t')  }\n${
-          rows.map(row => row.map(v => v ?? '').join('\t')).join('\n')}`;
+        return `${columnNames.join('\t')  }\n${ 
+               rows.map(row => row.map(v => v ?? '').join('\t')).join('\n')}`;
 
       case 'csv':
         // CSV格式
-      { const escapeCsv = (val: any) => {
-        if (val === null || val === undefined) return '';
-        const str = String(val);
-        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-          return `"${str.replace(/"/g, '""')}"`;
-        }
-        return str;
-      };
-        return `${columnNames.map(escapeCsv).join(',')  }\n${
-          rows.map(row => row.map(escapeCsv).join(',')).join('\n')}`; }
+        { const escapeCsv = (val: any) => {
+          if (val === null || val === undefined) return '';
+          const str = String(val);
+          if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+            return `"${str.replace(/"/g, '""')}"`;
+          }
+          return str;
+        };
+        return `${columnNames.map(escapeCsv).join(',')  }\n${ 
+               rows.map(row => row.map(escapeCsv).join(',')).join('\n')}`; }
 
       case 'json':
         // JSON格式
-      { const jsonData = rows.map(row => {
-        const obj: Record<string, any> = {};
-        columnNames.forEach((col, idx) => {
-          obj[col] = row[idx];
+        { const jsonData = rows.map(row => {
+          const obj: Record<string, any> = {};
+          columnNames.forEach((col, idx) => {
+            obj[col] = row[idx];
+          });
+          return obj;
         });
-        return obj;
-      });
         return JSON.stringify(jsonData, null, 2); }
 
       case 'markdown':
         // Markdown表格格式
         return `| ${  columnNames.join(' | ')  } |\n` +
-          `| ${  columnNames.map(() => '---').join(' | ')  } |\n${
-            rows.map(row => `| ${  row.map(v => v ?? '').join(' | ')  } |`).join('\n')}`;
+               `| ${  columnNames.map(() => '---').join(' | ')  } |\n${ 
+               rows.map(row => `| ${  row.map(v => v ?? '').join(' | ')  } |`).join('\n')}`;
 
       case 'insert':
         // INSERT SQL格式
-      { const table = tableName || 'table_name';
+        { const table = tableName || 'table_name';
         const sqlStatements: string[] = [];
         rows.forEach(row => {
           const values = row.map(val => formatValueForSQL(val, dataSourceType));
@@ -1163,507 +702,6 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   useEffect(() => {
     gridSelectionRef.current = gridSelection;
   }, [gridSelection]);
-
-  // 计算选中区域的边框和内部分割线位置
-  const selectionBorders = useMemo(() => {
-    if (!gridSelection) {
-      return null;
-    }
-
-    // 单元格尺寸配置
-    const rowHeight = 32;
-    const headerHeight = 36;
-    const rowMarkerWidth = 48;
-
-    // 计算列的 X 坐标
-    const getColumnX = (colIndex: number) => {
-      let xPos = rowMarkerWidth;
-      for (let i = 0; i < colIndex; i++) {
-        const col = gridColumns[i];
-        if (!col || typeof col !== 'object') continue;
-        const colWidth = ('width' in col ? col.width : 150) as number;
-        xPos += colWidth;
-      }
-      return xPos;
-    };
-
-    const borders: Array<{
-      outerBorder: { left: number; top: number; width: number; height: number };
-      innerLines: Array<{
-        type: 'vertical' | 'horizontal';
-        x?: number;
-        y1?: number;
-        y2?: number;
-        y?: number;
-        x1?: number;
-        x2?: number;
-      }>;
-    }> = [];
-
-    // 处理单元格范围选择（但不包括单个单元格，避免双边框）
-    if (gridSelection.current?.range) {
-      const { range } = gridSelection.current;
-      const { x: startCol, y: startRow, width: colCount, height: rowCount } = range;
-
-      // 只在选中多个单元格时才绘制自定义边框，单个单元格使用Glide默认边框
-      if (colCount > 1 || rowCount > 1) {
-        const x1 = getColumnX(startCol);
-        const x2 = getColumnX(startCol + colCount);
-        const y1 = headerHeight + startRow * rowHeight;
-        const y2 = headerHeight + (startRow + rowCount) * rowHeight;
-
-        const outerBorder = {
-          left: x1,
-          top: y1,
-          width: x2 - x1,
-          height: y2 - y1,
-        };
-
-        const innerLines: Array<{
-          type: 'vertical' | 'horizontal';
-          x?: number;
-          y1?: number;
-          y2?: number;
-          y?: number;
-          x1?: number;
-          x2?: number;
-        }> = [];
-
-        // 垂直分割线（列之间）
-        if (colCount > 1) {
-          for (let i = 1; i < colCount; i++) {
-            const col = startCol + i;
-            const x = getColumnX(col);
-            innerLines.push({
-              type: 'vertical',
-              x,
-              y1,
-              y2,
-            });
-          }
-        }
-
-        // 水平分割线（行之间）
-        if (rowCount > 1) {
-          for (let i = 1; i < rowCount; i++) {
-            const row = startRow + i;
-            const y = headerHeight + row * rowHeight;
-            innerLines.push({
-              type: 'horizontal',
-              y,
-              x1,
-              x2,
-            });
-          }
-        }
-
-        borders.push({ outerBorder, innerLines });
-      }
-    }
-
-    // 处理列选择 - 合并连续的列
-    if (gridSelection.columns && typeof gridSelection.columns.length === 'number' && gridSelection.columns.length > 0) {
-      // 收集所有选中的列索引
-      const selectedCols: number[] = [];
-      for (const colIdx of gridSelection.columns) {
-        selectedCols.push(colIdx);
-      }
-      selectedCols.sort((a, b) => a - b);
-
-      // 将连续的列分组
-      const colRanges: Array<{ start: number; end: number }> = [];
-      let rangeStart = selectedCols[0];
-      let rangeEnd = selectedCols[0];
-
-      for (let i = 1; i < selectedCols.length; i++) {
-        if (selectedCols[i] === rangeEnd + 1) {
-          rangeEnd = selectedCols[i];
-        } else {
-          colRanges.push({ start: rangeStart, end: rangeEnd });
-          rangeStart = selectedCols[i];
-          rangeEnd = selectedCols[i];
-        }
-      }
-      colRanges.push({ start: rangeStart, end: rangeEnd });
-
-      // 为每个连续的列范围创建边框
-      for (const range of colRanges) {
-        const x1 = getColumnX(range.start);
-        const x2 = getColumnX(range.end + 1);
-        const y1 = headerHeight;
-        const y2 = headerHeight + (data?.length || 0) * rowHeight;
-        const colCount = range.end - range.start + 1;
-
-        const outerBorder = {
-          left: x1,
-          top: y1,
-          width: x2 - x1,
-          height: y2 - y1,
-        };
-
-        const innerLines: Array<{
-          type: 'vertical' | 'horizontal';
-          x?: number;
-          y1?: number;
-          y2?: number;
-          y?: number;
-          x1?: number;
-          x2?: number;
-        }> = [];
-
-        // 垂直分割线（列之间）
-        if (colCount > 1) {
-          for (let i = 1; i < colCount; i++) {
-            const col = range.start + i;
-            const x = getColumnX(col);
-            innerLines.push({
-              type: 'vertical',
-              x,
-              y1,
-              y2,
-            });
-          }
-        }
-
-        // 水平分割线（行之间）
-        if (data && data.length > 1) {
-          for (let i = 1; i < data.length; i++) {
-            const y = headerHeight + i * rowHeight;
-            innerLines.push({
-              type: 'horizontal',
-              y,
-              x1,
-              x2,
-            });
-          }
-        }
-
-        borders.push({ outerBorder, innerLines });
-      }
-    }
-
-    // 处理行选择 - 合并连续的行
-    if (gridSelection.rows && typeof gridSelection.rows.length === 'number' && gridSelection.rows.length > 0) {
-      // 收集所有选中的行索引
-      const selectedRows: number[] = [];
-      for (const rowIdx of gridSelection.rows) {
-        selectedRows.push(rowIdx);
-      }
-      selectedRows.sort((a, b) => a - b);
-
-      // 将连续的行分组
-      const rowRanges: Array<{ start: number; end: number }> = [];
-      let rangeStart = selectedRows[0];
-      let rangeEnd = selectedRows[0];
-
-      for (let i = 1; i < selectedRows.length; i++) {
-        if (selectedRows[i] === rangeEnd + 1) {
-          rangeEnd = selectedRows[i];
-        } else {
-          rowRanges.push({ start: rangeStart, end: rangeEnd });
-          rangeStart = selectedRows[i];
-          rangeEnd = selectedRows[i];
-        }
-      }
-      rowRanges.push({ start: rangeStart, end: rangeEnd });
-
-      // 为每个连续的行范围创建边框
-      for (const range of rowRanges) {
-        const x1 = rowMarkerWidth;
-        const x2 = getColumnX(gridColumns.length);
-        const y1 = headerHeight + range.start * rowHeight;
-        const y2 = headerHeight + (range.end + 1) * rowHeight;
-        const rowCount = range.end - range.start + 1;
-
-        const outerBorder = {
-          left: x1,
-          top: y1,
-          width: x2 - x1,
-          height: y2 - y1,
-        };
-
-        const innerLines: Array<{
-          type: 'vertical' | 'horizontal';
-          x?: number;
-          y1?: number;
-          y2?: number;
-          y?: number;
-          x1?: number;
-          x2?: number;
-        }> = [];
-
-        // 垂直分割线（列之间）
-        if (gridColumns.length > 1) {
-          for (let i = 1; i < gridColumns.length; i++) {
-            const x = getColumnX(i);
-            innerLines.push({
-              type: 'vertical',
-              x,
-              y1,
-              y2,
-            });
-          }
-        }
-
-        // 水平分割线（行之间）
-        if (rowCount > 1) {
-          for (let i = 1; i < rowCount; i++) {
-            const row = range.start + i;
-            const y = headerHeight + row * rowHeight;
-            innerLines.push({
-              type: 'horizontal',
-              y,
-              x1,
-              x2,
-            });
-          }
-        }
-
-        borders.push({ outerBorder, innerLines });
-      }
-    }
-
-    return borders.length > 0 ? borders : null;
-  }, [gridSelection, gridColumns, data]);
-
-  // 拖动选择时的自动滚动功能
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const scrollableContainer = container.querySelector('.flex-1.min-h-0.overflow-auto') as HTMLElement;
-    if (!scrollableContainer) return;
-
-    let isDragging = false;
-    let animationFrameId: number | null = null;
-    let mouseX = 0;
-    let mouseY = 0;
-
-    const handleMouseDown = () => {
-      isDragging = true;
-    };
-
-    const handleMouseUp = () => {
-      isDragging = false;
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-      }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-
-      const rect = scrollableContainer.getBoundingClientRect();
-      mouseX = e.clientX;
-      mouseY = e.clientY;
-
-      // 开始自动滚动检测
-      if (!animationFrameId) {
-        animationFrameId = requestAnimationFrame(autoScroll);
-      }
-    };
-
-    const autoScroll = () => {
-      const rect = scrollableContainer.getBoundingClientRect();
-      const edgeSize = 50; // 靠近边缘多少像素时开始滚动
-      const scrollSpeed = 10; // 滚动速度
-
-      let scrollX = 0;
-      let scrollY = 0;
-
-      // 检测鼠标是否靠近右边缘
-      if (mouseX > rect.right - edgeSize) {
-        scrollX = scrollSpeed;
-      }
-      // 检测鼠标是否靠近左边缘
-      else if (mouseX < rect.left + edgeSize) {
-        scrollX = -scrollSpeed;
-      }
-
-      // 检测鼠标是否靠近下边缘
-      if (mouseY > rect.bottom - edgeSize) {
-        scrollY = scrollSpeed;
-      }
-      // 检测鼠标是否靠近上边缘
-      else if (mouseY < rect.top + edgeSize) {
-        scrollY = -scrollSpeed;
-      }
-
-      // 执行滚动
-      if (scrollX !== 0 || scrollY !== 0) {
-        scrollableContainer.scrollLeft += scrollX;
-        scrollableContainer.scrollTop += scrollY;
-
-        // 继续动画
-        if (isDragging) {
-          animationFrameId = requestAnimationFrame(autoScroll);
-        }
-      } else {
-        animationFrameId = null;
-      }
-    };
-
-    // 添加事件监听
-    container.addEventListener('mousedown', handleMouseDown);
-    document.addEventListener('mouseup', handleMouseUp);
-    document.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      container.removeEventListener('mousedown', handleMouseDown);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.removeEventListener('mousemove', handleMouseMove);
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
-    };
-  }, []);
-
-
-  // 自定义表头绘制 - 添加筛选和排序图标
-  const drawHeader = useCallback<DrawHeaderCallback>((args, drawContent) => {
-    const { ctx, column, theme, rect, isSelected, spriteManager } = args;
-
-    // 绘制背景
-    if (isSelected) {
-      ctx.fillStyle = theme.accentLight;
-      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-    } else {
-      ctx.fillStyle = theme.bgHeader;
-      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-    }
-
-    // 获取当前列的配置
-    const columnId = column.id as string;
-    const columnConfig = columns.find(c => c.key === columnId);
-
-    // 如果是行号列（第一列，通常没有配置或key为特殊值），只绘制背景，不绘制内容
-    if (!columnConfig) {
-      // 这是行号列或其他特殊列，只绘制背景即可
-      return;
-    }
-
-    // 绘制列标题文本
-    ctx.fillStyle = theme.textHeader;
-    ctx.font = theme.headerFontStyle;
-    ctx.textBaseline = 'middle';
-
-    const padding = 8;
-    const iconSpacing = 4; // 图标与文本的间距
-    const iconSize = 20; // 图标大小
-    const sortIconWidth = iconSize; // 排序图标区域宽度
-    const filterIconWidth = iconSize; // 筛选图标区域宽度
-
-    // 计算文本位置
-    const textX = rect.x + padding;
-    const textY = rect.y + rect.height / 2;
-
-    // 绘制列名（可能需要截断以适应图标）
-    const maxTextWidth = rect.width - padding * 2 - sortIconWidth - filterIconWidth - iconSpacing * 2;
-    let displayText = column.title;
-    let textWidth = ctx.measureText(displayText).width;
-
-    // 如果文本太长，添加省略号
-    if (textWidth > maxTextWidth) {
-      while (textWidth > maxTextWidth && displayText.length > 0) {
-        displayText = displayText.slice(0, -1);
-        textWidth = ctx.measureText(`${displayText  }...`).width;
-      }
-      displayText += '...';
-    }
-
-    ctx.fillText(displayText, textX, textY);
-
-    // 绘制筛选图标（紧跟在列名后面）
-    if (filterable && columnConfig?.filterable !== false) {
-      const filterX = textX + ctx.measureText(displayText).width + iconSpacing;
-      const filterY = textY - iconSize / 2;
-      const isFilterActive = columnFilters.has(columnId) && columnFilters.get(columnId)!.size > 0;
-
-      // 手动绘制筛选图标（确保使用正确的颜色）
-      ctx.save();
-      ctx.strokeStyle = theme.textHeader; // 使用与文本相同的颜色
-      ctx.lineWidth = 1.5; // 优化线条粗细
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      if (isFilterActive) {
-        // 实心漏斗
-        ctx.fillStyle = theme.textHeader;
-        ctx.beginPath();
-        ctx.moveTo(filterX + 4, filterY + 5);
-        ctx.lineTo(filterX + 16, filterY + 5);
-        ctx.lineTo(filterX + 11.5, filterY + 11);
-        ctx.lineTo(filterX + 11.5, filterY + 16);
-        ctx.lineTo(filterX + 8.5, filterY + 14.5);
-        ctx.lineTo(filterX + 8.5, filterY + 11);
-        ctx.closePath();
-        ctx.fill();
-      } else {
-        // 线框漏斗
-        ctx.beginPath();
-        ctx.moveTo(filterX + 4, filterY + 5);
-        ctx.lineTo(filterX + 16, filterY + 5);
-        ctx.lineTo(filterX + 11.5, filterY + 11);
-        ctx.lineTo(filterX + 11.5, filterY + 16);
-        ctx.lineTo(filterX + 8.5, filterY + 14.5);
-        ctx.lineTo(filterX + 8.5, filterY + 11);
-        ctx.closePath();
-        ctx.stroke();
-      }
-      ctx.restore();
-    }
-
-    // 绘制排序图标（右对齐）
-    if (sortable && columnConfig?.sortable !== false) {
-      const sortX = rect.x + rect.width - padding - sortIconWidth;
-      const sortY = textY - iconSize / 2;
-      const sortDirection = sortConfig?.column === columnId ? (sortConfig?.direction ?? null) : null;
-
-      // 手动绘制排序图标（确保使用正确的颜色）
-      ctx.save();
-      ctx.fillStyle = theme.textHeader; // 使用与文本相同的颜色
-      ctx.strokeStyle = theme.textHeader;
-      ctx.lineWidth = 1.5;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-
-      if (sortDirection === null) {
-        // 默认状态：上下箭头（线框）
-        // 上箭头
-        ctx.beginPath();
-        ctx.moveTo(sortX + 6, sortY + 7);
-        ctx.lineTo(sortX + 10, sortY + 3);
-        ctx.lineTo(sortX + 14, sortY + 7);
-        ctx.stroke();
-        // 下箭头
-        ctx.beginPath();
-        ctx.moveTo(sortX + 6, sortY + 13);
-        ctx.lineTo(sortX + 10, sortY + 17);
-        ctx.lineTo(sortX + 14, sortY + 13);
-        ctx.stroke();
-      } else if (sortDirection === 'asc') {
-        // 升序：实心向上三角形
-        ctx.beginPath();
-        ctx.moveTo(sortX + 10, sortY + 6);    // 顶点
-        ctx.lineTo(sortX + 15, sortY + 14);   // 右下角
-        ctx.lineTo(sortX + 5, sortY + 14);    // 左下角
-        ctx.closePath();
-        ctx.fill();
-      } else {
-        // 降序：实心向下三角形
-        ctx.beginPath();
-        ctx.moveTo(sortX + 10, sortY + 14);   // 底部顶点
-        ctx.lineTo(sortX + 15, sortY + 6);    // 右上角
-        ctx.lineTo(sortX + 5, sortY + 6);     // 左上角
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.restore();
-    }
-
-    // 不调用 drawContent()，避免绘制默认的排序图标
-  }, [columns, sortConfig, columnFilters, sortable, filterable]);
 
   // 使用全局键盘事件监听复制
   useEffect(() => {
@@ -1805,19 +843,6 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
-      {/* 修复鼠标样式 */}
-      <style>{`
-        .dvn-scroller .dvn-underlay canvas,
-        .dvn-scroller .dvn-underlay {
-          cursor: default !important;
-        }
-        .gdg-header-cell {
-          cursor: default !important;
-        }
-        .gdg-row-marker {
-          cursor: default !important;
-        }
-      `}</style>
       {/* 工具栏 */}
       {showToolbar && (
         <Card className="mb-4">
@@ -1863,16 +888,15 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         </Card>
       )}
 
-      {/* 数据表格 - 使用外层滚动容器 */}
-      <div ref={containerRef} className="flex-1 min-h-0 flex flex-col border rounded-none bg-background">
-        {/* 可滚动内容区域 - 滚动条固定在容器边缘 */}
-        <div className="flex-1 min-h-0 overflow-auto">
+      {/* 数据表格 - 移除圆角 */}
+      <div ref={containerRef} className="flex-1 min-h-0 flex flex-col border rounded-none overflow-hidden bg-background">
+        <div className="flex-1 min-h-0 relative">
           {loading ? (
-            <div className="flex items-center justify-center h-full bg-background">
+            <div className="absolute inset-0 flex items-center justify-center bg-background">
               <div className="text-muted-foreground">加载中...</div>
             </div>
           ) : processedData.length === 0 ? (
-            <div className="flex items-center justify-center h-full bg-background">
+            <div className="absolute inset-0 flex items-center justify-center bg-background">
               <div className="text-muted-foreground">暂无数据</div>
             </div>
           ) : (
@@ -1881,223 +905,69 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                 gridColumns数: gridColumns.length,
                 rows: processedData.length,
                 containerHeight,
-                containerWidth,
+                计算后高度: containerHeight - (pagination ? 60 : 0),
               })}
-              {(() => {
-                // 计算表格实际大小
-                const rowMarkerWidth = 48;
-                const headerHeight = 36;
-                const rowHeight = 32;
-
-                // 类型安全地访问width属性
-                const totalColumnsWidth = gridColumns.reduce((sum, col) => {
-                  const width = 'width' in col ? col.width : 150;
-                  return sum + width;
-                }, 0);
-
-                // 表格实际宽度（所有列宽 + 行标记）
-                const tableWidth = totalColumnsWidth + rowMarkerWidth;
-
-                // 表格实际高度（表头 + 所有行）
-                const tableHeight = headerHeight + (rowHeight * processedData.length);
-
-                logger.info('📊 表格实际尺寸:', {
-                  totalColumnsWidth,
-                  tableWidth,
-                  tableHeight,
-                  rowCount: processedData.length,
-                  containerWidth,
-                  containerHeight,
-                });
-
-                // 统一的渲染模式：DataEditor 以实际内容大小渲染，外层容器提供滚动
-                // wrapper div提供border（通过CSS伪元素），宽高由DataEditor撑开
-                return (
-                  <div
-                    className="glide-table-border-fix"
-                    style={{
-                      display: 'inline-block', // 让div大小由内容（DataEditor）决定
-                      position: 'relative',
-                      backgroundColor: 'var(--background)',
-                      overflow: 'hidden', // 隐藏DataEditor内部可能的滚动条
-                    }}
-                  >
-                    <DataEditor
-                      getCellContent={getCellContent}
-                      columns={gridColumns}
-                      rows={processedData.length}
-                      width={tableWidth}
-                      height={tableHeight}
-                      smoothScrollX={false}
-                      smoothScrollY={false}
-                      overscrollX={0}
-                      overscrollY={0}
-                      rowMarkers="both"
-                      rowMarkerWidth={rowMarkerWidth}
-                      onHeaderClicked={onHeaderClicked}
-                      onColumnResize={handleColumnResize}
-                      onColumnResizeEnd={handleColumnResizeEnd}
-                      {...(enableColumnReorder ? {
-                        onColumnProposeMove: handleColumnProposeMove,
-                        onColumnMoved: handleColumnMoved,
-                      } : {})}
-                      onVisibleRegionChanged={handleVisibleRegionChanged}
-                      gridSelection={gridSelection}
-                      onGridSelectionChange={setGridSelection}
-                      rangeSelect="multi-rect"
-                      columnSelect="multi"
-                      rowSelect="multi"
-                      rowSelectionMode="multi"
-                      minColumnWidth={80}
-                      maxColumnWidth={800}
-                      maxColumnAutoWidth={500}
-                      keybindings={{
-                        copy: false,
-                        paste: false,
-                        selectAll: true,
-                        selectRow: true,
-                        selectColumn: true,
-                      }}
-                      freezeColumns={0}
-                      headerHeight={36}
-                      rowHeight={32}
-                      drawHeader={drawHeader}
-                      onCellEdited={(cell, newValue) => {
-                        logger.debug('单元格编辑:', { cell, newValue });
-                        return undefined;
-                      }}
-                      rightElement={undefined}
-                      rightElementProps={{
-                        fill: false,
-                        sticky: false,
-                      }}
-                      trailingRowOptions={undefined}
-                      fillHandle={false}
-                      theme={{
-                        accentColor: getCSSVariable('--primary', '#0066cc'),
-                        accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
-                        accentLight: getCSSVariable('--accent', '#f0f9ff'),
-                        textDark: getCSSVariable('--foreground', '#09090b'),
-                        textMedium: getCSSVariable('--muted-foreground', '#71717a'),
-                        textLight: getCSSVariable('--muted-foreground', '#a1a1aa'),
-                        textBubble: getCSSVariable('--foreground', '#09090b'),
-                        bgIconHeader: getCSSVariable('--muted-foreground', '#71717a'),
-                        fgIconHeader: getCSSVariable('--background', '#ffffff'),
-                        textHeader: getCSSVariable('--foreground', '#09090b'),
-                        textHeaderSelected: getCSSVariable('--primary-foreground', '#ffffff'),
-                        bgCell: getCSSVariable('--background', '#ffffff'),
-                        bgCellMedium: getCSSVariable('--muted', '#f4f4f5'),
-                        bgHeader: getCSSVariable('--muted', '#f4f4f5'),
-                        bgHeaderHasFocus: getCSSVariable('--muted', '#f4f4f5'),
-                        bgHeaderHovered: getCSSVariable('--accent', '#f0f9ff'),
-                        bgBubble: getCSSVariable('--background', '#ffffff'),
-                        bgBubbleSelected: getCSSVariable('--primary', '#0066cc'),
-                        bgSearchResult: getCSSVariable('--accent', '#f0f9ff'),
-                        borderColor: getCSSVariable('--border', '#e4e4e7'),
-                        drilldownBorder: getCSSVariable('--border', '#e4e4e7'),
-                        linkColor: getCSSVariable('--primary', '#0066cc'),
-                        headerFontStyle: "600 14px",
-                        baseFontStyle: "14px",
-                        fontFamily: "Inter, system-ui, sans-serif",
-                      }}
-                    />
-
-                    {/* 选中区域边框和内部分割线覆盖层 */}
-                    {selectionBorders && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: 0,
-                          left: 0,
-                          width: '100%',
-                          height: '100%',
-                          pointerEvents: 'none',
-                          zIndex: 50,
-                        }}
-                      >
-                        {selectionBorders.map((border, borderIndex) => (
-                          <React.Fragment key={`border-${borderIndex}`}>
-                            {/* 外边框 - 拆分为四条边 */}
-                            {/* 上边框 */}
-                            <div
-                              style={{
-                                position: 'absolute',
-                                left: `${border.outerBorder.left}px`,
-                                top: `${border.outerBorder.top}px`,
-                                width: `${border.outerBorder.width}px`,
-                                height: '1px',
-                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
-                              }}
-                            />
-                            {/* 下边框 */}
-                            <div
-                              style={{
-                                position: 'absolute',
-                                left: `${border.outerBorder.left}px`,
-                                top: `${border.outerBorder.top + border.outerBorder.height - 1}px`,
-                                width: `${border.outerBorder.width + 1}px`,
-                                height: '1px',
-                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
-                              }}
-                            />
-                            {/* 左边框 */}
-                            <div
-                              style={{
-                                position: 'absolute',
-                                left: `${border.outerBorder.left}px`,
-                                top: `${border.outerBorder.top}px`,
-                                width: '1px',
-                                height: `${border.outerBorder.height}px`,
-                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
-                              }}
-                            />
-                            {/* 右边框 */}
-                            <div
-                              style={{
-                                position: 'absolute',
-                                left: `${border.outerBorder.left + border.outerBorder.width - 1}px`,
-                                top: `${border.outerBorder.top}px`,
-                                width: '1px',
-                                height: `${border.outerBorder.height + 1}px`,
-                                backgroundColor: getCSSVariable('--primary', '#0066cc'),
-                              }}
-                            />
-
-                            {/* 内部分割线 */}
-                            {border.innerLines.map((line, lineIndex) => (
-                              line.type === 'vertical' ? (
-                                <div
-                                  key={`border-${borderIndex}-v-${lineIndex}`}
-                                  style={{
-                                    position: 'absolute',
-                                    left: `${line.x}px`,
-                                    top: `${line.y1}px`,
-                                    width: '1px',
-                                    height: `${(line.y2! - line.y1!)}px`,
-                                    backgroundColor: getCSSVariable('--primary', '#0066cc'),
-                                  }}
-                                />
-                              ) : (
-                                <div
-                                  key={`border-${borderIndex}-h-${lineIndex}`}
-                                  style={{
-                                    position: 'absolute',
-                                    left: `${line.x1}px`,
-                                    top: `${line.y}px`,
-                                    width: `${(line.x2! - line.x1!)}px`,
-                                    height: '1px',
-                                    backgroundColor: getCSSVariable('--primary', '#0066cc'),
-                                  }}
-                                />
-                              )
-                            ))}
-                          </React.Fragment>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
+              <DataEditor
+                getCellContent={getCellContent}
+                columns={gridColumns}
+                rows={processedData.length}
+                width="100%"
+                height={containerHeight - (pagination ? 60 : 0)} // 为分页控件预留空间
+                smoothScrollX={true}
+                smoothScrollY={true}
+                rowMarkers="both"
+                onHeaderClicked={onHeaderClicked}
+                onColumnResize={handleColumnResize}
+                onColumnResizeEnd={handleColumnResizeEnd}
+                onVisibleRegionChanged={handleVisibleRegionChanged}
+                gridSelection={gridSelection}
+                onGridSelectionChange={setGridSelection}
+                minColumnWidth={80}
+                maxColumnWidth={800}
+                maxColumnAutoWidth={500}
+                keybindings={{
+                  copy: false,  // 禁用默认复制，使用自定义处理
+                  paste: false,
+                  selectAll: true,
+                  selectRow: true,
+                  selectColumn: true,
+                }}
+                freezeColumns={0}
+                headerHeight={36}
+                rowHeight={32}
+                rightElement={undefined}
+                rightElementProps={{
+                  fill: false,
+                  sticky: false,
+                }}
+                theme={{
+              accentColor: getCSSVariable('--primary', '#0066cc'),
+              accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
+              accentLight: getCSSVariable('--accent', '#f0f9ff'),
+              textDark: getCSSVariable('--foreground', '#09090b'),
+              textMedium: getCSSVariable('--muted-foreground', '#71717a'),
+              textLight: getCSSVariable('--muted-foreground', '#a1a1aa'),
+              textBubble: getCSSVariable('--foreground', '#09090b'),
+              bgIconHeader: getCSSVariable('--muted-foreground', '#71717a'),
+              fgIconHeader: getCSSVariable('--background', '#ffffff'),
+              textHeader: getCSSVariable('--foreground', '#09090b'),
+              textHeaderSelected: getCSSVariable('--primary-foreground', '#ffffff'),
+              bgCell: getCSSVariable('--background', '#ffffff'),
+              bgCellMedium: getCSSVariable('--muted', '#f4f4f5'),
+              bgHeader: getCSSVariable('--muted', '#f4f4f5'),
+              bgHeaderHasFocus: getCSSVariable('--muted', '#f4f4f5'),
+              bgHeaderHovered: getCSSVariable('--accent', '#f0f9ff'),
+              bgBubble: getCSSVariable('--background', '#ffffff'),
+              bgBubbleSelected: getCSSVariable('--primary', '#0066cc'),
+              bgSearchResult: getCSSVariable('--accent', '#f0f9ff'),
+              borderColor: getCSSVariable('--border', '#e4e4e7'),
+              drilldownBorder: getCSSVariable('--border', '#e4e4e7'),
+              linkColor: getCSSVariable('--primary', '#0066cc'),
+              headerFontStyle: "600 14px",
+              baseFontStyle: "14px",
+              fontFamily: "Inter, system-ui, sans-serif",
+                }}
+              />
             </>
           )}
         </div>
@@ -2180,35 +1050,6 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           </div>
         )}
       </div>
-
-      {/* 筛选弹框 */}
-      {filterPopover && (
-        <div
-          className="fixed z-50 bg-background border rounded-md shadow-lg"
-          style={{
-            left: filterPopover.x,
-            top: filterPopover.y,
-          }}
-        >
-          <ColumnFilterPopover
-            column={filterPopover.column}
-            valueItems={getColumnValueItems(filterPopover.column)}
-            selectedValues={columnFilters.get(filterPopover.column) || new Set()}
-            onFilterChange={(selectedValues) => {
-              applyColumnFilter(filterPopover.column, selectedValues);
-            }}
-            onClose={() => setFilterPopover(null)}
-          />
-        </div>
-      )}
-
-      {/* 点击外部关闭弹框 */}
-      {filterPopover && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setFilterPopover(null)}
-        />
-      )}
     </div>
   );
 };
