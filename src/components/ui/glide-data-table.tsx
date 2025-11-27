@@ -803,13 +803,12 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         const isLeftColSelected = selectedCols.includes(col - 1);
         const isRightColSelected = selectedCols.includes(col + 1);
 
-        // 左边框 - 最左侧列绘制外边框，或者左侧也被选中时绘制内部分割线
-        if (isLeftmostCol || isLeftColSelected) {
-          ctx.beginPath();
-          ctx.moveTo(Math.floor(rect.x), rect.y);
-          ctx.lineTo(Math.floor(rect.x), rect.y + rect.height);
-          ctx.stroke();
-        }
+        // 左边框 - 每个单元格都绘制（外边框或内部列分割线）
+        // 向内偏移1像素避免被 Canvas 剪切区域裁剪
+        ctx.beginPath();
+        ctx.moveTo(Math.floor(rect.x) + 1, rect.y);
+        ctx.lineTo(Math.floor(rect.x) + 1, rect.y + rect.height);
+        ctx.stroke();
 
         // 右边框 - 最右侧列绘制外边框，或者右侧也被选中时绘制内部分割线
         if (isRightmostCol || isRightColSelected) {
@@ -949,34 +948,58 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         dataSourceType,
       });
 
-      // 检查是否有选中的单元格
-      if (!gridSelection.current) {
-        logger.debug('⚠️ [GlideDataTable] 没有选中任何内容');
-        return;
-      }
-
       // 构建选中的单元格列表
       const selectedCells: { col: number; row: number }[] = [];
+      const totalRows = processedData.length;
+      const totalCols = gridColumns.length;
 
-      const { cell, range } = gridSelection.current;
+      // 检查列选择
+      if (gridSelection.columns && gridSelection.columns.length > 0) {
+        const selectedCols = gridSelection.columns.toArray();
+        logger.info('📊 [GlideDataTable] 列选择:', { selectedCols, totalRows });
 
-      if (range) {
-        // 有范围选择
-        const startCol = range.x;
-        const endCol = range.x + range.width - 1;
-        const startRow = range.y;
-        const endRow = range.y + range.height - 1;
-
-        logger.info('📊 [GlideDataTable] 选择区域:', { startCol, endCol, startRow, endRow });
-
-        for (let row = startRow; row <= endRow; row++) {
-          for (let col = startCol; col <= endCol; col++) {
+        for (let row = 0; row < totalRows; row++) {
+          for (const col of selectedCols) {
             selectedCells.push({ col, row });
           }
         }
+      }
+      // 检查行选择
+      else if (gridSelection.rows && gridSelection.rows.length > 0) {
+        const selectedRows = gridSelection.rows.toArray();
+        logger.info('📊 [GlideDataTable] 行选择:', { selectedRows, totalCols });
+
+        for (const row of selectedRows) {
+          for (let col = 0; col < totalCols; col++) {
+            selectedCells.push({ col, row });
+          }
+        }
+      }
+      // 检查范围选择或单个单元格选择
+      else if (gridSelection.current) {
+        const { cell, range } = gridSelection.current;
+
+        if (range) {
+          // 有范围选择
+          const startCol = range.x;
+          const endCol = range.x + range.width - 1;
+          const startRow = range.y;
+          const endRow = range.y + range.height - 1;
+
+          logger.info('📊 [GlideDataTable] 选择区域:', { startCol, endCol, startRow, endRow });
+
+          for (let row = startRow; row <= endRow; row++) {
+            for (let col = startCol; col <= endCol; col++) {
+              selectedCells.push({ col, row });
+            }
+          }
+        } else {
+          // 单个单元格选择
+          selectedCells.push({ col: cell[0], row: cell[1] });
+        }
       } else {
-        // 单个单元格选择
-        selectedCells.push({ col: cell[0], row: cell[1] });
+        logger.debug('⚠️ [GlideDataTable] 没有选中任何内容');
+        return;
       }
 
       if (selectedCells.length === 0) {
