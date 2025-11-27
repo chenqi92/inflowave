@@ -1,5 +1,7 @@
 ﻿import React, {useState, useCallback, startTransition, useEffect, useRef} from 'react';
-import { GlideDataTable, type DataRow } from '@/components/ui/glide-data-table';
+import { GlideDataTable, type DataRow, type DataSourceType } from '@/components/ui/glide-data-table';
+import { useConnectionStore } from '@/store/connection';
+import type { CopyFormat } from '@/components/ui/table-toolbar';
 import { TableToolbar } from '@/components/ui/table-toolbar';
 import { ExportConfigDialog } from './ExportConfigDialog';
 import { exportQueryResult, ExportConfig } from '@/utils/dataExport';
@@ -93,6 +95,15 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                                                        queryType,
                                                    }) => {
     const { t } = useTranslation('query');
+
+    // 获取连接信息用于复制功能
+    const { activeConnectionId, getConnection } = useConnectionStore();
+    const activeConnection = activeConnectionId ? getConnection(activeConnectionId) : null;
+    const dataSourceType: DataSourceType = (activeConnection?.dbType as DataSourceType) || 'influxdb';
+    const database = activeConnection?.database || '';
+
+    // 复制格式状态
+    const [copyFormat, setCopyFormat] = useState<CopyFormat>('text');
 
     // 检测SQL语句类型
     // 优先使用后端返回的 sql_type，其次使用传入的 queryType，最后才是前端检测
@@ -485,6 +496,10 @@ const QueryResults: React.FC<QueryResultsProps> = ({
                             columnManagement={true}
                             showToolbar={false} // 使用外部工具栏
                             className="h-full"
+                            tableName="query_result"
+                            dataSourceType={dataSourceType}
+                            database={database}
+                            copyFormat={copyFormat}
                             onPageChange={(page, size) => {
                                 handlePageChange(page);
                                 if (size !== pageSize) {

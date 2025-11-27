@@ -791,7 +791,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       if (isColSelected) {
         ctx.save();
         ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
 
         const totalRows = processedData.length;
         const minCol = Math.min(...selectedCols);
@@ -846,7 +846,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       if (isRowSelected) {
         ctx.save();
         ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
 
         const totalCols = gridColumns.length;
         const minRow = Math.min(...selectedRows);
@@ -904,7 +904,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       if (col === startCol && row === startRow) {
         ctx.save();
         ctx.strokeStyle = borderColor;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
 
         // 左和上向内偏移1像素，右和下保持在网格线位置
         const left = rect.x + 1;
@@ -933,7 +933,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
 
     ctx.save();
     ctx.strokeStyle = borderColor;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 2;
 
     // 只绘制内部分割线（外边框由 Glide Data Grid 自动绘制）
     const isNotRightmostCol = col < startCol + colCount - 1;
