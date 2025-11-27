@@ -782,7 +782,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
       });
     }
 
-    // 处理列选择（使用与 range 选择相同的绘制方式）
+    // 处理列选择
+    // Glide 不会为列选择绘制外边框，所以我们需要绘制所有边框（外边框 + 内部分割线）
     if (selection?.columns && selection.columns.length > 0) {
       const selectedCols = selection.columns.toArray();
       const isColSelected = selectedCols.includes(col);
@@ -792,44 +793,53 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         ctx.strokeStyle = borderColor;
         ctx.lineWidth = 1;
 
+        const totalRows = processedData.length;
+        const minCol = Math.min(...selectedCols);
+        const maxCol = Math.max(...selectedCols);
+        const isLeftmostCol = col === minCol;
+        const isRightmostCol = col === maxCol;
+        const isFirstRow = row === 0;
+        const isLastRow = row === totalRows - 1;
         const isLeftColSelected = selectedCols.includes(col - 1);
         const isRightColSelected = selectedCols.includes(col + 1);
-        const totalRows = processedData.length;
 
-        // 右边框（列分割线或外边框）- 使用单元格边缘位置
-        ctx.beginPath();
-        ctx.moveTo(Math.floor(rect.x + rect.width), rect.y);
-        ctx.lineTo(Math.floor(rect.x + rect.width), rect.y + rect.height);
-        ctx.stroke();
-
-        // 下边框（行分割线或外边框）- 使用单元格边缘位置
-        ctx.beginPath();
-        ctx.moveTo(rect.x, Math.floor(rect.y + rect.height));
-        ctx.lineTo(rect.x + rect.width, Math.floor(rect.y + rect.height));
-        ctx.stroke();
-
-        // 左边框（只在第一个选中列绘制外边框）
-        if (!isLeftColSelected) {
+        // 左边框 - 最左侧列绘制外边框，或者左侧也被选中时绘制内部分割线
+        if (isLeftmostCol || isLeftColSelected) {
           ctx.beginPath();
           ctx.moveTo(Math.floor(rect.x), rect.y);
           ctx.lineTo(Math.floor(rect.x), rect.y + rect.height);
           ctx.stroke();
         }
 
-        // 上边框（只在第一行绘制外边框）
-        if (row === 0) {
+        // 右边框 - 最右侧列绘制外边框，或者右侧也被选中时绘制内部分割线
+        if (isRightmostCol || isRightColSelected) {
+          ctx.beginPath();
+          ctx.moveTo(Math.floor(rect.x + rect.width), rect.y);
+          ctx.lineTo(Math.floor(rect.x + rect.width), rect.y + rect.height);
+          ctx.stroke();
+        }
+
+        // 上边框 - 只有第一行需要绘制（外边框）
+        if (isFirstRow) {
           ctx.beginPath();
           ctx.moveTo(rect.x, Math.floor(rect.y));
           ctx.lineTo(rect.x + rect.width, Math.floor(rect.y));
           ctx.stroke();
         }
 
+        // 下边框 - 每行都绘制（外边框或内部行分割线）
+        ctx.beginPath();
+        ctx.moveTo(rect.x, Math.floor(rect.y + rect.height));
+        ctx.lineTo(rect.x + rect.width, Math.floor(rect.y + rect.height));
+        ctx.stroke();
+
         ctx.restore();
         return;
       }
     }
 
-    // 处理行选择（使用与 range 选择相同的绘制方式）
+    // 处理行选择
+    // Glide 不会为行选择绘制外边框，所以我们需要绘制所有边框（外边框 + 内部分割线）
     if (selection?.rows && selection.rows.length > 0) {
       const selectedRows = selection.rows.toArray();
       const isRowSelected = selectedRows.includes(row);
@@ -839,35 +849,43 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         ctx.strokeStyle = borderColor;
         ctx.lineWidth = 1;
 
+        const totalCols = gridColumns.length;
+        const minRow = Math.min(...selectedRows);
+        const maxRow = Math.max(...selectedRows);
+        const isTopmostRow = row === minRow;
+        const isBottommostRow = row === maxRow;
+        const isFirstCol = col === 0;
+        const isLastCol = col === totalCols - 1;
         const isTopRowSelected = selectedRows.includes(row - 1);
         const isBottomRowSelected = selectedRows.includes(row + 1);
-        const totalCols = gridColumns.length;
 
-        // 右边框（列分割线或外边框）- 使用单元格边缘位置
+        // 左边框 - 只有第一列需要绘制（外边框）
+        if (isFirstCol) {
+          ctx.beginPath();
+          ctx.moveTo(Math.floor(rect.x), rect.y);
+          ctx.lineTo(Math.floor(rect.x), rect.y + rect.height);
+          ctx.stroke();
+        }
+
+        // 右边框 - 每列都绘制（外边框或内部列分割线）
         ctx.beginPath();
         ctx.moveTo(Math.floor(rect.x + rect.width), rect.y);
         ctx.lineTo(Math.floor(rect.x + rect.width), rect.y + rect.height);
         ctx.stroke();
 
-        // 下边框（行分割线或外边框）- 使用单元格边缘位置
-        ctx.beginPath();
-        ctx.moveTo(rect.x, Math.floor(rect.y + rect.height));
-        ctx.lineTo(rect.x + rect.width, Math.floor(rect.y + rect.height));
-        ctx.stroke();
-
-        // 上边框（只在第一个选中行绘制外边框）
-        if (!isTopRowSelected) {
+        // 上边框 - 最上方行绘制外边框，或者上方也被选中时绘制内部分割线
+        if (isTopmostRow || isTopRowSelected) {
           ctx.beginPath();
           ctx.moveTo(rect.x, Math.floor(rect.y));
           ctx.lineTo(rect.x + rect.width, Math.floor(rect.y));
           ctx.stroke();
         }
 
-        // 左边框（只在第一列绘制外边框）
-        if (col === 0) {
+        // 下边框 - 最下方行绘制外边框，或者下方也被选中时绘制内部分割线
+        if (isBottommostRow || isBottomRowSelected) {
           ctx.beginPath();
-          ctx.moveTo(Math.floor(rect.x), rect.y);
-          ctx.lineTo(Math.floor(rect.x), rect.y + rect.height);
+          ctx.moveTo(rect.x, Math.floor(rect.y + rect.height));
+          ctx.lineTo(rect.x + rect.width, Math.floor(rect.y + rect.height));
           ctx.stroke();
         }
 
