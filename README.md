@@ -44,32 +44,23 @@
 #### 🔍 版本选择指南
 
 #### Windows 用户
-- **MSI 安装包 (推荐)**: 📥 **[InfloWave-0.8.5-x86_64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave-0.8.5-x86_64.msi)**
+- **MSI 安装包 (推荐)**: 📥 **[InfloWave_0.8.5_x64_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x64_zh-CN.msi)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 企业级安装包，支持 GPO 部署
   - ✅ MSI 格式，系统信任度高
 
 - **EXE 安装包**: 📥 **[InfloWave_0.8.5_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x64-setup.exe)**
   - ✅ 适用于 Windows 10/11 (64位系统)
-  - ✅ 用户友好的安装向导
+  - ✅ 用户友好的安装向导 (NSIS)
   - ✅ 支持中英文界面
 
-- **32位版本**: 📥 **[InfloWave-0.8.5-i686.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave-0.8.5-i686.msi)**
+- **32位 MSI**: 📥 **[InfloWave_0.8.5_x86_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x86_zh-CN.msi)**
   - ✅ 适用于较老的32位 Windows 系统
   - ⚠️ 仅在无法运行64位版本时使用
 
-**便携版 (免安装)**
-
-- **64位便携版**: 📥 **[InfloWave-x64-portable-0.8.5.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave-x64-portable-0.8.5.exe)**
-  - ✅ 绿色软件，无需安装
-  - ✅ 不写入注册表，不留痕迹
-  - ✅ 便于携带，可放在U盘中
-  - ✅ 适用于 Windows 10/11 (64位)
-
-- **32位便携版**: 📥 **[InfloWave-x86-portable-0.8.5.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave-x86-portable-0.8.5.exe)**
-  - ✅ 绿色软件，无需安装
-  - ✅ 兼容性更好，支持老旧系统
+- **32位 EXE**: 📥 **[InfloWave_0.8.5_x86-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x86-setup.exe)**
   - ✅ 适用于 Windows 7/8/10/11 (32位/64位)
+  - ✅ 用户友好的安装向导 (NSIS)
 
 #### macOS 用户
 
@@ -96,24 +87,24 @@
 - 运行命令: `cat /etc/os-release` 或 `lsb_release -a`
 
 **Debian/Ubuntu 系列 (推荐)**
-- 📥 **[inflowave_0.8.5_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/inflowave_0.8.5_amd64.deb)**
+- 📥 **[InfloWave_0.8.5_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_amd64.deb)**
   - ✅ Ubuntu 18.04+, Debian 10+
   - ✅ 系统集成度高，支持自动更新
-  - 📋 安装命令: `sudo dpkg -i inflowave_0.8.5_amd64.deb`
+  - 📋 安装命令: `sudo dpkg -i InfloWave_0.8.5_amd64.deb`
   - 🔧 依赖修复: `sudo apt-get install -f`
 
 **通用 Linux (万能选择)**
-- 📥 **[inflowave_0.8.5_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/inflowave_0.8.5_amd64.AppImage)**
+- 📥 **[InfloWave_0.8.5_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_amd64.AppImage)**
   - ✅ 适用于大部分 x64 Linux 发行版
   - ✅ 免安装，下载后直接运行
   - ✅ 便携版，不影响系统
-  - 📋 使用方法: `chmod +x inflowave_0.8.5_amd64.AppImage && ./inflowave_0.8.5_amd64.AppImage`
+  - 📋 使用方法: `chmod +x InfloWave_0.8.5_amd64.AppImage && ./InfloWave_0.8.5_amd64.AppImage`
 
 **RPM 系列 (CentOS/RHEL/Fedora)**
-- 📥 **[inflowave-0.8.5-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/inflowave-0.8.5-1.x86_64.rpm)**
+- 📥 **[InfloWave-0.8.5-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave-0.8.5-1.x86_64.rpm)**
   - ✅ CentOS 7+, RHEL 7+, Fedora 30+
-  - 📋 安装命令: `sudo rpm -i inflowave-0.8.5-1.x86_64.rpm`
-  - 📋 或使用: `sudo dnf install inflowave-0.8.5-1.x86_64.rpm`
+  - 📋 安装命令: `sudo rpm -i InfloWave-0.8.5-1.x86_64.rpm`
+  - 📋 或使用: `sudo dnf install InfloWave-0.8.5-1.x86_64.rpm`
 
 ### ⚠️ 系统要求
 

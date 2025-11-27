@@ -268,25 +268,25 @@ fn find_platform_asset(assets: &[GitHubAsset]) -> Option<String> {
     let platform_patterns = match platform {
         "windows" => match arch {
             "x86_64" => vec![
-                "_x64.msi",      // 标准格式: InfloWave_0.1.3_x64.msi
-                "_x64_zh-CN.msi", // 带语言后缀的旧格式（兼容性）
-                "_x64-setup.exe", // Setup EXE 格式: InfloWave_0.1.3_x64-setup.exe
-                "x64.msi", 
-                "x64.exe", 
-                "win64", 
+                "_x64_zh-CN.msi", // 当前格式: InfloWave_0.8.5_x64_zh-CN.msi
+                "_x64-setup.exe", // NSIS 格式: InfloWave_0.8.5_x64-setup.exe
+                "_x64.msi",       // 兼容格式
+                "x64.msi",
+                "x64.exe",
+                "win64",
                 "windows-x64",
-                ".msi",          // 通用备选
+                ".msi",           // 通用备选
                 ".exe"
             ],
             "x86" => vec![
-                "_x86.msi",      // 标准格式: InfloWave_0.1.3_x86.msi
-                "_x86_zh-CN.msi", // 带语言后缀的旧格式（兼容性）
-                "_x86-setup.exe", // Setup EXE 格式: InfloWave_0.1.3_x86-setup.exe
-                "x86.msi", 
-                "x86.exe", 
-                "win32", 
+                "_x86_zh-CN.msi", // 当前格式: InfloWave_0.8.5_x86_zh-CN.msi
+                "_x86-setup.exe", // NSIS 格式: InfloWave_0.8.5_x86-setup.exe
+                "_x86.msi",       // 兼容格式
+                "x86.msi",
+                "x86.exe",
+                "win32",
                 "windows-x86",
-                ".msi",          // 通用备选
+                ".msi",           // 通用备选
                 ".exe"
             ],
             _ => vec![".msi", ".exe", "windows"],

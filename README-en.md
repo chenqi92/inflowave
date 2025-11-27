@@ -44,27 +44,23 @@ Visit the [Releases page](https://github.com/chenqi92/inflowave/releases/latest)
 #### 🔍 Version Selection Guide
 
 #### Windows Users
-- **Recommended**: 📥 **[InfloWave_0.8.5_x64.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x64.msi)** 
+- **MSI Installer (Recommended)**: 📥 **[InfloWave_0.8.5_x64_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x64_zh-CN.msi)**
   - ✅ For Windows 10/11 (64-bit systems)
-  - ✅ Supports most modern Windows systems
-  - ✅ MSI format, simple and reliable installation
+  - ✅ Enterprise-grade installer, supports GPO deployment
+  - ✅ MSI format, high system trust
 
-- **Legacy**: 📥 **[InfloWave_0.8.5_x86.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x86.msi)**
+- **EXE Installer**: 📥 **[InfloWave_0.8.5_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x64-setup.exe)**
+  - ✅ For Windows 10/11 (64-bit systems)
+  - ✅ User-friendly installation wizard (NSIS)
+  - ✅ Supports Chinese and English interface
+
+- **32-bit MSI**: 📥 **[InfloWave_0.8.5_x86_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x86_zh-CN.msi)**
   - ✅ For older 32-bit Windows systems
   - ⚠️ Use only if 64-bit version doesn't work
 
-**Portable Versions (No Installation Required)**
-
-- **64-bit Portable**: 📥 **[InfloWave-x64-portable-0.8.5.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave-x64-portable-0.8.5.exe)**
-  - ✅ Green software, no installation needed
-  - ✅ Doesn't write to registry, leaves no traces
-  - ✅ Portable, can be run from USB drive
-  - ✅ For Windows 10/11 (64-bit)
-
-- **32-bit Portable**: 📥 **[InfloWave-x86-portable-0.8.5.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave-x86-portable-0.8.5.exe)**
-  - ✅ Green software, no installation needed
-  - ✅ Better compatibility, supports older systems
+- **32-bit EXE**: 📥 **[InfloWave_0.8.5_x86-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.8.5/InfloWave_0.8.5_x86-setup.exe)**
   - ✅ For Windows 7/8/10/11 (32-bit/64-bit)
+  - ✅ User-friendly installation wizard (NSIS)
 
 #### macOS Users
 
