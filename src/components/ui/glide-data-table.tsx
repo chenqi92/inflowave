@@ -899,8 +899,31 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
     const { range } = selection.current;
     const { x: startCol, y: startRow, width: colCount, height: rowCount } = range;
 
-    // 只在选中多个单元格时才绘制边框
-    if (colCount <= 1 && rowCount <= 1) return;
+    // 单个单元格选中时，绘制焦点环
+    if (colCount === 1 && rowCount === 1) {
+      if (col === startCol && row === startRow) {
+        ctx.save();
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 1;
+
+        // 左和上向内偏移1像素，右和下保持在网格线位置
+        const left = rect.x + 1;
+        const top = rect.y + 1;
+        const right = rect.x + rect.width;
+        const bottom = rect.y + rect.height;
+
+        ctx.beginPath();
+        ctx.moveTo(left, top);
+        ctx.lineTo(right, top);
+        ctx.lineTo(right, bottom);
+        ctx.lineTo(left, bottom);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.restore();
+      }
+      return;
+    }
 
     // 检查当前单元格是否在选中范围内
     const inSelectionX = col >= startCol && col < startCol + colCount;
