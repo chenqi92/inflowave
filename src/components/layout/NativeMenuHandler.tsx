@@ -11,6 +11,8 @@ import { openExternalLink, openIssueReport, openDocumentation } from '@/utils/ex
 import AboutDialog from '@/components/common/AboutDialog';
 import SettingsModal from '@/components/common/SettingsModal';
 import SampleQueriesModal from '@/components/common/SampleQueriesModal';
+import { UpdateNotification } from '@/components/updater/UpdateNotification';
+import { UpdateInfo } from '@/types/updater';
 import { useSettingsTranslation, useMenuTranslation } from '@/hooks/useTranslation';
 
 import { logger } from '@/utils/logger';
@@ -42,6 +44,8 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState('general');
   const [sampleQueriesVisible, setSampleQueriesVisible] = useState(false);
+  const [updateDialogVisible, setUpdateDialogVisible] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const setupRef = useRef(false);
 
   useEffect(() => {
@@ -360,16 +364,21 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
 
   const handleCheckUpdates = async () => {
     try {
-      const result = await safeTauriInvoke('check_for_app_updates');
+      showMessage.info(tMenu('native.helpSystem.checkingUpdates'));
+      const result = await safeTauriInvoke<UpdateInfo>('check_for_app_updates');
       if (result.available && !result.is_skipped) {
-        showMessage.info(tMenu('native.helpSystem.newVersionFound', { version: result.latest_version }));
+        // 发现新版本，保存更新信息并显示更新对话框
+        setUpdateInfo(result);
+        setUpdateDialogVisible(true);
+        showMessage.success(tMenu('native.helpSystem.newVersionFound', { version: result.latest_version }));
       } else if (result.is_skipped) {
         showMessage.info(tMenu('native.helpSystem.versionSkipped', { version: result.latest_version }));
       } else {
         showMessage.success(tMenu('native.helpSystem.latestVersion'));
       }
     } catch (error) {
-      showMessage.error(tMenu('native.helpSystem.checkUpdateFailed', { error }));
+      logger.error('检查更新失败:', error);
+      showMessage.error(tMenu('native.helpSystem.checkUpdateFailed', { error: String(error) }));
     }
   };
 
@@ -1213,9 +1222,14 @@ const NativeMenuHandler: React.FC<NativeMenuHandlerProps> = ({
         }} 
         initialTab={settingsInitialTab}
       />
-      <SampleQueriesModal 
-        visible={sampleQueriesVisible} 
-        onClose={() => setSampleQueriesVisible(false)} 
+      <SampleQueriesModal
+        visible={sampleQueriesVisible}
+        onClose={() => setSampleQueriesVisible(false)}
+      />
+      <UpdateNotification
+        open={updateDialogVisible}
+        updateInfo={updateInfo}
+        onOpenChange={setUpdateDialogVisible}
       />
     </>
   );

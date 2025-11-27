@@ -325,6 +325,7 @@
     "helpSystem": {
       "openUserGuide": "Open User Guide",
       "openQuickStart": "Open Quick Start",
+      "checkingUpdates": "Checking for updates...",
       "newVersionFound": "New version found: {{version}}",
       "versionSkipped": "Version {{version}} has been skipped",
       "latestVersion": "You are using the latest version",

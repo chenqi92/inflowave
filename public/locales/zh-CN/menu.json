@@ -325,6 +325,7 @@
     "helpSystem": {
       "openUserGuide": "打开用户引导",
       "openQuickStart": "打开快速入门",
+      "checkingUpdates": "正在检查更新...",
       "newVersionFound": "发现新版本: {{version}}",
       "versionSkipped": "版本 {{version}} 已被跳过",
       "latestVersion": "您使用的是最新版本",
