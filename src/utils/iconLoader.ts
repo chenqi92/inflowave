@@ -220,25 +220,137 @@ export const getIconDescription = (nodeType: TreeNodeType): string => {
 
 /**
  * 获取数据库品牌图标URL
+ * @param dbType 数据库类型
+ * @param isConnected 是否已连接（未连接时使用 -dark 后缀的图标）
+ * @param dbVersion 数据库版本
  */
-export const getDatabaseBrandIcon = (dbType: string, dbVersion?: string): string => {
+export const getDatabaseBrandIcon = (dbType: string, isConnected: boolean = true, dbVersion?: string): string => {
   // 标准化数据库类型名称
   const normalizedDbType = dbType.toLowerCase();
 
+  // 未连接时使用 -dark 后缀
+  const suffix = isConnected ? '' : '-dark';
+
   // 处理InfluxDB的不同版本
   if (normalizedDbType === 'influxdb' && dbVersion) {
-    const versionKey = `influxdb-${dbVersion}`;
-    return DatabaseBrandIconMap[versionKey] || DatabaseBrandIconMap['influxdb-1x'];
+    const versionKey = `influxdb-${dbVersion}${suffix}`;
+    const fallbackKey = `influxdb-${dbVersion}`;
+    return DatabaseBrandIconMap[versionKey] || DatabaseBrandIconMap[fallbackKey] || DatabaseBrandIconMap['influxdb-1x'];
   }
 
   // 处理特殊的数据库类型映射
   const typeMapping: Record<string, string> = {
     'influxdb': 'influxdb-1x',
+    'influxdb1': 'influxdb-1x',
+    'influxdb1x': 'influxdb-1x',
     'influxdb2': 'influxdb-2x',
+    'influxdb2x': 'influxdb-2x',
     'influxdb3': 'influxdb-3x',
+    'influxdb3x': 'influxdb-3x',
     'iotdb': 'iotdb'
   };
 
-  const mappedType = typeMapping[normalizedDbType] || 'database-generic';
-  return DatabaseBrandIconMap[mappedType] || DatabaseBrandIconMap['database-generic'];
+  const baseType = typeMapping[normalizedDbType] || 'database-generic';
+  const iconKey = `${baseType}${suffix}`;
+
+  return DatabaseBrandIconMap[iconKey] || DatabaseBrandIconMap[baseType] || DatabaseBrandIconMap['database-generic'] || '';
+};
+
+/**
+ * 获取功能图标URL（支持打开/关闭状态）
+ * @param nodeType 节点类型
+ * @param theme 主题
+ * @param isOpen 是否为打开状态
+ */
+export const getFunctionalIcon = (nodeType: TreeNodeType | string, theme: 'light' | 'dark', isOpen: boolean = false): string => {
+  // 节点类型到图标名称的映射（处理下划线到连字符的转换）
+  const nodeTypeToIconName: Record<string, string> = {
+    'database': 'database',
+    'system_database': 'database-system',
+    'database3x': 'database3x',
+    'table': 'table',
+    'measurement': 'measurement',
+    'column': 'column',
+    'field': 'field',
+    'field_group': 'field-group',
+    'tag': 'tag',
+    'tag_group': 'tag-group',
+    'index': 'index',
+    'view': 'view',
+    'materialized_view': 'materialized-view',
+    'user1x': 'user1x',
+    'user2x': 'user2x',
+    'authorization': 'authorization',
+    'privilege': 'privilege',
+    'bucket': 'bucket',
+    'system_bucket': 'system-bucket',
+    'organization': 'organization',
+    'task': 'task',
+    'dashboard': 'dashboard',
+    'cell': 'cell',
+    'variable': 'variable',
+    'check': 'check',
+    'notification_rule': 'notification-rule',
+    'notification_endpoint': 'notification-endpoint',
+    'scraper': 'scraper',
+    'telegraf': 'telegraf',
+    'label': 'label',
+    'storage_group': 'storage-group',
+    'device': 'device',
+    'timeseries': 'timeseries',
+    'aligned_timeseries': 'aligned-timeseries',
+    'attribute_group': 'attribute-group',
+    'data_type': 'data-type',
+    'encoding': 'encoding',
+    'compression': 'compression',
+    'schema_template': 'schema-template',
+    'template': 'template',
+    'system_info': 'system-info',
+    'cluster_info': 'cluster-info',
+    'storage_engine_info': 'storage-engine-info',
+    'version_info': 'version-info',
+    'function': 'function',
+    'function_group': 'function-group',
+    'function3x': 'function3x',
+    'procedure': 'procedure',
+    'trigger': 'trigger',
+    'trigger_group': 'trigger-group',
+    'trigger3x': 'trigger3x',
+    'user_group': 'user-group',
+    'namespace': 'namespace',
+    'schema': 'schema',
+    'partition': 'partition',
+    'shard': 'shard',
+    'shard_group': 'shard-group',
+    'retention_policy': 'retention-policy',
+    'continuous_query': 'continuous-query',
+    'series': 'series',
+  };
+
+  // 支持打开状态的节点类型
+  const openableNodeTypes = new Set([
+    'database', 'database-system', 'database3x',
+    'bucket', 'system-bucket', 'measurement', 'table',
+    'storage-group', 'device', 'organization', 'schema',
+    'namespace', 'view', 'materialized-view', 'dashboard',
+    'attribute-group', 'schema-template', 'template',
+    'system-info', 'function', 'trigger'
+  ]);
+
+  const iconName = nodeTypeToIconName[nodeType] || nodeType.toString().replace(/_/g, '-');
+
+  // 如果是可打开的节点且处于打开状态，使用 _cur 后缀
+  const finalIconName = (isOpen && openableNodeTypes.has(iconName))
+    ? `${iconName}_cur`
+    : iconName;
+
+  const iconConfig = DatabaseIconMap[finalIconName] || DatabaseIconMap[iconName];
+
+  if (iconConfig && iconConfig[theme]) {
+    return iconConfig[theme];
+  }
+
+  // 回退到默认图标
+  const defaultIcon = DatabaseIconMap['default'];
+  return defaultIcon?.[theme] || '';
 };

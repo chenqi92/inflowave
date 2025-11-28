@@ -58,21 +58,15 @@ const AppWrapper: React.FC = () => {
 // 渲染应用
 const root = ReactDOM.createRoot(document.getElementById('root')!);
 
-// 在开发环境中暂时禁用 StrictMode 以避免 DOM 操作错误
-// StrictMode 在开发环境中会双重调用 effects，可能导致 DOM 操作冲突
-const isDevelopment = import.meta.env.DEV;
+// 🔧 统一禁用 StrictMode
+// 原因：
+// 1. StrictMode 会双重调用 effects，可能导致初始化逻辑执行两次
+// 2. 某些 Tauri API 调用和 i18n 初始化不兼容双重调用
+// 3. 开发和生产环境行为一致，减少难以复现的 bug
+// 4. 我们已通过 useRef 保护关键初始化逻辑，确保只执行一次
 
-if (isDevelopment) {
-  logger.info('🔧 开发环境：禁用 React StrictMode 以避免 DOM 操作冲突');
-  root.render(<AppWrapper />);
-} else {
-  logger.info('🚀 生产环境：启用 React StrictMode');
-  root.render(
-    <React.StrictMode>
-      <AppWrapper />
-    </React.StrictMode>
-  );
-}
+logger.info('🚀 InfloWave 启动中...');
+root.render(<AppWrapper />);
 
 // 开发环境热更新
 // Hot module replacement is handled by Vite automatically in development mode

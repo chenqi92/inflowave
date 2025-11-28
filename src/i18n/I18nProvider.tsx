@@ -78,17 +78,11 @@ const DefaultErrorFallback: React.FC<{ error: Error }> = ({ error }) => (
 );
 
 // ============================================================================
-// 加载组件
+// 加载组件（简化版，不阻塞渲染）
 // ============================================================================
 
-const DefaultLoadingFallback: React.FC = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-      <p className="text-gray-600">正在初始化国际化系统...</p>
-    </div>
-  </div>
-);
+// 不再使用独立的加载界面，依赖 index.html 的加载屏幕
+// 这样可以避免两个加载界面重叠的问题
 
 // ============================================================================
 // I18nProvider 组件
@@ -106,7 +100,8 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
 
   // 🛡️ 防止 StrictMode 或重渲染导致的重复初始化
   const initializationStarted = useRef(false);
-  
+  const initializationCompleted = useRef(false);
+
   // 从 store 获取状态和方法
   const {
     currentLanguage,
@@ -121,48 +116,65 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
   } = useI18nStore();
 
   // ============================================================================
-  // 初始化逻辑
+  // 初始化逻辑（优化版：非阻塞后台语言设置加载）
   // ============================================================================
 
   const initializeI18n = useCallback(async () => {
+    // 🛡️ 双重检查，防止 StrictMode 导致的重复初始化
+    if (initializationCompleted.current) {
+      logger.debug('[I18nProvider] 初始化已完成，跳过');
+      setIsInitialized(true);
+      return;
+    }
+
     try {
       logger.info('🚀 [I18nProvider] 开始初始化国际化系统');
 
-      // 初始化 i18next
+      // 阶段1: 核心初始化（必须完成才能渲染）
       await initI18n();
-
-      // 初始化 store
       await initI18nStore();
 
-      // 🔧 优先从后端加载语言设置
-      let targetLanguage = defaultLanguage;
-
-      try {
-        // 尝试从 Tauri 后端获取语言设置
-        if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-          const { safeTauriInvoke } = await import('@/utils/tauri');
-          const appSettings = await safeTauriInvoke<any>('get_app_settings');
-          if (appSettings?.general?.language) {
-            targetLanguage = appSettings.general.language;
-            logger.debug('✅ [I18nProvider] 从后端加载语言设置:', targetLanguage);
-          }
-        }
-      } catch (error) {
-        logger.warn('⚠️ [I18nProvider] 从后端加载语言设置失败，使用默认语言:', error);
-      }
-
-      // 如果指定了目标语言，切换到目标语言
-      if (targetLanguage) {
-        const { currentLanguage: detectedLanguage } = useI18nStore.getState();
-        if (targetLanguage !== detectedLanguage) {
-          await setLanguage(targetLanguage);
-        }
-      }
-
+      // 标记核心初始化完成
+      initializationCompleted.current = true;
       setIsInitialized(true);
-      logger.debug('✅ [I18nProvider] 国际化系统初始化完成');
+      logger.debug('✅ [I18nProvider] 核心初始化完成');
+
+      // 阶段2: 后台加载语言设置（非阻塞）
+      // 将后端语言设置加载移到后台，不阻塞 UI 渲染
+      (async () => {
+        try {
+          let targetLanguage = defaultLanguage;
+
+          // 尝试从 Tauri 后端获取语言设置
+          if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+            const { safeTauriInvoke } = await import('@/utils/tauri');
+            const appSettings = await safeTauriInvoke<any>('get_app_settings');
+            if (appSettings?.general?.language) {
+              targetLanguage = appSettings.general.language;
+              logger.debug('✅ [I18nProvider] 从后端加载语言设置:', targetLanguage);
+            }
+          }
+
+          // 如果目标语言与当前语言不同，切换语言
+          if (targetLanguage) {
+            const { currentLanguage: detectedLanguage } = useI18nStore.getState();
+            if (targetLanguage !== detectedLanguage) {
+              await setLanguage(targetLanguage);
+              logger.debug('✅ [I18nProvider] 语言已切换至:', targetLanguage);
+            }
+          }
+        } catch (error) {
+          logger.warn('⚠️ [I18nProvider] 后台加载语言设置失败:', error);
+          // 不影响应用运行，使用默认/检测到的语言
+        }
+      })();
+
     } catch (error) {
-      logger.error('❌ [I18nProvider] 初始化失败:', error);
+      logger.error('❌ [I18nProvider] 核心初始化失败:', error);
+      // 即使初始化失败，也尝试让应用继续运行
+      initializationCompleted.current = true;
+      setIsInitialized(true);
+      // 记录错误但不阻止渲染
       setInitError(error as Error);
     }
   }, [defaultLanguage, setLanguage]);
@@ -265,18 +277,18 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
   };
 
   // ============================================================================
-  // 渲染逻辑
+  // 渲染逻辑（优化版：不阻塞渲染）
   // ============================================================================
 
-  // 如果初始化出错，显示错误
+  // 如果初始化出错，记录错误但继续渲染
+  // 这样应用仍然可以使用（可能显示键名代替翻译）
   if (initError) {
-    throw initError;
+    logger.warn('⚠️ [I18nProvider] 初始化时发生错误，应用将以降级模式运行:', initError.message);
   }
 
-  // 如果还在初始化，显示加载状态
-  if (!isInitialized) {
-    return <DefaultLoadingFallback />;
-  }
+  // 不再显示独立的加载界面
+  // 如果还在初始化，仍然渲染子组件，让 index.html 的加载屏幕处理加载状态
+  // 这样可以避免两个加载界面重叠的问题
 
   return (
     <I18nContext.Provider value={contextValue}>

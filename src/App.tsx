@@ -279,6 +279,10 @@ const App: React.FC = () => {
   const [unsavedTabs, setUnsavedTabs] = useState<EditorTab[]>([]);
   const { preferences, loadUserPreferences } = useUserPreferencesStore();
 
+  // 🛡️ 防止初始化被多次执行
+  const initializationStarted = React.useRef(false);
+  const initializationCompleted = React.useRef(false);
+
   // 🎨 应用字体设置（实时响应用户偏好变化）
   useFontApplier();
   
@@ -483,13 +487,27 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // 初始化应用
+  // 初始化应用（优化版：防止重复初始化，并行化任务）
   useEffect(() => {
+    // 🛡️ 防止 StrictMode 或意外重新挂载导致的重复初始化
+    if (initializationStarted.current) {
+      logger.debug('[App] 初始化已开始，跳过重复执行');
+      return;
+    }
+    initializationStarted.current = true;
+
     const initApp = async () => {
+      // 🛡️ 双重检查
+      if (initializationCompleted.current) {
+        logger.debug('[App] 初始化已完成，跳过');
+        setLoading(false);
+        return;
+      }
+
       try {
         logger.debug('InfloWave 启动中...');
 
-        // 📍 阶段1: 初始化环境
+        // 📍 阶段1: 初始化环境（同步，快速）
         window.dispatchEvent(new CustomEvent('app-loading-stage', {
           detail: { stage: 'initializing' }
         }));
@@ -500,69 +518,60 @@ const App: React.FC = () => {
         // 初始化上下文菜单禁用器（生产环境）
         initializeContextMenuDisabler();
 
-        // 📍 阶段2: 加载用户偏好
+        // 📍 阶段2: 并行加载用户偏好和应用配置
         window.dispatchEvent(new CustomEvent('app-loading-stage', {
           detail: { stage: 'loadingPreferences' }
         }));
 
-        // 🔧 加载用户偏好设置（优先级高，影响UI显示）
-        try {
-          await loadUserPreferences();
-          logger.info('用户偏好设置加载成功');
-        } catch (prefError) {
-          logger.warn('用户偏好设置加载失败，使用默认值:', prefError);
-        }
+        // 🚀 优化：用户偏好和应用配置并行加载
+        const loadPreferencesPromise = loadUserPreferences()
+          .then(() => logger.info('用户偏好设置加载成功'))
+          .catch(err => logger.warn('用户偏好设置加载失败，使用默认值:', err));
 
-        // 📍 阶段3: 加载配置
-        window.dispatchEvent(new CustomEvent('app-loading-stage', {
-          detail: { stage: 'loadingConfig' }
-        }));
-
-        // ✅ 优化：应用配置加载改为非阻塞后台加载
-        safeTauriInvoke<any>('get_app_config')
+        const loadConfigPromise = safeTauriInvoke<any>('get_app_config')
           .then(() => logger.debug('应用配置加载成功'))
           .catch(err => logger.warn('应用配置加载失败，使用默认配置:', err));
 
-        // 📍 阶段4: 初始化服务
+        // 等待关键配置加载完成（超时 2 秒）
+        await Promise.race([
+          Promise.all([loadPreferencesPromise, loadConfigPromise]),
+          new Promise(resolve => setTimeout(resolve, 2000))
+        ]);
+
+        // 📍 阶段3: 后台初始化服务（非阻塞）
         window.dispatchEvent(new CustomEvent('app-loading-stage', {
           detail: { stage: 'initializingServices' }
         }));
 
-        // ✅ 优化：连接服务初始化改为非阻塞后台加载
-        // 后端已在 main.rs 中异步加载连接配置，前端延迟加载不影响启动速度
+        // ✅ 连接服务初始化改为后台执行，不阻塞 UI
         safeTauriInvoke<void>('initialize_connections')
           .then(() => {
             logger.debug('连接服务初始化成功');
-            // 初始化时同步一次连接配置
             const { syncConnectionsFromBackend } = useConnectionStore.getState();
             return syncConnectionsFromBackend();
           })
           .then(() => logger.debug('连接配置后台加载完成'))
           .catch(err => logger.warn('连接服务初始化失败:', err));
 
-        // ❌ 移除：桌面应用不需要定期健康检查
-        // 健康检查应该是按需的（用户打开性能监控页面时才执行）
-        // 如需检查，可在性能监控组件中手动触发
-        // initializeHealthCheck();
-
         showMessage.success('应用启动成功');
       } catch (error) {
         logger.error('应用初始化失败:', error);
-        // 记录到错误日志系统
-        await errorLogger.logCustomError('应用初始化失败', {
+        // 记录到错误日志系统（后台执行）
+        errorLogger.logCustomError('应用初始化失败', {
           error: error?.toString(),
           stack: (error as Error)?.stack,
-        });
+        }).catch(() => {});
         // 不显示错误消息，允许应用继续运行
         logger.warn('应用将以降级模式运行');
       } finally {
+        // 标记初始化完成
+        initializationCompleted.current = true;
         setLoading(false);
 
-        // 立即通知加载屏幕应用已准备就绪
         // 确保窗口标题正确设置
         document.title = 'InfloWave';
 
-        // 如果是Tauri环境，也通过Tauri API设置标题
+        // 如果是Tauri环境，也通过Tauri API设置标题（后台执行）
         if ((window as any).__TAURI__) {
           import('@tauri-apps/api/webviewWindow').then(({ getCurrentWebviewWindow }) => {
             getCurrentWebviewWindow().setTitle('InfloWave').catch(err => {
@@ -576,33 +585,27 @@ const App: React.FC = () => {
         // 📍 最终阶段: 应用就绪
         window.dispatchEvent(new CustomEvent('app-ready'));
         logger.info('应用启动完成，窗口标题已设置，已发送ready信号');
-
       }
     };
 
-    // 直接初始化，React已确保UI渲染顺序
+    // 直接初始化
     initApp();
-    return () => {
-      // 应用卸载时清理错误日志器
-      errorLogger.cleanup();
 
-      // 停止连接配置同步机制
+    return () => {
+      // 应用卸载时清理（仅在真正卸载时执行）
+      errorLogger.cleanup();
       const { stopConnectionSync } = useConnectionStore.getState();
       stopConnectionSync();
     };
-  }, [loadUserPreferences]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
+  // 🚀 优化：不再显示 React 层面的加载界面
+  // 依赖 index.html 的加载屏幕，避免两个加载界面重叠
+  // app-ready 事件会通知 index.html 隐藏加载屏幕
   if (loading) {
-    return (
-      <div className='min-h-screen bg-muted/20 flex items-center justify-center'>
-        <div className='text-center space-y-4'>
-          <Spin size='large' />
-          <Text className='text-base text-muted-foreground'>
-            正在启动 InfloWave...
-          </Text>
-        </div>
-      </div>
-    );
+    // 返回空容器，让 index.html 的加载屏幕继续显示
+    return <div className='min-h-screen bg-background' />;
   }
 
   // 获取通知位置设置，如果没有设置则使用默认值
