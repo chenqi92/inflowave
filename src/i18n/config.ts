@@ -179,8 +179,11 @@ const migrateLanguageCode = () => {
 let isI18nInitialized = false;
 let initializationPromise: Promise<typeof i18n> | null = null;
 
-// 初始化 i18next
-const initI18n = async () => {
+/**
+ * 初始化 i18next
+ * @param initialLanguage 可选的初始语言（来自后端设置）
+ */
+const initI18n = async (initialLanguage?: string) => {
   // 🛡️ 防止重复初始化
   if (isI18nInitialized) {
     logger.debug('[i18n] Already initialized, skipping...');
@@ -201,11 +204,23 @@ const initI18n = async () => {
       // 初始化资源管理器
       await resourceManager.initialize();
 
+      // 确定初始语言：优先使用传入的语言，否则使用检测到的语言
+      const lng = initialLanguage || languageDetector.detectLanguage();
+      logger.info(`[i18n] 初始化语言: ${lng} (传入: ${initialLanguage || '无'}, 检测: ${languageDetector.detectLanguage()})`);
+
+      // 如果使用了后端传入的语言，同步到 localStorage
+      if (initialLanguage) {
+        languageDetector.saveLanguagePreference(initialLanguage);
+      }
+
       // 使用 HTTP 后端和 React 集成初始化 i18next
       await i18n
         .use(Backend)
         .use(initReactI18next)
-        .init(i18nConfig);
+        .init({
+          ...i18nConfig,
+          lng, // 使用确定的语言
+        });
 
       logger.info('i18next initialized successfully with language:', i18n.language);
 

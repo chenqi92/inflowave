@@ -105,9 +105,8 @@ impl Default for AppSettings {
         Self {
             general: GeneralSettings {
                 theme: "system".to_string(),
-                // 默认语言设置为 en-US，与前端系统检测保持一致
-                // 用户可以在设置中切换为中文
-                language: "en-US".to_string(),
+                // 默认语言设置为中文
+                language: "zh-CN".to_string(),
                 auto_save: true,
                 auto_connect: false,
                 startup_connection: None,
@@ -671,6 +670,36 @@ pub async fn get_monitoring_settings(
     })?;
 
     Ok(settings.monitoring.clone())
+}
+
+/// 保存语言偏好设置
+/// 仅更新语言设置，不影响其他设置
+#[tauri::command]
+pub async fn save_language_preference(
+    settings_storage: State<'_, SettingsStorage>,
+    persistence: State<'_, PersistenceManagerState>,
+    language: String,
+) -> Result<(), String> {
+    info!("保存语言偏好: {}", language);
+
+    // 验证语言代码
+    let valid_languages = ["zh-CN", "en-US"];
+    if !valid_languages.contains(&language.as_str()) {
+        warn!("无效的语言代码: {}", language);
+        return Err(format!("不支持的语言: {}", language));
+    }
+
+    let mut settings = settings_storage.lock().map_err(|e| {
+        error!("获取设置存储锁失败: {}", e);
+        "存储访问失败".to_string()
+    })?;
+
+    settings.general.language = language.clone();
+    info!("语言偏好已更新: {}", language);
+
+    // 持久化到文件
+    persist_settings(&persistence, &settings)?;
+    Ok(())
 }
 
 /// 更新应用菜单语言

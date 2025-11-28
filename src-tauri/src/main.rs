@@ -1296,6 +1296,7 @@ async fn main() {
             import_settings,
             get_settings_schema,
             update_menu_language,
+            save_language_preference,
 
             // Context menu and SQL generation
             generate_smart_sql,

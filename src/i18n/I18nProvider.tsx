@@ -130,44 +130,30 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
     try {
       logger.info('🚀 [I18nProvider] 开始初始化国际化系统');
 
-      // 阶段1: 核心初始化（必须完成才能渲染）
-      await initI18n();
+      // 阶段1: 先从后端加载语言设置
+      let initialLanguage: string | undefined = defaultLanguage;
+
+      try {
+        if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+          const { safeTauriInvoke } = await import('@/utils/tauri');
+          const appSettings = await safeTauriInvoke<any>('get_app_settings');
+          if (appSettings?.general?.language) {
+            initialLanguage = appSettings.general.language;
+            logger.info('✅ [I18nProvider] 从后端加载语言设置:', initialLanguage);
+          }
+        }
+      } catch (error) {
+        logger.warn('⚠️ [I18nProvider] 从后端加载语言设置失败，使用默认语言:', error);
+      }
+
+      // 阶段2: 使用后端语言设置初始化 i18n
+      await initI18n(initialLanguage);
       await initI18nStore();
 
       // 标记核心初始化完成
       initializationCompleted.current = true;
       setIsInitialized(true);
-      logger.debug('✅ [I18nProvider] 核心初始化完成');
-
-      // 阶段2: 后台加载语言设置（非阻塞）
-      // 将后端语言设置加载移到后台，不阻塞 UI 渲染
-      (async () => {
-        try {
-          let targetLanguage = defaultLanguage;
-
-          // 尝试从 Tauri 后端获取语言设置
-          if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-            const { safeTauriInvoke } = await import('@/utils/tauri');
-            const appSettings = await safeTauriInvoke<any>('get_app_settings');
-            if (appSettings?.general?.language) {
-              targetLanguage = appSettings.general.language;
-              logger.debug('✅ [I18nProvider] 从后端加载语言设置:', targetLanguage);
-            }
-          }
-
-          // 如果目标语言与当前语言不同，切换语言
-          if (targetLanguage) {
-            const { currentLanguage: detectedLanguage } = useI18nStore.getState();
-            if (targetLanguage !== detectedLanguage) {
-              await setLanguage(targetLanguage);
-              logger.debug('✅ [I18nProvider] 语言已切换至:', targetLanguage);
-            }
-          }
-        } catch (error) {
-          logger.warn('⚠️ [I18nProvider] 后台加载语言设置失败:', error);
-          // 不影响应用运行，使用默认/检测到的语言
-        }
-      })();
+      logger.debug('✅ [I18nProvider] 核心初始化完成，语言:', initialLanguage);
 
     } catch (error) {
       logger.error('❌ [I18nProvider] 核心初始化失败:', error);
@@ -177,7 +163,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
       // 记录错误但不阻止渲染
       setInitError(error as Error);
     }
-  }, [defaultLanguage, setLanguage]);
+  }, [defaultLanguage]);
 
   // 组件挂载时初始化（只执行一次）
   // 使用 ref 防止 StrictMode 导致的重复初始化
