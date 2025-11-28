@@ -32,6 +32,17 @@
   "databaseExportInDevelopment": "Database \"{{database}}\" structure export feature in development...",
   "filterDescription": "Filter {{column}} {{operator}} {{value}}",
   "aggregateDescription": "{{func}} aggregation query: {{column}}",
+  "storage_group_operations": "Storage Group Operations",
+  "device_management": "Device Management",
+  "data_management": "Data Management",
+  "refresh_storage_group": "Refresh Storage Group",
+  "open_storage_group": "Open Storage Group",
+  "close_storage_group": "Close Storage Group",
+  "create_device": "Create Device",
+  "show_devices": "Show All Devices",
+  "storage_group_info": "Storage Group Info",
+  "copy_storage_group_name": "Copy Storage Group Name",
+  "delete_storage_group": "Delete Storage Group",
   "actions": {
     "test_connection": {
       "label": "Test Connection",
