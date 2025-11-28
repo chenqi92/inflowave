@@ -127,12 +127,6 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
     await toggleFavorite(id);
   };
 
-  // 截断查询文本
-  const truncateQuery = (query: string, maxLength: number = 100) => {
-    if (query.length <= maxLength) return query;
-    return `${query.substring(0, maxLength)  }...`;
-  };
-
   // 格式化时间
   const formatTime = (date: Date | string | undefined | null) => {
     if (!date) {
@@ -173,18 +167,11 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
           {/* 查询预览和状态 */}
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <code className="text-xs bg-muted px-2 py-1 rounded block truncate">
-                    {truncateQuery(item.query)}
-                  </code>
-                </TooltipTrigger>
-                <TooltipContent side="left" className="max-w-md">
-                  <pre className="text-xs whitespace-pre-wrap">{item.query}</pre>
-                </TooltipContent>
-              </Tooltip>
+              <code className="text-xs bg-muted px-2 py-1 rounded block whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
+                {item.query}
+              </code>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 flex-shrink-0">
               {item.success ? (
                 <CheckCircle className="w-4 h-4 text-green-500" />
               ) : (
@@ -269,16 +256,9 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
           </div>
 
           {/* 查询预览 */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <code className="text-xs bg-muted px-2 py-1 rounded block truncate">
-                {truncateQuery(query.query)}
-              </code>
-            </TooltipTrigger>
-            <TooltipContent side="left" className="max-w-md">
-              <pre className="text-xs whitespace-pre-wrap">{query.query}</pre>
-            </TooltipContent>
-          </Tooltip>
+          <code className="text-xs bg-muted px-2 py-1 rounded block whitespace-pre-wrap break-all max-h-20 overflow-y-auto">
+            {query.query}
+          </code>
 
           {/* 元数据 */}
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -418,7 +398,7 @@ export const VerticalQueryHistory: React.FC<VerticalQueryHistoryProps> = ({
         </div>
 
         {/* 标签页切换 */}
-        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'history' | 'saved')} className="flex-1 flex flex-col">
+        <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'history' | 'saved')} className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <TabsList className="w-full rounded-none border-b bg-transparent p-0 h-auto grid grid-cols-2">
             <TabsTrigger
               value="history"

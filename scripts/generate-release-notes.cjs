@@ -108,9 +108,9 @@ function generateDownloadSection(version, type = 'release') {
 请在下方的 **Assets** 区域选择适合您系统的安装包：
 
 #### 🪟 Windows 用户
-- MSI 安装包: InfloWave-${version}-x86_64.msi (64位系统)
+- MSI 安装包: InfloWave-${version}-x64_zh-CN.msi (64位系统)
 - EXE 安装包: InfloWave_${version}_x64-setup.exe (64位系统)
-- 32位版本: InfloWave-${version}-i686.msi (32位系统)
+- 32位版本: InfloWave-${version}-x86_zh-CN.msi (32位系统)
 
 #### 🍎 macOS 用户
 - Apple Silicon (M1/M2/M3): InfloWave_${version}_aarch64.dmg
@@ -149,7 +149,7 @@ function generateDownloadSection(version, type = 'release') {
 ### 🔍 如何选择适合的版本
 
 #### Windows 用户
-- **MSI 安装包 (推荐)**: 📥 **[InfloWave-${version}-x86_64.msi](https://github.com/${repository}/releases/download/v${version}/InfloWave-${version}-x86_64.msi)**
+- **MSI 安装包 (推荐)**: 📥 **[InfloWave-${version}_x64_zh-CN.msi](https://github.com/${repository}/releases/download/v${version}/InfloWave-${version}_x64_zh-CN.msi)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 企业级安装包，支持 GPO 部署
   - ✅ MSI 格式，系统信任度高
@@ -159,7 +159,7 @@ function generateDownloadSection(version, type = 'release') {
   - ✅ 用户友好的安装向导
   - ✅ 支持中英文界面
 
-- **32位版本**: 📥 **[InfloWave-${version}-i686.msi](https://github.com/${repository}/releases/download/v${version}/InfloWave-${version}-i686.msi)**
+- **32位版本**: 📥 **[InfloWave-${version}_x86_zh-CN.msi](https://github.com/${repository}/releases/download/v${version}/InfloWave-${version}_x86_zh-CN.msi)**
   - ✅ 适用于较老的32位 Windows 系统
   - ⚠️ 仅在无法运行64位版本时使用
 
