@@ -1,3 +1,7 @@
+/**
+ * Tree 节点渲染器 - JetBrains New UI 风格
+ * 24px 节点高度, 13px 字体, 16px 图标
+ */
 import React from 'react';
 import type { ItemInstance } from '@headless-tree/core';
 import { ChevronRight, ChevronDown, Loader2, Shield } from 'lucide-react';
@@ -307,8 +311,8 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
     !!error  // ✅ 使用订阅的 error 状态
   );
 
-  // 计算缩进样式
-  const indentStyle = { paddingLeft: `${level * 20}px` };
+  // 计算缩进样式 - JetBrains New UI: 16px 缩进
+  const indentStyle = { paddingLeft: `${level * 16}px` };
 
   // 获取 Headless Tree 的 props
   const treeProps = item.getProps();
@@ -339,7 +343,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
       }}
       style={indentStyle}
       className={cn(
-        'flex items-center py-1.5 px-2 cursor-pointer rounded transition-colors select-none',
+        'flex items-center h-6 px-1.5 cursor-pointer rounded-sm transition-colors duration-100 select-none',
         'hover:bg-accent hover:text-accent-foreground',
         nodeOpacity,
         nodeBackground
@@ -364,10 +368,10 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
       }}
     >
       {/* 展开/折叠图标 */}
-      <div className="w-5 h-5 flex items-center justify-center mr-0.5">
+      <div className="w-4 h-4 flex items-center justify-center mr-0.5">
         {hasChildren && (
           <div
-            className="w-4 h-4 hover:bg-muted rounded cursor-pointer flex items-center justify-center transition-colors"
+            className="w-4 h-4 hover:bg-muted rounded-sm cursor-pointer flex items-center justify-center transition-colors duration-100"
             onClick={(e) => {
               e.stopPropagation();
 
@@ -393,11 +397,11 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
             }}
           >
             {isLoading ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />
+              <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
             ) : isNodeExpanded ? (
-              <ChevronDown className="w-3.5 h-3.5 text-foreground" />
+              <ChevronDown className="w-3 h-3 text-foreground" />
             ) : (
-              <ChevronRight className="w-3.5 h-3.5 text-foreground" />
+              <ChevronRight className="w-3 h-3 text-foreground" />
             )}
           </div>
         )}
@@ -405,7 +409,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
 
       {/* 节点图标 */}
       <div className={cn(
-        "mr-2.5 flex items-center justify-center w-5 h-5 relative",
+        "mr-1.5 flex items-center justify-center w-4 h-4 relative",
         nodeIconColor
       )}>
         <DatabaseIcon
@@ -422,7 +426,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
           }
           isConnected={isConnected}
           dbType={data.dbType}
-          size={18}
+          size={16}
           className="flex-shrink-0"
           title={`${data.name} (${normalizedNodeType})`}
         />
@@ -432,12 +436,12 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
         )}
       </div>
 
-      {/* 节点名称 */}
+      {/* 节点名称 - JetBrains New UI: 13px 字体 */}
       {data.description ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <span className={cn(
-              "text-sm flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
+              "text-[13px] flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
               nodeFontStyle,
               nodeTextColor,
               error && "text-destructive",  // ✅ 使用订阅的 error 状态
@@ -448,7 +452,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
           </TooltipTrigger>
           <TooltipContent side="right" align="start" className='max-w-sm'>
             <div className='space-y-1 p-1'>
-              <div className='text-sm'>
+              <div className='text-[13px]'>
                 <span className='text-foreground'>{data.description}</span>
               </div>
             </div>
@@ -456,7 +460,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
         </Tooltip>
       ) : (
         <span className={cn(
-          "text-sm flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
+          "text-[13px] flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
           nodeFontStyle,
           nodeTextColor,
           error && "text-destructive",  // ✅ 使用订阅的 error 状态

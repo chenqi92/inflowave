@@ -1,7 +1,8 @@
 /**
- * 高性能数据表格组件 - 基于 Glide Data Grid
+ * 高性能数据表格组件 - 基于 Glide Data Grid - JetBrains New UI 风格
  * 支持虚拟滚动、排序、筛选等功能
  * 专为大数据量场景优化，使用 Canvas 渲染确保极致性能
+ * 32px 表头高度, 28px 行高, 13px 字体
  */
 
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
@@ -1214,8 +1215,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                   selectColumn: true,
                 }}
                 freezeColumns={0}
-                headerHeight={36}
-                rowHeight={32}
+                headerHeight={32}
+                rowHeight={28}
                 drawFocusRing={false}
                 drawCell={drawCell}
                 rightElement={undefined}
@@ -1246,8 +1247,8 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
               borderColor: getCSSVariable('--border', '#e4e4e7'),
               drilldownBorder: getCSSVariable('--border', '#e4e4e7'),
               linkColor: getCSSVariable('--primary', '#0066cc'),
-              headerFontStyle: "600 14px",
-              baseFontStyle: "14px",
+              headerFontStyle: "600 12px",
+              baseFontStyle: "13px",
               fontFamily: "Inter, system-ui, sans-serif",
                 }}
               />
@@ -1255,10 +1256,10 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
           )}
         </div>
 
-        {/* 分页控件 */}
+        {/* 分页控件 - JetBrains New UI 风格 */}
         {pagination && paginationInfo && (
-          <div className="flex items-center justify-between px-4 py-3 border-t bg-background">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center justify-between px-3 py-2 border-t bg-background">
+            <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
               <span>
                 {t('showing_records', {
                   start: paginationInfo.start,
@@ -1268,14 +1269,14 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
               </span>
               {paginationInfo.showSizeChanger && (
                 <>
-                  <span className="mx-2">|</span>
+                  <span className="mx-1.5">|</span>
                   <span>{t('per_page')}</span>
                   <Select
                     key={`pagesize-${paginationInfo.pageSize}-${paginationInfo.pageSizeOptions.join('-')}`}
                     value={paginationInfo.pageSize === -1 ? 'all' : String(paginationInfo.pageSize)}
                     onValueChange={handlePageSizeChange}
                   >
-                    <SelectTrigger className="h-8 w-24">
+                    <SelectTrigger className="h-6 w-20 text-[12px]">
                       <SelectValue placeholder={t('select_datasource')}>
                         {paginationInfo.pageSize === -1 ? t('all_records') : String(paginationInfo.pageSize)}
                       </SelectValue>
@@ -1293,41 +1294,45 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               <Button
                 variant="outline"
                 size="sm"
+                className="h-6 w-6 p-0"
                 onClick={() => handlePageChange(1)}
                 disabled={paginationInfo.current === 1 || loading}
               >
-                <ChevronsLeft className="h-4 w-4" />
+                <ChevronsLeft className="h-3.5 w-3.5" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
+                className="h-6 w-6 p-0"
                 onClick={() => handlePageChange(paginationInfo.current - 1)}
                 disabled={paginationInfo.current === 1 || loading}
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
-              <span className="mx-2 text-sm">
+              <span className="mx-1.5 text-[12px]">
                 {t('page_info', { current: paginationInfo.current, total: paginationInfo.totalPages })}
               </span>
               <Button
                 variant="outline"
                 size="sm"
+                className="h-6 w-6 p-0"
                 onClick={() => handlePageChange(paginationInfo.current + 1)}
                 disabled={paginationInfo.current >= paginationInfo.totalPages || loading}
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </Button>
               <Button
                 variant="outline"
                 size="sm"
+                className="h-6 w-6 p-0"
                 onClick={() => handlePageChange(paginationInfo.totalPages)}
                 disabled={paginationInfo.current >= paginationInfo.totalPages || loading}
               >
-                <ChevronsRight className="h-4 w-4" />
+                <ChevronsRight className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>

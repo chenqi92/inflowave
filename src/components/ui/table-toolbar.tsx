@@ -1,6 +1,7 @@
 /**
- * 统一的表格工具栏组件
+ * 统一的表格工具栏组件 - JetBrains New UI 风格
  * 提供表格标题、行数统计、导出功能等通用功能
+ * 36-40px 工具栏高度, 13px 字体
  */
 
 import React from 'react';
@@ -94,16 +95,16 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
     };
     return (
         <Card className={`flex-shrink-0 border-0 border-b rounded-none bg-background ${className || ''}`}>
-            <CardHeader className="py-2 pb-2">
+            <CardHeader className="py-1.5 pb-1.5">
                 <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        {icon || <TableIcon className="w-5 h-5 text-blue-600" />}
-                        <CardTitle className="text-lg">{title}</CardTitle>
-                        <Badge variant="outline" className="text-xs">
+                    <div className="flex items-center gap-1.5">
+                        {icon || <TableIcon className="w-4 h-4 text-primary" />}
+                        <CardTitle className="text-[14px]">{title}</CardTitle>
+                        <Badge variant="outline" className="text-[11px] h-5 px-1.5">
                             {t('rows_count', { count: rowCount })}
                         </Badge>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         {/* 刷新按钮 */}
                         {showRefresh && onRefresh && (
                             <Tooltip>
@@ -113,9 +114,9 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                         size="sm"
                                         onClick={onRefresh}
                                         disabled={loading}
-                                        className="h-8 px-2"
+                                        className="h-7 px-2"
                                     >
-                                        <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} />
+                                        <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>{t('refresh_data')}</TooltipContent>
@@ -132,11 +133,11 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-8 px-3"
+                                        className="h-7 px-2"
                                     >
-                                        <Copy className="w-3 h-3 mr-1.5" />
-                                        <span className="text-xs">{formatNames[selectedCopyFormat]}</span>
-                                        <ChevronDown className="w-3 h-3 ml-1.5" />
+                                        <Copy className="w-3.5 h-3.5 mr-1" />
+                                        <span className="text-[12px]">{formatNames[selectedCopyFormat]}</span>
+                                        <ChevronDown className="w-3 h-3 ml-1" />
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
@@ -177,9 +178,9 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                     variant="outline"
                                     size="sm"
                                     disabled={rowCount === 0}
-                                    className="h-8 px-2"
+                                    className="h-7 px-2"
                                 >
-                                    <Download className="w-3 h-3 mr-1" />
+                                    <Download className="w-3.5 h-3.5 mr-1" />
                                     <ChevronDown className="w-3 h-3" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -207,10 +208,10 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                     <Button
                                         variant="outline"
                                         size="sm"
-                                        className="h-8 px-3"
+                                        className="h-7 px-2"
                                         onClick={onColumnSelectorClick}
                                     >
-                                        <span className="text-xs">
+                                        <span className="text-[12px]">
                                             {t('columns_selector', { selected: selectedColumnsCount, total: totalColumnsCount })}
                                         </span>
                                     </Button>

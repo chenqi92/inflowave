@@ -11,6 +11,10 @@ interface SpinProps {
   indicator?: React.ReactNode;
 }
 
+/**
+ * Spin 组件 - JetBrains New UI 风格
+ * 紧凑尺寸, 12px 提示字体
+ */
 const Spin = React.forwardRef<HTMLDivElement, SpinProps>(
   (
     {
@@ -33,13 +37,13 @@ const Spin = React.forwardRef<HTMLDivElement, SpinProps>(
       ...domProps
     } = props as any;
     const sizeClasses = {
-      small: 'h-4 w-4',
-      default: 'h-6 w-6',
-      large: 'h-8 w-8',
+      small: 'h-3 w-3',
+      default: 'h-4 w-4',
+      large: 'h-6 w-6',
     };
 
     const defaultIndicator = (
-      <Loader2 className={cn('animate-spin', sizeClasses[size])} />
+      <Loader2 className={cn('animate-spin text-primary', sizeClasses[size])} />
     );
 
     if (!children) {
@@ -47,13 +51,13 @@ const Spin = React.forwardRef<HTMLDivElement, SpinProps>(
         <div
           ref={ref}
           className={cn(
-            'flex flex-col items-center justify-center space-y-2',
+            'flex flex-col items-center justify-center space-y-1.5',
             className
           )}
           {...domProps}
         >
           {indicator || defaultIndicator}
-          {tip && <span className='text-sm text-muted-foreground'>{tip}</span>}
+          {tip && <span className='text-[12px] text-muted-foreground'>{tip}</span>}
         </div>
       );
     }
@@ -63,10 +67,10 @@ const Spin = React.forwardRef<HTMLDivElement, SpinProps>(
         {children}
         {spinning && (
           <div className='absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm'>
-            <div className='flex flex-col items-center space-y-2'>
+            <div className='flex flex-col items-center space-y-1.5'>
               {indicator || defaultIndicator}
               {tip && (
-                <span className='text-sm text-muted-foreground'>{tip}</span>
+                <span className='text-[12px] text-muted-foreground'>{tip}</span>
               )}
             </div>
           </div>

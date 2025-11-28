@@ -19,6 +19,10 @@ const getZebraClass = (zebraType: string): string => {
   return zebraMap[zebraType] || 'zebra-table';
 };
 
+/**
+ * Table 组件 - JetBrains New UI 风格
+ * 13px 字体, 28-32px 行高
+ */
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement> & {
@@ -29,7 +33,7 @@ const Table = React.forwardRef<
   <table
     ref={ref}
     className={cn(
-      'w-full caption-bottom text-sm',
+      'w-full caption-bottom text-[13px]',
       zebra && getZebraClass(zebraType),
       className
     )}
@@ -80,7 +84,7 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      'border-b transition-colors hover:bg-muted/30 dark:hover:bg-muted/20 data-[state=selected]:bg-primary/10 dark:data-[state=selected]:bg-primary/20',
+      'h-7 border-b transition-colors duration-100 hover:bg-muted/30 dark:hover:bg-muted/20 data-[state=selected]:bg-primary/10 dark:data-[state=selected]:bg-primary/20',
       className
     )}
     {...props}
@@ -95,7 +99,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'h-12 px-4 text-left align-middle font-semibold text-foreground bg-muted/50 border-b border-border [&:has([role=checkbox])]:pr-0',
+      'h-8 px-2 text-left align-middle text-[12px] font-semibold text-foreground bg-muted/50 border-b border-border [&:has([role=checkbox])]:pr-0',
       className
     )}
     {...props}
@@ -109,7 +113,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn('p-4 align-middle [&:has([role=checkbox])]:pr-0', className)}
+    className={cn('px-2 py-1 align-middle text-[13px] [&:has([role=checkbox])]:pr-0', className)}
     {...props}
   />
 ));
@@ -121,7 +125,7 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn('mt-4 text-sm text-muted-foreground', className)}
+    className={cn('mt-2 text-[12px] text-muted-foreground', className)}
     {...props}
   />
 ));

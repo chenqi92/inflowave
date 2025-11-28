@@ -1,4 +1,8 @@
-﻿import React, { memo, useCallback, useMemo } from 'react';
+/**
+ * 虚拟化表格数据浏览器 - JetBrains New UI 风格
+ * 32px 表头高度, 28px 行高, 12px/13px 字体
+ */
+import React, { memo, useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -112,22 +116,22 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
     }, [isHeader, onRowContextMenu, index]);
 
     if (isHeader) {
-      // 渲染表头
+      // 渲染表头 - JetBrains New UI 风格: 32px 高度, 12px 字体
       return (
-        <div className='virtual-table-header flex border-b bg-background z-10 h-[48px] flex-shrink-0' style={{ minWidth: 'max-content', width: 'max-content' }}>
+        <div className='virtual-table-header flex border-b bg-muted/50 z-10 h-8 flex-shrink-0' style={{ minWidth: 'max-content', width: 'max-content' }}>
           {visibleColumns.map(column => {
 
             // 使用统一的列宽度
-            const width = column === '#' ? 50 : (columnWidths[column] || 120);
+            const width = column === '#' ? 40 : (columnWidths[column] || 120);
 
             return (
               <div
                 key={column}
                 className={cn(
-                  'virtual-table-column px-3 py-2 text-left text-xs font-medium text-muted-foreground flex items-center h-full',
+                  'virtual-table-column px-2 py-1 text-left text-[12px] font-semibold text-foreground flex items-center h-full transition-colors duration-100',
                   column === '#'
-                    ? 'justify-center bg-muted border-r-2 border-muted'
-                    : 'cursor-pointer hover:bg-muted/50'
+                    ? 'justify-center bg-muted/80 border-r border-border'
+                    : 'cursor-pointer hover:bg-muted/80'
                 )}
                 style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px`, flexShrink: 0 }}
                 onClick={() => column !== '#' && onSort?.(column)}
@@ -135,19 +139,19 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
                 <div className='flex items-center gap-1 w-full h-full'>
                   {column !== '#' && (
                     <span
-                      className='text-xs font-medium flex-shrink-0'
+                      className='text-[12px] font-semibold flex-shrink-0 truncate'
                       title={column}
                     >
                       {column}
                     </span>
                   )}
                   {column === 'time' && (
-                    <Badge variant='secondary' className='text-xs'>
+                    <Badge variant='secondary' className='text-[10px] h-4 px-1'>
                       时间
                     </Badge>
                   )}
                   {sortColumn === column && column !== '#' && (
-                    <span className='text-xs text-primary'>
+                    <span className='text-[11px] text-primary'>
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
@@ -164,7 +168,7 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align='start'>
                         <DropdownMenuItem onClick={() => onAddFilter?.(column)}>
-                          <Filter className='w-4 h-4 mr-2' />
+                          <Filter className='w-3.5 h-3.5 mr-1.5' />
                           添加过滤器
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -177,14 +181,14 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
         </div>
       );
     } else {
-      // 渲染数据行
+      // 渲染数据行 - JetBrains New UI 风格: 28px 高度, 13px 字体
       if (!row) return null;
 
       return (
         <div
           className={cn(
-            'virtual-table-row flex border-b transition-colors hover:bg-muted/50 cursor-pointer group relative h-[40px] select-none',
-            isSelected && 'bg-blue-50 hover:bg-blue-100'
+            'virtual-table-row flex border-b transition-colors duration-100 hover:bg-muted/30 cursor-pointer group relative h-7 select-none',
+            isSelected && 'bg-primary/10 hover:bg-primary/15'
           )}
           onClick={handleRowClick}
           onMouseDown={handleRowMouseDown}
@@ -196,16 +200,16 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
           {visibleColumns.map(column => {
 
             // 使用统一的列宽度
-            const width = column === '#' ? 50 : (columnWidths[column] || 120);
+            const width = column === '#' ? 40 : (columnWidths[column] || 120);
 
             return (
               <div
                 key={column}
                 className={cn(
-                  'virtual-table-column px-2 py-2 text-xs flex items-center',
+                  'virtual-table-column px-2 py-1 text-[13px] flex items-center',
                   column === '#'
-                    ? 'font-medium text-muted-foreground bg-muted justify-center border-r-2 border-muted'
-                    : 'font-mono px-3'
+                    ? 'font-medium text-muted-foreground bg-muted/50 justify-center border-r border-border text-[12px]'
+                    : 'font-mono'
                 )}
                 style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px`, flexShrink: 0 }}
                 onDoubleClick={(e) => {

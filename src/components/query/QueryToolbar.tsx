@@ -105,31 +105,32 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
     showMessage.info('已切换数据源，请重新选择数据库');
   };
 
+  // JetBrains New UI 风格: 36-40px 工具栏高度, 28px 按钮高度, 13px 字体
   return (
-    <div className="flex items-center gap-1.5 px-3 py-1.5 border-b bg-background/50">
-      {/* 保存按钮 - 放在最前方，更紧凑 */}
+    <div className="flex items-center gap-1.5 px-2 py-1 border-b bg-background/50">
+      {/* 保存按钮 - 放在最前方 */}
       <Button
         variant="outline"
         size="sm"
         onClick={onSaveQuery}
         disabled={disabled}
-        className="h-6 px-1.5 flex items-center gap-1"
+        className="h-7 px-2 flex items-center gap-1"
         title={t('save_to_workspace')}
       >
-        <Save className="w-3 h-3" />
-        <span className="text-xs">{t('save_button')}</span>
+        <Save className="w-3.5 h-3.5" />
+        <span className="text-[12px]">{t('save_button')}</span>
       </Button>
 
       {/* 分隔线 */}
       <div className="h-4 w-px bg-border/50" />
 
-      {/* 数据源下拉框 - 更紧凑 */}
+      {/* 数据源下拉框 */}
       <Select
         value={selectedConnectionId || ''}
         onValueChange={handleConnectionChange}
         disabled={disabled || connectedConnections.length === 0}
       >
-        <SelectTrigger className="min-w-[140px] w-auto h-6 text-xs whitespace-nowrap">
+        <SelectTrigger className="min-w-[140px] w-auto h-7 text-[12px] whitespace-nowrap">
           <SelectValue
             placeholder={
               connectedConnections.length === 0
@@ -153,13 +154,13 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
         </SelectContent>
       </Select>
 
-      {/* 数据库下拉框 - 更紧凑 */}
+      {/* 数据库下拉框 */}
       <Select
         value={selectedDatabase}
         onValueChange={onDatabaseChange}
         disabled={disabled || !selectedConnectionId || currentConnectionDatabases.length === 0}
       >
-        <SelectTrigger className="min-w-[140px] w-auto h-6 text-xs whitespace-nowrap">
+        <SelectTrigger className="min-w-[140px] w-auto h-7 text-[12px] whitespace-nowrap">
           <SelectValue
             placeholder={
               !selectedConnectionId
@@ -198,14 +199,14 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
         </>
       )}
 
-      {/* 操作按钮组 - 更紧凑 */}
+      {/* 操作按钮组 */}
       <div className="flex items-center gap-1">
         {/* 执行按钮 */}
         <Button
           size="sm"
           onClick={onExecuteQuery}
           disabled={loading || disabled || !selectedConnectionId || !selectedDatabase}
-          className="h-6 px-1.5 flex items-center gap-1"
+          className="h-7 px-2 flex items-center gap-1"
           title={
             !selectedConnectionId
               ? t('execute_need_datasource')
@@ -214,8 +215,8 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
               : t('execute_query_tooltip')
           }
         >
-          <PlayCircle className="w-3 h-3" />
-          <span className="text-xs">{loading ? t('executing') : t('execute_button')}</span>
+          <PlayCircle className="w-3.5 h-3.5" />
+          <span className="text-[12px]">{loading ? t('executing') : t('execute_button')}</span>
         </Button>
 
         {/* 美化SQL按钮 */}
@@ -224,19 +225,19 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
           size="sm"
           onClick={onFormatSQL}
           disabled={disabled}
-          className="h-6 px-1.5 flex items-center gap-1"
+          className="h-7 px-2 flex items-center gap-1"
           title={t('beautify_sql')}
         >
-          <Wand2 className="w-3 h-3" />
-          <span className="text-xs">{t('beautify_button')}</span>
+          <Wand2 className="w-3.5 h-3.5" />
+          <span className="text-[12px]">{t('beautify_button')}</span>
         </Button>
       </div>
 
-      {/* 右侧状态信息 - 更紧凑 */}
+      {/* 右侧状态信息 */}
       <div className="flex-1" />
 
       {selectedConnectionId && selectedDatabase && (
-        <div className="text-xs text-muted-foreground px-2 py-1 bg-muted/30 rounded">
+        <div className="text-[12px] text-muted-foreground px-2 py-0.5 bg-muted/30 rounded">
           {connections.find(c => c.id === selectedConnectionId)?.name} / {selectedDatabase}
         </div>
       )}

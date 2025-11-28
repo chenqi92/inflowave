@@ -1,0 +1,225 @@
+/**
+ * JetBrains New UI Design Tokens
+ * 参考: JetBrains UI Guidelines (2024.2+)
+ *
+ * 这个文件定义了全局设计令牌，用于统一界面风格
+ */
+
+:root {
+  /* ========================================
+   * Typography - 字体系统
+   * ======================================== */
+
+  /* 字体族 */
+  --font-family-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+
+  /* 字体大小 - 基于 JetBrains 13px 基准 */
+  --font-size-h1: 18px;
+  --font-size-h2: 16px;
+  --font-size-h3: 14px;
+  --font-size-base: 13px;
+  --font-size-sm: 12px;
+  --font-size-xs: 11px;
+
+  /* 字重 */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* 行高 */
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.35;
+  --line-height-normal: 1.5;
+
+  /* ========================================
+   * Spacing - 间距系统 (4px 网格)
+   * ======================================== */
+  --space-0: 0;
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ========================================
+   * Border Radius - 圆角 (桌面应用风格)
+   * ======================================== */
+  --radius-none: 0;
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 6px;
+  --radius-xl: 8px;
+  --radius-full: 9999px;
+
+  /* ========================================
+   * Shadows - 阴影 (浅色主题)
+   * ======================================== */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-xl: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+
+  /* Focus Ring */
+  --ring-width: 2px;
+  --ring-color: rgba(53, 116, 240, 0.4);
+  --ring-offset: 1px;
+
+  /* ========================================
+   * Animation - 动画 (桌面应用更快的响应)
+   * ======================================== */
+  --duration-instant: 50ms;
+  --duration-fast: 100ms;
+  --duration-normal: 150ms;
+  --duration-slow: 200ms;
+
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ========================================
+   * Z-Index - 层级
+   * ======================================== */
+  --z-base: 0;
+  --z-dropdown: 50;
+  --z-sticky: 100;
+  --z-fixed: 200;
+  --z-modal-backdrop: 400;
+  --z-modal: 500;
+  --z-popover: 600;
+  --z-tooltip: 700;
+  --z-toast: 800;
+
+  /* ========================================
+   * Component Sizes - 组件尺寸
+   * ======================================== */
+
+  /* Button */
+  --btn-height-sm: 24px;
+  --btn-height-md: 28px;
+  --btn-height-lg: 32px;
+  --btn-padding-x-sm: 8px;
+  --btn-padding-x-md: 12px;
+  --btn-padding-x-lg: 16px;
+
+  /* Input */
+  --input-height-sm: 24px;
+  --input-height-md: 28px;
+  --input-height-lg: 32px;
+
+  /* Checkbox & Radio */
+  --checkbox-size: 14px;
+
+  /* Switch */
+  --switch-width: 32px;
+  --switch-height: 18px;
+  --switch-thumb-size: 14px;
+
+  /* Tab */
+  --tab-height: 32px;
+
+  /* Tree Node */
+  --tree-node-height: 24px;
+  --tree-indent: 16px;
+
+  /* Table */
+  --table-row-height: 28px;
+  --table-header-height: 32px;
+
+  /* Toolbar */
+  --toolbar-height: 36px;
+
+  /* Status Bar */
+  --statusbar-height: 22px;
+
+  /* ========================================
+   * Colors - JetBrains Light Theme
+   * ======================================== */
+
+  /* Background */
+  --jb-bg-base: #FFFFFF;
+  --jb-bg-subtle: #F7F8FA;
+  --jb-bg-muted: #F0F1F3;
+  --jb-bg-emphasis: #E8EAED;
+
+  /* Foreground */
+  --jb-fg-default: #1E1F22;
+  --jb-fg-muted: #6E7681;
+  --jb-fg-subtle: #8B949E;
+
+  /* Border */
+  --jb-border-default: #D1D5DB;
+  --jb-border-muted: #E5E7EB;
+  --jb-border-emphasis: #9CA3AF;
+
+  /* Accent - JetBrains Blue */
+  --jb-accent-default: #3574F0;
+  --jb-accent-emphasis: #2E65D9;
+  --jb-accent-muted: #EBF2FF;
+  --jb-accent-subtle: #F5F8FF;
+
+  /* Semantic Colors */
+  --jb-success-default: #5D9B63;
+  --jb-success-muted: #E6F4E7;
+  --jb-warning-default: #C77D18;
+  --jb-warning-muted: #FFF3E0;
+  --jb-error-default: #DB5860;
+  --jb-error-muted: #FDEDEF;
+  --jb-info-default: #3574F0;
+  --jb-info-muted: #EBF2FF;
+}
+
+/* ========================================
+ * Dark Theme - Darcula
+ * ======================================== */
+.dark {
+  /* Shadows - 深色主题使用更深的阴影 */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --shadow-xl: 0 8px 32px rgba(0, 0, 0, 0.35);
+
+  /* Focus Ring */
+  --ring-color: rgba(84, 138, 247, 0.4);
+
+  /* Background */
+  --jb-bg-base: #1E1F22;
+  --jb-bg-subtle: #2B2D30;
+  --jb-bg-muted: #393B40;
+  --jb-bg-emphasis: #43454A;
+
+  /* Foreground */
+  --jb-fg-default: #BCBEC4;
+  --jb-fg-muted: #8C8C8C;
+  --jb-fg-subtle: #6F737A;
+
+  /* Border */
+  --jb-border-default: #43454A;
+  --jb-border-muted: #393B40;
+  --jb-border-emphasis: #5A5D63;
+
+  /* Accent */
+  --jb-accent-default: #548AF7;
+  --jb-accent-emphasis: #6B9EFF;
+  --jb-accent-muted: #2E436E;
+  --jb-accent-subtle: #253555;
+
+  /* Semantic Colors */
+  --jb-success-default: #6AAB73;
+  --jb-success-muted: #2A3B2D;
+  --jb-warning-default: #E8A953;
+  --jb-warning-muted: #3D3527;
+  --jb-error-default: #F75464;
+  --jb-error-muted: #402A32;
+  --jb-info-default: #548AF7;
+  --jb-info-muted: #2E436E;
+}

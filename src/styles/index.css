@@ -2,6 +2,10 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
+/* JetBrains 设计令牌和字体系统 */
+@import './design-tokens.css';
+@import './typography.css';
+
 /* 字体配置 - 本地字体优先，CDN 降级 */
 /* 如果本地字体文件存在，使用本地字体；否则使用 Google Fonts CDN */
 @import './fonts-local.css';
@@ -320,7 +324,7 @@
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --radius: 4px;
   }
 
   .dark {

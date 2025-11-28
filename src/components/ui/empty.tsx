@@ -10,11 +10,15 @@ interface EmptyProps {
   children?: React.ReactNode;
 }
 
+/**
+ * Empty 组件 - JetBrains New UI 风格
+ * 紧凑布局, 13px 字体, 较小图标
+ */
 const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(
   ({ className, image, imageStyle, description, children, ...props }, ref) => {
     const defaultImage = (
       <FileX
-        className='h-16 w-16 text-muted-foreground/50'
+        className='h-10 w-10 text-muted-foreground/40'
         style={imageStyle}
       />
     );
@@ -23,15 +27,15 @@ const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(
       <div
         ref={ref}
         className={cn(
-          'flex min-h-[200px] flex-col items-center justify-center space-y-4 p-8 text-center',
+          'flex min-h-[120px] flex-col items-center justify-center space-y-2 p-4 text-center',
           className
         )}
         {...props}
       >
-        <div className='flex flex-col items-center space-y-2'>
+        <div className='flex flex-col items-center space-y-1.5'>
           {image || defaultImage}
           {description && (
-            <p className='text-sm text-muted-foreground max-w-sm'>
+            <p className='text-[13px] text-muted-foreground max-w-sm'>
               {description}
             </p>
           )}
@@ -49,7 +53,7 @@ const EmptyDatabase = React.forwardRef<
 >((props, ref) => (
   <Empty
     ref={ref}
-    image={<Database className='h-16 w-16 text-muted-foreground/50' />}
+    image={<Database className='h-10 w-10 text-muted-foreground/40' />}
     description='暂无数据库连接'
     {...props}
   />
@@ -60,7 +64,7 @@ const EmptySearch = React.forwardRef<HTMLDivElement, Omit<EmptyProps, 'image'>>(
   (props, ref) => (
     <Empty
       ref={ref}
-      image={<Search className='h-16 w-16 text-muted-foreground/50' />}
+      image={<Search className='h-10 w-10 text-muted-foreground/40' />}
       description='未找到搜索结果'
       {...props}
     />

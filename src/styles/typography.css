@@ -1,0 +1,191 @@
+/**
+ * JetBrains New UI Typography System
+ * 参考: JetBrains UI Guidelines Typography
+ *
+ * 基于 13px 基准字号的文本样式预设
+ */
+
+@layer components {
+  /* ========================================
+   * Text Styles - 文本样式预设
+   * ======================================== */
+
+  /* 页面标题 - 18px semibold */
+  .text-title {
+    font-size: var(--font-size-h1);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    color: hsl(var(--foreground));
+  }
+
+  /* 区块标题 - 16px semibold */
+  .text-heading {
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-semibold);
+    line-height: var(--line-height-tight);
+    color: hsl(var(--foreground));
+  }
+
+  /* 小标题 - 14px medium */
+  .text-subheading {
+    font-size: var(--font-size-h3);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    color: hsl(var(--foreground));
+  }
+
+  /* 正文内容 - 13px normal */
+  .text-body {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+    color: hsl(var(--foreground));
+  }
+
+  /* 表单标签 - 13px medium */
+  .text-label {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-snug);
+    color: hsl(var(--foreground));
+  }
+
+  /* 辅助说明 - 12px normal */
+  .text-caption {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-snug);
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* 标签徽章 - 11px medium uppercase */
+  .text-overline {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-tight);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* 代码文本 - 12px mono */
+  .text-code {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.4;
+    color: hsl(var(--foreground));
+  }
+
+  /* ========================================
+   * Font Size Utilities - 字体大小工具类
+   * ======================================== */
+
+  .text-h1 {
+    font-size: var(--font-size-h1); /* 18px */
+  }
+
+  .text-h2 {
+    font-size: var(--font-size-h2); /* 16px */
+  }
+
+  .text-h3 {
+    font-size: var(--font-size-h3); /* 14px */
+  }
+
+  .text-base {
+    font-size: var(--font-size-base); /* 13px */
+  }
+
+  .text-sm {
+    font-size: var(--font-size-sm); /* 12px */
+  }
+
+  .text-xs {
+    font-size: var(--font-size-xs); /* 11px */
+  }
+
+  /* ========================================
+   * Font Weight Utilities - 字重工具类
+   * ======================================== */
+
+  .font-normal {
+    font-weight: var(--font-weight-normal); /* 400 */
+  }
+
+  .font-medium {
+    font-weight: var(--font-weight-medium); /* 500 */
+  }
+
+  .font-semibold {
+    font-weight: var(--font-weight-semibold); /* 600 */
+  }
+
+  .font-bold {
+    font-weight: var(--font-weight-bold); /* 700 */
+  }
+
+  /* ========================================
+   * Line Height Utilities - 行高工具类
+   * ======================================== */
+
+  .leading-tight {
+    line-height: var(--line-height-tight); /* 1.2 */
+  }
+
+  .leading-snug {
+    line-height: var(--line-height-snug); /* 1.35 */
+  }
+
+  .leading-normal {
+    line-height: var(--line-height-normal); /* 1.5 */
+  }
+
+  /* ========================================
+   * Semantic Text Colors - 语义文本颜色
+   * ======================================== */
+
+  .text-default {
+    color: hsl(var(--foreground));
+  }
+
+  .text-muted {
+    color: hsl(var(--muted-foreground));
+  }
+
+  .text-subtle {
+    color: var(--jb-fg-subtle);
+  }
+
+  .text-success {
+    color: var(--jb-success-default);
+  }
+
+  .text-warning {
+    color: var(--jb-warning-default);
+  }
+
+  .text-error {
+    color: var(--jb-error-default);
+  }
+
+  .text-info {
+    color: var(--jb-info-default);
+  }
+
+  .text-accent {
+    color: var(--jb-accent-default);
+  }
+
+  /* ========================================
+   * Font Family Utilities - 字体族工具类
+   * ======================================== */
+
+  .font-ui {
+    font-family: var(--font-family-ui);
+  }
+
+  .font-mono {
+    font-family: var(--font-family-mono);
+  }
+}

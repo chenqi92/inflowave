@@ -27,6 +27,10 @@ const DialogOverlay = React.forwardRef<
 ));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
+/**
+ * DialogContent - JetBrains New UI 风格
+ * 6px 圆角, 16px 内边距, lg 阴影
+ */
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
@@ -39,7 +43,8 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          'relative grid w-full max-w-lg gap-4 border bg-background p-6 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] sm:rounded-lg',
+          // JetBrains New UI 风格: 6px 圆角, 16px 内边距, lg 阴影
+          'relative grid w-full max-w-lg gap-3 border bg-background p-4 shadow-lg rounded-lg',
           className
         )}
         style={{
@@ -53,7 +58,7 @@ const DialogContent = React.forwardRef<
         {...props}
       >
         {children}
-        <DialogPrimitive.Close className='absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground'>
+        <DialogPrimitive.Close className='absolute right-3 top-3 rounded-sm opacity-70 ring-offset-background transition-opacity duration-100 hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-ring focus:ring-offset-1 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground'>
           <X className='h-4 w-4' />
           <span className='sr-only'>Close</span>
         </DialogPrimitive.Close>
@@ -69,7 +74,7 @@ const DialogHeader = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'flex flex-col space-y-1.5 text-center sm:text-left',
+      'flex flex-col space-y-1 text-center sm:text-left',
       className
     )}
     {...props}
@@ -77,13 +82,17 @@ const DialogHeader = ({
 );
 DialogHeader.displayName = 'DialogHeader';
 
+/**
+ * DialogFooter - JetBrains New UI 风格
+ * 紧凑布局, 右对齐
+ */
 const DialogFooter = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      'flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2',
+      'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2',
       className
     )}
     {...props}
@@ -91,6 +100,10 @@ const DialogFooter = ({
 );
 DialogFooter.displayName = 'DialogFooter';
 
+/**
+ * DialogTitle - JetBrains New UI 风格
+ * 16px semibold
+ */
 const DialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
@@ -98,7 +111,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      'text-lg font-semibold leading-none tracking-tight',
+      'text-[16px] font-semibold leading-tight tracking-tight',
       className
     )}
     {...props}
@@ -106,13 +119,17 @@ const DialogTitle = React.forwardRef<
 ));
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
+/**
+ * DialogDescription - JetBrains New UI 风格
+ * 13px 字体
+ */
 const DialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('text-sm text-muted-foreground', className)}
+    className={cn('text-[13px] text-muted-foreground', className)}
     {...props}
   />
 ));

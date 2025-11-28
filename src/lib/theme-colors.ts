@@ -21,6 +21,26 @@ export interface ThemeColors {
 
 // 预定义的主题颜色方案
 export const themeColors: Record<string, ThemeColors> = {
+  // JetBrains New UI 风格主题 - 参考 IntelliJ IDEA 2024.2+
+  jetbrains: {
+    name: 'jetbrains',
+    label: 'JetBrains',
+    primary: '216 87% 57%', // #3574F0
+    primaryForeground: '0 0% 100%',
+    secondary: '220 14% 96%',
+    secondaryForeground: '220 9% 20%',
+    accent: '216 87% 95%',
+    accentForeground: '216 87% 40%',
+    muted: '220 14% 96%',
+    mutedForeground: '220 9% 46%',
+    destructive: '0 84% 60%',
+    destructiveForeground: '0 0% 100%',
+    success: '142 76% 36%',
+    successForeground: '0 0% 100%',
+    warning: '38 92% 50%',
+    warningForeground: '0 0% 100%',
+    ring: '216 87% 57%',
+  },
   default: {
     name: 'default',
     label: '默认蓝色',
@@ -291,6 +311,18 @@ export const themeColors: Record<string, ThemeColors> = {
 
 // 深色主题的颜色配置
 export const darkThemeColors: Record<string, Partial<ThemeColors>> = {
+  // JetBrains New UI 深色主题 - 参考 IntelliJ IDEA 2024.2+ Darcula
+  jetbrains: {
+    primary: '221 89% 65%', // #548AF7
+    primaryForeground: '0 0% 100%',
+    secondary: '220 13% 18%',
+    secondaryForeground: '220 9% 90%',
+    accent: '221 50% 25%',
+    accentForeground: '221 89% 75%',
+    muted: '220 13% 18%',
+    mutedForeground: '220 9% 60%',
+    ring: '221 89% 65%',
+  },
   default: {
     primary: '217.2 91.2% 59.8%',
     primaryForeground: '222.2 84% 4.9%',

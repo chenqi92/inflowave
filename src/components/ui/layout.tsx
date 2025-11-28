@@ -1,3 +1,7 @@
+/**
+ * Layout 组件 - JetBrains New UI 风格
+ * 紧凑布局, 更小的间距
+ */
 import React, { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -118,7 +122,7 @@ const Content = forwardRef<HTMLDivElement, ContentProps>(
 );
 Content.displayName = 'Content';
 
-// Footer component
+// Footer / Status Bar component - JetBrains New UI: 22px 高度, 11px 字体
 export type FooterProps = React.HTMLAttributes<HTMLElement>;
 
 const Footer = forwardRef<HTMLElement, FooterProps>(
@@ -126,7 +130,10 @@ const Footer = forwardRef<HTMLElement, FooterProps>(
     return (
       <footer
         ref={ref}
-        className={cn('border-t bg-background px-4 py-2', className)}
+        className={cn(
+          'h-[22px] border-t bg-muted/30 px-2 flex items-center text-[11px] text-muted-foreground',
+          className
+        )}
         {...props}
       >
         {children}
