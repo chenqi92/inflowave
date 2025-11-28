@@ -173,10 +173,11 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
       '十二月',
     ];
 
+    // JetBrains New UI: h-6(24px) small, h-7(28px) middle, h-8(32px) large
     const sizeClasses = {
       small: 'h-6',
-      middle: 'h-10',
-      large: 'h-12',
+      middle: 'h-7',
+      large: 'h-8',
     };
 
     const displayValue = selectedDate ? formatDate(selectedDate) : '';
@@ -251,7 +252,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
               {['日', '一', '二', '三', '四', '五', '六'].map(day => (
                 <div
                   key={day}
-                  className='text-center text-xs text-muted-foreground p-2'
+                  className='text-center text-[11px] text-muted-foreground p-1.5'
                 >
                   {day}
                 </div>
@@ -287,7 +288,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
               <div className='border-t pt-4 mt-4'>
                 <div className='flex items-center gap-2 justify-center'>
                   <div className='flex flex-col items-center'>
-                    <label className='text-xs text-muted-foreground mb-1'>
+                    <label className='text-[11px] text-muted-foreground mb-1'>
                       时
                     </label>
                     <input
@@ -303,12 +304,12 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
                           selectedDate?.getSeconds() || 0
                         );
                       }}
-                      className='w-12 h-8 text-center text-sm border border-input bg-background text-foreground rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+                      className='w-12 h-7 text-center text-[13px] border border-input bg-background text-foreground rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
                     />
                   </div>
                   <span className='text-muted-foreground'>:</span>
                   <div className='flex flex-col items-center'>
-                    <label className='text-xs text-muted-foreground mb-1'>
+                    <label className='text-[11px] text-muted-foreground mb-1'>
                       分
                     </label>
                     <input
@@ -324,12 +325,12 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
                           selectedDate?.getSeconds() || 0
                         );
                       }}
-                      className='w-12 h-8 text-center text-sm border border-input bg-background text-foreground rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+                      className='w-12 h-7 text-center text-[13px] border border-input bg-background text-foreground rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
                     />
                   </div>
                   <span className='text-muted-foreground'>:</span>
                   <div className='flex flex-col items-center'>
-                    <label className='text-xs text-muted-foreground mb-1'>
+                    <label className='text-[11px] text-muted-foreground mb-1'>
                       秒
                     </label>
                     <input
@@ -345,7 +346,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
                           seconds
                         );
                       }}
-                      className='w-12 h-8 text-center text-sm border border-input bg-background text-foreground rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
+                      className='w-12 h-7 text-center text-[13px] border border-input bg-background text-foreground rounded px-1 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2'
                     />
                   </div>
                 </div>

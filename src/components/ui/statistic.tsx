@@ -46,14 +46,14 @@ const Statistic = React.forwardRef<HTMLDivElement, StatisticProps>(
     return (
       <div ref={ref} className={cn('space-y-1', className)} {...props}>
         {title && (
-          <div className='text-sm text-muted-foreground flex items-center gap-2'>
+          <div className='text-[12px] text-muted-foreground flex items-center gap-2'>
             {icon && <span className='flex-shrink-0'>{icon}</span>}
             <span>{title}</span>
           </div>
         )}
         <div
           className={cn(
-            'text-2xl font-semibold text-foreground flex items-baseline',
+            'text-[18px] font-semibold text-foreground flex items-baseline',
             valueClassName
           )}
           style={valueStyle}

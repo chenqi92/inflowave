@@ -137,8 +137,8 @@ const SuggestionItem: React.FC<{
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm mb-1">{suggestion.title}</div>
-        <div className="text-xs text-muted-foreground">{suggestion.description}</div>
+        <div className="font-medium text-[13px] mb-1">{suggestion.title}</div>
+        <div className="text-[11px] text-muted-foreground">{suggestion.description}</div>
       </div>
       {suggestion.action && suggestion.actionLabel && (
         <Button
@@ -201,7 +201,7 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
                     size="sm"
                     className="w-full justify-between p-2 h-auto font-medium"
                   >
-                    <span className="text-sm">
+                    <span className="text-[13px]">
                       {isExpanded ? '隐藏' : '查看'}恢复建议 ({error.suggestions?.length})
                     </span>
                     {isExpanded ? (
@@ -227,7 +227,7 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
               </Collapsible>
             ) : (
               <div className="space-y-2">
-                <div className="text-sm font-medium mb-2">恢复建议：</div>
+                <div className="text-[13px] font-medium mb-2">恢复建议：</div>
                 <ScrollArea className="max-h-[300px]">
                   <div className="space-y-2 pr-4">
                     {error.suggestions?.map((suggestion, index) => (
@@ -251,7 +251,7 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="w-full justify-between p-2 h-auto font-medium text-xs"
+                className="w-full justify-between p-2 h-auto font-medium text-[11px]"
               >
                 <span>技术详情</span>
                 <ChevronDown className="h-3 w-3" />
@@ -259,7 +259,7 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2">
               <ScrollArea className="max-h-[200px]">
-                <div className="p-3 rounded-lg bg-muted/50 font-mono text-xs space-y-2">
+                <div className="p-3 rounded-lg bg-muted/50 font-mono text-[11px] space-y-2">
                   {error.technicalDetails && (
                     <div>
                       <div className="font-semibold mb-1">详情：</div>

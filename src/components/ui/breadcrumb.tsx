@@ -19,7 +19,8 @@ const BreadcrumbList = React.forwardRef<
   <ol
     ref={ref}
     className={cn(
-      'flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5',
+      // JetBrains New UI: text-[13px]
+      'flex flex-wrap items-center gap-1.5 break-words text-[13px] text-muted-foreground sm:gap-2',
       className
     )}
     {...props}
@@ -95,10 +96,10 @@ const BreadcrumbEllipsis = ({
   <span
     role='presentation'
     aria-hidden='true'
-    className={cn('flex h-9 w-9 items-center justify-center', className)}
+    className={cn('flex h-7 w-7 items-center justify-center', className)}
     {...props}
   >
-    <MoreHorizontal className='h-4 w-4' />
+    <MoreHorizontal className='h-3.5 w-3.5' />
     <span className='sr-only'>More</span>
   </span>
 );

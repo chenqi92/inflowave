@@ -91,13 +91,13 @@ const CustomDialog: React.FC<CustomDialogProps> = ({
     switch (type) {
       case 'warning':
       case 'error':
-        return <AlertTriangle className="w-6 h-6 text-yellow-500" />;
+        return <AlertTriangle className="w-5 h-5 text-yellow-500" />;
       case 'confirm':
-        return <HelpCircle className="w-6 h-6 text-blue-500" />;
+        return <HelpCircle className="w-5 h-5 text-blue-500" />;
       case 'info':
       case 'prompt':
       default:
-        return <Info className="w-6 h-6 text-blue-500" />;
+        return <Info className="w-5 h-5 text-blue-500" />;
     }
   };
 
@@ -125,7 +125,7 @@ const CustomDialog: React.FC<CustomDialogProps> = ({
             {getIcon()}
             {title || getDefaultTitle()}
           </DialogTitle>
-          <DialogDescription className="text-base pt-2">
+          <DialogDescription className="text-[13px] pt-2">
             {message}
           </DialogDescription>
         </DialogHeader>

@@ -38,14 +38,14 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
         <input
           type="text"
           className={cn(
-            // 基础样式
-            'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background',
-            'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
+            // 基础样式 - JetBrains New UI: 13px 字体
+            'flex w-full rounded-md border border-input bg-background text-[13px] ring-offset-background',
+            'file:border-0 file:bg-transparent file:text-[13px] file:font-medium file:text-foreground',
             'placeholder:text-muted-foreground',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             'disabled:cursor-not-allowed disabled:opacity-50',
-            // 高度和内边距
-            iconSize === 'sm' ? 'h-8 py-1.5' : 'h-9 py-2',
+            // 高度和内边距 - JetBrains New UI: h-7 (28px)
+            iconSize === 'sm' ? 'h-6 py-1' : 'h-7 py-1.5',
             paddingClass,
             // 右侧内边距（为清除按钮留空间）
             showClearButton && hasValue ? (iconSize === 'sm' ? 'pr-8' : 'pr-10') : 'pr-3',

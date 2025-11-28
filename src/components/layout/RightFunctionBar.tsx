@@ -35,6 +35,7 @@ const RightFunctionBar: React.FC<RightFunctionBarProps> = ({
   const { t } = useMenuTranslation();
 
   // Generate function items with translations
+  // JetBrains New UI: 侧边栏图标 16px (w-4 h-4)
   const functionItems: FunctionItem[] = [
     {
       key: 'notifications',

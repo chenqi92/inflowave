@@ -123,11 +123,11 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
                 )}
               >
                 {item.label && (
-                  <div className='text-xs text-muted-foreground mb-1'>
+                  <div className='text-[11px] text-muted-foreground mb-1'>
                     {item.label}
                   </div>
                 )}
-                <div className='text-sm text-foreground'>{item.children}</div>
+                <div className='text-[13px] text-foreground'>{item.children}</div>
               </div>
 
               {/* 时间轴中心线和点 */}
@@ -158,11 +158,11 @@ const Timeline = React.forwardRef<HTMLDivElement, TimelineProps>(
               {/* 内容区域 */}
               <div className='flex-1 pb-8'>
                 {item.label && (
-                  <div className='text-xs text-muted-foreground mb-1'>
+                  <div className='text-[11px] text-muted-foreground mb-1'>
                     {item.label}
                   </div>
                 )}
-                <div className='text-sm text-foreground'>{item.children}</div>
+                <div className='text-[13px] text-foreground'>{item.children}</div>
               </div>
             </>
           )}

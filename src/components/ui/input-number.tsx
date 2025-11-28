@@ -77,10 +77,11 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
 
     const actualValue = value !== undefined ? value : innerValue;
 
+    // JetBrains New UI: h-6(24px) small, h-7(28px) default, h-8(32px) large
     const sizeClasses = {
-      sm: 'h-8 px-2 text-sm',
-      default: 'h-10 px-3',
-      lg: 'h-12 px-4 text-lg',
+      sm: 'h-6 px-2 text-[12px]',
+      default: 'h-7 px-2 text-[13px]',
+      lg: 'h-8 px-3 text-[14px]',
     };
 
     const formatValue = React.useCallback((val: number | null): string => {
@@ -231,7 +232,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
           ref={mergeRefs([inputRef, ref])}
           type='text'
           className={cn(
-            'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+            'flex w-full rounded-md border border-input bg-background ring-offset-background file:border-0 file:bg-transparent file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
             sizeClasses[size],
             rightPadding,
             className
@@ -262,8 +263,8 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
       const leftOffset = `${leftPadding + textWidth + 2}px`; // +2px for spacing
       
       return (
-        <div 
-          className="absolute top-1/2 -translate-y-1/2 pointer-events-none text-sm text-muted-foreground"
+        <div
+          className="absolute top-1/2 -translate-y-1/2 pointer-events-none text-[12px] text-muted-foreground"
           style={{ left: leftOffset }}
         >
           {displayUnit}
@@ -311,7 +312,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
     if (addonBefore) {
       return (
         <div className='flex w-full'>
-          <div className='flex items-center px-3 border border-r-0 border-input bg-muted rounded-l-md text-sm'>
+          <div className='flex items-center px-2 border border-r-0 border-input bg-muted rounded-l-md text-[13px]'>
             {addonBefore}
           </div>
           <div className='relative flex-1'>

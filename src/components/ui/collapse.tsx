@@ -72,10 +72,11 @@ const CollapseComponent: React.FC<CollapseProps> = ({
     onChange?.(newActiveKeys);
   };
 
+  // JetBrains New UI: 紧凑字体大小
   const sizeClasses = {
-    small: 'text-sm',
-    default: 'text-base',
-    large: 'text-lg',
+    small: 'text-[12px]',
+    default: 'text-[13px]',
+    large: 'text-[14px]',
   };
 
   // 如果是手风琴模式，使用 shadcn Accordion 组件
@@ -185,7 +186,8 @@ const CollapseComponent: React.FC<CollapseProps> = ({
           >
             <CollapsibleTrigger
               className={cn(
-                'flex w-full items-center justify-between py-4 px-4 text-left font-medium transition-all',
+                // JetBrains New UI: py-2 紧凑
+                'flex w-full items-center justify-between py-2 px-3 text-left font-medium transition-all',
                 'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
                 'disabled:pointer-events-none disabled:opacity-50',
                 '[&[data-state=open]>svg]:rotate-180',
@@ -195,7 +197,7 @@ const CollapseComponent: React.FC<CollapseProps> = ({
             >
               {header}
               <svg
-                className="h-4 w-4 shrink-0 transition-transform duration-200"
+                className="h-3.5 w-3.5 shrink-0 transition-transform duration-150"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -210,7 +212,7 @@ const CollapseComponent: React.FC<CollapseProps> = ({
               </svg>
             </CollapsibleTrigger>
             <CollapsibleContent className="overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down">
-              <div className={cn('px-4 pb-4 pt-0', ghost && 'px-0')}>
+              <div className={cn('px-3 pb-2 pt-0', ghost && 'px-0')}>
                 {panelChildren}
               </div>
             </CollapsibleContent>

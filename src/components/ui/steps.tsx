@@ -52,7 +52,7 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
       // 对于第一个步骤（配置连接），始终显示数字 "1"
       if (index === 0) {
         return (
-          <span className={cn('text-sm font-medium', isSmall && 'text-xs')}>
+          <span className={cn('text-[13px] font-medium', isSmall && 'text-[11px]')}>
             1
           </span>
         );
@@ -65,7 +65,7 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
           return <X className={cn('h-4 w-4', isSmall && 'h-3 w-3')} />;
         default:
           return (
-            <span className={cn('text-sm font-medium', isSmall && 'text-xs')}>
+            <span className={cn('text-[13px] font-medium', isSmall && 'text-[11px]')}>
               {index + 1}
             </span>
           );
@@ -104,7 +104,7 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
 
       const contentClasses = cn(
         isHorizontal ? 'ml-3 flex-1' : 'mt-2 text-center',
-        isSmall && 'text-sm'
+        isSmall && 'text-[12px]'
       );
 
       const titleClasses = cn('font-medium transition-colors', {
@@ -115,8 +115,8 @@ const Steps = React.forwardRef<HTMLDivElement, StepsProps>(
       });
 
       const descriptionClasses = cn(
-        'text-sm text-muted-foreground mt-1',
-        isSmall && 'text-xs'
+        'text-[12px] text-muted-foreground mt-1',
+        isSmall && 'text-[11px]'
       );
 
       return (

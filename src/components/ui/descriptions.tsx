@@ -44,16 +44,18 @@ const Descriptions = React.forwardRef<HTMLDivElement, DescriptionsProps>(
     },
     ref
   ) => {
+    // JetBrains New UI: 紧凑字体大小
     const sizeClasses = {
-      small: 'text-xs',
-      default: 'text-sm',
-      middle: 'text-base',
+      small: 'text-[11px]',
+      default: 'text-[13px]',
+      middle: 'text-[13px]',
     };
 
+    // JetBrains New UI: 紧凑内边距
     const paddingClasses = {
-      small: 'p-2',
-      default: 'p-3',
-      middle: 'p-4',
+      small: 'p-1.5',
+      default: 'p-2',
+      middle: 'p-3',
     };
 
     // 处理items数据
@@ -190,7 +192,7 @@ const Descriptions = React.forwardRef<HTMLDivElement, DescriptionsProps>(
             )}
           >
             {title && (
-              <div className='text-lg font-semibold text-foreground'>
+              <div className='text-[16px] font-semibold text-foreground'>
                 {title}
               </div>
             )}

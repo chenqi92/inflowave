@@ -109,22 +109,23 @@ export const ExpandableSearchInput = React.forwardRef<
           }}
         >
           <div className="relative">
-            {/* 搜索图标 */}
-            <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-              <Search className="w-4 h-4 text-muted-foreground" />
+            {/* 搜索图标 - JetBrains New UI: 14px图标 */}
+            <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none">
+              <Search className="w-3.5 h-3.5 text-muted-foreground" />
             </div>
 
             {/* 输入框 */}
+            {/* JetBrains New UI: h-7(28px), text-[13px] */}
             <input
               ref={inputRef}
               type="text"
               className={cn(
-                'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background',
+                'flex w-full rounded-md border border-input bg-background text-[13px] ring-offset-background',
                 'placeholder:text-muted-foreground',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 'disabled:cursor-not-allowed disabled:opacity-50',
-                'h-9 py-2 pl-10',
-                hasValue ? 'pr-10' : 'pr-3',
+                'h-7 py-1.5 pl-9',
+                hasValue ? 'pr-9' : 'pr-3',
                 inputClassName
               )}
               value={value}
@@ -134,16 +135,16 @@ export const ExpandableSearchInput = React.forwardRef<
               disabled={disabled}
             />
 
-            {/* 清除按钮 */}
+            {/* 清除按钮 - JetBrains New UI: 14px图标 */}
             {hasValue && (
-              <div className="absolute inset-y-0 right-3 flex items-center">
+              <div className="absolute inset-y-0 right-2.5 flex items-center">
                 <button
                   type="button"
                   onClick={handleClear}
-                  className="p-1 rounded-sm hover:bg-muted/50 transition-colors"
+                  className="p-0.5 rounded-sm hover:bg-muted/50 transition-colors"
                   tabIndex={-1}
                 >
-                  <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                  <X className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground" />
                 </button>
               </div>
             )}

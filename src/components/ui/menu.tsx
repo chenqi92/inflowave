@@ -46,7 +46,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
         return (
           <div
             key={item.key}
-            className='px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider'
+            className='px-3 py-1.5 text-[11px] font-medium text-muted-foreground uppercase tracking-wider'
           >
             {item.label}
           </div>
@@ -60,7 +60,8 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
         <div key={item.key}>
           <div
             className={cn(
-              'flex items-center justify-between px-3 py-2 text-sm cursor-pointer transition-colors',
+              // JetBrains New UI: text-[13px], py-1.5 紧凑
+              'flex items-center justify-between px-3 py-1.5 text-[13px] cursor-pointer transition-colors',
               'hover:bg-accent hover:text-accent-foreground',
               isSelected && 'bg-accent text-accent-foreground',
               item.disabled && 'opacity-50 cursor-not-allowed',
@@ -78,7 +79,7 @@ const Menu = React.forwardRef<HTMLDivElement, MenuProps>(
               {item.icon && <span className='flex-shrink-0'>{item.icon}</span>}
               <span>{item.label}</span>
             </div>
-            {hasChildren && <ChevronRight className='h-4 w-4' />}
+            {hasChildren && <ChevronRight className='h-3.5 w-3.5' />}
           </div>
           {hasChildren && (
             <div className='ml-4'>
@@ -122,7 +123,8 @@ const MenuItem = React.forwardRef<HTMLDivElement, MenuItemProps>(
       <div
         ref={ref}
         className={cn(
-          'flex items-center space-x-2 px-3 py-2 text-sm cursor-pointer transition-colors',
+          // JetBrains New UI: text-[13px], py-1.5 紧凑
+          'flex items-center space-x-2 px-3 py-1.5 text-[13px] cursor-pointer transition-colors',
           'hover:bg-accent hover:text-accent-foreground',
           disabled && 'opacity-50 cursor-not-allowed',
           danger && 'text-destructive hover:text-destructive',

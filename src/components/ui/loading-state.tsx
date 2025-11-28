@@ -137,7 +137,7 @@ const LoadingContent: React.FC<{
         <div className="w-full space-y-2">
           <Progress value={progress} className="w-full" />
           {showPercent && (
-            <div className="text-center text-sm text-muted-foreground">
+            <div className="text-center text-[13px] text-muted-foreground">
               {Math.round(progress)}%
             </div>
           )}
@@ -147,13 +147,13 @@ const LoadingContent: React.FC<{
       {/* 提示文本 */}
       {tip && (
         <div className="text-center">
-          <p className="text-sm text-muted-foreground">{tip}</p>
+          <p className="text-[13px] text-muted-foreground">{tip}</p>
         </div>
       )}
 
       {/* 已用时间 */}
       {showElapsedTime && elapsedTime > 0 && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <Clock className="w-3 h-3" />
           <span>{formatElapsedTime(elapsedTime)}</span>
         </div>
@@ -184,8 +184,9 @@ export const InlineLoading: React.FC<InlineLoadingProps> = ({
 }) => {
   if (!loading) return null;
 
-  const iconSize = size === 'small' ? 'w-3 h-3' : 'w-4 h-4';
-  const textSize = size === 'small' ? 'text-xs' : 'text-sm';
+  // JetBrains New UI: 紧凑图标和文字
+  const iconSize = size === 'small' ? 'w-3 h-3' : 'w-3.5 h-3.5';
+  const textSize = size === 'small' ? 'text-[11px]' : 'text-[13px]';
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
