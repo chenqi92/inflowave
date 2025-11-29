@@ -10,6 +10,7 @@
   "enterValue": "Enter value",
   "rowNumber": "Row Number",
   "time_column": "Time Column",
+  "time_label": "Time",
   "dragToSort": "Drag to sort",
   "numericValue": "Numeric Value",
   "applyFilter": "Apply Filter",

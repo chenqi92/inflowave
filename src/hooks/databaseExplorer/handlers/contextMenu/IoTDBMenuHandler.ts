@@ -7,6 +7,7 @@ import { BaseMenuHandler } from './BaseMenuHandler';
 import type { TreeNodeData } from '@/components/database/TreeNodeRenderer';
 import type { ContextMenuAction } from '@/types/contextMenu';
 import logger from '@/utils/logger';
+import { tNs } from '@/i18n/translate';
 
 /**
  * 设备节点菜单处理器
@@ -85,7 +86,7 @@ export class DeviceMenuHandler extends BaseMenuHandler {
         this.deps.onCreateAndExecuteQuery(query, storageGroup, connectionId);
       }
 
-      this.showSuccess('view_device_data', `正在查询设备 "${devicePath}" 的数据`);
+      this.showSuccess('view_device_data', tNs('menu', 'iotdb_messages.querying_device_data', { devicePath }));
     } catch (error) {
       this.showError('view_device_data', error);
     }
@@ -108,7 +109,7 @@ export class DeviceMenuHandler extends BaseMenuHandler {
 
   private async showTimeseries(connectionId: string, devicePath: string): Promise<void> {
     try {
-      const timeseries = await this.invokeTauri<string[]>('show_timeseries', {
+      const timeseries = await this.invokeTauri<string[]>('get_iotdb_timeseries', {
         connectionId,
         devicePath,
       });
@@ -129,7 +130,7 @@ export class DeviceMenuHandler extends BaseMenuHandler {
 
   private async showDeviceInfo(connectionId: string, devicePath: string): Promise<void> {
     try {
-      const info = await this.invokeTauri<any>('get_device_info', {
+      const info = await this.invokeTauri<any>('get_iotdb_device_info', {
         connectionId,
         devicePath,
       });
@@ -216,7 +217,7 @@ export class TimeseriesMenuHandler extends BaseMenuHandler {
         this.deps.onCreateAndExecuteQuery(query, storageGroup, connectionId);
       }
 
-      this.showSuccess('query_timeseries', `正在查询时间序列 "${timeseriesPath}"`);
+      this.showSuccess('query_timeseries', tNs('menu', 'iotdb_messages.querying_timeseries', { timeseriesPath }));
     } catch (error) {
       this.showError('query_timeseries', error);
     }
@@ -224,7 +225,7 @@ export class TimeseriesMenuHandler extends BaseMenuHandler {
 
   private async showTimeseriesInfo(connectionId: string, timeseriesPath: string): Promise<void> {
     try {
-      const info = await this.invokeTauri<any>('get_timeseries_info', {
+      const info = await this.invokeTauri<any>('get_iotdb_timeseries_info', {
         connectionId,
         timeseriesPath,
       });
@@ -245,7 +246,7 @@ export class TimeseriesMenuHandler extends BaseMenuHandler {
 
   private async showTimeseriesStats(connectionId: string, timeseriesPath: string): Promise<void> {
     try {
-      const stats = await this.invokeTauri<any>('get_timeseries_statistics', {
+      const stats = await this.invokeTauri<any>('get_iotdb_timeseries_statistics', {
         connectionId,
         timeseriesPath,
       });
@@ -377,7 +378,7 @@ export class TemplateMenuHandler extends BaseMenuHandler {
   private async unmountTemplate(connectionId: string, templateName: string): Promise<void> {
     const confirmed = await this.confirm(
       'unmount_template',
-      `确定要卸载模板 "${templateName}" 吗？`
+      `${tNs('menu', 'context_menu.delete_template')  } "${templateName}"?`
     );
 
     if (!confirmed) {
@@ -390,7 +391,7 @@ export class TemplateMenuHandler extends BaseMenuHandler {
         templateName,
       });
 
-      this.showSuccess('unmount_template', `模板 "${templateName}" 已卸载`);
+      this.showSuccess('unmount_template', tNs('menu', 'iotdb_messages.template_unmounted', { templateName }));
       await this.refreshTree(true);
     } catch (error) {
       this.showError('unmount_template', error);

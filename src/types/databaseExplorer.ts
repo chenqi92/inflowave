@@ -134,6 +134,12 @@ export interface DialogStates {
         storageGroup: string;
         devices: string[];
     };
+    deviceInfo?: {
+        open: boolean;
+        connectionId: string;
+        devicePath: string;
+        info: any;
+    };
     exportData?: {
         open: boolean;
         connectionId: string;

@@ -89,6 +89,17 @@ import {
 import { FileThumbnail, getFileIcon } from './components/FileThumbnail';
 import { setupPreviewNavigationGuard, cleanupNavigationGuard, type NavigationGuardCleanup } from './utils/navigationGuard';
 import { generatePreviewContent, loadObjectTags, cleanupBlobUrl } from './utils/previewHandler';
+import { VideoPlayer } from './components/VideoPlayer';
+import { VideoInfo } from './components/VideoInfo';
+import { VideoPlaylist } from './components/VideoPlaylist';
+import { VideoFilter } from './components/VideoFilter';
+import {
+  createPlaylistFromFolder,
+  shuffleArray,
+  extractUsedFormats,
+  filterVideos,
+  type VideoFilterOptions,
+} from './utils/videoHelpers';
 
 // ============================================================================
 // 模块级别的加载状态管理（跨组件实例共享）
@@ -216,6 +227,16 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [showShareInPreview, setShowShareInPreview] = useState(false);
+
+  // 视频播放状态
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoPlaylist, setVideoPlaylist] = useState<S3Object[]>([]);
+  const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
+  const [showVideoInfo, setShowVideoInfo] = useState(true);
+  const [showVideoPlaylist, setShowVideoPlaylist] = useState(false);
+  const [showVideoFilter, setShowVideoFilter] = useState(false);
+  const [videoFilterOptions, setVideoFilterOptions] = useState<VideoFilterOptions>({});
+  const [filteredVideos, setFilteredVideos] = useState<S3Object[]>([]);
 
   // 重命名状态
   const [showRenameDialog, setShowRenameDialog] = useState(false);
@@ -960,6 +981,14 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     setPreviewLoading(true);
     setPreviewContent(null);
 
+    // 如果是视频文件，创建播放列表
+    if (isVideoFile(object)) {
+      const { playlist, currentIndex } = createPlaylistFromFolder(objects, object);
+      setVideoPlaylist(playlist);
+      setCurrentVideoIndex(currentIndex);
+      setFilteredVideos(playlist);
+    }
+
     // 异步获取标签并更新预览对象
     if (currentBucket && !object.isDirectory) {
       loadObjectTags(connectionId, currentBucket, object.key)
@@ -987,6 +1016,65 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     } finally {
       setPreviewLoading(false);
     }
+  };
+
+  // 视频播放列表处理函数
+  const handleVideoNext = () => {
+    if (currentVideoIndex < filteredVideos.length - 1) {
+      const nextVideo = filteredVideos[currentVideoIndex + 1];
+      setCurrentVideoIndex(currentVideoIndex + 1);
+      handlePreviewFile(nextVideo);
+    }
+  };
+
+  const handleVideoPrevious = () => {
+    if (currentVideoIndex > 0) {
+      const prevVideo = filteredVideos[currentVideoIndex - 1];
+      setCurrentVideoIndex(currentVideoIndex - 1);
+      handlePreviewFile(prevVideo);
+    }
+  };
+
+  const handleVideoSelect = (index: number) => {
+    const selectedVideo = filteredVideos[index];
+    setCurrentVideoIndex(index);
+    handlePreviewFile(selectedVideo);
+  };
+
+  const handleVideoRemove = (index: number) => {
+    const newFiltered = filteredVideos.filter((_, i) => i !== index);
+    setFilteredVideos(newFiltered);
+    if (index === currentVideoIndex && newFiltered.length > 0) {
+      // 如果删除的是当前播放的视频，播放下一个或上一个
+      const nextIndex = Math.min(index, newFiltered.length - 1);
+      setCurrentVideoIndex(nextIndex);
+      handlePreviewFile(newFiltered[nextIndex]);
+    } else if (index < currentVideoIndex) {
+      // 如果删除的视频在当前播放之前，调整索引
+      setCurrentVideoIndex(currentVideoIndex - 1);
+    }
+  };
+
+  const handleVideoClearPlaylist = () => {
+    setFilteredVideos([]);
+    setVideoPlaylist([]);
+  };
+
+  const handleVideoShuffle = () => {
+    const shuffled = shuffleArray(filteredVideos);
+    setFilteredVideos(shuffled);
+    // 找到当前播放视频在新列表中的位置
+    const currentVideo = filteredVideos[currentVideoIndex];
+    const newIndex = shuffled.findIndex(v => v.key === currentVideo.key);
+    setCurrentVideoIndex(newIndex >= 0 ? newIndex : 0);
+  };
+
+  const handleVideoFilterChange = (filters: VideoFilterOptions) => {
+    setVideoFilterOptions(filters);
+    const filtered = filterVideos(videoPlaylist, filters);
+    setFilteredVideos(filtered);
+    // 重置当前索引
+    setCurrentVideoIndex(0);
   };
 
   // 设置预览对话框的导航保护
@@ -2936,14 +3024,79 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                 )}
 
                 {/* 视频预览 */}
-                {isVideoFile(previewObject) && (
-                  <div className='bg-black rounded-xl overflow-hidden shadow-xl'>
-                    <video
-                      src={previewContent}
-                      controls
-                      className='w-full h-auto'
-                      style={{ maxHeight: '65vh' }}
-                    />
+                {isVideoFile(previewObject) && previewContent && (
+                  <div className='space-y-4'>
+                    <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+                      {/* 主视频播放器 */}
+                      <div className={showVideoInfo || showVideoPlaylist ? 'lg:col-span-2' : 'lg:col-span-3'}>
+                        <VideoPlayer
+                          src={previewContent}
+                          object={previewObject}
+                          onNext={handleVideoNext}
+                          onPrevious={handleVideoPrevious}
+                          hasNext={currentVideoIndex < filteredVideos.length - 1}
+                          hasPrevious={currentVideoIndex > 0}
+                          playlist={filteredVideos}
+                          currentIndex={currentVideoIndex}
+                        />
+                      </div>
+
+                      {/* 侧边栏：视频信息和播放列表 */}
+                      {(showVideoInfo || showVideoPlaylist) && (
+                        <div className='space-y-4'>
+                          {showVideoInfo && (
+                            <VideoInfo
+                              object={previewObject}
+                              videoElement={videoRef.current}
+                            />
+                          )}
+                          {showVideoPlaylist && filteredVideos.length > 0 && (
+                            <VideoPlaylist
+                              videos={filteredVideos}
+                              currentIndex={currentVideoIndex}
+                              onSelect={handleVideoSelect}
+                              onRemove={handleVideoRemove}
+                              onClear={handleVideoClearPlaylist}
+                              onShuffle={handleVideoShuffle}
+                            />
+                          )}
+                          {showVideoFilter && (
+                            <VideoFilter
+                              availableFormats={extractUsedFormats(videoPlaylist)}
+                              onFilterChange={handleVideoFilterChange}
+                              totalCount={videoPlaylist.length}
+                              filteredCount={filteredVideos.length}
+                              maxFileSize={Math.max(...videoPlaylist.map(v => v.size), 0)}
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 工具栏 */}
+                    <div className='flex items-center gap-2 justify-end px-4'>
+                      <Button
+                        variant={showVideoInfo ? 'default' : 'outline'}
+                        size='sm'
+                        onClick={() => setShowVideoInfo(!showVideoInfo)}
+                      >
+                        {t('s3:video_info.title')}
+                      </Button>
+                      <Button
+                        variant={showVideoPlaylist ? 'default' : 'outline'}
+                        size='sm'
+                        onClick={() => setShowVideoPlaylist(!showVideoPlaylist)}
+                      >
+                        {t('s3:playlist.title')} ({filteredVideos.length})
+                      </Button>
+                      <Button
+                        variant={showVideoFilter ? 'default' : 'outline'}
+                        size='sm'
+                        onClick={() => setShowVideoFilter(!showVideoFilter)}
+                      >
+                        {t('s3:video_filter.title')}
+                      </Button>
+                    </div>
                   </div>
                 )}
 

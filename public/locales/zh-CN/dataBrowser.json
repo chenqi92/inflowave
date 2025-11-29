@@ -10,6 +10,7 @@
   "enterValue": "输入值",
   "rowNumber": "序号",
   "time_column": "时间列",
+  "time_label": "时间",
   "dragToSort": "拖拽排序",
   "numericValue": "数值",
   "applyFilter": "应用过滤器",

@@ -283,6 +283,28 @@
     "close_left_tabs": "关闭左侧标签页",
     "close_right_tabs": "关闭右侧标签页"
   },
+  "iotdb_messages": {
+    "querying_device_data": "正在查询设备 \"{{devicePath}}\" 的数据",
+    "querying_timeseries": "正在查询时间序列 \"{{timeseriesPath}}\"",
+    "template_unmounted": "模板 \"{{templateName}}\" 已卸载"
+  },
+  "dialog": {
+    "confirm_operation": "确认操作",
+    "confirm_disconnect": "确定要断开连接吗？",
+    "confirm_delete_connection": "确定要删除此连接吗？此操作不可撤销！",
+    "confirm_operation_question": "确定要执行此操作吗？",
+    "processing": "处理中..."
+  },
+  "device_info": {
+    "iotdb_device_info": "IoTDB 设备信息",
+    "view_device_details": "查看设备详细信息",
+    "basic_info": "基本信息",
+    "device_path": "设备路径:",
+    "timeseries_count": "时间序列数量:",
+    "connection_info": "连接信息",
+    "connection_id": "连接 ID:",
+    "no_device_info": "无设备信息"
+  },
   "native": {
     "openAppSettings": "打开应用设置",
     "themeSwitch": {

@@ -15,12 +15,31 @@ import {
 import {
   Filter,
 } from 'lucide-react';
+import { useDataBrowserTranslation } from '@/hooks/useTranslation';
 
 // 数据行接口
 interface DataRow {
   [key: string]: any;
   _id?: string | number;
 }
+
+// 安全地将任何值转换为可显示的字符串
+const safeStringify = (value: any): string => {
+  if (value === null || value === undefined) return '-';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'object') {
+    // 处理 Date 对象
+    if (value instanceof Date) return value.toLocaleString();
+    // 处理数组和对象 - 使用 JSON.stringify
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return '[Object]';
+    }
+  }
+  return String(value);
+};
 
 // 统一的表格行类型（支持表头和数据行）
 interface UnifiedTableRowProps {
@@ -76,6 +95,8 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
     onCopyRow,
     onCopyCell,
   }) => {
+    const { t } = useDataBrowserTranslation();
+
     const visibleColumns = useMemo(
       () => [
         '#', // 序号列始终在最前面
@@ -147,7 +168,7 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
                   )}
                   {column === 'time' && (
                     <Badge variant='secondary' className='text-xs h-4 px-1'>
-                      时间
+                      {t('time_label')}
                     </Badge>
                   )}
                   {sortColumn === column && column !== '#' && (
@@ -217,14 +238,14 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
                   e.stopPropagation();
                   onCopyCell?.(index, column);
                 }}
-                title={column === '#' ? `行号: ${index + 1}` : `双击复制: ${String(row[column] || '-')}`}
+                title={column === '#' ? `行号: ${index + 1}` : `双击复制: ${safeStringify(row[column])}`}
               >
                 <div className='truncate w-full'>
                   {column === '#'
                     ? index + 1 // 显示行号（从1开始）
                     : column === 'time'
                       ? new Date(row[column]).toLocaleString()
-                      : String(row[column] || '-')}
+                      : safeStringify(row[column])}
                 </div>
               </div>
             );
@@ -260,6 +281,8 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
     }
   }
 );
+
+UnifiedTableRow.displayName = 'UnifiedTableRow';
 
 // 保持原有的VirtualTableRowProps接口兼容性
 interface VirtualTableRowProps {
@@ -315,6 +338,8 @@ const VirtualTableRow: React.FC<VirtualTableRowProps> = memo(
   }
 );
 
+VirtualTableRow.displayName = 'VirtualTableRow';
+
 // 虚拟化表格头部组件接口
 interface VirtualTableHeaderProps {
   columnOrder: string[];
@@ -363,6 +388,8 @@ const VirtualTableHeader: React.FC<VirtualTableHeaderProps> = memo(
     );
   }
 );
+
+VirtualTableHeader.displayName = 'VirtualTableHeader';
 
 export { VirtualTableRow, VirtualTableHeader, UnifiedTableRow };
 export type { DataRow, VirtualTableRowProps, VirtualTableHeaderProps, UnifiedTableRowProps };

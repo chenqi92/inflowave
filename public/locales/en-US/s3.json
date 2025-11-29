@@ -197,5 +197,59 @@
     "not_supported": "Current provider does not support ACL permissions",
     "use_alternative": "Please use {{alternative}} for access control",
     "no_acl_support": "This provider does not support ACL functionality"
+  },
+  "video_player": {
+    "speed": "Playback Speed",
+    "normal_speed": "Normal Speed",
+    "shortcuts": "Keyboard Shortcuts",
+    "shortcut_play_pause": "Play/Pause: Space or K",
+    "shortcut_forward": "Forward 5s: →",
+    "shortcut_backward": "Backward 5s: ←",
+    "shortcut_volume_up": "Volume Up: ↑",
+    "shortcut_volume_down": "Volume Down: ↓",
+    "shortcut_mute": "Mute: M",
+    "shortcut_fullscreen": "Fullscreen: F",
+    "shortcut_next": "Next: N",
+    "shortcut_previous": "Previous: P",
+    "repeat_off": "No Repeat",
+    "repeat_one": "Repeat One",
+    "repeat_all": "Repeat All"
+  },
+  "video_info": {
+    "title": "Video Information",
+    "filename": "Filename",
+    "size": "File Size",
+    "duration": "Duration",
+    "resolution": "Resolution",
+    "format": "Format",
+    "modified": "Modified",
+    "tags": "Tags",
+    "bitrate": "Bitrate"
+  },
+  "playlist": {
+    "title": "Playlist",
+    "empty": "Playlist is empty",
+    "shuffle": "Shuffle",
+    "clear": "Clear List",
+    "add_to_playlist": "Add to Playlist",
+    "remove_from_playlist": "Remove from Playlist",
+    "play_all": "Play All",
+    "playing": "Now Playing"
+  },
+  "video_filter": {
+    "title": "Video Filters",
+    "format": "Format",
+    "all_formats": "All Formats",
+    "resolution": "Resolution",
+    "all_resolutions": "All Resolutions",
+    "duration": "Duration",
+    "short": "Short (0-5 minutes)",
+    "medium": "Medium (5-30 minutes)",
+    "long": "Long (30+ minutes)",
+    "all_durations": "All Durations",
+    "size_range": "File Size",
+    "apply_filter": "Apply Filter",
+    "clear_filter": "Clear Filter",
+    "showing_results": "Showing {{count}} result(s)"
   }
 }

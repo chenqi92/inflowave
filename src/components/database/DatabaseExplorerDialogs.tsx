@@ -15,6 +15,7 @@ import DataPreviewDialog from '@/components/database/DataPreviewDialog';
 import TagValuesDialog from '@/components/database/TagValuesDialog';
 import CreateDeviceDialog from '@/components/database/CreateDeviceDialog';
 import DeviceListDialog from '@/components/database/DeviceListDialog';
+import DeviceInfoDialog from '@/components/database/DeviceInfoDialog';
 import TableExportDialog from '@/components/database/TableExportDialog';
 import TableImportDialog from '@/components/database/TableImportDialog';
 import type {
@@ -384,6 +385,27 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     connectionId={dialogStates.deviceList.connectionId}
                     storageGroup={dialogStates.deviceList.storageGroup}
                     devices={dialogStates.deviceList.devices}
+                />
+            )}
+
+            {/* IoTDB 设备信息对话框 */}
+            {dialogStates.deviceInfo && (
+                <DeviceInfoDialog
+                    open={dialogStates.deviceInfo.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            deviceInfo: {
+                                open: false,
+                                connectionId: '',
+                                devicePath: '',
+                                info: null,
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.deviceInfo.connectionId}
+                    devicePath={dialogStates.deviceInfo.devicePath}
+                    info={dialogStates.deviceInfo.info}
                 />
             )}
 

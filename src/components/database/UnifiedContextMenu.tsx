@@ -746,11 +746,11 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
             <ContextMenuLabel>{t('context_menu.timeseries_operations')}</ContextMenuLabel>
             <ContextMenuItem onSelect={() => handleAction('create_timeseries')}>
                 <Plus className="w-4 h-4 mr-2"/>
-                {t('context_menu.query_timeseries')}
+                {t('context_menu.create_timeseries')}
             </ContextMenuItem>
             <ContextMenuItem onSelect={() => handleAction('show_timeseries')}>
                 <Table className="w-4 h-4 mr-2"/>
-                {t('context_menu.query_timeseries')}
+                {t('context_menu.show_timeseries')}
             </ContextMenuItem>
             <ContextMenuSeparator/>
 
@@ -979,18 +979,18 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         switch (confirmDialog.action) {
             case 'disconnect':
                 return {
-                    title: '确认操作',
-                    message: '确定要断开连接吗？'
+                    title: t('dialog.confirm_operation'),
+                    message: t('dialog.confirm_disconnect')
                 };
             case 'delete_connection':
                 return {
-                    title: '确认操作',
-                    message: '确定要删除此连接吗？此操作不可撤销！'
+                    title: t('dialog.confirm_operation'),
+                    message: t('dialog.confirm_delete_connection')
                 };
             default:
                 return {
-                    title: '确认操作',
-                    message: '确定要执行此操作吗？'
+                    title: t('dialog.confirm_operation'),
+                    message: t('dialog.confirm_operation_question')
                 };
         }
     };
@@ -1084,7 +1084,7 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                                     disabled={loading}
                                     className="h-7 px-3 text-xs"
                                 >
-                                    取消
+                                    {t('cancel', { ns: 'common' })}
                                 </Button>
                                 <Button
                                     variant={confirmDialog.action === 'delete_connection' ? 'destructive' : 'default'}
@@ -1093,7 +1093,7 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                                     disabled={loading}
                                     className="h-7 px-3 text-xs"
                                 >
-                                    {loading ? '处理中...' : '确定'}
+                                    {loading ? t('dialog.processing') : t('ok', { ns: 'common' })}
                                 </Button>
                             </div>
                         </div>

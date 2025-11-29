@@ -283,6 +283,28 @@
     "close_left_tabs": "Close Left Tabs",
     "close_right_tabs": "Close Right Tabs"
   },
+  "iotdb_messages": {
+    "querying_device_data": "Querying device \"{{devicePath}}\" data",
+    "querying_timeseries": "Querying time series \"{{timeseriesPath}}\"",
+    "template_unmounted": "Template \"{{templateName}}\" unmounted"
+  },
+  "dialog": {
+    "confirm_operation": "Confirm Operation",
+    "confirm_disconnect": "Are you sure you want to disconnect?",
+    "confirm_delete_connection": "Are you sure you want to delete this connection? This operation cannot be undone!",
+    "confirm_operation_question": "Are you sure you want to perform this operation?",
+    "processing": "Processing..."
+  },
+  "device_info": {
+    "iotdb_device_info": "IoTDB Device Info",
+    "view_device_details": "View device details",
+    "basic_info": "Basic Info",
+    "device_path": "Device Path:",
+    "timeseries_count": "Time Series Count:",
+    "connection_info": "Connection Info",
+    "connection_id": "Connection ID:",
+    "no_device_info": "No device info"
+  },
   "native": {
     "openAppSettings": "Open Application Settings",
     "themeSwitch": {
