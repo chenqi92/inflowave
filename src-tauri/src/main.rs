@@ -1245,6 +1245,8 @@ async fn main() {
             show_message_dialog,
             close_app,
             rebuild_native_menu,
+            get_logs_dir,
+            open_logs_dir,
             // Environment-aware file operations
             write_file_env,
             read_file_env,

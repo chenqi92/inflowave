@@ -585,6 +585,65 @@ fn resolve_path(app: &tauri::AppHandle, path: &str) -> Result<PathBuf, String> {
     Ok(base_dir.join(path))
 }
 
+/// 获取日志目录的绝对路径
+#[tauri::command]
+pub async fn get_logs_dir(app: tauri::AppHandle) -> Result<String, String> {
+    let logs_path = resolve_path(&app, "logs")?;
+
+    // 确保目录存在
+    if !logs_path.exists() {
+        std::fs::create_dir_all(&logs_path).map_err(|e| {
+            error!("创建日志目录失败: {:?}: {}", logs_path, e);
+            format!("创建日志目录失败: {}", e)
+        })?;
+    }
+
+    Ok(logs_path.to_string_lossy().to_string())
+}
+
+/// 打开日志目录（使用系统文件管理器）
+#[tauri::command]
+pub async fn open_logs_dir(app: tauri::AppHandle) -> Result<(), String> {
+    let logs_path = resolve_path(&app, "logs")?;
+
+    // 确保目录存在
+    if !logs_path.exists() {
+        std::fs::create_dir_all(&logs_path).map_err(|e| {
+            error!("创建日志目录失败: {:?}: {}", logs_path, e);
+            format!("创建日志目录失败: {}", e)
+        })?;
+    }
+
+    info!("打开日志目录: {:?}", logs_path);
+
+    // 使用系统命令打开文件管理器
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&logs_path)
+            .spawn()
+            .map_err(|e| format!("打开目录失败: {}", e))?;
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(&logs_path)
+            .spawn()
+            .map_err(|e| format!("打开目录失败: {}", e))?;
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&logs_path)
+            .spawn()
+            .map_err(|e| format!("打开目录失败: {}", e))?;
+    }
+
+    Ok(())
+}
+
 /// 读取文件内容
 #[tauri::command]
 pub async fn read_file(path: String) -> Result<String, String> {

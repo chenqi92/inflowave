@@ -4,6 +4,27 @@ use std::fs;
 use std::path::PathBuf;
 use log::{debug, error, info};
 
+/// 获取日志目录路径
+///
+/// 开发环境：使用 src-tauri/logs/（与 cargo 工作目录一致）
+/// 生产环境：使用应用数据目录的 logs/
+fn get_log_dir(app: &AppHandle) -> Result<PathBuf, String> {
+    let log_dir = if cfg!(debug_assertions) {
+        // 开发环境：使用 cargo 工作目录下的 logs/
+        let current_dir = std::env::current_dir()
+            .map_err(|e| format!("获取当前目录失败: {}", e))?;
+        current_dir.join("logs")
+    } else {
+        // 生产环境：使用应用数据目录
+        let app_dir = app.path()
+            .app_data_dir()
+            .map_err(|e| format!("获取应用数据目录失败: {}", e))?;
+        app_dir.join("logs")
+    };
+
+    Ok(log_dir)
+}
+
 /// 日志文件信息
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct LogFileInfo {
@@ -41,9 +62,8 @@ pub async fn get_backend_log_path(app: AppHandle) -> Result<String, String> {
 pub async fn list_log_files(app: AppHandle) -> Result<Vec<LogFileInfo>, String> {
     debug!("列出日志文件");
 
-    // 获取日志目录路径
-    let log_dir = app.path().app_log_dir()
-        .map_err(|e| format!("获取日志目录失败: {}", e))?;
+    // 获取日志目录路径（使用统一的环境感知逻辑）
+    let log_dir = get_log_dir(&app)?;
 
     if !log_dir.exists() {
         debug!("日志目录不存在: {:?}", log_dir);
@@ -172,8 +192,8 @@ pub async fn cleanup_old_log_files(app: AppHandle, keep_count: usize) -> Result<
 pub async fn get_log_dir_path(app: AppHandle) -> Result<String, String> {
     debug!("获取日志目录路径");
 
-    let log_dir = app.path().app_log_dir()
-        .map_err(|e| format!("获取日志目录失败: {}", e))?;
+    // 使用统一的环境感知逻辑
+    let log_dir = get_log_dir(&app)?;
 
     let path = log_dir.to_string_lossy().to_string();
     info!("日志目录路径: {}", path);
@@ -185,8 +205,8 @@ pub async fn get_log_dir_path(app: AppHandle) -> Result<String, String> {
 pub async fn open_log_folder(app: AppHandle) -> Result<(), String> {
     debug!("打开日志文件夹");
 
-    let log_dir = app.path().app_log_dir()
-        .map_err(|e| format!("获取日志目录失败: {}", e))?;
+    // 使用统一的环境感知逻辑
+    let log_dir = get_log_dir(&app)?;
 
     // 确保目录存在
     if !log_dir.exists() {

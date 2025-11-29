@@ -7,11 +7,18 @@ use tracing_appender::rolling::{RollingFileAppender, Rotation};
 
 /// 获取日志目录路径
 ///
-/// 开发环境：使用项目根目录的 logs/
+/// 开发环境：使用 src-tauri/logs/（与 cargo 工作目录一致，便于开发时查看）
 /// 生产环境：使用应用数据目录的 logs/
+///   - macOS: ~/Library/Application Support/com.inflowave.app/logs/
+///   - Windows: C:\Users\<user>\AppData\Roaming\com.inflowave.app\logs\
+///   - Linux: ~/.local/share/com.inflowave.app/logs/
+///
+/// 注意：前端日志和后端日志都会写入同一个 logs/ 目录
 fn get_log_dir(app_handle: &tauri::AppHandle) -> Result<PathBuf> {
     let log_dir = if cfg!(debug_assertions) {
-        // 开发环境：使用项目根目录
+        // 开发环境：使用 cargo 工作目录下的 logs/
+        // Tauri 开发模式下，cargo 在 src-tauri 目录运行
+        // 所以日志会在 src-tauri/logs/ 目录
         let current_dir = std::env::current_dir()
             .map_err(|e| anyhow::anyhow!("获取当前目录失败: {}", e))?;
         current_dir.join("logs")
@@ -175,17 +182,19 @@ fn setup_logging(log_dir: &PathBuf) -> Result<()> {
         None
     };
 
-    // 环境过滤器 - 默认 info 级别
-    // 优化：降低 AWS SDK 的日志级别，减少日志输出
+    // 环境过滤器 - 根据环境设置默认日志级别
+    // 生产环境：只记录 ERROR 和 WARN
+    // 开发环境：记录 DEBUG 及以上
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| {
             if cfg!(debug_assertions) {
-                println!("🔍 [Logger] 使用 DEBUG 级别（AWS SDK 使用 INFO 级别）");
-                // 应用级别使用 debug，但 AWS SDK 相关的库使用 info
+                println!("🔍 [Logger] 开发模式：使用 DEBUG 级别（AWS SDK 使用 INFO 级别）");
+                // 开发环境：应用级别使用 debug，AWS SDK 相关的库使用 info
                 EnvFilter::new("debug,aws_smithy_runtime=info,aws_runtime=info,aws_sdk_s3=info")
             } else {
-                println!("🔍 [Logger] 使用 INFO 级别");
-                EnvFilter::new("info")
+                // 生产环境：只记录 ERROR 和 WARN，大幅减少日志输出
+                println!("🔍 [Logger] 生产模式：使用 WARN 级别（仅记录警告和错误）");
+                EnvFilter::new("warn,aws_smithy_runtime=error,aws_runtime=error,aws_sdk_s3=error")
             }
         });
 

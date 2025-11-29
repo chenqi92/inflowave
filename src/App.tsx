@@ -25,7 +25,7 @@ import { initializeContextMenuDisabler } from './utils/contextMenuDisabler';
 import { useTabStore } from './stores/tabStore';
 import UnsavedTabsDialog from './components/common/UnsavedTabsDialog';
 import type { EditorTab } from '@components/editor';
-import { logger, LogLevel } from './utils/logger';
+import { logger, LogLevel, initLoggerWithStore } from './utils/logger';
 import { i18n } from '@/i18n';
 
 // 更新组件
@@ -289,40 +289,12 @@ const App: React.FC = () => {
   // 🌐 同步 dayjs locale 与 i18n 语言
   useDayjsLocaleSync();
 
-  // 🔧 监听日志设置变化，动态更新 logger 配置
+  // 🔧 初始化日志系统与用户偏好设置的同步（仅执行一次）
   useEffect(() => {
-    if (!preferences?.logging) return;
-
-    const { level, enable_file_logging } = preferences.logging;
-
-    // 将字符串转换为 LogLevel 枚举
-    let logLevel = LogLevel.INFO;
-    switch (level.toUpperCase()) {
-      case 'ERROR':
-        logLevel = LogLevel.ERROR;
-        break;
-      case 'WARN':
-        logLevel = LogLevel.WARN;
-        break;
-      case 'INFO':
-        logLevel = LogLevel.INFO;
-        break;
-      case 'DEBUG':
-        logLevel = LogLevel.DEBUG;
-        break;
-    }
-
-    logger.setLevel(logLevel);
-
-    // 启用或禁用文件日志
-    if (enable_file_logging) {
-      logger.enableFileLogging();
-    } else {
-      logger.disableFileLogging();
-    }
-
-    logger.debug(`📝 日志级别已更新为: ${level}, 文件日志: ${enable_file_logging ? '启用' : '禁用'}`);
-  }, [preferences?.logging]);
+    // 初始化日志系统与 store 的订阅
+    // 这会自动处理日志设置变化的动态更新
+    initLoggerWithStore();
+  }, []);
 
   // 应用无障碍设置到 DOM（高对比度和减少动画）
   // 注意：字体设置已由 useFontApplier hook 处理

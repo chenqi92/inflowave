@@ -1,6 +1,11 @@
 /**
  * 日志工具类
  * 提供分级日志功能，支持文件持久化
+ *
+ * 特性：
+ * 1. 根据环境自动设置默认日志级别（开发环境 INFO，生产环境 ERROR）
+ * 2. 支持用户配置动态更新
+ * 3. 支持文件日志持久化
  */
 
 import { FileOperations } from './fileOperations';
@@ -30,6 +35,9 @@ export interface LogEntry {
   source?: string;
 }
 
+// Store subscription cleanup function
+let storeUnsubscribe: (() => void) | null = null;
+
 class Logger {
   private config: LoggerConfig;
   private logs: LogEntry[] = [];
@@ -43,6 +51,7 @@ class Logger {
   private maxFiles = 5; // 默认保留5个文件
   private currentFileSize = 0; // 当前文件大小（字节）
   private isWritingLog = false; // 防止日志写入递归
+  private isInitialized = false; // 是否已从用户设置初始化
   private originalConsole: {
     log: typeof console.log;
     info: typeof console.info;
@@ -65,6 +74,7 @@ class Logger {
     this.sessionId = this.generateSessionId();
 
     // 🔧 初始化默认配置
+    // 生产环境默认只记录 ERROR，开发环境默认 INFO
     const isDev = import.meta.env.DEV;
 
     this.config = {
@@ -72,7 +82,7 @@ class Logger {
       enableEmoji: isDev,
       enableTimestamp: false,
       enableStackTrace: false,
-      enableFileLogging: false, // 默认关闭，等待用户设置
+      enableFileLogging: true, // 默认启用文件日志
     };
 
     // 🔧 从 localStorage 同步加载用户设置
@@ -82,6 +92,12 @@ class Logger {
     if (this.config.enableFileLogging) {
       this.initializeFileLogging();
     }
+
+    // 输出当前配置
+    const levelNames = ['ERROR', 'WARN', 'INFO', 'DEBUG'];
+    this.originalConsole.log(
+      `📝 [Logger] 初始化完成 - 环境: ${isDev ? '开发' : '生产'}, 级别: ${levelNames[this.config.level]}, 文件日志: ${this.config.enableFileLogging ? '启用' : '禁用'}`
+    );
   }
 
   private generateSessionId(): string {
@@ -98,14 +114,88 @@ class Logger {
         const prefs = JSON.parse(prefsStr);
         if (prefs?.state?.preferences?.logging) {
           const logging = prefs.state.preferences.logging;
-          this.setLevel(this.stringToLogLevel(logging.level));
-          this.config.enableFileLogging = logging.enable_file_logging ?? false;
-          this.maxFileSizeMB = logging.max_file_size_mb ?? 10;
-          this.maxFiles = logging.max_files ?? 5;
+          this.applyLoggingConfig(logging);
+          this.isInitialized = true;
         }
       }
     } catch (error) {
       // 静默失败，使用默认配置
+    }
+  }
+
+  /**
+   * 应用日志配置
+   */
+  private applyLoggingConfig(logging: {
+    level?: string;
+    enable_file_logging?: boolean;
+    max_file_size_mb?: number;
+    max_files?: number;
+  }): void {
+    const isDev = import.meta.env.DEV;
+
+    // 设置日志级别
+    if (logging.level) {
+      const configuredLevel = this.stringToLogLevel(logging.level);
+      // 生产环境强制限制：不允许低于 WARN 的日志级别
+      if (!isDev && configuredLevel > LogLevel.WARN) {
+        this.originalConsole.log(
+          `📝 [Logger] 生产环境限制日志级别为 WARN（配置请求: ${logging.level}）`
+        );
+        this.config.level = LogLevel.WARN;
+      } else {
+        this.config.level = configuredLevel;
+      }
+    } else if (!isDev) {
+      // 生产环境默认只记录错误
+      this.config.level = LogLevel.ERROR;
+    }
+
+    // 其他配置
+    if (logging.enable_file_logging !== undefined) {
+      const wasEnabled = this.config.enableFileLogging;
+      this.config.enableFileLogging = logging.enable_file_logging;
+
+      // 如果从禁用变为启用，初始化文件日志
+      if (!wasEnabled && this.config.enableFileLogging) {
+        this.initializeFileLogging();
+      }
+      // 如果从启用变为禁用，清理定时器
+      if (wasEnabled && !this.config.enableFileLogging) {
+        this.disableFileLogging();
+      }
+    }
+
+    if (logging.max_file_size_mb !== undefined) {
+      this.maxFileSizeMB = logging.max_file_size_mb;
+    }
+
+    if (logging.max_files !== undefined) {
+      this.maxFiles = logging.max_files;
+    }
+  }
+
+  /**
+   * 更新日志配置（供外部调用）
+   * 当用户在设置中更改日志配置时调用此方法
+   */
+  updateConfig(logging: {
+    level?: string;
+    enable_file_logging?: boolean;
+    max_file_size_mb?: number;
+    max_files?: number;
+  }): void {
+    const levelNames = ['ERROR', 'WARN', 'INFO', 'DEBUG'];
+    const oldLevel = this.config.level;
+    const oldFileLogging = this.config.enableFileLogging;
+
+    this.applyLoggingConfig(logging);
+
+    // 输出配置变更日志
+    if (oldLevel !== this.config.level || oldFileLogging !== this.config.enableFileLogging) {
+      this.originalConsole.log(
+        `📝 [Logger] 配置已更新 - 级别: ${levelNames[oldLevel]} -> ${levelNames[this.config.level]}, 文件日志: ${oldFileLogging ? '启用' : '禁用'} -> ${this.config.enableFileLogging ? '启用' : '禁用'}`
+      );
     }
   }
 
@@ -658,6 +748,58 @@ export const log = {
   timeEnd: logger.timeEnd.bind(logger),
   table: logger.table.bind(logger),
 };
+
+/**
+ * 初始化日志系统与用户偏好设置的同步
+ * 应在应用启动后、用户偏好设置加载完成后调用
+ */
+export function initLoggerWithStore(): void {
+  // 动态导入以避免循环依赖
+  import('@/stores/userPreferencesStore').then(({ useUserPreferencesStore }) => {
+    // 清理之前的订阅
+    if (storeUnsubscribe) {
+      storeUnsubscribe();
+    }
+
+    // 保存上一次的日志设置用于比较
+    let prevLogging = useUserPreferencesStore.getState().preferences.logging;
+
+    // 订阅整个 store 变更，手动检查 logging 变化
+    storeUnsubscribe = useUserPreferencesStore.subscribe((state) => {
+      const currentLogging = state.preferences.logging;
+
+      // 只在 logging 设置实际变化时更新
+      if (currentLogging &&
+          (currentLogging.level !== prevLogging?.level ||
+           currentLogging.enable_file_logging !== prevLogging?.enable_file_logging ||
+           currentLogging.max_file_size_mb !== prevLogging?.max_file_size_mb ||
+           currentLogging.max_files !== prevLogging?.max_files)) {
+        logger.updateConfig({
+          level: currentLogging.level,
+          enable_file_logging: currentLogging.enable_file_logging,
+          max_file_size_mb: currentLogging.max_file_size_mb,
+          max_files: currentLogging.max_files,
+        });
+        prevLogging = currentLogging;
+      }
+    });
+
+    // 立即应用当前设置
+    const currentLogging = useUserPreferencesStore.getState().preferences.logging;
+    if (currentLogging) {
+      logger.updateConfig({
+        level: currentLogging.level,
+        enable_file_logging: currentLogging.enable_file_logging,
+        max_file_size_mb: currentLogging.max_file_size_mb,
+        max_files: currentLogging.max_files,
+      });
+    }
+
+    logger.info('📝 日志系统已与用户偏好设置同步');
+  }).catch((error) => {
+    logger.error('📝 日志系统同步用户偏好设置失败:', error);
+  });
+}
 
 export default logger;
 

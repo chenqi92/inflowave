@@ -17,11 +17,21 @@ pub struct KeyboardShortcut {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct LoggingSettings {
+    pub level: String,  // "ERROR", "WARN", "INFO", "DEBUG"
+    pub enable_file_logging: bool,
+    pub max_file_size_mb: u32,
+    pub max_files: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct UserPreferences {
     pub shortcuts: Vec<KeyboardShortcut>,
     pub notifications: NotificationSettings,
     pub accessibility: AccessibilitySettings,
     pub workspace: WorkspaceSettings,
+    #[serde(default)]
+    pub logging: LoggingSettings,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -465,6 +475,23 @@ pub async fn get_help_content(
     Ok(help_content)
 }
 
+impl Default for LoggingSettings {
+    fn default() -> Self {
+        Self {
+            // 默认日志级别根据编译模式设置
+            // debug模式: INFO, release模式: ERROR
+            level: if cfg!(debug_assertions) {
+                "INFO".to_string()
+            } else {
+                "ERROR".to_string()
+            },
+            enable_file_logging: true,
+            max_file_size_mb: 10,
+            max_files: 5,
+        }
+    }
+}
+
 impl Default for UserPreferences {
     fn default() -> Self {
         Self {
@@ -501,6 +528,7 @@ impl Default for UserPreferences {
                 recent_files: vec![],
                 restore_tabs_on_startup: true,
             },
+            logging: LoggingSettings::default(),
         }
     }
 }
