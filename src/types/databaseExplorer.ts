@@ -140,6 +140,12 @@ export interface DialogStates {
         devicePath: string;
         info: any;
     };
+    timeseriesInfo?: {
+        open: boolean;
+        connectionId: string;
+        timeseriesPath: string;
+        info: any;
+    };
     exportData?: {
         open: boolean;
         connectionId: string;

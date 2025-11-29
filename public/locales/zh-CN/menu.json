@@ -305,6 +305,21 @@
     "connection_id": "连接 ID:",
     "no_device_info": "无设备信息"
   },
+  "timeseries_info": {
+    "iotdb_timeseries_info": "IoTDB 时间序列信息",
+    "view_timeseries_details": "查看时间序列详细信息",
+    "basic_info": "基本信息",
+    "timeseries_path": "时间序列路径:",
+    "alias": "别名:",
+    "storage_group": "存储组:",
+    "data_settings": "数据设置",
+    "data_type": "数据类型:",
+    "encoding": "编码方式:",
+    "compression": "压缩方式:",
+    "tags": "标签",
+    "attributes": "属性",
+    "no_timeseries_info": "无时间序列信息"
+  },
   "native": {
     "openAppSettings": "打开应用设置",
     "themeSwitch": {

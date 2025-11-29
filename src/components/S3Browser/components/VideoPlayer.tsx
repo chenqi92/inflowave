@@ -43,6 +43,7 @@ interface VideoPlayerProps {
   hasPrevious?: boolean;
   playlist?: S3Object[];
   currentIndex?: number;
+  onVideoReady?: (video: HTMLVideoElement | null) => void;
 }
 
 type PlaybackSpeed = 0.25 | 0.5 | 0.75 | 1 | 1.25 | 1.5 | 1.75 | 2;
@@ -57,11 +58,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   hasPrevious = false,
   playlist = [],
   currentIndex = 0,
+  onVideoReady,
 }) => {
   const { t } = useTranslation('s3');
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // 通知父组件video元素已准备好
+  useEffect(() => {
+    if (onVideoReady && videoRef.current) {
+      onVideoReady(videoRef.current);
+    }
+  }, [onVideoReady]);
 
   // 播放状态
   const [isPlaying, setIsPlaying] = useState(false);

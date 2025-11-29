@@ -229,7 +229,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   const [showShareInPreview, setShowShareInPreview] = useState(false);
 
   // 视频播放状态
-  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
   const [videoPlaylist, setVideoPlaylist] = useState<S3Object[]>([]);
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [showVideoInfo, setShowVideoInfo] = useState(true);
@@ -3038,6 +3038,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                           hasPrevious={currentVideoIndex > 0}
                           playlist={filteredVideos}
                           currentIndex={currentVideoIndex}
+                          onVideoReady={setVideoElement}
                         />
                       </div>
 
@@ -3047,7 +3048,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                           {showVideoInfo && (
                             <VideoInfo
                               object={previewObject}
-                              videoElement={videoRef.current}
+                              videoElement={videoElement}
                             />
                           )}
                           {showVideoPlaylist && filteredVideos.length > 0 && (

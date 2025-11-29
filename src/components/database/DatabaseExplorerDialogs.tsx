@@ -16,6 +16,7 @@ import TagValuesDialog from '@/components/database/TagValuesDialog';
 import CreateDeviceDialog from '@/components/database/CreateDeviceDialog';
 import DeviceListDialog from '@/components/database/DeviceListDialog';
 import DeviceInfoDialog from '@/components/database/DeviceInfoDialog';
+import TimeseriesInfoDialog from '@/components/database/TimeseriesInfoDialog';
 import TableExportDialog from '@/components/database/TableExportDialog';
 import TableImportDialog from '@/components/database/TableImportDialog';
 import type {
@@ -406,6 +407,27 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     connectionId={dialogStates.deviceInfo.connectionId}
                     devicePath={dialogStates.deviceInfo.devicePath}
                     info={dialogStates.deviceInfo.info}
+                />
+            )}
+
+            {/* IoTDB 时间序列信息对话框 */}
+            {dialogStates.timeseriesInfo && (
+                <TimeseriesInfoDialog
+                    open={dialogStates.timeseriesInfo.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            timeseriesInfo: {
+                                open: false,
+                                connectionId: '',
+                                timeseriesPath: '',
+                                info: null,
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.timeseriesInfo.connectionId}
+                    timeseriesPath={dialogStates.timeseriesInfo.timeseriesPath}
+                    info={dialogStates.timeseriesInfo.info}
                 />
             )}
 

@@ -305,6 +305,21 @@
     "connection_id": "Connection ID:",
     "no_device_info": "No device info"
   },
+  "timeseries_info": {
+    "iotdb_timeseries_info": "IoTDB Time Series Info",
+    "view_timeseries_details": "View time series details",
+    "basic_info": "Basic Info",
+    "timeseries_path": "Time Series Path:",
+    "alias": "Alias:",
+    "storage_group": "Storage Group:",
+    "data_settings": "Data Settings",
+    "data_type": "Data Type:",
+    "encoding": "Encoding:",
+    "compression": "Compression:",
+    "tags": "Tags",
+    "attributes": "Attributes",
+    "no_timeseries_info": "No time series info"
+  },
   "native": {
     "openAppSettings": "Open Application Settings",
     "themeSwitch": {
