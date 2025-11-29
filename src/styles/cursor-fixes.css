@@ -195,7 +195,7 @@ label[for] {
 /* 9. 开关组件 - 保持手型指针 */
 .switch,
 [role="switch"] {
-  cursor: default;
+  cursor: pointer;
 }
 
 /* 10. 下拉选择器 - 保持手型指针 */

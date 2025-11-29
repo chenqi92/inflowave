@@ -53,24 +53,75 @@ const fontSizeMap: Record<string, string> = {
   extraLarge: '16px',
 };
 
+// 动态样式元素 ID
+const FONT_STYLE_ID = 'inflowave-font-style';
+
+/**
+ * 创建或更新动态字体样式
+ * 使用 <style> 标签确保字体应用到所有元素
+ */
+function updateFontStyleSheet(actualFontFamily: string, actualFontSize: string) {
+  let styleElement = document.getElementById(FONT_STYLE_ID) as HTMLStyleElement;
+
+  if (!styleElement) {
+    styleElement = document.createElement('style');
+    styleElement.id = FONT_STYLE_ID;
+    document.head.appendChild(styleElement);
+  }
+
+  // 使用高优先级选择器确保字体应用到所有 UI 元素
+  // 排除代码编辑器和等宽字体区域
+  styleElement.textContent = `
+    :root {
+      --font-family: ${actualFontFamily};
+      --font-size: ${actualFontSize};
+    }
+
+    /* 全局应用字体 - 使用继承机制 */
+    html, body, #root {
+      font-family: ${actualFontFamily} !important;
+      font-size: ${actualFontSize} !important;
+    }
+
+    /* 表单元素需要显式设置字体（它们默认不继承） */
+    button, input, select, textarea,
+    [role="button"], [role="menuitem"], [role="option"],
+    label, span, p, div, h1, h2, h3, h4, h5, h6,
+    a, li, td, th {
+      font-family: inherit !important;
+    }
+
+    /* 保持等宽字体区域不受影响 */
+    code, pre, .cm-editor, .font-mono,
+    [class*="mono"], .CodeMirror,
+    .ace_editor, .monaco-editor {
+      font-family: var(--font-family-mono, "JetBrains Mono"), "Consolas", "Monaco", "Courier New", monospace !important;
+    }
+  `;
+}
+
 /**
  * 应用字体到 DOM
  */
 function applyFont(fontFamily: string, fontSize: string) {
   const root = document.documentElement;
   const body = document.body;
-  
+
   // 获取实际的 font-family 字符串
   const actualFontFamily = fontFamilyMap[fontFamily] || fontFamilyMap.system;
-  
-  // 应用到 root 元素
+  const actualFontSize = fontSizeMap[fontSize] || fontSizeMap.medium;
+
+  // 应用到 root 元素的 CSS 变量
   root.style.setProperty('--font-family', actualFontFamily);
-  root.style.setProperty('--font-size', fontSizeMap[fontSize] || fontSizeMap.medium);
-  
-  // 直接应用到 body
+  root.style.setProperty('--font-size', actualFontSize);
+
+  // 直接应用到 body（作为基础样式）
   body.style.fontFamily = actualFontFamily;
-  body.style.fontSize = fontSizeMap[fontSize] || fontSizeMap.medium;
-  
+  body.style.fontSize = actualFontSize;
+
+  // 更新动态样式表，确保高优先级应用
+  updateFontStyleSheet(actualFontFamily, actualFontSize);
+
   // 触发字体加载检测
   if (document.fonts && fontFamily !== 'system') {
     const fontName = actualFontFamily.split(',')[0].replace(/['"]/g, '').trim();

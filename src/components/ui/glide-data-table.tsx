@@ -41,6 +41,8 @@ import {
   ChevronsRight,
 } from 'lucide-react';
 import logger from '@/utils/logger';
+import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
+import { getFontFamily } from '@/hooks/useFontApplier';
 
 // 获取 CSS 变量的实际颜色值
 const getCSSVariable = (variable: string, fallback: string = '#000000'): string => {
@@ -208,6 +210,11 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   // 列宽管理：存储用户自定义的列宽
   const [columnWidths, setColumnWidths] = useState<Map<string, number>>(new Map());
   const { t } = useTranslation('query');
+
+  // 获取用户字体偏好设置
+  const fontFamily = useUserPreferencesStore(state => state.preferences.accessibility.font_family);
+  // 获取实际的字体 CSS 值
+  const actualFontFamily = useMemo(() => getFontFamily(fontFamily), [fontFamily]);
 
   // 动态计算容器高度
   useEffect(() => {
@@ -1249,7 +1256,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
               linkColor: getCSSVariable('--primary', '#0066cc'),
               headerFontStyle: "600 12px",
               baseFontStyle: "13px",
-              fontFamily: "Inter, system-ui, sans-serif",
+              fontFamily: actualFontFamily,
                 }}
               />
             </>

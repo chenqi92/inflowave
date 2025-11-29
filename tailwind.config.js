@@ -128,8 +128,9 @@ export default {
         },
       },
       fontFamily: {
+        // 使用 CSS 变量支持动态字体切换
         sans: [
-          'Inter',
+          'var(--font-family)',
           '-apple-system',
           'BlinkMacSystemFont',
           'system-ui',
@@ -140,7 +141,7 @@ export default {
           'sans-serif',
         ],
         mono: [
-          'JetBrains Mono',
+          'var(--font-family-mono, "JetBrains Mono")',
           'SF Mono',
           'Fira Code',
           'Cascadia Code',
