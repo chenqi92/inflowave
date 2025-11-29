@@ -471,22 +471,15 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                     <CardTitle className="text-base">{t('import_export') || '导入/导出'}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      <div>
-                        <Label className="mb-2 block">{t('export_theme_config') || '导出主题配置'}</Label>
-                        <Button variant="outline" onClick={handleExport} className="w-full">
-                          <Download className="w-4 h-4 mr-2" />
-                          {t('export_as_json') || '导出为 JSON 文件'}
-                        </Button>
-                      </div>
-
-                      <div>
-                        <Label className="mb-2 block">{t('import_theme_config') || '导入主题配置'}</Label>
-                        <Button variant="outline" onClick={handleImport} className="w-full">
-                          <Upload className="w-4 h-4 mr-2" />
-                          {t('import_from_json') || '从 JSON 文件导入'}
-                        </Button>
-                      </div>
+                    <div className="flex flex-wrap gap-3">
+                      <Button variant="outline" onClick={handleExport}>
+                        <Download className="w-4 h-4 mr-2" />
+                        {t('export_as_json') || '导出为 JSON 文件'}
+                      </Button>
+                      <Button variant="outline" onClick={handleImport}>
+                        <Upload className="w-4 h-4 mr-2" />
+                        {t('import_from_json') || '从 JSON 文件导入'}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -497,11 +490,11 @@ export const ThemeCustomDialog: React.FC<ThemeCustomDialogProps> = ({
                     <CardTitle className="text-base">{t('reset_theme') || '重置主题'}</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                       <p className="text-sm text-muted-foreground">
                         {t('reset_theme_desc') || '将所有主题设置重置为默认值'}
                       </p>
-                      <Button variant="destructive" onClick={handleReset} className="w-full">
+                      <Button variant="destructive" onClick={handleReset}>
                         <RotateCcw className="w-4 h-4 mr-2" />
                         {t('reset_to_default') || '重置到默认设置'}
                       </Button>

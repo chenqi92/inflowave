@@ -366,7 +366,6 @@ const LoggingSettingsComponent: React.FC = () => {
               type="button"
               variant="outline"
               onClick={handleOpenLogFolder}
-              className="w-full"
             >
               <FolderOpen className="w-4 h-4 mr-2" />
               {t('logging_settings.open_log_folder')}
@@ -399,12 +398,11 @@ const LoggingSettingsComponent: React.FC = () => {
             </div>
 
             {/* 操作按钮 */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={loadLogFiles}
-                className="flex-1"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
                 {t('logging_settings.refresh_list')}
@@ -413,7 +411,6 @@ const LoggingSettingsComponent: React.FC = () => {
                 type="button"
                 variant="outline"
                 onClick={handleCleanupOldLogs}
-                className="flex-1"
               >
                 {t('logging_settings.cleanup_old_files')}
               </Button>
@@ -421,7 +418,6 @@ const LoggingSettingsComponent: React.FC = () => {
                 type="button"
                 variant="destructive"
                 onClick={handleDeleteAllLogs}
-                className="flex-1"
               >
                 {t('logging_settings.delete_all')}
               </Button>

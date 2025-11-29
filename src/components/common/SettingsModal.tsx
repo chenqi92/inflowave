@@ -529,11 +529,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
 
           <div>
             <h4 className='text-sm font-medium mb-3'>{tSettings('config_backup_restore')}</h4>
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
+            <div className='flex flex-wrap gap-3'>
               <Button
                 variant='outline'
                 onClick={exportSettings}
-                className='w-full justify-start'
               >
                 <FileDown className='w-4 h-4 mr-2' />
                 {tSettings('export_config')}
@@ -541,7 +540,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               <Button
                 variant='outline'
                 onClick={importSettings}
-                className='w-full justify-start'
               >
                 <FileUp className='w-4 h-4 mr-2' />
                 {tSettings('import_config')}
@@ -608,10 +606,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               </div>
             </div>
 
-            <div className='grid grid-cols-1 gap-3'>
+            <div className='flex flex-wrap gap-3'>
               <Button
+                variant='outline'
                 onClick={() => setUserGuideVisible(true)}
-                className='w-full justify-start'
               >
                 <Info className='w-4 h-4 mr-2' />
                 {tSettings('view_user_guide')}
@@ -691,7 +689,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                     errorMessage: '打开GitHub页面失败'
                   });
                 }}
-                className='w-full justify-start'
               >
                 <ExternalLink className='w-4 h-4 mr-2' />
                 {tSettings('visit_github')}

@@ -823,7 +823,11 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                       <FormItem>
                         <FormLabel>{t('font_size_label')}</FormLabel>
                         <Select
-                          onValueChange={field.onChange}
+                          onValueChange={(value) => {
+                            field.onChange(value);
+                            // 立即保存字体大小设置以触发实时更新
+                            saveFieldImmediately('accessibility.font_size', value);
+                          }}
                           value={field.value}
                         >
                           <FormControl>
@@ -929,6 +933,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                             onValueChange={(value) => {
                               logger.info('布局模式选择变更:', value);
                               field.onChange(value);
+                              // 立即保存布局模式设置以触发实时更新
+                              saveFieldImmediately('workspace.layout', value);
                             }}
                             value={safeValue}
                             defaultValue="comfortable"
@@ -953,7 +959,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                             </SelectContent>
                           </Select>
                           <FormDescription>
-                            {t('layout_mode_desc')} (当前: {safeValue})
+                            {t('layout_mode_desc')}
                           </FormDescription>
                         </FormItem>
                       );
