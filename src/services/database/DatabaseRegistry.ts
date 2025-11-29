@@ -202,6 +202,20 @@ export class DatabaseRegistry {
             ping: '/ping'
           },
           features: ['flux_language', 'tasks', 'alerts', 'dashboards']
+        },
+        '3.x': {
+          apiType: 'flightsql',
+          authMethod: 'token',
+          queryLanguages: ['sql', 'influxql'],
+          concepts: ['database', 'table', 'column', 'organization'],
+          queryCommands: ['SHOW DATABASES', 'SHOW TABLES', 'DESCRIBE', 'SELECT'],
+          apiEndpoints: {
+            query: '/api/v3/query',
+            write: '/api/v3/write',
+            ping: '/api/v3/ping'
+          },
+          features: ['sql_language', 'flightsql', 'arrow_format', 'partition_templates'],
+          limitations: ['no_flux', 'no_retention_policies']
         }
       },
       

@@ -26,8 +26,9 @@ export function versionToLanguageType(version: DatabaseVersion | 'unknown', dbTy
     case '1.x':
       return 'influxql';
     case '2.x':
-    case '3.x':
       return 'flux';
+    case '3.x':
+      return 'sql'; // InfluxDB 3.x 默认使用 SQL，也支持 InfluxQL
     default:
       return 'sql';
   }

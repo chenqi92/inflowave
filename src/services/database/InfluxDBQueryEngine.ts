@@ -11,13 +11,24 @@ import type {
   QueryOperation,
   QueryParams,
   FieldInfo,
-  QueryCapabilities
+  QueryCapabilities,
+  QueryLanguage
 } from '@/types/database/features';
 
 export class InfluxDBQueryEngine extends QueryEngineBase {
   constructor(version: string) {
+    // 根据版本确定支持的查询语言
+    let languages: QueryLanguage[];
+    if (version.startsWith('3.')) {
+      languages = ['sql', 'influxql']; // InfluxDB 3.x 主要使用 SQL，也支持 InfluxQL
+    } else if (version.startsWith('2.')) {
+      languages = ['flux', 'influxql']; // InfluxDB 2.x 主要使用 Flux
+    } else {
+      languages = ['influxql']; // InfluxDB 1.x 仅支持 InfluxQL
+    }
+
     const capabilities: QueryCapabilities = {
-      languages: version.startsWith('2.') ? ['flux', 'influxql'] : ['influxql'],
+      languages,
       supportedOperations: ['select', 'show', 'describe', 'explain', 'insert', 'delete'],
       maxQuerySize: 1000000,
       timeoutSeconds: 300,
@@ -179,52 +190,80 @@ export class InfluxDBQueryEngine extends QueryEngineBase {
   // InfluxDB 特定的查询构建方法
   protected buildSelectQuery(params: QueryParams): string {
     const { database, table, field, limit, timeRange } = params;
-    
-    if (this.version.startsWith('2.')) {
-      // Flux 查询
-      let query = `from(bucket: "${database}")`;
-      
-      if (timeRange) {
-        query += `\n  |> range(start: ${timeRange.start}, stop: ${timeRange.end})`;
-      }
-      
-      if (table) {
-        query += `\n  |> filter(fn: (r) => r._measurement == "${table}")`;
-      }
-      
-      if (field) {
-        query += `\n  |> filter(fn: (r) => r._field == "${field}")`;
-      }
-      
-      if (limit) {
-        query += `\n  |> limit(n: ${limit})`;
-      }
-      
-      query += '\n  |> yield()';
-      
-      return query;
-    } else {
-      // InfluxQL 查询
+
+    if (this.version.startsWith('3.')) {
+      // InfluxDB 3.x SQL 查询
       let query = 'SELECT ';
-      
+
       if (field) {
         query += `"${field}"`;
       } else {
         query += '*';
       }
-      
+
       query += ` FROM "${table}"`;
-      
+
+      const conditions: string[] = [];
       if (timeRange) {
-        query += ` WHERE time >= '${timeRange.start}' AND time <= '${timeRange.end}'`;
+        conditions.push(`time >= '${timeRange.start}' AND time <= '${timeRange.end}'`);
       }
-      
+
+      if (conditions.length > 0) {
+        query += ` WHERE ${conditions.join(' AND ')}`;
+      }
+
       query += ' ORDER BY time DESC';
-      
+
       if (limit) {
         query += ` LIMIT ${limit}`;
       }
-      
+
+      return query;
+    } else if (this.version.startsWith('2.')) {
+      // Flux 查询
+      let query = `from(bucket: "${database}")`;
+
+      if (timeRange) {
+        query += `\n  |> range(start: ${timeRange.start}, stop: ${timeRange.end})`;
+      }
+
+      if (table) {
+        query += `\n  |> filter(fn: (r) => r._measurement == "${table}")`;
+      }
+
+      if (field) {
+        query += `\n  |> filter(fn: (r) => r._field == "${field}")`;
+      }
+
+      if (limit) {
+        query += `\n  |> limit(n: ${limit})`;
+      }
+
+      query += '\n  |> yield()';
+
+      return query;
+    } else {
+      // InfluxQL 查询 (1.x)
+      let query = 'SELECT ';
+
+      if (field) {
+        query += `"${field}"`;
+      } else {
+        query += '*';
+      }
+
+      query += ` FROM "${table}"`;
+
+      if (timeRange) {
+        query += ` WHERE time >= '${timeRange.start}' AND time <= '${timeRange.end}'`;
+      }
+
+      query += ' ORDER BY time DESC';
+
+      if (limit) {
+        query += ` LIMIT ${limit}`;
+      }
+
       return query;
     }
   }
@@ -253,7 +292,10 @@ export class InfluxDBQueryEngine extends QueryEngineBase {
 
   // InfluxDB 特定的辅助方法
   private buildShowMeasurementsQuery(database: string): string {
-    if (this.version.startsWith('2.')) {
+    if (this.version.startsWith('3.')) {
+      // InfluxDB 3.x 使用标准 SQL 的 SHOW TABLES
+      return `SHOW TABLES`;
+    } else if (this.version.startsWith('2.')) {
       return `from(bucket: "${database}") |> range(start: -1h) |> group(columns: ["_measurement"]) |> distinct(column: "_measurement") |> yield()`;
     } else {
       return `SHOW MEASUREMENTS ON "${database}"`;
@@ -261,7 +303,10 @@ export class InfluxDBQueryEngine extends QueryEngineBase {
   }
 
   private buildShowFieldKeysQuery(database: string, measurement: string): string {
-    if (this.version.startsWith('2.')) {
+    if (this.version.startsWith('3.')) {
+      // InfluxDB 3.x 使用 DESCRIBE 或 information_schema 查询列信息
+      return `DESCRIBE "${measurement}"`;
+    } else if (this.version.startsWith('2.')) {
       return `from(bucket: "${database}") |> range(start: -1h) |> filter(fn: (r) => r._measurement == "${measurement}") |> group(columns: ["_field"]) |> distinct(column: "_field") |> yield()`;
     } else {
       return `SHOW FIELD KEYS ON "${database}" FROM "${measurement}"`;

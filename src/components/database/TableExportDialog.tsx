@@ -115,6 +115,9 @@ const TableExportDialog: React.FC<TableExportDialogProps> = ({
   |> range(start: -30d)
   |> filter(fn: (r) => r._measurement == "${table}")
   |> limit(n: ${limit})`;
+      case 'influxdb3':
+        // InfluxDB 3.x 使用标准 SQL 查询
+        return `SELECT * FROM "${table}" ORDER BY time DESC LIMIT ${limit}`;
       case 'iotdb':
         return `SELECT * FROM ${database}.${table} LIMIT ${limit}`;
       default:
@@ -187,6 +190,8 @@ const TableExportDialog: React.FC<TableExportDialogProps> = ({
         return 'InfluxDB 1.x';
       case 'influxdb2':
         return 'InfluxDB 2.x';
+      case 'influxdb3':
+        return 'InfluxDB 3.x';
       case 'iotdb':
         return 'IoTDB';
       default:

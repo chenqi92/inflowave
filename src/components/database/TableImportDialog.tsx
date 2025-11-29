@@ -153,6 +153,8 @@ const TableImportDialog: React.FC<TableImportDialogProps> = ({
       // 根据数据库类型和格式执行导入
       if (dbType.toLowerCase() === 'iotdb') {
         await importToIoTDB(data, values);
+      } else if (dbType.toLowerCase() === 'influxdb3') {
+        await importToInfluxDB3(data, values);
       } else if (dbType.toLowerCase() === 'influxdb2') {
         await importToInfluxDB2(data, values);
       } else {
@@ -232,6 +234,35 @@ const TableImportDialog: React.FC<TableImportDialogProps> = ({
       await safeTauriInvoke('write_points_v2', {
         connectionId,
         bucket: database,
+        data: lineProtocol,
+        precision: values.precision,
+      });
+    }
+  };
+
+  // 导入到 InfluxDB 3.x
+  const importToInfluxDB3 = async (data: string, values: ImportFormData) => {
+    // InfluxDB 3.x 使用 /api/v3/write 端点，支持 Line Protocol
+    if (values.format === 'line_protocol') {
+      await safeTauriInvoke('write_points_v3', {
+        connectionId,
+        database,
+        data,
+        precision: values.precision,
+      });
+    } else if (values.format === 'csv') {
+      const lineProtocol = convertCsvToLineProtocol(data, table, values.hasHeader);
+      await safeTauriInvoke('write_points_v3', {
+        connectionId,
+        database,
+        data: lineProtocol,
+        precision: values.precision,
+      });
+    } else if (values.format === 'json') {
+      const lineProtocol = convertJsonToLineProtocol(data, table);
+      await safeTauriInvoke('write_points_v3', {
+        connectionId,
+        database,
         data: lineProtocol,
         precision: values.precision,
       });
@@ -357,6 +388,8 @@ const TableImportDialog: React.FC<TableImportDialogProps> = ({
         return 'InfluxDB 1.x';
       case 'influxdb2':
         return 'InfluxDB 2.x';
+      case 'influxdb3':
+        return 'InfluxDB 3.x';
       case 'iotdb':
         return 'IoTDB';
       default:
