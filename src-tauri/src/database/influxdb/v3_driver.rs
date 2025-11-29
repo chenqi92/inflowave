@@ -1,34 +1,28 @@
 /**
  * InfluxDB 3.x FlightSQL 驱动实现
- * 
+ *
  * 使用 FlightSQL 协议与 InfluxDB 3.x 进行交互，支持 SQL 和 InfluxQL
  */
 
 #[cfg(feature = "influxdb-v3")]
 use super::{
-    capability::{Capability, Query, DataSet, BucketInfo, Health, HealthStatus, QueryLanguage},
+    capability::{Capability, Query, DataSet, BucketInfo, Health, QueryLanguage},
     driver::{
-        InfluxDriver, MeasurementSchema, FieldSchema, TagSchema, FieldType,
-        RetentionPolicyInfo, RetentionPolicyConfig, DriverError, DriverResult,
+        InfluxDriver, MeasurementSchema, FieldSchema, FieldType,
+        RetentionPolicyInfo, RetentionPolicyConfig,
     },
     detector::InfluxDetector,
 };
 use crate::models::ConnectionConfig;
 use anyhow::Result;
 use async_trait::async_trait;
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use std::time::{Duration, Instant};
 
 // FlightSQL 相关导入
 #[cfg(feature = "influxdb-v3")]
-use arrow_flight::{
-    sql::{client::FlightSqlServiceClient, CommandStatementQuery, ProstMessageExt},
-    FlightDescriptor, FlightInfo, Ticket,
-};
-use tonic::{
-    transport::{Channel, Endpoint},
-    Request,
-};
+use arrow_flight::sql::client::FlightSqlServiceClient;
+use tonic::transport::{Channel, Endpoint};
 
 /// InfluxDB 3.x FlightSQL 驱动
 #[cfg(feature = "influxdb-v3")]
@@ -93,72 +87,50 @@ impl FlightSqlDriver {
         debug!("执行 SQL 查询: {}", sql);
 
         let mut client = self.get_client().await?;
-        
-        // 创建查询命令
-        let cmd = CommandStatementQuery {
-            query: sql.to_string(),
-            transaction_id: None,
-        };
-        
-        let mut request = Request::new(FlightDescriptor::new_cmd(cmd.as_any().encode_to_vec()));
-        request.metadata_mut().insert(
-            "authorization",
-            format!("Bearer {}", self.token).parse()?,
-        );
-        
-        // 获取查询信息
-        let flight_info = client.get_flight_info(request).await?
-            .into_inner();
-        
+
+        // 使用 FlightSqlServiceClient 的 execute 方法
+        let flight_info = client.execute(sql.to_string(), None).await
+            .map_err(|e| anyhow::anyhow!("执行 SQL 查询失败: {}", e))?;
+
         // 执行查询并获取结果
         let mut all_rows = Vec::new();
         let mut columns = Vec::new();
-        
+
         for endpoint in flight_info.endpoint {
-            for ticket in endpoint.ticket {
-                let mut ticket_request = Request::new(ticket);
-                ticket_request.metadata_mut().insert(
-                    "authorization",
-                    format!("Bearer {}", self.token).parse()?,
-                );
-                
-                let mut stream = client.do_get(ticket_request).await?
-                    .into_inner();
-                
-                while let Some(batch_result) = stream.message().await? {
-                    if let Some(batch) = batch_result.data {
-                        // 解析 Arrow 批次数据
-                        let record_batch = arrow::ipc::reader::StreamReader::try_new(
-                            std::io::Cursor::new(batch.to_vec()),
-                            None,
-                        )?
-                        .next()
-                        .ok_or_else(|| anyhow::anyhow!("无法读取 Arrow 批次"))??;
-                        
-                        // 提取列名（只在第一次）
-                        if columns.is_empty() {
-                            columns = record_batch.schema()
-                                .fields()
-                                .iter()
-                                .map(|field| field.name().clone())
-                                .collect();
+            if let Some(ticket) = endpoint.ticket {
+                // 使用 do_get 获取数据流
+                let stream = client.do_get(ticket).await
+                    .map_err(|e| anyhow::anyhow!("获取数据流失败: {}", e))?;
+
+                // 使用 try_collect 收集所有 RecordBatch
+                use futures_util::TryStreamExt;
+                let batches: Vec<arrow::record_batch::RecordBatch> = stream.try_collect().await
+                    .map_err(|e| anyhow::anyhow!("收集数据批次失败: {}", e))?;
+
+                for record_batch in batches {
+                    // 提取列名（只在第一次）
+                    if columns.is_empty() {
+                        columns = record_batch.schema()
+                            .fields()
+                            .iter()
+                            .map(|field| field.name().clone())
+                            .collect();
+                    }
+
+                    // 转换数据行
+                    for row_idx in 0..record_batch.num_rows() {
+                        let mut row = Vec::new();
+                        for col_idx in 0..record_batch.num_columns() {
+                            let column = record_batch.column(col_idx);
+                            let value = self.arrow_value_to_json(column, row_idx)?;
+                            row.push(value);
                         }
-                        
-                        // 转换数据行
-                        for row_idx in 0..record_batch.num_rows() {
-                            let mut row = Vec::new();
-                            for col_idx in 0..record_batch.num_columns() {
-                                let column = record_batch.column(col_idx);
-                                let value = self.arrow_value_to_json(column, row_idx)?;
-                                row.push(value);
-                            }
-                            all_rows.push(row);
-                        }
+                        all_rows.push(row);
                     }
                 }
             }
         }
-        
+
         Ok(DataSet::new(columns, all_rows))
     }
     

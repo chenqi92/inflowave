@@ -10,6 +10,27 @@ use std::sync::Arc;
 use log::{debug, error, info, warn};
 use reqwest;
 
+/// 构建 IoTDB 设备路径
+///
+/// IoTDB 的设备路径格式为 `storage_group.device`，例如 `root.sg1.device1`
+/// 此函数处理以下情况：
+/// - 如果设备路径为空，返回存储组路径
+/// - 如果设备路径已包含存储组前缀，直接返回设备路径
+/// - 否则，将存储组和设备路径合并
+fn build_iotdb_device_path(storage_group: &str, device: &str) -> String {
+    if device.is_empty() {
+        storage_group.to_string()
+    } else if device.starts_with(storage_group) {
+        // 设备路径已包含存储组前缀
+        device.to_string()
+    } else if device.starts_with("root.") {
+        // 设备路径是完整路径（以 root. 开头）
+        device.to_string()
+    } else {
+        format!("{}.{}", storage_group, device)
+    }
+}
+
 /// 数据库客户端枚举 - 解决 async trait 的 dyn 兼容性问题
 #[derive(Debug)]
 pub enum DatabaseClient {
@@ -136,12 +157,7 @@ impl DatabaseClient {
             },
             DatabaseClient::IoTDB(client) => {
                 let client = client.lock().await;
-                // 对于IoTDB，需要传递完整的路径：database.table
-                let device_path = if table.starts_with(database) {
-                    table.to_string()
-                } else {
-                    format!("{}.{}", database, table)
-                };
+                let device_path = build_iotdb_device_path(database, table);
                 client.get_timeseries(&device_path).await
             },
             DatabaseClient::ObjectStorage(_) => Ok(vec![]),
@@ -367,12 +383,7 @@ impl DatabaseClient {
             },
             DatabaseClient::IoTDB(client) => {
                 let client = client.lock().await;
-                // 对于IoTDB，需要传递完整的路径：database.measurement
-                let device_path = if measurement.is_empty() {
-                    database.to_string()
-                } else {
-                    format!("{}.{}", database, measurement)
-                };
+                let device_path = build_iotdb_device_path(database, measurement);
                 client.get_timeseries(&device_path).await
             },
             DatabaseClient::ObjectStorage(_) => Err(anyhow::anyhow!("此操作暂不支持对象存储")),

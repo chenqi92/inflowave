@@ -12,11 +12,64 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use log::{debug, info, trace, warn};
 
+/// IoTDB 版本信息
+#[derive(Debug, Clone, Default)]
+pub struct IoTDBVersionInfo {
+    /// 版本字符串，如 "1.3.0"
+    pub version_string: String,
+    /// 主版本号
+    pub major: u32,
+    /// 次版本号
+    pub minor: u32,
+    /// 是否为 1.x 版本
+    pub is_v1x: bool,
+}
+
+impl IoTDBVersionInfo {
+    /// 解析版本字符串
+    pub fn parse(version_str: &str) -> Self {
+        let parts: Vec<&str> = version_str.split('.').collect();
+        let major = parts.first()
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(1);
+        let minor = parts.get(1)
+            .and_then(|s| s.parse::<u32>().ok())
+            .unwrap_or(0);
+
+        Self {
+            version_string: version_str.to_string(),
+            major,
+            minor,
+            is_v1x: major >= 1,
+        }
+    }
+
+    /// 获取存储组查询命令
+    pub fn get_storage_group_query(&self) -> &str {
+        if self.is_v1x {
+            "SHOW DATABASES"
+        } else {
+            "SHOW STORAGE GROUP"
+        }
+    }
+
+    /// 获取设备查询命令
+    pub fn get_devices_query(&self, storage_group: &str) -> String {
+        if storage_group.is_empty() {
+            "SHOW DEVICES".to_string()
+        } else {
+            format!("SHOW DEVICES {}.**", storage_group)
+        }
+    }
+}
+
 /// IoTDB 官方客户端包装器
 #[derive(Debug)]
 pub struct IoTDBOfficialClient {
     client: Arc<Mutex<Option<OfficialThriftClient>>>,
     config: ConnectionConfig,
+    /// 缓存的版本信息
+    version_info: Arc<Mutex<Option<IoTDBVersionInfo>>>,
 }
 
 impl IoTDBOfficialClient {
@@ -25,14 +78,39 @@ impl IoTDBOfficialClient {
         info!("创建IoTDB官方客户端: {}:{}", config.host, config.port);
 
         let client = Arc::new(Mutex::new(None));
+        let version_info = Arc::new(Mutex::new(None));
 
         let instance = Self {
             client,
             config,
+            version_info,
         };
 
         info!("IoTDB官方客户端创建成功");
         Ok(instance)
+    }
+
+    /// 获取或检测版本信息（带缓存）
+    pub async fn get_version_info(&self) -> IoTDBVersionInfo {
+        // 首先检查缓存
+        {
+            let cache = self.version_info.lock().await;
+            if let Some(info) = cache.as_ref() {
+                return info.clone();
+            }
+        }
+
+        // 尝试检测版本
+        let version_str = self.detect_version().await.unwrap_or_else(|_| "1.3.0".to_string());
+        let info = IoTDBVersionInfo::parse(&version_str);
+
+        // 更新缓存
+        {
+            let mut cache = self.version_info.lock().await;
+            *cache = Some(info.clone());
+        }
+
+        info
     }
 
     /// 连接到IoTDB服务器
@@ -395,13 +473,28 @@ impl IoTDBOfficialClient {
     pub async fn get_databases(&self) -> Result<Vec<String>> {
         debug!("获取IoTDB存储组列表");
 
-        // 尝试不同的查询语句
-        let queries = vec![
-            "SHOW STORAGE GROUP",
-            "SHOW DATABASES",
-            "SHOW DATABASE",
-            "LIST DATABASE",
-        ];
+        // 获取版本信息，优先使用版本对应的查询命令
+        let version_info = self.get_version_info().await;
+        let preferred_query = version_info.get_storage_group_query();
+
+        // 根据版本信息排序查询语句，将最可能成功的放在前面
+        let queries = if version_info.is_v1x {
+            vec![
+                "SHOW DATABASES",      // IoTDB 1.x+ 优先
+                "SHOW DATABASE",       // 备选
+                "SHOW STORAGE GROUP",  // IoTDB 0.x
+                "LIST DATABASE",
+            ]
+        } else {
+            vec![
+                "SHOW STORAGE GROUP",  // IoTDB 0.x 优先
+                "SHOW DATABASES",      // IoTDB 1.x+
+                "SHOW DATABASE",       // 备选
+                "LIST DATABASE",
+            ]
+        };
+
+        debug!("IoTDB 版本: {}, 优先查询: {}", version_info.version_string, preferred_query);
 
         for query in queries {
             debug!("尝试查询存储组: {}", query);

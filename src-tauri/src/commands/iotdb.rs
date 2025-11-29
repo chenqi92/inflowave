@@ -1,16 +1,119 @@
 /**
  * IoTDB 特定命令
- * 
+ *
  * 提供 IoTDB 数据库的专用操作命令
  */
 
 use crate::database::connection::ConnectionManager;
 use crate::models::QueryResult;
 use anyhow::Result;
-use log::{debug, info};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::sync::Arc;
 use tauri::State;
+
+// ============================================================================
+// IoTDB 有效参数值常量
+// ============================================================================
+
+/// 有效的数据类型
+const VALID_DATA_TYPES: &[&str] = &["BOOLEAN", "INT32", "INT64", "FLOAT", "DOUBLE", "TEXT"];
+
+/// 有效的编码类型
+const VALID_ENCODINGS: &[&str] = &[
+    "PLAIN", "DICTIONARY", "RLE", "DIFF", "TS_2DIFF", "BITMAP", "GORILLA", "REGULAR", "FREQ", "CHIMP", "SPRINTZ", "RLBE"
+];
+
+/// 有效的压缩类型
+const VALID_COMPRESSIONS: &[&str] = &[
+    "UNCOMPRESSED", "SNAPPY", "GZIP", "LZ4", "ZSTD", "LZMA2"
+];
+
+/// 验证数据类型参数
+fn validate_data_type(data_type: &str) -> Result<(), String> {
+    let dt_upper = data_type.to_uppercase();
+    if !VALID_DATA_TYPES.contains(&dt_upper.as_str()) {
+        return Err(format!(
+            "无效的数据类型 '{}'. 有效值: {:?}",
+            data_type, VALID_DATA_TYPES
+        ));
+    }
+    Ok(())
+}
+
+/// 验证编码类型参数
+fn validate_encoding(encoding: &str) -> Result<(), String> {
+    let enc_upper = encoding.to_uppercase();
+    if !VALID_ENCODINGS.contains(&enc_upper.as_str()) {
+        return Err(format!(
+            "无效的编码类型 '{}'. 有效值: {:?}",
+            encoding, VALID_ENCODINGS
+        ));
+    }
+    Ok(())
+}
+
+/// 验证压缩类型参数
+fn validate_compression(compression: &str) -> Result<(), String> {
+    let comp_upper = compression.to_uppercase();
+    if !VALID_COMPRESSIONS.contains(&comp_upper.as_str()) {
+        return Err(format!(
+            "无效的压缩类型 '{}'. 有效值: {:?}",
+            compression, VALID_COMPRESSIONS
+        ));
+    }
+    Ok(()
+    )
+}
+
+// ============================================================================
+// 安全的值提取辅助函数
+// ============================================================================
+
+/// 安全地从 JSON Value 数组中提取字符串
+fn extract_string(row: &[Value], index: usize) -> Option<String> {
+    row.get(index).and_then(|v| {
+        match v {
+            Value::String(s) => Some(s.clone()),
+            Value::Number(n) => Some(n.to_string()),
+            Value::Bool(b) => Some(b.to_string()),
+            Value::Null => None,
+            _ => Some(v.to_string().trim_matches('"').to_string()),
+        }
+    })
+}
+
+/// 安全地从 JSON Value 数组中提取字符串，带默认值
+fn extract_string_or(row: &[Value], index: usize, default: &str) -> String {
+    extract_string(row, index).unwrap_or_else(|| default.to_string())
+}
+
+/// 安全地从 JSON Value 数组中提取整数
+fn extract_i64(row: &[Value], index: usize) -> Option<i64> {
+    row.get(index).and_then(|v| {
+        match v {
+            Value::Number(n) => n.as_i64(),
+            Value::String(s) => s.parse().ok(),
+            _ => None,
+        }
+    })
+}
+
+/// 安全地从 JSON Value 数组中提取整数，带默认值
+fn extract_i64_or(row: &[Value], index: usize, default: i64) -> i64 {
+    extract_i64(row, index).unwrap_or(default)
+}
+
+/// 安全地从 JSON Value 数组中提取 i32
+fn extract_i32(row: &[Value], index: usize) -> Option<i32> {
+    extract_i64(row, index).map(|v| v as i32)
+}
+
+/// 安全地从 JSON Value 数组中提取 i32，带默认值
+fn extract_i32_or(row: &[Value], index: usize, default: i32) -> i32 {
+    extract_i32(row, index).unwrap_or(default)
+}
 
 // IoTDB 存储组信息
 #[derive(Debug, Serialize, Deserialize)]
@@ -228,20 +331,42 @@ pub async fn create_iotdb_timeseries(
 ) -> Result<(), String> {
     debug!("创建 IoTDB 时间序列: {} - {}", connection_id, timeseries_path);
 
+    // 验证时间序列路径格式
+    if !timeseries_path.starts_with("root.") {
+        return Err("时间序列路径必须以 'root.' 开头".to_string());
+    }
+
+    // 验证数据类型
+    validate_data_type(&data_type)?;
+
+    // 验证编码类型（如果提供）
+    if let Some(ref enc) = encoding {
+        validate_encoding(enc)?;
+    }
+
+    // 验证压缩类型（如果提供）
+    if let Some(ref comp) = compression {
+        validate_compression(comp)?;
+    }
+
     let client = connection_manager
         .get_connection(&connection_id)
         .await
         .map_err(|e| format!("获取连接失败: {}", e))?;
 
-    // 构建创建时间序列的 SQL
-    let mut query = format!("CREATE TIMESERIES {} WITH DATATYPE={}", timeseries_path, data_type);
-    
+    // 构建创建时间序列的 SQL，使用大写确保一致性
+    let mut query = format!(
+        "CREATE TIMESERIES {} WITH DATATYPE={}",
+        timeseries_path,
+        data_type.to_uppercase()
+    );
+
     if let Some(enc) = encoding {
-        query.push_str(&format!(",ENCODING={}", enc));
+        query.push_str(&format!(",ENCODING={}", enc.to_uppercase()));
     }
-    
+
     if let Some(comp) = compression {
-        query.push_str(&format!(",COMPRESSION={}", comp));
+        query.push_str(&format!(",COMPRESSION={}", comp.to_uppercase()));
     }
 
     client
@@ -381,13 +506,15 @@ pub async fn get_iotdb_cluster_info(
         for row in data {
             if row.len() >= 4 {
                 let node_info = ClusterNodeInfo {
-                    node_id: row[0].as_str().unwrap_or("").to_string(),
-                    node_type: row[1].as_str().unwrap_or("").to_string(),
-                    host: row[2].as_str().unwrap_or("").to_string(),
-                    port: row[3].as_i64().unwrap_or(0) as i32,
-                    status: row.get(4).and_then(|v| v.as_str()).unwrap_or("UNKNOWN").to_string(),
+                    node_id: extract_string_or(&row, 0, ""),
+                    node_type: extract_string_or(&row, 1, ""),
+                    host: extract_string_or(&row, 2, ""),
+                    port: extract_i32_or(&row, 3, 0),
+                    status: extract_string_or(&row, 4, "UNKNOWN"),
                 };
                 cluster_nodes.push(node_info);
+            } else {
+                warn!("IoTDB 集群节点数据格式不正确，期望至少 4 列，实际 {} 列", row.len());
             }
         }
     }
@@ -417,15 +544,16 @@ pub async fn get_iotdb_users(
     if let Some(data) = result.data {
         for row in data {
             if !row.is_empty() {
-                let username = row[0].as_str().unwrap_or("").to_string();
-                let is_admin = username == "root" || username.contains("admin");
+                if let Some(username) = extract_string(&row, 0) {
+                    let is_admin = username == "root" || username.contains("admin");
 
-                let user_info = UserInfo {
-                    username,
-                    is_admin,
-                    privileges: vec![], // 可以后续通过 LIST PRIVILEGES 获取
-                };
-                users.push(user_info);
+                    let user_info = UserInfo {
+                        username,
+                        is_admin,
+                        privileges: vec![], // 可以后续通过 LIST PRIVILEGES 获取
+                    };
+                    users.push(user_info);
+                }
             }
         }
     }
@@ -456,12 +584,14 @@ pub async fn get_iotdb_functions(
         for row in data {
             if row.len() >= 3 {
                 let function_info = FunctionInfo {
-                    name: row[0].as_str().unwrap_or("").to_string(),
-                    function_type: row[1].as_str().unwrap_or("UDF").to_string(),
-                    class_name: row[2].as_str().unwrap_or("").to_string(),
-                    description: row.get(3).and_then(|v| v.as_str()).map(|s| s.to_string()),
+                    name: extract_string_or(&row, 0, ""),
+                    function_type: extract_string_or(&row, 1, "UDF"),
+                    class_name: extract_string_or(&row, 2, ""),
+                    description: extract_string(&row, 3),
                 };
                 functions.push(function_info);
+            } else {
+                warn!("IoTDB 函数数据格式不正确，期望至少 3 列，实际 {} 列", row.len());
             }
         }
     }
@@ -492,13 +622,15 @@ pub async fn get_iotdb_triggers(
         for row in data {
             if row.len() >= 5 {
                 let trigger_info = TriggerInfo {
-                    name: row[0].as_str().unwrap_or("").to_string(),
-                    status: row[1].as_str().unwrap_or("UNKNOWN").to_string(),
-                    event: row[2].as_str().unwrap_or("").to_string(),
-                    path: row[3].as_str().unwrap_or("").to_string(),
-                    class_name: row[4].as_str().unwrap_or("").to_string(),
+                    name: extract_string_or(&row, 0, ""),
+                    status: extract_string_or(&row, 1, "UNKNOWN"),
+                    event: extract_string_or(&row, 2, ""),
+                    path: extract_string_or(&row, 3, ""),
+                    class_name: extract_string_or(&row, 4, ""),
                 };
                 triggers.push(trigger_info);
+            } else {
+                warn!("IoTDB 触发器数据格式不正确，期望至少 5 列，实际 {} 列", row.len());
             }
         }
     }
@@ -602,6 +734,38 @@ pub async fn create_iotdb_template(
 ) -> Result<(), String> {
     debug!("创建 IoTDB 模板: {} - {}", connection_id, template_info.name);
 
+    // 验证模板名称
+    if template_info.name.is_empty() {
+        return Err("模板名称不能为空".to_string());
+    }
+
+    // 验证测量点列表不为空
+    if template_info.measurements.is_empty() {
+        return Err("模板必须至少包含一个测量点".to_string());
+    }
+
+    // 验证每个测量点的数据类型、编码和压缩配置
+    for (i, measurement) in template_info.measurements.iter().enumerate() {
+        if measurement.is_empty() {
+            return Err(format!("第 {} 个测量点名称不能为空", i + 1));
+        }
+
+        // 验证数据类型
+        if let Some(dt) = template_info.data_types.get(i) {
+            validate_data_type(dt)?;
+        }
+
+        // 验证编码类型
+        if let Some(enc) = template_info.encodings.get(i) {
+            validate_encoding(enc)?;
+        }
+
+        // 验证压缩类型
+        if let Some(comp) = template_info.compressions.get(i) {
+            validate_compression(comp)?;
+        }
+    }
+
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -611,9 +775,15 @@ pub async fn create_iotdb_template(
     let mut query = format!("CREATE SCHEMA TEMPLATE {}", template_info.name);
 
     for (i, measurement) in template_info.measurements.iter().enumerate() {
-        let data_type = template_info.data_types.get(i).map(|s| s.as_str()).unwrap_or("FLOAT");
-        let encoding = template_info.encodings.get(i).map(|s| s.as_str()).unwrap_or("PLAIN");
-        let compression = template_info.compressions.get(i).map(|s| s.as_str()).unwrap_or("SNAPPY");
+        let data_type = template_info.data_types.get(i)
+            .map(|s| s.to_uppercase())
+            .unwrap_or_else(|| "FLOAT".to_string());
+        let encoding = template_info.encodings.get(i)
+            .map(|s| s.to_uppercase())
+            .unwrap_or_else(|| "PLAIN".to_string());
+        let compression = template_info.compressions.get(i)
+            .map(|s| s.to_uppercase())
+            .unwrap_or_else(|| "SNAPPY".to_string());
 
         query.push_str(&format!(
             " ({} {} encoding {} compression {})",
@@ -626,6 +796,7 @@ pub async fn create_iotdb_template(
         .await
         .map_err(|e| format!("创建模板失败: {}", e))?;
 
+    info!("模板 '{}' 创建成功", template_info.name);
     Ok(())
 }
 
@@ -753,13 +924,17 @@ pub async fn get_iotdb_timeseries_info(
     let row = rows.first()
         .ok_or_else(|| "时间序列不存在".to_string())?;
 
+    // 安全地提取各字段值
+    let name = extract_string(row, 0)
+        .ok_or_else(|| "时间序列名称不存在".to_string())?;
+
     Ok(TimeseriesInfo {
-        name: row.get(0).and_then(|v| v.as_str()).unwrap_or("").to_string(),
-        alias: row.get(1).and_then(|v| v.as_str()).map(|s| s.to_string()),
-        storage_group: row.get(2).and_then(|v| v.as_str()).unwrap_or("").to_string(),
-        data_type: row.get(3).and_then(|v| v.as_str()).unwrap_or("").to_string(),
-        encoding: row.get(4).and_then(|v| v.as_str()).unwrap_or("").to_string(),
-        compression: row.get(5).and_then(|v| v.as_str()).unwrap_or("").to_string(),
+        name,
+        alias: extract_string(row, 1),
+        storage_group: extract_string_or(row, 2, ""),
+        data_type: extract_string_or(row, 3, "UNKNOWN"),
+        encoding: extract_string_or(row, 4, "PLAIN"),
+        compression: extract_string_or(row, 5, "UNCOMPRESSED"),
         tags: None,
         attributes: None,
     })

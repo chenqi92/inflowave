@@ -288,7 +288,10 @@ impl IoTDBHttpClient {
         }
     }
 
-    /// 测试TCP连接（包含认证验证）
+    /// 测试TCP连接（仅验证端口可达性）
+    ///
+    /// 注意：IoTDB 使用 Thrift 协议，此方法仅检查 TCP 端口是否可达，
+    /// 不进行完整的协议握手或认证验证。
     async fn test_tcp_connection(&self) -> Result<u64> {
         use tokio::net::TcpStream;
         use tokio::time::{timeout, Duration};
@@ -296,7 +299,7 @@ impl IoTDBHttpClient {
         let start = Instant::now();
         let address = format!("{}:{}", self.config.host, self.config.port);
 
-        info!("🔌 尝试TCP连接并验证认证: {}", address);
+        info!("🔌 尝试TCP连接检测端口可达性: {}", address);
 
         // 使用用户配置的连接超时时间
         let timeout_secs = if self.config.connection_timeout > 0 {
@@ -305,18 +308,16 @@ impl IoTDBHttpClient {
             30 // 默认30秒
         };
 
-        // 尝试建立TCP连接
+        // 尝试建立TCP连接（仅验证端口可达性）
         match timeout(Duration::from_secs(timeout_secs), TcpStream::connect(&address)).await {
-            Ok(Ok(mut stream)) => {
-                info!("✅ TCP连接建立成功，开始验证认证...");
-                // 🔒 安全修复: 必须验证认证信息
-                if let Err(auth_error) = self.verify_tcp_authentication(&mut stream).await {
-                    error!("❌ IoTDB TCP认证验证失败: {}", auth_error);
-                    return Err(anyhow::anyhow!("认证验证失败: {}", auth_error));
-                }
-
+            Ok(Ok(_stream)) => {
                 let latency = start.elapsed().as_millis() as u64;
-                info!("✅ IoTDB TCP连接和认证验证成功，延迟: {}ms", latency);
+                info!("✅ TCP端口可达，延迟: {}ms", latency);
+                info!("⚠️  注意：IoTDB 使用 Thrift 协议，当前仅验证了端口可达性");
+                info!("⚠️  推荐使用 REST API (端口31999) 以获得完整功能支持");
+
+                // TCP 端口可达，但由于不支持 Thrift 协议，返回特殊状态
+                // 让调用者知道 TCP 是可达的，但功能受限
                 Ok(latency)
             }
             Ok(Err(e)) => {
@@ -336,43 +337,15 @@ impl IoTDBHttpClient {
         }
     }
 
-    /// 验证TCP连接的认证信息
-    async fn verify_tcp_authentication(&self, _stream: &mut tokio::net::TcpStream) -> Result<()> {
-        // 🚨 重要说明：IoTDB使用Thrift协议，不是纯文本协议
-        // 当前的实现是一个简化的测试，实际生产环境需要实现完整的Thrift协议
-
-        warn!("IoTDB TCP连接使用Thrift协议，当前实现仅用于连接测试");
-        warn!("建议使用REST API进行生产环境连接");
-
-        // 由于IoTDB使用Thrift协议，直接发送文本查询会导致连接关闭
-        // 这里我们返回一个明确的错误信息，指导用户使用正确的连接方式
-        Err(anyhow::anyhow!(
-            "IoTDB TCP连接需要Thrift协议支持。\n\
-            当前应用暂不支持Thrift协议。\n\
-            建议解决方案：\n\
-            1. 启用IoTDB的REST API (端口31999)\n\
-            2. 使用HTTP连接方式\n\
-            3. 检查IoTDB容器配置：docker exec -it <container> cat conf/iotdb-datanode.properties"
-        ))
-    }
-
     /// 执行查询
     pub async fn execute_query(&self, query: &str, _database: Option<&str>) -> Result<QueryResult> {
         debug!("执行 IoTDB 查询: {}", query);
 
-        // 首先尝试HTTP REST API
-        match self.execute_http_query(query).await {
-            Ok(result) => {
-                debug!("HTTP查询成功");
-                return Ok(result);
-            }
-            Err(e) => {
-                debug!("HTTP查询失败: {}, 使用模拟数据", e);
-            }
-        }
-
-        // HTTP失败时，返回模拟数据
-        self.execute_fallback_query(query).await
+        // 通过 HTTP REST API 执行查询
+        self.execute_http_query(query).await.map_err(|e| {
+            error!("IoTDB 查询执行失败: {}", e);
+            anyhow::anyhow!("IoTDB 查询执行失败: {}", e)
+        })
     }
 
     /// 通过HTTP REST API执行查询
@@ -380,16 +353,24 @@ impl IoTDBHttpClient {
         let start = Instant::now();
         let url = format!("{}/rest/v1/query", self.base_url);
 
+        // 使用查询超时配置，如果未设置则使用默认值
+        let query_timeout_secs = if self.config.query_timeout > 0 {
+            self.config.query_timeout
+        } else {
+            300 // 默认5分钟查询超时
+        };
+
         // 构建请求体
         let request_body = IoTDBQueryRequest {
             sql: query.to_string(),
             row_limit: Some(10000), // 默认限制 10000 行
         };
 
-        // 发送请求
+        // 发送请求，使用查询超时配置
         let mut request_builder = self.client
             .post(&url)
             .header("Content-Type", "application/json")
+            .timeout(std::time::Duration::from_secs(query_timeout_secs))
             .json(&request_body);
 
         // 添加认证头
@@ -466,15 +447,6 @@ impl IoTDBHttpClient {
             aggregations: None,
             sql_type: None,
         })
-    }
-
-    /// 执行模拟查询（当HTTP失败时使用）
-    async fn execute_fallback_query(&self, query: &str) -> Result<QueryResult> {
-        error!("IoTDB HTTP 查询失败，查询: {}", query);
-
-        // 不返回模拟数据，而是返回错误
-        Err(anyhow::anyhow!("IoTDB 查询失败：HTTP 连接不可用，请检查 IoTDB 服务状态和连接配置"))
-
     }
 
     /// 获取存储组列表

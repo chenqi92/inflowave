@@ -251,7 +251,7 @@ impl InfluxDetector {
     
     /// 通过 FlightSQL 探测 InfluxDB 3.x
     #[cfg(feature = "influxdb-v3")]
-    async fn detect_v3x_flight(base_url: &str, config: &ConnectionConfig) -> Result<Capability> {
+    async fn detect_v3x_flight(base_url: &str, _config: &ConnectionConfig) -> Result<Capability> {
         // 实现 FlightSQL 握手检测
         // 这里需要使用 arrow-flight 库进行 gRPC 连接测试
 
@@ -275,24 +275,8 @@ impl InfluxDetector {
             Ok(_) => {
                 info!("FlightSQL 端口可达，假设为 InfluxDB 3.x");
 
-                // 构建 InfluxDB 3.x 能力描述
-                Ok(Capability {
-                    server: ServerInfo {
-                        version: Version::parse("3.0.0").unwrap(),
-                        build: "flight".to_string(),
-                        commit: "unknown".to_string(),
-                    },
-                    features: FeatureSet {
-                        flux_support: true,
-                        influxql_support: true,
-                        sql_support: true,
-                        flight_sql_support: true,
-                        v1_api_support: false,
-                        v2_api_support: false,
-                        v3_api_support: true,
-                    },
-                    limits: ResourceLimits::default(),
-                })
+                // 使用 Capability::v3x 工厂方法构建能力描述
+                Ok(Capability::v3x("3.0.0".to_string(), true))
             },
             Err(e) => {
                 debug!("FlightSQL 连接失败: {}", e);

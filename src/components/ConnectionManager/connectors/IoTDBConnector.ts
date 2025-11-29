@@ -6,6 +6,19 @@ import { tConn as t } from '@/i18n';
 import { getProxyConfigSection } from './proxyConfig';
 
 /**
+ * 获取系统时区
+ * @returns 系统时区字符串，如 'Asia/Shanghai'
+ */
+function getSystemTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    // 如果无法获取系统时区，返回 UTC
+    return 'UTC';
+  }
+}
+
+/**
  * IoTDB连接配置
  */
 export interface IoTDBConfig extends BaseConnectionConfig {
@@ -213,7 +226,7 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
       password: '',
       sessionPoolSize: 5,
       enableCompression: false,
-      timeZone: 'Asia/Shanghai',
+      timeZone: getSystemTimezone(), // 自动检测系统时区
       fetchSize: 5000,
       enableRedirection: false,
       maxRetryCount: 3,
@@ -247,7 +260,7 @@ export class IoTDBConnector extends BaseConnector<IoTDBConfig> {
         iotdb: {
           sessionPoolSize: formData.sessionPoolSize || 5,
           enableCompression: formData.enableCompression || false,
-          timeZone: formData.timeZone || 'Asia/Shanghai',
+          timeZone: formData.timeZone || getSystemTimezone(),
           fetchSize: formData.fetchSize || 5000,
           enableRedirection: formData.enableRedirection || false,
           maxRetryCount: formData.maxRetryCount || 3,

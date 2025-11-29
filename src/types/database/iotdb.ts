@@ -1,6 +1,6 @@
 /**
  * IoTDB 数据库驱动类型定义
- * 
+ *
  * 这个文件定义了 IoTDB 特定的类型和配置接口。
  */
 
@@ -20,6 +20,8 @@ import {
   QueryContext,
   QueryLanguage
 } from './base';
+import { safeTauriInvoke } from '@/utils/tauri';
+import logger from '@/utils/logger';
 
 // IoTDB 版本类型
 export type IoTDBVersion = '0.13.x' | '0.14.x' | '1.0.x' | '1.1.x' | '1.2.x';
@@ -174,48 +176,152 @@ export class IoTDBDriver implements DatabaseDriver {
   }
 
   async createConnection(config: DatabaseConnectionConfig): Promise<DatabaseConnection> {
-    // 这里会调用 Tauri 后端创建实际连接
-    // 现在返回一个模拟的连接对象
-    return {
-      id: config.id || `iotdb_${Date.now()}`,
-      config,
-      status: 'disconnected',
-      metadata: {
-        driverType: 'iotdb',
-        version: (config as IoTDBConnectionConfig).version || '1.2.x'
-      }
-    };
+    const connectionId = config.id || `iotdb_${Date.now()}`;
+
+    try {
+      // 调用 Tauri 后端创建实际连接
+      await safeTauriInvoke('test_connection', {
+        connectionId,
+        config: {
+          id: connectionId,
+          name: config.name,
+          host: config.host,
+          port: config.port,
+          username: config.username,
+          password: config.password,
+          ssl: config.ssl,
+          timeout: config.timeout,
+          db_type: 'iotdb',
+          iotdb_config: (config as IoTDBConnectionConfig)
+        }
+      });
+
+      return {
+        id: connectionId,
+        config,
+        status: 'connected',
+        metadata: {
+          driverType: 'iotdb',
+          version: (config as IoTDBConnectionConfig).version || '1.2.x'
+        }
+      };
+    } catch (error) {
+      logger.error('IoTDB 连接创建失败:', error);
+      return {
+        id: connectionId,
+        config,
+        status: 'error',
+        metadata: {
+          driverType: 'iotdb',
+          version: (config as IoTDBConnectionConfig).version || '1.2.x',
+          error: String(error)
+        }
+      };
+    }
   }
 
   async testConnection(config: DatabaseConnectionConfig): Promise<ConnectionTestResult> {
-    // 这里会调用 Tauri 后端测试连接
-    // 现在返回一个模拟的测试结果
-    return {
-      success: true,
-      latency: 30,
-      serverVersion: '1.2.0',
-      databases: ['root.sg1', 'root.sg2'],
-      metadata: {
-        storageGroups: ['root.sg1', 'root.sg2']
+    const startTime = Date.now();
+    const connectionId = config.id || `iotdb_test_${Date.now()}`;
+
+    try {
+      // 调用 Tauri 后端测试连接
+      const result = await safeTauriInvoke<{
+        success: boolean;
+        version?: string;
+        latency?: number;
+        error?: string;
+      }>('test_connection', {
+        connectionId,
+        config: {
+          id: connectionId,
+          name: config.name || 'test',
+          host: config.host,
+          port: config.port,
+          username: config.username,
+          password: config.password,
+          ssl: config.ssl,
+          timeout: config.timeout,
+          db_type: 'iotdb',
+          iotdb_config: (config as IoTDBConnectionConfig)
+        }
+      });
+
+      if (!result?.success) {
+        return {
+          success: false,
+          error: result?.error || '连接测试失败'
+        };
       }
-    };
+
+      // 获取存储组列表
+      const storageGroups = await safeTauriInvoke<string[]>('get_iotdb_storage_groups', {
+        connectionId
+      }).catch(() => []);
+
+      const latency = Date.now() - startTime;
+
+      return {
+        success: true,
+        latency: result?.latency || latency,
+        serverVersion: result?.version,
+        databases: storageGroups,
+        metadata: {
+          storageGroups
+        }
+      };
+    } catch (error) {
+      logger.error('IoTDB 连接测试失败:', error);
+      return {
+        success: false,
+        error: String(error)
+      };
+    }
   }
 
   async closeConnection(connection: DatabaseConnection): Promise<void> {
-    // 这里会调用 Tauri 后端关闭连接
-    connection.status = 'disconnected';
+    try {
+      await safeTauriInvoke('disconnect', {
+        connectionId: connection.id
+      });
+      connection.status = 'disconnected';
+    } catch (error) {
+      logger.error('IoTDB 断开连接失败:', error);
+      connection.status = 'error';
+    }
   }
 
   async executeQuery(connection: DatabaseConnection, query: Query): Promise<QueryResult> {
-    // 这里会调用 Tauri 后端执行查询
-    // 现在返回一个模拟的查询结果
-    return {
-      success: true,
-      data: [['Time', 'root.sg1.d1.s1'], ['2023-01-01T00:00:00.000+08:00', 25.5]],
-      columns: ['Time', 'root.sg1.d1.s1'],
-      rowCount: 1,
-      executionTime: 15
-    };
+    try {
+      const result = await safeTauriInvoke<{
+        columns: string[];
+        data: any[][];
+        row_count: number;
+        execution_time: number;
+      }>('execute_iotdb_query', {
+        connectionId: connection.id,
+        query: query.sql,
+        storageGroup: query.database
+      });
+
+      return {
+        success: true,
+        data: result?.data || [],
+        columns: result?.columns || [],
+        rowCount: result?.row_count || 0,
+        executionTime: result?.execution_time || 0
+      };
+    } catch (error) {
+      logger.error('IoTDB 查询执行失败:', error);
+      return {
+        success: false,
+        data: [],
+        columns: [],
+        rowCount: 0,
+        executionTime: 0,
+        error: String(error)
+      };
+    }
   }
 
   async validateQuery(query: string, language: QueryLanguage): Promise<ValidationResult> {
@@ -244,28 +350,151 @@ export class IoTDBDriver implements DatabaseDriver {
   }
 
   async getDatabases(connection: DatabaseConnection): Promise<DatabaseInfo[]> {
-    // 这里会调用 Tauri 后端获取存储组列表
-    return [];
+    try {
+      const storageGroups = await safeTauriInvoke<string[]>('get_iotdb_storage_groups', {
+        connectionId: connection.id
+      });
+
+      return (storageGroups || []).map(name => ({
+        name,
+        type: 'storage_group' as const,
+        metadata: {}
+      }));
+    } catch (error) {
+      logger.error('IoTDB 获取存储组列表失败:', error);
+      return [];
+    }
   }
 
   async getMeasurements(connection: DatabaseConnection, database: string): Promise<MeasurementInfo[]> {
-    // 这里会调用 Tauri 后端获取设备列表
-    return [];
+    try {
+      const devices = await safeTauriInvoke<string[]>('get_iotdb_devices', {
+        connectionId: connection.id,
+        storageGroup: database
+      });
+
+      return (devices || []).map(name => ({
+        name,
+        database,
+        type: 'device' as const,
+        metadata: {
+          storageGroup: database
+        }
+      }));
+    } catch (error) {
+      logger.error('IoTDB 获取设备列表失败:', error);
+      return [];
+    }
   }
 
   async getFields(connection: DatabaseConnection, database: string, measurement: string): Promise<FieldInfo[]> {
-    // 这里会调用 Tauri 后端获取传感器列表
-    return [];
+    try {
+      const timeseries = await safeTauriInvoke<string[]>('get_iotdb_timeseries', {
+        connectionId: connection.id,
+        storageGroup: database,
+        device: measurement
+      });
+
+      return (timeseries || []).map(name => ({
+        name,
+        type: 'unknown' as const,
+        nullable: true,
+        metadata: {
+          device: measurement,
+          storageGroup: database
+        }
+      }));
+    } catch (error) {
+      logger.error('IoTDB 获取时间序列列表失败:', error);
+      return [];
+    }
   }
 
   async getTags(connection: DatabaseConnection, database: string, measurement: string): Promise<TagInfo[]> {
-    // 这里会调用 Tauri 后端获取设备标签列表
-    return [];
+    // IoTDB 的标签需要通过 SHOW TIMESERIES 查询获取
+    try {
+      const result = await safeTauriInvoke<{
+        columns: string[];
+        data: any[][];
+      }>('execute_iotdb_query', {
+        connectionId: connection.id,
+        query: `SHOW TIMESERIES ${database}.${measurement}.**`,
+        storageGroup: database
+      });
+
+      // 从结果中提取标签信息
+      const tags: TagInfo[] = [];
+      const tagIndex = result?.columns?.indexOf('tags') ?? -1;
+
+      if (tagIndex >= 0 && result?.data) {
+        const tagSet = new Set<string>();
+        for (const row of result.data) {
+          const tagStr = row[tagIndex];
+          if (tagStr && typeof tagStr === 'string') {
+            // 解析标签字符串
+            const tagPairs = tagStr.split(',');
+            for (const pair of tagPairs) {
+              const [key] = pair.split('=');
+              if (key) tagSet.add(key.trim());
+            }
+          }
+        }
+        for (const tagName of tagSet) {
+          tags.push({
+            name: tagName,
+            metadata: {
+              device: measurement,
+              storageGroup: database,
+              tagType: 'tag'
+            }
+          });
+        }
+      }
+
+      return tags;
+    } catch (error) {
+      logger.error('IoTDB 获取标签列表失败:', error);
+      return [];
+    }
   }
 
   async getSmartSuggestions(connection: DatabaseConnection, context: QueryContext): Promise<SmartSuggestion[]> {
-    // 这里会根据上下文提供智能建议
-    return [];
+    const suggestions: SmartSuggestion[] = [];
+
+    try {
+      // 根据上下文提供智能建议
+      const queryText = context.selectedText || '';
+      const cursorLine = context.cursorPosition?.line ?? 0;
+      const cursorColumn = context.cursorPosition?.column ?? 0;
+
+      // 简单的基于位置的建议
+      const textLower = queryText.toLowerCase();
+
+      // 如果用户输入了 SELECT 但还没有 FROM
+      if (textLower.includes('select') && !textLower.includes('from')) {
+        suggestions.push({
+          text: ' FROM ',
+          type: 'keyword',
+          description: 'Add FROM clause'
+        });
+      }
+
+      // 如果用户输入了 FROM，建议存储组
+      if (textLower.includes('from') && context.database) {
+        const devices = await this.getMeasurements(connection, context.database);
+        for (const device of devices.slice(0, 10)) {
+          suggestions.push({
+            text: device.name,
+            type: 'table',
+            description: `Device: ${device.name}`
+          });
+        }
+      }
+    } catch (error) {
+      logger.error('IoTDB 获取智能建议失败:', error);
+    }
+
+    return suggestions;
   }
 
   async healthCheck(connection: DatabaseConnection): Promise<{
@@ -274,11 +503,43 @@ export class IoTDBDriver implements DatabaseDriver {
     error?: string;
     metadata?: Record<string, any>;
   }> {
-    // 这里会检查连接健康状态
-    return {
-      healthy: true,
-      latency: 8
-    };
+    const startTime = Date.now();
+
+    try {
+      // 执行简单查询检查健康状态
+      const result = await safeTauriInvoke<{
+        success: boolean;
+        version?: string;
+        error?: string;
+      }>('get_iotdb_server_info', {
+        connectionId: connection.id
+      });
+
+      const latency = Date.now() - startTime;
+
+      if (result?.success !== false) {
+        return {
+          healthy: true,
+          latency,
+          metadata: {
+            version: result?.version
+          }
+        };
+      }
+
+      return {
+        healthy: false,
+        latency,
+        error: result?.error || '健康检查失败'
+      };
+    } catch (error) {
+      logger.error('IoTDB 健康检查失败:', error);
+      return {
+        healthy: false,
+        latency: Date.now() - startTime,
+        error: String(error)
+      };
+    }
   }
 }
 
