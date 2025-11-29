@@ -13,6 +13,8 @@ import TableListDialog from '@/components/database/TableListDialog';
 import TableStatisticsDialog from '@/components/database/TableStatisticsDialog';
 import DataPreviewDialog from '@/components/database/DataPreviewDialog';
 import TagValuesDialog from '@/components/database/TagValuesDialog';
+import CreateDeviceDialog from '@/components/database/CreateDeviceDialog';
+import DeviceListDialog from '@/components/database/DeviceListDialog';
 import type {
     DialogStates,
     DatabaseInfoDialogState,
@@ -334,6 +336,52 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     table={dialogStates.tagValues.table}
                     tag={dialogStates.tagValues.tag}
                     values={dialogStates.tagValues.values}
+                />
+            )}
+
+            {/* IoTDB 设备创建对话框 */}
+            {dialogStates.createDevice && (
+                <CreateDeviceDialog
+                    open={dialogStates.createDevice.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            createDevice: {
+                                open: false,
+                                connectionId: '',
+                                storageGroup: '',
+                            },
+                        }));
+                    }}
+                    onSuccess={() => {
+                        // 延迟刷新树形数据，确保后端已完成创建操作
+                        setTimeout(() => {
+                            buildCompleteTreeData(true);
+                        }, 300);
+                    }}
+                    connectionId={dialogStates.createDevice.connectionId}
+                    storageGroup={dialogStates.createDevice.storageGroup}
+                />
+            )}
+
+            {/* IoTDB 设备列表对话框 */}
+            {dialogStates.deviceList && (
+                <DeviceListDialog
+                    open={dialogStates.deviceList.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            deviceList: {
+                                open: false,
+                                connectionId: '',
+                                storageGroup: '',
+                                devices: [],
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.deviceList.connectionId}
+                    storageGroup={dialogStates.deviceList.storageGroup}
+                    devices={dialogStates.deviceList.devices}
                 />
             )}
         </>

@@ -23,10 +23,10 @@ import {
   SelectValue,
   Switch,
 } from '@/components/ui';
+import { SearchInput } from '@/components/ui/search-input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Keyboard,
-  Search,
   Download,
   Upload,
   RotateCcw,
@@ -334,15 +334,13 @@ export const ShortcutConfigDialog: React.FC<ShortcutConfigDialogProps> = ({
 
         {/* 过滤器 */}
         <div className="flex items-center gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="搜索快捷键..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <SearchInput
+            className="flex-1"
+            placeholder="搜索快捷键..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onClear={() => setSearchQuery('')}
+          />
 
           <Select
             value={selectedCategory}

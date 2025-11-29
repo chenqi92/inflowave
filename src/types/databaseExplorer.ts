@@ -123,6 +123,17 @@ export interface DialogStates {
         tag: string;
         values: string[];
     };
+    createDevice?: {
+        open: boolean;
+        connectionId: string;
+        storageGroup: string;
+    };
+    deviceList?: {
+        open: boolean;
+        connectionId: string;
+        storageGroup: string;
+        devices: string[];
+    };
 }
 
 /**

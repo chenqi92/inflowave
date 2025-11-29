@@ -219,8 +219,8 @@ export const TableStatisticsDialog: React.FC<TableStatisticsDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[80vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <BarChart3 className="w-5 h-5 text-blue-500" />
             表统计分析
@@ -230,9 +230,9 @@ export const TableStatisticsDialog: React.FC<TableStatisticsDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <Separator className="my-4" />
+        <Separator className="my-4 flex-shrink-0" />
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto space-y-4">
           {renderStatistics()}
         </div>
       </DialogContent>

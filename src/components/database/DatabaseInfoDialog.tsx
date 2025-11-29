@@ -204,8 +204,8 @@ ${measurements.length > 20 ? `\n... 还有 ${measurements.length - 20} 个` : ''
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Database className="w-5 h-5" />
             数据库信息 - {databaseName}
@@ -215,13 +215,14 @@ ${measurements.length > 20 ? `\n... 还有 ${measurements.length - 20} 个` : ''
           </DialogDescription>
         </DialogHeader>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-8">
-            <Spin tip="加载中..." />
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {/* 基本统计信息 */}
+        <div className="flex-1 overflow-y-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Spin tip="加载中..." />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* 基本统计信息 */}
             {stats && (
               <Card>
                 <CardHeader>
@@ -369,50 +370,51 @@ ${measurements.length > 20 ? `\n... 还有 ${measurements.length - 20} 个` : ''
               </CardContent>
             </Card>
 
-            {/* 数据预览 */}
-            {showPreview && previewData && (
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-medium flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-green-500" />
-                    数据预览 ({measurements[0]})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b">
-                          {previewData.columns?.map((col, index) => (
-                            <th key={index} className="text-left p-2 font-medium">
-                              {col}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {previewData.data?.slice(0, 10).map((row, rowIndex) => (
-                          <tr key={rowIndex} className="border-b hover:bg-muted/50">
-                            {row.map((cell, cellIndex) => (
-                              <td key={cellIndex} className="p-2">
-                                {cell !== null && cell !== undefined ? String(cell) : '-'}
-                              </td>
+              {/* 数据预览 */}
+              {showPreview && previewData && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-green-500" />
+                      数据预览 ({measurements[0]})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs">
+                        <thead>
+                          <tr className="border-b">
+                            {previewData.columns?.map((col, index) => (
+                              <th key={index} className="text-left p-2 font-medium">
+                                {col}
+                              </th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    显示前 {Math.min(10, previewData.data?.length || 0)} 条记录
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        )}
+                        </thead>
+                        <tbody>
+                          {previewData.data?.slice(0, 10).map((row, rowIndex) => (
+                            <tr key={rowIndex} className="border-b hover:bg-muted/50">
+                              {row.map((cell, cellIndex) => (
+                                <td key={cellIndex} className="p-2">
+                                  {cell !== null && cell !== undefined ? String(cell) : '-'}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      显示前 {Math.min(10, previewData.data?.length || 0)} 条记录
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
 
-        <div className="flex justify-between">
+        <div className="flex-shrink-0 pt-4 border-t flex justify-between">
           <div className="flex gap-2">
             <Button
               variant="outline"

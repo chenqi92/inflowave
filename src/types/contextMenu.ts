@@ -84,6 +84,8 @@ export type ContextMenuAction =
   // IoTDB 设备操作
   | 'view_device_data'
   | 'refresh_device'
+  | 'create_device'
+  | 'show_devices'
   | 'create_timeseries'
   | 'show_timeseries'
   | 'device_info'
@@ -277,6 +279,8 @@ export const CONTEXT_MENU_ACTIONS: Record<ContextMenuAction, ContextMenuActionMe
   // IoTDB 设备操作
   view_device_data: createAction('view_device_data'),
   refresh_device: createAction('refresh_device'),
+  create_device: createAction('create_device'),
+  show_devices: createAction('show_devices'),
   create_timeseries: createAction('create_timeseries'),
   show_timeseries: createAction('show_timeseries'),
   device_info: createAction('device_info'),

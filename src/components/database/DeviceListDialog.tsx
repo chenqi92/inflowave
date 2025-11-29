@@ -9,33 +9,40 @@ import {
 import { SearchInput } from '@/components/ui/search-input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Table } from 'lucide-react';
+import { Cpu } from 'lucide-react';
+import { useDatabaseExplorerTranslation } from '@/hooks/useTranslation';
 
-interface TableListDialogProps {
+interface DeviceListDialogProps {
   open: boolean;
   onClose: () => void;
   connectionId: string;
-  database: string;
-  tables: string[];
+  storageGroup: string;
+  devices: string[];
 }
 
-export const TableListDialog: React.FC<TableListDialogProps> = ({
+/**
+ * IoTDB 设备列表对话框
+ *
+ * 显示指定存储组下的所有设备列表
+ */
+export const DeviceListDialog: React.FC<DeviceListDialogProps> = ({
   open,
   onClose,
   connectionId,
-  database,
-  tables,
+  storageGroup,
+  devices,
 }) => {
+  const { t: tExplorer } = useDatabaseExplorerTranslation();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // 过滤表列表
-  const filteredTables = useMemo(() => {
+  // 过滤设备列表
+  const filteredDevices = useMemo(() => {
     if (!searchTerm.trim()) {
-      return tables;
+      return devices;
     }
     const lowerSearch = searchTerm.toLowerCase();
-    return tables.filter(table => table.toLowerCase().includes(lowerSearch));
-  }, [tables, searchTerm]);
+    return devices.filter(device => device.toLowerCase().includes(lowerSearch));
+  }, [devices, searchTerm]);
 
   const handleClose = () => {
     setSearchTerm('');
@@ -47,39 +54,39 @@ export const TableListDialog: React.FC<TableListDialogProps> = ({
       <DialogContent className="sm:max-w-[600px] max-h-[80vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Table className="w-5 h-5 text-blue-500" />
-            表列表
+            <Cpu className="w-5 h-5 text-green-500" />
+            {tExplorer('deviceList.title')}
           </DialogTitle>
           <DialogDescription>
-            {database} - 共 {tables.length} 个表/测量值
+            {tExplorer('deviceList.description', { storageGroup, count: devices.length })}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           {/* 搜索框 */}
           <SearchInput
-            placeholder="搜索表名..."
+            placeholder={tExplorer('deviceList.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onClear={() => setSearchTerm('')}
           />
 
-          {/* 表列表 */}
+          {/* 设备列表 */}
           <ScrollArea className="h-[400px] rounded-md border">
             <div className="p-4 space-y-2">
-              {filteredTables.length === 0 ? (
+              {filteredDevices.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  {searchTerm ? '未找到匹配的表' : '暂无表'}
+                  {searchTerm ? tExplorer('deviceList.noMatch') : tExplorer('deviceList.noDevices')}
                 </div>
               ) : (
-                filteredTables.map((table, index) => (
+                filteredDevices.map((device, index) => (
                   <div
-                    key={table}
+                    key={device}
                     className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <Table className="w-4 h-4 text-primary" />
-                      <span className="font-medium">{table}</span>
+                      <Cpu className="w-4 h-4 text-primary" />
+                      <span className="font-medium font-mono text-sm">{device}</span>
                     </div>
                     <Badge variant="secondary">{index + 1}</Badge>
                   </div>
@@ -91,7 +98,7 @@ export const TableListDialog: React.FC<TableListDialogProps> = ({
           {/* 统计信息 */}
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>
-              显示 {filteredTables.length} / {tables.length} 个表
+              {tExplorer('deviceList.showing', { shown: filteredDevices.length, total: devices.length })}
             </span>
           </div>
         </div>
@@ -100,5 +107,4 @@ export const TableListDialog: React.FC<TableListDialogProps> = ({
   );
 };
 
-export default TableListDialog;
-
+export default DeviceListDialog;

@@ -297,15 +297,16 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
   return (
     <>
       <Dialog open={visible} onOpenChange={open => !open && onClose()}>
-        <DialogContent className='max-w-4xl max-h-[90vh] overflow-y-auto'>
-          <DialogHeader>
+        <DialogContent className='max-w-4xl max-h-[90vh] flex flex-col overflow-hidden'>
+          <DialogHeader className='flex-shrink-0'>
             <DialogTitle>数据写入</DialogTitle>
             <DialogDescription>
               将数据写入到 InfluxDB 数据库，支持 CSV、JSON 和 Line Protocol 格式
             </DialogDescription>
           </DialogHeader>
 
-          <Form {...form}>
+          <div className='flex-1 overflow-y-auto'>
+            <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleSubmit)}
               className='space-y-6'
@@ -625,8 +626,9 @@ const DataWriteDialog: React.FC<DataWriteDialogProps> = ({
               )}
             </form>
           </Form>
+          </div>
 
-          <DialogFooter className='flex gap-2'>
+          <DialogFooter className='flex-shrink-0 flex gap-2'>
             <Button variant='outline' onClick={onClose}>
               取消
             </Button>

@@ -6,13 +6,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Tag, Copy, Check, BarChart } from 'lucide-react';
+import { Tag, Copy, Check, BarChart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { writeToClipboard } from '@/utils/clipboard';
-import { showMessage } from '@/utils/message';
 import { Separator } from '@/components/ui/separator';
 
 interface TagValuesDialogProps {
@@ -122,15 +121,13 @@ const TagValuesDialog: React.FC<TagValuesDialogProps> = ({
 
           {/* 搜索框 */}
           <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="搜索标签值..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9"
-              />
-            </div>
+            <SearchInput
+              className="flex-1"
+              placeholder="搜索标签值..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onClear={() => setSearchTerm('')}
+            />
             <Button
               variant="outline"
               size="sm"

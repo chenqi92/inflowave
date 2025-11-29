@@ -131,8 +131,8 @@ export const ExportConfigDialog: React.FC<ExportConfigDialogProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileDown className="w-5 h-5" />
             导出数据
@@ -142,7 +142,7 @@ export const ExportConfigDialog: React.FC<ExportConfigDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="flex-1 overflow-y-auto space-y-6 py-4">
           {/* 文件名 */}
           <div className="space-y-2">
             <Label htmlFor="filename">文件名</Label>
@@ -318,7 +318,7 @@ export const ExportConfigDialog: React.FC<ExportConfigDialogProps> = ({
           </Tabs>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={onClose}>
             取消
           </Button>

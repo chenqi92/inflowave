@@ -80,6 +80,37 @@
     "buttonCreate": "创建",
     "buttonCreating": "创建中..."
   },
+  "createDevice": {
+    "title": "创建设备",
+    "description": "在存储组 {{storageGroup}} 中创建新设备",
+    "labelDeviceName": "设备名称",
+    "placeholderDeviceName": "例如: device001",
+    "labelTimeseriesName": "初始时间序列名称",
+    "placeholderTimeseriesName": "例如: temperature",
+    "timeseriesHelp": "设备需要至少一个时间序列才能创建",
+    "labelDataType": "数据类型",
+    "labelEncoding": "编码方式",
+    "labelCompression": "压缩方式",
+    "preview": "时间序列路径预览:",
+    "errorNoConnection": "请先选择一个连接",
+    "errorDeviceNameRequired": "请输入设备名称",
+    "errorDeviceNamePattern": "设备名称只能包含字母、数字和下划线，且不能以数字开头",
+    "errorTimeseriesNameRequired": "请输入时间序列名称",
+    "errorTimeseriesNamePattern": "时间序列名称只能包含字母、数字和下划线，且不能以数字开头",
+    "success": "设备 \"{{deviceName}}\" 创建成功",
+    "failed": "创建设备失败",
+    "buttonCancel": "取消",
+    "buttonCreate": "创建",
+    "buttonCreating": "创建中..."
+  },
+  "deviceList": {
+    "title": "设备列表",
+    "description": "{{storageGroup}} - 共 {{count}} 个设备",
+    "searchPlaceholder": "搜索设备名...",
+    "noMatch": "未找到匹配的设备",
+    "noDevices": "暂无设备",
+    "showing": "显示 {{shown}} / {{total}} 个设备"
+  },
   "contextMenu": {
     "addToFavorites": "添加到收藏",
     "removeFromFavorites": "取消收藏",

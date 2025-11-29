@@ -581,10 +581,6 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                     <Info className="w-4 h-4 mr-2"/>
                     {t('context_menu.table_info')}
                 </ContextMenuItem>
-                <ContextMenuItem onSelect={() => handleAction('edit_table')}>
-                    <Edit className="w-4 h-4 mr-2"/>
-                    {t('context_menu.edit_table')}
-                </ContextMenuItem>
                 <ContextMenuItem onSelect={() => handleAction('table_designer')}>
                     <Settings className="w-4 h-4 mr-2"/>
                     {t('context_menu.table_designer')}

@@ -80,6 +80,37 @@
     "buttonCreate": "Create",
     "buttonCreating": "Creating..."
   },
+  "createDevice": {
+    "title": "Create Device",
+    "description": "Create a new device in storage group {{storageGroup}}",
+    "labelDeviceName": "Device Name",
+    "placeholderDeviceName": "e.g.: device001",
+    "labelTimeseriesName": "Initial Timeseries Name",
+    "placeholderTimeseriesName": "e.g.: temperature",
+    "timeseriesHelp": "A device requires at least one timeseries to be created",
+    "labelDataType": "Data Type",
+    "labelEncoding": "Encoding",
+    "labelCompression": "Compression",
+    "preview": "Timeseries path preview:",
+    "errorNoConnection": "Please select a connection first",
+    "errorDeviceNameRequired": "Please enter device name",
+    "errorDeviceNamePattern": "Device name can only contain letters, numbers and underscores, and cannot start with a number",
+    "errorTimeseriesNameRequired": "Please enter timeseries name",
+    "errorTimeseriesNamePattern": "Timeseries name can only contain letters, numbers and underscores, and cannot start with a number",
+    "success": "Device \"{{deviceName}}\" created successfully",
+    "failed": "Failed to create device",
+    "buttonCancel": "Cancel",
+    "buttonCreate": "Create",
+    "buttonCreating": "Creating..."
+  },
+  "deviceList": {
+    "title": "Device List",
+    "description": "{{storageGroup}} - {{count}} device(s)",
+    "searchPlaceholder": "Search device name...",
+    "noMatch": "No matching devices found",
+    "noDevices": "No devices",
+    "showing": "Showing {{shown}} / {{total}} device(s)"
+  },
   "contextMenu": {
     "addToFavorites": "Add to Favorites",
     "removeFromFavorites": "Remove from Favorites",

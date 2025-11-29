@@ -228,8 +228,8 @@ ${design.retentionPolicies.map(rp => `  ${rp.name}: ${rp.duration} (${rp.default
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[800px] max-h-[80vh] flex flex-col overflow-hidden">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5 text-blue-500" />
             表设计器
@@ -239,7 +239,7 @@ ${design.retentionPolicies.map(rp => `  ${rp.name}: ${rp.duration} (${rp.default
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto space-y-4">
           {loading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-6 h-6 animate-spin mr-2" />
@@ -448,27 +448,25 @@ ${design.retentionPolicies.map(rp => `  ${rp.name}: ${rp.duration} (${rp.default
             </Tabs>
           )}
 
-          {design && (
-            <>
-              <Separator />
-              <div className="flex justify-between">
-                <div className="flex gap-2">
-                  <Button onClick={loadTableDesign} variant="outline" size="sm">
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    刷新
-                  </Button>
-                  <Button onClick={copyDesignToClipboard} variant="outline" size="sm">
-                    <Copy className="w-4 h-4 mr-2" />
-                    复制设计
-                  </Button>
-                </div>
-                <Button onClick={onClose}>
-                  关闭
-                </Button>
-              </div>
-            </>
-          )}
         </div>
+
+        {design && (
+          <div className="flex-shrink-0 pt-4 border-t flex justify-between">
+            <div className="flex gap-2">
+              <Button onClick={loadTableDesign} variant="outline" size="sm">
+                <RefreshCw className="w-4 h-4 mr-2" />
+                刷新
+              </Button>
+              <Button onClick={copyDesignToClipboard} variant="outline" size="sm">
+                <Copy className="w-4 h-4 mr-2" />
+                复制设计
+              </Button>
+            </div>
+            <Button onClick={onClose} size="sm">
+              关闭
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

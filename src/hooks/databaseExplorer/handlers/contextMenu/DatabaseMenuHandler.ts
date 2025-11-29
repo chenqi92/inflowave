@@ -52,6 +52,15 @@ export class DatabaseMenuHandler extends BaseMenuHandler {
         await this.deleteDatabase(connectionId, database);
         break;
 
+      // IoTDB storage group specific actions
+      case 'create_device':
+        await this.createDevice(connectionId, database);
+        break;
+
+      case 'show_devices':
+        await this.showDevices(connectionId, database);
+        break;
+
       default:
         logger.warn(`未处理的数据库菜单动作: ${action}`);
     }
@@ -192,6 +201,48 @@ export class DatabaseMenuHandler extends BaseMenuHandler {
       { connectionId, database },
       true
     );
+  }
+
+  /**
+   * 创建设备 (IoTDB specific)
+   */
+  private async createDevice(connectionId: string, storageGroup: string): Promise<void> {
+    try {
+      this.deps.setDialogStates((prev: any) => ({
+        ...prev,
+        createDevice: {
+          open: true,
+          connectionId,
+          storageGroup,
+        },
+      }));
+    } catch (error) {
+      this.showError('create_device', error);
+    }
+  }
+
+  /**
+   * 显示设备列表 (IoTDB specific)
+   */
+  private async showDevices(connectionId: string, storageGroup: string): Promise<void> {
+    try {
+      const devices = await this.invokeTauri<string[]>('get_iotdb_devices', {
+        connectionId,
+        storageGroup,
+      });
+
+      this.deps.setDialogStates((prev: any) => ({
+        ...prev,
+        deviceList: {
+          open: true,
+          connectionId,
+          storageGroup,
+          devices,
+        },
+      }));
+    } catch (error) {
+      this.showError('show_devices', error);
+    }
   }
 }
 
