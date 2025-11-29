@@ -43,6 +43,7 @@ import {
   ExternalLink,
   FileText,
   Globe,
+  Keyboard,
 } from 'lucide-react';
 import { safeTauriInvoke, isBrowserEnvironment } from '@/utils/tauri';
 import { saveJsonFile } from '@/utils/nativeDownload';
@@ -55,11 +56,11 @@ import ControllerSettings from '@/components/settings/ControllerSettings';
 import LoggingSettings from '@/components/settings/LoggingSettings';
 import UserGuideModal from '@/components/common/UserGuideModal';
 import LanguageManagement from '@/components/settings/LanguageManagement';
+import KeyboardShortcuts from '@/components/settings/KeyboardShortcuts';
 import { useNoticeStore } from '@/store/notice';
 import { UpdateSettings } from '@/components/updater/UpdateSettings';
 import { openExternalLink } from '@/utils/externalLinks';
 import { dataExplorerRefresh } from '@/utils/refreshEvents';
-import { performHealthCheck } from '@/utils/healthCheck';
 import type { AppConfig } from '@/types';
 import { getAppVersion } from '@/utils/version';
 import { useTranslation, useSettingsTranslation, useCommonTranslation } from '@/hooks/useTranslation';
@@ -314,7 +315,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
 
                 <div className='space-y-2'>
                   <LanguageSelector
-                    showProgress={true}
+                    showProgress={false}
                     showNativeName={true}
                     showFlag={true}
                   />
@@ -391,110 +392,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                 </div>
               </div>
 
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='space-y-2'>
-                  <Label htmlFor='logLevel'>{tSettings('log_level')}</Label>
-                  <Select
-                    value={config.logLevel || 'info'}
-                    onValueChange={value => {
-                      saveSettingImmediately('logLevel', value);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={tSettings('select_log_level')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value='debug'>{tSettings('log_level_debug')}</SelectItem>
-                      <SelectItem value='info'>{tSettings('log_level_info')}</SelectItem>
-                      <SelectItem value='warn'>{tSettings('log_level_warn')}</SelectItem>
-                      <SelectItem value='error'>{tSettings('log_level_error')}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
             </div>
           </div>
 
-          <Separator />
-
-          {/* 应用行为设置 */}
-          <div>
-            <div className='flex items-center gap-3 mb-4'>
-              <Settings className='w-5 h-5 text-blue-600' />
-              <div>
-                <h2 className='text-lg font-semibold'>{tSettings('app_behavior')}</h2>
-                <p className='text-xs text-muted-foreground'>
-                  {tSettings('app_behavior_description')}
-                </p>
-              </div>
-            </div>
-            <div className='space-y-4'>
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='flex items-center justify-between p-4 border rounded-lg'>
-                  <div className='space-y-0.5'>
-                    <Label className='text-base'>{tSettings('auto_save')}</Label>
-                    <p className='text-sm text-muted-foreground'>
-                      {tSettings('auto_save_description')}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={config.autoSave || false}
-                    onCheckedChange={checked => {
-                      saveSettingImmediately('autoSave', checked);
-                    }}
-                  />
-                </div>
-
-                <div className='flex items-center justify-between p-4 border rounded-lg'>
-                  <div className='space-y-0.5'>
-                    <Label className='text-base'>{tSettings('auto_connect')}</Label>
-                    <p className='text-sm text-muted-foreground'>
-                      {tSettings('auto_connect_description')}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={config.autoConnect || false}
-                    onCheckedChange={checked => {
-                      saveSettingImmediately('autoConnect', checked);
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* 系统健康检查 */}
-              <div className='space-y-4'>
-                <div>
-                  <Label className='text-base font-medium'>{tSettings('system_health_check')}</Label>
-                  <p className='text-sm text-muted-foreground'>
-                    {tSettings('system_health_check_description')}
-                  </p>
-                </div>
-                <div className='flex gap-2'>
-                  <Button
-                    type='button'
-                    variant='outline'
-                    onClick={async () => {
-                      setLoading(true);
-                      try {
-                        const result = await performHealthCheck();
-                        if (result) {
-                          showMessage.success(tSettings('health_check_success'));
-                        }
-                      } catch (error) {
-                        showMessage.error(`${tSettings('health_check_failed')}: ${error}`);
-                      } finally {
-                        setLoading(false);
-                      }
-                    }}
-                    disabled={loading}
-                  >
-                    <Monitor className='w-4 h-4 mr-2' />
-                    {tSettings('perform_health_check')}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       ),
     },
@@ -509,6 +409,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
       icon: <User className='w-4 h-4' />,
       label: tSettings('user_preferences'),
       children: <UserPreferencesComponent />,
+    },
+    {
+      key: 'keyboard-shortcuts',
+      icon: <Keyboard className='w-4 h-4' />,
+      label: tSettings('keyboard_shortcuts_title'),
+      children: <KeyboardShortcuts />,
     },
     {
       key: 'config',
