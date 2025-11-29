@@ -15,6 +15,8 @@ import DataPreviewDialog from '@/components/database/DataPreviewDialog';
 import TagValuesDialog from '@/components/database/TagValuesDialog';
 import CreateDeviceDialog from '@/components/database/CreateDeviceDialog';
 import DeviceListDialog from '@/components/database/DeviceListDialog';
+import TableExportDialog from '@/components/database/TableExportDialog';
+import TableImportDialog from '@/components/database/TableImportDialog';
 import type {
     DialogStates,
     DatabaseInfoDialogState,
@@ -382,6 +384,58 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     connectionId={dialogStates.deviceList.connectionId}
                     storageGroup={dialogStates.deviceList.storageGroup}
                     devices={dialogStates.deviceList.devices}
+                />
+            )}
+
+            {/* 表数据导出对话框 */}
+            {dialogStates.exportData && (
+                <TableExportDialog
+                    open={dialogStates.exportData.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            exportData: {
+                                open: false,
+                                connectionId: '',
+                                database: '',
+                                table: '',
+                                dbType: '',
+                            },
+                        }));
+                    }}
+                    connectionId={dialogStates.exportData.connectionId}
+                    database={dialogStates.exportData.database}
+                    table={dialogStates.exportData.table}
+                    dbType={dialogStates.exportData.dbType}
+                />
+            )}
+
+            {/* 表数据导入对话框 */}
+            {dialogStates.importData && (
+                <TableImportDialog
+                    open={dialogStates.importData.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            importData: {
+                                open: false,
+                                connectionId: '',
+                                database: '',
+                                table: '',
+                                dbType: '',
+                            },
+                        }));
+                    }}
+                    onSuccess={() => {
+                        // 延迟刷新树形数据，确保后端已完成导入操作
+                        setTimeout(() => {
+                            buildCompleteTreeData(true);
+                        }, 300);
+                    }}
+                    connectionId={dialogStates.importData.connectionId}
+                    database={dialogStates.importData.database}
+                    table={dialogStates.importData.table}
+                    dbType={dialogStates.importData.dbType}
                 />
             )}
         </>

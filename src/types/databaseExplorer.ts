@@ -134,6 +134,20 @@ export interface DialogStates {
         storageGroup: string;
         devices: string[];
     };
+    exportData?: {
+        open: boolean;
+        connectionId: string;
+        database: string;
+        table: string;
+        dbType: string;
+    };
+    importData?: {
+        open: boolean;
+        connectionId: string;
+        database: string;
+        table: string;
+        dbType: string;
+    };
 }
 
 /**

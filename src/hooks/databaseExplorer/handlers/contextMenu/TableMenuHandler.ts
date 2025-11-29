@@ -254,11 +254,24 @@ export class TableMenuHandler extends BaseMenuHandler {
    * 导出表数据
    */
   private async exportTableData(connectionId: string, database: string, table: string): Promise<void> {
-    await this.handleExport('export_table_data', 'export_table', {
-      connectionId,
-      database,
-      table,
-    });
+    try {
+      // 获取连接信息以确定数据库类型
+      const connection = this.deps.getConnection(connectionId);
+      const dbType = connection?.dbType || 'influxdb';
+
+      this.deps.setDialogStates((prev: any) => ({
+        ...prev,
+        exportData: {
+          open: true,
+          connectionId,
+          database,
+          table,
+          dbType,
+        },
+      }));
+    } catch (error) {
+      this.showError('export_table_data', error);
+    }
   }
 
   /**
@@ -266,27 +279,22 @@ export class TableMenuHandler extends BaseMenuHandler {
    */
   private async importTableData(connectionId: string, database: string, table: string): Promise<void> {
     try {
-      // 打开文件选择对话框
-      const filePath = await this.invokeTauri<string>('select_import_file');
-      
-      if (!filePath) {
-        return;
-      }
+      // 获取连接信息以确定数据库类型
+      const connection = this.deps.getConnection(connectionId);
+      const dbType = connection?.dbType || 'influxdb';
 
-      this.deps.setLoading(true);
-      await this.invokeTauri('import_table_data', {
-        connectionId,
-        database,
-        table,
-        filePath,
-      });
-
-      this.showSuccess('import_table_data', `数据导入成功`);
-      await this.refreshTree(true);
+      this.deps.setDialogStates((prev: any) => ({
+        ...prev,
+        importData: {
+          open: true,
+          connectionId,
+          database,
+          table,
+          dbType,
+        },
+      }));
     } catch (error) {
       this.showError('import_table_data', error);
-    } finally {
-      this.deps.setLoading(false);
     }
   }
 
