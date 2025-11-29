@@ -601,10 +601,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
       <div className='space-y-6 settings-content'>
         {/* 主标题 */}
         <div className='flex items-center gap-3 mb-4'>
-          <User className='w-6 h-6 text-blue-600' />
+          <User className='w-5 h-5 text-blue-600' />
           <div>
-            <h2 className='text-2xl font-bold'>{t('user_preferences')}</h2>
-            <p className='text-muted-foreground'>{t('user_preferences_description')}</p>
+            <h2 className='text-[16px] font-semibold'>{t('user_preferences')}</h2>
+            <p className='text-[12px] text-muted-foreground'>{t('user_preferences_description')}</p>
           </div>
         </div>
 
@@ -613,10 +613,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             {/* 通知设置 */}
             <div>
               <div className='flex items-center gap-3 mb-4'>
-                <Bell className='w-5 h-5 text-blue-600' />
+                <Bell className='w-4 h-4 text-blue-600' />
                 <div>
-                  <h3 className='text-lg font-semibold'>{t('notification_settings_title')}</h3>
-                  <p className='text-sm text-muted-foreground'>{t('notification_settings_desc')}</p>
+                  <h3 className='text-[14px] font-medium'>{t('notification_settings_title')}</h3>
+                  <p className='text-[12px] text-muted-foreground'>{t('notification_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -703,7 +703,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                           value={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger className='h-9'>
+                            <SelectTrigger>
                               <SelectValue placeholder={t('notification_position_placeholder')} />
                             </SelectTrigger>
                           </FormControl>
@@ -768,10 +768,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             {/* 无障碍设置 */}
             <div>
               <div className='flex items-center gap-3 mb-4'>
-                <Eye className='w-5 h-5 text-blue-600' />
+                <Eye className='w-4 h-4 text-blue-600' />
                 <div>
-                  <h3 className='text-lg font-semibold'>{t('accessibility_settings_title')}</h3>
-                  <p className='text-sm text-muted-foreground'>{t('accessibility_settings_desc')}</p>
+                  <h3 className='text-[14px] font-medium'>{t('accessibility_settings_title')}</h3>
+                  <p className='text-[12px] text-muted-foreground'>{t('accessibility_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -827,7 +827,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                           value={field.value}
                         >
                           <FormControl>
-                            <SelectTrigger className='h-9'>
+                            <SelectTrigger>
                               <SelectValue placeholder={t('font_size_placeholder')} />
                             </SelectTrigger>
                           </FormControl>
@@ -905,10 +905,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             {/* 工作区设置 */}
             <div>
               <div className='flex items-center gap-3 mb-4'>
-                <Layout className='w-5 h-5 text-blue-600' />
+                <Layout className='w-4 h-4 text-blue-600' />
                 <div>
-                  <h3 className='text-lg font-semibold'>{t('workspace_settings_title')}</h3>
-                  <p className='text-sm text-muted-foreground'>{t('workspace_settings_desc')}</p>
+                  <h3 className='text-[14px] font-medium'>{t('workspace_settings_title')}</h3>
+                  <p className='text-[12px] text-muted-foreground'>{t('workspace_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -934,7 +934,7 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                             defaultValue="comfortable"
                           >
                             <FormControl>
-                              <SelectTrigger className='h-9'>
+                              <SelectTrigger>
                                 <SelectValue
                                   placeholder={safeValue ?
                                     (safeValue === 'compact' ? t('layout_mode_compact') :
@@ -1032,10 +1032,10 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
             <div>
               <div className='flex items-center justify-between mb-4'>
                 <div className='flex items-center gap-3'>
-                  <Keyboard className='w-5 h-5 text-blue-600' />
+                  <Keyboard className='w-4 h-4 text-blue-600' />
                   <div>
-                    <h3 className='text-lg font-semibold'>{t('keyboard_shortcuts_title')}</h3>
-                    <p className='text-sm text-muted-foreground'>{t('keyboard_shortcuts_desc')}</p>
+                    <h3 className='text-[14px] font-medium'>{t('keyboard_shortcuts_title')}</h3>
+                    <p className='text-[12px] text-muted-foreground'>{t('keyboard_shortcuts_desc')}</p>
                   </div>
                 </div>
                 <Button

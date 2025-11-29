@@ -76,10 +76,10 @@ const ControllerSettings: React.FC = () => {
       <div className='space-y-6'>
         {/* 页面标题 */}
         <div className='flex items-center gap-3'>
-          <Shield className='w-6 h-6 text-blue-600' />
+          <Shield className='w-5 h-5 text-blue-600' />
           <div>
-            <h2 className='text-2xl font-bold'>{t('controller_settings.title')}</h2>
-            <p className='text-muted-foreground'>{t('controller_settings.description')}</p>
+            <h2 className='text-[16px] font-semibold'>{t('controller_settings.title')}</h2>
+            <p className='text-[12px] text-muted-foreground'>{t('controller_settings.description')}</p>
           </div>
         </div>
 

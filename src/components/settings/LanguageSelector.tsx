@@ -155,12 +155,12 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     }
   };
 
-  // 获取触发器高度
+  // 获取触发器高度 - JetBrains New UI: sm=24px, md=28px, lg=32px
   const getTriggerHeight = () => {
     switch (size) {
-      case 'sm': return 'h-8';
-      case 'lg': return 'h-12';
-      default: return 'h-9';
+      case 'sm': return 'h-6';
+      case 'lg': return 'h-8';
+      default: return 'h-7';
     }
   };
 
@@ -205,7 +205,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             <SelectItem
               key={language.code}
               value={language.code}
-              className="cursor-pointer h-9"
+              className="cursor-pointer"
             >
               <LanguageItem
                 language={language}

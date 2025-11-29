@@ -281,10 +281,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
         <div className='space-y-6 settings-content'>
           <div>
             <div className='flex items-center gap-3 mb-4'>
-              <Monitor className='w-6 h-6 text-blue-600' />
+              <Monitor className='w-5 h-5 text-blue-600' />
               <div>
-                <h2 className='text-2xl font-bold'>{tSettings('interface_settings')}</h2>
-                <p className='text-muted-foreground'>
+                <h2 className='text-[16px] font-semibold'>{tSettings('interface_settings')}</h2>
+                <p className='text-[12px] text-muted-foreground'>
                   {tSettings('interface_settings_description')}
                 </p>
               </div>
@@ -301,7 +301,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                       saveSettingImmediately('theme', newTheme);
                     }}
                   >
-                    <SelectTrigger className='h-9'>
+                    <SelectTrigger>
                       <SelectValue placeholder={tSettings('select_theme')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -400,7 +400,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                       saveSettingImmediately('logLevel', value);
                     }}
                   >
-                    <SelectTrigger className='h-9'>
+                    <SelectTrigger>
                       <SelectValue placeholder={tSettings('select_log_level')} />
                     </SelectTrigger>
                     <SelectContent>
@@ -420,10 +420,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           {/* 应用行为设置 */}
           <div>
             <div className='flex items-center gap-3 mb-4'>
-              <Settings className='w-6 h-6 text-blue-600' />
+              <Settings className='w-5 h-5 text-blue-600' />
               <div>
-                <h2 className='text-2xl font-bold'>{tSettings('app_behavior')}</h2>
-                <p className='text-muted-foreground'>
+                <h2 className='text-[16px] font-semibold'>{tSettings('app_behavior')}</h2>
+                <p className='text-[12px] text-muted-foreground'>
                   {tSettings('app_behavior_description')}
                 </p>
               </div>
@@ -518,10 +518,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
         <div className='space-y-6'>
           {/* 标准标题格式 */}
           <div className='flex items-center gap-3 mb-4'>
-            <Database className='w-6 h-6 text-blue-600' />
+            <Database className='w-5 h-5 text-blue-600' />
             <div>
-              <h2 className='text-2xl font-bold'>{tSettings('config_management')}</h2>
-              <p className='text-muted-foreground'>
+              <h2 className='text-[16px] font-semibold'>{tSettings('config_management')}</h2>
+              <p className='text-[12px] text-muted-foreground'>
                 {tSettings('config_management_description')}
               </p>
             </div>
@@ -570,10 +570,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
         <div className='space-y-6'>
           {/* 页面标题 */}
           <div className='flex items-center gap-3 mb-4'>
-            <Bell className='w-6 h-6 text-blue-600' />
+            <Bell className='w-5 h-5 text-blue-600' />
             <div>
-              <h2 className='text-2xl font-bold'>{tSettings('user_guide_title')}</h2>
-              <p className='text-muted-foreground'>{tSettings('user_guide_description')}</p>
+              <h2 className='text-[16px] font-semibold'>{tSettings('user_guide_title')}</h2>
+              <p className='text-[12px] text-muted-foreground'>{tSettings('user_guide_description')}</p>
             </div>
           </div>
 
@@ -647,10 +647,10 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
         <div className='space-y-6'>
           <div>
             <div className='flex items-center gap-3 mb-4'>
-              <Info className='w-6 h-6 text-blue-600' />
+              <Info className='w-5 h-5 text-blue-600' />
               <div>
-                <h2 className='text-2xl font-bold'>{tSettings('about_inflowave')}</h2>
-                <p className='text-muted-foreground'>
+                <h2 className='text-[16px] font-semibold'>{tSettings('about_inflowave')}</h2>
+                <p className='text-[12px] text-muted-foreground'>
                   {tSettings('about_inflowave_description')}
                 </p>
               </div>
