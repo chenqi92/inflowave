@@ -28,8 +28,6 @@ import {
     Plus,
     Info,
     Clock,
-    Star,
-    StarOff,
     Edit,
     BarChart,
     Tags,
@@ -60,7 +58,6 @@ export interface UnifiedContextMenuProps {
     node: TreeNodeData;
     onAction: (action: string, node: TreeNodeData) => void;
     isDatabaseOpened?: (connectionId: string, database: string) => boolean;
-    isFavorite?: (path: string) => boolean;
     disabled?: boolean;
 }
 
@@ -73,7 +70,6 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                                                                            node,
                                                                            onAction,
                                                                            isDatabaseOpened,
-                                                                           isFavorite,
                                                                            disabled = false,
                                                                        }) => {
     const {t} = useMenuTranslation();
@@ -518,9 +514,6 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     // 表/测量节点菜单
     // ============================================================================
     const renderTableMenu = (metadata: Record<string, any>) => {
-        const tablePath = `${metadata.connectionId}/${metadata.database || metadata.databaseName}/${node.name}`;
-        const isFav = isFavorite?.(tablePath) || false;
-
         return (
             <>
                 <ContextMenuLabel>{t('context_menu.table_operations')}</ContextMenuLabel>
@@ -595,13 +588,6 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                 <ContextMenuItem onSelect={() => handleAction('import_table_data')}>
                     <Upload className="w-4 h-4 mr-2"/>
                     {t('context_menu.import_table_data')}
-                </ContextMenuItem>
-                <ContextMenuSeparator/>
-
-                <ContextMenuLabel>{t('context_menu.favorite_operations')}</ContextMenuLabel>
-                <ContextMenuItem onSelect={() => handleAction(isFav ? 'remove_favorite' : 'add_favorite')}>
-                    {isFav ? <StarOff className="w-4 h-4 mr-2"/> : <Star className="w-4 h-4 mr-2"/>}
-                    {isFav ? t('context_menu.remove_favorite') : t('context_menu.add_favorite')}
                 </ContextMenuItem>
                 <ContextMenuSeparator/>
 
@@ -1136,9 +1122,6 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
         return false;
     }
     if (prevProps.isDatabaseOpened !== nextProps.isDatabaseOpened) {
-        return false;
-    }
-    if (prevProps.isFavorite !== nextProps.isFavorite) {
         return false;
     }
 

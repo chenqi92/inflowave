@@ -26,7 +26,6 @@ import {
 } from '@/utils/treeNodeStyles';
 import {
   SystemNodeIndicator,
-  FavoriteIndicator,
   ErrorIndicator,
 } from './NodeStatusIndicator';
 import { log } from '@/utils/logger';
@@ -46,8 +45,6 @@ export interface TreeNodeData {
   // 错误状态
   error?: string;
   errorType?: 'connection' | 'database' | 'loading';
-  // 收藏状态
-  isFavorite?: boolean;
   // 描述信息
   description?: string;
 }
@@ -238,7 +235,6 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
     }
   }
 
-  const isFavorite = data.isFavorite ?? false;
   const isSystem = data.isSystem ?? false;
 
   // 获取节点元数据
@@ -469,9 +465,6 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
           {data.name}
         </span>
       )}
-
-      {/* 收藏图标 */}
-      {isFavorite && <FavoriteIndicator />}
 
       {/* 错误图标 */}
       {error && <ErrorIndicator message={error} />}  {/* ✅ 使用订阅的 error 状态 */}

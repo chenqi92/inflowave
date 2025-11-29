@@ -1931,7 +1931,6 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               databaseLoadingStates={memoizedDatabaseLoadingStates}
               connectionErrors={memoizedConnectionErrors}
               databaseErrors={memoizedDatabaseErrors}
-              isFavorite={isFavorite}
               isDatabaseOpened={isDatabaseOpened}
               onConnectionToggle={stableHandleConnectionAndLoadDatabases}
               onNodeSelect={stableHandleNodeSelect}

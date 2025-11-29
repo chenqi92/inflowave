@@ -65,8 +65,6 @@ interface MultiConnectionTreeViewProps {
   // 错误状态
   connectionErrors?: Map<string, string>;
   databaseErrors?: Map<string, string>;
-  // 收藏状态
-  isFavorite?: (path: string) => boolean;
   // 数据库打开状态
   isDatabaseOpened?: (connectionId: string, database: string) => boolean;
   // 节点元素引用映射（用于错误提示定位）
@@ -90,7 +88,6 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   databaseLoadingStates,
   connectionErrors,
   databaseErrors,
-  isFavorite,
   isDatabaseOpened,
   nodeRefsMap,
   nodeToRefresh,
@@ -742,13 +739,6 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       error = databaseErrors?.get(dbKey);
     }
 
-    // 检查收藏状态
-    let isFav = false;
-    if ((nodeType === 'measurement' || nodeType === 'table') && isFavorite) {
-      const favPath = `${connectionId}/${database}/${table}`;
-      isFav = isFavorite(favPath);
-    }
-
     // 不再在这里计算 isActivated，而是在 TreeNodeRenderer 中动态计算
     // 这样可以避免 openedDatabasesList 变化时触发整个树的重新渲染
 
@@ -766,7 +756,6 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
       },
       isLoading,
       error,
-      isFavorite: isFav,
       // 不再设置 isActivated，在渲染时动态计算
       // 如果有子节点，直接设置；如果可展开但没有子节点，设置为 undefined 表示需要懒加载
       children: hasChildren
@@ -1881,7 +1870,6 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
           node={nodeData}
           onAction={onContextMenuAction}
           isDatabaseOpened={isDatabaseOpened}
-          isFavorite={isFavorite}
         >
           {nodeRenderer}
         </UnifiedContextMenu>
@@ -2023,7 +2011,6 @@ const arePropsEqual = (
     prevProps.onContextMenuAction !== nextProps.onContextMenuAction ||
     prevProps.onRefresh !== nextProps.onRefresh ||
     prevProps.onConnectionToggle !== nextProps.onConnectionToggle ||
-    prevProps.isFavorite !== nextProps.isFavorite ||
     prevProps.isDatabaseOpened !== nextProps.isDatabaseOpened
   ) {
     logger.debug('[Props比较] 回调函数引用变化');
