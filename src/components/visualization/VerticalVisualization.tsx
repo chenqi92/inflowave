@@ -539,8 +539,9 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
         </Dialog>
 
         {/* 图表列表 */}
-        <ScrollArea className="flex-1">
-          <div className="p-3 space-y-3">
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-3 space-y-3">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
@@ -618,8 +619,9 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
                 </p>
               </div>
             )}
-          </div>
-        </ScrollArea>
+            </div>
+          </ScrollArea>
+        </div>
 
         {/* 预览模态框 */}
         <Dialog open={previewModalOpen} onOpenChange={setPreviewModalOpen}>

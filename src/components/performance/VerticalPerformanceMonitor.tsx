@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  ScrollArea,
 } from '@/components/ui';
 import {
   Database,
@@ -232,7 +233,9 @@ export const VerticalPerformanceMonitor: React.FC<
         </div>
 
         {/* 主要内容区域 - 纵向布局 */}
-        <div className='flex-1 overflow-y-auto p-4 space-y-6'>
+        <div className='flex-1 overflow-hidden'>
+          <ScrollArea className='h-full'>
+            <div className='p-4 space-y-6'>
         {/* 打开的数据源概览 */}
         <Card className="shadow-[inset_0_1px_3px_rgba(0,0,0,0.08)] dark:shadow-[inset_0_1px_3px_rgba(0,0,0,0.25)]">
           <CardHeader className='pb-3'>
@@ -519,6 +522,8 @@ export const VerticalPerformanceMonitor: React.FC<
               </Card>
             );
           })()}
+            </div>
+          </ScrollArea>
         </div>
       </div>
     </TooltipProvider>
