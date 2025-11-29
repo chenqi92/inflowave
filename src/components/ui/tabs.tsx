@@ -6,8 +6,8 @@ import { cn } from '@/lib/utils';
 const Tabs = TabsPrimitive.Root;
 
 /**
- * TabsList - JetBrains New UI 风格
- * 32px 高度, 更紧凑的布局
+ * TabsList - InfloWave UI
+ * 32px 高度
  */
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
@@ -25,8 +25,8 @@ const TabsList = React.forwardRef<
 TabsList.displayName = TabsPrimitive.List.displayName;
 
 /**
- * TabsTrigger - JetBrains New UI 风格
- * 13px 字体, 底部 2px 指示线, 100ms 过渡
+ * TabsTrigger - InfloWave UI
+ * 13px 字体
  */
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
@@ -35,7 +35,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1 text-[13px] font-medium transition-colors duration-100',
+      'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1 text-sm font-medium transition-colors duration-100',
       'focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0',
       'disabled:pointer-events-none disabled:opacity-50',
       'hover:bg-muted/50 hover:text-foreground',

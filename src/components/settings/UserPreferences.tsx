@@ -603,8 +603,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
         <div className='flex items-center gap-3 mb-4'>
           <User className='w-5 h-5 text-blue-600' />
           <div>
-            <h2 className='text-[16px] font-semibold'>{t('user_preferences')}</h2>
-            <p className='text-[12px] text-muted-foreground'>{t('user_preferences_description')}</p>
+            <h2 className='text-lg font-semibold'>{t('user_preferences')}</h2>
+            <p className='text-xs text-muted-foreground'>{t('user_preferences_description')}</p>
           </div>
         </div>
 
@@ -615,8 +615,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
               <div className='flex items-center gap-3 mb-4'>
                 <Bell className='w-4 h-4 text-blue-600' />
                 <div>
-                  <h3 className='text-[14px] font-medium'>{t('notification_settings_title')}</h3>
-                  <p className='text-[12px] text-muted-foreground'>{t('notification_settings_desc')}</p>
+                  <h3 className='text-base font-medium'>{t('notification_settings_title')}</h3>
+                  <p className='text-xs text-muted-foreground'>{t('notification_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -770,8 +770,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
               <div className='flex items-center gap-3 mb-4'>
                 <Eye className='w-4 h-4 text-blue-600' />
                 <div>
-                  <h3 className='text-[14px] font-medium'>{t('accessibility_settings_title')}</h3>
-                  <p className='text-[12px] text-muted-foreground'>{t('accessibility_settings_desc')}</p>
+                  <h3 className='text-base font-medium'>{t('accessibility_settings_title')}</h3>
+                  <p className='text-xs text-muted-foreground'>{t('accessibility_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -907,8 +907,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
               <div className='flex items-center gap-3 mb-4'>
                 <Layout className='w-4 h-4 text-blue-600' />
                 <div>
-                  <h3 className='text-[14px] font-medium'>{t('workspace_settings_title')}</h3>
-                  <p className='text-[12px] text-muted-foreground'>{t('workspace_settings_desc')}</p>
+                  <h3 className='text-base font-medium'>{t('workspace_settings_title')}</h3>
+                  <p className='text-xs text-muted-foreground'>{t('workspace_settings_desc')}</p>
                 </div>
               </div>
               <div className='space-y-4'>
@@ -1034,8 +1034,8 @@ const UserPreferencesComponent: React.FC<UserPreferencesComponentProps> = ({
                 <div className='flex items-center gap-3'>
                   <Keyboard className='w-4 h-4 text-blue-600' />
                   <div>
-                    <h3 className='text-[14px] font-medium'>{t('keyboard_shortcuts_title')}</h3>
-                    <p className='text-[12px] text-muted-foreground'>{t('keyboard_shortcuts_desc')}</p>
+                    <h3 className='text-base font-medium'>{t('keyboard_shortcuts_title')}</h3>
+                    <p className='text-xs text-muted-foreground'>{t('keyboard_shortcuts_desc')}</p>
                   </div>
                 </div>
                 <Button

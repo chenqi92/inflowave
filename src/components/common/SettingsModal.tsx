@@ -283,8 +283,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
             <div className='flex items-center gap-3 mb-4'>
               <Monitor className='w-5 h-5 text-blue-600' />
               <div>
-                <h2 className='text-[16px] font-semibold'>{tSettings('interface_settings')}</h2>
-                <p className='text-[12px] text-muted-foreground'>
+                <h2 className='text-lg font-semibold'>{tSettings('interface_settings')}</h2>
+                <p className='text-xs text-muted-foreground'>
                   {tSettings('interface_settings_description')}
                 </p>
               </div>
@@ -422,8 +422,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
             <div className='flex items-center gap-3 mb-4'>
               <Settings className='w-5 h-5 text-blue-600' />
               <div>
-                <h2 className='text-[16px] font-semibold'>{tSettings('app_behavior')}</h2>
-                <p className='text-[12px] text-muted-foreground'>
+                <h2 className='text-lg font-semibold'>{tSettings('app_behavior')}</h2>
+                <p className='text-xs text-muted-foreground'>
                   {tSettings('app_behavior_description')}
                 </p>
               </div>
@@ -520,8 +520,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           <div className='flex items-center gap-3 mb-4'>
             <Database className='w-5 h-5 text-blue-600' />
             <div>
-              <h2 className='text-[16px] font-semibold'>{tSettings('config_management')}</h2>
-              <p className='text-[12px] text-muted-foreground'>
+              <h2 className='text-lg font-semibold'>{tSettings('config_management')}</h2>
+              <p className='text-xs text-muted-foreground'>
                 {tSettings('config_management_description')}
               </p>
             </div>
@@ -572,8 +572,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           <div className='flex items-center gap-3 mb-4'>
             <Bell className='w-5 h-5 text-blue-600' />
             <div>
-              <h2 className='text-[16px] font-semibold'>{tSettings('user_guide_title')}</h2>
-              <p className='text-[12px] text-muted-foreground'>{tSettings('user_guide_description')}</p>
+              <h2 className='text-lg font-semibold'>{tSettings('user_guide_title')}</h2>
+              <p className='text-xs text-muted-foreground'>{tSettings('user_guide_description')}</p>
             </div>
           </div>
 
@@ -649,8 +649,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
             <div className='flex items-center gap-3 mb-4'>
               <Info className='w-5 h-5 text-blue-600' />
               <div>
-                <h2 className='text-[16px] font-semibold'>{tSettings('about_inflowave')}</h2>
-                <p className='text-[12px] text-muted-foreground'>
+                <h2 className='text-lg font-semibold'>{tSettings('about_inflowave')}</h2>
+                <p className='text-xs text-muted-foreground'>
                   {tSettings('about_inflowave_description')}
                 </p>
               </div>

@@ -80,7 +80,7 @@ const Result: React.FC<ResultProps> = ({
       {icon && <div className={cn('mb-4 text-4xl', config.color)}>{icon}</div>}
 
       {title && (
-        <h3 className={cn('text-[16px] font-semibold mb-2', config.color)}>
+        <h3 className={cn('text-lg font-semibold mb-2', config.color)}>
           {title}
         </h3>
       )}

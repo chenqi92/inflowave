@@ -35,7 +35,7 @@ const Empty = React.forwardRef<HTMLDivElement, EmptyProps>(
         <div className='flex flex-col items-center space-y-1.5'>
           {image || defaultImage}
           {description && (
-            <p className='text-[13px] text-muted-foreground max-w-sm'>
+            <p className='text-sm text-muted-foreground max-w-sm'>
               {description}
             </p>
           )}

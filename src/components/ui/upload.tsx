@@ -127,11 +127,11 @@ const Upload: React.FC<UploadProps> & {
               className='flex items-center justify-between p-2 border rounded-md bg-muted/50'
             >
               <div className='flex items-center space-x-2'>
-                <span className='text-[13px] text-muted-foreground'>
+                <span className='text-sm text-muted-foreground'>
                   {file.name}
                 </span>
                 {file.size && (
-                  <span className='text-[11px] text-muted-foreground'>
+                  <span className='text-xs text-muted-foreground'>
                     ({(file.size / 1024).toFixed(1)} KB)
                   </span>
                 )}
@@ -249,11 +249,11 @@ const Dragger: React.FC<DraggerProps> = ({
                 className='flex items-center justify-between p-2 border rounded-md bg-muted/50'
               >
                 <div className='flex items-center space-x-2'>
-                  <span className='text-[13px] text-muted-foreground'>
+                  <span className='text-sm text-muted-foreground'>
                     {file.name}
                   </span>
                   {file.size && (
-                    <span className='text-[11px] text-muted-foreground'>
+                    <span className='text-xs text-muted-foreground'>
                       ({(file.size / 1024).toFixed(1)} KB)
                     </span>
                   )}

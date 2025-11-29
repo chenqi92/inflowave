@@ -33,7 +33,7 @@ const Table = React.forwardRef<
   <table
     ref={ref}
     className={cn(
-      'w-full caption-bottom text-[13px]',
+      'w-full caption-bottom text-sm',
       zebra && getZebraClass(zebraType),
       className
     )}
@@ -99,7 +99,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      'h-8 px-2 text-left align-middle text-[12px] font-semibold text-foreground bg-muted/50 border-b border-border [&:has([role=checkbox])]:pr-0',
+      'h-8 px-2 text-left align-middle text-xs font-semibold text-foreground bg-muted/50 border-b border-border [&:has([role=checkbox])]:pr-0',
       className
     )}
     {...props}
@@ -113,7 +113,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn('px-2 py-1 align-middle text-[13px] [&:has([role=checkbox])]:pr-0', className)}
+    className={cn('px-2 py-1 align-middle text-sm [&:has([role=checkbox])]:pr-0', className)}
     {...props}
   />
 ));
@@ -125,7 +125,7 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn('mt-2 text-[12px] text-muted-foreground', className)}
+    className={cn('mt-2 text-xs text-muted-foreground', className)}
     {...props}
   />
 ));

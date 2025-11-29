@@ -34,7 +34,7 @@ export const DatabaseExplorerHeader: React.FC<DatabaseExplorerHeaderProps> = ({
         <CardContent className='px-2 py-1.5 border-b'>
             <div ref={headerRef} className='flex items-center justify-between w-[280px]'>
                 <div className='flex items-center gap-1.5 flex-shrink-0'>
-                    <Typography.Text className='text-[13px] font-medium whitespace-nowrap'>数据源</Typography.Text>
+                    <Typography.Text className='text-sm font-medium whitespace-nowrap'>数据源</Typography.Text>
                 </div>
                 <div className='flex items-center gap-0.5 flex-shrink-0'>
                     {/* 可展开搜索框 */}

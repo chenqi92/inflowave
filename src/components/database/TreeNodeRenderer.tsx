@@ -441,7 +441,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
         <Tooltip>
           <TooltipTrigger asChild>
             <span className={cn(
-              "text-[13px] flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
+              "text-sm flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
               nodeFontStyle,
               nodeTextColor,
               error && "text-destructive",  // ✅ 使用订阅的 error 状态
@@ -452,7 +452,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
           </TooltipTrigger>
           <TooltipContent side="right" align="start" className='max-w-sm'>
             <div className='space-y-1 p-1'>
-              <div className='text-[13px]'>
+              <div className='text-sm'>
                 <span className='text-foreground'>{data.description}</span>
               </div>
             </div>
@@ -460,7 +460,7 @@ const TreeNodeRendererInner = React.forwardRef<HTMLDivElement, TreeNodeRendererP
         </Tooltip>
       ) : (
         <span className={cn(
-          "text-[13px] flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
+          "text-sm flex-1 whitespace-nowrap overflow-hidden text-ellipsis",
           nodeFontStyle,
           nodeTextColor,
           error && "text-destructive",  // ✅ 使用订阅的 error 状态

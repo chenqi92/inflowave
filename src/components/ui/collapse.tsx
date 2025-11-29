@@ -74,9 +74,9 @@ const CollapseComponent: React.FC<CollapseProps> = ({
 
   // JetBrains New UI: 紧凑字体大小
   const sizeClasses = {
-    small: 'text-[12px]',
-    default: 'text-[13px]',
-    large: 'text-[14px]',
+    small: 'text-xs',
+    default: 'text-sm',
+    large: 'text-base',
   };
 
   // 如果是手风琴模式，使用 shadcn Accordion 组件

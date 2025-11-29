@@ -105,12 +105,12 @@ const Popconfirm = React.forwardRef<HTMLDivElement, PopconfirmProps>(
                 </div>
                 <div className='flex-1 space-y-1'>
                   {title && (
-                    <div className='text-[13px] font-medium leading-none'>
+                    <div className='text-sm font-medium leading-none'>
                       {title}
                     </div>
                   )}
                   {description && (
-                    <div className='text-[12px] text-muted-foreground'>
+                    <div className='text-xs text-muted-foreground'>
                       {description}
                     </div>
                   )}
@@ -122,7 +122,7 @@ const Popconfirm = React.forwardRef<HTMLDivElement, PopconfirmProps>(
                   size='sm'
                   onClick={handleCancel}
                   disabled={loading}
-                  className='h-7 px-3 text-[11px]'
+                  className='h-7 px-3 text-xs'
                 >
                   {cancelText}
                 </Button>
@@ -131,7 +131,7 @@ const Popconfirm = React.forwardRef<HTMLDivElement, PopconfirmProps>(
                   size='sm'
                   onClick={handleConfirm}
                   disabled={loading}
-                  className='h-7 px-3 text-[11px]'
+                  className='h-7 px-3 text-xs'
                 >
                   {okText}
                 </Button>

@@ -182,8 +182,8 @@ const LoggingSettingsComponent: React.FC = () => {
         <div className="flex items-center gap-3 mb-4">
           <FileText className="w-5 h-5 text-blue-600" />
           <div>
-            <h2 className="text-[16px] font-semibold">{t('logging_settings.title')}</h2>
-            <p className="text-[12px] text-muted-foreground">
+            <h2 className="text-lg font-semibold">{t('logging_settings.title')}</h2>
+            <p className="text-xs text-muted-foreground">
               {t('logging_settings.description')}
             </p>
           </div>
@@ -389,12 +389,12 @@ const LoggingSettingsComponent: React.FC = () => {
             {/* 统计信息 */}
             <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
               <div>
-                <div className="text-[12px] text-muted-foreground">{t('logging_settings.log_file_count')}</div>
-                <div className="text-[18px] font-semibold">{logFiles.length}</div>
+                <div className="text-xs text-muted-foreground">{t('logging_settings.log_file_count')}</div>
+                <div className="text-xl font-semibold">{logFiles.length}</div>
               </div>
               <div>
-                <div className="text-[12px] text-muted-foreground">{t('logging_settings.total_size')}</div>
-                <div className="text-[18px] font-semibold">{formatFileSize(totalSize)}</div>
+                <div className="text-xs text-muted-foreground">{t('logging_settings.total_size')}</div>
+                <div className="text-xl font-semibold">{formatFileSize(totalSize)}</div>
               </div>
             </div>
 

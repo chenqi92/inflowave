@@ -301,24 +301,24 @@ export const ShortcutConfigDialog: React.FC<ShortcutConfigDialogProps> = ({
         {/* 统计信息 */}
         <div className="grid grid-cols-5 gap-4">
           <div className="p-3 border rounded-lg">
-            <div className="text-[18px] font-semibold">{stats.total}</div>
-            <div className="text-[12px] text-muted-foreground">总快捷键</div>
+            <div className="text-xl font-semibold">{stats.total}</div>
+            <div className="text-xs text-muted-foreground">总快捷键</div>
           </div>
           <div className="p-3 border rounded-lg">
-            <div className="text-[18px] font-semibold text-green-600">{stats.enabled}</div>
-            <div className="text-[12px] text-muted-foreground">已启用</div>
+            <div className="text-xl font-semibold text-green-600">{stats.enabled}</div>
+            <div className="text-xs text-muted-foreground">已启用</div>
           </div>
           <div className="p-3 border rounded-lg">
-            <div className="text-[18px] font-semibold text-gray-600">{stats.disabled}</div>
-            <div className="text-[12px] text-muted-foreground">已禁用</div>
+            <div className="text-xl font-semibold text-gray-600">{stats.disabled}</div>
+            <div className="text-xs text-muted-foreground">已禁用</div>
           </div>
           <div className="p-3 border rounded-lg">
-            <div className="text-[18px] font-semibold text-blue-600">{stats.customized}</div>
-            <div className="text-[12px] text-muted-foreground">已自定义</div>
+            <div className="text-xl font-semibold text-blue-600">{stats.customized}</div>
+            <div className="text-xs text-muted-foreground">已自定义</div>
           </div>
           <div className="p-3 border rounded-lg">
-            <div className="text-[18px] font-semibold text-red-600">{stats.conflicts}</div>
-            <div className="text-[12px] text-muted-foreground">冲突</div>
+            <div className="text-xl font-semibold text-red-600">{stats.conflicts}</div>
+            <div className="text-xs text-muted-foreground">冲突</div>
           </div>
         </div>
 

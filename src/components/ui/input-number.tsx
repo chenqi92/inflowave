@@ -79,9 +79,9 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
 
     // JetBrains New UI: h-6(24px) small, h-7(28px) default, h-8(32px) large
     const sizeClasses = {
-      sm: 'h-6 px-2 text-[12px]',
-      default: 'h-7 px-2 text-[13px]',
-      lg: 'h-8 px-3 text-[14px]',
+      sm: 'h-6 px-2 text-xs',
+      default: 'h-7 px-2 text-sm',
+      lg: 'h-8 px-3 text-base',
     };
 
     const formatValue = React.useCallback((val: number | null): string => {
@@ -264,7 +264,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
       
       return (
         <div
-          className="absolute top-1/2 -translate-y-1/2 pointer-events-none text-[12px] text-muted-foreground"
+          className="absolute top-1/2 -translate-y-1/2 pointer-events-none text-xs text-muted-foreground"
           style={{ left: leftOffset }}
         >
           {displayUnit}
@@ -312,7 +312,7 @@ const InputNumber = React.forwardRef<HTMLInputElement, InputNumberProps>(
     if (addonBefore) {
       return (
         <div className='flex w-full'>
-          <div className='flex items-center px-2 border border-r-0 border-input bg-muted rounded-l-md text-[13px]'>
+          <div className='flex items-center px-2 border border-r-0 border-input bg-muted rounded-l-md text-sm'>
             {addonBefore}
           </div>
           <div className='relative flex-1'>

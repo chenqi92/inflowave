@@ -46,9 +46,9 @@ const Descriptions = React.forwardRef<HTMLDivElement, DescriptionsProps>(
   ) => {
     // JetBrains New UI: 紧凑字体大小
     const sizeClasses = {
-      small: 'text-[11px]',
-      default: 'text-[13px]',
-      middle: 'text-[13px]',
+      small: 'text-xs',
+      default: 'text-sm',
+      middle: 'text-sm',
     };
 
     // JetBrains New UI: 紧凑内边距
@@ -192,7 +192,7 @@ const Descriptions = React.forwardRef<HTMLDivElement, DescriptionsProps>(
             )}
           >
             {title && (
-              <div className='text-[16px] font-semibold text-foreground'>
+              <div className='text-lg font-semibold text-foreground'>
                 {title}
               </div>
             )}

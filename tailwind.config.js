@@ -11,16 +11,26 @@ export default {
       },
     },
     extend: {
-      // JetBrains 字体大小 - 基于 13px 基准
+      /**
+       * 字体大小 - 14px 基准
+       * xs (12px): 辅助文本、描述
+       * sm (13px): 次要内容、表格
+       * base (14px): 正文、按钮、标签
+       * lg (16px): 区块标题
+       * xl (18px): 页面标题
+       */
       fontSize: {
-        'xs': ['11px', { lineHeight: '1.2' }],
-        'sm': ['12px', { lineHeight: '1.35' }],
-        'base': ['13px', { lineHeight: '1.5' }],
-        'lg': ['14px', { lineHeight: '1.35' }],
-        'xl': ['16px', { lineHeight: '1.2' }],
-        '2xl': ['18px', { lineHeight: '1.2' }],
+        'xs': ['12px', { lineHeight: '1.35' }],
+        'sm': ['13px', { lineHeight: '1.4' }],
+        'base': ['14px', { lineHeight: '1.5' }],
+        'lg': ['16px', { lineHeight: '1.35' }],
+        'xl': ['18px', { lineHeight: '1.25' }],
+        '2xl': ['20px', { lineHeight: '1.2' }],
       },
-      // JetBrains 间距 - 4px 网格系统
+      /**
+       * 间距系统 - 4px 网格
+       * 常用: 1(4px), 2(8px), 3(12px), 4(16px)
+       */
       spacing: {
         '0.5': '2px',
         '1': '4px',
@@ -37,14 +47,17 @@ export default {
         '10': '40px',
         '12': '48px',
       },
-      // JetBrains 圆角 - 桌面应用风格 (小圆角)
+      /**
+       * 圆角 - 桌面应用风格
+       * sm(2px): checkbox | DEFAULT(4px): 按钮/输入框 | md(6px): 对话框
+       */
       borderRadius: {
         'none': '0',
         'sm': '2px',
         'DEFAULT': '4px',
-        'md': '4px',
-        'lg': '6px',
-        'xl': '8px',
+        'md': '6px',
+        'lg': '8px',
+        'xl': '12px',
         'full': '9999px',
       },
       // JetBrains 过渡时长 - 更快的响应

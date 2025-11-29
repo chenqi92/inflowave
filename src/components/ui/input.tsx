@@ -65,9 +65,9 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<'input'>>(
       <input
         type={type}
         className={cn(
-          // JetBrains New UI 风格: 28px 高度, 4px 圆角, 13px 字体, 100ms 过渡
-          'flex h-7 w-full rounded border border-input bg-background px-2 py-1 text-[13px] ring-offset-background transition-colors duration-100',
-          'file:border-0 file:bg-transparent file:text-[13px] file:font-medium file:text-foreground',
+          // InfloWave UI: 28px 高度, 4px 圆角, 13px 字体
+          'flex h-7 w-full rounded border border-input bg-background px-2 py-1 text-sm ring-offset-background transition-colors duration-100',
+          'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
           'placeholder:text-muted-foreground',
           'focus-visible:outline-none focus-visible:border-primary focus-visible:ring-1 focus-visible:ring-primary/20',
           'disabled:cursor-not-allowed disabled:opacity-50',

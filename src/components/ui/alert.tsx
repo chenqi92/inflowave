@@ -4,11 +4,11 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 /**
- * Alert 组件 - JetBrains New UI 风格
+ * Alert 组件 - InfloWave UI
  * 4px 圆角, 紧凑内边距, 13px 字体
  */
 const alertVariants = cva(
-  'relative w-full rounded border p-3 text-[13px] [&>svg~*]:pl-6 [&>svg+div]:translate-y-[-2px] [&>svg]:absolute [&>svg]:left-3 [&>svg]:top-3 [&>svg]:h-4 [&>svg]:w-4 [&>svg]:text-foreground',
+  'relative w-full rounded border p-3 text-sm [&>svg~*]:pl-6 [&>svg+div]:translate-y-[-2px] [&>svg]:absolute [&>svg]:left-3 [&>svg]:top-3 [&>svg]:h-4 [&>svg]:w-4 [&>svg]:text-foreground',
   {
     variants: {
       variant: {
@@ -46,7 +46,7 @@ const AlertTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h5
     ref={ref}
-    className={cn('mb-1 text-[14px] font-semibold leading-tight tracking-tight', className)}
+    className={cn('mb-1 text-base font-semibold leading-tight tracking-tight', className)}
     {...props}
   />
 ));
@@ -58,7 +58,7 @@ const AlertDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn('text-[13px] [&_p]:leading-normal', className)}
+    className={cn('text-sm [&_p]:leading-normal', className)}
     {...props}
   />
 ));

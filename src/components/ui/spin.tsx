@@ -57,7 +57,7 @@ const Spin = React.forwardRef<HTMLDivElement, SpinProps>(
           {...domProps}
         >
           {indicator || defaultIndicator}
-          {tip && <span className='text-[12px] text-muted-foreground'>{tip}</span>}
+          {tip && <span className='text-xs text-muted-foreground'>{tip}</span>}
         </div>
       );
     }

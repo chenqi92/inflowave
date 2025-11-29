@@ -99,8 +99,8 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
                         {icon || <TableIcon className="w-4 h-4 text-primary" />}
-                        <CardTitle className="text-[14px]">{title}</CardTitle>
-                        <Badge variant="outline" className="text-[11px] h-5 px-1.5">
+                        <CardTitle className="text-base">{title}</CardTitle>
+                        <Badge variant="outline" className="text-xs h-5 px-1.5">
                             {t('rows_count', { count: rowCount })}
                         </Badge>
                     </div>
@@ -136,7 +136,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                         className="h-7 px-2"
                                     >
                                         <Copy className="w-3.5 h-3.5 mr-1" />
-                                        <span className="text-[12px]">{formatNames[selectedCopyFormat]}</span>
+                                        <span className="text-xs">{formatNames[selectedCopyFormat]}</span>
                                         <ChevronDown className="w-3 h-3 ml-1" />
                                     </Button>
                                 </DropdownMenuTrigger>
@@ -211,7 +211,7 @@ export const TableToolbar: React.FC<TableToolbarProps> = ({
                                         className="h-7 px-2"
                                         onClick={onColumnSelectorClick}
                                     >
-                                        <span className="text-[12px]">
+                                        <span className="text-xs">
                                             {t('columns_selector', { selected: selectedColumnsCount, total: totalColumnsCount })}
                                         </span>
                                     </Button>

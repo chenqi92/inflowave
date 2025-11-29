@@ -259,10 +259,10 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
       );
       if (customRender) {
         return (
-          <div key={field.name} className="space-y-0.5">
+          <div key={field.name} className="space-y-1.5">
             {customRender}
             {error && (
-              <p className="text-[10px] text-destructive">{error}</p>
+              <p className="text-xs text-destructive mt-1">{error}</p>
             )}
           </div>
         );
@@ -273,8 +273,8 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
     switch (field.type) {
       case 'text':
         return (
-          <div key={field.name} className="space-y-0.5">
-            <Label htmlFor={field.name} className="text-[11px]">
+          <div key={field.name} className="space-y-1.5">
+            <Label htmlFor={field.name}>
               {fieldLabel}
               {field.required && <span className="text-destructive ml-0.5">*</span>}
             </Label>
@@ -284,25 +284,25 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               onChange={(e) => handleFieldChange(field.name, e.target.value)}
               placeholder={field.placeholder}
               disabled={disabled}
-              className={`h-7 text-xs ${error ? 'border-destructive' : ''}`}
+              className={error ? 'border-destructive' : ''}
               autoComplete="off"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck="false"
             />
             {field.description && (
-              <p className="text-[10px] text-muted-foreground leading-tight">{field.description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{field.description}</p>
             )}
             {error && (
-              <p className="text-[10px] text-destructive">{error}</p>
+              <p className="text-xs text-destructive mt-1">{error}</p>
             )}
           </div>
         );
 
       case 'password':
         return (
-          <div key={field.name} className="space-y-0.5">
-            <Label htmlFor={field.name} className="text-[11px]">
+          <div key={field.name} className="space-y-1.5">
+            <Label htmlFor={field.name}>
               {fieldLabel}
               {field.required && <span className="text-destructive ml-0.5">*</span>}
             </Label>
@@ -313,25 +313,25 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               onChange={(e) => handleFieldChange(field.name, e.target.value)}
               placeholder={field.placeholder}
               disabled={disabled}
-              className={`h-7 text-xs ${error ? 'border-destructive' : ''}`}
+              className={error ? 'border-destructive' : ''}
               autoComplete="off"
               autoCapitalize="none"
               autoCorrect="off"
               spellCheck="false"
             />
             {field.description && (
-              <p className="text-[10px] text-muted-foreground leading-tight">{field.description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{field.description}</p>
             )}
             {error && (
-              <p className="text-[10px] text-destructive">{error}</p>
+              <p className="text-xs text-destructive mt-1">{error}</p>
             )}
           </div>
         );
 
       case 'number':
         return (
-          <div key={field.name} className="space-y-0.5">
-            <Label htmlFor={field.name} className="text-[11px]">
+          <div key={field.name} className="space-y-1.5">
+            <Label htmlFor={field.name}>
               {fieldLabel}
               {field.required && <span className="text-destructive ml-0.5">*</span>}
             </Label>
@@ -345,13 +345,13 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               placeholder={field.placeholder}
               disabled={disabled}
               controls={false}
-              className={`h-7 text-xs ${error ? 'border-destructive' : ''}`}
+              className={error ? 'border-destructive' : ''}
             />
             {field.description && (
-              <p className="text-[10px] text-muted-foreground leading-tight">{field.description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{field.description}</p>
             )}
             {error && (
-              <p className="text-[10px] text-destructive">{error}</p>
+              <p className="text-xs text-destructive mt-1">{error}</p>
             )}
           </div>
         );
@@ -374,8 +374,8 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
         }
 
         return (
-          <div key={field.name} className="space-y-0.5">
-            <Label htmlFor={field.name} className="text-[11px]">
+          <div key={field.name} className="space-y-1.5">
+            <Label htmlFor={field.name}>
               {fieldLabel}
               {field.required && <span className="text-destructive ml-0.5">*</span>}
             </Label>
@@ -384,42 +384,41 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               onValueChange={(val) => handleFieldChange(field.name, val)}
               disabled={disabled}
             >
-              <SelectTrigger className={`h-7 text-xs ${error ? 'border-destructive' : ''}`}>
+              <SelectTrigger className={error ? 'border-destructive' : ''}>
                 <SelectValue placeholder={field.placeholder || tConn('select_placeholder')} />
               </SelectTrigger>
               <SelectContent>
                 {options.map(option => (
-                  <SelectItem key={option.value} value={option.value} className="text-xs">
+                  <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             {field.description && (
-              <p className="text-[10px] text-muted-foreground leading-tight">{field.description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{field.description}</p>
             )}
             {error && (
-              <p className="text-[10px] text-destructive">{error}</p>
+              <p className="text-xs text-destructive mt-1">{error}</p>
             )}
           </div>
         ); }
 
       case 'switch':
         return (
-          <div key={field.name} className="flex items-center space-x-2 py-0.5">
+          <div key={field.name} className="flex items-center space-x-2 py-1">
             <Checkbox
               id={field.name}
               checked={value || false}
               onCheckedChange={(checked) => handleFieldChange(field.name, checked)}
               disabled={disabled}
-              className="h-3.5 w-3.5 shrink-0"
             />
             <div className="flex-1">
-              <Label htmlFor={field.name} className="text-[11px] cursor-pointer leading-tight">
+              <Label htmlFor={field.name} className="cursor-pointer">
                 {fieldLabel}
               </Label>
               {field.description && (
-                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{field.description}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{field.description}</p>
               )}
             </div>
           </div>
@@ -427,8 +426,8 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
       case 'textarea':
         return (
-          <div key={field.name} className="space-y-0.5">
-            <Label htmlFor={field.name} className="text-[11px]">
+          <div key={field.name} className="space-y-1.5">
+            <Label htmlFor={field.name}>
               {fieldLabel}
               {field.required && <span className="text-destructive ml-0.5">*</span>}
             </Label>
@@ -439,13 +438,13 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
               placeholder={field.placeholder}
               disabled={disabled}
               rows={field.rows || 2}
-              className={`text-xs ${error ? 'border-destructive' : ''}`}
+              className={error ? 'border-destructive' : ''}
             />
             {field.description && (
-              <p className="text-[10px] text-muted-foreground leading-tight">{field.description}</p>
+              <p className="text-xs text-muted-foreground mt-1">{field.description}</p>
             )}
             {error && (
-              <p className="text-[10px] text-destructive">{error}</p>
+              <p className="text-xs text-destructive mt-1">{error}</p>
             )}
           </div>
         );
@@ -580,8 +579,8 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
   return (
     <Dialog open={visible} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent className="max-w-5xl h-[85vh] overflow-hidden flex flex-col p-0" disableOutsideClick>
-        <DialogHeader className="px-3 pt-3 pb-2 flex-shrink-0 border-b">
-          <DialogTitle className="text-sm">
+        <DialogHeader className="px-4 pt-4 pb-3 flex-shrink-0 border-b">
+          <DialogTitle>
             {isEditMode ? tConn('dialog.edit_connection') : tConn('dialog.new_connection')}
           </DialogTitle>
         </DialogHeader>
@@ -589,8 +588,8 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
         <div className="flex-1 min-h-0 overflow-hidden flex">
           {/* 左侧：数据库类型选择 */}
           {!isEditMode && (
-            <div className="w-44 border-r bg-muted/30 p-3 space-y-1.5 overflow-y-auto">
-              <h3 className="text-xs font-medium text-muted-foreground mb-2">
+            <div className="w-48 border-r bg-muted/30 p-4 space-y-2 overflow-y-auto">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">
                 {tConn('dialog.select_database_type')}
               </h3>
               {connectors.map(connector => {
@@ -618,22 +617,22 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
                     key={connector.type}
                     onClick={() => handleTypeChange(connector.type)}
                     className={`
-                      w-full text-left px-2 py-1.5 rounded-md transition-colors
+                      w-full text-left px-3 py-2 rounded transition-colors
                       ${selectedType === connector.type
                         ? 'bg-primary text-primary-foreground shadow-sm'
                         : 'hover:bg-muted'
                       }
                     `}
                   >
-                    <div className="flex items-center gap-1.5 mb-0.5">
+                    <div className="flex items-center gap-2 mb-1">
                       <img
                         src={connector.icon}
                         alt={getName()}
-                        className="w-3.5 h-3.5"
+                        className="w-4 h-4"
                       />
-                      <span className="font-medium text-xs">{getName()}</span>
+                      <span className="font-medium text-sm">{getName()}</span>
                     </div>
-                    <p className={`text-[10px] leading-tight ${selectedType === connector.type ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
+                    <p className={`text-xs leading-normal ${selectedType === connector.type ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
                       {getDesc()}
                     </p>
                   </button>
@@ -643,11 +642,11 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
           )}
 
           {/* 右侧：表单配置 */}
-          <div className="flex-1 overflow-y-auto px-3 py-2">
+          <div className="flex-1 overflow-y-auto px-4 py-3">
             {/* 基本信息：连接名称和描述 */}
-            <div className="mb-2 pb-2 border-b space-y-1.5">
-              <div className="space-y-0.5">
-                <Label htmlFor="connection-name" className="text-[11px]">
+            <div className="mb-4 pb-4 border-b space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="connection-name">
                   {tConn('connection_name')}
                   <span className="text-destructive ml-0.5">*</span>
                 </Label>
@@ -656,18 +655,18 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
                   value={formData.name || ''}
                   onChange={(e) => handleFieldChange('name', e.target.value)}
                   placeholder={tConn('name_placeholder')}
-                  className={`h-7 text-xs ${errors.name ? 'border-destructive' : ''}`}
+                  className={errors.name ? 'border-destructive' : ''}
                   autoComplete="off"
                   autoCapitalize="none"
                   autoCorrect="off"
                   spellCheck="false"
                 />
                 {errors.name && (
-                  <p className="text-[10px] text-destructive">{errors.name}</p>
+                  <p className="text-xs text-destructive mt-1">{errors.name}</p>
                 )}
               </div>
-              <div className="space-y-0.5">
-                <Label htmlFor="connection-description" className="text-[11px]">
+              <div className="space-y-1.5">
+                <Label htmlFor="connection-description">
                   {tConn('description')}
                 </Label>
                 <Input
@@ -675,7 +674,6 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
                   value={formData.description || ''}
                   onChange={(e) => handleFieldChange('description', e.target.value)}
                   placeholder={tConn('description_placeholder')}
-                  className="h-7 text-xs"
                   autoComplete="off"
                   autoCapitalize="none"
                   autoCorrect="off"
@@ -686,7 +684,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
             {/* 对象存储特有：服务商选择器 */}
             {selectedType === 'object-storage' && currentConnector && 'getProviderField' in currentConnector && typeof (currentConnector as any).getProviderField === 'function' && (
-              <div className="mb-2 pb-2 border-b space-y-0.5">
+              <div className="mb-4 pb-4 border-b space-y-1.5">
                 {(() => {
                   const providerField = (currentConnector as any).getProviderField();
                   const value = formData[providerField.name];
@@ -694,7 +692,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
                   return (
                     <>
-                      <Label htmlFor={providerField.name} className="text-[11px]">
+                      <Label htmlFor={providerField.name}>
                         {providerField.label}
                         {providerField.required && <span className="text-destructive ml-0.5">*</span>}
                       </Label>
@@ -702,22 +700,22 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
                         value={value || providerField.defaultValue}
                         onValueChange={(newValue) => handleFieldChange(providerField.name, newValue)}
                       >
-                        <SelectTrigger className="h-7 text-xs">
+                        <SelectTrigger>
                           <SelectValue placeholder={providerField.placeholder} />
                         </SelectTrigger>
                         <SelectContent>
                           {providerField.options.map((option: any) => (
-                            <SelectItem key={option.value} value={option.value} className="text-xs">
+                            <SelectItem key={option.value} value={option.value}>
                               {option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       {providerField.description && (
-                        <p className="text-[10px] text-muted-foreground leading-tight">{providerField.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{providerField.description}</p>
                       )}
                       {error && (
-                        <p className="text-[10px] text-destructive">{error}</p>
+                        <p className="text-xs text-destructive mt-1">{error}</p>
                       )}
                     </>
                   );
@@ -727,7 +725,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
             {/* InfluxDB特有：版本选择器 */}
             {selectedType === 'influxdb' && currentConnector && 'getVersionField' in currentConnector && typeof (currentConnector as any).getVersionField === 'function' && (
-              <div className="mb-2 pb-2 border-b space-y-0.5">
+              <div className="mb-4 pb-4 border-b space-y-1.5">
                 {(() => {
                   const versionField = (currentConnector as any).getVersionField();
                   const value = formData[versionField.name];
@@ -735,7 +733,7 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
 
                   return (
                     <>
-                      <Label htmlFor={versionField.name} className="text-[11px]">
+                      <Label htmlFor={versionField.name}>
                         {versionField.label}
                         {versionField.required && <span className="text-destructive ml-0.5">*</span>}
                       </Label>
@@ -743,22 +741,22 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
                         value={value || versionField.defaultValue}
                         onValueChange={(newValue) => handleFieldChange(versionField.name, newValue)}
                       >
-                        <SelectTrigger className="h-7 text-xs">
+                        <SelectTrigger>
                           <SelectValue placeholder={versionField.placeholder} />
                         </SelectTrigger>
                         <SelectContent>
                           {versionField.options.map((option: any) => (
-                            <SelectItem key={option.value} value={option.value} className="text-xs">
+                            <SelectItem key={option.value} value={option.value}>
                               {option.label}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                       {versionField.description && (
-                        <p className="text-[10px] text-muted-foreground leading-tight">{versionField.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{versionField.description}</p>
                       )}
                       {error && (
-                        <p className="text-[10px] text-destructive">{error}</p>
+                        <p className="text-xs text-destructive mt-1">{error}</p>
                       )}
                     </>
                   );
@@ -767,65 +765,64 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
             )}
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="inline-flex h-8 items-center justify-start w-full bg-transparent p-0 mb-2 border-b border-border rounded-none">
+              <TabsList className="inline-flex h-9 items-center justify-start w-full bg-transparent p-0 mb-3 border-b border-border rounded-none">
                 <TabsTrigger
                   value="general"
-                  className="text-[11px] h-8 px-2.5 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:scale-100 data-[state=active]:text-primary hover:bg-transparent hover:text-foreground"
+                  className="text-sm h-9 px-3 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:scale-100 data-[state=active]:text-primary hover:bg-transparent hover:text-foreground"
                 >
-                  <Database className="w-3 h-3 mr-1" />
+                  <Database className="w-4 h-4 mr-1.5" />
                   {tConn('dialog.general_tab')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="advanced"
-                  className="text-[11px] h-8 px-2.5 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:scale-100 data-[state=active]:text-primary hover:bg-transparent hover:text-foreground"
+                  className="text-sm h-9 px-3 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:scale-100 data-[state=active]:text-primary hover:bg-transparent hover:text-foreground"
                 >
-                  <Settings className="w-3 h-3 mr-1" />
+                  <Settings className="w-4 h-4 mr-1.5" />
                   {tConn('dialog.advanced_tab')}
                 </TabsTrigger>
                 <TabsTrigger
                   value="proxy"
-                  className="text-[11px] h-8 px-2.5 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:scale-100 data-[state=active]:text-primary hover:bg-transparent hover:text-foreground"
+                  className="text-sm h-9 px-3 rounded-none bg-transparent border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:scale-100 data-[state=active]:text-primary hover:bg-transparent hover:text-foreground"
                 >
-                  <Network className="w-3 h-3 mr-1" />
+                  <Network className="w-4 h-4 mr-1.5" />
                   {tConn('dialog.proxy_tab')}
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="general" className="space-y-2 mt-0">
+              <TabsContent value="general" className="space-y-3 mt-0">
                 {sectionGroups.general?.map(section => renderFormSection(section))}
               </TabsContent>
 
-              <TabsContent value="advanced" className="space-y-2 mt-0">
+              <TabsContent value="advanced" className="space-y-3 mt-0">
                 {sectionGroups.advanced?.map(section => renderFormSection(section))}
               </TabsContent>
 
-              <TabsContent value="proxy" className="space-y-2 mt-0">
+              <TabsContent value="proxy" className="space-y-3 mt-0">
                 {sectionGroups.proxy?.map(section => renderFormSection(section))}
               </TabsContent>
             </Tabs>
 
             {/* 测试结果 */}
             {testResult && (
-              <div className="mt-3">
+              <div className="mt-4">
                 {renderTestResult()}
               </div>
             )}
           </div>
         </div>
 
-        <DialogFooter className="px-3 py-2 flex-shrink-0 border-t">
-          <Button variant="outline" onClick={onCancel} disabled={isTesting || isSaving} className="h-7 text-xs">
+        <DialogFooter className="px-4 py-3 flex-shrink-0 border-t">
+          <Button variant="outline" onClick={onCancel} disabled={isTesting || isSaving}>
             {tConn('dialog.cancel')}
           </Button>
           <Button
             variant="outline"
             onClick={handleTestConnection}
             disabled={isTesting || isSaving}
-            className="h-7 text-xs"
           >
             {isTesting ? (
               <>
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 {tConn('dialog.testing')}
               </>
             ) : (
@@ -835,11 +832,10 @@ const RefactoredConnectionDialog: React.FC<RefactoredConnectionDialogProps> = ({
           <Button
             onClick={handleSave}
             disabled={isTesting || isSaving}
-            className="h-7 text-xs"
           >
             {isSaving ? (
               <>
-                <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                 {tConn('dialog.saving')}
               </>
             ) : (

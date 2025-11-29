@@ -1259,7 +1259,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
         {/* 分页控件 - JetBrains New UI 风格 */}
         {pagination && paginationInfo && (
           <div className="flex items-center justify-between px-3 py-2 border-t bg-background">
-            <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <span>
                 {t('showing_records', {
                   start: paginationInfo.start,
@@ -1276,7 +1276,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                     value={paginationInfo.pageSize === -1 ? 'all' : String(paginationInfo.pageSize)}
                     onValueChange={handlePageSizeChange}
                   >
-                    <SelectTrigger className="h-6 w-20 text-[12px]">
+                    <SelectTrigger className="h-6 w-20 text-xs">
                       <SelectValue placeholder={t('select_datasource')}>
                         {paginationInfo.pageSize === -1 ? t('all_records') : String(paginationInfo.pageSize)}
                       </SelectValue>
@@ -1313,7 +1313,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
               >
                 <ChevronLeft className="h-3.5 w-3.5" />
               </Button>
-              <span className="mx-1.5 text-[12px]">
+              <span className="mx-1.5 text-xs">
                 {t('page_info', { current: paginationInfo.current, total: paginationInfo.totalPages })}
               </span>
               <Button

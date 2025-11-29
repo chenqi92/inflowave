@@ -121,7 +121,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           title={t('toolbar.new_connection')}
         >
           <Plus className='w-3.5 h-3.5' />
-          <span className='text-[10px] whitespace-nowrap'>{t('toolbar.new_connection')}</span>
+          <span className='text-xs whitespace-nowrap'>{t('toolbar.new_connection')}</span>
         </Button>
 
         {/* 区域3: 新建查询按钮 */}
@@ -136,7 +136,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
           title={t('toolbar.new_query')}
         >
           <FilePlus className='w-3.5 h-3.5' />
-          <span className='text-[10px] whitespace-nowrap'>{t('toolbar.new_query')}</span>
+          <span className='text-xs whitespace-nowrap'>{t('toolbar.new_query')}</span>
         </Button>
 
         <div className='w-px h-4 bg-border mx-1.5' />
@@ -172,7 +172,7 @@ const MainToolbar: React.FC<MainToolbarProps> = ({
 
         >
           <Settings className='w-3.5 h-3.5' />
-          <span className='text-[10px] whitespace-nowrap'>{t('toolbar.settings')}</span>
+          <span className='text-xs whitespace-nowrap'>{t('toolbar.settings')}</span>
         </Button>
       </div>
 

@@ -1,26 +1,36 @@
 /**
- * JetBrains New UI Design Tokens
- * 参考: JetBrains UI Guidelines (2024.2+)
+ * InfloWave Design Tokens
+ * 基于 JetBrains New UI Guidelines，优化为 14px 基准
  *
- * 这个文件定义了全局设计令牌，用于统一界面风格
+ * 字体层级：
+ * - title (16px): 对话框标题、区块标题
+ * - base (14px): 正文、标签、按钮文字
+ * - sm (13px): 次要文本、表格内容
+ * - xs (12px): 描述、提示、辅助信息
+ *
+ * 组件高度：
+ * - sm: 24px | default: 28px | lg: 32px
  */
 
 :root {
   /* ========================================
-   * Typography - 字体系统
+   * Typography - 字体系统 (14px 基准)
    * ======================================== */
 
   /* 字体族 */
   --font-family-ui: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-family-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
 
-  /* 字体大小 - 基于 JetBrains 13px 基准 */
+  /* 字体大小 - 14px 基准，简化为 4 级 */
+  --font-size-title: 16px;   /* 标题：对话框、区块标题 */
+  --font-size-base: 14px;    /* 正文：标签、按钮、主要内容 */
+  --font-size-sm: 13px;      /* 次要：表格内容、次要文本 */
+  --font-size-xs: 12px;      /* 辅助：描述、提示、帮助文本 */
+
+  /* 兼容旧变量名 */
   --font-size-h1: 18px;
   --font-size-h2: 16px;
   --font-size-h3: 14px;
-  --font-size-base: 13px;
-  --font-size-sm: 12px;
-  --font-size-xs: 11px;
 
   /* 字重 */
   --font-weight-normal: 400;

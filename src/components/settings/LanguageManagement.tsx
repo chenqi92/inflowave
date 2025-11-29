@@ -275,8 +275,8 @@ const LanguageManagement: React.FC = () => {
       <div className='flex items-center gap-3 mb-4'>
         <Globe className='w-5 h-5 text-blue-600' />
         <div>
-          <h2 className='text-[16px] font-semibold'>{tSettings('language_management')}</h2>
-          <p className='text-[12px] text-muted-foreground'>
+          <h2 className='text-lg font-semibold'>{tSettings('language_management')}</h2>
+          <p className='text-xs text-muted-foreground'>
             {tSettings('language_management_description')}
           </p>
         </div>
@@ -404,18 +404,18 @@ const LanguageManagement: React.FC = () => {
       {/* 统计信息 */}
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-4'>
         <div className='p-4 border rounded-lg'>
-          <div className='text-[12px] text-muted-foreground'>{tSettings('available_languages')}</div>
-          <div className='text-[18px] font-semibold mt-1'>{availableLanguages.length}</div>
+          <div className='text-xs text-muted-foreground'>{tSettings('available_languages')}</div>
+          <div className='text-xl font-semibold mt-1'>{availableLanguages.length}</div>
         </div>
         <div className='p-4 border rounded-lg'>
-          <div className='text-[12px] text-muted-foreground'>{tCommon('enabled')}</div>
-          <div className='text-[18px] font-semibold mt-1'>
+          <div className='text-xs text-muted-foreground'>{tCommon('enabled')}</div>
+          <div className='text-xl font-semibold mt-1'>
             {availableLanguages.filter(lang => lang.enabled).length}
           </div>
         </div>
         <div className='p-4 border rounded-lg'>
-          <div className='text-[12px] text-muted-foreground'>{tSettings('translation_progress')}</div>
-          <div className='text-[18px] font-semibold mt-1'>
+          <div className='text-xs text-muted-foreground'>{tSettings('translation_progress')}</div>
+          <div className='text-xl font-semibold mt-1'>
             {Math.round(
               availableLanguages.reduce((sum, lang) => sum + lang.progress, 0) /
                 availableLanguages.length

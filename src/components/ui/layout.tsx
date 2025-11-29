@@ -131,7 +131,7 @@ const Footer = forwardRef<HTMLElement, FooterProps>(
       <footer
         ref={ref}
         className={cn(
-          'h-[22px] border-t bg-muted/30 px-2 flex items-center text-[11px] text-muted-foreground',
+          'h-[22px] border-t bg-muted/30 px-2 flex items-center text-xs text-muted-foreground',
           className
         )}
         {...props}

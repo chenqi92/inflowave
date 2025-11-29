@@ -6,22 +6,16 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
- * Button 组件 - JetBrains New UI 风格
+ * Button 组件 - InfloWave UI
  *
  * 尺寸规范:
- * - sm: 24px 高度
- * - default: 28px 高度
- * - lg: 32px 高度
+ * - sm: 24px 高度, 13px 字体
+ * - default: 28px 高度, 14px 字体
+ * - lg: 32px 高度, 14px 字体
  * - icon: 28px x 28px
- *
- * 样式特点:
- * - 4px 圆角 (桌面应用风格)
- * - 13px 字体
- * - 100ms 过渡动画
- * - 微妙的 hover 效果
  */
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded text-[13px] font-medium transition-colors duration-100 flex-shrink-0 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:lucide-icon',
+  'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded text-sm font-medium transition-colors duration-100 flex-shrink-0 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:lucide-icon',
   {
     variants: {
       variant: {

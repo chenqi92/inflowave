@@ -118,7 +118,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
         title={t('save_to_workspace')}
       >
         <Save className="w-3.5 h-3.5" />
-        <span className="text-[12px]">{t('save_button')}</span>
+        <span className="text-xs">{t('save_button')}</span>
       </Button>
 
       {/* 分隔线 */}
@@ -130,7 +130,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
         onValueChange={handleConnectionChange}
         disabled={disabled || connectedConnections.length === 0}
       >
-        <SelectTrigger className="min-w-[140px] w-auto h-7 text-[12px] whitespace-nowrap">
+        <SelectTrigger className="min-w-[140px] w-auto h-7 text-xs whitespace-nowrap">
           <SelectValue
             placeholder={
               connectedConnections.length === 0
@@ -160,7 +160,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
         onValueChange={onDatabaseChange}
         disabled={disabled || !selectedConnectionId || currentConnectionDatabases.length === 0}
       >
-        <SelectTrigger className="min-w-[140px] w-auto h-7 text-[12px] whitespace-nowrap">
+        <SelectTrigger className="min-w-[140px] w-auto h-7 text-xs whitespace-nowrap">
           <SelectValue
             placeholder={
               !selectedConnectionId
@@ -216,7 +216,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
           }
         >
           <PlayCircle className="w-3.5 h-3.5" />
-          <span className="text-[12px]">{loading ? t('executing') : t('execute_button')}</span>
+          <span className="text-xs">{loading ? t('executing') : t('execute_button')}</span>
         </Button>
 
         {/* 美化SQL按钮 */}
@@ -229,7 +229,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
           title={t('beautify_sql')}
         >
           <Wand2 className="w-3.5 h-3.5" />
-          <span className="text-[12px]">{t('beautify_button')}</span>
+          <span className="text-xs">{t('beautify_button')}</span>
         </Button>
       </div>
 
@@ -237,7 +237,7 @@ export const QueryToolbar: React.FC<QueryToolbarProps> = ({
       <div className="flex-1" />
 
       {selectedConnectionId && selectedDatabase && (
-        <div className="text-[12px] text-muted-foreground px-2 py-0.5 bg-muted/30 rounded">
+        <div className="text-xs text-muted-foreground px-2 py-0.5 bg-muted/30 rounded">
           {connections.find(c => c.id === selectedConnectionId)?.name} / {selectedDatabase}
         </div>
       )}

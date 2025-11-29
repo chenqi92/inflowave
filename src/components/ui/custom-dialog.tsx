@@ -125,7 +125,7 @@ const CustomDialog: React.FC<CustomDialogProps> = ({
             {getIcon()}
             {title || getDefaultTitle()}
           </DialogTitle>
-          <DialogDescription className="text-[13px] pt-2">
+          <DialogDescription className="text-sm pt-2">
             {message}
           </DialogDescription>
         </DialogHeader>

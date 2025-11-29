@@ -106,7 +106,7 @@ export const SuggestionItemComponent: React.FC<SuggestionItemComponentProps> = (
           {/* 详细信息标签 */}
           {item.detail && (
             <div className={cn(
-              'text-[10px] px-1 py-0.5 rounded text-right flex-shrink-0',
+              'text-xs px-1 py-0.5 rounded text-right flex-shrink-0',
               selected
                 ? 'text-accent-foreground/70'
                 : 'text-muted-foreground'
@@ -118,7 +118,7 @@ export const SuggestionItemComponent: React.FC<SuggestionItemComponentProps> = (
           {/* 文档说明 - 放在同一行 */}
           {item.documentation && (
             <div className={cn(
-              'text-[10px] truncate flex-1 ml-2',
+              'text-xs truncate flex-1 ml-2',
               selected
                 ? 'text-accent-foreground/70'
                 : 'text-muted-foreground'

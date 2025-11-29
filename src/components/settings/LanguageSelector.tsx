@@ -81,7 +81,7 @@ const LanguageItem: React.FC<LanguageItemProps> = ({
         
         {/* 本地名称 */}
         {showNativeName && language.nativeName !== language.name && (
-          <div className={`text-muted-foreground ${compact ? 'text-[10px]' : 'text-xs'}`}>
+          <div className={`text-muted-foreground ${compact ? 'text-xs' : 'text-xs'}`}>
             {language.nativeName}
           </div>
         )}
@@ -92,7 +92,7 @@ const LanguageItem: React.FC<LanguageItemProps> = ({
         <div className="flex items-center gap-1">
           <Badge
             variant={language.progress >= 90 ? 'default' : language.progress >= 70 ? 'secondary' : 'outline'}
-            className="text-[10px] px-1.5 py-0"
+            className="text-xs px-1.5 py-0"
           >
             {language.progress}%
           </Badge>
@@ -101,7 +101,7 @@ const LanguageItem: React.FC<LanguageItemProps> = ({
 
       {/* 禁用状态指示 */}
       {!language.enabled && (
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+        <Badge variant="outline" className="text-xs px-1.5 py-0">
           Disabled
         </Badge>
       )}

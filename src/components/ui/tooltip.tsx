@@ -9,8 +9,8 @@ const Tooltip = TooltipPrimitive.Root;
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
 /**
- * TooltipContent - JetBrains New UI 风格
- * 4px 圆角, 12px 字体, 紧凑内边距
+ * TooltipContent - InfloWave UI
+ * 4px 圆角, 12px 字体
  */
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
@@ -20,8 +20,8 @@ const TooltipContent = React.forwardRef<
     ref={ref}
     sideOffset={sideOffset}
     className={cn(
-      // JetBrains New UI 风格: 4px 圆角, 12px 字体, 紧凑内边距
-      'z-50 overflow-hidden rounded border bg-popover px-2 py-1 text-[12px] text-popover-foreground shadow-md',
+      // InfloWave UI: 4px 圆角, 12px 字体
+      'z-50 overflow-hidden rounded border bg-popover px-2 py-1 text-xs text-popover-foreground shadow-md',
       'animate-in fade-in-0 zoom-in-95',
       'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
       'data-[side=bottom]:slide-in-from-top-1 data-[side=left]:slide-in-from-right-1 data-[side=right]:slide-in-from-left-1 data-[side=top]:slide-in-from-bottom-1',

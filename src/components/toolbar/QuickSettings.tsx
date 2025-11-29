@@ -100,7 +100,7 @@ const QuickSettings: React.FC = () => {
             </Badge>
           )}
           <Shield className='w-3.5 h-3.5' />
-          <span className='text-[10px] whitespace-nowrap'>{t('quick_settings_panel.title')}</span>
+          <span className='text-xs whitespace-nowrap'>{t('quick_settings_panel.title')}</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className='w-80' align='end'>

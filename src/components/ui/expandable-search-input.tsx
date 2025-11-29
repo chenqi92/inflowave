@@ -115,12 +115,12 @@ export const ExpandableSearchInput = React.forwardRef<
             </div>
 
             {/* 输入框 */}
-            {/* JetBrains New UI: h-7(28px), text-[13px] */}
+            {/* JetBrains New UI: h-7(28px), text-sm */}
             <input
               ref={inputRef}
               type="text"
               className={cn(
-                'flex w-full rounded-md border border-input bg-background text-[13px] ring-offset-background',
+                'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background',
                 'placeholder:text-muted-foreground',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                 'disabled:cursor-not-allowed disabled:opacity-50',

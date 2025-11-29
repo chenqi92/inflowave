@@ -11,7 +11,7 @@ const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
 
 /**
- * SelectTrigger - JetBrains New UI 风格
+ * SelectTrigger - InfloWave UI
  * 28px 高度, 4px 圆角, 13px 字体
  */
 const SelectTrigger = React.forwardRef<
@@ -21,7 +21,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      'flex h-7 w-full items-center justify-between rounded border border-input bg-background px-2 py-1 text-[13px] ring-offset-background transition-colors duration-100',
+      'flex h-7 w-full items-center justify-between rounded border border-input bg-background px-2 py-1 text-sm ring-offset-background transition-colors duration-100',
       'data-[placeholder]:text-muted-foreground',
       'focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20',
       'disabled:cursor-not-allowed disabled:opacity-50',
@@ -117,14 +117,14 @@ const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn('py-1 pl-6 pr-2 text-[12px] font-semibold text-muted-foreground', className)}
+    className={cn('py-1 pl-6 pr-2 text-xs font-semibold text-muted-foreground', className)}
     {...props}
   />
 ));
 SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
 /**
- * SelectItem - JetBrains New UI 风格
+ * SelectItem - InfloWave UI
  * 28px 高度, 13px 字体
  */
 const SelectItem = React.forwardRef<
@@ -134,7 +134,7 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      'relative flex w-full min-w-0 cursor-default select-none items-center rounded-sm h-7 py-1 pl-6 pr-2 text-[13px] outline-none transition-colors duration-100',
+      'relative flex w-full min-w-0 cursor-default select-none items-center rounded-sm h-7 py-1 pl-6 pr-2 text-sm outline-none transition-colors duration-100',
       'focus:bg-accent focus:text-accent-foreground',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       className

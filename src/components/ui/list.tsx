@@ -56,10 +56,10 @@ const ListItemMeta = React.forwardRef<HTMLDivElement, ListItemMetaProps>(
         {avatar && <div className='flex-shrink-0'>{avatar}</div>}
         <div className='flex-1 min-w-0'>
           {title && (
-            <div className='text-[13px] font-medium text-foreground'>{title}</div>
+            <div className='text-sm font-medium text-foreground'>{title}</div>
           )}
           {description && (
-            <div className='text-[12px] text-muted-foreground mt-1'>
+            <div className='text-xs text-muted-foreground mt-1'>
               {description}
             </div>
           )}
@@ -114,9 +114,9 @@ const List = React.forwardRef<HTMLDivElement, ListProps>(
     } = props as any;
     // JetBrains New UI: 紧凑字体大小
     const sizeClasses = {
-      small: 'text-[12px]',
-      default: 'text-[13px]',
-      large: 'text-[14px]',
+      small: 'text-xs',
+      default: 'text-sm',
+      large: 'text-base',
     };
 
     const content =

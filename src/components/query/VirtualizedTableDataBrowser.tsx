@@ -139,19 +139,19 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
                 <div className='flex items-center gap-1 w-full h-full'>
                   {column !== '#' && (
                     <span
-                      className='text-[12px] font-semibold flex-shrink-0 truncate'
+                      className='text-xs font-semibold flex-shrink-0 truncate'
                       title={column}
                     >
                       {column}
                     </span>
                   )}
                   {column === 'time' && (
-                    <Badge variant='secondary' className='text-[10px] h-4 px-1'>
+                    <Badge variant='secondary' className='text-xs h-4 px-1'>
                       时间
                     </Badge>
                   )}
                   {sortColumn === column && column !== '#' && (
-                    <span className='text-[11px] text-primary'>
+                    <span className='text-xs text-primary'>
                       {sortDirection === 'asc' ? '↑' : '↓'}
                     </span>
                   )}
@@ -206,9 +206,9 @@ const UnifiedTableRow: React.FC<UnifiedTableRowProps> = memo(
               <div
                 key={column}
                 className={cn(
-                  'virtual-table-column px-2 py-1 text-[13px] flex items-center',
+                  'virtual-table-column px-2 py-1 text-sm flex items-center',
                   column === '#'
-                    ? 'font-medium text-muted-foreground bg-muted/50 justify-center border-r border-border text-[12px]'
+                    ? 'font-medium text-muted-foreground bg-muted/50 justify-center border-r border-border text-xs'
                     : 'font-mono'
                 )}
                 style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px`, flexShrink: 0 }}

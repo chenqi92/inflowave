@@ -39,8 +39,8 @@ const SearchInput = React.forwardRef<HTMLInputElement, SearchInputProps>(
           type="text"
           className={cn(
             // 基础样式 - JetBrains New UI: 13px 字体
-            'flex w-full rounded-md border border-input bg-background text-[13px] ring-offset-background',
-            'file:border-0 file:bg-transparent file:text-[13px] file:font-medium file:text-foreground',
+            'flex w-full rounded-md border border-input bg-background text-sm ring-offset-background',
+            'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground',
             'placeholder:text-muted-foreground',
             'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             'disabled:cursor-not-allowed disabled:opacity-50',

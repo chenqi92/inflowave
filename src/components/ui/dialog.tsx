@@ -28,7 +28,7 @@ const DialogOverlay = React.forwardRef<
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 /**
- * DialogContent - JetBrains New UI 风格
+ * DialogContent - InfloWave UI
  * 6px 圆角, 16px 内边距, lg 阴影
  */
 const DialogContent = React.forwardRef<
@@ -43,8 +43,8 @@ const DialogContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         className={cn(
-          // JetBrains New UI 风格: 6px 圆角, 16px 内边距, lg 阴影
-          'relative grid w-full max-w-lg gap-3 border bg-background p-4 shadow-lg rounded-lg',
+          // InfloWave UI: 6px 圆角, 16px 内边距
+          'relative grid w-full max-w-lg gap-3 border bg-background p-4 shadow-lg rounded-md',
           className
         )}
         style={{
@@ -101,7 +101,7 @@ const DialogFooter = ({
 DialogFooter.displayName = 'DialogFooter';
 
 /**
- * DialogTitle - JetBrains New UI 风格
+ * DialogTitle - InfloWave UI
  * 16px semibold
  */
 const DialogTitle = React.forwardRef<
@@ -111,7 +111,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      'text-[16px] font-semibold leading-tight tracking-tight',
+      'text-lg font-semibold leading-tight tracking-tight',
       className
     )}
     {...props}
@@ -120,7 +120,7 @@ const DialogTitle = React.forwardRef<
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
 
 /**
- * DialogDescription - JetBrains New UI 风格
+ * DialogDescription - InfloWave UI
  * 13px 字体
  */
 const DialogDescription = React.forwardRef<
@@ -129,7 +129,7 @@ const DialogDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Description
     ref={ref}
-    className={cn('text-[13px] text-muted-foreground', className)}
+    className={cn('text-sm text-muted-foreground', className)}
     {...props}
   />
 ));
