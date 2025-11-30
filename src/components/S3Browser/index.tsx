@@ -226,7 +226,9 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   const [previewObject, setPreviewObject] = useState<S3Object | null>(null);
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewProgress, setPreviewProgress] = useState<string>('');
   const [showShareInPreview, setShowShareInPreview] = useState(false);
+  const [currentTempFile, setCurrentTempFile] = useState<string | null>(null);
 
   // 视频播放状态
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(null);
@@ -354,8 +356,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         logger.warn(`📦 [S3Browser] 组件卸载时仍在加载中，重置加载状态`);
         isLoadingBucketsRef.current = false;
       }
+
+      // 清理临时视频文件
+      if (currentTempFile) {
+        cleanupTempFile(currentTempFile);
+      }
     };
-  }, []);
+  }, [currentTempFile]);
 
   // 加载根级别内容（buckets 或 bucket 内的对象）
   // 注意：不包含 sortBy 依赖项，因为排序在前端完成，不需要重新加载数据
@@ -968,6 +975,22 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     }
   };
 
+  // 清理临时文件
+  const cleanupTempFile = async (filePath: string) => {
+    const { tempFileCache } = await import('./utils/tempFileCache');
+    await tempFileCache.removeFile(filePath);
+  };
+
+  // 关闭预览对话框
+  const handleClosePreview = async () => {
+    // 清理临时文件
+    if (currentTempFile) {
+      await cleanupTempFile(currentTempFile);
+      setCurrentTempFile(null);
+    }
+    setShowPreviewDialog(false);
+  };
+
   // 预览文件
   const handlePreviewFile = async (object: S3Object) => {
     if (!isPreviewableFile(object)) {
@@ -976,13 +999,21 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       return;
     }
 
+    // 清理之前的临时文件
+    if (currentTempFile) {
+      await cleanupTempFile(currentTempFile);
+      setCurrentTempFile(null);
+    }
+
     setPreviewObject(object);
     setShowPreviewDialog(true);
     setPreviewLoading(true);
     setPreviewContent(null);
+    setPreviewProgress('');
 
     // 如果是视频文件，创建播放列表
     if (isVideoFile(object)) {
+      setPreviewProgress(t('s3:preview.downloading_video'));
       const { playlist, currentIndex } = createPlaylistFromFolder(objects, object);
       setVideoPlaylist(playlist);
       setCurrentVideoIndex(currentIndex);
@@ -1001,6 +1032,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     }
 
     try {
+      // 为视频添加额外的进度状态
+      if (isVideoFile(object)) {
+        setPreviewProgress(t('s3:preview.preparing_video'));
+      }
+
       // 使用统一的预览内容生成器
       const result = await generatePreviewContent(
         connectionId,
@@ -1009,12 +1045,17 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       );
 
       setPreviewContent(result.content);
+      // 保存临时文件路径，用于后续清理
+      if (result.tempFilePath) {
+        setCurrentTempFile(result.tempFilePath);
+      }
     } catch (error) {
       logger.error(`Preview file failed:`, error);
       showMessage.error(`${String(t('s3:preview.failed'))}: ${error}`);
       setShowPreviewDialog(false);
     } finally {
       setPreviewLoading(false);
+      setPreviewProgress('');
     }
   };
 
@@ -3006,8 +3047,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               <div className='flex flex-col items-center justify-center p-20'>
                 <RefreshCw className='w-10 h-10 animate-spin text-primary mb-4' />
                 <p className='text-sm text-muted-foreground'>
-                  {t('s3:preview.loading')}
+                  {previewProgress || t('s3:preview.loading')}
                 </p>
+                {previewObject && isVideoFile(previewObject) && (
+                  <p className='text-xs text-muted-foreground mt-2'>
+                    {t('s3:preview.video_size_hint', {
+                      size: (previewObject.size / 1024 / 1024).toFixed(2)
+                    })}
+                  </p>
+                )}
               </div>
             ) : previewObject && previewContent ? (
               <div className='p-6' ref={previewContentRef}>
@@ -3389,7 +3437,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             </div>
           ) : (
             <div className='flex items-center justify-end gap-2 px-6 py-4 border-t bg-muted/20'>
-              <Button onClick={() => setShowPreviewDialog(false)}>
+              <Button onClick={handleClosePreview}>
                 {String(t('common:close'))}
               </Button>
             </div>

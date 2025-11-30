@@ -416,7 +416,9 @@
     "influxql_language_description": "InfluxDB专用查询语言（1.x/2.x/3.x均支持）",
     "flux_language": "Flux",
     "flux_language_description": "InfluxDB 2.x 的函数式数据脚本语言",
-    "flux_not_supported_3x": "InfluxDB 3.x 不支持 Flux 查询语言"
+    "flux_not_supported_3x": "InfluxDB 3.x 不支持 Flux 查询语言",
+    "arrow_format": "Apache Arrow 格式",
+    "arrow_format_description": "InfluxDB 3.x 使用 Apache Arrow 列式数据格式"
   },
   "common": {
     "optional": "可选",

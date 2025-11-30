@@ -3,7 +3,7 @@
  * 提供S3/MinIO相关的前端服务
  */
 
-import { safeTauriInvoke } from '@/utils/tauri';
+import { safeTauriInvoke, safeTauriInvokeSilent } from '@/utils/tauri';
 import type {
   S3Bucket,
   S3ListObjectsResult,
@@ -483,12 +483,14 @@ export class S3Service {
     connectionId: string,
     bucket: string
   ): Promise<string> {
-    return await safeTauriInvoke<string>('s3_get_bucket_policy', {
+    const result = await safeTauriInvokeSilent<string>('s3_get_bucket_policy', {
       request: {
         connection_id: connectionId,
         bucket,
       },
     });
+    // 如果获取失败，返回 'private' 作为默认值
+    return result || 'private';
   }
 
   /**

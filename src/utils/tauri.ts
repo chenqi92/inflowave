@@ -200,6 +200,25 @@ export const safeTauriInvokeOptional = async <T = any>(
   }
 };
 
+// 静默的 Tauri API 调用包装器 - 失败时只记录debug日志
+export const safeTauriInvokeSilent = async <T = any>(
+  command: string,
+  args?: Record<string, any>
+): Promise<T | null> => {
+
+  try {
+    // 直接尝试调用 Tauri API，不进行环境检测
+    const { invoke } = await import('@tauri-apps/api/core');
+    const result = await invoke<T>(command, args);
+    return result;
+  } catch (error) {
+    // 对于预期可能失败的操作（如获取bucket policy），只记录debug级别
+    logger.debug(`Tauri command "${command}" failed (expected):`, error);
+    // 返回 null 而不是抛出错误
+    return null;
+  }
+};
+
 // 专门用于 void 命令的包装器
 export const safeTauriInvokeVoid = async (
   command: string,

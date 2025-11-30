@@ -7,6 +7,8 @@ import * as XLSX from 'xlsx';
 import { S3Service } from '@/services/s3Service';
 import type { S3Object } from '@/types/s3';
 import { isImageFile, isVideoFile, getFileExtension } from './fileHelpers';
+import { isTauriEnvironment, safeTauriInvoke } from '@/utils/tauri';
+import { tempFileCache } from './tempFileCache';
 import logger from '@/utils/logger';
 
 /**
@@ -20,6 +22,7 @@ export type PreviewContentType = 'blob' | 'text' | 'html' | 'url';
 export interface PreviewResult {
   content: string;
   type: PreviewContentType;
+  tempFilePath?: string; // 临时文件路径，用于清理
 }
 
 /**
@@ -101,7 +104,62 @@ export async function generateMediaPreview(
   const extension = getFileExtension(object.name);
   const mimeType = getMimeType(object, extension);
 
-  // 创建 blob URL
+  // 在 Tauri 环境中，对于视频文件使用临时文件而不是 blob URL
+  const isTauri = isTauriEnvironment();
+  const isVideo = isVideoFile(object);
+
+  if (isTauri && isVideo) {
+    try {
+      // 获取临时目录路径
+      const { appCacheDir, join } = await import('@tauri-apps/api/path');
+      const cacheDir = await appCacheDir();
+
+      // 生成临时文件名
+      const timestamp = Date.now();
+      const fileName = `video_preview_${timestamp}.${extension}`;
+      const tempPath = await join(cacheDir, 'video_previews', fileName);
+
+      // 将二进制数据转换为 base64
+      const uint8Array = new Uint8Array(data);
+      let binary = '';
+      for (let i = 0; i < uint8Array.length; i++) {
+        binary += String.fromCharCode(uint8Array[i]);
+      }
+      const base64Data = btoa(binary);
+
+      // 写入临时文件
+      await safeTauriInvoke('write_binary_file', {
+        path: tempPath,
+        data: base64Data,
+      });
+
+      logger.info('Saved video to temp file:', tempPath);
+
+      // 添加到缓存管理器
+      await tempFileCache.addFile(tempPath, data.byteLength);
+
+      // 使用 Tauri 的 convertFileSrc 转换路径为可访问的 URL
+      const { convertFileSrc } = await import('@tauri-apps/api/core');
+      const assetUrl = convertFileSrc(tempPath);
+
+      logger.info('Created asset URL for video preview:', assetUrl);
+
+      // 记录缓存统计信息
+      const stats = tempFileCache.getStats();
+      logger.info(`Temp file cache stats: ${stats.fileCount} files, ${(stats.totalSize / 1024 / 1024).toFixed(2)}MB / ${(stats.maxSize / 1024 / 1024).toFixed(2)}MB (${stats.utilizationPercent.toFixed(1)}%)`);
+
+      return {
+        content: assetUrl,
+        type: 'url',
+        tempFilePath: tempPath,
+      };
+    } catch (error) {
+      logger.error('Failed to save video to temp file:', error);
+      // 如果保存失败，回退到 blob URL
+    }
+  }
+
+  // 对于其他情况，使用 blob URL
   const blob = new Blob([data.slice()], { type: mimeType });
   const blobUrl = URL.createObjectURL(blob);
 

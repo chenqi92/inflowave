@@ -8,6 +8,8 @@
     "shell:allow-open",
     "dialog:default",
     "fs:default",
+    "fs:allow-appcache-read-recursive",
+    "fs:allow-appcache-write-recursive",
     "os:default",
     "notification:default",
     "notification:allow-is-permission-granted",

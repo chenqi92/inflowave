@@ -32,6 +32,7 @@ import {
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/useTranslation';
+import { isTauriEnvironment } from '@/utils/tauri';
 import type { S3Object } from '@/types/s3';
 
 interface VideoPlayerProps {
@@ -64,6 +65,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const controlsTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // 检测 Tauri 环境
+  const isTauri = isTauriEnvironment();
 
   // 通知父组件video元素已准备好
   useEffect(() => {
@@ -162,24 +166,41 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const toggleFullscreen = useCallback(async () => {
     if (!containerRef.current) return;
 
+    // 在 Tauri 环境中，检查 Fullscreen API 是否可用
+    if (isTauri && !document.fullscreenEnabled) {
+      console.warn('Fullscreen API not supported in this environment');
+      return;
+    }
+
     try {
       if (!document.fullscreenElement) {
-        await containerRef.current.requestFullscreen();
-        setIsFullscreen(true);
+        // 检查 requestFullscreen 方法是否存在
+        if (containerRef.current.requestFullscreen) {
+          await containerRef.current.requestFullscreen();
+          setIsFullscreen(true);
+        }
       } else {
-        await document.exitFullscreen();
-        setIsFullscreen(false);
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+          setIsFullscreen(false);
+        }
       }
     } catch (error) {
       console.error('Fullscreen error:', error);
     }
-  }, []);
+  }, [isTauri]);
 
   // 画中画
   const togglePictureInPicture = useCallback(async () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || isTauri) return;
 
     try {
+      // 检查 Picture-in-Picture API 是否可用
+      if (!document.pictureInPictureEnabled || !videoRef.current.requestPictureInPicture) {
+        console.warn('Picture-in-Picture API not available');
+        return;
+      }
+
       if (document.pictureInPictureElement) {
         await document.exitPictureInPicture();
       } else {
@@ -188,7 +209,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     } catch (error) {
       console.error('Picture-in-picture error:', error);
     }
-  }, []);
+  }, [isTauri]);
 
   // 处理视频结束
   const handleVideoEnded = useCallback(() => {
@@ -289,6 +310,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     };
     const handleWaiting = () => setIsBuffering(true);
     const handleCanPlay = () => setIsBuffering(false);
+    const handleError = (e: Event) => {
+      console.error('Video error:', e);
+      const videoElement = e.target as HTMLVideoElement;
+      if (videoElement.error) {
+        console.error('Video error code:', videoElement.error.code);
+        console.error('Video error message:', videoElement.error.message);
+      }
+      setIsBuffering(false);
+    };
 
     video.addEventListener('play', handlePlay);
     video.addEventListener('pause', handlePause);
@@ -298,6 +328,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     video.addEventListener('waiting', handleWaiting);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('ended', handleVideoEnded);
+    video.addEventListener('error', handleError);
 
     return () => {
       video.removeEventListener('play', handlePlay);
@@ -308,6 +339,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       video.removeEventListener('waiting', handleWaiting);
       video.removeEventListener('canplay', handleCanPlay);
       video.removeEventListener('ended', handleVideoEnded);
+      video.removeEventListener('error', handleError);
     };
   }, [handleVideoEnded]);
 
@@ -347,6 +379,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         src={src}
         className="w-full h-auto max-h-[70vh]"
         onClick={togglePlay}
+        preload="metadata"
+        playsInline
       />
 
       {/* 缓冲指示器 */}
@@ -479,15 +513,17 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* 画中画 */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={togglePictureInPicture}
-              className="hover:bg-white/20"
-            >
-              <PictureInPicture className="h-4 w-4" />
-            </Button>
+            {/* 画中画 (Tauri环境中不支持) */}
+            {!isTauri && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={togglePictureInPicture}
+                className="hover:bg-white/20"
+              >
+                <PictureInPicture className="h-4 w-4" />
+              </Button>
+            )}
 
             {/* 全屏 */}
             <Button
