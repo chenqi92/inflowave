@@ -1247,6 +1247,8 @@ async fn main() {
             rebuild_native_menu,
             get_logs_dir,
             open_logs_dir,
+            get_video_server_port,
+            start_video_server,
             // Environment-aware file operations
             write_file_env,
             read_file_env,
@@ -1487,9 +1489,22 @@ async fn main() {
         ])
         .setup(|app| {
             info!("Application setup started");
-            
+
             // 设置崩溃处理程序
             setup_crash_handler(app.handle().clone());
+
+            // 清理上次运行留下的临时视频文件
+            if let Err(e) = services::cleanup_temp_video_files() {
+                warn!("Failed to cleanup temp video files: {}", e);
+            }
+
+            // 启动视频服务器（用于在 WebView 中播放本地视频）
+            tauri::async_runtime::spawn(async {
+                match services::start_video_server().await {
+                    Ok(port) => info!("Video server started on port {}", port),
+                    Err(e) => error!("Failed to start video server: {}", e),
+                }
+            });
 
             // 设置响应式窗口大小和标题
             if let Some(window) = app.get_webview_window("main") {

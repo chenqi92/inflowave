@@ -1973,11 +1973,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   }, [contextMenu.visible]);
 
   // 清理blob URL以避免内存泄漏
+  // 只在对话框关闭时清理，不在 previewContent 变化时清理
   useEffect(() => {
-    if (!showPreviewDialog) {
+    // 当对话框从打开变为关闭时，清理之前的 blob URL
+    if (!showPreviewDialog && previewContent) {
       cleanupBlobUrl(previewContent);
     }
-  }, [showPreviewDialog, previewContent]);
+  }, [showPreviewDialog]); // 移除 previewContent 依赖，避免在内容更新时触发清理
 
   const getBreadcrumbs = (): BreadcrumbItem[] => {
     const items: BreadcrumbItem[] = [];

@@ -34,6 +34,7 @@ import {
 import { useTranslation } from '@/hooks/useTranslation';
 import { isTauriEnvironment } from '@/utils/tauri';
 import type { S3Object } from '@/types/s3';
+import logger from '@/utils/logger';
 
 interface VideoPlayerProps {
   src: string;
@@ -69,12 +70,46 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // 检测 Tauri 环境
   const isTauri = isTauriEnvironment();
 
+  // 调试：检查 src 变化
+  useEffect(() => {
+    logger.info('[VideoPlayer] src changed:', src);
+    logger.info('[VideoPlayer] src type:', typeof src);
+    logger.info('[VideoPlayer] src is blob URL:', src?.startsWith('blob:'));
+    logger.info('[VideoPlayer] src is HTTP URL:', src?.startsWith('http://'));
+    logger.info('[VideoPlayer] isTauri environment:', isTauri);
+  }, [src, isTauri]);
+
   // 通知父组件video元素已准备好
   useEffect(() => {
     if (onVideoReady && videoRef.current) {
       onVideoReady(videoRef.current);
     }
   }, [onVideoReady]);
+
+  // 当 src 改变时，强制视频元素重新加载
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && src) {
+      logger.info('[VideoPlayer] Forcing video load with src:', src);
+
+      // 重置视频状态
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+      setIsBuffering(true);
+
+      // 强制重新加载
+      video.load();
+
+      logger.info('[VideoPlayer] Video element after load:', {
+        src: video.src,
+        currentSrc: video.currentSrc,
+        readyState: video.readyState,
+        networkState: video.networkState,
+        error: video.error
+      });
+    }
+  }, [src]);
 
   // 播放状态
   const [isPlaying, setIsPlaying] = useState(false);
@@ -311,12 +346,32 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     const handleWaiting = () => setIsBuffering(true);
     const handleCanPlay = () => setIsBuffering(false);
     const handleError = (e: Event) => {
-      console.error('Video error:', e);
+      logger.error('[VideoPlayer] Video error event:', e);
       const videoElement = e.target as HTMLVideoElement;
       if (videoElement.error) {
-        console.error('Video error code:', videoElement.error.code);
-        console.error('Video error message:', videoElement.error.message);
+        logger.error('[VideoPlayer] Video error code:', videoElement.error.code);
+        logger.error('[VideoPlayer] Video error message:', videoElement.error.message);
+
+        // 错误代码说明
+        const errorCodes: Record<number, string> = {
+          1: 'MEDIA_ERR_ABORTED - 加载被中止',
+          2: 'MEDIA_ERR_NETWORK - 网络错误',
+          3: 'MEDIA_ERR_DECODE - 解码错误',
+          4: 'MEDIA_ERR_SRC_NOT_SUPPORTED - 不支持的媒体源'
+        };
+        logger.error('[VideoPlayer] Error type:', errorCodes[videoElement.error.code] || 'UNKNOWN');
       }
+
+      // 记录视频元素的详细状态
+      logger.error('[VideoPlayer] Video element state on error:', {
+        src: videoElement.src,
+        currentSrc: videoElement.currentSrc,
+        readyState: videoElement.readyState,
+        networkState: videoElement.networkState,
+        currentTime: videoElement.currentTime,
+        duration: videoElement.duration
+      });
+
       setIsBuffering(false);
     };
 
@@ -379,8 +434,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         src={src}
         className="w-full h-auto max-h-[70vh]"
         onClick={togglePlay}
-        preload="metadata"
+        preload="auto"
         playsInline
+        controlsList="nodownload"
       />
 
       {/* 缓冲指示器 */}

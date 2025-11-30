@@ -1087,3 +1087,20 @@ pub async fn rebuild_native_menu(
         }
     }
 }
+
+/// 获取视频服务器端口
+#[tauri::command]
+pub async fn get_video_server_port() -> Result<Option<u16>, String> {
+    debug!("获取视频服务器端口");
+    Ok(crate::services::get_video_server_port().await)
+}
+
+/// 启动视频服务器
+#[tauri::command]
+pub async fn start_video_server() -> Result<u16, String> {
+    debug!("启动视频服务器");
+    crate::services::start_video_server().await.map_err(|e| {
+        error!("启动视频服务器失败: {}", e);
+        format!("启动视频服务器失败: {}", e)
+    })
+}

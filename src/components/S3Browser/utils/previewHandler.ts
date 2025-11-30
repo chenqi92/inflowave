@@ -138,23 +138,32 @@ export async function generateMediaPreview(
       // 添加到缓存管理器
       await tempFileCache.addFile(tempPath, data.byteLength);
 
-      // 使用 Tauri 的 convertFileSrc 转换路径为可访问的 URL
-      const { convertFileSrc } = await import('@tauri-apps/api/core');
-      const assetUrl = convertFileSrc(tempPath);
+      // 在 Tauri 环境中，使用本地 HTTP 视频服务器访问临时文件
+      // blob URL、asset 协议和自定义协议在 Tauri 的 WebKit 中都不被 video 元素支持
+      // 只有真正的 HTTP 协议才能在所有浏览器引擎中可靠地工作
+      const port = await safeTauriInvoke<number>('start_video_server');
+      if (!port) {
+        throw new Error('Failed to get video server port');
+      }
 
-      logger.info('Created asset URL for video preview:', assetUrl);
+      const encodedPath = encodeURIComponent(tempPath);
+      const videoHttpUrl = `http://127.0.0.1:${port}/video/${encodedPath}`;
+
+      logger.info('Created video HTTP URL:', tempPath, '->', videoHttpUrl);
+      logger.info('Video data size:', data.byteLength, 'bytes');
+      logger.info('Video MIME type:', mimeType);
 
       // 记录缓存统计信息
       const stats = tempFileCache.getStats();
       logger.info(`Temp file cache stats: ${stats.fileCount} files, ${(stats.totalSize / 1024 / 1024).toFixed(2)}MB / ${(stats.maxSize / 1024 / 1024).toFixed(2)}MB (${stats.utilizationPercent.toFixed(1)}%)`);
 
       return {
-        content: assetUrl,
+        content: videoHttpUrl,
         type: 'url',
         tempFilePath: tempPath,
       };
     } catch (error) {
-      logger.error('Failed to save video to temp file:', error);
+      logger.error('Failed to process video in Tauri environment:', error);
       // 如果保存失败，回退到 blob URL
     }
   }
