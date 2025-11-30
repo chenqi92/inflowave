@@ -36,6 +36,16 @@ InfloWave 持续改进，为用户提供更好的时序数据库管理体验。
 
 > 🆘 **获取帮助**：如果您在使用过程中遇到问题，欢迎在 [GitHub Issues](https://github.com/chenqi92/inflowave/issues) 中反馈，或参与 [GitHub Discussions](https://github.com/chenqi92/inflowave/discussions) 讨论。
 
+### ⚠️ macOS 用户注意事项
+
+如果在 macOS 上首次打开应用时遇到"无法打开应用，因为无法验证开发者"的提示，请在终端中运行以下命令：
+
+```bash
+sudo xattr -r -d com.apple.quarantine /Applications/Inflowave.app
+```
+
+然后输入您的 macOS 密码即可正常打开应用。
+
 ---
 
 > 🙏 **感谢支持**：感谢所有用户的反馈和建议，让 InfloWave 能够不断改进。您的支持是我们前进的动力！

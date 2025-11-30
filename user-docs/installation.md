@@ -61,6 +61,11 @@
 
 - 首次运行时，可能需要在"系统偏好设置"→"安全性与隐私"中允许运行
 - 如果提示"无法验证开发者"，请按住 Control 键点击应用图标，选择"打开"
+- 如果上述方法无效，可以在终端中运行以下命令移除隔离属性：
+  ```bash
+  sudo xattr -r -d com.apple.quarantine /Applications/Inflowave.app
+  ```
+  然后输入您的 macOS 密码即可正常打开应用
 
 #### Linux 安装
 
@@ -222,6 +227,11 @@ sudo apt remove inflowave
 
 - 在"系统偏好设置"→"安全性与隐私"中允许运行
 - 或按住 Control 键点击应用图标，选择"打开"
+- 如果仍然无法打开，在终端中运行以下命令：
+  ```bash
+  sudo xattr -r -d com.apple.quarantine /Applications/Inflowave.app
+  ```
+  输入密码后即可正常打开应用
 
 **Linux 依赖问题**：
 
