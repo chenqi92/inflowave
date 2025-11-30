@@ -3082,6 +3082,7 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                         <VideoPlayer
                           src={previewContent}
                           object={previewObject}
+                          tempFilePath={currentTempFile ?? undefined}
                           onNext={handleVideoNext}
                           onPrevious={handleVideoPrevious}
                           hasNext={currentVideoIndex < filteredVideos.length - 1}

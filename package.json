@@ -147,6 +147,7 @@
     "@tauri-apps/plugin-clipboard-manager": "^2.3.2",
     "@tauri-apps/plugin-dialog": "^2.4.2",
     "@tauri-apps/plugin-fs": "^2.4.4",
+    "@tauri-apps/plugin-opener": "^2.5.2",
     "@tauri-apps/plugin-shell": "^2.3.3",
     "@uiw/react-codemirror": "^4.25.2",
     "class-variance-authority": "^0.7.1",

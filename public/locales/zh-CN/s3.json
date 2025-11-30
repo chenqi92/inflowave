@@ -173,7 +173,13 @@
     "shortcut_previous": "上一个: P",
     "repeat_off": "不循环",
     "repeat_one": "单曲循环",
-    "repeat_all": "列表循环"
+    "repeat_all": "列表循环",
+    "opening": "正在打开...",
+    "open_with_system_player": "使用系统播放器打开",
+    "opened_successfully": "已在系统播放器中打开",
+    "system_player_hint": "视频将使用系统默认播放器打开，获得最佳播放体验",
+    "previous": "上一个",
+    "next": "下一个"
   },
   "video_info": {
     "title": "视频信息",

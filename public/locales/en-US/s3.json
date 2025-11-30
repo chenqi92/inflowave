@@ -217,7 +217,13 @@
     "shortcut_previous": "Previous: P",
     "repeat_off": "No Repeat",
     "repeat_one": "Repeat One",
-    "repeat_all": "Repeat All"
+    "repeat_all": "Repeat All",
+    "opening": "Opening...",
+    "open_with_system_player": "Open with System Player",
+    "opened_successfully": "Opened in system player",
+    "system_player_hint": "Video will open in your system's default player for the best playback experience",
+    "previous": "Previous",
+    "next": "Next"
   },
   "video_info": {
     "title": "Video Information",

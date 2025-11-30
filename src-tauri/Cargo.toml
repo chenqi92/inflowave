@@ -133,6 +133,7 @@ tauri-plugin-os = "2.3"
 tauri-plugin-notification = "2.3"
 tauri-plugin-global-shortcut = "2.3"
 tauri-plugin-clipboard-manager = "2.3"
+tauri-plugin-opener = "2"
 
 # 构建配置优化
 [profile.dev]

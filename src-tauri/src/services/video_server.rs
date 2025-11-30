@@ -236,6 +236,7 @@ async fn find_available_port(start: u16, end: u16) -> Result<u16> {
 async fn serve_video(
     State(state): State<VideoServerState>,
     Path(path): Path<String>,
+    headers: HeaderMap,
 ) -> impl IntoResponse {
     // URL 解码路径
     let decoded_path = match urlencoding::decode(&path) {
@@ -280,6 +281,8 @@ async fn serve_video(
     // 读取文件
     match std::fs::read(file_path) {
         Ok(data) => {
+            let file_size = data.len() as u64;
+
             // 确定 MIME 类型
             let mime_type = match file_path.extension().and_then(|e| e.to_str()) {
                 Some("mp4") => "video/mp4",
@@ -292,15 +295,41 @@ async fn serve_video(
                 _ => "video/mp4",
             };
 
-            info!("Serving video: {} ({} bytes, {})", decoded_path, data.len(), mime_type);
+            // 检查是否有 Range 请求
+            if let Some(range_header) = headers.get(header::RANGE) {
+                if let Ok(range_str) = range_header.to_str() {
+                    // 解析 Range 头 (格式: "bytes=start-end")
+                    if let Some(range) = parse_range_header(range_str, file_size) {
+                        let (start, end) = range;
+                        let content_length = end - start + 1;
+                        let partial_data = data[start as usize..=end as usize].to_vec();
 
-            let mut headers = HeaderMap::new();
-            headers.insert(header::CONTENT_TYPE, mime_type.parse().unwrap());
-            headers.insert(header::CONTENT_LENGTH, data.len().to_string().parse().unwrap());
-            headers.insert(header::ACCEPT_RANGES, "bytes".parse().unwrap());
-            headers.insert(header::CACHE_CONTROL, "no-cache".parse().unwrap());
+                        info!("Serving partial video: {} (range {}-{}/{}, {} bytes, {})",
+                            decoded_path, start, end, file_size, content_length, mime_type);
 
-            (StatusCode::OK, headers, data)
+                        let mut resp_headers = HeaderMap::new();
+                        resp_headers.insert(header::CONTENT_TYPE, mime_type.parse().unwrap());
+                        resp_headers.insert(header::CONTENT_LENGTH, content_length.to_string().parse().unwrap());
+                        resp_headers.insert(header::CONTENT_RANGE,
+                            format!("bytes {}-{}/{}", start, end, file_size).parse().unwrap());
+                        resp_headers.insert(header::ACCEPT_RANGES, "bytes".parse().unwrap());
+                        resp_headers.insert(header::CACHE_CONTROL, "no-cache".parse().unwrap());
+
+                        return (StatusCode::PARTIAL_CONTENT, resp_headers, partial_data);
+                    }
+                }
+            }
+
+            // 没有 Range 请求，返回完整文件
+            info!("Serving full video: {} ({} bytes, {})", decoded_path, file_size, mime_type);
+
+            let mut resp_headers = HeaderMap::new();
+            resp_headers.insert(header::CONTENT_TYPE, mime_type.parse().unwrap());
+            resp_headers.insert(header::CONTENT_LENGTH, file_size.to_string().parse().unwrap());
+            resp_headers.insert(header::ACCEPT_RANGES, "bytes".parse().unwrap());
+            resp_headers.insert(header::CACHE_CONTROL, "no-cache".parse().unwrap());
+
+            (StatusCode::OK, resp_headers, data)
         }
         Err(e) => {
             error!("Failed to read video file: {}", e);
@@ -311,4 +340,35 @@ async fn serve_video(
             )
         }
     }
+}
+
+/// 解析 Range 请求头
+/// 返回 (start, end) 字节范围，如果解析失败返回 None
+fn parse_range_header(range_str: &str, file_size: u64) -> Option<(u64, u64)> {
+    // Range 格式: "bytes=start-end" 或 "bytes=start-"
+    if !range_str.starts_with("bytes=") {
+        return None;
+    }
+
+    let range_part = &range_str[6..]; // 跳过 "bytes="
+    let parts: Vec<&str> = range_part.split('-').collect();
+
+    if parts.len() != 2 {
+        return None;
+    }
+
+    let start = parts[0].parse::<u64>().ok()?;
+    let end = if parts[1].is_empty() {
+        // "bytes=start-" 表示从 start 到文件末尾
+        file_size - 1
+    } else {
+        parts[1].parse::<u64>().ok()?
+    };
+
+    // 验证范围有效性
+    if start > end || end >= file_size {
+        return None;
+    }
+
+    Some((start, end))
 }

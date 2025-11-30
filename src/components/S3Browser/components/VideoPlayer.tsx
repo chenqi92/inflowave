@@ -1,6 +1,7 @@
 /**
  * 增强的视频播放器组件
  * 提供完整的播放控制功能
+ * 在 Tauri 桌面环境中使用系统播放器打开视频
  */
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,8 @@ import {
   List,
   Repeat,
   Repeat1,
+  ExternalLink,
+  FileVideo,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,13 +35,14 @@ import {
   DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import { useTranslation } from '@/hooks/useTranslation';
-import { isTauriEnvironment } from '@/utils/tauri';
+import { isTauriEnvironment, safeTauriInvoke } from '@/utils/tauri';
 import type { S3Object } from '@/types/s3';
 import logger from '@/utils/logger';
 
 interface VideoPlayerProps {
   src: string;
   object: S3Object;
+  tempFilePath?: string; // 临时文件路径，用于系统播放器
   onNext?: () => void;
   onPrevious?: () => void;
   hasNext?: boolean;
@@ -54,6 +58,7 @@ type RepeatMode = 'none' | 'one' | 'all';
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   src,
   object,
+  tempFilePath,
   onNext,
   onPrevious,
   hasNext = false,
@@ -70,14 +75,43 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   // 检测 Tauri 环境
   const isTauri = isTauriEnvironment();
 
+  // 是否正在使用系统播放器打开
+  const [isOpeningExternal, setIsOpeningExternal] = useState(false);
+  const [externalOpenSuccess, setExternalOpenSuccess] = useState(false);
+
+  // 使用系统默认播放器打开视频
+  const openWithSystemPlayer = useCallback(async () => {
+    if (!tempFilePath) {
+      logger.error('[VideoPlayer] No temp file path available');
+      return;
+    }
+
+    setIsOpeningExternal(true);
+    logger.info('[VideoPlayer] Opening video with system player:', tempFilePath);
+
+    try {
+      // 使用 Tauri opener 插件打开本地文件
+      // opener 插件的 openPath 专门用于打开本地文件路径
+      const { openPath } = await import('@tauri-apps/plugin-opener');
+
+      logger.info('[VideoPlayer] Opening file path:', tempFilePath);
+      await openPath(tempFilePath);
+      setExternalOpenSuccess(true);
+      logger.info('[VideoPlayer] Successfully opened video with system player');
+    } catch (error) {
+      logger.error('[VideoPlayer] Failed to open with system player:', error);
+      setExternalOpenSuccess(false);
+    } finally {
+      setIsOpeningExternal(false);
+    }
+  }, [tempFilePath]);
+
   // 调试：检查 src 变化
   useEffect(() => {
     logger.info('[VideoPlayer] src changed:', src);
-    logger.info('[VideoPlayer] src type:', typeof src);
-    logger.info('[VideoPlayer] src is blob URL:', src?.startsWith('blob:'));
-    logger.info('[VideoPlayer] src is HTTP URL:', src?.startsWith('http://'));
+    logger.info('[VideoPlayer] tempFilePath:', tempFilePath);
     logger.info('[VideoPlayer] isTauri environment:', isTauri);
-  }, [src, isTauri]);
+  }, [src, tempFilePath, isTauri]);
 
   // 通知父组件video元素已准备好
   useEffect(() => {
@@ -86,10 +120,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     }
   }, [onVideoReady]);
 
-  // 当 src 改变时，强制视频元素重新加载
+  // 当 src 改变时，强制视频元素重新加载（仅非 Tauri 环境）
   useEffect(() => {
     const video = videoRef.current;
-    if (video && src) {
+    if (video && src && !isTauri) {
       logger.info('[VideoPlayer] Forcing video load with src:', src);
 
       // 重置视频状态
@@ -100,16 +134,8 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
       // 强制重新加载
       video.load();
-
-      logger.info('[VideoPlayer] Video element after load:', {
-        src: video.src,
-        currentSrc: video.currentSrc,
-        readyState: video.readyState,
-        networkState: video.networkState,
-        error: video.error
-      });
     }
-  }, [src]);
+  }, [src, isTauri]);
 
   // 播放状态
   const [isPlaying, setIsPlaying] = useState(false);
@@ -421,6 +447,98 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // 在 Tauri 环境中，显示系统播放器界面
+  if (isTauri && tempFilePath) {
+    return (
+      <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg overflow-hidden">
+        {/* 视频预览卡片 */}
+        <div className="flex flex-col items-center justify-center py-16 px-8">
+          {/* 视频图标 */}
+          <div className="relative mb-6">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl">
+              <FileVideo className="w-12 h-12 text-white" />
+            </div>
+            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+              <Play className="w-4 h-4 text-white ml-0.5" />
+            </div>
+          </div>
+
+          {/* 文件名 */}
+          <h3 className="text-lg font-medium text-white mb-2 text-center max-w-md truncate">
+            {object.name}
+          </h3>
+
+          {/* 文件信息 */}
+          <p className="text-sm text-slate-400 mb-6">
+            {object.size ? `${(object.size / 1024 / 1024).toFixed(2)} MB` : ''}
+          </p>
+
+          {/* 播放按钮 */}
+          <Button
+            onClick={openWithSystemPlayer}
+            disabled={isOpeningExternal}
+            size="lg"
+            className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-6 text-base rounded-xl shadow-lg"
+          >
+            {isOpeningExternal ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                {t('video_player.opening') || '正在打开...'}
+              </>
+            ) : (
+              <>
+                <ExternalLink className="w-5 h-5 mr-3" />
+                {t('video_player.open_with_system_player') || '使用系统播放器打开'}
+              </>
+            )}
+          </Button>
+
+          {/* 成功提示 */}
+          {externalOpenSuccess && (
+            <p className="text-sm text-green-400 mt-4">
+              {t('video_player.opened_successfully') || '已在系统播放器中打开'}
+            </p>
+          )}
+
+          {/* 说明文字 */}
+          <p className="text-xs text-slate-500 mt-6 text-center max-w-sm">
+            {t('video_player.system_player_hint') || '视频将使用系统默认播放器打开，获得最佳播放体验'}
+          </p>
+
+          {/* 播放列表导航 */}
+          {playlist.length > 1 && (
+            <div className="flex items-center gap-4 mt-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onPrevious}
+                disabled={!hasPrevious}
+                className="text-slate-400 hover:text-white"
+              >
+                <SkipBack className="w-4 h-4 mr-1" />
+                {t('video_player.previous') || '上一个'}
+              </Button>
+              <span className="text-slate-500 text-sm">
+                {currentIndex + 1} / {playlist.length}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onNext}
+                disabled={!hasNext}
+                className="text-slate-400 hover:text-white"
+              >
+                {t('video_player.next') || '下一个'}
+                <SkipForward className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 非 Tauri 环境，使用内置视频播放器
   return (
     <div
       ref={containerRef}
