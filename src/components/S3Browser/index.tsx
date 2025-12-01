@@ -250,6 +250,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   const [newBucketName, setNewBucketName] = useState('');
   const [bucketNameError, setBucketNameError] = useState('');
 
+  // 创建文件夹对话框状态
+  const [showCreateFolderDialog, setShowCreateFolderDialog] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [folderNameError, setFolderNameError] = useState('');
+
   // 框选状态
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState<{
@@ -1488,6 +1493,37 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     return '';
   };
 
+  // 验证文件夹名称
+  const validateFolderName = (name: string): string => {
+    if (!name || !name.trim()) {
+      return String(t('s3:folder.name_required', { defaultValue: '请输入文件夹名称' }));
+    }
+
+    const trimmedName = name.trim();
+
+    // 不能包含斜杠
+    if (trimmedName.includes('/')) {
+      return String(t('s3:folder.name_no_slash', { defaultValue: '文件夹名称不能包含斜杠' }));
+    }
+
+    // 不能是 . 或 ..
+    if (trimmedName === '.' || trimmedName === '..') {
+      return String(t('s3:folder.name_invalid', { defaultValue: '文件夹名称不能为 . 或 ..' }));
+    }
+
+    // 检查是否与现有文件夹重复
+    const existingFolders = new Set(
+      objects
+        .filter(obj => obj.isDirectory)
+        .map(obj => obj.name)
+    );
+    if (existingFolders.has(trimmedName)) {
+      return String(t('s3:folder.name_exists', { defaultValue: '该文件夹已存在' }));
+    }
+
+    return '';
+  };
+
   const handleCreateBucket = async () => {
     // 验证bucket名称
     const error = validateBucketName(newBucketName);
@@ -1534,15 +1570,26 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       return;
     }
 
+    // 打开创建文件夹对话框
+    setNewFolderName('');
+    setFolderNameError('');
+    setShowCreateFolderDialog(true);
+  };
+
+  const handleCreateFolderSubmit = async () => {
+    // 验证文件夹名称
+    const error = validateFolderName(newFolderName);
+    if (error) {
+      setFolderNameError(error);
+      return;
+    }
+
     setIsLoading(true);
+    setShowCreateFolderDialog(false);
 
     try {
-      // 生成唯一的文件夹名称
-      const baseName = String(
-        t('s3:folder.default_name', { defaultValue: '新建文件夹' })
-      );
-      const uniqueName = generateUniqueFolderName(baseName);
-      const folderPath = buildObjectPath(currentPath, uniqueName);
+      const trimmedName = newFolderName.trim();
+      const folderPath = buildObjectPath(currentPath, trimmedName);
 
       // 确保路径以 / 结尾
       const folderKey = folderPath.endsWith('/')
@@ -1560,11 +1607,15 @@ const S3Browser: React.FC<S3BrowserProps> = ({
 
       showMessage.success(
         String(
-          t('s3:folder.created_rename_tip', {
-            defaultValue: '文件夹已创建，双击可重命名',
+          t('s3:folder.created', {
+            defaultValue: '文件夹已创建',
           })
         )
       );
+
+      // 重置状态
+      setNewFolderName('');
+      setFolderNameError('');
 
       // 重新加载对象列表
       await loadObjects();
@@ -3649,6 +3700,69 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               {String(t('common:cancel'))}
             </Button>
             <Button onClick={handleCreateBucket}>
+              {String(t('common:confirm'))}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 创建文件夹对话框 */}
+      <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t('s3:folder.create', { defaultValue: '创建文件夹' })}
+            </DialogTitle>
+            <DialogDescription>
+              {t('s3:folder.create_description', { defaultValue: '请输入文件夹名称' })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className='py-4 space-y-4'>
+            <div className='space-y-2'>
+              <Input
+                value={newFolderName}
+                onChange={e => {
+                  setNewFolderName(e.target.value);
+                  // 实时验证
+                  if (folderNameError) {
+                    setFolderNameError('');
+                  }
+                }}
+                placeholder={t('s3:folder.name_placeholder', {
+                  defaultValue: '例如: documents',
+                })}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    handleCreateFolderSubmit();
+                  }
+                }}
+                className={folderNameError ? 'border-destructive' : ''}
+              />
+              {folderNameError && (
+                <p className='text-sm text-destructive'>{folderNameError}</p>
+              )}
+            </div>
+            <div className='text-sm text-muted-foreground space-y-1'>
+              <p className='font-medium'>{t('s3:folder.naming_rules', { defaultValue: '命名规则：' })}</p>
+              <ul className='list-disc list-inside space-y-0.5 ml-2'>
+                <li>{t('s3:folder.rule_no_slash', { defaultValue: '不能包含斜杠 (/)' })}</li>
+                <li>{t('s3:folder.rule_no_dots', { defaultValue: '不能为 . 或 ..' })}</li>
+                <li>{t('s3:folder.rule_unique', { defaultValue: '不能与现有文件夹重复' })}</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setShowCreateFolderDialog(false);
+                setNewFolderName('');
+                setFolderNameError('');
+              }}
+            >
+              {String(t('common:cancel'))}
+            </Button>
+            <Button onClick={handleCreateFolderSubmit}>
               {String(t('common:confirm'))}
             </Button>
           </DialogFooter>
