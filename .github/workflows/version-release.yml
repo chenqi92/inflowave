@@ -564,127 +564,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
-  # 上传到 Cloudflare R2（用于国内访问）
+  # 调用独立的 R2 上传 workflow（可选，如需禁用请注释掉此 job）
   upload-to-r2:
     needs: [detect-version, build-release]
     if: needs.detect-version.outputs.should_release == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Install AWS CLI
-        run: |
-          echo "📦 Installing AWS CLI..."
-          # 使用官方安装脚本安装 AWS CLI v2
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
-          aws --version
-          echo "✅ AWS CLI installed successfully"
-
-      - name: Configure AWS CLI for Cloudflare R2
-        run: |
-          echo "🔧 Configuring AWS CLI for Cloudflare R2..."
-          aws configure set aws_access_key_id ${{ secrets.R2_ACCESS_KEY_ID }}
-          aws configure set aws_secret_access_key ${{ secrets.R2_SECRET_ACCESS_KEY }}
-          aws configure set default.region auto
-          echo "✅ AWS CLI configured"
-
-      - name: Download release assets
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          echo "📥 Downloading release assets from GitHub Release..."
-          VERSION="${{ needs.detect-version.outputs.version }}"
-
-          # 创建临时目录
-          mkdir -p ./r2-upload
-          cd ./r2-upload
-
-          # 下载 macOS ARM64 DMG
-          echo "Downloading macOS ARM64 DMG..."
-          gh release download "v${VERSION}" \
-            --pattern "*aarch64*.dmg" \
-            --repo ${{ github.repository }} || echo "⚠️ macOS ARM64 DMG not found"
-
-          # 下载 Windows x64 MSI
-          echo "Downloading Windows x64 MSI..."
-          gh release download "v${VERSION}" \
-            --pattern "*x64*.msi" \
-            --repo ${{ github.repository }} || echo "⚠️ Windows x64 MSI not found"
-
-          # 列出下载的文件
-          echo "📋 Downloaded files:"
-          ls -lh
-
-          cd ..
-
-      - name: Upload to Cloudflare R2
-        env:
-          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET_NAME }}
-        run: |
-          echo "☁️ Uploading files to Cloudflare R2..."
-          VERSION="${{ needs.detect-version.outputs.version }}"
-
-          # 检查是否有文件需要上传
-          if [ -z "$(ls -A ./r2-upload)" ]; then
-            echo "⚠️ No files to upload"
-            exit 0
-          fi
-
-          # 上传所有文件到 R2
-          for file in ./r2-upload/*; do
-            if [ -f "$file" ]; then
-              filename=$(basename "$file")
-              echo "📤 Uploading: $filename"
-
-              # 上传到 R2，路径格式: releases/v{version}/{filename}
-              aws s3 cp "$file" \
-                "s3://${R2_BUCKET}/releases/v${VERSION}/${filename}" \
-                --endpoint-url "${R2_ENDPOINT}" \
-                --acl public-read || echo "⚠️ Failed to upload $filename"
-
-              if [ $? -eq 0 ]; then
-                echo "✅ Successfully uploaded: $filename"
-              fi
-            fi
-          done
-
-          echo "🎉 Upload to Cloudflare R2 completed!"
-
-      - name: Generate download URLs
-        env:
-          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
-          R2_BUCKET: ${{ secrets.R2_BUCKET_NAME }}
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
-        run: |
-          echo "🔗 Generating download URLs..."
-          VERSION="${{ needs.detect-version.outputs.version }}"
-
-          echo "## Cloudflare R2 下载链接（国内访问）" > r2-urls.md
-          echo "" >> r2-urls.md
-
-          for file in ./r2-upload/*; do
-            if [ -f "$file" ]; then
-              filename=$(basename "$file")
-              # 如果配置了公共 URL，使用它；否则使用默认格式
-              if [ -n "${R2_PUBLIC_URL}" ]; then
-                url="${R2_PUBLIC_URL}/releases/v${VERSION}/${filename}"
-              else
-                url="https://${R2_BUCKET}.r2.dev/releases/v${VERSION}/${filename}"
-              fi
-              echo "- [$filename]($url)" >> r2-urls.md
-            fi
-          done
-
-          echo "" >> r2-urls.md
-          cat r2-urls.md
-
-          # 将下载链接添加到 Release 说明中
-          if [ -f "r2-urls.md" ]; then
-            gh release edit "v${VERSION}" \
-              --notes-file r2-urls.md \
-              --repo ${{ github.repository }} || echo "⚠️ Failed to update release notes"
-          fi
+    uses: ./.github/workflows/upload-to-r2.yml
+    secrets: inherit
+    with:
+      version: ${{ needs.detect-version.outputs.version }}
+      upload_macos_arm: true
+      upload_windows_x64: true
+      update_release_notes: true

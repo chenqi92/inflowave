@@ -62,12 +62,35 @@
 
 ### 5. 验证配置
 
-配置完成后，下次触发 release 时，workflow 会自动：
+配置完成后，有两种方式使用 R2 上传功能：
 
-1. 构建 macOS ARM64 和 Windows x64 安装包
+#### 自动上传（推荐）
+
+下次触发 release 时，`version-release.yml` workflow 会自动：
+
+1. 构建所有平台的安装包
 2. 上传到 GitHub Release
-3. 同时上传到 Cloudflare R2
+3. **自动调用** `upload-to-r2.yml` 上传到 Cloudflare R2
 4. 在 Release 说明中添加 R2 下载链接
+
+#### 手动上传
+
+如果需要单独上传某个版本到 R2：
+
+1. 进入 GitHub 仓库的 **Actions** 标签
+2. 选择 **"Upload to Cloudflare R2"** workflow
+3. 点击 **"Run workflow"**
+4. 填写参数：
+   - **版本号**: 例如 `1.0.0`（不需要 `v` 前缀）
+   - **上传 macOS ARM64 包**: 勾选或取消
+   - **上传 Windows x64 MSI 包**: 勾选或取消
+   - **更新 Release 说明**: 是否添加 R2 下载链接
+5. 点击 **"Run workflow"** 开始上传
+
+这种方式适用于：
+- 重新上传某个版本的包
+- 只上传特定平台的包
+- Release 已完成但需要补充上传到 R2
 
 ## 上传的文件
 
@@ -77,6 +100,26 @@
 - **Windows x64**: `*x64*.msi` - 适用于 64 位 Windows 系统
 
 文件在 R2 中的路径格式：`releases/v{version}/{filename}`
+
+## 禁用自动上传
+
+如果只想手动控制 R2 上传，可以在 `version-release.yml` 中注释掉自动上传部分：
+
+```yaml
+# 注释掉以下 job 即可禁用自动上传
+# upload-to-r2:
+#   needs: [detect-version, build-release]
+#   if: needs.detect-version.outputs.should_release == 'true'
+#   uses: ./.github/workflows/upload-to-r2.yml
+#   secrets: inherit
+#   with:
+#     version: ${{ needs.detect-version.outputs.version }}
+#     upload_macos_arm: true
+#     upload_windows_x64: true
+#     update_release_notes: true
+```
+
+禁用后，仍可以通过手动触发 `upload-to-r2.yml` workflow 来上传文件。
 
 ## 自定义域名配置（推荐）
 
