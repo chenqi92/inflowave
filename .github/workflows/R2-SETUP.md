@@ -84,9 +84,21 @@
 3. 点击 **"Run workflow"**
 4. 填写参数：
    - **版本号**: 例如 `1.0.0`（不需要 `v` 前缀）
-   - **上传 macOS ARM64 包**: 勾选或取消
-   - **上传 Windows x64 MSI 包**: 勾选或取消
+   - **选择要上传的包**（可多选）：
+     - macOS ARM64 DMG（默认选中）
+     - macOS x64 DMG
+     - Windows x64 MSI（默认选中）
+     - Windows x64 NSIS
+     - Windows x86 MSI
+     - Windows x86 NSIS
+     - Linux x64 DEB
+     - Linux x64 RPM
+     - Linux x64 AppImage
+     - Linux ARM64 DEB
+     - Linux ARM64 RPM
+     - Linux ARM64 AppImage
    - **更新 Release 说明**: 是否添加 R2 下载链接
+   - **更新 README.md**: 是否添加 R2 镜像链接
 5. 点击 **"Run workflow"** 开始上传
 
 这种方式适用于：
@@ -94,14 +106,58 @@
 - 只上传特定平台的包
 - Release 已完成但需要补充上传到 R2
 
-## 上传的文件
+## 支持的包类型
 
-当前配置会上传以下文件到 R2：
+workflow 支持上传以下所有平台的包到 R2：
 
-- **macOS ARM64**: `*aarch64*.dmg` - 适用于 Apple Silicon (M1/M2/M3) Mac
-- **Windows x64**: `*x64*.msi` - 适用于 64 位 Windows 系统
+### macOS
+- **macOS ARM64 DMG**: `*aarch64*.dmg` - 适用于 Apple Silicon (M1/M2/M3) Mac（默认上传）
+- **macOS x64 DMG**: `*x64*.dmg` - 适用于 Intel Mac
+
+### Windows
+- **Windows x64 MSI**: `*x64*.msi` - 64 位 Windows MSI 安装包（默认上传）
+- **Windows x64 NSIS**: `*x64*.exe` - 64 位 Windows NSIS 安装包
+- **Windows x86 MSI**: `*x86*.msi` - 32 位 Windows MSI 安装包
+- **Windows x86 NSIS**: `*x86*.exe` - 32 位 Windows NSIS 安装包
+
+### Linux
+- **Linux x64 DEB**: `*amd64*.deb` - Debian/Ubuntu 64 位包
+- **Linux x64 RPM**: `*x86_64*.rpm` - RedHat/Fedora 64 位包
+- **Linux x64 AppImage**: `*amd64*.AppImage` - 通用 Linux 64 位包
+- **Linux ARM64 DEB**: `*arm64*.deb` - Debian/Ubuntu ARM64 包
+- **Linux ARM64 RPM**: `*aarch64*.rpm` - RedHat/Fedora ARM64 包
+- **Linux ARM64 AppImage**: `*arm64*.AppImage` - 通用 Linux ARM64 包
 
 文件在 R2 中的路径格式：`releases/v{version}/{filename}`
+
+## 自定义自动上传的包
+
+默认情况下，自动上传只会上传 macOS ARM64 DMG 和 Windows x64 MSI。如果你想修改自动上传的包，可以编辑 `version-release.yml` 中的 `upload-to-r2` job：
+
+```yaml
+upload-to-r2:
+  needs: [detect-version, build-release]
+  if: needs.detect-version.outputs.should_release == 'true'
+  uses: ./.github/workflows/upload-to-r2.yml
+  secrets: inherit
+  with:
+    version: ${{ needs.detect-version.outputs.version }}
+    # 修改这些值来控制上传哪些包（true = 上传，false = 不上传）
+    upload_macos_arm64: true          # macOS ARM64 DMG
+    upload_macos_x64: false           # macOS x64 DMG
+    upload_windows_x64_msi: true      # Windows x64 MSI
+    upload_windows_x64_nsis: false    # Windows x64 NSIS
+    upload_windows_x86_msi: false     # Windows x86 MSI
+    upload_windows_x86_nsis: false    # Windows x86 NSIS
+    upload_linux_x64_deb: false       # Linux x64 DEB
+    upload_linux_x64_rpm: false       # Linux x64 RPM
+    upload_linux_x64_appimage: false  # Linux x64 AppImage
+    upload_linux_arm64_deb: false     # Linux ARM64 DEB
+    upload_linux_arm64_rpm: false     # Linux ARM64 RPM
+    upload_linux_arm64_appimage: false # Linux ARM64 AppImage
+    update_release_notes: true        # 更新 Release 说明
+    update_readme: true               # 更新 README.md
+```
 
 ## 禁用自动上传
 
@@ -116,9 +172,7 @@
 #   secrets: inherit
 #   with:
 #     version: ${{ needs.detect-version.outputs.version }}
-#     upload_macos_arm: true
-#     upload_windows_x64: true
-#     update_release_notes: true
+#     ...
 ```
 
 禁用后，仍可以通过手动触发 `upload-to-r2.yml` workflow 来上传文件。

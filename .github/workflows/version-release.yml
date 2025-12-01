@@ -572,6 +572,20 @@ jobs:
     secrets: inherit
     with:
       version: ${{ needs.detect-version.outputs.version }}
-      upload_macos_arm: true
-      upload_windows_x64: true
+      # 默认上传 macOS ARM64 和 Windows x64 MSI
+      upload_macos_arm64: true
+      upload_windows_x64_msi: true
+      # 其他包默认不上传，可根据需要修改
+      upload_macos_x64: false
+      upload_windows_x64_nsis: false
+      upload_windows_x86_msi: false
+      upload_windows_x86_nsis: false
+      upload_linux_x64_deb: false
+      upload_linux_x64_rpm: false
+      upload_linux_x64_appimage: false
+      upload_linux_arm64_deb: false
+      upload_linux_arm64_rpm: false
+      upload_linux_arm64_appimage: false
+      # 更新选项
       update_release_notes: true
+      update_readme: true

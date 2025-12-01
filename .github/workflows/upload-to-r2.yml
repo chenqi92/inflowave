@@ -8,22 +8,82 @@ on:
         description: '版本号（例如：1.0.0，不需要 v 前缀）'
         required: true
         type: string
-      upload_macos_arm:
-        description: '上传 macOS ARM64 包'
+      # macOS 包
+      upload_macos_arm64:
+        description: '上传 macOS ARM64 DMG'
         required: false
         type: boolean
         default: true
-      upload_windows_x64:
-        description: '上传 Windows x64 MSI 包'
+      upload_macos_x64:
+        description: '上传 macOS x64 DMG'
+        required: false
+        type: boolean
+        default: false
+      # Windows 包
+      upload_windows_x64_msi:
+        description: '上传 Windows x64 MSI'
         required: false
         type: boolean
         default: true
+      upload_windows_x64_nsis:
+        description: '上传 Windows x64 NSIS'
+        required: false
+        type: boolean
+        default: false
+      upload_windows_x86_msi:
+        description: '上传 Windows x86 MSI'
+        required: false
+        type: boolean
+        default: false
+      upload_windows_x86_nsis:
+        description: '上传 Windows x86 NSIS'
+        required: false
+        type: boolean
+        default: false
+      # Linux x64 包
+      upload_linux_x64_deb:
+        description: '上传 Linux x64 DEB'
+        required: false
+        type: boolean
+        default: false
+      upload_linux_x64_rpm:
+        description: '上传 Linux x64 RPM'
+        required: false
+        type: boolean
+        default: false
+      upload_linux_x64_appimage:
+        description: '上传 Linux x64 AppImage'
+        required: false
+        type: boolean
+        default: false
+      # Linux ARM64 包
+      upload_linux_arm64_deb:
+        description: '上传 Linux ARM64 DEB'
+        required: false
+        type: boolean
+        default: false
+      upload_linux_arm64_rpm:
+        description: '上传 Linux ARM64 RPM'
+        required: false
+        type: boolean
+        default: false
+      upload_linux_arm64_appimage:
+        description: '上传 Linux ARM64 AppImage'
+        required: false
+        type: boolean
+        default: false
+      # 其他选项
       update_release_notes:
         description: '更新 Release 说明（添加 R2 下载链接）'
         required: false
         type: boolean
         default: true
-  
+      update_readme:
+        description: '更新 README.md（添加 R2 镜像链接）'
+        required: false
+        type: boolean
+        default: true
+
   # 支持被其他 workflow 调用
   workflow_call:
     inputs:
@@ -31,18 +91,78 @@ on:
         description: '版本号（例如：1.0.0，不需要 v 前缀）'
         required: true
         type: string
-      upload_macos_arm:
-        description: '上传 macOS ARM64 包'
+      # macOS 包
+      upload_macos_arm64:
+        description: '上传 macOS ARM64 DMG'
         required: false
         type: boolean
         default: true
-      upload_windows_x64:
-        description: '上传 Windows x64 MSI 包'
+      upload_macos_x64:
+        description: '上传 macOS x64 DMG'
+        required: false
+        type: boolean
+        default: false
+      # Windows 包
+      upload_windows_x64_msi:
+        description: '上传 Windows x64 MSI'
         required: false
         type: boolean
         default: true
+      upload_windows_x64_nsis:
+        description: '上传 Windows x64 NSIS'
+        required: false
+        type: boolean
+        default: false
+      upload_windows_x86_msi:
+        description: '上传 Windows x86 MSI'
+        required: false
+        type: boolean
+        default: false
+      upload_windows_x86_nsis:
+        description: '上传 Windows x86 NSIS'
+        required: false
+        type: boolean
+        default: false
+      # Linux x64 包
+      upload_linux_x64_deb:
+        description: '上传 Linux x64 DEB'
+        required: false
+        type: boolean
+        default: false
+      upload_linux_x64_rpm:
+        description: '上传 Linux x64 RPM'
+        required: false
+        type: boolean
+        default: false
+      upload_linux_x64_appimage:
+        description: '上传 Linux x64 AppImage'
+        required: false
+        type: boolean
+        default: false
+      # Linux ARM64 包
+      upload_linux_arm64_deb:
+        description: '上传 Linux ARM64 DEB'
+        required: false
+        type: boolean
+        default: false
+      upload_linux_arm64_rpm:
+        description: '上传 Linux ARM64 RPM'
+        required: false
+        type: boolean
+        default: false
+      upload_linux_arm64_appimage:
+        description: '上传 Linux ARM64 AppImage'
+        required: false
+        type: boolean
+        default: false
+      # 其他选项
       update_release_notes:
         description: '更新 Release 说明（添加 R2 下载链接）'
+        required: false
+        type: boolean
+        default: true
+      update_readme:
+        description: '更新 README.md（添加 R2 镜像链接）'
         required: false
         type: boolean
         default: true
@@ -77,31 +197,104 @@ jobs:
         run: |
           echo "📥 Downloading release assets from GitHub Release..."
           VERSION="${{ inputs.version }}"
-          
+
           # 创建临时目录
           mkdir -p ./r2-upload
           cd ./r2-upload
-          
-          # 下载 macOS ARM64 DMG
-          if [[ "${{ inputs.upload_macos_arm }}" == "true" ]]; then
+
+          # macOS 包
+          if [[ "${{ inputs.upload_macos_arm64 }}" == "true" ]]; then
             echo "📦 Downloading macOS ARM64 DMG..."
             gh release download "v${VERSION}" \
               --pattern "*aarch64*.dmg" \
               --repo ${{ github.repository }} || echo "⚠️ macOS ARM64 DMG not found"
           fi
-          
-          # 下载 Windows x64 MSI
-          if [[ "${{ inputs.upload_windows_x64 }}" == "true" ]]; then
+
+          if [[ "${{ inputs.upload_macos_x64 }}" == "true" ]]; then
+            echo "📦 Downloading macOS x64 DMG..."
+            gh release download "v${VERSION}" \
+              --pattern "*x64*.dmg" \
+              --repo ${{ github.repository }} || echo "⚠️ macOS x64 DMG not found"
+          fi
+
+          # Windows x64 包
+          if [[ "${{ inputs.upload_windows_x64_msi }}" == "true" ]]; then
             echo "📦 Downloading Windows x64 MSI..."
             gh release download "v${VERSION}" \
               --pattern "*x64*.msi" \
               --repo ${{ github.repository }} || echo "⚠️ Windows x64 MSI not found"
           fi
-          
+
+          if [[ "${{ inputs.upload_windows_x64_nsis }}" == "true" ]]; then
+            echo "📦 Downloading Windows x64 NSIS..."
+            gh release download "v${VERSION}" \
+              --pattern "*x64*.exe" \
+              --repo ${{ github.repository }} || echo "⚠️ Windows x64 NSIS not found"
+          fi
+
+          # Windows x86 包
+          if [[ "${{ inputs.upload_windows_x86_msi }}" == "true" ]]; then
+            echo "📦 Downloading Windows x86 MSI..."
+            gh release download "v${VERSION}" \
+              --pattern "*x86*.msi" \
+              --repo ${{ github.repository }} || echo "⚠️ Windows x86 MSI not found"
+          fi
+
+          if [[ "${{ inputs.upload_windows_x86_nsis }}" == "true" ]]; then
+            echo "📦 Downloading Windows x86 NSIS..."
+            gh release download "v${VERSION}" \
+              --pattern "*x86*.exe" \
+              --repo ${{ github.repository }} || echo "⚠️ Windows x86 NSIS not found"
+          fi
+
+          # Linux x64 包
+          if [[ "${{ inputs.upload_linux_x64_deb }}" == "true" ]]; then
+            echo "📦 Downloading Linux x64 DEB..."
+            gh release download "v${VERSION}" \
+              --pattern "*amd64*.deb" \
+              --repo ${{ github.repository }} || echo "⚠️ Linux x64 DEB not found"
+          fi
+
+          if [[ "${{ inputs.upload_linux_x64_rpm }}" == "true" ]]; then
+            echo "📦 Downloading Linux x64 RPM..."
+            gh release download "v${VERSION}" \
+              --pattern "*x86_64*.rpm" \
+              --repo ${{ github.repository }} || echo "⚠️ Linux x64 RPM not found"
+          fi
+
+          if [[ "${{ inputs.upload_linux_x64_appimage }}" == "true" ]]; then
+            echo "📦 Downloading Linux x64 AppImage..."
+            gh release download "v${VERSION}" \
+              --pattern "*amd64*.AppImage" \
+              --repo ${{ github.repository }} || echo "⚠️ Linux x64 AppImage not found"
+          fi
+
+          # Linux ARM64 包
+          if [[ "${{ inputs.upload_linux_arm64_deb }}" == "true" ]]; then
+            echo "📦 Downloading Linux ARM64 DEB..."
+            gh release download "v${VERSION}" \
+              --pattern "*arm64*.deb" \
+              --repo ${{ github.repository }} || echo "⚠️ Linux ARM64 DEB not found"
+          fi
+
+          if [[ "${{ inputs.upload_linux_arm64_rpm }}" == "true" ]]; then
+            echo "📦 Downloading Linux ARM64 RPM..."
+            gh release download "v${VERSION}" \
+              --pattern "*aarch64*.rpm" \
+              --repo ${{ github.repository }} || echo "⚠️ Linux ARM64 RPM not found"
+          fi
+
+          if [[ "${{ inputs.upload_linux_arm64_appimage }}" == "true" ]]; then
+            echo "📦 Downloading Linux ARM64 AppImage..."
+            gh release download "v${VERSION}" \
+              --pattern "*arm64*.AppImage" \
+              --repo ${{ github.repository }} || echo "⚠️ Linux ARM64 AppImage not found"
+          fi
+
           # 列出下载的文件
           echo "📋 Downloaded files:"
           ls -lh
-          
+
           cd ..
 
       - name: Upload to Cloudflare R2
@@ -212,7 +405,7 @@ jobs:
           fi
 
       - name: Update README with R2 mirror links
-        if: inputs.update_release_notes == true
+        if: inputs.update_readme == true
         env:
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
           R2_BUCKET: ${{ secrets.R2_BUCKET_NAME }}
