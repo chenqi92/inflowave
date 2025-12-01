@@ -245,6 +245,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   const [renameObject, setRenameObject] = useState<S3Object | null>(null);
   const [newName, setNewName] = useState('');
 
+  // 创建bucket对话框状态
+  const [showCreateBucketDialog, setShowCreateBucketDialog] = useState(false);
+  const [newBucketName, setNewBucketName] = useState('');
+  const [bucketNameError, setBucketNameError] = useState('');
+
   // 框选状态
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState<{
@@ -1443,28 +1448,60 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     return newName;
   };
 
+  // 验证bucket名称
+  const validateBucketName = (name: string): string => {
+    if (!name) {
+      return String(t('s3:bucket.name_required', { defaultValue: '请输入存储桶名称' }));
+    }
+
+    // 长度检查
+    if (name.length < 3 || name.length > 63) {
+      return String(t('s3:bucket.name_length_error', { defaultValue: '名称长度必须在3-63个字符之间' }));
+    }
+
+    // 字符检查：只能包含小写字母、数字、点(.)和连字符(-)
+    if (!/^[a-z0-9.-]+$/.test(name)) {
+      return String(t('s3:bucket.name_format_error', { defaultValue: '只能包含小写字母、数字、点(.)和连字符(-)' }));
+    }
+
+    // 开头和结尾检查：必须以字母或数字开头和结尾
+    if (!/^[a-z0-9]/.test(name) || !/[a-z0-9]$/.test(name)) {
+      return String(t('s3:bucket.name_start_end_error', { defaultValue: '必须以字母或数字开头和结尾' }));
+    }
+
+    // 不能包含连续的点
+    if (/\.\./.test(name)) {
+      return String(t('s3:bucket.name_consecutive_dots', { defaultValue: '不能包含连续的点' }));
+    }
+
+    // 不能是IP地址格式
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(name)) {
+      return String(t('s3:bucket.name_ip_format', { defaultValue: '不能使用IP地址格式' }));
+    }
+
+    // 检查是否与现有bucket重复
+    const existingBuckets = new Set(buckets.map(b => b.name));
+    if (existingBuckets.has(name)) {
+      return String(t('s3:bucket.name_exists', { defaultValue: '该名称已存在' }));
+    }
+
+    return '';
+  };
+
   const handleCreateBucket = async () => {
+    // 验证bucket名称
+    const error = validateBucketName(newBucketName);
+    if (error) {
+      setBucketNameError(error);
+      return;
+    }
+
     setIsLoading(true);
+    setShowCreateBucketDialog(false);
 
     try {
-      // S3 bucket名称规则：
-      // - 只能包含小写字母、数字、点(.)和连字符(-)
-      // - 必须以字母或数字开头和结尾
-      // - 长度在3-63个字符之间
-      const baseName = 'new-bucket';
-
-      // 获取现有bucket名称
-      const existingBuckets = new Set(buckets.map(b => b.name));
-
-      let bucketName = baseName;
-      let counter = 1;
-      while (existingBuckets.has(bucketName)) {
-        bucketName = `${baseName}-${counter}`;
-        counter++;
-      }
-
       // 创建bucket
-      await S3Service.createBucket(connectionId, bucketName);
+      await S3Service.createBucket(connectionId, newBucketName);
 
       showMessage.success(
         String(
@@ -1473,6 +1510,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           })
         )
       );
+
+      // 重置状态
+      setNewBucketName('');
+      setBucketNameError('');
 
       // 重新加载bucket列表
       await loadBuckets();
@@ -1485,9 +1526,11 @@ const S3Browser: React.FC<S3BrowserProps> = ({
   };
 
   const handleCreateFolder = async () => {
-    // 如果在根目录（没有选择bucket），则创建bucket
+    // 如果在根目录（没有选择bucket），则打开创建bucket对话框
     if (!currentBucket) {
-      await handleCreateBucket();
+      setNewBucketName('');
+      setBucketNameError('');
+      setShowCreateBucketDialog(true);
       return;
     }
 
@@ -3542,6 +3585,70 @@ const S3Browser: React.FC<S3BrowserProps> = ({
               {String(t('common:cancel'))}
             </Button>
             <Button onClick={handleRenameSubmit} disabled={!newName.trim()}>
+              {String(t('common:confirm'))}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 创建存储桶对话框 */}
+      <Dialog open={showCreateBucketDialog} onOpenChange={setShowCreateBucketDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {t('s3:bucket.create', { defaultValue: '创建存储桶' })}
+            </DialogTitle>
+            <DialogDescription>
+              {t('s3:bucket.create_description', { defaultValue: '请输入存储桶名称（3-63个字符，只能包含小写字母、数字、点和连字符）' })}
+            </DialogDescription>
+          </DialogHeader>
+          <div className='py-4 space-y-4'>
+            <div className='space-y-2'>
+              <Input
+                value={newBucketName}
+                onChange={e => {
+                  setNewBucketName(e.target.value);
+                  // 实时验证
+                  if (bucketNameError) {
+                    setBucketNameError('');
+                  }
+                }}
+                placeholder={t('s3:bucket.name_placeholder', {
+                  defaultValue: '例如: my-bucket',
+                })}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    handleCreateBucket();
+                  }
+                }}
+                className={bucketNameError ? 'border-destructive' : ''}
+              />
+              {bucketNameError && (
+                <p className='text-sm text-destructive'>{bucketNameError}</p>
+              )}
+            </div>
+            <div className='text-sm text-muted-foreground space-y-1'>
+              <p className='font-medium'>{t('s3:bucket.naming_rules', { defaultValue: '命名规则：' })}</p>
+              <ul className='list-disc list-inside space-y-0.5 ml-2'>
+                <li>{t('s3:bucket.rule_length', { defaultValue: '长度3-63个字符' })}</li>
+                <li>{t('s3:bucket.rule_chars', { defaultValue: '只能包含小写字母、数字、点(.)和连字符(-)' })}</li>
+                <li>{t('s3:bucket.rule_start_end', { defaultValue: '必须以字母或数字开头和结尾' })}</li>
+                <li>{t('s3:bucket.rule_no_ip', { defaultValue: '不能使用IP地址格式' })}</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setShowCreateBucketDialog(false);
+                setNewBucketName('');
+                setBucketNameError('');
+              }}
+            >
+              {String(t('common:cancel'))}
+            </Button>
+            <Button onClick={handleCreateBucket}>
               {String(t('common:confirm'))}
             </Button>
           </DialogFooter>
