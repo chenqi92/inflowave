@@ -286,6 +286,12 @@ function updateReadmeVersion(filePath, version, createBackup = true) {
                 replacement: (match, oldVersion) => match.replace(`v${oldVersion}`, `v${version}`),
                 description: 'GitHub下载链接'
             },
+            // R2镜像下载链接中的版本号 (支持任意域名)
+            {
+                regex: /(https?:\/\/[^\/]+\/releases\/v)(\d+\.\d+\.\d+)\//g,
+                replacement: (match, prefix, oldVersion) => `${prefix}${version}/`,
+                description: 'R2镜像下载链接'
+            },
             // Windows文件名中的版本号 (InfloWave_1.2.3 或 InfloWave-1.2.3)
             {
                 regex: /InfloWave[_-](\d+\.\d+\.\d+)/g,

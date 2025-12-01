@@ -21,6 +21,7 @@ import {
 
 import { getVersionInfo } from '@/utils/version';
 import { openExternalLink } from '@/utils/externalLinks';
+import appIcon from '@/assets/app-icon.png';
 
 interface AboutDialogProps {
   visible: boolean;
@@ -49,7 +50,7 @@ const AboutDialog: React.FC<AboutDialogProps> = ({ visible, onClose }) => {
           <div className='flex items-center gap-3'>
             {/* 应用图标 */}
             <img
-              src='/app-icon.png'
+              src={appIcon}
               alt='InfloWave'
               className='w-14 h-14 rounded-xl shadow-md'
             />

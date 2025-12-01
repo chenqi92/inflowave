@@ -169,12 +169,18 @@ jobs:
 
               # 如果配置了公共 URL，使用它；否则使用默认格式
               if [ -n "${R2_PUBLIC_URL}" ]; then
-                url="${R2_PUBLIC_URL}/releases/v${VERSION}/${filename}"
+                # 确保 URL 包含协议前缀
+                if [[ "${R2_PUBLIC_URL}" =~ ^https?:// ]]; then
+                  base_url="${R2_PUBLIC_URL}"
+                else
+                  base_url="https://${R2_PUBLIC_URL}"
+                fi
+                url="${base_url}/releases/v${VERSION}/${filename}"
               else
                 url="https://${R2_BUCKET}.r2.dev/releases/v${VERSION}/${filename}"
               fi
 
-              echo "- **${filename}** (${filesize}): [下载链接]($url)" >> r2-urls.md
+              echo "- **${filename}** (${filesize}): [下载链接](${url})" >> r2-urls.md
             fi
           done
 
@@ -203,5 +209,84 @@ jobs:
               --repo ${{ github.repository }}
 
             echo "✅ Release notes updated with R2 download links"
+          fi
+
+      - name: Update README with R2 mirror links
+        if: inputs.update_release_notes == true
+        env:
+          R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET_NAME }}
+        run: |
+          echo "📝 Updating README.md with R2 mirror links..."
+          VERSION="${{ inputs.version }}"
+
+          # 检查是否有文件
+          if [ -z "$(ls -A ./r2-upload)" ]; then
+            echo "⚠️ No files to update in README"
+            exit 0
+          fi
+
+          # 检查 README.md 是否存在
+          if [ ! -f "README.md" ]; then
+            echo "⚠️ README.md not found, skipping update"
+            exit 0
+          fi
+
+          # 确保 URL 包含协议前缀
+          if [ -n "${R2_PUBLIC_URL}" ]; then
+            if [[ "${R2_PUBLIC_URL}" =~ ^https?:// ]]; then
+              base_url="${R2_PUBLIC_URL}"
+            else
+              base_url="https://${R2_PUBLIC_URL}"
+            fi
+          else
+            base_url="https://${R2_BUCKET}.r2.dev"
+          fi
+
+          # 生成 R2 镜像链接并更新 README
+          for file in ./r2-upload/*; do
+            if [ -f "$file" ]; then
+              filename=$(basename "$file")
+              r2_url="${base_url}/releases/v${VERSION}/${filename}"
+              github_url="https://github.com/${{ github.repository }}/releases/download/v${VERSION}/${filename}"
+
+              echo "🔄 Updating link for: $filename"
+              echo "   GitHub: $github_url"
+              echo "   R2: $r2_url"
+
+              # 在 README 中查找 GitHub 下载链接，并在其后添加国内镜像链接
+              # 使用 sed 在每个 GitHub 下载链接后添加国内镜像提示
+              if grep -q "$github_url" README.md; then
+                # 检查是否已经有国内镜像链接
+                if ! grep -q "国内镜像.*$filename" README.md; then
+                  # 在 GitHub 链接所在行后添加国内镜像链接
+                  sed -i "s|\($github_url\)|\1 \| [🇨🇳 国内镜像]($r2_url)|g" README.md
+                  echo "   ✅ Added R2 mirror link"
+                else
+                  # 更新现有的国内镜像链接
+                  sed -i "s|\[🇨🇳 国内镜像\]([^)]*$filename)|\[🇨🇳 国内镜像\]($r2_url)|g" README.md
+                  echo "   ✅ Updated existing R2 mirror link"
+                fi
+              else
+                echo "   ⚠️ GitHub link not found in README"
+              fi
+            fi
+          done
+
+          echo "✅ README.md updated with R2 mirror links"
+
+      - name: Commit and push README changes
+        if: inputs.update_release_notes == true
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          if git diff --quiet README.md; then
+            echo "ℹ️ No changes to README.md"
+          else
+            git add README.md
+            git commit -m "docs: update download links to v${{ inputs.version }}"
+            git push
+            echo "✅ README.md changes committed and pushed"
           fi
 

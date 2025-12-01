@@ -58,7 +58,9 @@
 
 | Secret 名称 | 说明 | 示例值 |
 |------------|------|--------|
-| `R2_PUBLIC_URL` | R2 公共访问 URL（如果配置了公共访问） | `https://releases.yourdomain.com` 或 `https://your-bucket.r2.dev` |
+| `R2_PUBLIC_URL` | R2 公共访问 URL（如果配置了公共访问） | `https://releases.yourdomain.com` 或 `releases.yourdomain.com` |
+
+> **💡 提示**: `R2_PUBLIC_URL` 可以包含或不包含 `https://` 前缀，workflow 会自动添加协议前缀。
 
 ### 5. 验证配置
 
