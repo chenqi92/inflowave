@@ -50,7 +50,7 @@ import {
     Database,
 } from 'lucide-react';
 import {TreeNodeData} from './TreeNodeRenderer';
-import {useMenuTranslation} from '@/hooks/useTranslation';
+import {useMenuTranslation, useContextMenuTranslation} from '@/hooks/useTranslation';
 import {useConnectionStore} from '@/store/connection';
 
 export interface UnifiedContextMenuProps {
@@ -73,6 +73,7 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                                                                            disabled = false,
                                                                        }) => {
     const {t} = useMenuTranslation();
+    const {t: tContext} = useContextMenuTranslation();
 
     // 🔧 从 store 实时获取连接状态
     const connectionStatuses = useConnectionStore(state => state.connectionStatuses);
@@ -746,11 +747,11 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
             <ContextMenuLabel>{t('context_menu.timeseries_operations')}</ContextMenuLabel>
             <ContextMenuItem onSelect={() => handleAction('create_timeseries')}>
                 <Plus className="w-4 h-4 mr-2"/>
-                {t('context_menu.create_timeseries')}
+                {tContext('actions.create_timeseries.label')}
             </ContextMenuItem>
             <ContextMenuItem onSelect={() => handleAction('show_timeseries')}>
                 <Table className="w-4 h-4 mr-2"/>
-                {t('context_menu.show_timeseries')}
+                {tContext('actions.show_timeseries.label')}
             </ContextMenuItem>
             <ContextMenuSeparator/>
 
