@@ -175,7 +175,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl max-h-[85vh]">
+            <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
                 <DialogHeader>
                     <div className="flex items-center space-x-2">
                         <CheckCircle className="w-5 h-5 text-green-500"/>
@@ -189,7 +189,8 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4">
+                {/* 可滚动的内容区域 */}
+                <div className="flex-1 overflow-y-auto space-y-4 pr-2 min-h-0">
                     {/* 版本信息 */}
                     <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                         <div className="space-y-1">
