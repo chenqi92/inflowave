@@ -654,6 +654,8 @@ jobs:
       - name: Generate download URLs
         env:
           R2_PUBLIC_URL: ${{ secrets.R2_PUBLIC_URL }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET_NAME }}
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
           echo "🔗 Generating download URLs..."
           VERSION="${{ needs.detect-version.outputs.version }}"
@@ -683,5 +685,3 @@ jobs:
               --notes-file r2-urls.md \
               --repo ${{ github.repository }} || echo "⚠️ Failed to update release notes"
           fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
