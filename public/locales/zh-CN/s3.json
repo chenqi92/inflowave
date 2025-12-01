@@ -1,6 +1,7 @@
 {
   "title": "S3/MinIO 文件浏览器",
   "select_bucket": "选择存储桶",
+  "new_bucket": "新建存储桶",
   "new_folder": "新建文件夹",
   "generate_link": "生成分享链接",
   "refresh": "刷新",
@@ -84,6 +85,7 @@
     "delete": "删除存储桶",
     "name": "存储桶名称",
     "region": "存储桶区域",
+    "default_name": "新建存储桶",
     "created": "存储桶创建成功",
     "deleted": "成功删除 {{count}} 个存储桶",
     "create_failed": "创建存储桶失败",

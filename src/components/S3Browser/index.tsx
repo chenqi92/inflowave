@@ -1173,8 +1173,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
       const end = Math.max(lastSelectedIndex, index);
       newSelection = new Set(selectedObjects);
       for (let i = start; i <= end; i++) {
-        if (objects[i]) {
-          newSelection.add(objects[i].key);
+        if (sortedObjects[i]) {
+          newSelection.add(sortedObjects[i].key);
         }
       }
     } else if (isCtrlOrCmd) {
@@ -1200,6 +1200,18 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     } else {
       setSelectedObjects(new Set());
     }
+    setLastSelectedIndex(-1);
+  };
+
+  const handleCheckboxToggle = (object: S3Object, index: number) => {
+    const newSelection = new Set(selectedObjects);
+    if (newSelection.has(object.key)) {
+      newSelection.delete(object.key);
+    } else {
+      newSelection.add(object.key);
+    }
+    setSelectedObjects(newSelection);
+    setLastSelectedIndex(index);
   };
 
   const handleUpload = async () => {
@@ -1431,13 +1443,51 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     return newName;
   };
 
-  const handleCreateFolder = async () => {
-    if (!currentBucket) {
-      showMessage.warning(
+  const handleCreateBucket = async () => {
+    setIsLoading(true);
+
+    try {
+      // S3 bucket名称规则：
+      // - 只能包含小写字母、数字、点(.)和连字符(-)
+      // - 必须以字母或数字开头和结尾
+      // - 长度在3-63个字符之间
+      const baseName = 'new-bucket';
+
+      // 获取现有bucket名称
+      const existingBuckets = new Set(buckets.map(b => b.name));
+
+      let bucketName = baseName;
+      let counter = 1;
+      while (existingBuckets.has(bucketName)) {
+        bucketName = `${baseName}-${counter}`;
+        counter++;
+      }
+
+      // 创建bucket
+      await S3Service.createBucket(connectionId, bucketName);
+
+      showMessage.success(
         String(
-          t('s3:folder.select_bucket_first', { defaultValue: '请先选择存储桶' })
+          t('s3:bucket.created', {
+            defaultValue: '存储桶已创建',
+          })
         )
       );
+
+      // 重新加载bucket列表
+      await loadBuckets();
+    } catch (error) {
+      logger.error('Create bucket failed:', error);
+      showMessage.error(`${String(t('s3:bucket.create_failed', { defaultValue: '创建存储桶失败' }))}: ${error}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateFolder = async () => {
+    // 如果在根目录（没有选择bucket），则创建bucket
+    if (!currentBucket) {
+      await handleCreateBucket();
       return;
     }
 
@@ -2130,10 +2180,10 @@ const S3Browser: React.FC<S3BrowserProps> = ({
           size='sm'
           variant='ghost'
           onClick={handleCreateFolder}
-          disabled={!currentBucket || !capabilities.createFolder}
+          disabled={!currentBucket ? !capabilities.createBucket : !capabilities.createFolder}
         >
           <FolderPlus className='w-4 h-4 mr-1' />
-          {t('s3:new_folder')}
+          {!currentBucket ? t('s3:new_bucket', { defaultValue: '新建存储桶' }) : t('s3:new_folder')}
         </Button>
 
         <Button
@@ -2457,14 +2507,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
                       <div className='flex items-center justify-center h-full'>
                         <Checkbox
                           checked={selectedObjects.has(object.key)}
-                          onCheckedChange={checked => {
-                            // Checkbox 点击时模拟一个带 Ctrl 键的事件（切换选择）
-                            const syntheticEvent = {
-                              ctrlKey: true,
-                              metaKey: false,
-                              shiftKey: false,
-                            } as React.MouseEvent;
-                            handleObjectSelect(object, index, syntheticEvent);
+                          onCheckedChange={() => {
+                            handleCheckboxToggle(object, index);
                           }}
                           onClick={e => e.stopPropagation()}
                         />
