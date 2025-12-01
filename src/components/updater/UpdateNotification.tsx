@@ -46,6 +46,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
     const [platformInfo, setPlatformInfo] = useState<PlatformInfo | null>(null);
     const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [downloadedFilePath, setDownloadedFilePath] = useState<string | null>(null);
 
     // 初始化平台信息和内置更新支持
     useEffect(() => {
@@ -116,14 +117,32 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
                     message: t('preparingDownload'),
                 });
 
-                await updaterService.downloadAndInstallUpdate(
+                // 下载更新包
+                const filePath = await updaterService.downloadAndInstallUpdate(
                     updateInfo.download_url,
                     updateInfo.latest_version,
-                    false // 显示安装界面
+                    false
                 );
+
+                // 保存下载的文件路径
+                setDownloadedFilePath(filePath);
+
+                // 下载完成，提示用户准备安装
+                setUpdateStatus({
+                    status: 'completed',
+                    message: t('downloadCompleted'),
+                });
+
+                // 显示确认对话框
+                toast.success(t('downloadCompletedReadyToInstall'));
+
+                // 自动开始安装
+                await handleInstall(filePath);
+
             } catch (error) {
                 setIsUpdating(false);
                 setUpdateStatus(null);
+                setDownloadedFilePath(null);
                 logger.error(t('builtinUpdateFailed'), error);
                 toast.error(`${t('builtinUpdateFailed')}: ${error}`);
 
@@ -139,6 +158,31 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
             updaterService.openDownloadPage(downloadUrl).catch(err => logger.error('Failed to open download page:', err));
             onOpenChange(false);
             toast.success(t('downloadPageOpened'));
+        }
+    };
+
+    const handleInstall = async (filePath: string) => {
+        try {
+            setUpdateStatus({
+                status: 'installing',
+                message: t('preparingInstall'),
+            });
+
+            logger.info('开始安装更新，应用即将关闭...');
+            toast.info(t('appWillCloseForInstall'), { duration: 3000 });
+
+            // 等待一小段时间让用户看到提示
+            await new Promise(resolve => setTimeout(resolve, 2000));
+
+            // 调用安装并退出
+            await updaterService.installUpdateAndExit(filePath);
+
+            // 注意：这行代码可能不会执行，因为应用会退出
+        } catch (error) {
+            setIsUpdating(false);
+            setUpdateStatus(null);
+            logger.error('安装更新失败:', error);
+            toast.error(`${t('installFailed')}: ${error}`);
         }
     };
 
@@ -220,7 +264,7 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
                         <div className="p-4">
                             <ReleaseNotesViewer
                                 version={updateInfo.latest_version}
-                                maxHeight="350px"
+                                maxHeight="250px"
                                 showTitle={false}
                                 showMetadata={false}
                                 onExternalLink={(url) => updaterService.openDownloadPage(url).catch(err => logger.error('Failed to open external link:', err))}
@@ -296,38 +340,33 @@ export const UpdateNotification: React.FC<UpdateNotificationProps> = ({
                     )}
                 </div>
 
-                <DialogFooter className="flex flex-col sm:flex-row gap-2">
-                    <div className="flex flex-1 space-x-2">
-                        <Button
-                            variant="outline"
-                            onClick={handleSkip}
-                            disabled={isSkipping || isUpdating}
-                            className="flex-1"
-                        >
-                            {isSkipping ? t('skipping') : t('skipThisVersion')}
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={() => {
-                                const detailUrl = updateInfo.release_url;
-                                if (!detailUrl) {
-                                    toast.error(t('detailsLinkError'));
-                                    return;
-                                }
-                                logger.info('Opening detail URL:', detailUrl);
-                                updaterService.openDownloadPage(detailUrl).catch(err => logger.error('Failed to open detail page:', err));
-                            }}
-                            disabled={isUpdating}
-                            className="flex-1"
-                        >
-                            <ExternalLink className="w-4 h-4 mr-2"/>
-                            {t('viewDetails')}
-                        </Button>
-                    </div>
+                <DialogFooter className="flex-row justify-end gap-2 pt-4 border-t mt-4">
+                    <Button
+                        variant="outline"
+                        onClick={handleSkip}
+                        disabled={isSkipping || isUpdating}
+                    >
+                        {isSkipping ? t('skipping') : t('skipThisVersion')}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => {
+                            const detailUrl = updateInfo.release_url;
+                            if (!detailUrl) {
+                                toast.error(t('detailsLinkError'));
+                                return;
+                            }
+                            logger.info('Opening detail URL:', detailUrl);
+                            updaterService.openDownloadPage(detailUrl).catch(err => logger.error('Failed to open detail page:', err));
+                        }}
+                        disabled={isUpdating}
+                    >
+                        <ExternalLink className="w-4 h-4 mr-2"/>
+                        {t('viewDetails')}
+                    </Button>
                     <Button
                         onClick={handleUpdate}
                         disabled={isUpdating}
-                        className="flex-1 sm:flex-none"
                     >
                         {isUpdating ? (
                             <>

@@ -607,10 +607,13 @@ pub async fn list_release_notes_files(app_handle: tauri::AppHandle) -> Result<Ve
     Ok(vec![])
 }
 
-/// 检查是否支持内置更新（仅Windows平台）
+/// 检查是否支持内置更新（支持 Windows、macOS、Linux）
 #[command]
 pub fn is_builtin_update_supported() -> bool {
-    cfg!(target_os = "windows")
+    // Windows: 支持 MSI 和 EXE
+    // macOS: 支持 DMG、PKG、APP
+    // Linux: 支持 AppImage、DEB、RPM
+    cfg!(any(target_os = "windows", target_os = "macos", target_os = "linux"))
 }
 
 /// 获取平台信息
@@ -623,20 +626,20 @@ pub fn get_platform_info() -> HashMap<String, String> {
     info
 }
 
-/// 下载更新包（仅Windows平台）
+/// 下载更新包（支持 Windows、macOS、Linux）
 #[command]
 pub async fn download_update(
     app_handle: AppHandle,
     download_url: String,
     version: String,
 ) -> Result<String, String> {
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
     {
-        let _ = (app_handle, download_url, version); // 避免未使用变量警告
-        return Err("内置更新仅支持Windows平台".to_string());
+        let _ = (app_handle, download_url, version);
+        return Err("当前平台不支持内置更新".to_string());
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
     {
         use std::io::Write;
         use std::time::Instant;
@@ -769,27 +772,27 @@ pub async fn download_update(
     }
 }
 
-/// 安装更新包（仅Windows平台）
+/// 安装更新包（支持 Windows、macOS、Linux）- 启动安装程序但不等待完成
 #[command]
 pub async fn install_update(
     app_handle: AppHandle,
     file_path: String,
     silent: bool,
 ) -> Result<(), String> {
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
     {
-        let _ = (app_handle, file_path, silent); // 避免未使用变量警告
-        return Err("内置更新仅支持Windows平台".to_string());
+        let _ = (app_handle, file_path, silent);
+        return Err("当前平台不支持内置更新".to_string());
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
     {
         use std::path::PathBuf;
         use std::process::Command;
         use tauri::Emitter;
-        
+
         let path = PathBuf::from(&file_path);
-        
+
         if !path.exists() {
             return Err("安装文件不存在".to_string());
         }
@@ -811,124 +814,285 @@ pub async fn install_update(
         });
 
         let mut install_command = match extension.as_str() {
+            // ===== Windows 平台 =====
             "msi" => {
-                let mut cmd = Command::new("msiexec");
-                cmd.arg("/i").arg(&file_path);
-                
-                if silent {
-                    cmd.arg("/quiet");
-                } else {
-                    cmd.arg("/qb"); // 基本UI
+                #[cfg(target_os = "windows")]
+                {
+                    let mut cmd = Command::new("msiexec");
+                    cmd.arg("/i").arg(&file_path);
+
+                    if silent {
+                        cmd.arg("/quiet");
+                    } else {
+                        cmd.arg("/passive"); // 无人值守模式，显示进度但不需要用户交互
+                    }
+
+                    cmd.arg("/norestart");
+
+                    // 记录安装日志
+                    let log_path = std::env::temp_dir().join("inflowave_install.log");
+                    cmd.arg("/l*v").arg(&log_path);
+
+                    cmd
                 }
-                
-                // 允许重启
-                cmd.arg("/norestart");
-                
-                // 记录安装日志
-                let log_path = std::env::temp_dir().join("inflowave_install.log");
-                cmd.arg("/l*v").arg(&log_path);
-                
-                cmd
+                #[cfg(not(target_os = "windows"))]
+                {
+                    return Err("MSI 格式仅支持 Windows 平台".to_string());
+                }
             },
             "exe" => {
-                let mut cmd = Command::new(&file_path);
-                
-                if silent {
-                    // 尝试常见的静默安装参数
-                    cmd.arg("/S").arg("/silent").arg("/quiet");
+                #[cfg(target_os = "windows")]
+                {
+                    let mut cmd = Command::new(&file_path);
+
+                    if silent {
+                        // 尝试常见的静默安装参数（NSIS、Inno Setup 等）
+                        cmd.arg("/S").arg("/silent").arg("/quiet");
+                    }
+
+                    cmd
                 }
-                
-                cmd
+                #[cfg(not(target_os = "windows"))]
+                {
+                    return Err("EXE 格式仅支持 Windows 平台".to_string());
+                }
             },
+
+            // ===== macOS 平台 =====
+            "pkg" => {
+                #[cfg(target_os = "macos")]
+                {
+                    let mut cmd = Command::new("installer");
+                    cmd.arg("-pkg").arg(&file_path);
+                    cmd.arg("-target").arg("/");
+                    cmd
+                }
+                #[cfg(not(target_os = "macos"))]
+                {
+                    return Err("PKG 格式仅支持 macOS 平台".to_string());
+                }
+            },
+            "dmg" => {
+                return Err("DMG 格式需要手动挂载和复制，建议使用 PKG 格式进行自动更新".to_string());
+            },
+
+            // ===== Linux 平台 =====
+            "AppImage" => {
+                return Err("AppImage 更新需要特殊处理（替换可执行文件），暂不支持".to_string());
+            },
+            "deb" => {
+                #[cfg(target_os = "linux")]
+                {
+                    // 使用 pkexec 获取权限
+                    let mut cmd = Command::new("pkexec");
+                    cmd.arg("dpkg").arg("-i").arg(&file_path);
+                    cmd
+                }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    return Err("DEB 格式仅支持 Linux 平台".to_string());
+                }
+            },
+            "rpm" => {
+                #[cfg(target_os = "linux")]
+                {
+                    // 使用 pkexec 获取权限
+                    let mut cmd = Command::new("pkexec");
+                    cmd.arg("rpm").arg("-U").arg(&file_path);
+                    cmd
+                }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    return Err("RPM 格式仅支持 Linux 平台".to_string());
+                }
+            },
+
             _ => {
                 return Err(format!("不支持的安装文件类型: {}", extension));
             }
         };
 
-        // 执行安装命令
-        log::info!("执行安装命令: {:?}", install_command);
-        
-        let output = install_command
-            .output()
+        // 启动安装程序（不等待完成）
+        log::info!("启动安装程序: {:?}", install_command);
+
+        install_command
+            .spawn()
             .map_err(|e| format!("启动安装程序失败: {}", e))?;
 
-        let exit_code = output.status.code().unwrap_or(-1);
-        let stdout = String::from_utf8_lossy(&output.stdout);
-        let stderr = String::from_utf8_lossy(&output.stderr);
+        log::info!("安装程序已启动");
 
-        log::info!("安装完成，退出码: {}", exit_code);
-        log::info!("安装输出: {}", stdout);
-        if !stderr.is_empty() {
-            log::warn!("安装错误: {}", stderr);
-        }
+        // 发送安装启动成功事件
+        let _ = app_handle.emit("update-install-started", UpdateStatus {
+            status: "installing".to_string(),
+            progress: None,
+            message: "安装程序已启动".to_string(),
+            error: None,
+        });
 
-        if output.status.success() || exit_code == 3010 { // 3010 表示需要重启
-            let message = if exit_code == 3010 {
-                "安装完成，需要重启系统以完成更新"
-            } else {
-                "安装完成"
-            };
-
-            // 发送安装成功事件
-            let _ = app_handle.emit("update-install-completed", UpdateStatus {
-                status: "completed".to_string(),
-                progress: None,
-                message: message.to_string(),
-                error: None,
-            });
-
-            // 清理下载的安装文件
-            if let Err(e) = std::fs::remove_file(&path) {
-                log::warn!("清理安装文件失败: {}", e);
-            }
-
-            Ok(())
-        } else {
-            let error_msg = if !stderr.is_empty() {
-                format!("安装失败 (退出码: {}): {}", exit_code, stderr)
-            } else {
-                format!("安装失败，退出码: {}", exit_code)
-            };
-
-            // 发送安装失败事件
-            let _ = app_handle.emit("update-install-error", UpdateStatus {
-                status: "error".to_string(),
-                progress: None,
-                message: "安装失败".to_string(),
-                error: Some(error_msg.clone()),
-            });
-
-            Err(error_msg)
-        }
+        Ok(())
     }
 }
 
-/// 下载并安装更新（Windows内置更新的完整流程）
+/// 安装更新并退出应用（支持 Windows、macOS、Linux）
+#[command]
+pub async fn install_update_and_exit(
+    app_handle: AppHandle,
+    file_path: String,
+) -> Result<(), String> {
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    {
+        let _ = (app_handle, file_path);
+        return Err("当前平台不支持内置更新".to_string());
+    }
+
+    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
+    {
+        use std::path::PathBuf;
+        use std::process::Command;
+
+        let path = PathBuf::from(&file_path);
+
+        if !path.exists() {
+            return Err("安装文件不存在".to_string());
+        }
+
+        // 检查文件扩展名
+        let extension = path.extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("")
+            .to_lowercase();
+
+        log::info!("准备安装更新并退出应用: {:?}", path);
+
+        let mut install_command = match extension.as_str() {
+            // ===== Windows 平台 =====
+            "msi" => {
+                #[cfg(target_os = "windows")]
+                {
+                    let mut cmd = Command::new("msiexec");
+                    cmd.arg("/i").arg(&file_path);
+                    cmd.arg("/passive"); // 无人值守模式
+                    cmd.arg("/norestart");
+
+                    // 记录安装日志
+                    let log_path = std::env::temp_dir().join("inflowave_install.log");
+                    cmd.arg("/l*v").arg(&log_path);
+
+                    cmd
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    return Err("MSI 格式仅支持 Windows 平台".to_string());
+                }
+            },
+            "exe" => {
+                #[cfg(target_os = "windows")]
+                {
+                    let mut cmd = Command::new(&file_path);
+                    cmd.arg("/S"); // NSIS 静默安装
+                    cmd
+                }
+                #[cfg(not(target_os = "windows"))]
+                {
+                    return Err("EXE 格式仅支持 Windows 平台".to_string());
+                }
+            },
+
+            // ===== macOS 平台 =====
+            "pkg" => {
+                #[cfg(target_os = "macos")]
+                {
+                    let mut cmd = Command::new("installer");
+                    cmd.arg("-pkg").arg(&file_path);
+                    cmd.arg("-target").arg("/");
+                    cmd
+                }
+                #[cfg(not(target_os = "macos"))]
+                {
+                    return Err("PKG 格式仅支持 macOS 平台".to_string());
+                }
+            },
+            "dmg" => {
+                return Err("DMG 格式需要手动挂载和复制，建议使用 PKG 格式".to_string());
+            },
+
+            // ===== Linux 平台 =====
+            "AppImage" => {
+                return Err("AppImage 更新需要特殊处理，暂不支持".to_string());
+            },
+            "deb" => {
+                #[cfg(target_os = "linux")]
+                {
+                    let mut cmd = Command::new("pkexec");
+                    cmd.arg("dpkg").arg("-i").arg(&file_path);
+                    cmd
+                }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    return Err("DEB 格式仅支持 Linux 平台".to_string());
+                }
+            },
+            "rpm" => {
+                #[cfg(target_os = "linux")]
+                {
+                    let mut cmd = Command::new("pkexec");
+                    cmd.arg("rpm").arg("-U").arg(&file_path);
+                    cmd
+                }
+                #[cfg(not(target_os = "linux"))]
+                {
+                    return Err("RPM 格式仅支持 Linux 平台".to_string());
+                }
+            },
+
+            _ => {
+                return Err(format!("不支持的安装文件类型: {}", extension));
+            }
+        };
+
+        // 启动安装程序
+        log::info!("启动安装程序: {:?}", install_command);
+        install_command
+            .spawn()
+            .map_err(|e| format!("启动安装程序失败: {}", e))?;
+
+        log::info!("安装程序已启动，准备退出应用");
+
+        // 等待一小段时间确保安装程序已启动
+        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+
+        // 退出应用
+        app_handle.exit(0);
+
+        Ok(())
+    }
+}
+
+/// 下载更新包（支持 Windows、macOS、Linux）- 只下载不安装
 #[command]
 pub async fn download_and_install_update(
     app_handle: AppHandle,
     download_url: String,
     version: String,
-    silent: bool,
-) -> Result<(), String> {
-    #[cfg(not(target_os = "windows"))]
+    _silent: bool, // 保留参数以兼容前端，但不使用
+) -> Result<String, String> {
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
     {
-        let _ = (app_handle, download_url, version, silent); // 避免未使用变量警告
-        return Err("内置更新仅支持Windows平台".to_string());
+        let _ = (app_handle, download_url, version, _silent);
+        return Err("当前平台不支持内置更新".to_string());
     }
 
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos", target_os = "linux"))]
     {
-        // 第一步：下载更新包
+        // 只下载更新包，返回文件路径
         let file_path = download_update(app_handle.clone(), download_url, version).await?;
-        
+
         // 等待一段时间确保下载完全完成
         tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
-        
-        // 第二步：安装更新包
-        install_update(app_handle, file_path, silent).await?;
-        
-        Ok(())
+
+        log::info!("更新包下载完成: {}", file_path);
+
+        Ok(file_path)
     }
 }
 

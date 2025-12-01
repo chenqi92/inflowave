@@ -1432,6 +1432,7 @@ async fn main() {
             get_platform_info,
             download_update,
             install_update,
+            install_update_and_exit,
             download_and_install_update,
 
             // Window theme commands

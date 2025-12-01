@@ -27,5 +27,10 @@
   "installing": "Installing...",
   "updating": "Updating...",
   "oneClickUpdate": "One-Click Update",
+  "downloadCompleted": "Download completed",
+  "downloadCompletedReadyToInstall": "Update package downloaded, ready to install",
+  "preparingInstall": "Preparing to install update...",
+  "appWillCloseForInstall": "Application will close and start installing update",
+  "installFailed": "Installation failed",
   "updateNow": "Update Now"
 }

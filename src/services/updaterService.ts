@@ -327,21 +327,35 @@ class UpdaterService {
   }
 
   /**
-   * 下载并安装更新（Windows内置更新的完整流程）
+   * 下载更新包（Windows内置更新）- 只下载不安装
    */
   async downloadAndInstallUpdate(
-    downloadUrl: string, 
-    version: string, 
+    downloadUrl: string,
+    version: string,
     silent: boolean = false
-  ): Promise<void> {
+  ): Promise<string> {
     try {
-      await safeTauriInvoke<void>('download_and_install_update', {
+      return await safeTauriInvoke<string>('download_and_install_update', {
         downloadUrl,
         version,
         silent
       });
     } catch (error) {
-      logger.error('下载并安装更新失败:', error);
+      logger.error('下载更新失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 安装更新并退出应用（Windows内置更新）
+   */
+  async installUpdateAndExit(filePath: string): Promise<void> {
+    try {
+      await safeTauriInvoke<void>('install_update_and_exit', {
+        filePath
+      });
+    } catch (error) {
+      logger.error('安装更新并退出失败:', error);
       throw error;
     }
   }
