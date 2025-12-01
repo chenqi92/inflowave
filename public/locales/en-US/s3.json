@@ -1,7 +1,9 @@
 {
   "title": "S3/MinIO File Browser",
   "select_bucket": "Select Bucket",
+  "new_bucket": "New Bucket",
   "new_folder": "New Folder",
+  "back_to_root": "Back to Root",
   "generate_link": "Generate Share Link",
   "refresh": "Refresh",
   "search": "Search files...",

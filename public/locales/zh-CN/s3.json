@@ -3,6 +3,7 @@
   "select_bucket": "选择存储桶",
   "new_bucket": "新建存储桶",
   "new_folder": "新建文件夹",
+  "back_to_root": "返回根目录",
   "generate_link": "生成分享链接",
   "refresh": "刷新",
   "search": "搜索文件...",
