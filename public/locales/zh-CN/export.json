@@ -2,5 +2,12 @@
   "noData": "没有数据可导出",
   "failed": "导出数据失败",
   "defaultFilename": "export",
-  "customValuePlaceholder": "留空或输入自定义值"
+  "customValuePlaceholder": "留空或输入自定义值",
+  "dialog_title": "导出数据",
+  "dialog_description": "选择导出格式和选项",
+  "db_query_export": "数据库查询导出",
+  "db_query_export_desc": "导出查询结果数据",
+  "cancel_button": "取消",
+  "estimate_size": "预估大小",
+  "export_button": "导出"
 }
