@@ -57,15 +57,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install AWS CLI
+      - name: Verify AWS CLI
         run: |
-          echo "📦 Installing AWS CLI..."
-          # 使用官方安装脚本安装 AWS CLI v2
-          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-          unzip awscliv2.zip
-          sudo ./aws/install
+          echo "📦 Verifying AWS CLI installation..."
           aws --version
-          echo "✅ AWS CLI installed successfully"
+          echo "✅ AWS CLI is ready"
 
       - name: Configure AWS CLI for Cloudflare R2
         run: |
