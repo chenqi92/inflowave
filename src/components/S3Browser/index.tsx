@@ -797,6 +797,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         if (objectsToLoad.length <= SMALL_LIST_THRESHOLD) {
           logger.info(`📦 [S3Browser] 对象数量较少（${objectsToLoad.length}），直接并发加载所有权限`);
 
+          // 检查provider是否支持ACL
+          if (!capabilities.objectAcl) {
+            logger.info(`📦 [S3Browser] 当前存储提供商 (${provider}) 不支持对象ACL，跳过权限加载`);
+            // 直接返回，不加载权限
+            return;
+          }
+
           const results = await Promise.allSettled(
             objectsToLoad.map(async obj => {
               const cacheKey = `object:${currentBucket}:${obj.key}`;
@@ -839,6 +846,13 @@ const S3Browser: React.FC<S3BrowserProps> = ({
             })
           );
           logger.info(`📦 [S3Browser] 批量更新了 ${aclMap.size} 个对象的权限`);
+          return;
+        }
+
+        // 检查provider是否支持ACL
+        if (!capabilities.objectAcl) {
+          logger.info(`📦 [S3Browser] 当前存储提供商 (${provider}) 不支持对象ACL，跳过权限加载`);
+          // 直接返回，不加载权限
           return;
         }
 
@@ -1021,7 +1035,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
     }
 
     // 异步获取标签并更新预览对象
-    if (currentBucket && !object.isDirectory) {
+    // 检查provider是否支持tagging
+    if (currentBucket && !object.isDirectory && capabilities.tagging) {
       loadObjectTags(connectionId, currentBucket, object.key)
         .then(tags => {
           setPreviewObject(prev => (prev ? { ...prev, tags } : null));
@@ -1029,6 +1044,8 @@ const S3Browser: React.FC<S3BrowserProps> = ({
         .catch(error => {
           logger.error('获取预览文件标签失败:', error);
         });
+    } else if (currentBucket && !object.isDirectory && !capabilities.tagging) {
+      logger.info(`📦 [S3Browser] 当前存储提供商 (${provider}) 不支持对象标签，跳过标签加载`);
     }
 
     try {
