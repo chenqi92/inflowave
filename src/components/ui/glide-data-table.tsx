@@ -43,6 +43,7 @@ import {
 import logger from '@/utils/logger';
 import { useUserPreferencesStore } from '@/stores/userPreferencesStore';
 import { getFontFamily } from '@/hooks/useFontApplier';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 // 获取 CSS 变量的实际颜色值
 const getCSSVariable = (variable: string, fallback: string = '#000000'): string => {
@@ -211,10 +212,56 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
   const [columnWidths, setColumnWidths] = useState<Map<string, number>>(new Map());
   const { t } = useTranslation('query');
 
+  // 获取主题状态，用于响应主题切换
+  const { resolvedTheme } = useTheme();
+
+  // 🎨 主题版本号 - 用于强制主题对象重新计算
+  const [themeVersion, setThemeVersion] = useState(0);
+
   // 获取用户字体偏好设置
   const fontFamily = useUserPreferencesStore(state => state.preferences.accessibility.font_family);
   // 获取实际的字体 CSS 值
   const actualFontFamily = useMemo(() => getFontFamily(fontFamily), [fontFamily]);
+
+  // 🎨 监听主题变化，使用 requestAnimationFrame 确保 CSS 变量已更新
+  useEffect(() => {
+    // 使用 requestAnimationFrame 确保 CSS 变量已经更新
+    requestAnimationFrame(() => {
+      setThemeVersion(v => v + 1);
+    });
+  }, [resolvedTheme]);
+
+  // 🎨 主题对象 - 响应主题切换
+  const gridTheme = useMemo(() => {
+    logger.debug('🎨 重新计算表格主题', { resolvedTheme, themeVersion });
+    return {
+      accentColor: getCSSVariable('--primary', '#0066cc'),
+      accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
+      accentLight: getCSSVariable('--accent', '#f0f9ff'),
+      textDark: getCSSVariable('--foreground', '#09090b'),
+      textMedium: getCSSVariable('--muted-foreground', '#71717a'),
+      textLight: getCSSVariable('--muted-foreground', '#a1a1aa'),
+      textBubble: getCSSVariable('--foreground', '#09090b'),
+      bgIconHeader: getCSSVariable('--muted-foreground', '#71717a'),
+      fgIconHeader: getCSSVariable('--background', '#ffffff'),
+      textHeader: getCSSVariable('--foreground', '#09090b'),
+      textHeaderSelected: getCSSVariable('--primary-foreground', '#ffffff'),
+      bgCell: getCSSVariable('--background', '#ffffff'),
+      bgCellMedium: getCSSVariable('--muted', '#f4f4f5'),
+      bgHeader: getCSSVariable('--muted', '#f4f4f5'),
+      bgHeaderHasFocus: getCSSVariable('--muted', '#f4f4f5'),
+      bgHeaderHovered: getCSSVariable('--accent', '#f0f9ff'),
+      bgBubble: getCSSVariable('--background', '#ffffff'),
+      bgBubbleSelected: getCSSVariable('--primary', '#0066cc'),
+      bgSearchResult: getCSSVariable('--accent', '#f0f9ff'),
+      borderColor: getCSSVariable('--border', '#e4e4e7'),
+      drilldownBorder: getCSSVariable('--border', '#e4e4e7'),
+      linkColor: getCSSVariable('--primary', '#0066cc'),
+      headerFontStyle: "600 12px",
+      baseFontStyle: "13px",
+      fontFamily: actualFontFamily,
+    };
+  }, [themeVersion, actualFontFamily]); // 依赖于 themeVersion，确保主题切换后重新计算
 
   // 动态计算容器高度
   useEffect(() => {
@@ -1231,33 +1278,7 @@ export const GlideDataTable: React.FC<GlideDataTableProps> = ({
                   fill: false,
                   sticky: false,
                 }}
-                theme={{
-              accentColor: getCSSVariable('--primary', '#0066cc'),
-              accentFg: getCSSVariable('--primary-foreground', '#ffffff'),
-              accentLight: getCSSVariable('--accent', '#f0f9ff'),
-              textDark: getCSSVariable('--foreground', '#09090b'),
-              textMedium: getCSSVariable('--muted-foreground', '#71717a'),
-              textLight: getCSSVariable('--muted-foreground', '#a1a1aa'),
-              textBubble: getCSSVariable('--foreground', '#09090b'),
-              bgIconHeader: getCSSVariable('--muted-foreground', '#71717a'),
-              fgIconHeader: getCSSVariable('--background', '#ffffff'),
-              textHeader: getCSSVariable('--foreground', '#09090b'),
-              textHeaderSelected: getCSSVariable('--primary-foreground', '#ffffff'),
-              bgCell: getCSSVariable('--background', '#ffffff'),
-              bgCellMedium: getCSSVariable('--muted', '#f4f4f5'),
-              bgHeader: getCSSVariable('--muted', '#f4f4f5'),
-              bgHeaderHasFocus: getCSSVariable('--muted', '#f4f4f5'),
-              bgHeaderHovered: getCSSVariable('--accent', '#f0f9ff'),
-              bgBubble: getCSSVariable('--background', '#ffffff'),
-              bgBubbleSelected: getCSSVariable('--primary', '#0066cc'),
-              bgSearchResult: getCSSVariable('--accent', '#f0f9ff'),
-              borderColor: getCSSVariable('--border', '#e4e4e7'),
-              drilldownBorder: getCSSVariable('--border', '#e4e4e7'),
-              linkColor: getCSSVariable('--primary', '#0066cc'),
-              headerFontStyle: "600 12px",
-              baseFontStyle: "13px",
-              fontFamily: actualFontFamily,
-                }}
+                theme={gridTheme}
               />
             </>
           )}
