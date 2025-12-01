@@ -2,14 +2,22 @@
 
 ## 📋 Workflow 列表
 
-### 1. `build.yml` - 单版本构建（默认）
+### 1. `version-release.yml` - 版本自动发布（主要）
+**自动触发**：修改 `package.json` 版本号时自动运行
+- ✅ **监听 `package.json` 版本变更**
+- ✅ **全平台全架构构建**
+- ✅ **自动创建 GitHub Release**
+- ✅ **自动上传到 Cloudflare R2**（国内访问优化）
+- ✅ **支持手动触发**
+
+### 2. `build.yml` - 单版本构建（备用）
 **自动触发**：推送标签时自动运行
 - ✅ **推送 `v*` 标签时自动构建**
 - ✅ **默认构建标准版（纯 Tauri 模式）**
 - ✅ **可手动选择服务器模式**
 - ✅ **包含 PR 测试**
 
-### 2. `dual-build.yml` - 双版本构建（手动）
+### 3. `dual-build.yml` - 双版本构建（手动）
 **手动触发**：需要手动运行
 - 🔧 **仅手动触发**
 - 🔧 **同时构建两个版本**
@@ -115,8 +123,33 @@ on:
   workflow_dispatch:
 ```
 
+## ☁️ Cloudflare R2 上传功能
+
+### 功能说明
+为了解决 GitHub 在某些地区访问受限的问题，`version-release.yml` 会自动将构建产物上传到 Cloudflare R2，提供备用下载源。
+
+### 上传的文件
+- **macOS ARM64**: `*aarch64*.dmg` - 适用于 Apple Silicon (M1/M2/M3) Mac
+- **Windows x64**: `*x64*.msi` - 适用于 64 位 Windows 系统
+
+### 配置方法
+详细配置步骤请参考：[R2-SETUP.md](./R2-SETUP.md)
+
+需要在 GitHub Secrets 中配置以下密钥：
+- `R2_ACCESS_KEY_ID` - R2 访问密钥 ID
+- `R2_SECRET_ACCESS_KEY` - R2 密钥
+- `R2_ENDPOINT` - R2 S3 API 端点
+- `R2_BUCKET_NAME` - R2 存储桶名称
+- `R2_PUBLIC_URL` - R2 公共访问 URL（可选）
+
+### 下载链接
+上传完成后，workflow 会自动在 Release 说明中添加 R2 下载链接，方便国内用户下载。
+
 ## ✅ 当前配置总结
 
+- ✅ **版本自动化**：修改 package.json 版本号即可触发发布
+- ✅ **全平台支持**：Windows (x64/x86) + macOS (Intel/ARM) + Linux (x64/ARM64)
+- ✅ **国内优化**：自动上传到 Cloudflare R2，提供备用下载源
 - ✅ **默认安全**：自动构建标准版，无端口冲突
 - ✅ **灵活选择**：需要时可手动构建服务器版
 - ✅ **双版本可选**：高级用户可构建两个版本
