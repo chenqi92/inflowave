@@ -459,6 +459,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                                 borderRadius: '6px',
                                 fontSize: '12px'
                               }}
+                              formatter={(value: number) => value.toFixed(1)}
                             />
                             <Legend wrapperStyle={{ fontSize: '11px' }} />
                             <Line
@@ -509,6 +510,7 @@ export const ModernPerformanceMonitor: React.FC<ModernPerformanceMonitorProps> =
                                 borderRadius: '6px',
                                 fontSize: '12px'
                               }}
+                              formatter={(value: number) => `${value.toFixed(1)}%`}
                             />
                             <Legend wrapperStyle={{ fontSize: '11px' }} />
                             <Area

@@ -325,13 +325,13 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-primary transition-all duration-300"
                               style={{ width: `${latestSystemMetrics.cpu}%` }}
                             />
                           </div>
                           <span className="text-sm font-medium w-12 text-right">
-                            {latestSystemMetrics.cpu.toFixed(0)}%
+                            {latestSystemMetrics.cpu.toFixed(1)}%
                           </span>
                         </div>
                       </div>
@@ -343,13 +343,13 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-success transition-all duration-300"
                               style={{ width: `${latestSystemMetrics.memory}%` }}
                             />
                           </div>
                           <span className="text-sm font-medium w-12 text-right">
-                            {latestSystemMetrics.memory.toFixed(0)}%
+                            {latestSystemMetrics.memory.toFixed(1)}%
                           </span>
                         </div>
                       </div>
@@ -361,13 +361,13 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-warning transition-all duration-300"
                               style={{ width: `${latestSystemMetrics.disk}%` }}
                             />
                           </div>
                           <span className="text-sm font-medium w-12 text-right">
-                            {latestSystemMetrics.disk.toFixed(0)}%
+                            {latestSystemMetrics.disk.toFixed(1)}%
                           </span>
                         </div>
                       </div>
@@ -379,13 +379,13 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
+                            <div
                               className="h-full bg-info transition-all duration-300"
                               style={{ width: `${latestSystemMetrics.network}%` }}
                             />
                           </div>
                           <span className="text-sm font-medium w-12 text-right">
-                            {latestSystemMetrics.network.toFixed(0)}%
+                            {latestSystemMetrics.network.toFixed(1)}%
                           </span>
                         </div>
                       </div>
@@ -567,7 +567,7 @@ export const PerformanceDashboard: React.FC<PerformanceDashboardProps> = ({
                         <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                         <XAxis dataKey="timestamp" tick={{ fontSize: 12 }} />
                         <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip />
+                        <Tooltip formatter={(value: number) => `${value.toFixed(1)}%`} />
                         <Area
                           type="monotone"
                           dataKey="cpu"

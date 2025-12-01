@@ -1726,7 +1726,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>{t('performanceReport.cpuUsageLabel')}</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {(metrics.cpu || 0).toFixed(2)}%
+                    {(metrics.cpu || 0).toFixed(1)}%
                   </Text>
                 </div>
                 <Progress
@@ -1738,7 +1738,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>{t('performanceReport.memoryUsageLabel')}</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {(metrics.memory || 0).toFixed(2)}%
+                    {(metrics.memory || 0).toFixed(1)}%
                   </Text>
                 </div>
                 <Progress
@@ -1750,7 +1750,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>{t('performanceReport.diskUsageLabel')}</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {(metrics.disk || 0).toFixed(2)}%
+                    {(metrics.disk || 0).toFixed(1)}%
                   </Text>
                 </div>
                 <Progress
@@ -1762,7 +1762,7 @@ export const PerformanceBottleneckDiagnostics: React.FC<
                 <div className='flex justify-between items-center mb-2'>
                   <Text className='font-semibold'>{t('performanceReport.networkIOLabel')}</Text>
                   <Text className='text-sm text-muted-foreground'>
-                    {(metrics.network || 0).toFixed(2)}%
+                    {(metrics.network || 0).toFixed(1)}%
                   </Text>
                 </div>
                 <Progress

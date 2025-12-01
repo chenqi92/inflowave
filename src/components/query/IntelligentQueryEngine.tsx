@@ -638,7 +638,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   className="h-2"
                 />
                 <Text className="text-xs text-muted-foreground">
-                  {queryStats?.resourceUtilization?.avgCpuUsage || 0}%
+                  {(queryStats?.resourceUtilization?.avgCpuUsage || 0).toFixed(1)}%
                 </Text>
               </div>
             </div>
@@ -652,7 +652,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   className="h-2"
                 />
                 <Text className="text-xs text-muted-foreground">
-                  {queryStats?.resourceUtilization?.avgMemoryUsage || 0}%
+                  {(queryStats?.resourceUtilization?.avgMemoryUsage || 0).toFixed(1)}%
                 </Text>
               </div>
             </div>
@@ -666,7 +666,7 @@ export const IntelligentQueryEngine: React.FC<IntelligentQueryEngineProps> = ({
                   className="h-2"
                 />
                 <Text className="text-xs text-muted-foreground">
-                  {queryStats?.resourceUtilization?.avgIoUsage || 0}%
+                  {(queryStats?.resourceUtilization?.avgIoUsage || 0).toFixed(1)}%
                 </Text>
               </div>
             </div>
