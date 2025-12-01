@@ -259,18 +259,18 @@ impl S3ClientManager {
     pub async fn test_connection(&self, id: &str) -> Result<bool> {
         let client = self.get_client(id).await?;
 
-        // 优化：使用 ListBuckets 但设置 max-buckets=1 来减少数据传输
-        // 这比完整的 list_buckets() 更轻量，同时仍能测试连接和认证
+        // 注意：某些S3兼容服务（如Cloudflare R2）不支持max_buckets参数
+        // 因此我们先尝试使用max_buckets=1，如果失败则回退到不带参数的list_buckets
         match client.list_buckets().max_buckets(1).send().await {
             Ok(_) => {
-                log::info!("S3 connection test successful");
+                log::info!("S3 connection test successful (with max_buckets)");
                 Ok(true)
             }
             Err(e) => {
-                log::error!("S3 connection test failed: {}", e);
+                let error_msg = e.to_string();
+                log::debug!("S3 connection test with max_buckets failed: {}, trying without max_buckets", error_msg);
 
                 // 检查是否是认证错误
-                let error_msg = e.to_string();
                 if error_msg.contains("InvalidAccessKeyId") || error_msg.contains("SignatureDoesNotMatch") {
                     return Err(anyhow::anyhow!("认证失败: Access Key 或 Secret Key 错误"));
                 } else if error_msg.contains("AccessDenied") || error_msg.contains("403") {
@@ -279,8 +279,29 @@ impl S3ClientManager {
                     return Err(anyhow::anyhow!("认证失败: 凭证配置错误"));
                 }
 
-                // 其他错误
-                Err(anyhow::anyhow!("连接测试失败: {}", e))
+                // 如果不是认证错误，可能是不支持max_buckets参数
+                // 尝试不带max_buckets参数的list_buckets
+                match client.list_buckets().send().await {
+                    Ok(_) => {
+                        log::info!("S3 connection test successful (without max_buckets)");
+                        Ok(true)
+                    }
+                    Err(e2) => {
+                        log::error!("S3 connection test failed: {}", e2);
+
+                        // 再次检查认证错误
+                        let error_msg2 = e2.to_string();
+                        if error_msg2.contains("InvalidAccessKeyId") || error_msg2.contains("SignatureDoesNotMatch") {
+                            return Err(anyhow::anyhow!("认证失败: Access Key 或 Secret Key 错误"));
+                        } else if error_msg2.contains("AccessDenied") || error_msg2.contains("403") {
+                            return Err(anyhow::anyhow!("认证失败: 没有权限访问"));
+                        } else if error_msg2.contains("credential") || error_msg2.contains("Credential") {
+                            return Err(anyhow::anyhow!("认证失败: 凭证配置错误"));
+                        }
+
+                        Err(anyhow::anyhow!("连接测试失败: {}", e2))
+                    }
+                }
             }
         }
     }
