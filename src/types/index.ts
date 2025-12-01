@@ -537,11 +537,8 @@ export interface AppConfig {
   language: string;
   queryTimeout: number;
   maxQueryResults: number;
-  autoSave: boolean;
-  autoConnect: boolean;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
   colorScheme?: string;
-  showInternalDatabases?: boolean;
 }
 
 // 错误相关类型
@@ -1091,8 +1088,6 @@ export interface AppSettings {
   general: {
     theme: string;
     language: string;
-    autoSave: boolean;
-    autoConnect: boolean;
     startupConnection?: string;
   };
   editor: {

@@ -115,8 +115,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
           general: {
             theme: updatedConfig.theme || 'system',
             language: updatedConfig.language || 'zh-CN',
-            auto_save: updatedConfig.autoSave || false,
-            auto_connect: updatedConfig.autoConnect || false,
             startup_connection: null,
           },
           editor: {
@@ -291,9 +289,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
               </div>
             </div>
             <div className='space-y-4'>
-              <div className='grid grid-cols-2 gap-4'>
+              <div className='grid grid-cols-2 gap-4 items-start'>
                 <div className='space-y-2'>
-                  <Label htmlFor='theme'>{tSettings('theme')}</Label>
+                  <Label htmlFor='theme' className='flex items-center gap-2'>
+                    <Monitor className='w-4 h-4' />
+                    {tSettings('theme')}
+                  </Label>
                   <Select
                     value={theme}
                     onValueChange={value => {
@@ -313,13 +314,12 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                   </Select>
                 </div>
 
-                <div className='space-y-2'>
-                  <LanguageSelector
-                    showProgress={false}
-                    showNativeName={true}
-                    showFlag={true}
-                  />
-                </div>
+                <LanguageSelector
+                  showProgress={false}
+                  showNativeName={true}
+                  showFlag={true}
+                  showLabel={true}
+                />
               </div>
 
               {/* 软件风格设置 */}
@@ -337,59 +337,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ visible, onClose, initial
                     saveSettingImmediately('colorScheme', value);
                   }}
                 />
-              </div>
-
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='flex items-center space-x-2'>
-                  <Switch
-                    checked={config.autoSave ?? false}
-                    onCheckedChange={checked => {
-                      saveSettingImmediately('autoSave', checked);
-                    }}
-                  />
-                  <Label htmlFor='autoSave'>{tSettings('auto_save')}</Label>
-                </div>
-
-                <div className='flex items-center space-x-2'>
-                  <Switch
-                    checked={config.autoConnect ?? false}
-                    onCheckedChange={checked => {
-                      saveSettingImmediately('autoConnect', checked);
-                    }}
-                  />
-                  <Label htmlFor='autoConnect'>{tSettings('auto_connect')}</Label>
-                </div>
-              </div>
-
-              <div className='grid grid-cols-2 gap-4'>
-                <div className='flex items-center space-x-2'>
-                  <Switch
-                    checked={config.showInternalDatabases ?? false}
-                    onCheckedChange={checked => {
-                      saveSettingImmediately('showInternalDatabases', checked).then(() => {
-                        // 触发数据库列表刷新
-                        dataExplorerRefresh.trigger();
-
-                        // 提供即时反馈
-                        if (checked) {
-                          showMessage.success(tSettings('internal_db_enabled'));
-                        } else {
-                          showMessage.success(tSettings('internal_db_disabled'));
-                        }
-                      }).catch(error => {
-                        logger.error('保存设置失败:', error);
-                        showMessage.error(tSettings('save_settings_failed'));
-                      });
-                    }}
-                  />
-                  <Label htmlFor='showInternalDatabases'>{tSettings('show_internal_databases')}</Label>
-                </div>
-                <div className='text-sm text-muted-foreground'>
-                  <p>{tSettings('show_internal_databases_description')}</p>
-                  <p className='text-xs mt-1 text-amber-600'>
-                    {tSettings('show_internal_databases_note')}
-                  </p>
-                </div>
               </div>
 
             </div>

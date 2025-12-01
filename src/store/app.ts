@@ -30,10 +30,7 @@ const defaultConfig: AppConfig = {
   language: 'zh-CN',
   queryTimeout: DEFAULT_APP_CONFIG.queryTimeout,
   maxQueryResults: DEFAULT_APP_CONFIG.maxQueryResults,
-  autoSave: DEFAULT_APP_CONFIG.autoSave,
-  autoConnect: DEFAULT_APP_CONFIG.autoConnect,
   logLevel: DEFAULT_APP_CONFIG.logLevel,
-  showInternalDatabases: false,
 };
 
 export const useAppStore = create<AppState>()(

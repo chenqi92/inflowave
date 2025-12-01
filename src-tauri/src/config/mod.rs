@@ -18,7 +18,6 @@ pub struct AppConfig {
 pub struct AppSettings {
     pub theme: String,
     pub language: String,
-    pub auto_save: bool,
     pub query_timeout: u64,
     pub max_query_history: usize,
     pub enable_logging: bool,
@@ -30,7 +29,6 @@ impl Default for AppSettings {
         Self {
             theme: "light".to_string(),
             language: "zh-CN".to_string(),
-            auto_save: true,
             query_timeout: 30,
             max_query_history: 100,
             enable_logging: true,

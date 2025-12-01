@@ -50,8 +50,6 @@ interface DefaultAppConfig {
   queryTimeout: number;
   maxQueryResults: number;
   maxQueryLength: number;
-  autoSave: boolean;
-  autoConnect: boolean;
   logLevel: 'debug' | 'info' | 'warn' | 'error';
 }
 
@@ -132,8 +130,6 @@ export const DEFAULT_APP_CONFIG: DefaultAppConfig = {
   queryTimeout: getEnvValue('VITE_DEFAULT_QUERY_TIMEOUT', 30000, parseInt),
   maxQueryResults: getEnvValue('VITE_DEFAULT_MAX_QUERY_RESULTS', 10000, parseInt),
   maxQueryLength: getEnvValue('VITE_DEFAULT_MAX_QUERY_LENGTH', 50000, parseInt),
-  autoSave: getEnvValue('VITE_DEFAULT_AUTO_SAVE', true, (v) => v.toLowerCase() === 'true'),
-  autoConnect: getEnvValue('VITE_DEFAULT_AUTO_CONNECT', false, (v) => v.toLowerCase() === 'true'),
   logLevel: getEnvValue('VITE_DEFAULT_LOG_LEVEL', 'info' as const, (v) => {
     const levels = ['debug', 'info', 'warn', 'error'] as const;
     return levels.includes(v as any) ? (v as any) : 'info';

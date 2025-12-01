@@ -36,6 +36,7 @@ export interface LanguageSelectorProps {
   showProgress?: boolean;
   showNativeName?: boolean;
   showFlag?: boolean;
+  showLabel?: boolean;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
@@ -120,6 +121,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   showProgress = false,
   showNativeName = true,
   showFlag = true,
+  showLabel = true,
   size = 'md',
   className = '',
 }) => {
@@ -165,12 +167,14 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      <Label htmlFor="language-selector" className="flex items-center gap-2">
-        <Globe className="w-4 h-4" />
-        {t('language')}
-      </Label>
-      
+    <div className={showLabel ? `space-y-2 ${className}` : className}>
+      {showLabel && (
+        <Label htmlFor="language-selector" className="flex items-center gap-2">
+          <Globe className="w-4 h-4" />
+          {t('language')}
+        </Label>
+      )}
+
       <Select
         value={selectedLanguage}
         onValueChange={handleLanguageChange}
