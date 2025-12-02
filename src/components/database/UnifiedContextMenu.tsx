@@ -217,7 +217,8 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
     // ============================================================================
     const renderConnectionMenu = () => {
         const metadata = node.metadata || {};
-        const dbType = metadata.dbType?.toLowerCase();
+        // 🔧 修复：dbType 在节点上，不在 metadata 中
+        const dbType = (node.dbType || metadata.dbType)?.toLowerCase();
         const isIoTDB = dbType === 'iotdb';
         const isInfluxDB2x = dbType === 'influxdb2' || metadata.version === '2.x';
 
