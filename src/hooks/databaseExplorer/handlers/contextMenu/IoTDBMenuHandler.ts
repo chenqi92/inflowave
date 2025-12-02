@@ -109,9 +109,22 @@ export class DeviceMenuHandler extends BaseMenuHandler {
 
   private async showTimeseries(connectionId: string, devicePath: string): Promise<void> {
     try {
+      // IoTDB 设备路径格式: root.storage_group.device
+      // 需要拆分成 storage_group 和 device
+      const parts = devicePath.split('.');
+      if (parts.length < 3) {
+        throw new Error(`无效的设备路径: ${devicePath}`);
+      }
+
+      // 存储组是前两段: root.storage_group
+      const storageGroup = `${parts[0]}.${parts[1]}`;
+      // 设备是完整路径
+      const device = devicePath;
+
       const timeseries = await this.invokeTauri<string[]>('get_iotdb_timeseries', {
         connectionId,
-        devicePath,
+        storageGroup,
+        device,
       });
 
       this.deps.setDialogStates((prev: any) => ({

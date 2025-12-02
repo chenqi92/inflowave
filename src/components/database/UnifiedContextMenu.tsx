@@ -476,10 +476,7 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
             <ContextMenuLabel>{t('context_menu.device_management')}</ContextMenuLabel>
             <ContextMenuItem onSelect={() => handleAction('create_device')}>
                 <Plus className="w-4 h-4 mr-2"/>
-                <div className="flex flex-col">
-                    <span>{t('context_menu.create_device')}</span>
-                    <span className="text-xs text-muted-foreground">{tContext('create_device_hint')}</span>
-                </div>
+                {t('context_menu.create_device')}
             </ContextMenuItem>
             <ContextMenuItem onSelect={() => handleAction('show_devices')}>
                 <Table className="w-4 h-4 mr-2"/>

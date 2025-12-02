@@ -62,6 +62,7 @@
     "copy_connection_name": "Copy Connection Name",
     "database_management": "Database Management",
     "create_database": "Create Database",
+    "create_storage_group": "Create Storage Group",
     "manage_templates": "Manage Templates",
     "connection_management": "Connection Management",
     "refresh_database": "Refresh Database",

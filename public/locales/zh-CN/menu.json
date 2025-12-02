@@ -62,6 +62,7 @@
     "copy_connection_name": "复制连接名",
     "database_management": "数据库管理",
     "create_database": "创建数据库",
+    "create_storage_group": "创建存储组",
     "manage_templates": "模板管理",
     "connection_management": "连接管理",
     "refresh_database": "刷新数据库",

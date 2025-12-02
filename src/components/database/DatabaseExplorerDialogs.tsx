@@ -14,6 +14,7 @@ import TableStatisticsDialog from '@/components/database/TableStatisticsDialog';
 import DataPreviewDialog from '@/components/database/DataPreviewDialog';
 import TagValuesDialog from '@/components/database/TagValuesDialog';
 import CreateDeviceDialog from '@/components/database/CreateDeviceDialog';
+import CreateTimeseriesDialog from '@/components/database/CreateTimeseriesDialog';
 import DeviceListDialog from '@/components/database/DeviceListDialog';
 import DeviceInfoDialog from '@/components/database/DeviceInfoDialog';
 import TimeseriesInfoDialog from '@/components/database/TimeseriesInfoDialog';
@@ -365,6 +366,31 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     }}
                     connectionId={dialogStates.createDevice.connectionId}
                     storageGroup={dialogStates.createDevice.storageGroup}
+                />
+            )}
+
+            {/* IoTDB 创建时间序列对话框 */}
+            {dialogStates.createTimeseries && (
+                <CreateTimeseriesDialog
+                    open={dialogStates.createTimeseries.open}
+                    onClose={() => {
+                        setDialogStates((prev) => ({
+                            ...prev,
+                            createTimeseries: {
+                                open: false,
+                                connectionId: '',
+                                devicePath: '',
+                            },
+                        }));
+                    }}
+                    onSuccess={() => {
+                        // 延迟刷新树形数据，确保后端已完成创建操作
+                        setTimeout(() => {
+                            buildCompleteTreeData(true);
+                        }, 300);
+                    }}
+                    connectionId={dialogStates.createTimeseries.connectionId}
+                    devicePath={dialogStates.createTimeseries.devicePath}
                 />
             )}
 
