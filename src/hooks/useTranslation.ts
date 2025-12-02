@@ -123,16 +123,18 @@ const handlePlural = (
 /**
  * 记录翻译键缺失警告
  */
-const logMissingKey = (key: string, language: string, context?: string) => {
+const logMissingKey = (key: string, language: string, namespace?: string, context?: string) => {
   const contextInfo = context ? ` (context: ${context})` : '';
+  const fullKey = namespace ? `${namespace}:${key}` : key;
   logger.warn(
-    `⚠️ [useTranslation] 翻译键缺失: "${key}" for language "${language}"${contextInfo}`
+    `⚠️ [useTranslation] 翻译键缺失: "${fullKey}" for language "${language}"${contextInfo}`
   );
-  
+
   // 在开发环境下，可以收集缺失的键用于翻译管理
   if (process.env.NODE_ENV === 'development') {
     const missingKeys = (window as any).__MISSING_TRANSLATION_KEYS__ || new Set();
-    missingKeys.add(`${language}:${key}`);
+    // 格式: language:namespace:key (例如: zh-CN:iotdb:template.title)
+    missingKeys.add(`${language}:${fullKey}`);
     (window as any).__MISSING_TRANSLATION_KEYS__ = missingKeys;
   }
 };
@@ -181,8 +183,7 @@ export const useTranslation = (namespace?: string): UseTranslationReturn => {
       }
 
       // 如果 i18next 找不到翻译，记录缺失的键并返回默认值或键名
-      const fullKey = namespace ? `${namespace}:${key}` : key;
-      logMissingKey(fullKey, currentLanguage, options.context);
+      logMissingKey(key, currentLanguage, namespace, options.context);
       return options.defaultValue || key;
     } catch (error) {
       logger.error(`❌ [useTranslation] 翻译处理失败: ${key}`, error);
