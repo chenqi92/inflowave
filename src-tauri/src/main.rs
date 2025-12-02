@@ -1453,6 +1453,11 @@ async fn main() {
             commands::logs::get_log_dir_path,
             commands::logs::open_log_folder,
 
+            // i18n development commands (only in debug mode)
+            commands::logs::save_missing_i18n_keys,
+            commands::logs::read_missing_i18n_keys,
+            commands::logs::clear_missing_i18n_keys,
+
             // Window management commands
             commands::window::create_detached_window,
             commands::window::close_detached_window,

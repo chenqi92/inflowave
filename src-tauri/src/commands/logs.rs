@@ -2,6 +2,7 @@ use crate::utils::logger;
 use tauri::{AppHandle, Manager};
 use std::fs;
 use std::path::PathBuf;
+use std::collections::HashSet;
 use log::{debug, error, info};
 
 /// 获取日志目录路径
@@ -240,5 +241,152 @@ pub async fn open_log_folder(app: AppHandle) -> Result<(), String> {
     }
 
     info!("成功打开日志文件夹: {:?}", log_dir);
+    Ok(())
+}
+
+/// 保存缺失的 i18n 翻译键到文件
+///
+/// 只在开发环境下生效，将缺失的翻译键去重后保存到 logs/missing-i18n.txt
+#[tauri::command]
+pub async fn save_missing_i18n_keys(
+    app: AppHandle,
+    missing_keys: Vec<String>,
+) -> Result<String, String> {
+    // 只在开发环境下生效
+    if !cfg!(debug_assertions) {
+        return Err("此功能仅在开发环境下可用".to_string());
+    }
+
+    debug!("保存缺失的 i18n 键，共 {} 个", missing_keys.len());
+
+    // 获取日志目录
+    let log_dir = get_log_dir(&app)?;
+
+    // 确保日志目录存在
+    if !log_dir.exists() {
+        fs::create_dir_all(&log_dir)
+            .map_err(|e| format!("创建日志目录失败: {}", e))?;
+    }
+
+    // 缺失键文件路径
+    let missing_keys_file = log_dir.join("missing-i18n.txt");
+
+    // 读取现有的缺失键（如果文件存在）
+    let mut existing_keys: HashSet<String> = if missing_keys_file.exists() {
+        let content = fs::read_to_string(&missing_keys_file)
+            .map_err(|e| format!("读取现有缺失键文件失败: {}", e))?;
+
+        content.lines()
+            .filter(|line| !line.trim().is_empty() && !line.starts_with('#'))
+            .map(|line| line.trim().to_string())
+            .collect()
+    } else {
+        HashSet::new()
+    };
+
+    // 添加新的缺失键
+    let initial_count = existing_keys.len();
+    for key in missing_keys {
+        existing_keys.insert(key);
+    }
+    let new_count = existing_keys.len() - initial_count;
+
+    // 将缺失键排序后写入文件
+    let mut sorted_keys: Vec<String> = existing_keys.into_iter().collect();
+    sorted_keys.sort();
+
+    // 生成文件内容
+    let mut content = String::new();
+    content.push_str("# 缺失的 i18n 翻译键\n");
+    content.push_str("# Missing i18n Translation Keys\n");
+    content.push_str("#\n");
+    content.push_str(&format!("# 生成时间 / Generated at: {}\n", chrono::Utc::now().to_rfc3339()));
+    content.push_str(&format!("# 总数 / Total: {}\n", sorted_keys.len()));
+    content.push_str("#\n");
+    content.push_str("# 格式 / Format: language:namespace:key 或 language:key\n");
+    content.push_str("# 例如 / Example: zh-CN:common:button.save 或 en-US:template.title\n");
+    content.push_str("#\n\n");
+
+    for key in &sorted_keys {
+        content.push_str(key);
+        content.push('\n');
+    }
+
+    // 写入文件
+    fs::write(&missing_keys_file, content)
+        .map_err(|e| format!("写入缺失键文件失败: {}", e))?;
+
+    let file_path = missing_keys_file.to_string_lossy().to_string();
+    info!(
+        "成功保存 {} 个缺失的 i18n 键到文件: {} (新增 {} 个)",
+        sorted_keys.len(),
+        file_path,
+        new_count
+    );
+
+    Ok(format!(
+        "已保存 {} 个缺失的翻译键 (新增 {} 个) 到: {}",
+        sorted_keys.len(),
+        new_count,
+        file_path
+    ))
+}
+
+/// 读取缺失的 i18n 翻译键文件
+#[tauri::command]
+pub async fn read_missing_i18n_keys(app: AppHandle) -> Result<Vec<String>, String> {
+    // 只在开发环境下生效
+    if !cfg!(debug_assertions) {
+        return Err("此功能仅在开发环境下可用".to_string());
+    }
+
+    debug!("读取缺失的 i18n 键文件");
+
+    // 获取日志目录
+    let log_dir = get_log_dir(&app)?;
+    let missing_keys_file = log_dir.join("missing-i18n.txt");
+
+    if !missing_keys_file.exists() {
+        debug!("缺失键文件不存在");
+        return Ok(Vec::new());
+    }
+
+    // 读取文件内容
+    let content = fs::read_to_string(&missing_keys_file)
+        .map_err(|e| format!("读取缺失键文件失败: {}", e))?;
+
+    // 解析文件内容，过滤掉注释和空行
+    let keys: Vec<String> = content
+        .lines()
+        .filter(|line| !line.trim().is_empty() && !line.starts_with('#'))
+        .map(|line| line.trim().to_string())
+        .collect();
+
+    info!("读取到 {} 个缺失的 i18n 键", keys.len());
+    Ok(keys)
+}
+
+/// 清空缺失的 i18n 翻译键文件
+#[tauri::command]
+pub async fn clear_missing_i18n_keys(app: AppHandle) -> Result<(), String> {
+    // 只在开发环境下生效
+    if !cfg!(debug_assertions) {
+        return Err("此功能仅在开发环境下可用".to_string());
+    }
+
+    debug!("清空缺失的 i18n 键文件");
+
+    // 获取日志目录
+    let log_dir = get_log_dir(&app)?;
+    let missing_keys_file = log_dir.join("missing-i18n.txt");
+
+    if missing_keys_file.exists() {
+        fs::remove_file(&missing_keys_file)
+            .map_err(|e| format!("删除缺失键文件失败: {}", e))?;
+        info!("成功清空缺失的 i18n 键文件");
+    } else {
+        debug!("缺失键文件不存在，无需清空");
+    }
+
     Ok(())
 }
