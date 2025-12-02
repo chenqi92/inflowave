@@ -8,6 +8,7 @@ import Backend from 'i18next-http-backend';
 import { LanguageDetector } from './language-detector';
 import { TranslationLoader } from './translation-loader';
 import { ResourceManager, type ResourceManagerConfig } from './resource-manager';
+import { fallbackManager } from './fallback-manager';
 import type { LanguageDetectionConfig, LoaderConfig } from './types';
 import logger from '@/utils/logger';
 
@@ -100,7 +101,25 @@ const i18nConfig = {
   // 键分隔符
   keySeparator: '.',
   nsSeparator: ':',
-  
+
+  // 缺失键处理器（在开发环境下记录缺失的翻译键）
+  saveMissing: import.meta.env.DEV, // 只在开发环境启用
+  missingKeyHandler: (lngs: readonly string[], ns: string, key: string, fallbackValue: string) => {
+    if (import.meta.env.DEV) {
+      const language = lngs[0];
+      // 记录到 fallbackManager
+      fallbackManager['recordMissingKey'](key, language, ns);
+
+      // 同时记录到 window 对象（用于兼容性）
+      const missingKeys = (window as any).__MISSING_TRANSLATION_KEYS__ || new Set();
+      const fullKey = ns ? `${ns}:${key}` : key;
+      missingKeys.add(`${language}:${fullKey}`);
+      (window as any).__MISSING_TRANSLATION_KEYS__ = missingKeys;
+
+      logger.warn(`⚠️ [i18n] 翻译键缺失: "${language}:${ns}:${key}"`);
+    }
+  },
+
   // 资源配置（将通过后端动态加载）
   resources: {},
   
