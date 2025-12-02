@@ -296,11 +296,11 @@ export default function IoTDBTemplateDialog({
   }, [selectedTemplate]);
 
   return (
-    <Dialog open={open} onOpenChange={(open) => {
+    <Dialog open={open} onOpenChange={(isOpen) => {
       // 只允许通过关闭按钮关闭，不允许点击外部关闭
-      if (!open) {
-        // 可以在这里添加确认逻辑
-        return;
+      // 但允许通过 ESC 键或 X 按钮关闭
+      if (!isOpen) {
+        onClose();
       }
     }}>
       <DialogContent className="max-w-5xl max-h-[85vh]" onInteractOutside={(e) => {
