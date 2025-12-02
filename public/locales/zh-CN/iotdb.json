@@ -1,0 +1,98 @@
+{
+  "template": {
+    "title": "IoTDB 模板管理",
+    "tabs": {
+      "list": "模板列表",
+      "create": "创建模板",
+      "mount": "挂载模板"
+    },
+    "list": {
+      "title": "模板列表",
+      "count": "共 {{count}} 个模板",
+      "empty": "暂无模板",
+      "selected": "已选择",
+      "details": "模板详情",
+      "selectTemplate": "请选择一个模板查看详情",
+      "measurements": "测量点列表",
+      "measurementName": "测量点名称",
+      "dataType": "数据类型",
+      "encoding": "编码方式",
+      "compression": "压缩方式",
+      "actions": "操作",
+      "delete": "删除",
+      "confirmDelete": "确定要删除模板 \"{{name}}\" 吗？",
+      "deleteSuccess": "模板删除成功",
+      "deleteFailed": "删除模板失败: {{error}}"
+    },
+    "create": {
+      "title": "创建新模板",
+      "description": "定义模板的时间序列结构",
+      "templateName": "模板名称",
+      "templateNamePlaceholder": "例如: device_template",
+      "timeseries": "时间序列配置",
+      "timeseriesDescription": "定义模板包含的时间序列",
+      "addTimeseries": "添加时间序列",
+      "measurement": "测量点",
+      "measurementPlaceholder": "例如: temperature",
+      "dataType": "数据类型",
+      "encoding": "编码",
+      "compression": "压缩",
+      "remove": "移除",
+      "clear": "清空",
+      "create": "创建模板",
+      "creating": "创建中...",
+      "success": "模板创建成功",
+      "failed": "创建模板失败: {{error}}",
+      "emptyName": "模板名称不能为空",
+      "emptyTimeseries": "至少需要添加一个时间序列"
+    },
+    "mount": {
+      "title": "挂载模板",
+      "description": "将模板挂载到设备路径",
+      "selectTemplate": "选择模板",
+      "selectTemplatePlaceholder": "请选择要挂载的模板",
+      "devicePath": "设备路径",
+      "devicePathPlaceholder": "例如: root.sg.device",
+      "devicePathHint": "模板将挂载到此设备路径",
+      "mount": "挂载模板",
+      "mounting": "挂载中...",
+      "unmount": "卸载模板",
+      "unmounting": "卸载中...",
+      "clear": "清空",
+      "mountSuccess": "模板挂载成功",
+      "mountFailed": "挂载模板失败: {{error}}",
+      "unmountSuccess": "模板卸载成功",
+      "unmountFailed": "卸载模板失败: {{error}}",
+      "emptyTemplate": "请选择模板",
+      "emptyPath": "设备路径不能为空"
+    },
+    "common": {
+      "close": "关闭",
+      "loading": "加载中...",
+      "noData": "暂无数据"
+    }
+  },
+  "dataTypes": {
+    "BOOLEAN": "布尔型",
+    "INT32": "32位整数",
+    "INT64": "64位整数",
+    "FLOAT": "单精度浮点",
+    "DOUBLE": "双精度浮点",
+    "TEXT": "文本"
+  },
+  "encodings": {
+    "PLAIN": "普通编码",
+    "RLE": "游程编码",
+    "TS_2DIFF": "二阶差分",
+    "GORILLA": "Gorilla编码",
+    "DICTIONARY": "字典编码"
+  },
+  "compressions": {
+    "UNCOMPRESSED": "不压缩",
+    "SNAPPY": "Snappy",
+    "GZIP": "GZip",
+    "LZ4": "LZ4",
+    "ZSTD": "ZStandard"
+  }
+}
+

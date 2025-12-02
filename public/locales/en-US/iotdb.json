@@ -1,0 +1,98 @@
+{
+  "template": {
+    "title": "IoTDB Template Management",
+    "tabs": {
+      "list": "Template List",
+      "create": "Create Template",
+      "mount": "Mount Template"
+    },
+    "list": {
+      "title": "Template List",
+      "count": "{{count}} template(s)",
+      "empty": "No templates",
+      "selected": "Selected",
+      "details": "Template Details",
+      "selectTemplate": "Select a template to view details",
+      "measurements": "Measurements",
+      "measurementName": "Measurement",
+      "dataType": "Data Type",
+      "encoding": "Encoding",
+      "compression": "Compression",
+      "actions": "Actions",
+      "delete": "Delete",
+      "confirmDelete": "Are you sure to delete template \"{{name}}\"?",
+      "deleteSuccess": "Template deleted successfully",
+      "deleteFailed": "Failed to delete template: {{error}}"
+    },
+    "create": {
+      "title": "Create New Template",
+      "description": "Define the timeseries structure of the template",
+      "templateName": "Template Name",
+      "templateNamePlaceholder": "e.g., device_template",
+      "timeseries": "Timeseries Configuration",
+      "timeseriesDescription": "Define timeseries included in the template",
+      "addTimeseries": "Add Timeseries",
+      "measurement": "Measurement",
+      "measurementPlaceholder": "e.g., temperature",
+      "dataType": "Data Type",
+      "encoding": "Encoding",
+      "compression": "Compression",
+      "remove": "Remove",
+      "clear": "Clear",
+      "create": "Create Template",
+      "creating": "Creating...",
+      "success": "Template created successfully",
+      "failed": "Failed to create template: {{error}}",
+      "emptyName": "Template name cannot be empty",
+      "emptyTimeseries": "At least one timeseries is required"
+    },
+    "mount": {
+      "title": "Mount Template",
+      "description": "Mount template to device path",
+      "selectTemplate": "Select Template",
+      "selectTemplatePlaceholder": "Please select a template to mount",
+      "devicePath": "Device Path",
+      "devicePathPlaceholder": "e.g., root.sg.device",
+      "devicePathHint": "Template will be mounted to this device path",
+      "mount": "Mount Template",
+      "mounting": "Mounting...",
+      "unmount": "Unmount Template",
+      "unmounting": "Unmounting...",
+      "clear": "Clear",
+      "mountSuccess": "Template mounted successfully",
+      "mountFailed": "Failed to mount template: {{error}}",
+      "unmountSuccess": "Template unmounted successfully",
+      "unmountFailed": "Failed to unmount template: {{error}}",
+      "emptyTemplate": "Please select a template",
+      "emptyPath": "Device path cannot be empty"
+    },
+    "common": {
+      "close": "Close",
+      "loading": "Loading...",
+      "noData": "No data"
+    }
+  },
+  "dataTypes": {
+    "BOOLEAN": "Boolean",
+    "INT32": "32-bit Integer",
+    "INT64": "64-bit Integer",
+    "FLOAT": "Float",
+    "DOUBLE": "Double",
+    "TEXT": "Text"
+  },
+  "encodings": {
+    "PLAIN": "Plain",
+    "RLE": "RLE",
+    "TS_2DIFF": "TS_2DIFF",
+    "GORILLA": "Gorilla",
+    "DICTIONARY": "Dictionary"
+  },
+  "compressions": {
+    "UNCOMPRESSED": "Uncompressed",
+    "SNAPPY": "Snappy",
+    "GZIP": "GZip",
+    "LZ4": "LZ4",
+    "ZSTD": "ZStandard"
+  }
+}
+

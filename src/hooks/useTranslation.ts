@@ -528,4 +528,11 @@ export const useTranslationStatus = () => {
   }, [currentLanguage, availableLanguages, isLoading]);
 };
 
+/**
+ * IoTDB 翻译 Hook
+ */
+export const useIoTDBTranslation = () => {
+  return useTranslation('iotdb');
+};
+
 export default useTranslation;

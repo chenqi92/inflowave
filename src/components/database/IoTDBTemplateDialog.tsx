@@ -32,6 +32,7 @@ import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
 import { Loader2, Plus, Trash2, FileText, Upload, Download, X } from 'lucide-react';
 import logger from '@/utils/logger';
+import { useIoTDBTranslation } from '@/hooks/useTranslation';
 
 // IoTDB 模板信息接口
 interface TemplateInfo {
@@ -75,6 +76,7 @@ export default function IoTDBTemplateDialog({
   mode = 'list',
   devicePath,
 }: IoTDBTemplateDialogProps) {
+  const { t } = useIoTDBTranslation();
   const [currentMode, setCurrentMode] = useState<'list' | 'create' | 'mount'>(mode);
   const [templates, setTemplates] = useState<string[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
@@ -128,11 +130,11 @@ export default function IoTDBTemplateDialog({
   // 创建模板
   const handleCreateTemplate = async () => {
     if (!newTemplateName.trim()) {
-      showMessage.error('请输入模板名称');
+      showMessage.error(t('template.create.emptyName'));
       return;
     }
     if (timeSeries.length === 0) {
-      showMessage.error('请至少添加一个时间序列');
+      showMessage.error(t('template.create.emptyTimeseries'));
       return;
     }
 
@@ -151,14 +153,14 @@ export default function IoTDBTemplateDialog({
         templateInfo,
       });
 
-      showMessage.success('模板创建成功');
+      showMessage.success(t('template.create.success'));
       setNewTemplateName('');
       setTimeSeries([]);
       setCurrentMode('list');
       await loadTemplates();
     } catch (error: any) {
       logger.error('创建模板失败:', error);
-      showMessage.error(`创建模板失败: ${error.message || error}`);
+      showMessage.error(t('template.create.failed', { error: error.message || error }));
     } finally {
       setLoading(false);
     }
@@ -167,11 +169,11 @@ export default function IoTDBTemplateDialog({
   // 挂载模板
   const handleMountTemplate = async () => {
     if (!mountTemplateName) {
-      showMessage.error('请选择要挂载的模板');
+      showMessage.error(t('template.mount.emptyTemplate'));
       return;
     }
     if (!mountPath.trim()) {
-      showMessage.error('请输入设备路径');
+      showMessage.error(t('template.mount.emptyPath'));
       return;
     }
 
@@ -183,13 +185,13 @@ export default function IoTDBTemplateDialog({
         path: mountPath,
       });
 
-      showMessage.success('模板挂载成功');
+      showMessage.success(t('template.mount.mountSuccess'));
       setMountTemplateName('');
       setMountPath('');
       setCurrentMode('list');
     } catch (error: any) {
       logger.error('挂载模板失败:', error);
-      showMessage.error(`挂载模板失败: ${error.message || error}`);
+      showMessage.error(t('template.mount.mountFailed', { error: error.message || error }));
     } finally {
       setLoading(false);
     }
@@ -198,7 +200,7 @@ export default function IoTDBTemplateDialog({
   // 卸载模板
   const handleUnmountTemplate = async (templateName: string, path: string) => {
     if (!path.trim()) {
-      showMessage.error('请输入设备路径');
+      showMessage.error(t('template.mount.emptyPath'));
       return;
     }
 
@@ -210,10 +212,10 @@ export default function IoTDBTemplateDialog({
         path,
       });
 
-      showMessage.success('模板卸载成功');
+      showMessage.success(t('template.mount.unmountSuccess'));
     } catch (error: any) {
       logger.error('卸载模板失败:', error);
-      showMessage.error(`卸载模板失败: ${error.message || error}`);
+      showMessage.error(t('template.mount.unmountFailed', { error: error.message || error }));
     } finally {
       setLoading(false);
     }
@@ -221,7 +223,7 @@ export default function IoTDBTemplateDialog({
 
   // 删除模板
   const handleDeleteTemplate = async (templateName: string) => {
-    if (!confirm(`确定要删除模板 "${templateName}" 吗？`)) {
+    if (!confirm(t('template.list.confirmDelete', { name: templateName }))) {
       return;
     }
 
@@ -232,13 +234,13 @@ export default function IoTDBTemplateDialog({
         templateName,
       });
 
-      showMessage.success('模板删除成功');
+      showMessage.success(t('template.list.deleteSuccess'));
       setSelectedTemplate(null);
       setTemplateInfo(null);
       await loadTemplates();
     } catch (error: any) {
       logger.error('删除模板失败:', error);
-      showMessage.error(`删除模板失败: ${error.message || error}`);
+      showMessage.error(t('template.list.deleteFailed', { error: error.message || error }));
     } finally {
       setLoading(false);
     }
@@ -294,17 +296,26 @@ export default function IoTDBTemplateDialog({
   }, [selectedTemplate]);
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-5xl max-h-[85vh]">
+    <Dialog open={open} onOpenChange={(open) => {
+      // 只允许通过关闭按钮关闭，不允许点击外部关闭
+      if (!open) {
+        // 可以在这里添加确认逻辑
+        return;
+      }
+    }}>
+      <DialogContent className="max-w-5xl max-h-[85vh]" onInteractOutside={(e) => {
+        // 阻止点击外部关闭对话框
+        e.preventDefault();
+      }}>
         <DialogHeader>
-          <DialogTitle>IoTDB 模板管理</DialogTitle>
+          <DialogTitle>{t('template.title')}</DialogTitle>
         </DialogHeader>
 
         <Tabs value={currentMode} onValueChange={(value) => setCurrentMode(value as any)}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="list">模板列表</TabsTrigger>
-            <TabsTrigger value="create">创建模板</TabsTrigger>
-            <TabsTrigger value="mount">挂载模板</TabsTrigger>
+            <TabsTrigger value="list">{t('template.tabs.list')}</TabsTrigger>
+            <TabsTrigger value="create">{t('template.tabs.create')}</TabsTrigger>
+            <TabsTrigger value="mount">{t('template.tabs.mount')}</TabsTrigger>
           </TabsList>
 
           {/* 模板列表标签页 */}
@@ -313,9 +324,9 @@ export default function IoTDBTemplateDialog({
               {/* 左侧：模板列表 */}
               <Card className="col-span-1">
                 <CardHeader>
-                  <CardTitle className="text-base">模板列表</CardTitle>
+                  <CardTitle className="text-base">{t('template.list.title')}</CardTitle>
                   <CardDescription>
-                    共 {templates.length} 个模板
+                    {t('template.list.count', { count: templates.length })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -327,7 +338,7 @@ export default function IoTDBTemplateDialog({
                     ) : templates.length === 0 ? (
                       <div className="text-center text-muted-foreground py-8">
                         <FileText className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                        <p>暂无模板</p>
+                        <p>{t('template.list.empty')}</p>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -345,7 +356,7 @@ export default function IoTDBTemplateDialog({
                               <span className="font-medium">{template}</span>
                               {selectedTemplate === template && (
                                 <Badge variant="default" className="text-xs">
-                                  已选择
+                                  {t('template.list.selected')}
                                 </Badge>
                               )}
                             </div>
@@ -362,9 +373,9 @@ export default function IoTDBTemplateDialog({
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-base">模板详情</CardTitle>
+                      <CardTitle className="text-base">{t('template.list.details')}</CardTitle>
                       <CardDescription>
-                        {selectedTemplate ? `模板: ${selectedTemplate}` : '请选择一个模板'}
+                        {selectedTemplate ? `${t('template.list.details')}: ${selectedTemplate}` : t('template.list.selectTemplate')}
                       </CardDescription>
                     </div>
                     {selectedTemplate && (
@@ -379,7 +390,7 @@ export default function IoTDBTemplateDialog({
                         ) : (
                           <Trash2 className="w-4 h-4 mr-1" />
                         )}
-                        删除模板
+                        {t('template.list.delete')}
                       </Button>
                     )}
                   </div>
@@ -389,7 +400,7 @@ export default function IoTDBTemplateDialog({
                     {!selectedTemplate ? (
                       <div className="text-center text-muted-foreground py-16">
                         <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                        <p>请从左侧选择一个模板查看详情</p>
+                        <p>{t('template.list.selectTemplate')}</p>
                       </div>
                     ) : loadingInfo ? (
                       <div className="flex items-center justify-center py-16">
@@ -809,6 +820,13 @@ export default function IoTDBTemplateDialog({
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* 底部关闭按钮 */}
+        <div className="flex justify-end pt-4 border-t">
+          <Button variant="outline" onClick={onClose}>
+            {t('template.common.close')}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

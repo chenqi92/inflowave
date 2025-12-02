@@ -788,7 +788,8 @@ pub async fn create_iotdb_template(
         .map_err(|e| format!("获取连接失败: {}", e))?;
 
     // 构建创建模板的查询
-    let mut query = format!("CREATE SCHEMA TEMPLATE {}", template_info.name);
+    // IoTDB 语法: CREATE SCHEMA TEMPLATE t1 (temperature FLOAT encoding=RLE, status BOOLEAN encoding=PLAIN compression=SNAPPY)
+    let mut query = format!("CREATE SCHEMA TEMPLATE {} (", template_info.name);
 
     for (i, measurement) in template_info.measurements.iter().enumerate() {
         let data_type = template_info.data_types.get(i)
@@ -801,11 +802,20 @@ pub async fn create_iotdb_template(
             .map(|s| s.to_uppercase())
             .unwrap_or_else(|| "SNAPPY".to_string());
 
+        if i > 0 {
+            query.push_str(", ");
+        }
+
+        // 使用正确的 IoTDB 语法: measurement DATATYPE encoding=ENCODING compression=COMPRESSION
         query.push_str(&format!(
-            " ({} {} encoding {} compression {})",
+            "{} {} encoding={} compression={}",
             measurement, data_type, encoding, compression
         ));
     }
+
+    query.push(')');
+
+    debug!("创建模板 SQL: {}", query);
 
     client
         .execute_query(&query, None)
