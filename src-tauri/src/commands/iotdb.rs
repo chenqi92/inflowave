@@ -4,13 +4,12 @@
  * 提供 IoTDB 数据库的专用操作命令
  */
 
-use crate::database::connection::ConnectionManager;
+use crate::services::connection_service::ConnectionService;
 use crate::models::QueryResult;
 use anyhow::Result;
 use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::sync::Arc;
 use tauri::State;
 
 // ============================================================================
@@ -183,13 +182,14 @@ pub struct TriggerInfo {
 }
 
 /// 获取 IoTDB 存储组列表
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_iotdb_storage_groups(
     connection_id: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<String>, String> {
     debug!("获取 IoTDB 存储组列表: {}", connection_id);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -202,14 +202,15 @@ pub async fn get_iotdb_storage_groups(
 }
 
 /// 获取 IoTDB 设备列表
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_iotdb_devices(
     connection_id: String,
     storage_group: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<String>, String> {
     debug!("获取 IoTDB 设备列表: {} - {}", connection_id, storage_group);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -222,15 +223,16 @@ pub async fn get_iotdb_devices(
 }
 
 /// 获取 IoTDB 时间序列列表
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_iotdb_timeseries(
     connection_id: String,
     storage_group: String,
     device: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<String>, String> {
     debug!("获取 IoTDB 时间序列列表: {} - {}.{}", connection_id, storage_group, device);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -243,15 +245,16 @@ pub async fn get_iotdb_timeseries(
 }
 
 /// 执行 IoTDB 查询
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn execute_iotdb_query(
     connection_id: String,
     query: String,
     storage_group: Option<String>,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<QueryResult, String> {
     debug!("执行 IoTDB 查询: {} - {}", connection_id, query);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -264,15 +267,16 @@ pub async fn execute_iotdb_query(
 }
 
 /// 创建 IoTDB 存储组
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn create_iotdb_storage_group(
     connection_id: String,
     storage_group: String,
     ttl: Option<i64>,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("创建 IoTDB 存储组: {} - {}", connection_id, storage_group);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -280,7 +284,7 @@ pub async fn create_iotdb_storage_group(
 
     // 构建创建存储组的 SQL
     let mut query = format!("CREATE STORAGE GROUP {}", storage_group);
-    
+
     if let Some(ttl_value) = ttl {
         query.push_str(&format!(" WITH TTL {}", ttl_value));
     }
@@ -295,14 +299,15 @@ pub async fn create_iotdb_storage_group(
 }
 
 /// 删除 IoTDB 存储组
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn delete_iotdb_storage_group(
     connection_id: String,
     storage_group: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("删除 IoTDB 存储组: {} - {}", connection_id, storage_group);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -320,14 +325,14 @@ pub async fn delete_iotdb_storage_group(
 }
 
 /// 创建 IoTDB 时间序列
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn create_iotdb_timeseries(
     connection_id: String,
     timeseries_path: String,
     data_type: String,
     encoding: Option<String>,
     compression: Option<String>,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("创建 IoTDB 时间序列: {} - {}", connection_id, timeseries_path);
 
@@ -349,6 +354,7 @@ pub async fn create_iotdb_timeseries(
         validate_compression(comp)?;
     }
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -379,14 +385,15 @@ pub async fn create_iotdb_timeseries(
 }
 
 /// 删除 IoTDB 时间序列
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn delete_iotdb_timeseries(
     connection_id: String,
     timeseries_path: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("删除 IoTDB 时间序列: {} - {}", connection_id, timeseries_path);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -404,14 +411,14 @@ pub async fn delete_iotdb_timeseries(
 }
 
 /// 插入 IoTDB 数据
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn insert_iotdb_data(
     connection_id: String,
     device_path: String,
     timestamp: i64,
     measurements: Vec<String>,
     values: Vec<String>,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("插入 IoTDB 数据: {} - {}", connection_id, device_path);
 
@@ -419,6 +426,7 @@ pub async fn insert_iotdb_data(
         return Err("测量点和值的数量不匹配".to_string());
     }
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -442,13 +450,14 @@ pub async fn insert_iotdb_data(
 }
 
 /// 获取 IoTDB 服务器信息
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_iotdb_server_info(
     connection_id: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<serde_json::Value, String> {
     debug!("获取 IoTDB 服务器信息: {}", connection_id);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -484,13 +493,14 @@ pub async fn get_iotdb_server_info(
 }
 
 /// 获取 IoTDB 集群信息
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_iotdb_cluster_info(
     connection_id: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<ClusterNodeInfo>, String> {
     debug!("获取 IoTDB 集群信息: {}", connection_id);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -523,13 +533,14 @@ pub async fn get_iotdb_cluster_info(
 }
 
 /// 获取 IoTDB 用户列表
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_iotdb_users(
     connection_id: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<UserInfo>, String> {
     debug!("获取 IoTDB 用户列表: {}", connection_id);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -562,13 +573,14 @@ pub async fn get_iotdb_users(
 }
 
 /// 获取 IoTDB 函数列表
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_iotdb_functions(
     connection_id: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<FunctionInfo>, String> {
     debug!("获取 IoTDB 函数列表: {}", connection_id);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -600,13 +612,14 @@ pub async fn get_iotdb_functions(
 }
 
 /// 获取 IoTDB 触发器列表
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_iotdb_triggers(
     connection_id: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<TriggerInfo>, String> {
     debug!("获取 IoTDB 触发器列表: {}", connection_id);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -649,13 +662,14 @@ pub struct TemplateInfo {
 }
 
 /// 获取 IoTDB 模板列表
-#[tauri::command]
+#[tauri::command(rename_all = "camelCase")]
 pub async fn get_iotdb_templates(
     connection_id: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<Vec<String>, String> {
     debug!("获取 IoTDB 模板列表: {}", connection_id);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -681,10 +695,11 @@ pub async fn get_iotdb_templates(
 pub async fn get_iotdb_template_info(
     connection_id: String,
     template_name: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<TemplateInfo, String> {
     debug!("获取 IoTDB 模板详细信息: {} - {}", connection_id, template_name);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -730,7 +745,7 @@ pub async fn get_iotdb_template_info(
 pub async fn create_iotdb_template(
     connection_id: String,
     template_info: TemplateInfo,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("创建 IoTDB 模板: {} - {}", connection_id, template_info.name);
 
@@ -766,6 +781,7 @@ pub async fn create_iotdb_template(
         }
     }
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -806,10 +822,11 @@ pub async fn mount_iotdb_template(
     connection_id: String,
     template_name: String,
     path: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("挂载 IoTDB 模板: {} - {} 到 {}", connection_id, template_name, path);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -830,10 +847,11 @@ pub async fn unmount_iotdb_template(
     connection_id: String,
     template_name: String,
     path: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("卸载 IoTDB 模板: {} - {} 从 {}", connection_id, template_name, path);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -853,10 +871,11 @@ pub async fn unmount_iotdb_template(
 pub async fn drop_iotdb_template(
     connection_id: String,
     template_name: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<(), String> {
     debug!("删除 IoTDB 模板: {} - {}", connection_id, template_name);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -876,10 +895,11 @@ pub async fn drop_iotdb_template(
 pub async fn get_iotdb_device_info(
     connection_id: String,
     device_path: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<serde_json::Value, String> {
     debug!("获取 IoTDB 设备信息: {} - {}", connection_id, device_path);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -905,10 +925,11 @@ pub async fn get_iotdb_device_info(
 pub async fn get_iotdb_timeseries_info(
     connection_id: String,
     timeseries_path: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<TimeseriesInfo, String> {
     debug!("获取 IoTDB 时间序列信息: {} - {}", connection_id, timeseries_path);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await
@@ -945,10 +966,11 @@ pub async fn get_iotdb_timeseries_info(
 pub async fn get_iotdb_timeseries_statistics(
     connection_id: String,
     timeseries_path: String,
-    connection_manager: State<'_, Arc<ConnectionManager>>,
+    connection_service: State<'_, ConnectionService>,
 ) -> Result<serde_json::Value, String> {
     debug!("获取 IoTDB 时间序列统计信息: {} - {}", connection_id, timeseries_path);
 
+    let connection_manager = connection_service.get_manager();
     let client = connection_manager
         .get_connection(&connection_id)
         .await

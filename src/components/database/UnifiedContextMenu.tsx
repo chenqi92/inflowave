@@ -246,7 +246,8 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
                         <ContextMenuLabel>{t('context_menu.database_management')}</ContextMenuLabel>
                         <ContextMenuItem onSelect={() => handleAction('create_database')}>
                             <Plus className="w-4 h-4 mr-2"/>
-                            {t('context_menu.create_database')}
+                            {/* IoTDB 显示"创建存储组"，其他数据库显示"创建数据库" */}
+                            {isIoTDB ? t('context_menu.create_storage_group') : t('context_menu.create_database')}
                         </ContextMenuItem>
                         {isIoTDB && (
                             <ContextMenuItem onSelect={() => handleAction('manage_templates')}>
@@ -475,7 +476,10 @@ export const UnifiedContextMenu = React.memo<UnifiedContextMenuProps>(({
             <ContextMenuLabel>{t('context_menu.device_management')}</ContextMenuLabel>
             <ContextMenuItem onSelect={() => handleAction('create_device')}>
                 <Plus className="w-4 h-4 mr-2"/>
-                {t('context_menu.create_device')}
+                <div className="flex flex-col">
+                    <span>{t('context_menu.create_device')}</span>
+                    <span className="text-xs text-muted-foreground">{tContext('create_device_hint')}</span>
+                </div>
             </ContextMenuItem>
             <ContextMenuItem onSelect={() => handleAction('show_devices')}>
                 <Table className="w-4 h-4 mr-2"/>

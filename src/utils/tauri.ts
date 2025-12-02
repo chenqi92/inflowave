@@ -122,6 +122,17 @@ const VOID_COMMANDS = new Set([
   'alter_retention_policy',
   'drop_measurement',
 
+  // IoTDB operations (返回 Result<(), String>)
+  'create_iotdb_storage_group',
+  'delete_iotdb_storage_group',
+  'create_iotdb_timeseries',
+  'delete_iotdb_timeseries',
+  'insert_iotdb_data',
+  'create_iotdb_template',
+  'mount_iotdb_template',
+  'unmount_iotdb_template',
+  'drop_iotdb_template',
+
   // S3 operations (返回 Result<(), String>)
   's3_disconnect',
   's3_create_bucket',
