@@ -67,7 +67,7 @@ async fn handle_management_query(
 #[tauri::command(rename_all = "camelCase")]
 pub async fn get_databases(
     connection_service: State<'_, ConnectionService>,
-    settings_storage: State<'_, SettingsStorage>,
+    _settings_storage: State<'_, SettingsStorage>,
     connection_id: String,
 ) -> Result<Vec<String>, String> {
     debug!("处理获取数据库列表命令: {}", connection_id);
