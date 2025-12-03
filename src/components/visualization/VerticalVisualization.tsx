@@ -50,7 +50,7 @@ import { useTheme } from '@/components/providers/ThemeProvider';
 import { useConnectionStore } from '@/store/connection';
 import { safeTauriInvoke } from '@/utils/tauri';
 import { showMessage } from '@/utils/message';
-import { useTranslation } from '@/hooks/useTranslation';
+import { useMenuTranslation } from '@/hooks/useTranslation';
 import type { QueryResult } from '@/types';
 import logger from '@/utils/logger';
 
@@ -80,7 +80,7 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [selectedChart, setSelectedChart] = useState<ChartConfig | null>(null);
-  const { t } = useTranslation();
+  const { t } = useMenuTranslation();
 
   // 创建图表表单状态
   const [newChart, setNewChart] = useState({
@@ -408,24 +408,24 @@ export const VerticalVisualization: React.FC<VerticalVisualizationProps> = ({
                     </Button>
                   </DropdownMenuTrigger>
                 </TooltipTrigger>
-                <TooltipContent>{t('menu.context_menu.type_filter')}</TooltipContent>
+                <TooltipContent>{t('context_menu.type_filter')}</TooltipContent>
               </Tooltip>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setSelectedType('all')}>
-                  {t('menu.context_menu.all_types')}
+                  {t('context_menu.all_types')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setSelectedType('line')}>
-                  {t('menu.context_menu.line_chart')}
+                  {t('context_menu.line_chart')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSelectedType('bar')}>
-                  {t('menu.context_menu.bar_chart')}
+                  {t('context_menu.bar_chart')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSelectedType('pie')}>
-                  {t('menu.context_menu.pie_chart')}
+                  {t('context_menu.pie_chart')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSelectedType('area')}>
-                  {t('menu.context_menu.area_chart')}
+                  {t('context_menu.area_chart')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

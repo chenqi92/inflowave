@@ -9,6 +9,7 @@
     "list": {
       "title": "模板列表",
       "count": "共 {{count}} 个模板",
+      "count_other": "共 {{count}} 个模板",
       "empty": "暂无模板",
       "selected": "已选择",
       "details": "模板详情",

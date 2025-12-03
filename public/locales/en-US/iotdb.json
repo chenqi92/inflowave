@@ -9,6 +9,7 @@
     "list": {
       "title": "Template List",
       "count": "{{count}} template(s)",
+      "count_other": "{{count}} templates",
       "empty": "No templates",
       "selected": "Selected",
       "details": "Template Details",

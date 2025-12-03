@@ -79,7 +79,7 @@ const i18nConfig = {
     'embeddedServer', 'export', 'extension', 'filter', 'font',
     'globalSearch', 'itemType', 'notifications', 'port', 'retentionPolicy',
     's3', 'shortcuts', 'statistics', 'status', 'tabs', 'theme',
-    'updater', 'userGuide', 'versionDetection'
+    'updater', 'userGuide', 'versionDetection', 'iotdb'
   ],
 
   // 预加载关键命名空间（在应用启动时立即加载）
