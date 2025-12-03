@@ -89,7 +89,11 @@ const DatabaseInfoDialog: React.FC<DatabaseInfoDialogProps> = ({
       if (infoResult.status === 'fulfilled') {
         const info = infoResult.value as any;
         setRetentionPolicies(info.retention_policies || []);
-        setMeasurements(info.measurements || []);
+        // 后端返回的是对象数组 {name, fields, tags, ...}，需要提取 name 字段
+        const measurementNames = (info.measurements || []).map((m: any) =>
+          typeof m === 'string' ? m : m.name
+        );
+        setMeasurements(measurementNames);
       }
 
       if (statsResult.status === 'fulfilled') {

@@ -170,5 +170,6 @@
   "default": "Default",
   "light": "Light",
   "dark": "Dark",
-  "minimal": "Minimal"
+  "minimal": "Minimal",
+  "rows": "Rows"
 }
