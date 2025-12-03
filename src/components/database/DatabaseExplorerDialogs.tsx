@@ -122,10 +122,20 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                     }));
                 }}
                 onSuccess={() => {
-                    // 延迟刷新树形数据，确保后端已完成创建操作
-                    setTimeout(() => {
-                        buildCompleteTreeData(true);
-                    }, 300);
+                    // 使用局部刷新而不是全局刷新
+                    const connectionId = dialogStates.createDatabase?.connectionId || dialogStates.create_database?.connectionId;
+                    if (connectionId && refreshNode) {
+                        // 延迟刷新，确保后端已完成创建操作
+                        setTimeout(() => {
+                            const connectionNodeId = `connection-${connectionId}`;
+                            refreshNode(connectionNodeId);
+                        }, 300);
+                    } else {
+                        // 降级到全局刷新
+                        setTimeout(() => {
+                            buildCompleteTreeData(true);
+                        }, 300);
+                    }
                 }}
                 connectionId={dialogStates.createDatabase?.connectionId || dialogStates.create_database?.connectionId}
                 metadata={dialogStates.create_database?.metadata}
@@ -359,10 +369,20 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                         }));
                     }}
                     onSuccess={() => {
-                        // 延迟刷新树形数据，确保后端已完成创建操作
-                        setTimeout(() => {
-                            buildCompleteTreeData(true);
-                        }, 300);
+                        // 使用局部刷新而不是全局刷新
+                        const storageGroup = dialogStates.createDevice?.storageGroup;
+                        if (storageGroup && refreshNode) {
+                            // 延迟刷新，确保后端已完成创建操作
+                            setTimeout(() => {
+                                const storageGroupNodeId = `sg_${storageGroup}`;
+                                refreshNode(storageGroupNodeId);
+                            }, 300);
+                        } else {
+                            // 降级到全局刷新
+                            setTimeout(() => {
+                                buildCompleteTreeData(true);
+                            }, 300);
+                        }
                     }}
                     connectionId={dialogStates.createDevice.connectionId}
                     storageGroup={dialogStates.createDevice.storageGroup}
@@ -384,10 +404,22 @@ export const DatabaseExplorerDialogs: React.FC<DatabaseExplorerDialogsProps> = (
                         }));
                     }}
                     onSuccess={() => {
-                        // 延迟刷新树形数据，确保后端已完成创建操作
-                        setTimeout(() => {
-                            buildCompleteTreeData(true);
-                        }, 300);
+                        // 使用局部刷新而不是全局刷新
+                        const devicePath = dialogStates.createTimeseries?.devicePath;
+                        if (devicePath && refreshNode) {
+                            // 延迟刷新，确保后端已完成创建操作
+                            setTimeout(() => {
+                                // 从设备路径提取设备节点 ID
+                                // 例如: root.sg1.device1 -> device_root_sg1_device1
+                                const deviceNodeId = `device_${devicePath.replace(/\./g, '_')}`;
+                                refreshNode(deviceNodeId);
+                            }, 300);
+                        } else {
+                            // 降级到全局刷新
+                            setTimeout(() => {
+                                buildCompleteTreeData(true);
+                            }, 300);
+                        }
                     }}
                     connectionId={dialogStates.createTimeseries.connectionId}
                     devicePath={dialogStates.createTimeseries.devicePath}

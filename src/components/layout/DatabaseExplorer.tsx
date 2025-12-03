@@ -201,6 +201,8 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
 
   // 需要刷新的节点 ID
   const [nodeToRefresh, setNodeToRefresh] = React.useState<string | null>(null);
+  // 刷新节点的方法引用
+  const refreshNodeRef = useRef<((nodeId: string) => void) | null>(null);
 
   const { clearDatabasesCache, getTreeNodesWithCache } = cache;
 
@@ -1620,11 +1622,17 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
   // 刷新特定节点
   const refreshNode = useCallback((nodeId: string) => {
     logger.debug(`[刷新节点] 触发节点刷新: ${nodeId}`);
-    setNodeToRefresh(nodeId);
-    // 清除状态，以便下次可以再次刷新同一个节点
-    setTimeout(() => {
-      setNodeToRefresh(null);
-    }, 100);
+    // 优先使用新的 refreshNodeRef 方法
+    if (refreshNodeRef.current) {
+      refreshNodeRef.current(nodeId);
+    } else {
+      // 降级到旧的 prop 方式
+      setNodeToRefresh(nodeId);
+      // 清除状态，以便下次可以再次刷新同一个节点
+      setTimeout(() => {
+        setNodeToRefresh(null);
+      }, 100);
+    }
   }, []);
 
   // Context menu handler
@@ -1645,7 +1653,7 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
     removeFavorite,
     clearDatabasesCache,
     buildCompleteTreeData,
-    refreshNode,
+    refreshNode: refreshNodeRef.current || undefined,
     setLoading,
     setCreateDatabaseDialogOpen,
     setDatabaseInfoDialog,
@@ -1939,6 +1947,9 @@ const DatabaseExplorer: React.FC<DatabaseExplorerProps> = ({
               onRefresh={stableHandleTreeRefresh}
               nodeRefsMap={nodeRefsMap}
               nodeToRefresh={nodeToRefresh}
+              onRefreshNodeReady={(refreshFn) => {
+                refreshNodeRef.current = refreshFn;
+              }}
               className='h-full'
             />
           </div>

@@ -71,6 +71,8 @@ interface MultiConnectionTreeViewProps {
   nodeRefsMap?: React.MutableRefObject<Map<string, HTMLElement>>;
   // 需要刷新的节点 ID（用于局部刷新）
   nodeToRefresh?: string | null;
+  // 暴露刷新节点的方法
+  onRefreshNodeReady?: (refreshNode: (nodeId: string) => void) => void;
 }
 
 export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = ({
@@ -91,6 +93,7 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
   isDatabaseOpened,
   nodeRefsMap,
   nodeToRefresh,
+  onRefreshNodeReady,
 }) => {
   // 翻译钩子
   const { t: tExplorer } = useDatabaseExplorerTranslation();
@@ -1729,47 +1732,59 @@ export const MultiConnectionTreeView: React.FC<MultiConnectionTreeViewProps> = (
     onRefresh?.();
   }, [loadAllTreeNodes, onRefresh]);
 
-  // 监听需要刷新的节点
+  // 局部刷新节点方法
+  const refreshNode = useCallback((nodeId: string) => {
+    logger.debug(`[局部刷新] 刷新节点: ${nodeId}`);
+
+    // 清除该节点的缓存
+    loadedNodesRef.current.delete(nodeId);
+
+    // 找到该节点并清除其 children，触发重新加载
+    setTreeData(prevData => {
+      const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
+        return nodes.map(node => {
+          if (node.id === nodeId) {
+            logger.debug(`[局部刷新] 找到节点，清除子节点: ${node.id}`);
+            return {
+              ...node,
+              children: undefined, // 清除子节点，触发重新加载
+            };
+          }
+          if (node.children && Array.isArray(node.children)) {
+            return {
+              ...node,
+              children: updateNode(node.children),
+            };
+          }
+          return node;
+        });
+      };
+      return updateNode(prevData);
+    });
+
+    // 如果节点已展开，触发重新加载
+    if (expandedNodeIds.includes(nodeId)) {
+      logger.debug(`[局部刷新] 节点已展开，触发重新加载: ${nodeId}`);
+      // 延迟一点时间，确保 children 已清除
+      setTimeout(() => {
+        handleToggleRef.current(nodeId);
+      }, 50);
+    }
+  }, [expandedNodeIds]);
+
+  // 暴露 refreshNode 方法给父组件
+  useEffect(() => {
+    if (onRefreshNodeReady) {
+      onRefreshNodeReady(refreshNode);
+    }
+  }, [onRefreshNodeReady, refreshNode]);
+
+  // 监听需要刷新的节点（兼容旧的 prop 方式）
   useEffect(() => {
     if (nodeToRefresh) {
-      logger.debug(`[局部刷新] 刷新节点: ${nodeToRefresh}`);
-
-      // 清除该节点的缓存
-      loadedNodesRef.current.delete(nodeToRefresh);
-
-      // 找到该节点并清除其 children，触发重新加载
-      setTreeData(prevData => {
-        const updateNode = (nodes: TreeNodeData[]): TreeNodeData[] => {
-          return nodes.map(node => {
-            if (node.id === nodeToRefresh) {
-              logger.debug(`[局部刷新] 找到节点，清除子节点: ${node.id}`);
-              return {
-                ...node,
-                children: undefined, // 清除子节点，触发重新加载
-              };
-            }
-            if (node.children && Array.isArray(node.children)) {
-              return {
-                ...node,
-                children: updateNode(node.children),
-              };
-            }
-            return node;
-          });
-        };
-        return updateNode(prevData);
-      });
-
-      // 如果节点已展开，触发重新加载
-      if (expandedNodeIds.includes(nodeToRefresh)) {
-        logger.debug(`[局部刷新] 节点已展开，触发重新加载: ${nodeToRefresh}`);
-        // 延迟一点时间，确保 children 已清除
-        setTimeout(() => {
-          handleToggleRef.current(nodeToRefresh);
-        }, 50);
-      }
+      refreshNode(nodeToRefresh);
     }
-  }, [nodeToRefresh, expandedNodeIds]);
+  }, [nodeToRefresh, refreshNode]);
 
   // 优化：只在初始加载且没有数据时显示全局 loading
   // 避免在后续操作时整个树闪烁

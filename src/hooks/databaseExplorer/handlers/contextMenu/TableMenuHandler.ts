@@ -310,11 +310,14 @@ export class TableMenuHandler extends BaseMenuHandler {
    * 删除表
    */
   private async deleteTable(connectionId: string, database: string, table: string): Promise<void> {
+    // 删除表后，刷新数据库节点以更新表列表
+    const databaseNodeId = `db_${database}`;
     await this.handleDelete(
       'delete_table',
       'drop_measurement',
       { connectionId, database, measurement: table },
-      true
+      true,
+      databaseNodeId
     );
   }
 }

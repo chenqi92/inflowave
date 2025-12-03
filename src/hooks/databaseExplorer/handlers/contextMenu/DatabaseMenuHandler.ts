@@ -195,11 +195,14 @@ export class DatabaseMenuHandler extends BaseMenuHandler {
    * 删除数据库
    */
   private async deleteDatabase(connectionId: string, database: string): Promise<void> {
+    // 删除数据库后，刷新连接节点以更新数据库列表
+    const connectionNodeId = `connection-${connectionId}`;
     await this.handleDelete(
       'delete_database',
       'drop_database',
       { connectionId, database },
-      true
+      true,
+      connectionNodeId
     );
   }
 
