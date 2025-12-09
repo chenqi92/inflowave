@@ -394,6 +394,222 @@ pre,
     'JetBrains Mono', 'Consolas', 'Monaco', 'Courier New', monospace !important;
 }
 
+/*
+ * CodeMirror 6 核心布局样式回退
+ * 这些样式确保在生产环境中 CodeMirror 的布局正确显示
+ * CodeMirror 6 通过 JavaScript 动态注入样式，但在某些情况下可能失效
+ * 这里提供静态 CSS 作为回退，使用与 CodeMirror 相同的样式值
+ */
+.cm-editor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.cm-scroller {
+  display: flex;
+  align-items: flex-start;
+  font-family: monospace;
+  line-height: 1.4;
+  height: 100%;
+  overflow-x: auto;
+  position: relative;
+  z-index: 0;
+  overflow-anchor: none;
+}
+
+.cm-content {
+  margin: 0;
+  flex-grow: 2;
+  flex-shrink: 0;
+  display: block;
+  white-space: pre;
+  word-wrap: normal;
+  box-sizing: border-box;
+  min-height: 100%;
+  padding: 4px 0;
+  outline: none;
+}
+
+.cm-content[contenteditable="true"] {
+  -webkit-user-modify: read-write-plaintext-only;
+}
+
+.cm-lineWrapping {
+  white-space: pre-wrap;
+  white-space: break-spaces;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  flex-shrink: 1;
+}
+
+.cm-line {
+  display: block;
+  padding: 0 2px 0 6px;
+}
+
+.cm-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  contain: size style;
+}
+
+.cm-layer > * {
+  position: absolute;
+}
+
+.cm-cursorLayer {
+  pointer-events: none;
+}
+
+.cm-cursor,
+.cm-dropCursor {
+  border-left: 1.2px solid black;
+  margin-left: -0.6px;
+  pointer-events: none;
+}
+
+.cm-cursor {
+  display: none;
+}
+
+.cm-dropCursor {
+  position: absolute;
+}
+
+.cm-gutters {
+  flex-shrink: 0;
+  display: flex;
+  height: 100%;
+  box-sizing: border-box;
+  z-index: 200;
+}
+
+.cm-gutter {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+.cm-gutterElement {
+  box-sizing: border-box;
+}
+
+.cm-lineNumbers .cm-gutterElement {
+  padding: 0 3px 0 5px;
+  min-width: 20px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* CodeMirror 焦点状态 */
+.cm-editor.cm-focused {
+  outline: 1px dotted #212121;
+}
+
+.cm-editor.cm-focused > .cm-scroller > .cm-cursorLayer {
+  animation: steps(1) cm-blink 1.2s infinite;
+}
+
+.cm-editor.cm-focused > .cm-scroller > .cm-cursorLayer .cm-cursor {
+  display: block;
+}
+
+@keyframes cm-blink {
+  0% {}
+  50% { opacity: 0; }
+  100% {}
+}
+
+/* CodeMirror 自动完成样式 */
+.cm-tooltip {
+  z-index: 100;
+  box-sizing: border-box;
+}
+
+.cm-tooltip-autocomplete {
+  overflow: hidden;
+}
+
+.cm-tooltip-autocomplete > ul {
+  font-family: monospace;
+  white-space: nowrap;
+  overflow: hidden auto;
+  max-width: min(700px, 95vw);
+  min-width: 250px;
+  max-height: 10em;
+  height: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.cm-tooltip-autocomplete > ul > li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  padding: 1px 3px;
+  line-height: 1.2;
+}
+
+.cm-completionIcon {
+  box-sizing: content-box;
+  font-size: 90%;
+  width: 0.8em;
+  display: inline-block;
+  text-align: center;
+  padding-right: 0.6em;
+  opacity: 0.6;
+}
+
+.cm-completionLabel {
+  flex: 1;
+}
+
+.cm-completionDetail {
+  margin-left: 0.5em;
+  font-style: italic;
+}
+
+/* CodeMirror 面板样式 */
+.cm-panels {
+  box-sizing: border-box;
+  position: sticky;
+  left: 0;
+  right: 0;
+  z-index: 300;
+}
+
+/* CodeMirror Tab 样式 */
+.cm-tab {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+}
+
+/* CodeMirror 占位符样式 */
+.cm-placeholder {
+  color: #888;
+  display: inline-block;
+  vertical-align: top;
+  user-select: none;
+}
+
+/* CodeMirror 选择层样式 */
+.cm-selectionLayer {
+  z-index: -1;
+  contain: size style;
+  pointer-events: none;
+}
+
+.cm-selectionBackground {
+  position: absolute;
+}
+
 /* 滚动条样式 */
 ::-webkit-scrollbar {
   width: 8px;

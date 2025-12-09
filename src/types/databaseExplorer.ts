@@ -128,6 +128,11 @@ export interface DialogStates {
         connectionId: string;
         storageGroup: string;
     };
+    createTimeseries?: {
+        open: boolean;
+        connectionId: string;
+        devicePath: string;
+    };
     deviceList?: {
         open: boolean;
         connectionId: string;

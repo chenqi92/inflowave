@@ -165,7 +165,7 @@ export function createAppTheme(isDark: boolean): Extension {
     // - 使用条件: backgroundImage: isDark ? 'url(".../table-dark.svg")' : 'url(".../table-light.svg")'
     // - 移除 filter 属性
     '.cm-completionIcon-db-table': {
-      backgroundImage: 'url("/src/assets/icons/completion/table.svg")',
+      backgroundImage: 'url("/icons/completion/table.svg")',
       backgroundSize: 'contain',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center',
@@ -175,7 +175,7 @@ export function createAppTheme(isDark: boolean): Extension {
         : 'brightness(0) saturate(100%) invert(35%) sepia(85%) saturate(2498%) hue-rotate(200deg) brightness(95%) contrast(101%)', // 深蓝 #2563EB
     },
     '.cm-completionIcon-db-field': {
-      backgroundImage: 'url("/src/assets/icons/completion/field.svg")',
+      backgroundImage: 'url("/icons/completion/field.svg")',
       backgroundSize: 'contain',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center',
@@ -185,7 +185,7 @@ export function createAppTheme(isDark: boolean): Extension {
         : 'brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(95%) contrast(101%)', // 深绿 #059669
     },
     '.cm-completionIcon-db-tag': {
-      backgroundImage: 'url("/src/assets/icons/completion/tag.svg")',
+      backgroundImage: 'url("/icons/completion/tag.svg")',
       backgroundSize: 'contain',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center',
@@ -195,7 +195,7 @@ export function createAppTheme(isDark: boolean): Extension {
         : 'brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(260deg) brightness(95%) contrast(101%)', // 深紫 #7C3AED
     },
     '.cm-completionIcon-keyword': {
-      backgroundImage: 'url("/src/assets/icons/completion/keyword.svg")',
+      backgroundImage: 'url("/icons/completion/keyword.svg")',
       backgroundSize: 'contain',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center',
@@ -205,7 +205,7 @@ export function createAppTheme(isDark: boolean): Extension {
         : 'brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%)', // 深橙 #EA580C
     },
     '.cm-completionIcon-function': {
-      backgroundImage: 'url("/src/assets/icons/completion/function.svg")',
+      backgroundImage: 'url("/icons/completion/function.svg")',
       backgroundSize: 'contain',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center',
@@ -215,7 +215,7 @@ export function createAppTheme(isDark: boolean): Extension {
         : 'brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%)', // 深黄 #D97706
     },
     '.cm-completionIcon-type': {
-      backgroundImage: 'url("/src/assets/icons/completion/type.svg")',
+      backgroundImage: 'url("/icons/completion/type.svg")',
       backgroundSize: 'contain',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center',
@@ -225,7 +225,7 @@ export function createAppTheme(isDark: boolean): Extension {
         : 'brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(170deg) brightness(95%) contrast(101%)', // 深青 #0891B2
     },
     '.cm-completionIcon-constant': {
-      backgroundImage: 'url("/src/assets/icons/completion/constant.svg")',
+      backgroundImage: 'url("/icons/completion/constant.svg")',
       backgroundSize: 'contain',
       backgroundRepeat: 'no-repeat',
       backgroundPosition: 'center',
