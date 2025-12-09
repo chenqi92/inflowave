@@ -527,12 +527,27 @@ pre,
 
 /* CodeMirror 自动完成样式 */
 .cm-tooltip {
+  position: fixed;
   z-index: 100;
   box-sizing: border-box;
+  border: 1px solid hsl(var(--border));
+  background-color: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border-radius: 6px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.cm-tooltip.cm-tooltip-above {
+  /* 当 tooltip 在光标上方时 */
+}
+
+.cm-tooltip.cm-tooltip-below {
+  /* 当 tooltip 在光标下方时 */
 }
 
 .cm-tooltip-autocomplete {
   overflow: hidden;
+  border-radius: 6px;
 }
 
 .cm-tooltip-autocomplete > ul {
@@ -541,38 +556,64 @@ pre,
   overflow: hidden auto;
   max-width: min(700px, 95vw);
   min-width: 250px;
-  max-height: 10em;
+  max-height: 300px;
   height: 100%;
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 4px 0;
 }
 
 .cm-tooltip-autocomplete > ul > li {
+  display: flex;
+  align-items: center;
   overflow: hidden;
   text-overflow: ellipsis;
   cursor: pointer;
-  padding: 1px 3px;
-  line-height: 1.2;
+  padding: 4px 8px;
+  line-height: 1.4;
+}
+
+.cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background-color: hsl(var(--accent));
+  color: hsl(var(--accent-foreground));
 }
 
 .cm-completionIcon {
   box-sizing: content-box;
-  font-size: 90%;
-  width: 0.8em;
+  font-size: 14px;
+  width: 16px;
+  height: 16px;
   display: inline-block;
   text-align: center;
-  padding-right: 0.6em;
-  opacity: 0.6;
+  padding-right: 6px;
+  margin-right: 4px;
+  opacity: 1;
+  vertical-align: middle;
+  line-height: 16px;
+  flex-shrink: 0;
+}
+
+/* 清除 CodeMirror 默认的图标内容 */
+.cm-completionIcon::before,
+.cm-completionIcon::after {
+  content: none !important;
+  display: none !important;
 }
 
 .cm-completionLabel {
   flex: 1;
+  font-family: var(--font-mono, monospace);
 }
 
 .cm-completionDetail {
   margin-left: 0.5em;
   font-style: italic;
+  opacity: 0.7;
+}
+
+.cm-completionMatchedText {
+  text-decoration: none;
+  font-weight: bold;
 }
 
 /* CodeMirror 面板样式 */
