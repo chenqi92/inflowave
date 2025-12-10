@@ -531,45 +531,25 @@ pre,
   top: -10000px;
 }
 
-/* CodeMirror 语法高亮基础样式 - 确保打包后样式一致 */
-.cm-editor .tok-keyword { color: #569cd6; font-weight: bold; }
-.cm-editor .tok-operator { color: #d4d4d4; }
-.cm-editor .tok-number { color: #b5cea8; }
-.cm-editor .tok-string { color: #ce9178; }
-.cm-editor .tok-string2 { color: #ce9178; }
-.cm-editor .tok-comment { color: #6a9955; font-style: italic; }
-.cm-editor .tok-variableName { color: #9cdcfe; }
-.cm-editor .tok-variableName2 { color: #4ec9b0; }
-.cm-editor .tok-definition { color: #dcdcaa; }
-.cm-editor .tok-propertyName { color: #9cdcfe; }
-.cm-editor .tok-typeName { color: #4ec9b0; }
-.cm-editor .tok-className { color: #4ec9b0; }
-.cm-editor .tok-function { color: #dcdcaa; }
-.cm-editor .tok-bool { color: #4fc1ff; }
-.cm-editor .tok-null { color: #4fc1ff; }
-.cm-editor .tok-punctuation { color: #d4d4d4; }
-.cm-editor .tok-bracket { color: #d4d4d4; }
-.cm-editor .tok-invalid { color: #f44747; }
+/* CodeMirror 6 语法高亮 Fallback - 通用样式确保打包后语法高亮仍然工作 */
+/* 这些是最后的fallback样式，JavaScript主题优先级更高 */
+/* 暗色主题 - 使用属性选择器匹配所有可能的语法高亮类名 */
+.dark .cm-editor .cm-content [class*="cm-"] {
+  /* 默认文本颜色 */
+  color: #d4d4d4;
+}
 
-/* 亮色主题语法高亮 */
-:root:not(.dark) .cm-editor .tok-keyword { color: #0000ff; }
-:root:not(.dark) .cm-editor .tok-operator { color: #000000; }
-:root:not(.dark) .cm-editor .tok-number { color: #098658; }
-:root:not(.dark) .cm-editor .tok-string { color: #a31515; }
-:root:not(.dark) .cm-editor .tok-string2 { color: #a31515; }
-:root:not(.dark) .cm-editor .tok-comment { color: #008000; }
-:root:not(.dark) .cm-editor .tok-variableName { color: #001080; }
-:root:not(.dark) .cm-editor .tok-variableName2 { color: #267f99; }
-:root:not(.dark) .cm-editor .tok-definition { color: #795e26; }
-:root:not(.dark) .cm-editor .tok-propertyName { color: #001080; }
-:root:not(.dark) .cm-editor .tok-typeName { color: #267f99; }
-:root:not(.dark) .cm-editor .tok-className { color: #267f99; }
-:root:not(.dark) .cm-editor .tok-function { color: #795e26; }
-:root:not(.dark) .cm-editor .tok-bool { color: #0070c1; }
-:root:not(.dark) .cm-editor .tok-null { color: #0070c1; }
-:root:not(.dark) .cm-editor .tok-punctuation { color: #000000; }
-:root:not(.dark) .cm-editor .tok-bracket { color: #000000; }
-:root:not(.dark) .cm-editor .tok-invalid { color: #cd3131; }
+/* 亮色主题 */
+:root:not(.dark) .cm-editor .cm-content [class*="cm-"] {
+  /* 默认文本颜色 */
+  color: #000000;
+}
+
+/* 确保JavaScript注入的样式能够工作 */
+.cm-editor .cm-line span {
+  /* 继承由 syntaxHighlighting 注入的样式 */
+  color: inherit;
+}
 
 /* CodeMirror 自动完成样式 */
 .cm-tooltip {
@@ -625,18 +605,22 @@ pre,
 }
 
 .cm-completionIcon {
-  box-sizing: content-box;
-  font-size: 14px;
-  width: 16px;
-  height: 16px;
-  display: inline-block;
-  text-align: center;
-  padding-right: 6px;
-  margin-right: 4px;
-  opacity: 1;
-  vertical-align: middle;
-  line-height: 16px;
-  flex-shrink: 0;
+  box-sizing: content-box !important;
+  font-size: 14px !important;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  max-width: 16px !important;
+  max-height: 16px !important;
+  display: inline-block !important;
+  text-align: center !important;
+  padding-right: 6px !important;
+  margin-right: 4px !important;
+  opacity: 1 !important;
+  vertical-align: middle !important;
+  line-height: 16px !important;
+  flex-shrink: 0 !important;
 }
 
 /* 清除 CodeMirror 默认的图标内容 */
@@ -646,7 +630,7 @@ pre,
   display: none !important;
 }
 
-/* 自动完成图标样式 - 使用 SVG 背景图 */
+/* 自动完成图标样式 - 使用 SVG 背景图 - 强制应用 */
 .cm-completionIcon-db-table,
 .cm-completionIcon-db-field,
 .cm-completionIcon-db-tag,
@@ -654,36 +638,37 @@ pre,
 .cm-completionIcon-function,
 .cm-completionIcon-type,
 .cm-completionIcon-constant {
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  background-size: contain !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  content: "" !important;
 }
 
-.cm-completionIcon-db-table { background-image: url('/icons/completion/table.svg'); }
-.cm-completionIcon-db-field { background-image: url('/icons/completion/field.svg'); }
-.cm-completionIcon-db-tag { background-image: url('/icons/completion/tag.svg'); }
-.cm-completionIcon-keyword { background-image: url('/icons/completion/keyword.svg'); }
-.cm-completionIcon-function { background-image: url('/icons/completion/function.svg'); }
-.cm-completionIcon-type { background-image: url('/icons/completion/type.svg'); }
-.cm-completionIcon-constant { background-image: url('/icons/completion/constant.svg'); }
+.cm-completionIcon-db-table { background-image: url('/icons/completion/table.svg') !important; }
+.cm-completionIcon-db-field { background-image: url('/icons/completion/field.svg') !important; }
+.cm-completionIcon-db-tag { background-image: url('/icons/completion/tag.svg') !important; }
+.cm-completionIcon-keyword { background-image: url('/icons/completion/keyword.svg') !important; }
+.cm-completionIcon-function { background-image: url('/icons/completion/function.svg') !important; }
+.cm-completionIcon-type { background-image: url('/icons/completion/type.svg') !important; }
+.cm-completionIcon-constant { background-image: url('/icons/completion/constant.svg') !important; }
 
 /* 自动完成图标颜色 - 暗色主题 */
-.dark .cm-completionIcon-db-table { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(180deg) brightness(95%) contrast(101%); }
-.dark .cm-completionIcon-db-field { filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(70deg) brightness(95%) contrast(101%); }
-.dark .cm-completionIcon-db-tag { filter: brightness(0) saturate(100%) invert(68%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%); }
-.dark .cm-completionIcon-keyword { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(340deg) brightness(95%) contrast(101%); }
-.dark .cm-completionIcon-function { filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(30deg) brightness(95%) contrast(101%); }
-.dark .cm-completionIcon-type { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(160deg) brightness(95%) contrast(101%); }
-.dark .cm-completionIcon-constant { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(300deg) brightness(95%) contrast(101%); }
+.dark .cm-completionIcon-db-table { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(180deg) brightness(95%) contrast(101%) !important; }
+.dark .cm-completionIcon-db-field { filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(70deg) brightness(95%) contrast(101%) !important; }
+.dark .cm-completionIcon-db-tag { filter: brightness(0) saturate(100%) invert(68%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%) !important; }
+.dark .cm-completionIcon-keyword { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(340deg) brightness(95%) contrast(101%) !important; }
+.dark .cm-completionIcon-function { filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(30deg) brightness(95%) contrast(101%) !important; }
+.dark .cm-completionIcon-type { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(160deg) brightness(95%) contrast(101%) !important; }
+.dark .cm-completionIcon-constant { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(300deg) brightness(95%) contrast(101%) !important; }
 
 /* 自动完成图标颜色 - 亮色主题 */
-:root:not(.dark) .cm-completionIcon-db-table { filter: brightness(0) saturate(100%) invert(35%) sepia(85%) saturate(2498%) hue-rotate(200deg) brightness(95%) contrast(101%); }
-:root:not(.dark) .cm-completionIcon-db-field { filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(95%) contrast(101%); }
-:root:not(.dark) .cm-completionIcon-db-tag { filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(260deg) brightness(95%) contrast(101%); }
-:root:not(.dark) .cm-completionIcon-keyword { filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%); }
-:root:not(.dark) .cm-completionIcon-function { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%); }
-:root:not(.dark) .cm-completionIcon-type { filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(170deg) brightness(95%) contrast(101%); }
-:root:not(.dark) .cm-completionIcon-constant { filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%); }
+:root:not(.dark) .cm-completionIcon-db-table { filter: brightness(0) saturate(100%) invert(35%) sepia(85%) saturate(2498%) hue-rotate(200deg) brightness(95%) contrast(101%) !important; }
+:root:not(.dark) .cm-completionIcon-db-field { filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(95%) contrast(101%) !important; }
+:root:not(.dark) .cm-completionIcon-db-tag { filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(260deg) brightness(95%) contrast(101%) !important; }
+:root:not(.dark) .cm-completionIcon-keyword { filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%) !important; }
+:root:not(.dark) .cm-completionIcon-function { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%) !important; }
+:root:not(.dark) .cm-completionIcon-type { filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(170deg) brightness(95%) contrast(101%) !important; }
+:root:not(.dark) .cm-completionIcon-constant { filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%) !important; }
 
 /* 自动完成标签颜色 */
 .cm-completionIcon-db-table + .cm-completionLabel { color: #4A9EFF; }

@@ -272,6 +272,37 @@ export function createAppTheme(isDark: boolean): Extension {
     'li[aria-selected] .cm-completionLabel': {
       color: 'inherit !important',
     },
+    // 内嵌语法高亮样式作为fallback，确保打包后能工作
+    '.cm-line span': {
+      color: 'inherit',
+    },
+    // SQL关键字样式（fallback）
+    '.cm-content span[class*="keyword"]': {
+      color: isDark ? '#569cd6' : '#0000ff',
+      fontWeight: 'bold',
+    },
+    '.cm-content span[class*="string"]': {
+      color: isDark ? '#ce9178' : '#a31515',
+    },
+    '.cm-content span[class*="number"]': {
+      color: isDark ? '#b5cea8' : '#098658',
+    },
+    '.cm-content span[class*="comment"]': {
+      color: isDark ? '#6a9955' : '#008000',
+      fontStyle: 'italic',
+    },
+    '.cm-content span[class*="variable"]': {
+      color: isDark ? '#9cdcfe' : '#001080',
+    },
+    '.cm-content span[class*="type"]': {
+      color: isDark ? '#4ec9b0' : '#267f99',
+    },
+    '.cm-content span[class*="function"]': {
+      color: isDark ? '#dcdcaa' : '#795e26',
+    },
+    '.cm-content span[class*="operator"]': {
+      color: isDark ? '#d4d4d4' : '#000000',
+    },
     '.cm-panels': {
       backgroundColor: getColor('--card'),
       color: getColor('--card-foreground'),
@@ -351,7 +382,7 @@ export function createSyntaxTheme(isDark: boolean): Extension {
     { tag: t.propertyName, color: colors.property },
   ]);
 
-  return syntaxHighlighting(highlightStyle);
+  return syntaxHighlighting(highlightStyle, { fallback: true });
 }
 
 /**
