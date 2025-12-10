@@ -256,8 +256,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
-          cache: 'npm'
+          node-version: '20'
+          # 禁用 npm 缓存，确保每次都获取最新的构建
+          # cache: 'npm'
 
       - name: Setup Windows Build Environment
         if: matrix.platform == 'windows-latest'
@@ -270,8 +271,35 @@ jobs:
 
           Write-Output "Windows build environment setup completed"
 
-      - name: Install frontend dependencies
-        run: npm ci
+      - name: Clean and install dependencies
+        run: |
+          # 显示环境信息
+          echo "📦 Node version: $(node -v)"
+          echo "📦 npm version: $(npm -v)"
+
+          # 清除可能存在的旧构建产物
+          rm -rf dist node_modules/.vite 2>/dev/null || true
+
+          # 安装依赖
+          npm ci
+
+          # 预构建前端以确保 CSS 样式正确包含
+          echo "🔨 Pre-building frontend..."
+          npm run build
+
+          # 验证构建产物
+          echo "📋 Checking build output..."
+          ls -la dist/ || dir dist
+          ls -la dist/assets/ 2>/dev/null || dir dist\\assets 2>/dev/null || echo "assets dir check"
+
+          # 验证 CSS 文件是否存在
+          echo "📋 CSS files in dist:"
+          find dist -name "*.css" 2>/dev/null || dir /s /b dist\\*.css 2>/dev/null || echo "No CSS files found directly"
+
+          # 验证图标文件
+          echo "📋 Icon files check:"
+          ls -la dist/icons/completion/ 2>/dev/null || dir dist\\icons\\completion 2>/dev/null || echo "Icons directory check"
+        shell: bash
 
       # 字体文件已包含在仓库中，无需下载
       # - name: Download fonts for offline use
