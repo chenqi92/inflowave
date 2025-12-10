@@ -525,6 +525,52 @@ pre,
   100% {}
 }
 
+/* CodeMirror 无障碍功能 - 屏幕阅读器通知（必须隐藏） */
+.cm-announced {
+  position: fixed;
+  top: -10000px;
+}
+
+/* CodeMirror 语法高亮基础样式 - 确保打包后样式一致 */
+.cm-editor .tok-keyword { color: #569cd6; font-weight: bold; }
+.cm-editor .tok-operator { color: #d4d4d4; }
+.cm-editor .tok-number { color: #b5cea8; }
+.cm-editor .tok-string { color: #ce9178; }
+.cm-editor .tok-string2 { color: #ce9178; }
+.cm-editor .tok-comment { color: #6a9955; font-style: italic; }
+.cm-editor .tok-variableName { color: #9cdcfe; }
+.cm-editor .tok-variableName2 { color: #4ec9b0; }
+.cm-editor .tok-definition { color: #dcdcaa; }
+.cm-editor .tok-propertyName { color: #9cdcfe; }
+.cm-editor .tok-typeName { color: #4ec9b0; }
+.cm-editor .tok-className { color: #4ec9b0; }
+.cm-editor .tok-function { color: #dcdcaa; }
+.cm-editor .tok-bool { color: #4fc1ff; }
+.cm-editor .tok-null { color: #4fc1ff; }
+.cm-editor .tok-punctuation { color: #d4d4d4; }
+.cm-editor .tok-bracket { color: #d4d4d4; }
+.cm-editor .tok-invalid { color: #f44747; }
+
+/* 亮色主题语法高亮 */
+:root:not(.dark) .cm-editor .tok-keyword { color: #0000ff; }
+:root:not(.dark) .cm-editor .tok-operator { color: #000000; }
+:root:not(.dark) .cm-editor .tok-number { color: #098658; }
+:root:not(.dark) .cm-editor .tok-string { color: #a31515; }
+:root:not(.dark) .cm-editor .tok-string2 { color: #a31515; }
+:root:not(.dark) .cm-editor .tok-comment { color: #008000; }
+:root:not(.dark) .cm-editor .tok-variableName { color: #001080; }
+:root:not(.dark) .cm-editor .tok-variableName2 { color: #267f99; }
+:root:not(.dark) .cm-editor .tok-definition { color: #795e26; }
+:root:not(.dark) .cm-editor .tok-propertyName { color: #001080; }
+:root:not(.dark) .cm-editor .tok-typeName { color: #267f99; }
+:root:not(.dark) .cm-editor .tok-className { color: #267f99; }
+:root:not(.dark) .cm-editor .tok-function { color: #795e26; }
+:root:not(.dark) .cm-editor .tok-bool { color: #0070c1; }
+:root:not(.dark) .cm-editor .tok-null { color: #0070c1; }
+:root:not(.dark) .cm-editor .tok-punctuation { color: #000000; }
+:root:not(.dark) .cm-editor .tok-bracket { color: #000000; }
+:root:not(.dark) .cm-editor .tok-invalid { color: #cd3131; }
+
 /* CodeMirror 自动完成样式 */
 .cm-tooltip {
   position: fixed;
@@ -598,6 +644,68 @@ pre,
 .cm-completionIcon::after {
   content: none !important;
   display: none !important;
+}
+
+/* 自动完成图标样式 - 使用 SVG 背景图 */
+.cm-completionIcon-db-table,
+.cm-completionIcon-db-field,
+.cm-completionIcon-db-tag,
+.cm-completionIcon-keyword,
+.cm-completionIcon-function,
+.cm-completionIcon-type,
+.cm-completionIcon-constant {
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+.cm-completionIcon-db-table { background-image: url('/icons/completion/table.svg'); }
+.cm-completionIcon-db-field { background-image: url('/icons/completion/field.svg'); }
+.cm-completionIcon-db-tag { background-image: url('/icons/completion/tag.svg'); }
+.cm-completionIcon-keyword { background-image: url('/icons/completion/keyword.svg'); }
+.cm-completionIcon-function { background-image: url('/icons/completion/function.svg'); }
+.cm-completionIcon-type { background-image: url('/icons/completion/type.svg'); }
+.cm-completionIcon-constant { background-image: url('/icons/completion/constant.svg'); }
+
+/* 自动完成图标颜色 - 暗色主题 */
+.dark .cm-completionIcon-db-table { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(180deg) brightness(95%) contrast(101%); }
+.dark .cm-completionIcon-db-field { filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(70deg) brightness(95%) contrast(101%); }
+.dark .cm-completionIcon-db-tag { filter: brightness(0) saturate(100%) invert(68%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%); }
+.dark .cm-completionIcon-keyword { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(340deg) brightness(95%) contrast(101%); }
+.dark .cm-completionIcon-function { filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(30deg) brightness(95%) contrast(101%); }
+.dark .cm-completionIcon-type { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(160deg) brightness(95%) contrast(101%); }
+.dark .cm-completionIcon-constant { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(300deg) brightness(95%) contrast(101%); }
+
+/* 自动完成图标颜色 - 亮色主题 */
+:root:not(.dark) .cm-completionIcon-db-table { filter: brightness(0) saturate(100%) invert(35%) sepia(85%) saturate(2498%) hue-rotate(200deg) brightness(95%) contrast(101%); }
+:root:not(.dark) .cm-completionIcon-db-field { filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(95%) contrast(101%); }
+:root:not(.dark) .cm-completionIcon-db-tag { filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(260deg) brightness(95%) contrast(101%); }
+:root:not(.dark) .cm-completionIcon-keyword { filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%); }
+:root:not(.dark) .cm-completionIcon-function { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%); }
+:root:not(.dark) .cm-completionIcon-type { filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(170deg) brightness(95%) contrast(101%); }
+:root:not(.dark) .cm-completionIcon-constant { filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%); }
+
+/* 自动完成标签颜色 */
+.cm-completionIcon-db-table + .cm-completionLabel { color: #4A9EFF; }
+.cm-completionIcon-db-field + .cm-completionLabel { color: #10B981; }
+.cm-completionIcon-db-tag + .cm-completionLabel { color: #A855F7; }
+.cm-completionIcon-keyword + .cm-completionLabel { color: #F97316; }
+.cm-completionIcon-function + .cm-completionLabel { color: #FBBF24; }
+.cm-completionIcon-type + .cm-completionLabel { color: #06B6D4; }
+.cm-completionIcon-constant + .cm-completionLabel { color: #EC4899; }
+
+/* 亮色主题标签颜色 */
+:root:not(.dark) .cm-completionIcon-db-table + .cm-completionLabel { color: #2563EB; }
+:root:not(.dark) .cm-completionIcon-db-field + .cm-completionLabel { color: #059669; }
+:root:not(.dark) .cm-completionIcon-db-tag + .cm-completionLabel { color: #7C3AED; }
+:root:not(.dark) .cm-completionIcon-keyword + .cm-completionLabel { color: #EA580C; }
+:root:not(.dark) .cm-completionIcon-function + .cm-completionLabel { color: #D97706; }
+:root:not(.dark) .cm-completionIcon-type + .cm-completionLabel { color: #0891B2; }
+:root:not(.dark) .cm-completionIcon-constant + .cm-completionLabel { color: #DB2777; }
+
+/* 选中状态保持高对比度 */
+.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionLabel {
+  color: inherit !important;
 }
 
 .cm-completionLabel {

@@ -118,14 +118,14 @@ const disableTextSelection = (): void => {
  * 初始化上下文菜单禁用器
  */
 export const initializeContextMenuDisabler = (): void => {
-  // 只在Tauri环境的生产版本中禁用
-  if (!isTauriEnvironment() || !isProduction()) {
-    logger.info('开发环境或浏览器环境：保留右键菜单和快捷键用于调试');
+  // 在 Tauri 环境下始终禁用浏览器快捷键（桌面应用不需要刷新功能）
+  if (!isTauriEnvironment()) {
+    logger.info('浏览器环境：保留右键菜单和快捷键用于调试');
     return;
   }
-  
-  logger.info('生产环境：禁用右键菜单和浏览器快捷键');
-  
+
+  logger.info('Tauri 环境：禁用浏览器刷新快捷键');
+
   // 等待DOM加载完成
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -169,5 +169,5 @@ export const removeContextMenuDisabler = (): void => {
  * 检查上下文菜单禁用器是否已启用
  */
 export const isContextMenuDisabled = (): boolean => {
-  return isTauriEnvironment() && isProduction();
+  return isTauriEnvironment();
 };
