@@ -6,6 +6,17 @@ on:
     paths:
       - 'package.json'
   workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: '强制重新构建（即使版本已存在）'
+        required: false
+        type: boolean
+        default: true
+      update_existing_release:
+        description: '更新已存在的 Release（覆盖旧文件）'
+        required: false
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -66,10 +77,18 @@ jobs:
             fi
           else
             # 手动触发的情况
+            FORCE_REBUILD="${{ github.event.inputs.force_rebuild }}"
+
             if git tag -l | grep -q "^v$VERSION$"; then
               echo "tag_exists=true" >> $GITHUB_OUTPUT
-              echo "should_release=false" >> $GITHUB_OUTPUT
-              echo "⚠️ Tag v$VERSION already exists, skipping release"
+
+              if [[ "$FORCE_REBUILD" == "true" ]]; then
+                echo "should_release=true" >> $GITHUB_OUTPUT
+                echo "🔄 Manual trigger with force_rebuild: will rebuild v$VERSION"
+              else
+                echo "should_release=false" >> $GITHUB_OUTPUT
+                echo "⚠️ Tag v$VERSION already exists, skipping release (use force_rebuild to override)"
+              fi
             else
               echo "tag_exists=false" >> $GITHUB_OUTPUT
               echo "should_release=true" >> $GITHUB_OUTPUT
@@ -316,6 +335,23 @@ jobs:
       #     Write-Output "Tauri 2.0 uses built-in WiX support"
       #     Write-Output "Windows build environment verified"
       #   shell: pwsh
+
+      # 检查并准备 Release（处理强制重建的情况）
+      - name: Prepare Release for Update
+        if: needs.detect-version.outputs.tag_exists == 'true'
+        run: |
+          echo "🔄 Release v${{ needs.detect-version.outputs.version }} already exists"
+          echo "📝 Will update existing release with new build artifacts"
+
+          # 检查 release 是否存在
+          if gh release view "v${{ needs.detect-version.outputs.version }}" &>/dev/null; then
+            echo "✅ Release exists, new artifacts will be uploaded with --clobber"
+          else
+            echo "⚠️ Tag exists but release not found, will create new release"
+          fi
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       # Windows 构建 - 使用 Tauri 2.0 内置 WiX 支持构建 NSIS 和 MSI
       - name: Build Windows Packages (Tauri)
