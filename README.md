@@ -44,30 +44,30 @@
 #### 🔍 版本选择指南
 
 #### Windows 用户
-- **MSI 安装包 (推荐)**: 📥 **[InfloWave_0.9.2_x64_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_x64_zh-CN.msi)**
+- **MSI 安装包 (推荐)**: 📥 **[InfloWave_0.9.3_x64_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_x64_zh-CN.msi)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 企业级安装包，支持 GPO 部署
   - ✅ MSI 格式，系统信任度高
 
-- **EXE 安装包**: 📥 **[InfloWave_0.9.2_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_x64-setup.exe)**
+- **EXE 安装包**: 📥 **[InfloWave_0.9.3_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_x64-setup.exe)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 用户友好的安装向导 (NSIS)
   - ✅ 支持中英文界面
 
-- **32位 MSI**: 📥 **[InfloWave_0.9.2_x86_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_x86_zh-CN.msi)**
+- **32位 MSI**: 📥 **[InfloWave_0.9.3_x86_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_x86_zh-CN.msi)**
   - ✅ 适用于较老的32位 Windows 系统
   - ⚠️ 仅在无法运行64位版本时使用
 
-- **32位 EXE**: 📥 **[InfloWave_0.9.2_x86-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_x86-setup.exe)**
+- **32位 EXE**: 📥 **[InfloWave_0.9.3_x86-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_x86-setup.exe)**
   - ✅ 适用于 Windows 7/8/10/11 (32位/64位)
   - ✅ 用户友好的安装向导 (NSIS)
 
-- **便携版 (64位)**: 📥 **[InfloWave_0.9.2_x64_portable.zip](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_x64_portable.zip)**
+- **便携版 (64位)**: 📥 **[InfloWave_0.9.3_x64_portable.zip](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_x64_portable.zip)**
   - ✅ 免安装，解压即用
   - ✅ 适合 U 盘携带或无管理员权限场景
   - ✅ 不写入注册表，不影响系统
 
-- **便携版 (32位)**: 📥 **[InfloWave_0.9.2_x86_portable.zip](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_x86_portable.zip)**
+- **便携版 (32位)**: 📥 **[InfloWave_0.9.3_x86_portable.zip](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_x86_portable.zip)**
   - ✅ 免安装，解压即用
   - ✅ 适用于 32 位系统
 
@@ -78,24 +78,24 @@
 - 💻 查看「处理器」或「芯片」信息
 
 **Apple Silicon Mac (M1/M2/M3/M4 芯片)**
-- 📥 **[InfloWave_0.9.2_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_aarch64.dmg)**
+- 📥 **[InfloWave_0.9.3_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_aarch64.dmg)**
   - ✅ 2020年11月后发布的 Mac
   - ✅ 性能最优，原生支持
   - ✅ 更低的电量消耗
   - ⚠️ **无法在 Intel Mac 上运行**
 
 **Intel Mac (Intel 处理器)**
-- 📥 **[InfloWave_0.9.2_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_x64.dmg)**
+- 📥 **[InfloWave_0.9.3_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_x64.dmg)**
   - ✅ 2020年前发布的 Mac
   - ✅ 兼容 macOS 10.15 或更高版本
   - ⚠️ 不支持 Apple Silicon 芯片
 
 **便携版 (免安装)**
-- **Apple Silicon**: 📥 **[InfloWave_aarch64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_aarch64.app.tar.gz)**
+- **Apple Silicon**: 📥 **[InfloWave_aarch64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_aarch64.app.tar.gz)**
   - ✅ 解压后直接运行，无需安装
   - 📋 使用方法: `tar -xzf InfloWave_aarch64.app.tar.gz && open InfloWave.app`
 
-- **Intel Mac**: 📥 **[InfloWave_x64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_x64.app.tar.gz)**
+- **Intel Mac**: 📥 **[InfloWave_x64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_x64.app.tar.gz)**
   - ✅ 解压后直接运行，无需安装
   - 📋 使用方法: `tar -xzf InfloWave_x64.app.tar.gz && open InfloWave.app`
 
@@ -115,24 +115,24 @@ sudo xattr -r -d com.apple.quarantine /Applications/Inflowave.app
 - 运行命令: `cat /etc/os-release` 或 `lsb_release -a`
 
 **Debian/Ubuntu 系列 (推荐)**
-- 📥 **[InfloWave_0.9.2_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_amd64.deb)**
+- 📥 **[InfloWave_0.9.3_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_amd64.deb)**
   - ✅ Ubuntu 18.04+, Debian 10+
   - ✅ 系统集成度高，支持自动更新
-  - 📋 安装命令: `sudo dpkg -i InfloWave_0.9.2_amd64.deb`
+  - 📋 安装命令: `sudo dpkg -i InfloWave_0.9.3_amd64.deb`
   - 🔧 依赖修复: `sudo apt-get install -f`
 
 **通用 Linux (万能选择)**
-- 📥 **[InfloWave_0.9.2_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave_0.9.2_amd64.AppImage)**
+- 📥 **[InfloWave_0.9.3_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave_0.9.3_amd64.AppImage)**
   - ✅ 适用于大部分 x64 Linux 发行版
   - ✅ 免安装，下载后直接运行
   - ✅ 便携版，不影响系统
-  - 📋 使用方法: `chmod +x InfloWave_0.9.2_amd64.AppImage && ./InfloWave_0.9.2_amd64.AppImage`
+  - 📋 使用方法: `chmod +x InfloWave_0.9.3_amd64.AppImage && ./InfloWave_0.9.3_amd64.AppImage`
 
 **RPM 系列 (CentOS/RHEL/Fedora)**
-- 📥 **[InfloWave-0.9.2-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.9.2/InfloWave-0.9.2-1.x86_64.rpm)**
+- 📥 **[InfloWave-0.9.3-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.9.3/InfloWave-0.9.3-1.x86_64.rpm)**
   - ✅ CentOS 7+, RHEL 7+, Fedora 30+
-  - 📋 安装命令: `sudo rpm -i InfloWave-0.9.2-1.x86_64.rpm`
-  - 📋 或使用: `sudo dnf install InfloWave-0.9.2-1.x86_64.rpm`
+  - 📋 安装命令: `sudo rpm -i InfloWave-0.9.3-1.x86_64.rpm`
+  - 📋 或使用: `sudo dnf install InfloWave-0.9.3-1.x86_64.rpm`
 
 ### ⚠️ 系统要求
 
