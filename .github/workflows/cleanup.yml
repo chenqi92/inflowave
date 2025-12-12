@@ -1,0 +1,24 @@
+name: Cleanup Old Runs
+# 触发条件：
+# 1. schedule: 每天运行一次（你可以根据需要修改 cron）
+# 2. workflow_dispatch: 允许你在 Actions 页面手动点击按钮触发
+on:
+  schedule:
+    - cron: '0 0 * * *' # 每天 UTC 时间 00:00 运行
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  del_runs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          retain_days: 0       # 设置为 0 表示不按天数保留（完全依赖下面的保留个数）
+          keep_minimum_runs: 5 # 核心配置：始终保留最新的 5 个版本
