@@ -1,24 +1,40 @@
-name: Cleanup Old Runs
-# 触发条件：
-# 1. schedule: 每天运行一次（你可以根据需要修改 cron）
-# 2. workflow_dispatch: 允许你在 Actions 页面手动点击按钮触发
+name: Cleanup Artifacts
 on:
   schedule:
-    - cron: '0 0 * * *' # 每天 UTC 时间 00:00 运行
-  workflow_dispatch:
+    - cron: '0 0 * * *' # 每天运行一次
+  workflow_dispatch:    # 支持手动触发
 
 permissions:
   actions: write
   contents: read
 
 jobs:
-  del_runs:
+  cleanup_releases:
     runs-on: ubuntu-latest
+    name: 清理发布任务 (保留最新3个)
     steps:
-      - name: Delete workflow runs
+      - name: Delete old release artifacts
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ github.token }}
           repository: ${{ github.repository }}
-          retain_days: 0       # 设置为 0 表示不按天数保留（完全依赖下面的保留个数）
-          keep_minimum_runs: 5 # 核心配置：始终保留最新的 5 个版本
+          # 指定你的发布 Workflow 文件名
+          workflow: version-release.yml
+
+          # 保留策略
+          retain_days: 0       # 过期天数设为0 (完全由下面数量控制)
+          keep_minimum_runs: 5 # 无论过期与否，死保最新的 5 个
+
+  cleanup_cdn:
+    runs-on: ubuntu-latest
+    name: 清理CDN任务 (只保留最新1个)
+    steps:
+      - name: Delete old CDN artifacts
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          workflow: upload-to-r2.yml
+
+          retain_days: 0
+          keep_minimum_runs: 1 # CDN 任务通常不需要留历史，留 1 个备查即可
