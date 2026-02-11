@@ -45,6 +45,10 @@ export interface CodeMirrorEditorProps {
   autoFocus?: boolean;
   /** Callback when editor is ready */
   onReady?: (view: EditorView) => void;
+  /** Callback for execute query (Ctrl/Cmd+Enter) */
+  onExecute?: () => void;
+  /** Callback for format code (Ctrl/Cmd+Shift+F) */
+  onFormat?: () => void;
 }
 
 export interface CodeMirrorEditorRef {
@@ -92,6 +96,8 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
       lineWrapping = true,
       autoFocus = false,
       onReady,
+      onExecute,
+      onFormat,
     },
     ref
   ) => {
@@ -178,6 +184,8 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
             lineWrapping,
             readOnly,
             editable: !readOnly && editable,
+            onExecute,
+            onFormat,
           }),
           // Theme (using compartment for dynamic updates)
           themeCompartmentRef.current.of(createEditorTheme(isDark)),
@@ -237,7 +245,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
             },
             keydown: (event: KeyboardEvent) => {
               const isClipboard = (event.ctrlKey || event.metaKey) &&
-                                 ['c', 'v', 'x'].includes(event.key.toLowerCase());
+                ['c', 'v', 'x'].includes(event.key.toLowerCase());
               if (isClipboard) {
                 logger.debug('⌨️ [CodeMirror] keydown event', {
                   key: event.key,
@@ -275,6 +283,8 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
       // Notify ready
       onReady?.(view);
 
+
+
       // Cleanup
       return () => {
         view.destroy();
@@ -299,7 +309,7 @@ export const CodeMirrorEditor = forwardRef<CodeMirrorEditorRef, CodeMirrorEditor
     // Update value when prop changes (controlled component)
     useEffect(() => {
       if (!viewRef.current) return;
-      
+
       const currentValue = viewRef.current.state.doc.toString();
       if (value !== currentValue) {
         viewRef.current.dispatch({

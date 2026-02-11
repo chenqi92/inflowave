@@ -5,11 +5,11 @@ import { resolve } from 'path';
 
 // 使用联合类型来支持Vitest配置
 interface ViteConfigWithTest {
-  test?: {
-    globals?: boolean;
-    environment?: string;
-    setupFiles?: string[];
-  };
+    test?: {
+        globals?: boolean;
+        environment?: string;
+        setupFiles?: string[];
+    };
 }
 
 // https://vitejs.dev/config/
@@ -18,7 +18,7 @@ export default defineConfig({
 
     // 静态资源配置
     publicDir: 'public',
-    
+
     // 确保语言资源文件被正确处理
     assetsInclude: ['**/*.woff', '**/*.woff2', '**/*.ttf', '**/locales/**/*.json'],
 
@@ -86,7 +86,14 @@ export default defineConfig({
                         '@codemirror/search',
                         '@codemirror/lang-sql',
                         '@codemirror/lang-javascript',
+                        '@codemirror/theme-one-dark',
                         '@lezer/highlight',
+                        '@lezer/common',
+                        '@lezer/lr',
+                        'codemirror',
+                        'style-mod',
+                        'crelt',
+                        'w3c-keyname',
                     ],
                     utils: ['lodash-es', 'dayjs', 'classnames'],
                     tauri: ['@tauri-apps/api', '@tauri-apps/plugin-shell'],

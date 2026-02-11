@@ -25,8 +25,6 @@ import {
   CodeMirrorEditor,
   type CodeMirrorEditorRef,
   type QueryDialect,
-  basicPreset,
-  createEditorTheme,
   formatDocument,
   getFormattingOptions,
   getDialectExtensions,
@@ -58,7 +56,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
   const lastContentRef = useRef<string>('');
   const { resolvedTheme } = useTheme();
   const { activeConnectionId, connections } = useConnectionStore();
-  
+
   // Current dialect state
   const [currentDialect, setCurrentDialect] = useState<QueryDialect>('sql');
 
@@ -290,13 +288,7 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
     return null;
   }
 
-  const isDark = resolvedTheme === 'dark';
   const extensions = [
-    basicPreset({
-      onExecute: () => onExecuteQuery?.(),
-      onFormat: handleFormat,
-    }),
-    ...createEditorTheme(isDark),
     ...getLanguageExtension(),
   ];
 
@@ -310,6 +302,8 @@ export const EditorManager = forwardRef<EditorManagerRef, EditorManagerProps>(({
           onChange={handleEditorChange}
           extensions={extensions}
           height="100%"
+          onExecute={() => onExecuteQuery?.()}
+          onFormat={handleFormat}
         />
       </div>
 

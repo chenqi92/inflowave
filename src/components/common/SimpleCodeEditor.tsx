@@ -6,8 +6,8 @@
  */
 
 import React, { useRef } from 'react';
-import { CodeMirrorEditor, type CodeMirrorEditorRef, basicPreset, createEditorTheme, getDialectExtensions, type QueryDialect } from '@/editor/cm6';
-import { useTheme } from '@/components/providers/ThemeProvider';
+import { CodeMirrorEditor, type CodeMirrorEditorRef, getDialectExtensions, type QueryDialect } from '@/editor/cm6';
+
 
 interface SimpleCodeEditorProps {
   value: string;
@@ -30,18 +30,12 @@ export const SimpleCodeEditor: React.FC<SimpleCodeEditorProps> = ({
   className = '',
 }) => {
   const editorRef = useRef<CodeMirrorEditorRef | null>(null);
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
 
   const handleChange = (newValue: string) => {
     onChange?.(newValue);
   };
 
   const extensions = [
-    basicPreset({
-      readOnly,
-    }),
-    ...createEditorTheme(isDark),
     ...getDialectExtensions(language),
   ];
 
@@ -53,6 +47,7 @@ export const SimpleCodeEditor: React.FC<SimpleCodeEditorProps> = ({
         onChange={handleChange}
         extensions={extensions}
         height={height}
+        readOnly={readOnly}
       />
     </div>
   );

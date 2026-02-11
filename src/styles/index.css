@@ -23,6 +23,7 @@
 
 /* 查询页面优化样式 */
 @layer components {
+
   /* Glide Data Grid 边框修复 - 使用伪元素添加底部和右侧边框 */
   .glide-table-border-fix::after {
     content: '';
@@ -61,7 +62,7 @@
   /* 网格背景效果 */
   .bg-grid-white\/5 {
     background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
     background-size: 24px 24px;
   }
 
@@ -72,10 +73,10 @@
     /* 继承传统表格的滚动条样式 */
     scrollbar-width: auto;
 
-  /* 让虚拟化滚动容器自身负责滚动（不要让父容器抢走滚动）*/
-  .virtualized-table {
-    overflow: hidden;
-  }
+    /* 让虚拟化滚动容器自身负责滚动（不要让父容器抢走滚动）*/
+    .virtualized-table {
+      overflow: hidden;
+    }
 
     scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
   }
@@ -135,7 +136,8 @@
     position: sticky !important;
     left: 0 !important;
     top: 0 !important;
-    z-index: 9999 !important; /* 极高层级，确保不被覆盖 */
+    z-index: 9999 !important;
+    /* 极高层级，确保不被覆盖 */
     background: hsl(var(--muted)) !important;
     border-right: 2px solid hsl(var(--border)) !important;
     background-clip: padding-box !important;
@@ -156,7 +158,8 @@
   .virtualized-sticky-cell {
     position: sticky !important;
     left: 0 !important;
-    z-index: 1 !important; /* 极低层级，确保被表头覆盖 */
+    z-index: 1 !important;
+    /* 极低层级，确保被表头覆盖 */
     background: hsl(var(--background)) !important;
     border-right: 2px solid hsl(var(--border)) !important;
     background-clip: padding-box !important;
@@ -175,22 +178,27 @@
   }
 
   .table-cell-selected {
-    background-color: rgb(219 234 254) !important; /* bg-blue-100 */
-    box-shadow: inset 0 0 0 2px rgb(59 130 246) !important; /* ring-2 ring-blue-500 */
+    background-color: rgb(219 234 254) !important;
+    /* bg-blue-100 */
+    box-shadow: inset 0 0 0 2px rgb(59 130 246) !important;
+    /* ring-2 ring-blue-500 */
   }
 
   .dark .table-cell-selected {
-    background-color: rgb(30 58 138 / 0.3) !important; /* dark:bg-blue-900/30 */
+    background-color: rgb(30 58 138 / 0.3) !important;
+    /* dark:bg-blue-900/30 */
   }
 
   .table-cell-editing {
     background-color: white !important;
-    box-shadow: inset 0 0 0 2px rgb(59 130 246) !important; /* ring-2 ring-blue-500 */
+    box-shadow: inset 0 0 0 2px rgb(59 130 246) !important;
+    /* ring-2 ring-blue-500 */
     padding: 0 !important;
   }
 
   .dark .table-cell-editing {
-    background-color: rgb(31 41 55) !important; /* dark:bg-gray-800 */
+    background-color: rgb(31 41 55) !important;
+    /* dark:bg-gray-800 */
   }
 
   .table-cell-editing input {
@@ -207,32 +215,40 @@
 
   /* 行选择样式 - 与单元格选择保持一致 */
   .table-row-selected {
-    background-color: rgb(219 234 254) !important; /* bg-blue-100 */
-    border-color: rgb(59 130 246) !important; /* border-blue-500 */
+    background-color: rgb(219 234 254) !important;
+    /* bg-blue-100 */
+    border-color: rgb(59 130 246) !important;
+    /* border-blue-500 */
   }
 
   .dark .table-row-selected {
-    background-color: rgb(30 58 138 / 0.3) !important; /* dark:bg-blue-900/30 */
+    background-color: rgb(30 58 138 / 0.3) !important;
+    /* dark:bg-blue-900/30 */
   }
 
   /* 序号列选中状态 */
   .table-row-selected .table-cell-selectable[data-column="#"] {
-    background-color: rgb(147 197 253) !important; /* bg-blue-300 */
+    background-color: rgb(147 197 253) !important;
+    /* bg-blue-300 */
     font-weight: 600;
   }
 
   .dark .table-row-selected .table-cell-selectable[data-column="#"] {
-    background-color: rgb(59 130 246 / 0.5) !important; /* dark:bg-blue-500/50 */
+    background-color: rgb(59 130 246 / 0.5) !important;
+    /* dark:bg-blue-500/50 */
   }
 
   /* 单元格范围选择样式 */
   .table-cell-range-selected {
-    background-color: rgb(191 219 254) !important; /* bg-blue-200 */
-    box-shadow: inset 0 0 0 1px rgb(59 130 246) !important; /* ring-1 ring-blue-500 */
+    background-color: rgb(191 219 254) !important;
+    /* bg-blue-200 */
+    box-shadow: inset 0 0 0 1px rgb(59 130 246) !important;
+    /* ring-1 ring-blue-500 */
   }
 
   .dark .table-cell-range-selected {
-    background-color: rgb(59 130 246 / 0.4) !important; /* dark:bg-blue-500/40 */
+    background-color: rgb(59 130 246 / 0.4) !important;
+    /* dark:bg-blue-500/40 */
   }
 
   /* 拖拽选择时的鼠标样式 */
@@ -244,8 +260,10 @@
   .table-selecting * {
     user-select: none;
   }
+
   /* Mac平台图标优化 - 针对高DPI屏幕 */
   @media screen and (-webkit-min-device-pixel-ratio: 2) {
+
     .lucide-icon,
     [class*='w-4'][class*='h-4'] svg,
     .toolbar-button svg,
@@ -257,11 +275,13 @@
 
   /* 针对Mac的字体渲染优化 - 使用webkit特性检测 */
   @supports (-webkit-appearance: none) {
+
     svg[class*='lucide'],
     .lucide-icon,
     .toolbar-button svg,
     .toolbar-button-vertical svg {
-      transform: scale(0.875); /* 87.5% 缩放，让图标在Mac上显示更合适 */
+      transform: scale(0.875);
+      /* 87.5% 缩放，让图标在Mac上显示更合适 */
     }
   }
 
@@ -358,6 +378,7 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -399,20 +420,22 @@ pre,
  * 这些样式确保在生产环境中 CodeMirror 的布局正确显示
  * CodeMirror 6 通过 JavaScript 动态注入样式，但在某些情况下可能失效
  * 这里提供静态 CSS 作为回退，使用与 CodeMirror 相同的样式值
+ * 使用 !important 确保打包后这些关键布局样式不会被覆盖
  */
 .cm-editor {
-  position: relative;
-  display: flex;
-  flex-direction: column;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
 }
 
 .cm-scroller {
-  display: flex;
-  align-items: flex-start;
+  display: flex !important;
+  align-items: flex-start !important;
   font-family: monospace;
   line-height: 1.4;
-  height: 100%;
+  height: 100% !important;
   overflow-x: auto;
+  overflow-y: auto;
   position: relative;
   z-index: 0;
   overflow-anchor: none;
@@ -420,15 +443,15 @@ pre,
 
 .cm-content {
   margin: 0;
-  flex-grow: 2;
+  flex-grow: 2 !important;
   flex-shrink: 0;
-  display: block;
+  display: block !important;
   white-space: pre;
   word-wrap: normal;
   box-sizing: border-box;
-  min-height: 100%;
+  min-height: 100% !important;
   padding: 4px 0;
-  outline: none;
+  outline: none !important;
 }
 
 .cm-content[contenteditable="true"] {
@@ -436,8 +459,8 @@ pre,
 }
 
 .cm-lineWrapping {
-  white-space: pre-wrap;
-  white-space: break-spaces;
+  white-space: pre-wrap !important;
+  white-space: break-spaces !important;
   word-break: break-word;
   overflow-wrap: anywhere;
   flex-shrink: 1;
@@ -455,7 +478,7 @@ pre,
   contain: size style;
 }
 
-.cm-layer > * {
+.cm-layer>* {
   position: absolute;
 }
 
@@ -479,16 +502,16 @@ pre,
 }
 
 .cm-gutters {
-  flex-shrink: 0;
-  display: flex;
-  height: 100%;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  height: 100% !important;
   box-sizing: border-box;
   z-index: 200;
 }
 
 .cm-gutter {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
   flex-shrink: 0;
   box-sizing: border-box;
   min-height: 100%;
@@ -511,17 +534,21 @@ pre,
   outline: 1px dotted #212121;
 }
 
-.cm-editor.cm-focused > .cm-scroller > .cm-cursorLayer {
+.cm-editor.cm-focused>.cm-scroller>.cm-cursorLayer {
   animation: steps(1) cm-blink 1.2s infinite;
 }
 
-.cm-editor.cm-focused > .cm-scroller > .cm-cursorLayer .cm-cursor {
+.cm-editor.cm-focused>.cm-scroller>.cm-cursorLayer .cm-cursor {
   display: block;
 }
 
 @keyframes cm-blink {
   0% {}
-  50% { opacity: 0; }
+
+  50% {
+    opacity: 0;
+  }
+
   100% {}
 }
 
@@ -531,25 +558,11 @@ pre,
   top: -10000px;
 }
 
-/* CodeMirror 6 语法高亮 Fallback - 通用样式确保打包后语法高亮仍然工作 */
-/* 这些是最后的fallback样式，JavaScript主题优先级更高 */
-/* 暗色主题 - 使用属性选择器匹配所有可能的语法高亮类名 */
-.dark .cm-editor .cm-content [class*="cm-"] {
-  /* 默认文本颜色 */
-  color: #d4d4d4;
-}
-
-/* 亮色主题 */
-:root:not(.dark) .cm-editor .cm-content [class*="cm-"] {
-  /* 默认文本颜色 */
-  color: #000000;
-}
-
-/* 确保JavaScript注入的样式能够工作 */
-.cm-editor .cm-line span {
-  /* 继承由 syntaxHighlighting 注入的样式 */
-  color: inherit;
-}
+/* 注意: 不要在此添加覆盖 CodeMirror 语法高亮颜色的规则
+ * CodeMirror 6 通过 style-mod 动态注入样式到 <head> 头部，
+ * 静态 CSS 在生产打包后会覆盖这些动态样式。
+ * 语法高亮由 theme.ts 的 createSyntaxTheme 提供。
+ */
 
 /* CodeMirror 自动完成样式 */
 .cm-tooltip {
@@ -576,7 +589,7 @@ pre,
   border-radius: 6px;
 }
 
-.cm-tooltip-autocomplete > ul {
+.cm-tooltip-autocomplete>ul {
   font-family: monospace;
   white-space: nowrap;
   overflow: hidden auto;
@@ -589,7 +602,7 @@ pre,
   padding: 4px 0;
 }
 
-.cm-tooltip-autocomplete > ul > li {
+.cm-tooltip-autocomplete>ul>li {
   display: flex;
   align-items: center;
   overflow: hidden;
@@ -599,7 +612,7 @@ pre,
   line-height: 1.4;
 }
 
-.cm-tooltip-autocomplete > ul > li[aria-selected] {
+.cm-tooltip-autocomplete>ul>li[aria-selected] {
   background-color: hsl(var(--accent));
   color: hsl(var(--accent-foreground));
 }
@@ -644,52 +657,152 @@ pre,
   content: "" !important;
 }
 
-.cm-completionIcon-db-table { background-image: url('/icons/completion/table.svg') !important; }
-.cm-completionIcon-db-field { background-image: url('/icons/completion/field.svg') !important; }
-.cm-completionIcon-db-tag { background-image: url('/icons/completion/tag.svg') !important; }
-.cm-completionIcon-keyword { background-image: url('/icons/completion/keyword.svg') !important; }
-.cm-completionIcon-function { background-image: url('/icons/completion/function.svg') !important; }
-.cm-completionIcon-type { background-image: url('/icons/completion/type.svg') !important; }
-.cm-completionIcon-constant { background-image: url('/icons/completion/constant.svg') !important; }
+.cm-completionIcon-db-table {
+  background-image: url('/icons/completion/table.svg') !important;
+}
+
+.cm-completionIcon-db-field {
+  background-image: url('/icons/completion/field.svg') !important;
+}
+
+.cm-completionIcon-db-tag {
+  background-image: url('/icons/completion/tag.svg') !important;
+}
+
+.cm-completionIcon-keyword {
+  background-image: url('/icons/completion/keyword.svg') !important;
+}
+
+.cm-completionIcon-function {
+  background-image: url('/icons/completion/function.svg') !important;
+}
+
+.cm-completionIcon-type {
+  background-image: url('/icons/completion/type.svg') !important;
+}
+
+.cm-completionIcon-constant {
+  background-image: url('/icons/completion/constant.svg') !important;
+}
 
 /* 自动完成图标颜色 - 暗色主题 */
-.dark .cm-completionIcon-db-table { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(180deg) brightness(95%) contrast(101%) !important; }
-.dark .cm-completionIcon-db-field { filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(70deg) brightness(95%) contrast(101%) !important; }
-.dark .cm-completionIcon-db-tag { filter: brightness(0) saturate(100%) invert(68%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%) !important; }
-.dark .cm-completionIcon-keyword { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(340deg) brightness(95%) contrast(101%) !important; }
-.dark .cm-completionIcon-function { filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(30deg) brightness(95%) contrast(101%) !important; }
-.dark .cm-completionIcon-type { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(160deg) brightness(95%) contrast(101%) !important; }
-.dark .cm-completionIcon-constant { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(300deg) brightness(95%) contrast(101%) !important; }
+.dark .cm-completionIcon-db-table {
+  filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(180deg) brightness(95%) contrast(101%) !important;
+}
+
+.dark .cm-completionIcon-db-field {
+  filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(70deg) brightness(95%) contrast(101%) !important;
+}
+
+.dark .cm-completionIcon-db-tag {
+  filter: brightness(0) saturate(100%) invert(68%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%) !important;
+}
+
+.dark .cm-completionIcon-keyword {
+  filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(340deg) brightness(95%) contrast(101%) !important;
+}
+
+.dark .cm-completionIcon-function {
+  filter: brightness(0) saturate(100%) invert(78%) sepia(51%) saturate(2498%) hue-rotate(30deg) brightness(95%) contrast(101%) !important;
+}
+
+.dark .cm-completionIcon-type {
+  filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(160deg) brightness(95%) contrast(101%) !important;
+}
+
+.dark .cm-completionIcon-constant {
+  filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(300deg) brightness(95%) contrast(101%) !important;
+}
 
 /* 自动完成图标颜色 - 亮色主题 */
-:root:not(.dark) .cm-completionIcon-db-table { filter: brightness(0) saturate(100%) invert(35%) sepia(85%) saturate(2498%) hue-rotate(200deg) brightness(95%) contrast(101%) !important; }
-:root:not(.dark) .cm-completionIcon-db-field { filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(95%) contrast(101%) !important; }
-:root:not(.dark) .cm-completionIcon-db-tag { filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(260deg) brightness(95%) contrast(101%) !important; }
-:root:not(.dark) .cm-completionIcon-keyword { filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%) !important; }
-:root:not(.dark) .cm-completionIcon-function { filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%) !important; }
-:root:not(.dark) .cm-completionIcon-type { filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(170deg) brightness(95%) contrast(101%) !important; }
-:root:not(.dark) .cm-completionIcon-constant { filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%) !important; }
+:root:not(.dark) .cm-completionIcon-db-table {
+  filter: brightness(0) saturate(100%) invert(35%) sepia(85%) saturate(2498%) hue-rotate(200deg) brightness(95%) contrast(101%) !important;
+}
+
+:root:not(.dark) .cm-completionIcon-db-field {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(79%) saturate(2476%) hue-rotate(86deg) brightness(95%) contrast(101%) !important;
+}
+
+:root:not(.dark) .cm-completionIcon-db-tag {
+  filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(260deg) brightness(95%) contrast(101%) !important;
+}
+
+:root:not(.dark) .cm-completionIcon-keyword {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%) !important;
+}
+
+:root:not(.dark) .cm-completionIcon-function {
+  filter: brightness(0) saturate(100%) invert(58%) sepia(85%) saturate(2498%) hue-rotate(10deg) brightness(95%) contrast(101%) !important;
+}
+
+:root:not(.dark) .cm-completionIcon-type {
+  filter: brightness(0) saturate(100%) invert(48%) sepia(85%) saturate(2498%) hue-rotate(170deg) brightness(95%) contrast(101%) !important;
+}
+
+:root:not(.dark) .cm-completionIcon-constant {
+  filter: brightness(0) saturate(100%) invert(38%) sepia(85%) saturate(2498%) hue-rotate(320deg) brightness(95%) contrast(101%) !important;
+}
 
 /* 自动完成标签颜色 */
-.cm-completionIcon-db-table + .cm-completionLabel { color: #4A9EFF; }
-.cm-completionIcon-db-field + .cm-completionLabel { color: #10B981; }
-.cm-completionIcon-db-tag + .cm-completionLabel { color: #A855F7; }
-.cm-completionIcon-keyword + .cm-completionLabel { color: #F97316; }
-.cm-completionIcon-function + .cm-completionLabel { color: #FBBF24; }
-.cm-completionIcon-type + .cm-completionLabel { color: #06B6D4; }
-.cm-completionIcon-constant + .cm-completionLabel { color: #EC4899; }
+.cm-completionIcon-db-table+.cm-completionLabel {
+  color: #4A9EFF;
+}
+
+.cm-completionIcon-db-field+.cm-completionLabel {
+  color: #10B981;
+}
+
+.cm-completionIcon-db-tag+.cm-completionLabel {
+  color: #A855F7;
+}
+
+.cm-completionIcon-keyword+.cm-completionLabel {
+  color: #F97316;
+}
+
+.cm-completionIcon-function+.cm-completionLabel {
+  color: #FBBF24;
+}
+
+.cm-completionIcon-type+.cm-completionLabel {
+  color: #06B6D4;
+}
+
+.cm-completionIcon-constant+.cm-completionLabel {
+  color: #EC4899;
+}
 
 /* 亮色主题标签颜色 */
-:root:not(.dark) .cm-completionIcon-db-table + .cm-completionLabel { color: #2563EB; }
-:root:not(.dark) .cm-completionIcon-db-field + .cm-completionLabel { color: #059669; }
-:root:not(.dark) .cm-completionIcon-db-tag + .cm-completionLabel { color: #7C3AED; }
-:root:not(.dark) .cm-completionIcon-keyword + .cm-completionLabel { color: #EA580C; }
-:root:not(.dark) .cm-completionIcon-function + .cm-completionLabel { color: #D97706; }
-:root:not(.dark) .cm-completionIcon-type + .cm-completionLabel { color: #0891B2; }
-:root:not(.dark) .cm-completionIcon-constant + .cm-completionLabel { color: #DB2777; }
+:root:not(.dark) .cm-completionIcon-db-table+.cm-completionLabel {
+  color: #2563EB;
+}
+
+:root:not(.dark) .cm-completionIcon-db-field+.cm-completionLabel {
+  color: #059669;
+}
+
+:root:not(.dark) .cm-completionIcon-db-tag+.cm-completionLabel {
+  color: #7C3AED;
+}
+
+:root:not(.dark) .cm-completionIcon-keyword+.cm-completionLabel {
+  color: #EA580C;
+}
+
+:root:not(.dark) .cm-completionIcon-function+.cm-completionLabel {
+  color: #D97706;
+}
+
+:root:not(.dark) .cm-completionIcon-type+.cm-completionLabel {
+  color: #0891B2;
+}
+
+:root:not(.dark) .cm-completionIcon-constant+.cm-completionLabel {
+  color: #DB2777;
+}
 
 /* 选中状态保持高对比度 */
-.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionLabel {
+.cm-tooltip-autocomplete>ul>li[aria-selected] .cm-completionLabel {
   color: inherit !important;
 }
 
@@ -1137,6 +1250,7 @@ pre,
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -1310,13 +1424,13 @@ pre,
   background: #fff;
 }
 
-.card-small > .card-header {
+.card-small>.card-header {
   padding: 8px 12px;
   min-height: 36px;
   border-bottom: 1px solid #e8e8e8;
 }
 
-.card-small > .card-body {
+.card-small>.card-body {
   padding: 12px;
 }
 
@@ -1463,6 +1577,7 @@ pre,
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -1472,9 +1587,11 @@ pre,
   0% {
     opacity: 1;
   }
+
   70% {
     opacity: 1;
   }
+
   100% {
     opacity: 0;
   }
@@ -1485,6 +1602,7 @@ pre,
     transform: translateY(20px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -1498,8 +1616,8 @@ pre,
   align-items: center;
 }
 
-.desktop-menu-bar .horizontal-menu > .menu-item,
-.desktop-menu-bar .horizontal-menu > .menu-submenu {
+.desktop-menu-bar .horizontal-menu>.menu-item,
+.desktop-menu-bar .horizontal-menu>.menu-submenu {
   border-bottom: 2px solid transparent;
   margin: 0 4px;
   padding: 8px 16px;
@@ -1507,14 +1625,14 @@ pre,
   transition: all 0.2s;
 }
 
-.desktop-menu-bar .horizontal-menu > .menu-item-selected,
-.desktop-menu-bar .horizontal-menu > .menu-submenu-selected {
+.desktop-menu-bar .horizontal-menu>.menu-item-selected,
+.desktop-menu-bar .horizontal-menu>.menu-submenu-selected {
   border-bottom-color: #1890ff;
   background: transparent;
 }
 
-.desktop-menu-bar .horizontal-menu > .menu-item:hover,
-.desktop-menu-bar .horizontal-menu > .menu-submenu:hover {
+.desktop-menu-bar .horizontal-menu>.menu-item:hover,
+.desktop-menu-bar .horizontal-menu>.menu-submenu:hover {
   border-bottom-color: #40a9ff;
   background: rgba(24, 144, 255, 0.06);
 }
@@ -1755,8 +1873,8 @@ pre,
 }
 
 /* 确保表头和表格行的列宽度完全一致 */
-.virtual-table-header > div,
-.virtual-table-row > div {
+.virtual-table-header>div,
+.virtual-table-row>div {
   flex-shrink: 0;
   box-sizing: border-box;
 }
@@ -1892,6 +2010,7 @@ pre,
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -2108,12 +2227,12 @@ pre,
 }
 
 /* 确保单元格内容容器有固定高度 */
-.virtualized-table-fixed-height [data-virtuoso-scroller] td > div,
-.virtualized-table-fixed-height [data-virtuoso-scroller] th > div,
-.virtualized-table [data-virtuoso-scroller] td > div,
-.virtualized-table [data-virtuoso-scroller] th > div,
-[data-virtuoso-scroller] td > div,
-[data-virtuoso-scroller] th > div {
+.virtualized-table-fixed-height [data-virtuoso-scroller] td>div,
+.virtualized-table-fixed-height [data-virtuoso-scroller] th>div,
+.virtualized-table [data-virtuoso-scroller] td>div,
+.virtualized-table [data-virtuoso-scroller] th>div,
+[data-virtuoso-scroller] td>div,
+[data-virtuoso-scroller] th>div {
   height: 36px !important;
   min-height: 36px !important;
   max-height: 36px !important;
@@ -2388,21 +2507,23 @@ pre,
   padding: 0 !important;
   vertical-align: top !important;
   line-height: normal !important;
-  border-bottom: 0 !important; /* 避免与固定行高冲突导致溢出 */
+  border-bottom: 0 !important;
+  /* 避免与固定行高冲突导致溢出 */
 }
 
 /* 使用右侧分隔线替代整行边框，避免高度误差 */
 .virtualized-table-fixed-height td {
   border-right: 1px solid hsl(var(--border));
 }
+
 .virtualized-table-fixed-height td:last-child {
   border-right: 0;
 }
 
 
 /* 单元格内容容器 */
-.virtualized-table-fixed-height td > div,
-.virtualized-table-fixed-height th > div {
+.virtualized-table-fixed-height td>div,
+.virtualized-table-fixed-height th>div {
   height: 36px !important;
   min-height: 36px !important;
   max-height: 36px !important;
@@ -2423,8 +2544,9 @@ pre,
 }
 
 /* 确保空白区域正确显示 */
-.virtualized-table-fixed-height td > div:empty::after {
-  content: '\00a0'; /* 不间断空格 */
+.virtualized-table-fixed-height td>div:empty::after {
+  content: '\00a0';
+  /* 不间断空格 */
   color: transparent;
 }
 
@@ -2453,8 +2575,8 @@ pre,
 }
 
 /* 强制所有内容容器使用固定高度 */
-.virtualized-table-fixed-height table td > *,
-.virtualized-table-fixed-height table th > * {
+.virtualized-table-fixed-height table td>*,
+.virtualized-table-fixed-height table th>* {
   height: 36px !important;
   min-height: 36px !important;
   max-height: 36px !important;
@@ -2541,6 +2663,7 @@ pre,
   overflow: hidden !important;
   box-sizing: border-box !important;
 }
+
 /* 虚拟化表格固定容器高度 */
 .virtualized-table-fixed-container {
   /* 固定容器高度 */
@@ -2553,7 +2676,7 @@ pre,
 }
 
 /* 确保 TableVirtuoso 填满容器但不超出 */
-.virtualized-table-fixed-container > div {
+.virtualized-table-fixed-container>div {
   flex: 1;
   min-height: 0;
   position: relative;

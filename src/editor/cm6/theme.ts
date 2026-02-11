@@ -24,17 +24,17 @@ function hslToHex(hsl: string): string {
   // Parse HSL values
   const match = hsl.match(/(\d+\.?\d*)\s+(\d+\.?\d*)%\s+(\d+\.?\d*)%/);
   if (!match) return '#000000';
-  
+
   const h = parseFloat(match[1]);
   const s = parseFloat(match[2]) / 100;
   const l = parseFloat(match[3]) / 100;
-  
+
   const c = (1 - Math.abs(2 * l - 1)) * s;
   const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
   const m = l - c / 2;
-  
+
   let r = 0, g = 0, b = 0;
-  
+
   if (h >= 0 && h < 60) {
     r = c; g = x; b = 0;
   } else if (h >= 60 && h < 120) {
@@ -48,12 +48,12 @@ function hslToHex(hsl: string): string {
   } else if (h >= 300 && h < 360) {
     r = c; g = 0; b = x;
   }
-  
+
   const toHex = (n: number) => {
     const hex = Math.round((n + m) * 255).toString(16);
-    return hex.length === 1 ? `0${  hex}` : hex;
+    return hex.length === 1 ? `0${hex}` : hex;
   };
-  
+
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -78,7 +78,7 @@ export function createAppTheme(isDark: boolean): Extension {
   const lineHighlight = getColor('--accent', isDark ? '#2a2d2e' : '#f0f0f0');
   const gutterBackground = getColor('--muted', isDark ? '#1e1e1e' : '#f5f5f5');
   const gutterForeground = getColor('--muted-foreground', isDark ? '#858585' : '#6e7781');
-  
+
   const theme = EditorView.theme({
     '&': {
       color: foreground,
@@ -95,13 +95,13 @@ export function createAppTheme(isDark: boolean): Extension {
       borderLeftWidth: '2px',
     },
     '&.cm-focused .cm-selectionBackground, .cm-selectionBackground, .cm-content ::selection': {
-      backgroundColor: `${selection  }40`, // Add transparency
+      backgroundColor: `${selection}40`, // Add transparency
     },
     '.cm-activeLine': {
-      backgroundColor: `${lineHighlight  }30`,
+      backgroundColor: `${lineHighlight}30`,
     },
     '.cm-selectionMatch': {
-      backgroundColor: `${selection  }30`,
+      backgroundColor: `${selection}30`,
     },
     '.cm-gutters': {
       backgroundColor: gutterBackground,
@@ -110,7 +110,7 @@ export function createAppTheme(isDark: boolean): Extension {
       borderRight: `1px solid ${getColor('--border', isDark ? '#2d2d2d' : '#e5e5e5')}`,
     },
     '.cm-activeLineGutter': {
-      backgroundColor: `${lineHighlight  }30`,
+      backgroundColor: `${lineHighlight}30`,
     },
     '.cm-foldPlaceholder': {
       backgroundColor: getColor('--muted', isDark ? '#3e3e3e' : '#e0e0e0'),
@@ -272,37 +272,8 @@ export function createAppTheme(isDark: boolean): Extension {
     'li[aria-selected] .cm-completionLabel': {
       color: 'inherit !important',
     },
-    // 内嵌语法高亮样式作为fallback，确保打包后能工作
-    '.cm-line span': {
-      color: 'inherit',
-    },
-    // SQL关键字样式（fallback）
-    '.cm-content span[class*="keyword"]': {
-      color: isDark ? '#569cd6' : '#0000ff',
-      fontWeight: 'bold',
-    },
-    '.cm-content span[class*="string"]': {
-      color: isDark ? '#ce9178' : '#a31515',
-    },
-    '.cm-content span[class*="number"]': {
-      color: isDark ? '#b5cea8' : '#098658',
-    },
-    '.cm-content span[class*="comment"]': {
-      color: isDark ? '#6a9955' : '#008000',
-      fontStyle: 'italic',
-    },
-    '.cm-content span[class*="variable"]': {
-      color: isDark ? '#9cdcfe' : '#001080',
-    },
-    '.cm-content span[class*="type"]': {
-      color: isDark ? '#4ec9b0' : '#267f99',
-    },
-    '.cm-content span[class*="function"]': {
-      color: isDark ? '#dcdcaa' : '#795e26',
-    },
-    '.cm-content span[class*="operator"]': {
-      color: isDark ? '#d4d4d4' : '#000000',
-    },
+    // 注意: 不要在这里设置 .cm-line span { color: inherit }，
+    // 这会覆盖 syntaxHighlighting 动态注入的语法高亮颜色
     '.cm-panels': {
       backgroundColor: getColor('--card'),
       color: getColor('--card-foreground'),
@@ -400,7 +371,7 @@ export function createEditorTheme(isDark: boolean): Extension[] {
  */
 export function watchThemeChanges(callback: (isDark: boolean) => void): () => void {
   const root = document.documentElement;
-  
+
   const observer = new MutationObserver((mutations) => {
     for (const mutation of mutations) {
       if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
@@ -409,12 +380,12 @@ export function watchThemeChanges(callback: (isDark: boolean) => void): () => vo
       }
     }
   });
-  
+
   observer.observe(root, {
     attributes: true,
     attributeFilter: ['class'],
   });
-  
+
   return () => observer.disconnect();
 }
 

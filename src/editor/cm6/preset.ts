@@ -11,7 +11,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { writeText, readText } from '@tauri-apps/plugin-clipboard-manager';
 import { searchKeymap, highlightSelectionMatches } from '@codemirror/search';
 import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete';
-import { foldGutter, indentOnInput, bracketMatching, foldKeymap, syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
+import { foldGutter, indentOnInput, bracketMatching, foldKeymap } from '@codemirror/language';
 import { lintKeymap } from '@codemirror/lint';
 import logger from '@/utils/logger';
 
@@ -114,7 +114,7 @@ export function basicPreset(options: PresetOptions = {}): Extension[] {
   if (opts.drawSelection) extensions.push(drawSelection());
   if (opts.dropCursor) extensions.push(dropCursor());
   if (opts.indentOnInput) extensions.push(indentOnInput());
-  if (opts.syntaxHighlighting) extensions.push(syntaxHighlighting(defaultHighlightStyle, { fallback: true }));
+  // syntaxHighlighting 由 theme.ts 的 createSyntaxTheme 提供，此处不再需要 fallback
 
   // Advanced features
   if (opts.bracketMatching) extensions.push(bracketMatching());
@@ -295,106 +295,106 @@ function createClipboardKeybindings(): KeyBinding[] {
  */
 function createVSCodeKeybindings(onExecute?: () => void, onFormat?: () => void) {
   return [
-  // Cmd/Ctrl+D for select next occurrence (multi-cursor)
-  {
-    key: 'Mod-d',
-    run: (view: EditorView) => {
-      const selection = view.state.selection.main;
-      if (selection.empty) {
-        // Select word at cursor
-        const word = view.state.wordAt(selection.head);
-        if (word) {
-          view.dispatch({
-            selection: { anchor: word.from, head: word.to },
-          });
+    // Cmd/Ctrl+D for select next occurrence (multi-cursor)
+    {
+      key: 'Mod-d',
+      run: (view: EditorView) => {
+        const selection = view.state.selection.main;
+        if (selection.empty) {
+          // Select word at cursor
+          const word = view.state.wordAt(selection.head);
+          if (word) {
+            view.dispatch({
+              selection: { anchor: word.from, head: word.to },
+            });
+          }
+        } else {
+          // Find next occurrence and add to selection
+          const selectedText = view.state.sliceDoc(selection.from, selection.to);
+          const searchFrom = selection.to;
+          const doc = view.state.doc;
+          const text = doc.toString();
+          const nextIndex = text.indexOf(selectedText, searchFrom);
+
+          if (nextIndex !== -1) {
+            view.dispatch({
+              selection: EditorSelection.create([
+                ...view.state.selection.ranges,
+                EditorSelection.range(nextIndex, nextIndex + selectedText.length),
+              ], view.state.selection.ranges.length),
+            });
+          }
         }
-      } else {
-        // Find next occurrence and add to selection
-        const selectedText = view.state.sliceDoc(selection.from, selection.to);
-        const searchFrom = selection.to;
-        const doc = view.state.doc;
-        const text = doc.toString();
-        const nextIndex = text.indexOf(selectedText, searchFrom);
-        
-        if (nextIndex !== -1) {
-          view.dispatch({
-            selection: EditorSelection.create([
-              ...view.state.selection.ranges,
-              EditorSelection.range(nextIndex, nextIndex + selectedText.length),
-            ], view.state.selection.ranges.length),
-          });
+        return true;
+      },
+    },
+    // Cmd/Ctrl+/ for toggle line comment
+    {
+      key: 'Mod-/',
+      run: (view: EditorView) => {
+        // This will be implemented with language-specific comment support
+        logger.info('Toggle line comment');
+        return true;
+      },
+    },
+    // Alt+Up/Down for move line up/down
+    {
+      key: 'Alt-ArrowUp',
+      run: (view: EditorView) => {
+        logger.info('Move line up');
+        return true;
+      },
+    },
+    {
+      key: 'Alt-ArrowDown',
+      run: (view: EditorView) => {
+        logger.info('Move line down');
+        return true;
+      },
+    },
+    // Cmd/Ctrl+Shift+K for delete line
+    {
+      key: 'Mod-Shift-k',
+      run: (view: EditorView) => {
+        const { state } = view;
+        const changes = state.changeByRange((range) => {
+          const line = state.doc.lineAt(range.head);
+          return {
+            changes: { from: line.from, to: line.to + 1 },
+            range,
+          };
+        });
+        view.dispatch(changes);
+        return true;
+      },
+    },
+    // Cmd/Ctrl+Enter for execute query
+    {
+      key: 'Mod-Enter',
+      run: () => {
+        if (onExecute) {
+          onExecute();
+        } else {
+          // Fallback to custom event
+          window.dispatchEvent(new CustomEvent('cm6:execute-query'));
         }
-      }
-      return true;
+        return true;
+      },
     },
-  },
-  // Cmd/Ctrl+/ for toggle line comment
-  {
-    key: 'Mod-/',
-    run: (view: EditorView) => {
-      // This will be implemented with language-specific comment support
-      logger.info('Toggle line comment');
-      return true;
+    // Cmd/Ctrl+Shift+F for format
+    {
+      key: 'Mod-Shift-f',
+      run: () => {
+        if (onFormat) {
+          onFormat();
+        } else {
+          // Fallback to custom event
+          window.dispatchEvent(new CustomEvent('cm6:format'));
+        }
+        return true;
+      },
     },
-  },
-  // Alt+Up/Down for move line up/down
-  {
-    key: 'Alt-ArrowUp',
-    run: (view: EditorView) => {
-      logger.info('Move line up');
-      return true;
-    },
-  },
-  {
-    key: 'Alt-ArrowDown',
-    run: (view: EditorView) => {
-      logger.info('Move line down');
-      return true;
-    },
-  },
-  // Cmd/Ctrl+Shift+K for delete line
-  {
-    key: 'Mod-Shift-k',
-    run: (view: EditorView) => {
-      const { state } = view;
-      const changes = state.changeByRange((range) => {
-        const line = state.doc.lineAt(range.head);
-        return {
-          changes: { from: line.from, to: line.to + 1 },
-          range,
-        };
-      });
-      view.dispatch(changes);
-      return true;
-    },
-  },
-  // Cmd/Ctrl+Enter for execute query
-  {
-    key: 'Mod-Enter',
-    run: () => {
-      if (onExecute) {
-        onExecute();
-      } else {
-        // Fallback to custom event
-        window.dispatchEvent(new CustomEvent('cm6:execute-query'));
-      }
-      return true;
-    },
-  },
-  // Cmd/Ctrl+Shift+F for format
-  {
-    key: 'Mod-Shift-f',
-    run: () => {
-      if (onFormat) {
-        onFormat();
-      } else {
-        // Fallback to custom event
-        window.dispatchEvent(new CustomEvent('cm6:format'));
-      }
-      return true;
-    },
-  },
-];
+  ];
 }
 
 /**
