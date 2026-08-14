@@ -48,8 +48,8 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
     // 处理行内代码（避免与代码块冲突）
     html = html.replace(
-      /(^|[^`])`([^`\n]+)`([^`]|$)/g,
-      '$1<code class="bg-muted px-1.5 py-0.5 rounded text-sm font-mono break-all">$2</code>$3'
+      /(^|[^`])`([^`\n]+)`(?!`)/g,
+      '$1<code class="bg-muted px-1.5 py-0.5 rounded text-sm font-mono break-all">$2</code>'
     );
 
     // 处理标题（确保不在代码块内）

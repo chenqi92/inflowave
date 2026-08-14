@@ -44,21 +44,21 @@
 #### 🔍 版本选择指南
 
 #### Windows 用户
-- **MSI 安装包 (推荐)**: 📥 **[InflowWave_0.9.4_x64_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_0.9.4_x64_zh-CN.msi)**
+- **MSI 安装包 (推荐)**: 📥 **[InflowWave_0.9.5_x64_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_0.9.5_x64_zh-CN.msi)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 企业级安装包，支持 GPO 部署
   - ✅ MSI 格式，系统信任度高
 
-- **EXE 安装包**: 📥 **[InflowWave_0.9.4_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_0.9.4_x64-setup.exe)**
+- **EXE 安装包**: 📥 **[InflowWave_0.9.5_x64-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_0.9.5_x64-setup.exe)**
   - ✅ 适用于 Windows 10/11 (64位系统)
   - ✅ 用户友好的安装向导 (NSIS)
   - ✅ 支持中英文界面
 
-- **32位 MSI**: 📥 **[InflowWave_0.9.4_x86_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_0.9.4_x86_zh-CN.msi)**
+- **32位 MSI**: 📥 **[InflowWave_0.9.5_x86_zh-CN.msi](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_0.9.5_x86_zh-CN.msi)**
   - ✅ 适用于较老的32位 Windows 系统
   - ⚠️ 仅在无法运行64位版本时使用
 
-- **32位 EXE**: 📥 **[InflowWave_0.9.4_x86-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_0.9.4_x86-setup.exe)**
+- **32位 EXE**: 📥 **[InflowWave_0.9.5_x86-setup.exe](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_0.9.5_x86-setup.exe)**
   - ✅ 适用于 Windows 7/8/10/11 (32位/64位)
   - ✅ 用户友好的安装向导 (NSIS)
 
@@ -69,24 +69,24 @@
 - 💻 查看「处理器」或「芯片」信息
 
 **Apple Silicon Mac (M1/M2/M3/M4 芯片)**
-- 📥 **[InflowWave_0.9.4_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_0.9.4_aarch64.dmg)**
+- 📥 **[InflowWave_0.9.5_aarch64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_0.9.5_aarch64.dmg)**
   - ✅ 2020年11月后发布的 Mac
   - ✅ 性能最优，原生支持
   - ✅ 更低的电量消耗
   - ⚠️ **无法在 Intel Mac 上运行**
 
 **Intel Mac (Intel 处理器)**
-- 📥 **[InflowWave_0.9.4_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_0.9.4_x64.dmg)**
+- 📥 **[InflowWave_0.9.5_x64.dmg](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_0.9.5_x64.dmg)**
   - ✅ 2020年前发布的 Mac
   - ✅ 兼容 macOS 10.15 或更高版本
   - ⚠️ 不支持 Apple Silicon 芯片
 
 **便携版 (免安装)**
-- **Apple Silicon**: 📥 **[InflowWave_aarch64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_aarch64.app.tar.gz)**
+- **Apple Silicon**: 📥 **[InflowWave_aarch64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_aarch64.app.tar.gz)**
   - ✅ 解压后直接运行，无需安装
   - 📋 使用方法: `tar -xzf InflowWave_aarch64.app.tar.gz && open InflowWave.app`
 
-- **Intel Mac**: 📥 **[InflowWave_x64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_x64.app.tar.gz)**
+- **Intel Mac**: 📥 **[InflowWave_x64.app.tar.gz](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_x64.app.tar.gz)**
   - ✅ 解压后直接运行，无需安装
   - 📋 使用方法: `tar -xzf InflowWave_x64.app.tar.gz && open InflowWave.app`
 
@@ -106,24 +106,24 @@ sudo xattr -r -d com.apple.quarantine /Applications/Inflowave.app
 - 运行命令: `cat /etc/os-release` 或 `lsb_release -a`
 
 **Debian/Ubuntu 系列 (推荐)**
-- 📥 **[InflowWave_0.9.4_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_0.9.4_amd64.deb)**
+- 📥 **[InflowWave_0.9.5_amd64.deb](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_0.9.5_amd64.deb)**
   - ✅ Ubuntu 18.04+, Debian 10+
   - ✅ 系统集成度高，支持自动更新
-  - 📋 安装命令: `sudo dpkg -i InflowWave_0.9.4_amd64.deb`
+  - 📋 安装命令: `sudo dpkg -i InflowWave_0.9.5_amd64.deb`
   - 🔧 依赖修复: `sudo apt-get install -f`
 
 **通用 Linux (万能选择)**
-- 📥 **[InflowWave_0.9.4_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave_0.9.4_amd64.AppImage)**
+- 📥 **[InflowWave_0.9.5_amd64.AppImage](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave_0.9.5_amd64.AppImage)**
   - ✅ 适用于大部分 x64 Linux 发行版
   - ✅ 免安装，下载后直接运行
   - ✅ 便携版，不影响系统
-  - 📋 使用方法: `chmod +x InflowWave_0.9.4_amd64.AppImage && ./InflowWave_0.9.4_amd64.AppImage`
+  - 📋 使用方法: `chmod +x InflowWave_0.9.5_amd64.AppImage && ./InflowWave_0.9.5_amd64.AppImage`
 
 **RPM 系列 (CentOS/RHEL/Fedora)**
-- 📥 **[InflowWave-0.9.4-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.9.4/InflowWave-0.9.4-1.x86_64.rpm)**
+- 📥 **[InflowWave-0.9.5-1.x86_64.rpm](https://github.com/chenqi92/inflowave/releases/download/v0.9.5/InflowWave-0.9.5-1.x86_64.rpm)**
   - ✅ CentOS 7+, RHEL 7+, Fedora 30+
-  - 📋 安装命令: `sudo rpm -i InflowWave-0.9.4-1.x86_64.rpm`
-  - 📋 或使用: `sudo dnf install InflowWave-0.9.4-1.x86_64.rpm`
+  - 📋 安装命令: `sudo rpm -i InflowWave-0.9.5-1.x86_64.rpm`
+  - 📋 或使用: `sudo dnf install InflowWave-0.9.5-1.x86_64.rpm`
 
 ### ⚠️ 系统要求
 
