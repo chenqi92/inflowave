@@ -36,9 +36,9 @@ rustflags = ["-C", "target-cpu=x86-64-v2"]
 [target.i686-pc-windows-msvc]
 rustflags = ["-C", "target-cpu=pentium4"]
 
-# Linux 和 macOS 可以使用 native，因为通常是用户自己编译
+# Linux 发布包不能依赖构建机器支持的额外 CPU 指令。
 [target.x86_64-unknown-linux-gnu]
-rustflags = ["-C", "target-cpu=native"]
+rustflags = ["-C", "target-cpu=x86-64"]
 # Linux 专用环境变量
 [target.x86_64-unknown-linux-gnu.env]
 PKG_CONFIG_ALLOW_CROSS = "1"

@@ -187,6 +187,10 @@ jobs:
             libxdo-dev libssl-dev \
             libglib2.0-0 libglib2.0-bin gobject-introspection libgirepository1.0-dev \
             libffi-dev patchelf
+
+          if [[ "${{ matrix.rust_target }}" == "x86_64-unknown-linux-gnu" ]]; then
+            sudo apt-get install -y qemu-user xvfb xauth xdotool dbus-x11
+          fi
           
           # 验证 glib pkg-config 文件
           echo "🔍 检查 glib pkg-config 文件..."
@@ -529,7 +533,7 @@ jobs:
               find "$bundle_dir" -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" | while read file; do
                 if [[ -f "$file" ]]; then
                   if [[ "$file" == *.AppImage ]]; then
-                    node scripts/validate-appimage.cjs "$file"
+                    node scripts/validate-appimage.cjs --startup "$file"
                   fi
                   echo "Uploading: $file"
                   gh release upload "v${{ needs.detect-version.outputs.version }}" "$file" --clobber || echo "Upload failed for $file"

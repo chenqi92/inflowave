@@ -16,8 +16,8 @@ if (result.error || result.status !== 0) {
 if (args[0] === 'build') {
   try {
     if (!process.env.APPIMAGE_PATH) throw new Error('APPIMAGE_PATH is required');
-    validateAppImage(process.env.APPIMAGE_PATH);
-    console.log(`AppImage metadata validated: ${process.env.APPIMAGE_PATH}`);
+    validateAppImage(process.env.APPIMAGE_PATH, { startup: true });
+    console.log(`AppImage metadata and startup validated: ${process.env.APPIMAGE_PATH}`);
   } catch (error) {
     console.error(`AppImage validation failed: ${error.message}`);
     process.exitCode = 1;

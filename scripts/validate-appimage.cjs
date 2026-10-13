@@ -47,7 +47,7 @@ function validateAppDir(directory) {
   appDirFile(appDir, iconFile);
 }
 
-function validateAppImage(filename) {
+function validateAppImage(filename, { startup = false } = {}) {
   if (process.platform !== 'linux') {
     throw new Error('AppImage extraction requires Linux; validate an extracted AppDir on this platform');
   }
@@ -60,7 +60,15 @@ function validateAppImage(filename) {
       stdio: ['ignore', 'ignore', 'pipe'],
       timeout: 120000,
     });
-    validateAppDir(path.join(temp, 'squashfs-root'));
+    const appDir = path.join(temp, 'squashfs-root');
+    validateAppDir(appDir);
+    if (startup) {
+      execFileSync('xvfb-run', ['-a', 'dbus-run-session', '--', 'bash',
+        path.join(__dirname, 'test-appimage-startup.sh'), appDir], {
+        stdio: 'inherit',
+        timeout: 90000,
+      });
+    }
   } finally {
     fs.rmSync(temp, { recursive: true, force: true });
   }
@@ -68,11 +76,15 @@ function validateAppImage(filename) {
 
 if (require.main === module) {
   try {
-    const files = process.argv.slice(2);
-    if (files.length === 0) throw new Error('Usage: node scripts/validate-appimage.cjs <AppImage|AppDir> [...]');
+    const args = process.argv.slice(2);
+    const startup = args.includes('--startup');
+    const files = args.filter(arg => arg !== '--startup');
+    if (files.length === 0) throw new Error('Usage: node scripts/validate-appimage.cjs [--startup] <AppImage|AppDir> [...]');
     for (const file of files) {
-      if (fs.statSync(file).isDirectory()) validateAppDir(file);
-      else validateAppImage(file);
+      if (fs.statSync(file).isDirectory()) {
+        if (startup) throw new Error('--startup requires a finished AppImage');
+        validateAppDir(file);
+      } else validateAppImage(file, { startup });
       console.log(`AppImage metadata validated: ${file}`);
     }
   } catch (error) {
