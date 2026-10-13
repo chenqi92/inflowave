@@ -1,4 +1,10 @@
 import logger from '@/utils/logger';
+import i18n from 'i18next';
+
+const translateGuide = (language: string, key: string, filename?: string): string =>
+  (i18n.t as (key: string, options: Record<string, unknown>) => string)(key, {
+    lng: language, ns: 'userGuide', filename,
+  });
 // 文档加载器 - 用于加载用户文档、
 export interface DocumentInfo {
   filename: string;
@@ -77,11 +83,12 @@ export const DOCUMENT_ORDER: DocumentInfo[] = [
  * @returns 文档内容
  */
 export const loadDocumentContent = async (
-  filename: string
+  filename: string,
+  language: string = i18n.language || 'en-US'
 ): Promise<string> => {
   try {
-    // 在 Vite 中使用动态导入加载文本文件
-    const response = await fetch(`/user-docs/${filename}`);
+    const directory = language.startsWith('zh') ? '/user-docs' : '/user-docs/en-US';
+    const response = await fetch(`${directory}/${filename}`);
     if (!response.ok) {
       throw new Error(`Failed to load ${filename}: ${response.statusText}`);
     }
@@ -89,27 +96,7 @@ export const loadDocumentContent = async (
   } catch (error) {
     logger.warn(`Failed to load document: ${filename}`, error);
 
-    // 返回错误提示内容
-    return `# 文档加载失败
-
-抱歉，无法加载文档 "${filename}"。
-
-## 可能的原因
-
-- 文件不存在或路径错误
-- 网络连接问题
-- 权限不足
-
-## 解决方案
-
-1. 请检查文件是否存在于 user-docs 目录中
-2. 刷新页面重试
-3. 如果问题持续存在，请联系技术支持
-
----
-
-**文件名**: ${filename}  
-**错误信息**: ${error instanceof Error ? error.message : String(error)}`;
+    return `# ${translateGuide(language, 'loadErrorTitle')}\n\n${translateGuide(language, 'loadError', filename)}`;
   }
 };
 
@@ -117,15 +104,16 @@ export const loadDocumentContent = async (
  * 加载所有用户文档
  * @returns 文档列表
  */
-export const loadAllDocuments = async () => {
+export const loadAllDocuments = async (language: string = i18n.language || 'en-US') => {
   const documents = [];
 
   for (const docInfo of DOCUMENT_ORDER) {
+    const title = translateGuide(language, `documents.${docInfo.filename.replace(/\.md$/, '')}`);
     try {
-      const content = await loadDocumentContent(docInfo.filename);
+      const content = await loadDocumentContent(docInfo.filename, language);
       documents.push({
         id: docInfo.filename,
-        title: docInfo.title,
+        title,
         filename: docInfo.filename,
         content,
         order: docInfo.order,
@@ -136,9 +124,9 @@ export const loadAllDocuments = async () => {
       // 即使加载失败也添加一个占位符
       documents.push({
         id: docInfo.filename,
-        title: docInfo.title,
+        title,
         filename: docInfo.filename,
-        content: `# ${docInfo.title}\n\n文档加载失败，请稍后重试。`,
+        content: `# ${title}\n\n${translateGuide(language, 'loadError', docInfo.filename)}`,
         order: docInfo.order,
         description: docInfo.description,
       });

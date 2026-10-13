@@ -12,6 +12,7 @@ import {ChevronLeft, ChevronRight, BookOpen, Home, Menu} from 'lucide-react';
 import MarkdownRenderer from './MarkdownRenderer';
 import {useNoticeStore} from '@/store/notice';
 import {loadAllDocuments} from '@/utils/documentLoader';
+import {useTranslation} from '@/hooks/useTranslation';
 import '@/styles/user-guide.css';
 import logger from '@/utils/logger';
 
@@ -30,6 +31,7 @@ interface GuideDocument {
 }
 
 const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
+    const {t, language, ready} = useTranslation('userGuide');
     const [currentIndex, setCurrentIndex] = useState(0);
     const [documents, setDocuments] = useState<GuideDocument[]>([]);
     const [loading, setLoading] = useState(true);
@@ -42,26 +44,32 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
 
     // 加载用户文档
     useEffect(() => {
+        let active = true;
         const loadDocuments = async () => {
             setLoading(true);
+            setDocuments([]);
             try {
-                const loadedDocs = await loadAllDocuments();
-                setDocuments(loadedDocs);
+                const loadedDocs = await loadAllDocuments(language);
+                if (active) setDocuments(loadedDocs);
             } catch (error) {
                 logger.error('Failed to load user guide documents:', error);
             } finally {
-                setLoading(false);
+                if (active) setLoading(false);
             }
         };
 
-        if (isOpen) {
+        if (isOpen && ready) {
             loadDocuments();
             // 检查屏幕尺寸，在移动端默认隐藏侧边栏
             setShowSidebar(window.innerWidth >= 768);
             // 重置滚动位置到顶部
-            setTimeout(scrollToTop, 200);
+            const timer = setTimeout(scrollToTop, 200);
+            return () => {
+                active = false;
+                clearTimeout(timer);
+            };
         }
-    }, [isOpen]);
+    }, [isOpen, language, ready]);
 
     // 监听文档索引变化，自动滚动到顶部
     useEffect(() => {
@@ -131,7 +139,7 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
                             </Button>
                             <BookOpen className='w-6 h-6 text-primary flex-shrink-0'/>
                             <span className='truncate'>
-                {currentDoc?.title || 'InfloWave 用户指引'}
+                {currentDoc?.title || t('title')}
               </span>
                         </div>
                         <div className='flex items-center gap-2 text-sm text-muted-foreground flex-shrink-0 ml-4 page-indicator'>
@@ -198,7 +206,7 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
                                         <div className='text-center'>
                                             <div
                                                 className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4'></div>
-                                            <p className='text-muted-foreground'>加载用户指引中...</p>
+                                            <p className='text-muted-foreground'>{t('loading')}</p>
                                         </div>
                                     </div>
                                 ) : currentDoc ? (
@@ -209,7 +217,7 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
                                     />
                                 ) : (
                                     <div className='flex items-center justify-center h-64'>
-                                        <p className='text-muted-foreground'>暂无内容</p>
+                                        <p className='text-muted-foreground'>{t('noContent')}</p>
                                     </div>
                                 )}
                             </div>
@@ -227,7 +235,7 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
                                         disabled={currentIndex === 0}
                                     >
                                         <ChevronLeft className='w-4 h-4 mr-1'/>
-                                        上一页
+                                        {t('previous')}
                                     </Button>
                                     <Button
                                         variant='outline'
@@ -235,7 +243,7 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
                                         onClick={goToNext}
                                         disabled={currentIndex === documents.length - 1}
                                     >
-                                        下一页
+                                        {t('next')}
                                         <ChevronRight className='w-4 h-4 ml-1'/>
                                     </Button>
                                 </div>
@@ -252,12 +260,12 @@ const UserGuideModal: React.FC<UserGuideModalProps> = ({isOpen, onClose}) => {
                                             htmlFor='dont-show-again'
                                             className='text-sm text-muted-foreground cursor-pointer'
                                         >
-                                            不再显示此指引
+                                            {t('dontShowAgain')}
                                         </label>
                                     </div>
                                     <Button onClick={handleClose} className='w-full sm:w-auto'>
                                         <Home className='w-4 h-4 mr-2'/>
-                                        开始使用
+                                        {t('startUsing')}
                                     </Button>
                                 </div>
                             </div>

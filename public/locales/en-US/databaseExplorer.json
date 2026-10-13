@@ -1,4 +1,12 @@
 {
+  "header": {
+    "title": "Data Sources",
+    "search": "Search connections, databases, tables...",
+    "showSystemNodes": "Show System Nodes",
+    "hideSystemNodes": "Hide System Nodes",
+    "refresh": "Refresh Data Sources and Test Connections",
+    "add": "Add Data Source"
+  },
   "connectionRefreshed": "Connection {{name}} refreshed",
   "connectionDisconnected": "Connection {{name}} disconnected",
   "connectionTestSuccess": "Connection test successful",

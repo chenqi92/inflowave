@@ -8,6 +8,7 @@ import TabContextMenu from './TabContextMenu';
 import SaveConfirmDialog from '../common/SaveConfirmDialog';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import logger from '@/utils/logger';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export interface EditorTab {
   id: string;
@@ -62,6 +63,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
   onSaveAllTabs,
   onCreateNewTab,
 }) => {
+  const { t } = useTranslation('tabs');
   const [closingTab, setClosingTab] = useState<ClosingTab | null>(null);
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
   const draggedTabIdRef = useRef<string | null>(null);
@@ -786,7 +788,7 @@ export const TabManager: React.FC<TabManagerProps> = ({
         variant='ghost'
         size='sm'
         className='ml-2 flex-shrink-0 focus:outline-none focus-visible:outline-none focus:ring-0 focus-visible:ring-0'
-        title='新建SQL查询'
+        title={t('newSqlQuery')}
         onClick={() => onCreateNewTab?.()}
       >
         <Plus className='w-4 h-4' />

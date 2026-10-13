@@ -1,4 +1,12 @@
 {
+  "header": {
+    "title": "数据源",
+    "search": "搜索连接、数据库、表...",
+    "showSystemNodes": "显示系统节点",
+    "hideSystemNodes": "隐藏系统节点",
+    "refresh": "刷新数据源树并测试连接",
+    "add": "添加数据源"
+  },
   "connectionRefreshed": "连接 {{name}} 已刷新",
   "connectionDisconnected": "连接 {{name}} 已断开",
   "connectionTestSuccess": "连接测试成功",

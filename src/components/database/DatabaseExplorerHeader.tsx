@@ -7,6 +7,7 @@ import { Button, CardContent, Tooltip, TooltipContent, TooltipTrigger, Typograph
 import { Filter, RefreshCw, Plus } from 'lucide-react';
 import type { ConnectionConfig } from '@/types';
 import logger from '@/utils/logger';
+import {useDatabaseExplorerTranslation} from '@/hooks/useTranslation';
 
 interface DatabaseExplorerHeaderProps {
     headerRef: React.RefObject<HTMLDivElement>;
@@ -29,17 +30,18 @@ export const DatabaseExplorerHeader: React.FC<DatabaseExplorerHeaderProps> = ({
     searchValue,
     setSearchValue,
 }) => {
+    const {t} = useDatabaseExplorerTranslation();
     // JetBrains New UI 风格: 紧凑的侧边栏头部
     return (
         <CardContent className='px-2 py-1.5 border-b'>
             <div ref={headerRef} className='flex items-center justify-between w-[280px]'>
                 <div className='flex items-center gap-1.5 flex-shrink-0'>
-                    <Typography.Text className='text-sm font-medium whitespace-nowrap'>数据源</Typography.Text>
+                    <Typography.Text className='text-sm font-medium whitespace-nowrap'>{t('header.title')}</Typography.Text>
                 </div>
                 <div className='flex items-center gap-0.5 flex-shrink-0'>
                     {/* 可展开搜索框 */}
                     <ExpandableSearchInput
-                        placeholder='搜索连接、数据库、表...'
+                        placeholder={t('header.search')}
                         value={searchValue}
                         onChange={(value: string) => setSearchValue(value)}
                         onClear={() => setSearchValue('')}
@@ -56,13 +58,13 @@ export const DatabaseExplorerHeader: React.FC<DatabaseExplorerHeaderProps> = ({
                                     logger.info(`🔄 按钮点击：过滤状态从 ${hideSystemNodes} 变为 ${newHideSystemNodes}`);
                                     setHideSystemNodes(newHideSystemNodes);
                                 }}
-                                title={hideSystemNodes ? '显示系统节点' : '隐藏系统节点'}
+                                title={t(hideSystemNodes ? 'header.showSystemNodes' : 'header.hideSystemNodes')}
                             >
                                 <Filter className='w-3.5 h-3.5'/>
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                            {hideSystemNodes ? '显示系统节点' : '隐藏系统节点'}
+                            {t(hideSystemNodes ? 'header.showSystemNodes' : 'header.hideSystemNodes')}
                         </TooltipContent>
                     </Tooltip>
                     <Tooltip>
@@ -73,12 +75,12 @@ export const DatabaseExplorerHeader: React.FC<DatabaseExplorerHeaderProps> = ({
                                 className='h-7 w-7 p-0'
                                 onClick={refreshTree}
                                 disabled={loading}
-                                title='刷新数据源树并测试连接'
+                                title={t('header.refresh')}
                             >
                                 <RefreshCw className='w-3.5 h-3.5'/>
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>刷新数据源树并测试连接</TooltipContent>
+                        <TooltipContent>{t('header.refresh')}</TooltipContent>
                     </Tooltip>
                     <Tooltip>
                         <TooltipTrigger asChild>
@@ -87,12 +89,12 @@ export const DatabaseExplorerHeader: React.FC<DatabaseExplorerHeaderProps> = ({
                                 size='sm'
                                 className='h-7 w-7 p-0'
                                 onClick={() => handleOpenConnectionDialog()}
-                                title='添加数据源'
+                                title={t('header.add')}
                             >
                                 <Plus className='w-3.5 h-3.5'/>
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent>添加数据源</TooltipContent>
+                        <TooltipContent>{t('header.add')}</TooltipContent>
                     </Tooltip>
                 </div>
             </div>

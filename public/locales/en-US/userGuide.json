@@ -1,4 +1,23 @@
 {
+  "title": "InfloWave User Guide",
   "loading": "Loading user guide...",
-  "noContent": "No content available"
+  "noContent": "No content available",
+  "previous": "Previous",
+  "next": "Next",
+  "dontShowAgain": "Don't show this guide again",
+  "startUsing": "Get Started",
+  "loadErrorTitle": "Unable to load this guide",
+  "loadError": "The document \"{{filename}}\" could not be loaded. Close the guide and open it again to retry.",
+  "documents": {
+    "README": "Welcome to InfloWave",
+    "installation": "Installation",
+    "quick-start": "Quick Start",
+    "connection-management": "Connections",
+    "database-operations": "Database Operations",
+    "query-features": "Queries",
+    "data-visualization": "Data Visualization",
+    "data-import": "Writing Data",
+    "shortcuts": "Shortcuts",
+    "faq": "Frequently Asked Questions"
+  }
 }

@@ -1,4 +1,23 @@
 {
+  "title": "InfloWave 用户指引",
   "loading": "加载用户引导中...",
-  "noContent": "暂无内容"
+  "noContent": "暂无内容",
+  "previous": "上一页",
+  "next": "下一页",
+  "dontShowAgain": "不再显示此指引",
+  "startUsing": "开始使用",
+  "loadErrorTitle": "文档加载失败",
+  "loadError": "无法加载文档“{{filename}}”。请关闭指引后重新打开以重试。",
+  "documents": {
+    "README": "📖 欢迎使用 InfloWave",
+    "installation": "🔧 安装指南",
+    "quick-start": "🚀 快速开始",
+    "connection-management": "🔗 连接管理",
+    "database-operations": "🗄️ 数据库操作",
+    "query-features": "🔍 查询功能",
+    "data-visualization": "📊 数据可视化",
+    "data-import": "📥 数据写入",
+    "shortcuts": "⚡ 快捷操作",
+    "faq": "❓ 常见问题"
+  }
 }

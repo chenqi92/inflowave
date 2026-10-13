@@ -1,4 +1,7 @@
 {
+  "noOpenTabs": "没有打开的标签页",
+  "createTab": "创建新标签页",
+  "newSqlQuery": "新建SQL查询",
   "unsavedTabs": "未保存的查询标签页",
   "unsavedTabsDescription": "您有 {{count}} 个未保存的查询标签页。关闭应用前是否要保存这些标签页？",
   "saveHint": "选择\"保存\"：这些标签页将在下次启动时恢复",

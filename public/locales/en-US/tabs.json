@@ -1,4 +1,7 @@
 {
+  "noOpenTabs": "No open tabs",
+  "createTab": "Create a New Tab",
+  "newSqlQuery": "New SQL Query",
   "unsavedTabs": "Unsaved Query Tabs",
   "unsavedTabsDescription": "You have {{count}} unsaved query tabs. Would you like to save these tabs before closing the application?",
   "saveHint": "Choose \"Save\": These tabs will be restored on next startup",

@@ -30,6 +30,7 @@ import S3Browser from '@/components/S3Browser';
 
 import type { QueryResult } from '@/types';
 import logger from '@/utils/logger';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface TabEditorProps {
   onQueryResult?: (result: QueryResult | null) => void;
@@ -55,6 +56,7 @@ export interface TabEditorRef {
 
 const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
   ({ onQueryResult, onBatchQueryResults, onActiveTabTypeChange, expandedDatabases = [], currentTimeRange }, ref) => {
+    const { t } = useTranslation('tabs');
     // 添加组件挂载/卸载日志
     const componentIdRef = React.useRef(`TabEditor-${Math.random().toString(36).substr(2, 9)}`);
     React.useEffect(() => {
@@ -533,14 +535,14 @@ const TabEditorRefactored = forwardRef<TabEditorRef, TabEditorProps>(
               <div className='h-full flex items-center justify-center text-muted-foreground border-0 shadow-none'>
                 <div className='text-center'>
                   <FileText className='w-12 h-12 mx-auto mb-4' />
-                  <p className="mb-4">没有打开的标签页</p>
+                  <p className="mb-4">{t('noOpenTabs')}</p>
                   <Button
                     variant='default'
                     onClick={() => createNewTab('query')}
                     className='mt-2'
                   >
                     <FileText className='w-4 h-4 mr-2' />
-                    创建新标签页
+                    {t('createTab')}
                   </Button>
                 </div>
               </div>

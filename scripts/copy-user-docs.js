@@ -9,6 +9,7 @@ const __dirname = path.dirname(__filename);
 // 源目录和目标目录
 const sourceDir = path.join(__dirname, '..', 'user-docs');
 const targetDir = path.join(__dirname, '..', 'public', 'user-docs');
+const englishSourceDir = path.join(__dirname, '..', 'docs', 'user-guide', 'en-US');
 const cacheFile = path.join(targetDir, '.copy-cache.json');
 
 // 确保目标目录存在
@@ -105,10 +106,21 @@ function copyUserDocs() {
     }
   });
 
+  const englishTargetDir = path.join(targetDir, 'en-US');
+  fs.mkdirSync(englishTargetDir, {recursive: true});
+  const englishFiles = fs.readdirSync(englishSourceDir).filter(file => file.endsWith('.md'));
+  englishFiles.forEach(file => {
+    if (copyFile(path.join(englishSourceDir, file), path.join(englishTargetDir, file), cache, `en-US/${file}`)) {
+      copiedCount++;
+    } else {
+      skippedCount++;
+    }
+  });
+
   saveCache(cache);
 
   const duration = Date.now() - startTime;
-  console.log(`✨ 完成！共 ${mdFiles.length} 个文档文件 (复制: ${copiedCount}, 跳过: ${skippedCount}, 耗时: ${duration}ms)`);
+  console.log(`✨ 完成！共 ${mdFiles.length + englishFiles.length} 个文档文件 (复制: ${copiedCount}, 跳过: ${skippedCount}, 耗时: ${duration}ms)`);
 }
 
 // 执行复制
