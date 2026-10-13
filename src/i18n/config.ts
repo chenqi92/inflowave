@@ -16,10 +16,10 @@ import logger from '@/utils/logger';
 export const SUPPORTED_LANGUAGES = ['zh-CN', 'en-US'] as const;
 
 // 默认语言
-export const DEFAULT_LANGUAGE = 'zh-CN';
+export const DEFAULT_LANGUAGE = 'en-US';
 
 // 回退语言
-export const FALLBACK_LANGUAGE = 'zh-CN';
+export const FALLBACK_LANGUAGE = 'en-US';
 
 // 语言检测配置
 const languageDetectionConfig: LanguageDetectionConfig = {

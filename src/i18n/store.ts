@@ -14,7 +14,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { zhCN, enUS } from 'date-fns/locale';
 import i18n from 'i18next';
 import { safeTauriInvoke } from '@/utils/tauri';
-import { languageDetector, translationLoader, resourceManager } from './config';
+import { languageDetector, translationLoader, resourceManager, FALLBACK_LANGUAGE } from './config';
 import { performanceMonitor } from './performance-monitor';
 import { errorHandler } from './error-handler';
 import { fallbackManager } from './fallback-manager';
@@ -105,7 +105,7 @@ export const useI18nStore = create<I18nState>((set, get) => ({
   
   // 配置
   config: {
-    fallbackLanguage: 'zh-CN',
+    fallbackLanguage: FALLBACK_LANGUAGE,
     enableDetection: true,
     enablePersistence: true,
     cacheTimeout: 24 * 60 * 60 * 1000, // 24小时
@@ -422,7 +422,7 @@ const saveLanguagePreference = async (language: string) => {
       languageDetector.saveLanguagePreference(language);
       
       // 保存到 Tauri 存储（如果可用）
-      if (typeof window !== 'undefined' && window.__TAURI__) {
+      if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
         await safeTauriInvoke('save_language_preference', { language });
       }
       
@@ -504,6 +504,11 @@ export const formatRelativeTime = (date: Date): string => {
  * 初始化 i18n store
  */
 export const initI18nStore = async (): Promise<void> => {
+  const language = i18n.resolvedLanguage || i18n.language;
+  if (languageDetector.isLanguageSupported(language)) {
+    useI18nStore.setState({ currentLanguage: language });
+    document.documentElement.lang = language;
+  }
   const store = useI18nStore.getState();
   
   try {

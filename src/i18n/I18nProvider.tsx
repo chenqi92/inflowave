@@ -10,7 +10,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useI18nStore, initI18nStore } from './store';
-import initI18n from './config';
+import initI18n, { languageDetector } from './config';
 import type { I18nContextValue, I18nProviderProps, I18nError } from './types';
 import logger from '@/utils/logger';
 
@@ -132,12 +132,16 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
 
       // 阶段1: 先从后端加载语言设置
       let initialLanguage: string | undefined = defaultLanguage;
+      const storedLanguage = languageDetector.getStoredLanguage();
+      if (!initialLanguage && storedLanguage && languageDetector.isLanguageSupported(storedLanguage)) {
+        initialLanguage = storedLanguage;
+      }
 
       try {
         if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
           const { safeTauriInvoke } = await import('@/utils/tauri');
           const appSettings = await safeTauriInvoke<any>('get_app_settings');
-          if (appSettings?.general?.language) {
+          if (!initialLanguage && appSettings?.general?.language) {
             initialLanguage = appSettings.general.language;
             logger.info('✅ [I18nProvider] 从后端加载语言设置:', initialLanguage);
           }

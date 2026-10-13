@@ -113,10 +113,10 @@ export class LanguageDetector {
    * 将各种格式的语言代码转换为标准格式
    */
   private normalizeLanguageCode(language: string): string {
-    if (!language) return this.config.fallbackLanguage;
+    if (!language) return '';
 
     // 移除空格并转换为小写
-    const cleaned = language.trim().toLowerCase();
+    const cleaned = language.trim().toLowerCase().split(/[.@]/)[0].replace(/_/g, '-');
 
     // 处理常见的语言代码映射
     const languageMap: Record<string, string> = {
@@ -169,7 +169,7 @@ export class LanguageDetector {
       return language;
     }
 
-    return this.config.fallbackLanguage;
+    return cleaned;
   }
 
   /**

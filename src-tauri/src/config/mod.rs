@@ -28,7 +28,7 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             theme: "light".to_string(),
-            language: "zh-CN".to_string(),
+            language: crate::utils::locale::default_app_language(),
             query_timeout: 30,
             max_query_history: 100,
             enable_logging: true,

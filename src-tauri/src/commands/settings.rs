@@ -102,8 +102,7 @@ impl Default for AppSettings {
         Self {
             general: GeneralSettings {
                 theme: "system".to_string(),
-                // 默认语言设置为中文
-                language: "zh-CN".to_string(),
+                language: crate::utils::locale::default_app_language(),
                 startup_connection: None,
             },
             editor: EditorSettings {
