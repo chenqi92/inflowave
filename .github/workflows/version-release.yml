@@ -116,7 +116,8 @@ jobs:
         id: generate
         run: |
           # 使用外部脚本生成release notes
-          RELEASE_BODY=$(node scripts/generate-release-notes.cjs)
+          node scripts/generate-release-notes.cjs --output="$RUNNER_TEMP/release-notes.md"
+          RELEASE_BODY=$(cat "$RUNNER_TEMP/release-notes.md")
           
           # 输出到GitHub Actions
           {
@@ -275,7 +276,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           # 禁用 npm 缓存，确保每次都获取最新的构建
           # cache: 'npm'
 
@@ -369,7 +370,7 @@ jobs:
           releaseDraft: false
           prerelease: false
           # 使用默认配置，同时构建 NSIS 和 MSI
-          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.conf.json
+          args: --target ${{ matrix.rust_target }} --config src-tauri/tauri.conf.json -- --locked
 
       # MSI 已通过 tauri-action 自动构建（使用 Tauri 2.0 内置 WiX 支持）
       # 不需要单独的构建步骤
@@ -398,6 +399,10 @@ jobs:
           Write-Output "Generated installer will be available in the release assets."
 
 
+
+      - name: Test AppImage validation
+        if: matrix.rust_target == 'x86_64-unknown-linux-gnu'
+        run: node --test scripts/test-appimage-validation.cjs
 
       # 非 Windows 平台使用 Tauri 构建
       - name: Build Non-Windows Platforms
@@ -431,7 +436,10 @@ jobs:
           GIO_SYS_USE_PKG_CONFIG: 1
           # AppImage 优化配置
           APPIMAGE_EXTRACT_AND_RUN: 1
+          APPIMAGE_PATH: src-tauri/target/${{ matrix.rust_target }}/release/bundle/appimage/InfloWave_${{ needs.detect-version.outputs.version }}_amd64.AppImage
         with:
+          # 在 tauri-action 上传之前校验已完成的 x64 AppImage。
+          tauriScript: ${{ matrix.rust_target == 'x86_64-unknown-linux-gnu' && 'node scripts/tauri-appimage-build.cjs' || '' }}
           tagName: v${{ needs.detect-version.outputs.version }}
           releaseName: 'InfloWave v${{ needs.detect-version.outputs.version }}'
           releaseBody: ${{ needs.prepare-release-notes.outputs.release_body }}
@@ -441,7 +449,7 @@ jobs:
           args: --target ${{ matrix.rust_target }} --verbose --config ${{
             matrix.platform == 'macos-latest' && 'src-tauri/tauri.macos.conf.json' ||
             (matrix.rust_target == 'aarch64-unknown-linux-gnu' && 'src-tauri/tauri.arm64.conf.json' ||
-            'src-tauri/tauri.linux.conf.json') }}
+            'src-tauri/tauri.linux.conf.json') }} -- --locked
 
       # macOS 专用上传步骤 - 处理 DMG 打包脚本失败但文件已生成的情况
       - name: Upload macOS Packages (Fallback)
@@ -520,6 +528,9 @@ jobs:
             if [[ -d "$bundle_dir" ]]; then
               find "$bundle_dir" -name "*.deb" -o -name "*.AppImage" -o -name "*.rpm" | while read file; do
                 if [[ -f "$file" ]]; then
+                  if [[ "$file" == *.AppImage ]]; then
+                    node scripts/validate-appimage.cjs "$file"
+                  fi
                   echo "Uploading: $file"
                   gh release upload "v${{ needs.detect-version.outputs.version }}" "$file" --clobber || echo "Upload failed for $file"
                 fi

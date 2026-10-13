@@ -159,7 +159,10 @@ mod tests {
     
     #[test]
     fn test_persistence_manager() {
-        let manager = PersistenceManager::new().unwrap();
+        let config_dir = tempfile::tempdir().unwrap();
+        let manager = PersistenceManager {
+            config_dir: config_dir.path().to_path_buf(),
+        };
         
         let test_data = TestConfig {
             name: "test".to_string(),

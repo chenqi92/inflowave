@@ -1,11 +1,13 @@
 [package]
 name = "InfloWave"
-version = "0.9.5"
+version = "0.9.6"
 description = "A modern time-series database management tool"
 authors = ["Kkape Team"]
 license = "MIT"
 repository = "https://github.com/chenqi92/inflowave"
 edition = "2021"
+rust-version = "1.93"
+resolver = "3"
 default-run = "InfloWave"
 
 # WiX 配置已移至 tauri.conf.json
@@ -15,92 +17,92 @@ default-run = "InfloWave"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "2.5.1", features = ["codegen"] }
+tauri-build = { version = "2.7.2", features = ["codegen"] }
 
 [dependencies]
-tauri = { version = "2.9.2", features = ["protocol-asset",
+tauri = { version = "2.12.3", features = ["protocol-asset",
     "tray-icon"
 ] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-tokio = { version = "1.0", features = ["full"] }
-reqwest = { version = "0.12.24", features = ["json", "native-tls", "stream"] }
-futures-util = "0.3"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+tokio = { version = "1.53.2", features = ["full"] }
+reqwest = { version = "0.12.28", features = ["json", "native-tls", "stream"] }
+futures-util = "0.3.34"
 influxdb = { version = "0.7.2", features = ["derive"] }
 influxdb2 = "0.5.2"
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4", "serde"] }
-anyhow = "1.0"
-thiserror = "2.0.17"
-log = "0.4"
-env_logger = "0.10"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "time", "json"] }
-tracing-appender = "0.2"
+chrono = { version = "0.4.45", features = ["serde"] }
+uuid = { version = "1.28.0", features = ["v4", "serde"] }
+anyhow = "1.0.104"
+thiserror = "2.0.21"
+log = "0.4.34"
+env_logger = "0.10.2"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.23", features = ["env-filter", "fmt", "time", "json"] }
+tracing-appender = "0.2.5"
 dirs = "6.0.0"
 base64 = "0.22.1"
-aes-gcm = "0.10"
-rand = "0.9.1"
+aes-gcm = "0.10.3"
+rand = "0.9.5"
 sysinfo = "0.37.2"
-lazy_static = "1.4"
+lazy_static = "1.5.1"
 rust_xlsxwriter = "0.91.0"
-async-trait = "0.1.89"
+async-trait = "0.1.92"
 # IoTDB 原生协议依赖
-url = "2.5.7"
-bytes = "1.10.1"
+url = "2.5.8"
+bytes = "1.12.1"
 # 移除封装客户端，使用原生协议实现
 # Thrift 协议支持
-thrift = "0.17"
+thrift = "0.17.0"
 # REST API 支持已通过 reqwest 提供
 # WebSocket 支持（可选）
 tokio-tungstenite = { version = "0.28.0", optional = true }
 
 # 新增依赖
-regex = "1.10"
-hex = "0.4"
+regex = "1.13.1"
+hex = "0.4.3"
 # 用于二进制数据处理
-byteorder = "1.5"
+byteorder = "1.5.0"
 # 用于网络连接
-tokio-util = { version = "0.7", features = ["codec"] }
+tokio-util = { version = "0.7.20", features = ["codec"] }
 # 用于数据压缩（IoTDB 支持 SNAPPY 压缩）
-snap = "1.1"
-urlencoding = "2.1"
+snap = "1.1.2"
+urlencoding = "2.1.3"
 # CSV 解析（用于 Flux 查询结果）
-csv = "1.3"
+csv = "1.4.0"
 
 # 本地 HTTP 视频服务器
-axum = "0.8"
-tower = "0.5"
-tower-http = { version = "0.6", features = ["fs", "cors"] }
+axum = "0.8.9"
+tower = "0.5.3"
+tower-http = { version = "0.6.11", features = ["fs", "cors"] }
 
 # S3/MinIO 支持
-aws-sdk-s3 = "1.112.0"
-aws-config = { version = "1.1", features = ["behavior-version-latest"] }
-aws-credential-types = "1.2.9"
-aws-smithy-types = "1.1"
-aws-smithy-runtime-api = "1.1"
-mime_guess = "2.0"
+aws-sdk-s3 = "1.137.0"
+aws-config = { version = "1.8.18", features = ["behavior-version-latest"] }
+aws-credential-types = "1.2.14"
+aws-smithy-types = "1.5.0"
+aws-smithy-runtime-api = "1.12.3"
+mime_guess = "2.0.5"
 
 # Windows 特定依赖已移除，使用标准库替代
 
 # InfluxDB 3.x FlightSQL 支持
-arrow-flight = { version = "57.0.0", features = ["flight-sql-experimental"], optional = true }
-arrow = { version = "57.0.0", optional = true }
-arrow-schema = { version = "57.0.0", optional = true }
-tonic = { version = "0.14.2", optional = true }
-prost = { version = "0.14.1", optional = true }
+arrow-flight = { version = "57.3.1", features = ["flight-sql-experimental"], optional = true }
+arrow = { version = "57.3.1", optional = true }
+arrow-schema = { version = "57.3.1", optional = true }
+tonic = { version = "0.14.6", optional = true }
+prost = { version = "0.14.4", optional = true }
 
 # macOS平台特定依赖 - 用于窗口背景色设置
 [target.'cfg(target_os = "macos")'.dependencies]
-objc2 = "0.5"
-objc2-app-kit = { version = "0.2", features = ["NSColor", "NSWindow"] }
+objc2 = "0.5.3"
+objc2-app-kit = { version = "0.2.2", features = ["NSColor", "NSWindow"] }
 
 # Linux平台特定依赖 - 启用原生菜单支持
 [target.'cfg(target_os = "linux")'.dependencies]
-tauri = { version = "2.9", features = ["linux-libxdo"] }
+tauri = { version = "2.12.3", features = ["protocol-asset", "linux-libxdo"] }
 
 [dev-dependencies]
-tempfile = "3.23.0"
+tempfile = "3.27.0"
 
 [features]
 # This feature is used for production builds or when a dev server is not specified, DO NOT REMOVE!!
@@ -126,14 +128,14 @@ influxdb-v3 = ["arrow-flight", "arrow", "arrow-schema", "tonic", "prost"]
 default = ["influxdb-v1", "influxdb-v2", "influxdb-v3", "iotdb-v1", "iotdb-v2", "iotdb-rest"]
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-shell = "2.3"
-tauri-plugin-dialog = "2.4"
-tauri-plugin-fs = "2.4"
-tauri-plugin-os = "2.3"
-tauri-plugin-notification = "2.3"
-tauri-plugin-global-shortcut = "2.3"
-tauri-plugin-clipboard-manager = "2.3"
-tauri-plugin-opener = "2"
+tauri-plugin-shell = "2.5.0"
+tauri-plugin-dialog = "2.8.2"
+tauri-plugin-fs = "2.7.0"
+tauri-plugin-os = "2.4.0"
+tauri-plugin-notification = "2.6.0"
+tauri-plugin-global-shortcut = "2.4.1"
+tauri-plugin-clipboard-manager = "2.4.2"
+tauri-plugin-opener = "2.7.1"
 
 # 构建配置优化
 [profile.dev]

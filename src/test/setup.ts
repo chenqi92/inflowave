@@ -4,10 +4,30 @@
 
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
-import initI18n from '@/i18n/config';
+import i18n from 'i18next';
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve, join } from 'node:path';
 
-// Initialize i18n for tests
-await initI18n();
+// Unit tests use bundled translations without starting native logging or HTTP loaders.
+const localeDirectory = resolve('public/locales/zh-CN');
+const namespaces = Object.fromEntries(readdirSync(localeDirectory)
+  .filter(file => file.endsWith('.json'))
+  .map(file => [file.replace('.json', ''), JSON.parse(readFileSync(join(localeDirectory, file), 'utf8'))]));
+await i18n.init({
+  lng: 'zh-CN',
+  fallbackLng: 'zh-CN',
+  defaultNS: 'common',
+  resources: { 'zh-CN': namespaces },
+});
+
+vi.mock('@/utils/logger', () => ({
+  default: {
+    error: vi.fn(),
+    warn: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
 
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

@@ -17,7 +17,7 @@ describe('SQL Type Detector', () => {
   describe('detectSQLStatementType', () => {
     test('should detect SELECT statements', () => {
       expect(detectSQLStatementType('SELECT * FROM measurement')).toBe('SELECT');
-      expect(detectSQLStatementType('  select count(*) from test  ')).toBe('SELECT');
+      expect(detectSQLStatementType('  select count(*) from test  ')).toBe('SELECT_AGGREGATE');
       expect(detectSQLStatementType('SELECT time, value FROM cpu')).toBe('SELECT');
     });
 
@@ -32,12 +32,12 @@ describe('SQL Type Detector', () => {
     });
 
     test('should detect CREATE statements', () => {
-      expect(detectSQLStatementType('CREATE DATABASE mydb')).toBe('CREATE');
+      expect(detectSQLStatementType('CREATE DATABASE mydb')).toBe('CREATE_DATABASE');
       expect(detectSQLStatementType('  create retention policy "1week" on "mydb"  ')).toBe('CREATE');
     });
 
     test('should detect DROP statements', () => {
-      expect(detectSQLStatementType('DROP DATABASE mydb')).toBe('DROP');
+      expect(detectSQLStatementType('DROP DATABASE mydb')).toBe('DROP_DATABASE');
       expect(detectSQLStatementType('  drop measurement cpu  ')).toBe('DROP');
     });
 
@@ -96,7 +96,10 @@ describe('SQL Type Detector', () => {
 
     test('should categorize unknown statements', () => {
       expect(getSQLStatementCategory('UNKNOWN')).toBe('unknown');
-      expect(getSQLStatementCategory('UPDATE')).toBe('unknown');
+    });
+
+    test('should categorize update statements', () => {
+      expect(getSQLStatementCategory('UPDATE')).toBe('update');
     });
   });
 
@@ -129,23 +132,17 @@ describe('SQL Type Detector', () => {
   describe('getSQLStatementTabs', () => {
     test('should return correct tabs for query statements', () => {
       const tabs = getSQLStatementTabs('SELECT');
-      expect(tabs).toHaveLength(3);
-      expect(tabs[0].key).toBe('table');
-      expect(tabs[1].key).toBe('json');
-      expect(tabs[2].key).toBe('chart');
+      expect(tabs.map(tab => tab.key)).toEqual(['table', 'json', 'chart', 'stats', 'messages', 'history']);
     });
 
     test('should return correct tabs for write statements', () => {
       const tabs = getSQLStatementTabs('INSERT');
-      expect(tabs).toHaveLength(2);
-      expect(tabs[0].key).toBe('status');
-      expect(tabs[1].key).toBe('json');
+      expect(tabs.map(tab => tab.key)).toEqual(['status', 'details', 'json', 'messages', 'history']);
     });
 
     test('should return correct tabs for unknown statements', () => {
       const tabs = getSQLStatementTabs('UNKNOWN');
-      expect(tabs).toHaveLength(1);
-      expect(tabs[0].key).toBe('json');
+      expect(tabs.map(tab => tab.key)).toEqual(['json', 'messages', 'history']);
     });
   });
 

@@ -26,7 +26,6 @@ dist-ssr
 
 # Tauri
 src-tauri/target
-src-tauri/Cargo.lock
 
 # Environment variables
 .env

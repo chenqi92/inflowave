@@ -19,8 +19,7 @@ incremental = true
 rustflags = [
     "-C", "target-cpu=x86-64-v2",
     "-C", "opt-level=3",
-    "-C", "codegen-units=1",
-    "-C", "panic=abort"
+    "-C", "codegen-units=1"
 ]
 
 [target.i686-pc-windows-msvc]
@@ -28,8 +27,7 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=pentium4",
     "-C", "opt-level=3",
-    "-C", "codegen-units=1",
-    "-C", "panic=abort"
+    "-C", "codegen-units=1"
 ]
 
 [target.aarch64-pc-windows-msvc]
@@ -37,8 +35,7 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=generic",
     "-C", "opt-level=3",
-    "-C", "codegen-units=1",
-    "-C", "panic=abort"
+    "-C", "codegen-units=1"
 ]
 
 [target.x86_64-apple-darwin]
@@ -46,8 +43,7 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=native",
     "-C", "opt-level=3",
-    "-C", "codegen-units=1",
-    "-C", "panic=abort"
+    "-C", "codegen-units=1"
 ]
 
 [target.aarch64-apple-darwin]
@@ -55,8 +51,7 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=apple-a14",
     "-C", "opt-level=3",
-    "-C", "codegen-units=1",
-    "-C", "panic=abort"
+    "-C", "codegen-units=1"
 ]
 
 [target.x86_64-unknown-linux-gnu]
@@ -64,8 +59,7 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=native",
     "-C", "opt-level=3",
-    "-C", "codegen-units=1",
-    "-C", "panic=abort"
+    "-C", "codegen-units=1"
 ]
 
 [target.aarch64-unknown-linux-gnu]
@@ -73,8 +67,7 @@ rustflags = [
 rustflags = [
     "-C", "target-cpu=generic",
     "-C", "opt-level=3",
-    "-C", "codegen-units=1",
-    "-C", "panic=abort"
+    "-C", "codegen-units=1"
 ]
 # 交叉编译链接器
 linker = "aarch64-linux-gnu-gcc"
@@ -84,8 +77,7 @@ linker = "aarch64-linux-gnu-gcc"
 rustflags = [
     "-C", "target-cpu=pentium4",
     "-C", "opt-level=3",
-    "-C", "codegen-units=1",
-    "-C", "panic=abort"
+    "-C", "codegen-units=1"
 ]
 
 # 注册表配置（使用国内镜像加速）

@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
+const { validateAppImage } = require('./validate-appimage.cjs');
 
 // ANSI 颜色代码
 const colors = {
@@ -221,9 +222,18 @@ function testRPM(pkg) {
 }
 
 function testAppImage(pkg) {
-  // AppImage 测试
-  log(`✅ AppImage 文件完整`, 'green');
-  return true;
+  if (process.platform !== 'linux') {
+    log('⚠️ 非 Linux 平台，跳过 AppImage 解包验证', 'yellow');
+    return true;
+  }
+  try {
+    validateAppImage(pkg.path);
+    log('✅ AppImage 入口、桌面文件和图标有效', 'green');
+    return true;
+  } catch (error) {
+    log(`❌ AppImage 验证失败: ${error.message}`, 'red');
+    return false;
+  }
 }
 
 function main() {

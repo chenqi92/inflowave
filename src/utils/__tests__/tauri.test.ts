@@ -3,21 +3,22 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mockIPC, clearMocks } from '@tauri-apps/api/mocks';
 import { safeTauriInvoke, isTauriEnvironment } from '../tauri';
 
 // Mock Tauri API
 const mockInvoke = vi.fn();
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: mockInvoke,
-}));
 
 describe('Tauri工具函数单元测试', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockInvoke.mockReset();
+    mockIPC((command, args) => mockInvoke(command, args));
   });
 
   afterEach(() => {
-    vi.restoreAllMocks();
+    clearMocks();
+    delete (window as any).__TAURI_INTERNALS__;
+    delete window.__TAURI__;
   });
 
   describe('safeTauriInvoke', () => {
@@ -44,7 +45,7 @@ describe('Tauri工具函数单元测试', () => {
 
       const result = await safeTauriInvoke('no_param_command');
 
-      expect(mockInvoke).toHaveBeenCalledWith('no_param_command', undefined);
+      expect(mockInvoke).toHaveBeenCalledWith('no_param_command', {});
       expect(result).toEqual(mockResult);
     });
 
@@ -73,12 +74,14 @@ describe('Tauri工具函数单元测试', () => {
       expect(result).toBe('');
     });
 
-    it('应该处理null结果', async () => {
+    it('应该拒绝有返回值命令的null结果', async () => {
       mockInvoke.mockResolvedValue(null);
+      await expect(safeTauriInvoke('null_result_command')).rejects.toThrow('returned null or undefined');
+    });
 
-      const result = await safeTauriInvoke('null_result_command');
-
-      expect(result).toBeNull();
+    it.each([null, undefined])('应该接受void命令的%s结果', async result => {
+      mockInvoke.mockResolvedValue(result);
+      await expect(safeTauriInvoke('update_connection')).resolves.toBeUndefined();
     });
 
     it('应该处理数组结果', async () => {
@@ -113,11 +116,17 @@ describe('Tauri工具函数单元测试', () => {
   });
 
   describe('isTauriEnvironment', () => {
+    beforeEach(() => {
+      clearMocks();
+      delete (window as any).__TAURI_INTERNALS__;
+    });
+
     it('应该在Tauri环境中返回true', () => {
       // Mock window.__TAURI__
       Object.defineProperty(window, '__TAURI__', {
         value: {},
         writable: true,
+        configurable: true,
       });
 
       expect(isTauriEnvironment()).toBe(true);
@@ -128,6 +137,7 @@ describe('Tauri工具函数单元测试', () => {
       Object.defineProperty(window, '__TAURI__', {
         value: undefined,
         writable: true,
+        configurable: true,
       });
 
       expect(isTauriEnvironment()).toBe(false);
